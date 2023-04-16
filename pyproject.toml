@@ -1,0 +1,25 @@
+[tool.pdm]
+
+[project]
+name = "acb"
+version = "0.1.0"
+description = "Application Code Base"
+authors = [
+    { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
+]
+dependencies = [
+    "pydantic>=1.10.7",
+    "itsdangerous>=2.1.2",
+    "msgspec>=0.14.1",
+    "addict>=2.4.0",
+    "aiopath>=0.6.11",
+    "arrow>=1.2.3",
+    "google-crc32c>=1.5.0",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "BSD-3-Clause" }
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
