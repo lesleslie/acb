@@ -1,8 +1,8 @@
-# acb - Application Code Base
+# Asynchronus Code Base
 
 ## About
 
-Application Code Base (acb) is a collection of core utilities and adapters useful for building out applications.
+Asynchronus Code Base (acb) is a collection of core actions and adapters useful for building out applications.
 
 ## Installation
 
