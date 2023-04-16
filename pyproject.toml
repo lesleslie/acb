@@ -28,6 +28,11 @@ requires-python = ">=3.11"
 readme = "README.md"
 license = { text = "BSD-3-Clause" }
 
+[project.urls]
+Homepage = "https://github.com/lesleslie/acb"
+Documentation = "https://github.com/lesleslie/acb"
+Repository = "https://github.com/lesleslie/acb"
+
 [tool.ruff]
 line-length = 88
 target-version = "py311"
