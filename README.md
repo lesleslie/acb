@@ -1,8 +1,13 @@
-# Asynchronus Code Base
+# Asynchronous Component Base
 
-## About
+Asynchronous Component Base, or 'acb', is a collection of modular
+components (actions / adapters) that provide the building blocks for rapid,
+asynchronous, application development.
+This codebase should be considered alpha right now as it is under
+heavy development. A majority of the components though should be
+immediately usable as they are added.
 
-Asynchronus Code Base (acb) is a collection of core actions and adapters useful for building out applications.
+More documentation is on the way!
 
 ## Installation
 
@@ -10,7 +15,7 @@ Asynchronus Code Base (acb) is a collection of core actions and adapters useful 
 pdm add acb
 ```
 
-## Usage
+## Actions
 
 ### Encode
 
@@ -36,4 +41,6 @@ from acb.configure import (
     AppSettings,
 )
 ```
+
+## Adapters
 
