@@ -9,7 +9,6 @@ import msgspec
 import tomlkit
 from addict import Dict as adict
 from aiopath import AsyncPath
-from icecream import ic
 from itsdangerous import Serializer as SecureSerializer
 from pathy import Path as PathyPath
 
@@ -34,7 +33,6 @@ class AcbEncoder:
     async def process(
             self, obj, path, action, serializer, sort_keys, use_list, **kwargs
     ) -> adict | bytes:
-        ic(action)
         if action in ("load", "decode"):
             if serializer is msgspec.msgpack:
                 kwargs.use_list = use_list
