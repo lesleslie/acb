@@ -6,8 +6,6 @@ from actions.log import pf
 from aioconsole import ainput
 from aioconsole import aprint
 from config import ac
-from sqlalchemy import inspect
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy_utils import create_database
 from sqlalchemy_utils import database_exists
@@ -16,6 +14,8 @@ from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from addict import Dict as adict
+from sqlalchemy import inspect
+from sqlalchemy import text
 
 
 class DatabaseSettings(AppSettings):
