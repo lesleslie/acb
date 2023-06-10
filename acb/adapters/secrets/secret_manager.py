@@ -1,3 +1,4 @@
+from contextlib import suppress
 from pathlib import Path
 from random import choice
 from secrets import compare_digest
@@ -14,6 +15,7 @@ from warnings import filterwarnings
 from acb.config import ac
 from acb.logger import logger
 from aiopath import AsyncPath
+from google.api_core.exceptions import AlreadyExists
 from google.auth import default
 from google.auth.transport.requests import AuthorizedSession
 from google.auth.transport.requests import Request
@@ -58,7 +60,7 @@ class AppSecrets(BaseSettings):
     app_mail_password: Optional[str] = gen_password(10)
 
     def __init__(self, **data: Any) -> None:
-    super().__init__(**data)
+        super().__init__(**data)
 
     class Config:
         extra = "forbid"
@@ -94,22 +96,22 @@ class SecretManager:
     async def get_access_token(self) -> str:
         self.creds.refresh(Request())
         if ac.debug.secret_manager:
-    logger.debug(f"Secrets access token:\n{self.creds.token}")
+            logger.debug(f"Secrets access token:\n{self.creds.token}")
         return self.creds.token
 
     async def verify_access_token(self, token: str) -> bool:
         verified = compare_digest(self.creds.token, token)
         if ac.debug.secret_manager:
-    logger.debug(f"Secrets access token verified - {verified}")
+            logger.debug(f"Secrets access token verified - {verified}")
         return verified
 
     async def list(self) -> list:
-    secrets = self.client.list_secrets(request={"parent": self.parent})
-    secrets = [self.extract_secret_name(secret.name) for secret in secrets]
-    secrets = [s for s in secrets if s.split("_")[0] in (ac.app.name, "000")]
-    # if not deployed and debug.secret_manager:
-    #     await apformat(secrets)
-    return secrets
+        secrets = self.client.list_secrets(request={"parent": self.parent})
+        secrets = [self.extract_secret_name(secret.name) for secret in secrets]
+        secrets = [s for s in secrets if s.split("_")[0] in (ac.app.name, "000")]
+        # if not deployed and debug.secret_manager:
+        #     await apformat(secrets)
+        return secrets
 
     async def get(self, name: str) -> str:
         name = self.get_name(name)
@@ -121,16 +123,16 @@ class SecretManager:
         return payload
 
     async def create(self, name: str, value: str) -> None:
-    name = self.get_name(name)
-    parent = f"projects/{self.project}"
-    with suppress(AlreadyExists):
-        version = self.client.create_secret(
-            request={
-                "parent": parent,
-                "secret_id": name,
-                "secret": {"replication": {"automatic": {}}},
-            }
-        )
+        name = self.get_name(name)
+        parent = f"projects/{self.project}"
+        with suppress(AlreadyExists):
+            version = self.client.create_secret(
+                request={
+                    "parent": parent,
+                    "secret_id": name,
+                    "secret": {"replication": {"automatic": {}}},
+                }
+            )
             self.client.add_secret_version(
                 request={
                     "parent": version.name,
@@ -141,29 +143,29 @@ class SecretManager:
                 logger.debug(f"Created secret - {name}")
 
     async def update(self, name: str, value: str) -> None:
-    name = self.get_name(name)
-    secret = self.client.secret_path(self.project, name)
-    self.client.add_secret_version(
-        request={
-            "parent": secret,
-            "payload": {"data": f"{value}".encode()},
-        }
-    )
-    if not deployed:
-        logger.debug(f"Updated secret - {name}")
+        name = self.get_name(name)
+        secret = self.client.secret_path(self.project, name)
+        self.client.add_secret_version(
+            request={
+                "parent": secret,
+                "payload": {"data": f"{value}".encode()},
+            }
+        )
+        if not deployed:
+            logger.debug(f"Updated secret - {name}")
 
     async def delete(self, name: str) -> None:
-    name = self.get_name(name)
-    secret = self.client.secret_path(self.project, name)
-    self.client.delete_secret(request={"name": secret})
-    if not deployed:
-        logger.debug(f"Deleted secret - {secret}")
+        name = self.get_name(name)
+        secret = self.client.secret_path(self.project, name)
+        self.client.delete_secret(request={"name": secret})
+        if not deployed:
+            logger.debug(f"Deleted secret - {secret}")
 
     async def load(self, name: str, secrets, cls_dict) -> str:
-    if name not in secrets:
-        await self.create(name, cls_dict[name])
-    secret = await self.get(name)
-    return secret
+        if name not in secrets:
+            await self.create(name, cls_dict[name])
+        secret = await self.get(name)
+        return secret
 
     async def load_all(self, cls_dict) -> dict:
         secrets = await self.list()
@@ -193,6 +195,6 @@ class SecretManager:
         self.client = SecretManagerServiceClient(credentials=self.creds)
         self.authed_session = AuthorizedSession(self.creds)
         if ac.debug.secret:
-    Path(secret_dir).rmdir()
+            Path(secret_dir).rmdir()
 
 # secret_manager = SecretManager()
