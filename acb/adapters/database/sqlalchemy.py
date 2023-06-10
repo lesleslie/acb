@@ -14,16 +14,16 @@ from pathlib import Path
 from re import search
 from typing import Any
 
-from acb.actions.debug import apformat
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import arrow
-from acb import ac
-from acb import AppSettings
-from acb import logger
 # from re import sub
 # from adapters.database_ import async_session
 from acb.adapters.database.sqlmodel import AppBaseModel
+from acb.config import ac
+from acb.config import AppSettings
+from acb.logger import apformat
+from acb.logger import logger
 from aioconsole import ainput
 from aioconsole import aprint
 # from sqlalchemy.orm.exc import UnmappedInstanceError
@@ -62,18 +62,18 @@ class DatabaseSettings(AppSettings):
     engine_kwargs = dict(poolclass=NullPool, pool_pre_ping=True)
 
     def __init__(self, **data: t.Any) -> None:
-    super().__init__(**data)
-    self.async_url_kwargs = dict(
-        drivername="mysql+asyncmy",
-        username=ac.secrets.database_user,
-        password=ac.secrets.database_password,
-        port=self.port,
-        host=self.host,
-        database=ac.app.name,
-    )
-    self.async_url = URL.create(**self.async_url_kwargs)
-    self.url_kwargs = dict(drivername="mysql+mysqldb")
-    self.url = URL.create(**{**self.async_url_kwargs, **self.url_kwargs})
+        super().__init__(**data)
+        self.async_url_kwargs = dict(
+            drivername="mysql+asyncmy",
+            username=ac.secrets.database_user,
+            password=ac.secrets.database_password,
+            port=self.port,
+            host=self.host,
+            database=ac.app.name,
+        )
+        self.async_url = URL.create(**self.async_url_kwargs)
+        self.url_kwargs = dict(drivername="mysql+mysqldb")
+        self.url = URL.create(**{**self.async_url_kwargs, **self.url_kwargs})
 
 
 class Database:
