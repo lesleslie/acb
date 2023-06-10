@@ -53,51 +53,49 @@ class AcbEncoder:
             return data
 
     def get_vars(self, frame: FrameType):
-    code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
-    calling_method = search("await\s(\w+)\.(\w+)\(", code_context)
-    return calling_method.group(1), self.serializers[calling_method.group(2)]
+        code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
+        calling_method = search("await\s(\w+)\.(\w+)\(", code_context)
+        return calling_method.group(1), self.serializers[calling_method.group(2)]
 
     def get_serializer(self, serializer, secret_key, secure_salt):
         secure = secret_key and secure_salt
         return (
-    SecureSerializer(
-        secret_key,
-        salt=secure_salt,
-        serializer=serializer,
-        signer_kwargs=dict(digest_method=blake3),
-    )
-    if secure
-    else serializer
-)
+            SecureSerializer(
+                secret_key,
+                salt=secure_salt,
+                serializer=serializer,
+                signer_kwargs=dict(digest_method=blake3),
+            )
+            if secure
+            else serializer
+        )
 
     async def __call__(
-    self,
-    obj: str | PathLike | dict,
-    path: t.Optional[AsyncPath] = None,
-    # sort_keys: bool = True,
-    use_list: bool = False,
-    secret_key: str = None,
-    secure_salt: str = None,
-    **kwargs,
-) -> dict | bytes:
-    # obj = obj if not isinstance(obj, AsyncPath) else AsyncPath(obj)
-    # path = AsyncPath(path) if isinstance(path, Path | str) else path
-    action, serializer = self.get_vars(sys._getframe(1))
-    if (secret_key and not secure_salt) or (secure_salt and not secret_key):
-        warn(
-            f"{serializer} serializer won't sign objects unless both "
-            f"secret_key and secure_salt are set"
+        self,
+        obj: str | PathLike | dict,
+        path: t.Optional[AsyncPath] = None,
+        # sort_keys: bool = True,
+        use_list: bool = False,
+        secret_key: str = None,
+        secure_salt: str = None,
+        **kwargs,
+    ) -> dict | bytes:
+        action, serializer = self.get_vars(sys._getframe(1))
+        if (secret_key and not secure_salt) or (secure_salt and not secret_key):
+            warn(
+                f"{serializer} serializer won't sign objects unless both "
+                f"secret_key and secure_salt are set"
+            )
+        serializer = self.get_serializer(serializer, secret_key, secure_salt)
+        return await self.process(
+            obj,
+            path,
+            action,
+            serializer,
+            use_list,
+            **kwargs
+            # obj, path, action, serializer, sort_keys, use_list, **kwargs
         )
-    serializer = self.get_serializer(serializer, secret_key, secure_salt)
-    return await self.process(
-        obj,
-        path,
-        action,
-        serializer,
-        use_list,
-        **kwargs
-        # obj, path, action, serializer, sort_keys, use_list, **kwargs
-    )
 
 
 dump = load = encode = decode = AcbEncoder()
