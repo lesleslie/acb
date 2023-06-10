@@ -1,41 +1,30 @@
-from hashlib import blake2b
-from pathlib import Path
+from os import PathLike
 
 import arrow
 from aiopath import AsyncPath
-from google_crc32c import value
-from pydantic import BaseModel
+from blake3 import blake3 as hash_blake3  # type: ignore
+from google_crc32c import value as hash_crc32c
 
 
-class Hash(BaseModel):
+class Hash:
     @staticmethod
-    async def blake2b(obj: AsyncPath | Path | list | bytes | str) -> str:
-        hash_obj = blake2b(digest_size=20)
+    async def blake3(obj: PathLike | list | bytes | str) -> str:
         if not obj:
             timestamp = arrow.utcnow().float_timestamp
             obj = str(timestamp)
-        elif isinstance(obj, AsyncPath | Path):
-            obj = AsyncPath(obj) if isinstance(obj, Path) else obj
-            obj = await obj.read_bytes()
+        elif isinstance(obj, PathLike):
+            obj = await AsyncPath(obj).read_bytes()
         elif isinstance(obj, list):
             obj = "".join([str(a) for a in obj])
         if not isinstance(obj, bytes):
             obj = obj.encode()
-        hash_obj.update(obj)
-        return hash_obj.hexdigest()
+        return hash_blake3(obj).hexdigest()
 
     @staticmethod
-    def crc32c(obj: Path | bytes | str) -> bytes:
-        if isinstance(obj, Path):
-            obj = obj.read_text()
-        return value(obj.encode())
-
-    @staticmethod
-    async def acrc32c(obj: AsyncPath | Path | bytes | str) -> bytes:
-        if isinstance(obj, AsyncPath | Path):
-            obj = AsyncPath(obj) if isinstance(obj, Path) else obj
-            obj = await obj.read_text()
-        return value(obj.encode())
+    async def crc32c(obj: PathLike | bytes | str) -> bytes:
+        if isinstance(obj, PathLike):
+            obj = await AsyncPath(obj).read_text()
+        return hash_crc32c(obj.encode())
 
 
 hash = Hash()

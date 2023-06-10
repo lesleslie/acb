@@ -1,23 +1,66 @@
-from asyncio import gather
-from pathlib import Path
+import sys
+import typing as t
 from pprint import pformat
 from pprint import pprint
 from re import search
-from typing import Any
 
-from actions.encode import load
-from actions.log import *
-from adapters.dns import create_dns_records
-from adapters.dns import DnsRecord
-from config import ac
-from config import debug
-
+from aiopath import AsyncPath
 from httpx import AsyncClient
+from loguru import logger
+from pydantic import AnyUrl
 from pydantic import BaseModel
+from pydantic import EmailStr
+from ..dns.cloud_dns import DnsRecord
+from ..dns.cloud_dns import gdns
+from ... import ac
+from ... import AppSettings
+from ...actions import load
+
+
+class MailSettings(AppSettings):
+    # MAIL_USERNAME: str
+    # MAIL_PASSWORD: str
+    # MAIL_PORT: int = 465
+    # MAIL_SERVER: str
+    # MAIL_TLS: bool = False
+    # MAIL_SSL: bool = True
+    # MAIL_DEBUG: conint(gt=-1, lt=2) = 0  # type: ignore
+    # MAIL_FROM: EmailStr
+    # MAIL_FROM_NAME: Optional[str] = None
+    # TEMPLATE_FOLDER: Optional[DirectoryAsyncPath] = None
+    # SUPPRESS_SEND: conint(gt=-1, lt=2) = 0  # type: ignore
+    # USE_CREDENTIALS: bool = True
+    # VALIDATE_CERTS: bool = True
+
+    enabled = not ac.app.mail_provider == "gmail"
+    debug = ac.debug.mail
+    domain: EmailStr = f"mail@{ac.app.domain}"
+    server: AnyUrl = "smtp.mailgun.com"
+    port = "587"
+    username = f"postmaster@{ac.app.domain}"
+    password = ac.secrets.app_mail_password
+    api_url = ("https://api.mailgun.net/v3/domains",)
+    api_key = (ac.secrets.mailgun_api_key,)
+    default_from: EmailStr = f"info@{ac.app.domain}"
+    default_from_name = ac.app.title
+    test_receiver: EmailStr = None
+    tls = True
+    ssl = False
+    template_folder: t.Optional[AsyncPath]
+    gmail = dict(
+        enabled=ac.app.mail_provider == "gmail",
+        mx_servers=[
+            "1 aspmx.l.google.com.",
+            "5 alt1.aspmx.l.google.com.",
+            "5 alt2.aspmx.l.google.com.",
+            "10 alt3.aspmx.l.google.com.",
+            "10 alt4.aspmx.l.google.com.",
+        ],
+    )
 
 
 class Mailgun(BaseModel):
-    def __init__(self, **data: Any):
+    def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
 
     # conf = ConnectionConfig(
@@ -31,33 +74,33 @@ class Mailgun(BaseModel):
     #     TEMPLATE_FOLDER=theme.path / "utility" / "mail",
     # )
 
-    def get_response(self, req_type: str, domain=None, data=None, params=None):
-        pass
-
-    #     caller = inspect_.calling_function()
-    #     match caller:
-    #         case search(caller, "domain"):
-    #             caller = "domain"
-    #         case search(caller, "route"):
-    #             caller = "route"
-    #     url = "/".join([ac.mailgun.api_url, caller, domain])
-    #     data = dict(auth=("api", ac.mailgun.api_key), params=params, data=data)
-    #     resp = None
-    #     async with AsyncClient() as client:
-    #         match req_type:
-    #             case "get":
-    #                 resp = await client.get(url)
-    #             case "put":
-    #                 url = "".join([url, "/connection"])
-    #                 resp = await client.put(url, data=data)
-    #             case "post":
-    #                 url = "".join([url, "/connection"])
-    #                 resp = await client.post(url, data=data)
-    #             case "delete":
-    #                 resp = await client.delete(url)
-    #     if debug.mail:
-    #         print(resp)
-    #     return load.json(resp.json())
+    async def get_response(
+            self, req_type: str, domain=None, data=None, params=None
+    ) -> dict:
+        caller: str = sys._getframe().f_back.f_code.co_name
+        match caller:
+            case search(caller, "domain"):
+                caller = "domain"
+            case search(caller, "route"):
+                caller = "route"
+        url = "/".join([ac.mailgun.api_url, caller, domain])
+        data = dict(auth=("api", ac.mailgun.api_key), params=params, data=data)
+        resp = None
+        async with AsyncClient() as client:
+            match req_type:
+                case "get":
+                    resp = await client.get(url)
+                case "put":
+                    url = "".join([url, "/connection"])
+                    resp = await client.put(url, data=data)
+                case "post":
+                    url = "".join([url, "/connection"])
+                    resp = await client.post(url, data=data)
+                case "delete":
+                    resp = await client.delete(url)
+        if ac.debug.mail:
+            print(resp)
+        return await load.json(resp.json())
 
     async def list_domains(self):
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
@@ -76,8 +119,8 @@ class Mailgun(BaseModel):
                 "web_scheme": "https",
             },
         )
-        if debug.mail:
-            logger.debug(resp)
+        if ac.debug.mail:
+    logger.debug(resp)
         resp = await self.get_response(
             "put", data={"require_tls": True, "skip_verification": True}
         )
@@ -114,37 +157,37 @@ class Mailgun(BaseModel):
             records.append(record)
         return records
 
-    async def create_dns_records(self):
-        # if not ac.mail.mailgun.domain in list_domains(self):
-        await self.create_domain(ac.mail.mailgun.domain)
-        await self.create_domain_credentials(ac.mail.mailgun.domain)
-        records = await self.get_dns_records(ac.mail.mailgun.domain)
-        if ac.mail.mailgun.gmail.enabled:
-            await self.delete_domain(ac.mail.mailgun.domain)
-            rrdata = ac.mail.gmail.mx_servers
-            record = DnsRecord(name=ac.mail.mailgun.domain, type="MX", rrdata=rrdata)
-            records.append(record)
-        else:
-            await self.delete_domain(ac.mail.mailgun.domain)
-        if debug.mail:
-            pprint(records)
-        await create_dns_records(records)
+    async def create_dns_records(self) -> None:
+    # if not ac.mail.mailgun.domain in list_domains(self):
+    await self.create_domain(ac.mail.mailgun.domain)
+    await self.create_domain_credentials(ac.mail.mailgun.domain)
+    records = await self.get_dns_records(ac.mail.mailgun.domain)
+    if ac.mail.mailgun.gmail.enabled:
+        await self.delete_domain(ac.mail.mailgun.domain)
+        rrdata = ac.mail.gmail.mx_servers
+        record = DnsRecord(name=ac.mail.mailgun.domain, type="MX", rrdata=rrdata)
+        records.append(record)
+    else:
+        await self.delete_domain(ac.mail.mailgun.domain)
+    if ac.debug.mail:
+        pprint(records)
+        await gdns.create_dns_records(records)
 
     async def list_routes(self):
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
         domain_routes = [
             r for r in resp["items"] if ac.mail.mailgun.domain in r["expression"]
         ]
-        if debug.mail:
-            logger.debug(pformat(resp["items"]))
-            logger.debug(len(resp["items"]))
-            logger.debug(pformat(domain_routes))
-            logger.debug(len(domain_routes))
+        if ac.debug.mail:
+    logger.debug(pformat(resp["items"]))
+    logger.debug(len(resp["items"]))
+    logger.debug(pformat(domain_routes))
+    logger.debug(len(domain_routes))
 
         return domain_routes
 
     async def delete_route(self, route):
-        with AsyncClient() as client:
+        async with AsyncClient() as client:
             resp = await client.delete("delete", domain={route["id"]})
         logger.info(f"Deleted route for {route['description']}")
         return resp
@@ -154,23 +197,23 @@ class Mailgun(BaseModel):
         name = search("'(.+)@.+", address)
         return name.group(1) if name else ""
 
-    async def delete_routes(self, delete_all=False):
-        forwards = await load.yaml(Path("mail.yml")).keys()
+    async def delete_routes(self, delete_all: bool = False) -> None:
+        forwards = await load.yaml(AsyncPath("mail.yml")).keys()
         routes = await self.list_routes()
         deletes = []
         deletes.extend(
             [r for r in routes if self.get_name(r["expression"]) not in forwards]
         )
-        if debug.mail:
+        if ac.debug.mail:
             pprint(deletes)
         for f in forwards:
             fs = [r for r in routes if self.get_name(r["expression"]) == f]
             deletes.extend(fs[1:])
         if delete_all or ac.mail.mailgun.gmail.enabled:
             deletes = [r for r in routes if len(self.get_name(r["expression"]))]
-        if debug.mail:
-            pprint(deletes)
-            print(len(deletes))
+        if ac.debug.mail:
+    pprint(deletes)
+    print(len(deletes))
         else:
             for d in deletes:
                 await self.delete_route(d)
@@ -183,8 +226,8 @@ class Mailgun(BaseModel):
 
         for addr in forwarding_addresses:
             actions.insert(0, f"forward('{addr}')")
-        if debug.mail:
-            print(actions)
+        if ac.debug.mail:
+    print(actions)
         route = {
             "priority": 0,
             "description": domain_address,
@@ -213,25 +256,24 @@ class Mailgun(BaseModel):
         )
         return resp
 
-    async def create_routes(self, ordered=True):
+    async def create_routes(self, ordered: bool = True) -> None:
         if ac.mail.mailgun.gmail.enabled:
             logger.info("Using gmail mx servers. No routes created.")
             return
         else:
-            forwards = await load.yaml(Path("mail.yml"), ordered=ordered)
+            forwards = await load.yaml(AsyncPath("mail.yml"), ordered=ordered)
             async for k, v in forwards.items():
                 await self.create_route(k, v)
 
-    def setup_mail(self):
-        self.create_dns_records()
-        if not (Path("mail.yml").exists()):
+
+    async def setup_mail(self) -> None:
+        await self.create_dns_records()
+
+        if not (AsyncPath("mail.yml").exists()):
             logger.info("No mail routes to configre - mail.yml not found.")
-            return False
-        self.delete_routes(delete_all=False)
-        self.create_routes()
+            return
+        await self.delete_routes()
+        await self.create_routes()
 
 
 mailgun = Mailgun()
-
-# if __name__ == "__main__":
-#     ac.mail.mailgun.setup_mail()
