@@ -2,8 +2,8 @@ from os import PathLike
 
 import arrow
 from aiopath import AsyncPath
-from blake3 import blake3 as hash_blake3  # type: ignore
-from google_crc32c import value as hash_crc32c
+from blake3 import blake3  # type: ignore
+from google_crc32c import value as crc32c
 
 
 class Hash:
@@ -18,13 +18,13 @@ class Hash:
             obj = "".join([str(a) for a in obj])
         if not isinstance(obj, bytes):
             obj = obj.encode()
-        return hash_blake3(obj).hexdigest()
+        return blake3(obj).hexdigest()
 
     @staticmethod
     async def crc32c(obj: PathLike | bytes | str) -> bytes:
         if isinstance(obj, PathLike):
             obj = await AsyncPath(obj).read_text()
-        return hash_crc32c(obj.encode())
+        return crc32c(obj.encode())
 
 
 hash = Hash()

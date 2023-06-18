@@ -8,6 +8,7 @@ from contextlib import suppress
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+from functools import cached_property
 from functools import lru_cache
 from itertools import chain
 from pathlib import Path
@@ -17,25 +18,17 @@ from typing import Any
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import arrow
-# from re import sub
-# from adapters.database_ import async_session
-from acb.adapters.database.sqlmodel import AppBaseModel
-from acb.config import ac
-from acb.config import AppSettings
-from acb.logger import apformat
-from acb.logger import logger
 from aioconsole import ainput
 from aioconsole import aprint
-# from sqlalchemy.orm.exc import UnmappedInstanceError
-# from storage import stor
 from aiopath import AsyncPath
-# from plugins import plugin_source
 from pydantic import BaseModel
 from pydantic import create_model
 from sqlalchemy import inspect
 from sqlalchemy import text
 from sqlalchemy.engine import URL
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine
+
 # from sqlalchemy.exc import IntegrityError
 # from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.serializer import dumps as sdumps
@@ -46,9 +39,12 @@ from sqlalchemy_utils import database_exists
 from sqlalchemy_utils import drop_database
 from sqlmodel import select
 from sqlmodel import SQLModel
+from .sqlmodel import AppBaseModel
+from acb.config import ac
+from acb.config import AppSettings
+from acb.logger import apformat
+from acb.logger import logger
 
-# from actions.load import load
-# from resize import clear_resized_images
 
 stor = create_model("Storage", __base__=BaseModel, **dict(db=None))
 
@@ -60,6 +56,14 @@ class DatabaseSettings(AppSettings):
     async_url: t.Optional[URL]
     url: t.Optional[URL]
     engine_kwargs = dict(poolclass=NullPool, pool_pre_ping=True)
+
+    @cached_property
+    def async_engine(self) -> AsyncEngine:
+        return create_async_engine(self.async_url, **self.engine_kwargs)
+
+    @cached_property
+    def async_session(self) -> AsyncSession:
+        return AsyncSession(self.async_engine, expire_on_commit=False)
 
     def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
@@ -77,19 +81,15 @@ class DatabaseSettings(AppSettings):
 
 
 class Database:
-    engine: t.Any = None
-
-    # session: t.Any = None
-
     async def create(self, demo: bool = False) -> None:
         exists = database_exists(ac.db.url)
         if exists:
             logger.debug("Database exists.")
 
         if (
-                (ac.debug.database or ac.debug.models)
-                and not (ac.app.is_deployed or ac.debug.production)
-                and exists
+            (ac.debug.database or ac.debug.models)
+            and not (ac.app.is_deployed or ac.debug.production)
+            and exists
         ):
             msg = (
                 "\n\nRESETTING THE DATABASE WILL CAUSE ALL OF YOUR"
@@ -112,38 +112,44 @@ class Database:
             logger.info("Database created.")
 
     @lru_cache
-    async def get_async_session(self):
-        return AsyncSession(self.engine, expire_on_commit=False)
+    def get_async_session(self) -> AsyncSession:
+        return ac.db.async_session
 
     @asynccontextmanager
     async def session(self) -> t.AsyncGenerator:
         async with self.get_async_session() as sess:
             yield sess
 
+    @lru_cache
+    def get_async_engine(self) -> AsyncEngine:
+        return ac.db.async_engine
+
+    @asynccontextmanager
+    async def engine(self) -> t.AsyncGenerator:
+        async with self.get_async_engine() as conn:
+            yield conn
+
     @staticmethod
-    def get_table_names(conn):
+    def get_table_names(conn) -> list[str]:
         inspector = inspect(conn)
         return inspector.get_table_names()
 
-    async def init(self, demo: bool = False) -> None:
-        self.engine = create_async_engine(ac.db.async_url, **ac.db.engine_kwargs)
-
+    async def __call__(self, demo: bool = False) -> None:
         # print(debug.database)
         # print(type(debug.database))
         await self.create(demo)
-        async with self.engine.connect() as conn:
-            if ac.debug.database:
-                sql = text("DROP TABLE IF EXISTS alembic_version")
-                await conn.execute(sql)
-            logger.info("Creating database tables...")
-            await conn.run_sync(SQLModel.metadata.create_all)
-            if ac.debug.models:
-                table_names = await conn.run_sync(self.get_table_names)
-                await apformat(table_names)
-            logger.info("Database initialized.")
+        if ac.debug.database:
+            sql = text("DROP TABLE IF EXISTS alembic_version")
+            await self.engine.execute(sql)
+        logger.info("Creating database tables...")
+        await self.engine.run_sync(SQLModel.metadata.create_all)
+        if ac.debug.models:
+            table_names = await self.engine.run_sync(self.get_table_names)
+            await apformat(table_names)
+        logger.info("Database initialized.")
 
 
-db = Database()
+db = database = Database()
 
 sure_delete = False
 
@@ -161,7 +167,7 @@ class BackupDbUtils(BaseModel):
             if self.get_timestamp(blob.name):
                 yield blob.name
 
-    def get_timestamps(self):
+    def get_timestamps(self) -> list[str]:
         if not self.files:
             self.files = tuple(self.get_files())
 
@@ -180,30 +186,30 @@ class BackupDbUtils(BaseModel):
             if timestamp == self.get_timestamp(name):
                 yield name
 
-    def valid(self, timestamp) -> bool:
-        if timestamp and timestamp in self.get_timestamps():
+    def valid(self, timestamp: str) -> bool:
+        if timestamp in self.get_timestamps():
             return True
         # print('==> Invalid id. Use "history" to list existing downloads')
         return False
 
-    def get_path(self, class_name: str, timestamp=None):
+    def get_path(self, class_name: str, timestamp: str = None) -> AsyncPath:
         timestamp = timestamp or arrow.utcnow().int_timestamp
-        self.backup_path = Path(f"{ac.app.name}-{timestamp}-{class_name}.sqla")
+        self.backup_path = AsyncPath(f"{ac.app.name}-{timestamp}-{class_name}.sqla")
         return self.backup_path
 
 
 class BackupDbDates(BaseModel):
-    today = arrow.utcnow()
-    white_list = []
-    black_list = []
-    dates = []
+    today: arrow.Arrow = arrow.utcnow()
+    white_list: list = []
+    black_list: list = []
+    dates: list = []
 
     def __init__(self, dates=None, **data: Any) -> None:
         super().__init__(**data)
         self.dates = sorted(dates, reverse=True) if dates else []
         self.run()  # feed self.white_list & self.black_list
 
-    def get_last_month_length(self):
+    def get_last_month_length(self) -> datetime.month:
         return monthrange(self.today.year, self.today.shift(months=-1).month)[1]
 
     def get_last_year_length(self):
@@ -211,7 +217,7 @@ class BackupDbDates(BaseModel):
         last_day = first_day - timedelta(days=1)  # last year
         return 366 if isleap(last_day.year) else 365
 
-    def filter_dates(self, dates, period):
+    def filter_dates(self, dates, period) -> t.Coroutine:
         reference = self.today.int_timestamp
         method_mapping = {
             "week": lambda obj: getattr(obj, "isocalendar")()[1],
@@ -256,8 +262,8 @@ class BackupDbDates(BaseModel):
 
 
 class BackupDb(BackupDbDates, BackupDbUtils):
-    do_not_backup = []
-    models = []
+    do_not_backup: list = []
+    models: list = []
 
     def show(self):
         return [
@@ -266,7 +272,7 @@ class BackupDb(BackupDbDates, BackupDbUtils):
             if isinstance(m, type) and issubclass(m, AppBaseModel)
         ]
 
-    def get_mapped_classes(self):
+    def get_mapped_classes(self) -> list[str]:
         self.add_subclasses(AppBaseModel)
         return self.models
 
@@ -277,7 +283,7 @@ class BackupDb(BackupDbDates, BackupDbUtils):
         else:
             self.models.append(model)
 
-    def get_data(self):
+    def get_data(self) -> dict[str, str]:
         data = {}
         async with db.session() as session:
             for model in self.get_mapped_classes():
@@ -286,7 +292,7 @@ class BackupDb(BackupDbDates, BackupDbUtils):
                 data[model.__name__] = sdumps(results)
         return data
 
-    def parse_data(self, contents):
+    def parse_data(self, contents) -> bytes:
         with suppress(AttributeError):
             contents = sloads(
                 contents,
@@ -309,7 +315,7 @@ class BackupDb(BackupDbDates, BackupDbUtils):
             logger.debug(f"Backing up - {path.name}")
             await self.backup(class_name, data[class_name], now)
 
-    async def get_backups(self):
+    async def get_backups(self) -> list[str]:
         timestamps = self.get_timestamps()
         backups = {}
         for timestamp in timestamps:
@@ -324,7 +330,7 @@ class BackupDb(BackupDbDates, BackupDbUtils):
             logger.debug(f"{date_formatted} ==> {adate_formatted}:")
         return sorted(backups, reverse=True)
 
-    def get_last_backup(self):
+    def get_last_backup(self) -> str | bool:
         timestamps = self.get_timestamps()
         if not len(timestamps):
             return False
@@ -374,7 +380,7 @@ class BackupDb(BackupDbDates, BackupDbUtils):
         #     status = err
         # return status, fails
 
-    def restore_backup(self, timestamp) -> None:
+    def restore_backup(self, timestamp: str) -> None:
         paths = [Path(b.name) for b in stor.db.list() if timestamp in b.name]
         when = arrow.Arrow.fromtimestamp(timestamp).humanize()
         logger.info(f"Restoring backup from {when}.....")
@@ -389,13 +395,13 @@ class BackupDb(BackupDbDates, BackupDbUtils):
                 for f in fails:
                     logger.error(f"\t\tRestore of {f} failed!")
 
-    def delete_backups(self, delete_list) -> None:
+    def delete_backups(self, delete_list: list[str]) -> None:
         delete_me = stor.db.delete(delete_list)
         if delete_me:
             for name in delete_list:
                 logger.debug(f"Deleted {name}")
 
-    def clean(self):
+    def clean(self) -> str | bool:
         """
         Remove a series of backup files based on the following rules:
         * Keeps all the backups from the last 7 days

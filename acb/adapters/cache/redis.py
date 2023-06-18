@@ -1,8 +1,8 @@
 import typing as t
 from ipaddress import IPv4Address
 
-from acb import ac
-from acb import AppSettings
+from ...config import ac
+from ...config import AppSettings
 from acb.actions import dump
 from acb.actions import load
 from cashews import cache
