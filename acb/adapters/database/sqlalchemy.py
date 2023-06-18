@@ -18,6 +18,10 @@ from typing import Any
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import arrow
+from acb.config import ac
+from acb.config import AppSettings
+from acb.logger import apformat
+from acb.logger import logger
 from aioconsole import ainput
 from aioconsole import aprint
 from aiopath import AsyncPath
@@ -40,11 +44,6 @@ from sqlalchemy_utils import drop_database
 from sqlmodel import select
 from sqlmodel import SQLModel
 from .sqlmodel import AppBaseModel
-from acb.config import ac
-from acb.config import AppSettings
-from acb.logger import apformat
-from acb.logger import logger
-
 
 stor = create_model("Storage", __base__=BaseModel, **dict(db=None))
 
@@ -140,11 +139,11 @@ class Database:
         await self.create(demo)
         if ac.debug.database:
             sql = text("DROP TABLE IF EXISTS alembic_version")
-            await self.engine.execute(sql)
+            self.get_async_engine.execute(sql)
         logger.info("Creating database tables...")
-        await self.engine.run_sync(SQLModel.metadata.create_all)
+        self.get_async_engine().run_sync(SQLModel.metadata.create_all)
         if ac.debug.models:
-            table_names = await self.engine.run_sync(self.get_table_names)
+            table_names = self.get_async_engine().run_sync(self.get_table_names)
             await apformat(table_names)
         logger.info("Database initialized.")
 

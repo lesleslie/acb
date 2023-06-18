@@ -1,0 +1,104 @@
+repos:
+  - repo: https://github.com/pdm-project/pdm
+    rev: 2.7.4  # a PDM release exposing the hook
+    hooks:
+      - id: pdm-lock-check
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        name: trailing-whitspace
+      - id: end-of-file-fixer
+        name: end-of-file-fixer
+      - id: check-yaml
+        name: check-yaml
+      - id: check-toml
+        name: check-toml
+      - id: check-added-large-files
+        name: check-added-large-files
+  - repo: https://github.com/psf/black
+    rev: '23.3.0'
+    hooks:
+      - id: black
+        language_version: python3.11
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.272
+    hooks:
+      - id: ruff
+#  - repo: https://github.com/fredrikaverpil/creosote
+  - repo: https://github.com/lesleslie/creosote
+    rev: v2.7.0
+    hooks:
+      - id: creosote
+        args: [--paths, "acb", --exclude-deps, "pdm-bump", "tomli-w", "--pep582"]
+  - repo: https://github.com/ikamensh/flynt/
+    rev: '0.78'
+    hooks:
+      - id: flynt
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.4
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
+  - repo: local
+    hooks:
+      - id: pyanalyze
+        name: pyanalyze
+        entry: python -m pyanalyze
+        language: python
+        files: \.py$
+        additional_dependencies:
+          - pyanalyze>=0.10.1
+  - repo: local
+    hooks:
+      - id: autotyping
+        name: autotyping
+        entry: python -m libcst.tool codemod autotyping.AutotypeCommand
+        args:
+          - --aggressive
+          - --only-without-imports
+          - --show-successes
+          - --include-generated
+          - --guess-common-names
+          - --pyanalyze-report '.pyanalyze-report.json',
+          - acb
+        types_or: [ python, pyi ]
+        language: python
+        files: \.py$
+        additional_dependencies:
+          - autotyping>=23.3.0
+          - libcst>=0.4.9
+  - repo: https://github.com/dosisod/refurb
+    rev: v1.16.0
+    hooks:
+      - id: refurb
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.313
+    hooks:
+      - id: pyright
+  #  - repo: https://github.com/pdoc3/pdoc
+  #    rev: master
+  #    hooks:
+  #      - id: pdoc
+  #        name: pdoc
+  #        entry: pdoc --html -f -o docs module1 module2 module3
+  #        language_version: python3.11
+  #        require_serial: true
+  #        types: [ python ]
+  #        always_run: true
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.272
+    hooks:
+      - id: ruff
+  - repo: https://github.com/psf/black
+    rev: '23.3.0'
+    hooks:
+      - id: black
+        language_version: python3.11
+  - repo: https://github.com/pdm-project/pdm
+    rev: 2.7.4 # a PDM release exposing the hook
+    hooks:
+      - id: pdm-export
+        args: [ '-o', 'requirements.txt', '--without-hashes' ]
+        files: ^pdm.lock$
