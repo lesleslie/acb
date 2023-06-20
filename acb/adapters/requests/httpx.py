@@ -1,8 +1,8 @@
 from functools import cached_property
 from functools import lru_cache
 
-from ...config import AppSettings
-from ...config import ac
+from acb.config import AppSettings
+from acb.config import ac
 
 from httpx import Response as HttpxResponse
 from httpx_cache import AsyncClient
@@ -17,7 +17,7 @@ class HttpxSettings(AppSettings):
     def redis_connection(self):
         return AsyncClient(
             cache=RedisCache(
-                redis_url=f"redis://{ac.cache.host}:{ac.cache.port}" f"/{self.cache_db}"
+                redis_url=f"redis://{ac.cache.host}:{ac.cache.port}/{self.cache_db}"
             )
         )
 

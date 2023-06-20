@@ -1,4 +1,4 @@
-from ...config import AppSettings
+from acb.config import AppSettings
 
 
 class MailSettings(AppSettings):

@@ -1,62 +1,18 @@
 from contextlib import suppress
 from pathlib import Path
-from random import choice
 from secrets import compare_digest
-from secrets import token_bytes
-from secrets import token_urlsafe
-from string import ascii_letters
-from string import digits
-from string import punctuation
-from typing import Any
 from typing import Optional
 from warnings import catch_warnings
 from warnings import filterwarnings
 
-from aiopath import AsyncPath
+from acb.config import ac
+from acb.logger import logger
 from google.api_core.exceptions import AlreadyExists
 from google.auth import default
 from google.auth.transport.requests import AuthorizedSession
 from google.auth.transport.requests import Request
 from google.cloud.secretmanager import SecretManagerServiceClient
 from google.oauth2.credentials import Credentials
-from pydantic import BaseSettings
-from ...config import ac
-from ...logger import logger
-
-
-def gen_password(size: int) -> str:
-    chars = ascii_letters + digits + punctuation
-    return "".join(choice(chars) for _ in range(size))
-
-
-class AppSecrets(BaseSettings):
-    database_host: Optional[str]
-    database_user: Optional[str]
-    database_password: Optional[str]
-    database_connection: Optional[str]
-    redis_host: Optional[str]
-    redis_password: Optional[str]
-    mailgun_api_key: Optional[str]
-    facebook_app_id: Optional[str]
-    facebook_app_secret: Optional[str]
-    firebase_api_key: Optional[str]
-    slack_api_key: Optional[str]
-    google_service_account: Optional[Any]
-    google_service_account_json: Optional[str]
-    google_maps_api_key: Optional[str]
-    google_maps_dev_api_key: Optional[str]
-    google_upload_json: Optional[str]
-    recaptcha_dev_key: Optional[str]
-    recaptcha_production_key: Optional[str]
-    app_secret_key = token_urlsafe(32)
-    app_secure_salt: Optional[str] = str(token_bytes(32))
-    app_mail_password: Optional[str] = gen_password(10)
-
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-
-    class Config:
-        extra = "forbid"
 
 
 class SecretManager:
@@ -69,10 +25,6 @@ class SecretManager:
     domain: Optional[str] = ac.domain
     prefix: Optional[str] = ac.app.name
     parent: Optional[str] = f"projects/{ac.app.project}"
-    secrets_dir: AsyncPath = ac.tmp / "secrets"
-
-    # class Config:
-    #     arbitrary_types_allowed = True
 
     @staticmethod
     def extract_secret_name(secret: str) -> str:
@@ -160,23 +112,23 @@ class SecretManager:
         secret = await self.get(name)
         return secret
 
-    async def load_all(self, cls_dict) -> dict:
-        secrets = await self.list()
-        data = {}
-        await self.secrets_dir.mkdir(exist_ok=True)
-        for name in cls_dict.keys():
-            secret = await self.load(name, secrets, cls_dict)
-            data[name] = secret
-            secret_path = self.secrets_dir / name
-            await secret_path.write_text(secret)
-        return data
+    # async def load_all(self, cls_dict) -> dict:
+    #     secrets = await self.list()
+    #     data = {}
+    #     await self.secrets_dir.mkdir(exist_ok=True)
+    #     for name in cls_dict.keys():
+    #         secret = await self.load(name, secrets, cls_dict)
+    #         data[name] = secret
+    #         secret_path = self.secrets_dir / name
+    #         await secret_path.write_text(secret)
+    #     return data
 
-    async def __call__(self) -> BaseSettings | dict:
-        if ac.debug.secrets:
-            await self.secrets_dir.rmdir()
-        if not await self.secrets_dir.exists():
-            return await self.load_all(AppSecrets().dict())
-        return AppSecrets(_secrets_dir=self.secrets_dir)
+    # async def __call__(self) -> BaseSettings | dict:
+    #     if ac.debug.secrets:
+    #         await self.secrets_dir.rmdir()
+    #     if not await self.secrets_dir.exists():
+    #         return await self.load_all(AppSecrets().model_dump())
+    #     return AppSecrets(_secrets_dir=self.secrets_dir)
 
     def __init__(self) -> None:
         super().__init__()
@@ -191,4 +143,4 @@ class SecretManager:
         self.authed_session = AuthorizedSession(self.creds)
 
 
-secret_manager = SecretManager()
+secrets = SecretManager()

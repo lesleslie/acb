@@ -11,12 +11,12 @@ from loguru import logger
 from pydantic import AnyUrl
 from pydantic import BaseModel
 from pydantic import EmailStr
-from ..dns.cloud_dns import DnsRecord
-from ..dns.cloud_dns import gdns
-from ..requests import requests
-from ...actions import load
-from ...config import ac
-from ...config import AppSettings
+from acb.adapters.dns import DnsRecord
+from acb.adapters.dns  import dns
+from acb.adapters.requests import requests
+from acb.actions import load
+from acb.config import ac
+from acb.config import AppSettings
 
 
 class MailSettings(AppSettings):
@@ -163,7 +163,7 @@ class Mailgun(BaseModel):
             await self.delete_domain(ac.mail.mailgun.domain)
         if ac.debug.mail:
             pprint(records)
-            await gdns.create_dns_records(records)
+            await dns.create_dns_records(records)
 
     async def list_routes(self) -> list:
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
@@ -259,4 +259,4 @@ class Mailgun(BaseModel):
         await self.create_routes()
 
 
-mailgun = Mailgun()
+mail = Mailgun()

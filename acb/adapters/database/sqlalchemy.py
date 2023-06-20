@@ -191,7 +191,7 @@ class BackupDbUtils(BaseModel):
         # print('==> Invalid id. Use "history" to list existing downloads')
         return False
 
-    def get_path(self, class_name: str, timestamp: str = None) -> AsyncPath:
+    def get_path(self, class_name: str, timestamp: int = None) -> AsyncPath:
         timestamp = timestamp or arrow.utcnow().int_timestamp
         self.backup_path = AsyncPath(f"{ac.app.name}-{timestamp}-{class_name}.sqla")
         return self.backup_path
@@ -282,7 +282,7 @@ class BackupDb(BackupDbDates, BackupDbUtils):
         else:
             self.models.append(model)
 
-    def get_data(self) -> dict[str, str]:
+    async def get_data(self) -> dict[str, str]:
         data = {}
         async with db.session() as session:
             for model in self.get_mapped_classes():

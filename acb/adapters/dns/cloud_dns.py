@@ -3,14 +3,14 @@ from time import sleep
 from warnings import catch_warnings
 from warnings import filterwarnings
 
-from acb import ac
+from acb.config import ac
 from acb.logger import apformat
 from google.api_core.exceptions import BadRequest
 from google.api_core.exceptions import Conflict
 from google.cloud.dns import Client as DnsClient
-from pydantic import BaseModel
 from validators import domain
 from validators import ValidationFailure
+from . import DnsRecord
 
 with catch_warnings():
     filterwarnings("ignore", category=Warning)
@@ -18,13 +18,6 @@ with catch_warnings():
 
 dns_zone = dns_client.zone(ac.app_name, f"{ac.raw_domain}.")
 splashstand_zone = dns_client.zone("sstand", "splashstand.com.")
-
-
-class DnsRecord(BaseModel):
-    name: str = ac.mail_domain
-    type: str = "TXT"
-    ttl: int = 300
-    rrdata: str | list = None
 
 
 class GoogleDNS:
@@ -37,6 +30,7 @@ class GoogleDNS:
         else:
             print(f"Zone for '{dns_zone.name}' exists.")
 
+    @staticmethod
     async def list_dns_records(zone: DnsClient.zone = dns_zone):
         records = zone.list_resource_record_sets()
         records = [
@@ -100,8 +94,8 @@ class GoogleDNS:
             new_record_sets.append(record_set)
             print(f"Creating - {record}")
         if current_record_sets:
-            for set in current_record_sets:
-                changes.delete_record_set(set)
+            for record_set in current_record_sets:
+                changes.delete_record_set(record_set)
             changes.create()  # API request
             print("Deleting record sets", end="")
             while changes.status != "done":
@@ -111,8 +105,8 @@ class GoogleDNS:
             print()
         changes = zone.changes()
         if new_record_sets:
-            for set in new_record_sets:
-                changes.add_record_set(set)
+            for record_set in new_record_sets:
+                changes.add_record_set(record_set)
             try:
                 changes.create()  # API request
                 print("Creating record sets", end="")
@@ -129,4 +123,4 @@ class GoogleDNS:
             print("No DNS changes detected.")
 
 
-gdns = GoogleDNS()
+dns = GoogleDNS()
