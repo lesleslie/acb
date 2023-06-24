@@ -1,8 +1,8 @@
 [tool.pdm.dev-dependencies]
 dev = [
     "pytest>=7.3.2",
-    "pre-commit>=3.3.2",
-    "-e file:///${PROJECT_ROOT}/../crackerjack#egg=Crackerjack",
+    "pre-commit>=3.3.3",
+    "crackerjack>=0.3.3",
 ]
 
 [tool.ruff]
@@ -57,11 +57,12 @@ dependencies = [
     "blake3>=0.3.3",
     "python-ulid>=1.1.0",
     "loguru>=0.7.0",
-    "google-api-core>=2.11.0",
+    "google-api-core>=2.11.1",
     "google-cloud-secret-manager>=2.16.1",
-    "pydantic>=2.0b2",
     "msgspec[toml]>=0.16.0",
     "tomli-w>=1.0.0",
+    "pydantic>=2.0b3",
+    "pydantic-settings>=2.0b1",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -88,10 +89,6 @@ dns = [
     "google-cloud-dns>=0.34.1",
     "validators>=0.20.0",
 ]
-database = [
-    "sqlalchemy>=2.0.16",
-    "sqlalchemy-utils>=0.41.1",
-]
 requests = [
     "httpx>=0.24.1",
     "httpx-cache>=0.11.0",
@@ -99,6 +96,10 @@ requests = [
 mail = []
 secrets = [
     "google-cloud-secret-manager>=2.16.1",
+]
+sql = [
+    "sqlalchemy>=2.0.16",
+    "sqlalchemy-utils>=0.41.1",
 ]
 
 [build-system]

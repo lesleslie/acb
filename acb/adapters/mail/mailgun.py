@@ -5,6 +5,7 @@ from pprint import pformat
 from pprint import pprint
 from re import search
 
+from . import MailBaseSettings
 from aiopath import AsyncPath
 from httpx import Response as HttpxResponse
 from loguru import logger
@@ -19,46 +20,18 @@ from acb.config import ac
 from acb.config import AppSettings
 
 
-class MailSettings(AppSettings):
-    # MAIL_USERNAME: str
-    # MAIL_PASSWORD: str
-    # MAIL_PORT: int = 465
-    # MAIL_SERVER: str
-    # MAIL_TLS: bool = False
-    # MAIL_SSL: bool = True
-    # MAIL_DEBUG: conint(gt=-1, lt=2) = 0  # type: ignore
-    # MAIL_FROM: EmailStr
-    # MAIL_FROM_NAME: Optional[str] = None
-    # TEMPLATE_FOLDER: Optional[DirectoryAsyncPath] = None
-    # SUPPRESS_SEND: conint(gt=-1, lt=2) = 0  # type: ignore
-    # USE_CREDENTIALS: bool = True
-    # VALIDATE_CERTS: bool = True
-
-    enabled = not ac.app.mail_provider == "gmail"
-    debug = ac.debug.mail
-    domain: EmailStr = f"mail@{ac.app.domain}"
+class MailSettings(MailBaseSettings):
     server: AnyUrl = "smtp.mailgun.com"
-    port = "587"
-    username = f"postmaster@{ac.app.domain}"
     password = ac.secrets.app_mail_password
     api_url = "https://api.mailgun.net/v3/domains"
-    api_key = ac.secrets.mailgun_api_key
+    api_key = ac.secrets.mail_api_key
     default_from: EmailStr = f"info@{ac.app.domain}"
     default_from_name = ac.app.title
     test_receiver: EmailStr = None
     tls = True
     ssl = False
     template_folder: t.Optional[AsyncPath]
-    # conf = ConnectionConfig(
-    #     MAIL_SERVER="smtp.ac.mail.mailgun.org",
-    #     MAIL_PORT=587,
-    #     MAIL_USERNAME=f"postmaster@{app.domain}",
-    #     MAIL_PASSWORD=secrets.app_mail_password,
-    #     MAIL_FROM="info@{app.domain}",
-    #     MAIL_TLS=True,
-    #     MAIL_SSL=False,
-    #     TEMPLATE_FOLDER=theme.path / "utility" / "mail",
-    # )
+
 
 
 class Mailgun(BaseModel):

@@ -25,12 +25,11 @@ repos:
     rev: v0.0.272
     hooks:
       - id: ruff
-#  - repo: https://github.com/fredrikaverpil/creosote
-  - repo: https://github.com/lesleslie/creosote
-    rev: v2.7.0
+  - repo: https://github.com/fredrikaverpil/creosote
+    rev: v2.6.2
     hooks:
       - id: creosote
-        args: [--paths, "acb", --exclude-deps, "pdm-bump", "tomli-w", "--pep582"]
+        args: [--paths, "acb", --exclude-deps, "pdm-bump", "tomli-w"]
   - repo: https://github.com/ikamensh/flynt/
     rev: '0.78'
     hooks:
