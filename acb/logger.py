@@ -17,12 +17,13 @@ def get_mod():
     mod_logger = stack()[3][0]
     mod = getmodule(mod_logger)
     mod.name = Path(mod.__file__).stem
+    print(mod.name)
     return mod
 
 
 def log_debug(s):
     mod = get_mod()
-    if ac.debug[mod.name]:
+    if dict(ac.debug.model_fields)[mod.name]:
         if ac.deployed:
             return logger.patch(lambda record: record.update(name=mod.__name__)).debug(
                 s
@@ -79,7 +80,6 @@ logger_format = dict(
     line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
     message="  <level>{message}</level>",
 )
-print(ac.debug)
 level_per_module = {
     m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.model_dump().items()
 }

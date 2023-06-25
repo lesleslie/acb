@@ -7,7 +7,6 @@ from importlib import import_module
 from inspect import currentframe
 from inspect import getouterframes
 from pathlib import Path
-from pprint import pprint
 from random import choice
 from re import search
 from secrets import token_bytes
@@ -33,11 +32,18 @@ from pydantic import BaseModel
 from pydantic import SecretStr
 from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
+from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import _annotation_is_complex
 from pydantic_settings.sources import SettingsError
 from pydantic_settings.utils import path_type_label
 from pydantic_settings.utils import path_type_labels
+
+# deployed = True if basedir.name == "srv" else False
+deployed = True if Path.cwd().name == "app" else False
+
+project: str = ""
+app_name: str = ""
 
 
 def gen_password(size: int) -> str:
@@ -103,8 +109,6 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         self,
         settings_cls: type["Settings"],
         secrets_dir: str | AsyncPath | None = None,
-        # case_sensitive: bool | None = None,
-        # env_prefix: str | None = None,
     ) -> None:
         super().__init__(settings_cls)
         self.case_sensitive = None
@@ -114,6 +118,12 @@ class FileSecretsSource(PydanticBaseSettingsSource):
 
     async def __call__(self) -> dict[str, t.Any]:
         secrets: dict[str, str | None] = {}
+        data: dict[str, t.Any] = {}
+        self.adapter_name: str = underscore(
+            self.settings_cls.__name__.replace("Settings", "")
+        )
+        if self.adapter_name == "debug":
+            return data
         if self.secrets_dir is None:
             return secrets
         self.secrets_path = await AsyncPath(self.secrets_dir).expanduser()
@@ -125,15 +135,34 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                 f"secrets_dir must reference a directory, not a "
                 f"{path_type_label(self.secrets_path)}"
             )
-        return await super().__call__()
+        for field_name, field in self.settings_cls.model_fields.items():
+            try:
+                field_value, field_key, value_is_complex = self.get_field_value(
+                    field, field_name
+                )
+            except Exception as e:
+                raise SettingsError(
+                    f'error getting value for field "{field_name}" from source "{self.__class__.__name__}"'
+                ) from e
+            try:
+                field_value = self.prepare_field_value(
+                    field_name, field, field_value, value_is_complex
+                )
+            except ValueError:
+                raise SettingsError(
+                    f'error parsing value for field "{field_name}" from source "{self.__class__.__name__}"'
+                )
+            if field_value is not None:
+                data[field_key] = field_value
+        return data
 
     @staticmethod
     async def path_type_label(p: AsyncPath) -> str:
-        assert await p.exists(), "path does not exist"
-        for method, name in path_type_labels.items():
-            if getattr(p, method)():
-                return name
-        return "unknown"
+        if await p.exists():
+            for method, name in path_type_labels.items():
+                if getattr(p, method)():
+                    return name
+            return "unknown"
 
     @classmethod
     async def find_case_path(
@@ -205,7 +234,6 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                 self.secrets_path, env_name, self.case_sensitive
             )
             if not path:
-                # path does not exist, we curently don't return a warning for this
                 continue
             if await path.is_file():
                 return (await path.read_text()).strip(), field_key, value_is_complex
@@ -221,57 +249,54 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         return f"FileSecretsSource(secrets_dir={self.secrets_dir!r})"
 
 
-class ManagerSecretsSource(PydanticBaseSettingsSource):
+class ManagerSecretsSource(FileSecretsSource):
     adapter_name: t.Optional[...]
 
     @alru_cache
-    async def load_secrets(self) -> dict:
+    async def load_secrets(self) -> t.NoReturn:
+        global project, app_name
         path: AsyncPath = ac.tmp / "secrets"
         # if ac.debug.secrets:
         #     await path.rmdir()
         await path.mkdir(exist_ok=True)
-        manager = import_module("acb.adapters.secrets").secrets
+        ic(project)
+        manager = import_module("acb.adapters.secrets").secrets(
+            project=project, app_name=app_name
+        )
         manager_secrets = await manager.list()
-        pprint(manager_secrets)
-        for name, value in dict(self.settings_cls):
-            print(name)
+        ic(manager_secrets)
+        ic(type(manager_secrets))
+        for name, value in {
+            n: v
+            for n, v in self.settings_cls.model_fields.items()
+            if isinstance(v, SecretStr)
+        }:
             secret_path = path / name
             if not await secret_path.exists():
                 if name not in manager_secrets:
                     await manager.create(name, value)
                 secret = await manager.load(name)
                 await secret_path.write_text(secret)
-        return manager_secrets
 
     async def get_field_value(
         self, field: FieldInfo, field_name: str
     ) -> t.Tuple[t.Any, str, bool]:
-        secrets_settings = await self.load_secrets()
-        return secrets_settings[field_name], field_name, False
+        return field, field_name, False
 
     def prepare_field_value(
         self, field_name: str, field: FieldInfo, value: t.Any, value_is_complex: bool
     ) -> str:
         return value
 
-    async def __call__(self) -> t.Dict[str, t.Any]:
+    async def __call__(self) -> dict[str, t.Any]:
+        data: dict[str, t.Any] = {}
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
         )
-        d: t.Dict[str, t.Any] = {}
         if self.adapter_name == "debug":
-            return d
-        for field_name, field in dict(self.settings_cls.model_fields).items():
-            field_value, field_key, value_is_complex = await self.get_field_value(
-                field, field_name
-            )
-            field_value = self.prepare_field_value(
-                field_name, field, field_value, value_is_complex
-            )
-            if field_value is not None:
-                d[field_key] = field_value
-        setattr(ac, self.adapter_name, self)
-        return d
+            return data
+        await self.load_secrets()
+        return await super().__call__()
 
 
 class YamlSettingsSource(PydanticBaseSettingsSource):
@@ -279,9 +304,9 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
     @alru_cache
     async def load_yml_settings(self) -> dict:
-        yml_path = ac.app_settings_path / f"{self.adapter_name}.yml"
-        print(yml_path)
-        if not await yml_path.exists() and not ac.deployed:
+        global project, app_name
+        yml_path = AsyncPath.cwd() / "settings" / f"{self.adapter_name}.yml"
+        if not await yml_path.exists() and not deployed:
             dump_settings = {
                 k: v.default for k, v in self.settings_cls.model_fields.items()
             }
@@ -294,8 +319,11 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                 if adptr not in yml_settings.keys()
             ]:
                 yml_settings[adptr] = False
-        if not ac.deployed:
+        if not deployed:
             await dump.yaml(yml_settings, yml_path)
+        if self.adapter_name == "app":
+            project = yml_settings["project"]
+            app_name = yml_settings["name"]
         ic(yml_settings)
         return yml_settings
 
@@ -331,109 +359,44 @@ class Settings(BaseModel, extra="allow"):
     def __init__(
         __pydantic_self__,
         _case_sensitive: bool | None = None,
-        # _env_prefix: str | None = None,
-        # _env_file: DotenvType | None = None,
-        # _env_file_encoding: str | None = None,
-        # _env_nested_delimiter: str | None = None,
         _secrets_dir: str | Path | None = None,
         **values: t.Any,
     ) -> None:
         nest_asyncio.apply()
-        ic(values)
         build_settings = __pydantic_self__._settings_build_values(
             values,
             _case_sensitive=_case_sensitive,
-            # _env_prefix=_env_prefix,
-            # _env_file=_env_file,
-            # _env_file_encoding=_env_file_encoding,
-            # _env_nested_delimiter=_env_nested_delimiter,
             _secrets_dir=_secrets_dir,
         )
         build_settings = asyncio.run(build_settings)
         ic(build_settings)
         ic(type(build_settings))
-        # with suppress(TypeError):
         super().__init__(**build_settings)
 
     async def _settings_build_values(
         self,
         init_kwargs: dict[str, t.Any],
         _case_sensitive: bool | None = None,
-        # _env_prefix: str | None = None,
-        # _env_file: DotenvType | None = None,
-        # _env_file_encoding: str | None = None,
-        # _env_nested_delimiter: str | None = None,
         _secrets_dir: str | AsyncPath | None = None,
     ) -> dict[str, t.Any]:
-        # Determine settings config values
-        # case_sensitive = (
-        #     _case_sensitive
-        #     if _case_sensitive is not None
-        #     else self.model_config.get("case_sensitive")
-        # )
-        # env_prefix = (
-        #     _env_prefix
-        #     if _env_prefix is not None
-        #     else self.model_config.get("env_prefix")
-        # )
-        # env_file = (
-        #     _env_file
-        #     if _env_file != AsyncPath("")
-        #     else self.model_config.get("env_file")
-        # )
-        # env_file_encoding = (
-        #     _env_file_encoding
-        #     if _env_file_encoding is not None
-        #     else self.model_config.get("env_file_encoding")
-        # )
-        # env_nested_delimiter = (
-        #     _env_nested_delimiter
-        #     if _env_nested_delimiter is not None
-        #     else self.model_config.get("env_nested_delimiter")
-        # )
         secrets_dir = (
             _secrets_dir
             if _secrets_dir is not None
             else self.model_config.get("secrets_dir")
         )
-
-        # Configure built-in sources
         init_settings = InitSettingsSource(self.__class__, init_kwargs=init_kwargs)
-        # env_settings = EnvSettingsSource(
-        #     self.__class__,
-        #     case_sensitive=case_sensitive,
-        #     env_prefix=env_prefix,
-        #     env_nested_delimiter=env_nested_delimiter,
-        # )
-        # dotenv_settings = DotEnvSettingsSource(
-        #     self.__class__,
-        #     env_file=env_file,
-        #     env_file_encoding=env_file_encoding,
-        #     case_sensitive=case_sensitive,
-        #     env_prefix=env_prefix,
-        #     env_nested_delimiter=env_nested_delimiter,
-        # )
-
         file_secrets_settings = FileSecretsSource(
             self.__class__,
             secrets_dir=secrets_dir,
-            # case_sensitive=case_sensitive,
-            # env_prefix=env_prefix
         )
-        # Provide a hook to set built-in sources priority and add / remove sources
         sources = self.settings_customise_sources(
             self.__class__,
             init_settings=init_settings,
-            # env_settings=env_settings,
-            # dotenv_settings=dotenv_settings,
             file_secrets_settings=file_secrets_settings,
         )
         if sources:
             return deep_update(*reversed([await source() for source in sources]))
         else:
-            # no one should mean to do this, but I think returning an empty
-            # dict is marginally preferable to an informative error and
-            # much better than a confusing error
             return {}
 
     @classmethod
@@ -441,8 +404,6 @@ class Settings(BaseModel, extra="allow"):
         cls,
         settings_cls: t.Type["Settings"],
         init_settings: PydanticBaseSettingsSource,
-        # env_settings: PydanticBaseSettingsSource,
-        # dotenv_settings: PydanticBaseSettingsSource,
         file_secrets_settings: PydanticBaseSettingsSource,
     ) -> tuple[
         PydanticBaseSettingsSource, YamlSettingsSource, ManagerSecretsSource, ...
@@ -459,10 +420,6 @@ class Settings(BaseModel, extra="allow"):
         arbitrary_types_allowed=True,
         validate_default=True,
         case_sensitive=False,
-        # env_prefix="",
-        # env_file=None,
-        # env_file_encoding=None,
-        # env_nested_delimiter=None,
         secrets_dir=None,
         protected_namespaces=("model_", "settings_"),
     )
@@ -473,6 +430,7 @@ class DebugSettings(Settings):
     main: bool = False
     secrets: bool = False
     logger: bool = False
+    config: bool = False
 
 
 class AppSettings(Settings):
@@ -487,21 +445,19 @@ class AppSettings(Settings):
         self.title = self.title or titleize(self.name)
 
 
-class AppConfig(Settings, extra="allow"):
+class AppConfig(BaseSettings, extra="allow"):
     pkgdir: AsyncPath = AsyncPath(__file__).parent
     basedir: AsyncPath = AsyncPath.cwd()
-    deployed: bool = False
+    deployed: bool = deployed
     tmp: t.Optional[AsyncPath] = None
     app_settings_path: t.Optional[AsyncPath] = None
     adapter_settings_path: t.Optional[AsyncPath] = None
     adapters: dict[str, str] = {}
     adapter_categories: list = []
     enabled_adapters: list = []
-
-    # secrets: t.Optional[BaseSettings] = None
+    project: t.Optional[str] = None
 
     async def __call__(self, deployed: bool = False) -> None:
-        # self.basedir = AsyncPath().cwd()
         self.tmp = self.basedir / "tmp"
         self.app_settings_path = self.basedir / "settings"
         self.adapter_settings_path = self.app_settings_path / "adapters.yml"
@@ -514,8 +470,6 @@ class AppConfig(Settings, extra="allow"):
         ):
             await path.mkdir(exist_ok=True)
         self.deployed = True if self.basedir.name == "app" else deployed
-        # deployed = True if basedir.name == "srv" else False
-        # self.debug = False if deployed else True
         mod_dir = self.basedir / "__pypackages__"
         sys.path.append(str(mod_dir))
         if self.basedir.name != "acb":
@@ -557,9 +511,6 @@ class AppConfig(Settings, extra="allow"):
 
 
 ac = AppConfig()
-
-# asyncio.run(ac())
-
 
 # class InspectStack(BaseModel):
 #     @staticmethod

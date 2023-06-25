@@ -9,7 +9,7 @@ from pydantic import AnyUrl
 
 class CacheSettings(Settings):
     db: int
-    host: SecretStr | AnyUrl | IPv4Address
+    host: SecretStr
     user: SecretStr
     password: SecretStr
     namespace: str = ac.app.name

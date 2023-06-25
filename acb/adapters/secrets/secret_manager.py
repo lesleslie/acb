@@ -16,18 +16,11 @@ from google.oauth2.credentials import Credentials
 
 
 class SecretManager:
+    parent: str
     client: Optional[SecretManagerServiceAsyncClient]
     authed_session: Optional[AuthorizedSession]
     creds: Optional[Credentials]
-    parent: Optional[str] = None
 
-    # target_audience: Optional[str]
-    # projects: Optional[list]
-    # project: Optional[str] = ac.app.project
-    # domain: Optional[str] = ac.app.domain
-    # prefix: Optional[str] = ac.app.name
-
-    # secrets_path: AsyncPath = ac.secrets.path
     @staticmethod
     def extract_secret_name(secret: str) -> str:
         return Path(secret).parts[-1]
@@ -53,7 +46,7 @@ class SecretManager:
         client_secrets = [
             self.extract_secret_name(secret.name) async for secret in client_secrets
         ]
-        client_secrets = [s for s in client_secrets if s.split("_")[0] == ac.app.name]
+        client_secrets = [s for s in client_secrets if s.split("_")[0] == self.app_name]
         # if not deployed and debug.secret_manager:
         #     await apformat(secrets)
         return client_secrets
@@ -69,11 +62,10 @@ class SecretManager:
 
     async def create(self, name: str, value: str) -> None:
         name = self.get_name(name)
-        parent = f"projects/{ac.app.project}"
         with suppress(AlreadyExists):
             version = await self.client.create_secret(
                 request={
-                    "parent": parent,
+                    "parent": self.parent,
                     "secret_id": name,
                     "secret": {"replication": {"automatic": {}}},
                 }
@@ -106,25 +98,26 @@ class SecretManager:
         if not ac.deployed:
             logger.debug(f"Deleted secret - {secret}")
 
-    # async def load(self, name: str, all_secrets, cls_dict) -> str:
-    async def load(self, name: str) -> str:
-        # if name not in all_secrets:
-        #     await self.create(name, cls_dict[name])
+    async def load(
+        self,
+        name: str,
+    ) -> str:
         secret = await self.get(name)
-        return secret.removeprefix(f"{ac.app.name}_")
+        return secret.removeprefix(f"{self.app_name}_")
 
-    def __init__(self) -> None:
+    def __init__(self, project: str, app_name: str) -> None:
         super().__init__()
         self.debug = None
-        self.parent = f"projects/{ac.app.project}"
+        self.project = project
+        self.parent = f"projects/{project}"
+        self.app_name = app_name
         # self.target_audience = f"https://{self.domain}"
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             creds, projects = default()
         self.creds = creds
-        self.projects = projects
         self.client = SecretManagerServiceAsyncClient(credentials=self.creds)
         self.authed_session = AuthorizedSession(self.creds)
 
 
-secrets = SecretManager()
+secrets = SecretManager
