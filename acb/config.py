@@ -94,7 +94,6 @@ class InitSettingsSource(PydanticBaseSettingsSource):
     def get_field_value(
         self, field: FieldInfo, field_name: str
     ) -> tuple[t.Any, str, bool]:
-        # Nothing to do here. Only implement the return statement to make mypy happy
         return None, "", False
 
     async def __call__(self) -> dict[str, t.Any]:
@@ -111,12 +110,13 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         secrets_dir: str | AsyncPath | None = None,
     ) -> None:
         super().__init__(settings_cls)
-        self.case_sensitive = None
         self.secrets_dir = (
             secrets_dir if secrets_dir is not None else self.config.get("secrets_dir")
         )
 
     async def __call__(self) -> dict[str, t.Any]:
+        global app_name
+
         secrets: dict[str, str | None] = {}
         data: dict[str, t.Any] = {}
         self.adapter_name: str = underscore(
@@ -127,22 +127,25 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         if self.secrets_dir is None:
             return secrets
         self.secrets_path = await AsyncPath(self.secrets_dir).expanduser()
-        if not self.secrets_path.exists():
+        if not await self.secrets_path.exists():
             warn(f'directory "{self.secrets_path}" does not exist')
             return secrets
-        if not self.secrets_path.is_dir():
+        if not await self.secrets_path.is_dir():
             raise SettingsError(
                 f"secrets_dir must reference a directory, not a "
                 f"{path_type_label(self.secrets_path)}"
             )
         for field_name, field in self.settings_cls.model_fields.items():
+            ic(field_name)
+            ic(field)
             try:
-                field_value, field_key, value_is_complex = self.get_field_value(
+                field_value, field_key, value_is_complex = await self.get_field_value(
                     field, field_name
                 )
             except Exception as e:
                 raise SettingsError(
-                    f'error getting value for field "{field_name}" from source "{self.__class__.__name__}"'
+                    f'error getting value for field "{field_name}" from '
+                    f'source "{self.__class__.__name__}"'
                 ) from e
             try:
                 field_value = self.prepare_field_value(
@@ -150,9 +153,12 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                 )
             except ValueError:
                 raise SettingsError(
-                    f'error parsing value for field "{field_name}" from source "{self.__class__.__name__}"'
+                    f'error parsing value for field "{field_name}" from'
+                    f' source "{self.__class__.__name__}"'
                 )
             if field_value is not None:
+                ic(field_key)
+                ic(field_value)
                 data[field_key] = field_value
         return data
 
@@ -175,9 +181,6 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                 return f
         return None
 
-    def _apply_case_sensitive(self, value: str) -> str:
-        return value.lower() if not self.case_sensitive else value
-
     def _extract_field_info(
         self, field: FieldInfo, field_name: str
     ) -> list[tuple[str, str, bool]]:
@@ -196,7 +199,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                         field_info.append(
                             (
                                 alias,
-                                self._apply_case_sensitive(alias),
+                                alias,
                                 True if len(alias) > 1 else False,
                             )
                         )
@@ -207,20 +210,20 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                         field_info.append(
                             (
                                 first_arg,
-                                self._apply_case_sensitive(first_arg),
+                                first_arg,
                                 True if len(alias) > 1 else False,
                             )
                         )
             else:  # string validation alias
-                field_info.append((v_alias, self._apply_case_sensitive(v_alias), False))
-        # else:
-        #     field_info.append(
-        #         (
-        #             field_name,
-        #             self._apply_case_sensitive(self.env_prefix + field_name),
-        #             False,
-        #         )
-        #     )
+                field_info.append((v_alias, v_alias, False))
+        else:
+            field_info.append(
+                (
+                    field_name,
+                    field_name,
+                    False,
+                )
+            )
 
         return field_info
 
@@ -231,7 +234,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
             field, field_name
         ):
             path = await self.find_case_path(
-                self.secrets_path, env_name, self.case_sensitive
+                self.secrets_path, env_name, False
             )
             if not path:
                 continue
@@ -243,7 +246,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                     f"{await self.path_type_label(path)} instead",
                     stacklevel=4,
                 )
-            return None, field_key, value_is_complex
+        return None, field_key, value_is_complex
 
     def __repr__(self) -> str:
         return f"FileSecretsSource(secrets_dir={self.secrets_dir!r})"
@@ -256,8 +259,6 @@ class ManagerSecretsSource(FileSecretsSource):
     async def load_secrets(self) -> t.NoReturn:
         global project, app_name
         path: AsyncPath = ac.tmp / "secrets"
-        # if ac.debug.secrets:
-        #     await path.rmdir()
         await path.mkdir(exist_ok=True)
         ic(project)
         manager = import_module("acb.adapters.secrets").secrets(
@@ -271,6 +272,8 @@ class ManagerSecretsSource(FileSecretsSource):
             for n, v in self.settings_cls.model_fields.items()
             if isinstance(v, SecretStr)
         }:
+            ic(name)
+            ic(value)
             secret_path = path / name
             if not await secret_path.exists():
                 if name not in manager_secrets:
@@ -355,7 +358,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         return d
 
 
-class Settings(BaseModel, extra="allow"):
+class Settings(BaseModel, extra="allow", alias_generator=secret_alias):
     def __init__(
         __pydantic_self__,
         _case_sensitive: bool | None = None,
@@ -406,13 +409,13 @@ class Settings(BaseModel, extra="allow"):
         init_settings: PydanticBaseSettingsSource,
         file_secrets_settings: PydanticBaseSettingsSource,
     ) -> tuple[
-        PydanticBaseSettingsSource, YamlSettingsSource, ManagerSecretsSource, ...
+        PydanticBaseSettingsSource, YamlSettingsSource, ..., ManagerSecretsSource
     ]:
         return (
             init_settings,
             YamlSettingsSource(settings_cls),
-            ManagerSecretsSource(settings_cls),
             file_secrets_settings,
+            ManagerSecretsSource(settings_cls),
         )
 
     model_config = SettingsConfigDict(
@@ -455,7 +458,6 @@ class AppConfig(BaseSettings, extra="allow"):
     adapters: dict[str, str] = {}
     adapter_categories: list = []
     enabled_adapters: list = []
-    project: t.Optional[str] = None
 
     async def __call__(self, deployed: bool = False) -> None:
         self.tmp = self.basedir / "tmp"
@@ -501,7 +503,7 @@ class AppConfig(BaseSettings, extra="allow"):
                 cat: adptr
                 for cat, adptr in self.adapters.items()
                 if cat in self.enabled_adapters and adptr
-            }:
+            }.items():
                 ic(category, adapter)
                 module = import_module(".".join(["acb", "adapters", category, adapter]))
                 adapter_settings = getattr(module, f"{camelize(adapter)}Settings")

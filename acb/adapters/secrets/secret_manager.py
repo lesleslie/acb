@@ -11,8 +11,10 @@ from google.api_core.exceptions import AlreadyExists
 from google.auth import default
 from google.auth.transport.requests import AuthorizedSession
 from google.auth.transport.requests import Request
-from google.cloud.secretmanager import SecretManagerServiceAsyncClient
+from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
+from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.oauth2.credentials import Credentials
+from icecream import ic
 
 
 class SecretManager:
@@ -31,24 +33,23 @@ class SecretManager:
 
     async def get_access_token(self) -> str:
         self.creds.refresh(Request())
-        if ac.debug.secret_manager:
-            logger.debug(f"Secrets access token:\n{self.creds.token}")
+        logger.debug(f"Secrets access token:\n{self.creds.token}")
         return self.creds.token
 
     async def verify_access_token(self, token: str) -> bool:
         verified = compare_digest(self.creds.token, token)
-        if ac.debug.secret_manager:
-            logger.debug(f"Secrets access token verified - {verified}")
+        logger.debug(f"Secrets access token verified - {verified}")
         return verified
 
     async def list(self) -> list:
-        client_secrets = await self.client.list_secrets(request={"parent": self.parent})
+        request = ListSecretsRequest(
+            parent=self.parent,
+        )
+        client_secrets = await self.client.list_secrets(request=request)
         client_secrets = [
             self.extract_secret_name(secret.name) async for secret in client_secrets
         ]
         client_secrets = [s for s in client_secrets if s.split("_")[0] == self.app_name]
-        # if not deployed and debug.secret_manager:
-        #     await apformat(secrets)
         return client_secrets
 
     async def get(self, name: str) -> str:
@@ -56,8 +57,7 @@ class SecretManager:
         path = f"projects/{ac.app.project}/secrets/{name}/versions/latest"
         version = await self.client.access_secret_version(request={"name": path})
         payload = version.payload.data.decode()
-        if not ac.deployed:
-            logger.info(f"Fetched secret - {name}")
+        logger.info(f"Fetched secret - {name}")
         return payload
 
     async def create(self, name: str, value: str) -> None:
@@ -81,7 +81,7 @@ class SecretManager:
 
     async def update(self, name: str, value: str) -> None:
         name = self.get_name(name)
-        secret = self.client.secret_path(ac.app.project, name)
+        secret = self.client.secret_path(self.project, name)
         await self.client.add_secret_version(
             request={
                 "parent": secret,
@@ -93,7 +93,7 @@ class SecretManager:
 
     async def delete(self, name: str) -> None:
         name = self.get_name(name)
-        secret = self.client.secret_path(ac.app.project, name)
+        secret = self.client.secret_path(self.project, name)
         await self.client.delete_secret(request={"name": secret})
         if not ac.deployed:
             logger.debug(f"Deleted secret - {secret}")
