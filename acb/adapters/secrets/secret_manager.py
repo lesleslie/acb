@@ -19,7 +19,7 @@ class SecretManager:
     client: Optional[SecretManagerServiceAsyncClient]
     authed_session: Optional[AuthorizedSession]
     creds: Optional[Credentials]
-    parent: Optional[str] = f"projects/{ac.app.project}"
+    parent: Optional[str] = None
 
     # target_audience: Optional[str]
     # projects: Optional[list]
@@ -116,6 +116,7 @@ class SecretManager:
     def __init__(self) -> None:
         super().__init__()
         self.debug = None
+        self.parent = f"projects/{ac.app.project}"
         # self.target_audience = f"https://{self.domain}"
         with catch_warnings():
             filterwarnings("ignore", category=Warning)

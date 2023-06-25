@@ -8,4 +8,4 @@ class SecretsSettings(Settings):
     ...
 
 
-secrets = import_module(f"acb.adapters.secrets.{ac.app.adapters['secrets']}").secrets
+secrets = import_module(f"acb.adapters.secrets.{ac.adapters['secrets']}").secrets

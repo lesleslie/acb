@@ -1,4 +1,3 @@
-import typing as t
 from importlib import import_module
 from ipaddress import IPv4Address
 
@@ -8,13 +7,11 @@ from pydantic import SecretStr
 from pydantic import AnyUrl
 
 
-
-
-
 class CacheSettings(Settings):
     db: int
-    host: t.Optional[SecretStr | AnyUrl | IPv4Address] = None
-    password: t.Optional[SecretStr] = None
+    host: SecretStr | AnyUrl | IPv4Address
+    user: SecretStr
+    password: SecretStr
     namespace: str = ac.app.name
     default_timeout: int = 86400
     template_timeout: int = 300 if ac.deployed else 1
@@ -24,4 +21,4 @@ class CacheSettings(Settings):
     health_check_interval: int = 15
 
 
-cache = import_module(f"acb.adapters.cache.{ac.app.adapters['cache']}").cache
+cache = import_module(f"acb.adapters.cache.{ac.adapters['cache']}").cache

@@ -4,7 +4,6 @@ from inspect import getmodule
 from inspect import stack
 from pathlib import Path
 from pprint import pformat
-from pprint import pprint
 from time import perf_counter
 
 from acb.config import ac
@@ -24,7 +23,7 @@ def get_mod():
 def log_debug(s):
     mod = get_mod()
     if ac.debug[mod.name]:
-        if ac.deployed or ac.debug.production:
+        if ac.deployed:
             return logger.patch(lambda record: record.update(name=mod.__name__)).debug(
                 s
             )
@@ -32,7 +31,7 @@ def log_debug(s):
 
 
 ic.configureOutput(prefix="    debug:  ", includeContext=True, outputFunction=log_debug)
-if ac.deployed or ac.debug.production:
+if ac.deployed:
     ic.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
 
 
@@ -80,8 +79,9 @@ logger_format = dict(
     line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
     message="  <level>{message}</level>",
 )
+print(ac.debug)
 level_per_module = {
-    m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.dict().items()
+    m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.model_dump().items()
 }
 
 log_format = "".join(logger_format.values())
@@ -91,7 +91,7 @@ configs = dict(
     enqueue=True,
     backtrace=True,
 )
-# logger.remove()
+logger.remove()
 # logging.getLogger("uvicorn").handlers.clear()
 logger.add(sys.stderr, **configs)
 logger.level("DEBUG", color="<cyan>")
@@ -112,10 +112,10 @@ logger.level("DEBUG", color="<cyan>")
 #     _logger.handlers.clear()
 #     _logger.handlers = [InterceptHandler(_logger.name)]
 
-if ac.debug.logger:
-    logger.debug("debug")
-    logger.info("info")
-    logger.warning("warning")
-    logger.error("error")
-    logger.critical("critical")
-    pprint(level_per_module)
+# if ac.debug.logger:
+#     logger.debug("debug")
+#     logger.info("info")
+#     logger.warning("warning")
+#     logger.error("error")
+#     logger.critical("critical")
+#     pprint(level_per_module)
