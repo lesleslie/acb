@@ -11,8 +11,12 @@ from google.api_core.exceptions import AlreadyExists
 from google.auth import default
 from google.auth.transport.requests import AuthorizedSession
 from google.auth.transport.requests import Request
-from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
+from google.cloud.secretmanager_v1 import AccessSecretVersionRequest
+from google.cloud.secretmanager_v1 import AddSecretVersionRequest
+from google.cloud.secretmanager_v1 import CreateSecretRequest
+from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
+from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
 from google.oauth2.credentials import Credentials
 from . import SecretsBaseSettings
 
@@ -42,9 +46,7 @@ class Secrets:
         return verified
 
     async def list(self) -> list:
-        request = ListSecretsRequest(
-            parent=self.parent,
-        )
+        request = ListSecretsRequest(parent=self.parent)
         client_secrets = await self.client.list_secrets(request=request)
         client_secrets = [
             self.extract_secret_name(secret.name) async for secret in client_secrets
@@ -54,43 +56,42 @@ class Secrets:
 
     async def get(self, name: str) -> str:
         path = f"projects/{self.project}/secrets/{name}/versions/latest"
-        version = await self.client.access_secret_version(request={"name": path})
+        request = AccessSecretVersionRequest(name=path)
+        version = await self.client.access_secret_version(request=request)
         payload = version.payload.data.decode()
         logger.info(f"Fetched secret - {name}")
         return payload
 
     async def create(self, name: str, value: str) -> None:
         with suppress(AlreadyExists):
-            version = await self.client.create_secret(
-                request={
-                    "parent": self.parent,
-                    "secret_id": name,
-                    "secret": {"replication": {"automatic": {}}},
-                }
+            request = CreateSecretRequest(
+                parent=self.parent,
+                secret_id=name,
+                secret={"replication": {"automatic": {}}},
             )
-            await self.client.add_secret_version(
-                request={
-                    "parent": version.name,
-                    "payload": {"data": f"{value}".encode()},
-                }
+            version = await self.client.create_secret(request)
+            request = AddSecretVersionRequest(
+                parent=version.name,
+                payload={"data": f"{value}".encode()},
             )
+            await self.client.add_secret_version(request)
             if not ac.deployed:
                 logger.debug(f"Created secret - {name}")
 
     async def update(self, name: str, value: str) -> None:
         secret = self.client.secret_path(self.project, name)
-        await self.client.add_secret_version(
-            request={
-                "parent": secret,
-                "payload": {"data": f"{value}".encode()},
-            }
+        request = AddSecretVersionRequest(
+            parent=secret,
+            payload={"data": f"{value}".encode()},
         )
+        await self.client.add_secret_version(request)
         if not ac.deployed:
             logger.debug(f"Updated secret - {name}")
 
     async def delete(self, name: str) -> None:
         secret = self.client.secret_path(self.project, name)
-        await self.client.delete_secret(request={"name": secret})
+        request = DeleteSecretRequest(name=secret)
+        await self.client.delete_secret(request=request)
         if not ac.deployed:
             logger.debug(f"Deleted secret - {secret}")
 
@@ -103,11 +104,9 @@ class Secrets:
 
     def __init__(self, project: str, app_name: str) -> None:
         super().__init__()
-        self.debug = None
         self.project = project
         self.parent = f"projects/{project}"
         self.app_name = app_name
-        # self.target_audience = f"https://{self.domain}"
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             creds, projects = default()

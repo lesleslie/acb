@@ -520,7 +520,7 @@ class AppConfig(BaseSettings, extra="allow"):
                 ic(initialized_settings.model_dump())
                 initialized_adapter_settings[category] = initialized_settings
             super().__init__(**initialized_adapter_settings)
-            ic(ac.model_extra)
+            ic(ac.model_dump())
 
 
 ac = AppConfig()
