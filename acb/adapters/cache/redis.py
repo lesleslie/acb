@@ -23,11 +23,11 @@ class CacheSettings(CacheBaseSettings):
 
     @cached_property
     def async_session(self) -> CashewsCache:
-        url = f"redis://{ac.cache.host}:{ac.cache.port}/{ac.cache.db}"
+        url = f"redis://{self.host.get_secret_value()}:{self.port}/{self.db}"
         cache = CashewsCache()
         cache.setup(
             url,
-            password=self.password,
+            password=self.password.get_secret_value(),
             client_side=True,
             client_side_prefix=f"{ac.app.name}:",
         )
@@ -38,13 +38,15 @@ class Cache:
     @staticmethod
     async def encoder(value: t.Any, *args, **kwargs) -> bytes:
         return await dump.msgpack(
-            value, secret_key=ac.app.secret_key, secure_salt=ac.app.secure_salt
+            value, secret_key=ac.app.secret_key.get_secret_value(),
+            secure_salt=ac.app.secure_salt.get_secret_value()
         )
 
     @staticmethod
     async def decoder(value: bytes, *args, **kwargs) -> t.Any:
         return await load.msgpack(
-            value, secret_key=ac.app.secret_key, secure_salt=ac.app.secure_salt
+            value, secret_key=ac.app.secret_key.get_secret_value(),
+            secure_salt=ac.app.secure_salt.get_secret_value()
         )
 
     @lru_cache

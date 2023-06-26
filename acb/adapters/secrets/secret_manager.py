@@ -31,9 +31,6 @@ class Secrets:
     def extract_secret_name(secret: str) -> str:
         return Path(secret).parts[-1]
 
-    def get_name(self, name: str) -> str:
-        return "_".join([self.app_name, name])
-
     async def get_access_token(self) -> str:
         self.creds.refresh(Request())
         logger.debug(f"Secrets access token:\n{self.creds.token}")
@@ -56,7 +53,6 @@ class Secrets:
         return client_secrets
 
     async def get(self, name: str) -> str:
-        name = self.get_name(name)
         path = f"projects/{self.project}/secrets/{name}/versions/latest"
         version = await self.client.access_secret_version(request={"name": path})
         payload = version.payload.data.decode()
@@ -64,7 +60,6 @@ class Secrets:
         return payload
 
     async def create(self, name: str, value: str) -> None:
-        name = self.get_name(name)
         with suppress(AlreadyExists):
             version = await self.client.create_secret(
                 request={
@@ -83,7 +78,6 @@ class Secrets:
                 logger.debug(f"Created secret - {name}")
 
     async def update(self, name: str, value: str) -> None:
-        name = self.get_name(name)
         secret = self.client.secret_path(self.project, name)
         await self.client.add_secret_version(
             request={
@@ -95,7 +89,6 @@ class Secrets:
             logger.debug(f"Updated secret - {name}")
 
     async def delete(self, name: str) -> None:
-        name = self.get_name(name)
         secret = self.client.secret_path(self.project, name)
         await self.client.delete_secret(request={"name": secret})
         if not ac.deployed:

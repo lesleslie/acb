@@ -8,8 +8,8 @@ from pydantic import SecretStr
 
 class CacheBaseSettings(Settings):
     db: int
-    host: SecretStr = "127.0.0.1"
-    password: SecretStr = gen_password(10)
+    host: SecretStr = SecretStr("127.0.0.1")
+    password: SecretStr = SecretStr(gen_password(10))
     namespace: str = ac.app.name
     default_timeout: int = 86400
     template_timeout: int = 300 if ac.deployed else 1

@@ -60,8 +60,6 @@ from sqlalchemy_utils import drop_database
 # from sqlmodel import select
 # from sqlmodel import SQLModel
 
-# stor = create_model("Storage", __base__=BaseModel, **dict(db=None))
-
 
 # class EngineKwargs(TypedDict):
 #     poolclass: type[NullPool]
@@ -73,9 +71,10 @@ class SqlBaseSettings(Settings):
     async_driver: str
     port: int
     pool_pre_ping: bool = False
-    host: SecretStr = "127.0.0.1"
-    user: SecretStr = "root"
-    password: SecretStr = gen_password(10)
+    poolclass: t.Any = None
+    host: SecretStr = SecretStr("127.0.0.1")
+    user: SecretStr = SecretStr("root")
+    password: SecretStr = SecretStr(gen_password(10))
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
 
@@ -87,7 +86,7 @@ class SqlBaseSettings(Settings):
 
     @cached_property
     def async_engine(self) -> AsyncEngine:
-        return create_async_engine(self.async_url, **self.engine_kwargs)
+        return create_async_engine(self._async_url, **self.engine_kwargs)
 
     # @cached_property
     # def async_session(self) -> AsyncSession:
@@ -97,9 +96,9 @@ class SqlBaseSettings(Settings):
         ic(self.user.get_secret_value())
         url_kwargs = dict(
             drivername=self.driver,
-            username=self.user,
-            password=self.password,
-            host=self.host,
+            username=self.user.get_secret_value(),
+            password=self.password.get_secret_value(),
+            host=self.host.get_secret_value(),
             port=self.port,
             database=ac.app.name,
         )
@@ -110,7 +109,7 @@ class SqlBaseSettings(Settings):
 
 class SqlBase:
     async def create(self, demo: bool = False) -> None:
-        exists = database_exists(ac.sql.url)
+        exists = database_exists(ac.sql._url)
         if exists:
             logger.debug("Database exists.")
 
@@ -127,12 +126,12 @@ class SqlBase:
             await aprint(msg)
             delete_db = await ainput("Would you like to reset the database? (Y/N) ")
             if delete_db:
-                drop_database(ac.sq.url)
+                drop_database(ac.sql._url)
                 logger.warning("Database dropped.")
-                exists = database_exists(ac.sql.url)
+                exists = database_exists(ac.sql._url)
 
         if not exists:
-            create_database(ac.db.url)
+            create_database(ac.sql._url)
             logger.info("Database created.")
 
     # @lru_cache

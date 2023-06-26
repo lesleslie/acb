@@ -117,53 +117,6 @@ class FileSecretsSource(PydanticBaseSettingsSource):
             secrets_dir if secrets_dir is not None else self.config.get("secrets_dir")
         )
 
-    async def __call__(self) -> dict[str, t.Any]:
-        global app_name, app_secrets
-
-        data: dict[str, t.Any] = {}
-        self.adapter_name: str = underscore(
-            self.settings_cls.__name__.replace("Settings", "")
-        )
-        if self.adapter_name == "debug":
-            return data
-        if self.secrets_dir is None:
-            return data
-        self.secrets_path = await AsyncPath(self.secrets_dir).expanduser()
-        if not await self.secrets_path.exists():
-            warn(f'directory "{self.secrets_path}" does not exist')
-            return data
-        if not await self.secrets_path.is_dir():
-            raise SettingsError(
-                f"secrets_dir must reference a directory, not a "
-                f"{path_type_label(self.secrets_path)}"
-            )
-        for field_name, field in self.settings_cls.model_fields.items():
-            try:
-                field_value, field_key, value_is_complex = await self.get_field_value(
-                    field, field_name
-                )
-            except Exception as e:
-                raise SettingsError(
-                    f'error getting value for field "{field_name}" from '
-                    f'source "{self.__class__.__name__}"'
-                ) from e
-            try:
-                field_value = self.prepare_field_value(
-                    field_name, field, field_value, value_is_complex
-                )
-            except ValueError:
-                raise SettingsError(
-                    f'error parsing value for field "{field_name}" from'
-                    f' source "{self.__class__.__name__}"'
-                )
-            if field_value is not None:
-                app_secrets.add(field_key)
-                field_key = field_key.removeprefix(f"{self.adapter_name}_")
-                ic()
-                ic(field_key)
-                data[field_key] = field_value
-        return data
-
     @staticmethod
     async def path_type_label(p: AsyncPath) -> str:
         if await p.exists():
@@ -228,7 +181,6 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                     False,
                 )
             )
-
         return field_info
 
     async def get_field_value(
@@ -241,7 +193,11 @@ class FileSecretsSource(PydanticBaseSettingsSource):
             if not path:
                 continue
             if await path.is_file():
-                return (await path.read_text()).strip(), field_key, value_is_complex
+                return (
+                    SecretStr((await path.read_text()).strip()),
+                    field_key,
+                    value_is_complex,
+                )
             else:
                 warn(
                     f'attempted to load secret file "{path}" but found a '
@@ -249,6 +205,51 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                     stacklevel=4,
                 )
         return None, field_key, value_is_complex
+
+    async def __call__(self) -> dict[str, t.Any]:
+        global app_name, app_secrets
+
+        data: dict[str, t.Any] = {}
+        self.adapter_name: str = underscore(
+            self.settings_cls.__name__.replace("Settings", "")
+        )
+        if self.adapter_name == "debug":
+            return data
+        if self.secrets_dir is None:
+            return data
+        self.secrets_path = await AsyncPath(self.secrets_dir).expanduser()
+        if not await self.secrets_path.exists():
+            warn(f'directory "{self.secrets_path}" does not exist')
+            return data
+        if not await self.secrets_path.is_dir():
+            raise SettingsError(
+                f"secrets_dir must reference a directory, not a "
+                f"{path_type_label(self.secrets_path)}"
+            )
+        for field_name, field in self.settings_cls.model_fields.items():
+            try:
+                field_value, field_key, value_is_complex = await self.get_field_value(
+                    field, field_name
+                )
+            except Exception as e:
+                raise SettingsError(
+                    f'error getting value for field "{field_name}" from '
+                    f'source "{self.__class__.__name__}"'
+                ) from e
+            try:
+                field_value = self.prepare_field_value(
+                    field_name, field, field_value, value_is_complex
+                )
+            except ValueError:
+                raise SettingsError(
+                    f'error parsing value for field "{field_name}" from'
+                    f' source "{self.__class__.__name__}"'
+                )
+            if field_value is not None:
+                app_secrets.add(field_key)
+                field_key = field_key.removeprefix(f"{self.adapter_name}_")
+                data[field_key] = field_value
+        return data
 
     def __repr__(self) -> str:
         return f"FileSecretsSource(secrets_dir={self.secrets_dir!r})"
@@ -263,7 +264,7 @@ class ManagerSecretsSource(FileSecretsSource):
         path: AsyncPath = ac.tmp / "secrets"
         await path.mkdir(exist_ok=True)
         model_secrets = {
-            n: v
+            "_".join((self.adapter_name, n)): v
             for n, v in self.settings_cls.model_fields.items()
             if v.annotation is SecretStr
         }
@@ -277,21 +278,18 @@ class ManagerSecretsSource(FileSecretsSource):
                 project=project, app_name=app_name
             )
             manager_secrets = await manager.list()
-            ic(manager_secrets)
             for field_name, field_value in unfetched_secrets.items():
-                field_name = "_".join([self.adapter_name, field_name])
-                ic()
+                stored_field_name = "_".join((app_name, field_name))
                 ic(field_name)
                 secret_path = path / field_name
                 if not await secret_path.exists():
                     if field_name not in manager_secrets:
-                        await manager.create(field_name, field_value.default)
-                    secret = await manager.load(field_name)
+                        await manager.create(
+                            stored_field_name, field_value.default.get_secret_value()
+                        )
+                    secret = await manager.load(stored_field_name)
                     await secret_path.write_text(secret)
-                ic()
-                ic(field_name)
                 app_secrets.add(field_name)
-        ic(app_secrets)
 
     async def get_field_value(
         self, field: FieldInfo, field_name: str
@@ -328,7 +326,6 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                 for k, v in self.settings_cls.model_fields.items()
                 if v.annotation is not SecretStr
             }
-            ic(dump_settings)
             await dump.yaml(dump_settings, yml_path)
         yml_settings = await load.yaml(yml_path)
         if self.adapter_name == "debug":
@@ -343,7 +340,6 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         if self.adapter_name == "app":
             project = yml_settings["project"]
             app_name = yml_settings["name"]
-        ic(yml_settings)
         return yml_settings
 
     def get_field_value(
@@ -360,7 +356,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
         )
-        d: t.Dict[str, t.Any] = {}
+        data: t.Dict[str, t.Any] = {}
         for field_name, field in (await self.load_yml_settings()).items():
             field_value, field_key, value_is_complex = self.get_field_value(
                 field, field_name
@@ -369,31 +365,36 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                 field_name, field, field_value, value_is_complex
             )
             if field_value is not None:
-                d[field_key] = field_value
-        return d
+                data[field_key] = field_value
+        return data
 
 
-class Settings(BaseModel, extra="allow", alias_generator=secret_alias):
+class Settings(BaseModel):
+    model_config = SettingsConfigDict(
+        extra="allow",
+        arbitrary_types_allowed=True,
+        validate_default=True,
+        secrets_dir=None,
+        protected_namespaces=("model_", "settings_"),
+        alias_generator=secret_alias,
+    )
+
     def __init__(
         __pydantic_self__,
-        _case_sensitive: bool | None = None,
         _secrets_dir: str | Path | None = None,
         **values: t.Any,
     ) -> None:
         nest_asyncio.apply()
         build_settings = __pydantic_self__._settings_build_values(
             values,
-            # _case_sensitive=_case_sensitive,
             _secrets_dir=_secrets_dir,
         )
         build_settings = asyncio.run(build_settings)
-        ic(build_settings)
         super().__init__(**build_settings)
 
     async def _settings_build_values(
         self,
         init_kwargs: dict[str, t.Any],
-        # _case_sensitive: bool | None = None,
         _secrets_dir: str | AsyncPath | None = None,
     ) -> dict[str, t.Any]:
         secrets_dir = (
@@ -432,15 +433,6 @@ class Settings(BaseModel, extra="allow", alias_generator=secret_alias):
             ManagerSecretsSource(settings_cls),
         )
 
-    model_config = SettingsConfigDict(
-        extra="forbid",
-        arbitrary_types_allowed=True,
-        validate_default=True,
-        case_sensitive=False,
-        secrets_dir=None,
-        protected_namespaces=("model_", "settings_"),
-    )
-
 
 class DebugSettings(Settings):
     production: bool = False
@@ -455,8 +447,8 @@ class AppSettings(Settings):
     name: str = "myapp"
     title: t.Optional[str] = None
     domain: t.Optional[AnyUrl] = None
-    secret_key: SecretStr = token_urlsafe(32)
-    secure_salt: SecretStr = str(token_bytes(32))
+    secret_key: SecretStr = SecretStr(token_urlsafe(32))
+    secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
 
     def model_post_init(self, __context: t.Any) -> None:
         self.title = self.title or titleize(self.name)
@@ -472,6 +464,8 @@ class AppConfig(BaseSettings, extra="allow"):
     adapters: dict[str, str] = {}
     adapter_categories: list = []
     enabled_adapters: list = []
+    app: t.Optional[Settings] = None
+    debug: t.Optional[Settings] = None
 
     async def __call__(self, deployed: bool = False) -> None:
         self.tmp = self.basedir / "tmp"
@@ -489,6 +483,7 @@ class AppConfig(BaseSettings, extra="allow"):
         mod_dir = self.basedir / "__pypackages__"
         sys.path.append(str(mod_dir))
         if self.basedir.name != "acb":
+            initialized_adapter_settings = {}
             self.adapter_categories = [
                 path.stem
                 async for path in (self.pkgdir / "adapters").iterdir()
@@ -500,20 +495,19 @@ class AppConfig(BaseSettings, extra="allow"):
                     self.adapter_settings_path,
                 )
             self.adapters = await load.yaml(self.adapter_settings_path)
-            ic(self.adapters)
             self.enabled_adapters = [
                 adptr
                 for adptr in self.adapters.keys()
                 if adptr in self.adapter_categories
             ]
             self.debug = DebugSettings()
-            ic(self.debug)
+            ic(self.debug.model_dump())
             try:
                 self.app = AppSettings(_secrets_dir=self.secrets_path)
             except ModuleNotFoundError:
                 warn("no secrets adapter configured")
                 sys.exit()
-            ic(self.app)
+            ic(self.app.model_dump())
             for category, adapter in {
                 cat: adptr
                 for cat, adptr in self.adapters.items()
@@ -522,10 +516,11 @@ class AppConfig(BaseSettings, extra="allow"):
                 ic(category, adapter)
                 module = import_module(".".join(["acb", "adapters", category, adapter]))
                 adapter_settings = getattr(module, f"{camelize(category)}Settings")
-                setattr(
-                    self, category, adapter_settings(_secrets_dir=self.secrets_path)
-                )
-        ic(self)
+                initialized_settings = adapter_settings(_secrets_dir=self.secrets_path)
+                ic(initialized_settings.model_dump())
+                initialized_adapter_settings[category] = initialized_settings
+            super().__init__(**initialized_adapter_settings)
+            ic(ac.model_extra)
 
 
 ac = AppConfig()
