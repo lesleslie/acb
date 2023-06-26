@@ -20,8 +20,10 @@ from re import search
 
 import arrow
 from acb.config import ac
+from acb.config import gen_password
 from acb.config import Settings
-from acb.logger import apformat
+
+# from acb.logger import apformat
 from acb.logger import logger
 from aioconsole import ainput
 from aioconsole import aprint
@@ -35,16 +37,15 @@ from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine
+from icecream import ic
 
 # from sqlalchemy.exc import IntegrityError
 # from sqlalchemy.exc import InvalidRequestError
 # from sqlalchemy.ext.serializer import dumps as sdumps
 # from sqlalchemy.ext.serializer import loads as sloads
-from sqlalchemy.pool import NullPool
 from sqlalchemy_utils import create_database
 from sqlalchemy_utils import database_exists
 from sqlalchemy_utils import drop_database
-from typing_extensions import TypedDict
 
 
 # import arrow
@@ -62,22 +63,27 @@ from typing_extensions import TypedDict
 # stor = create_model("Storage", __base__=BaseModel, **dict(db=None))
 
 
-class EngineKwargs(TypedDict):
-    poolclass: type[NullPool]
-    pool_pre_ping: bool
+# class EngineKwargs(TypedDict):
+#     poolclass: type[NullPool]
+#     pool_pre_ping: bool
 
 
 class SqlBaseSettings(Settings):
     driver: str
     async_driver: str
     port: int
-    host: SecretStr
-    user: SecretStr
-    password: SecretStr
-    url: t.Optional[URL] = None
-    async_url: t.Optional[URL] = None
+    pool_pre_ping: bool = False
+    host: SecretStr = "127.0.0.1"
+    user: SecretStr = "root"
+    password: SecretStr = gen_password(10)
+    _url: t.Optional[URL] = None
+    _async_url: t.Optional[URL] = None
 
     # engine_kwargs: EngineKwargs = None
+
+    # @field_serializer('poolclass')
+    # def serialize_poolclass(self, poolclass: Pool, _info):
+    #     return dump.pickle(poolclass)
 
     @cached_property
     def async_engine(self) -> AsyncEngine:
@@ -87,35 +93,28 @@ class SqlBaseSettings(Settings):
     # def async_session(self) -> AsyncSession:
     #     return AsyncSession(self.async_engine, expire_on_commit=False)
 
-    def __init__(self, **data: t.Any) -> None:
-        super().__init__(**data)
-        self.host: SecretStr = ac.secrets.sql_host
-        self.user: SecretStr = ac.secrets.sql_username
-        self.password: SecretStr = ac.secrets.sql_password
+    def model_post_init(self, __context: t.Any) -> None:
+        ic(self.user.get_secret_value())
         url_kwargs = dict(
             drivername=self.driver,
             username=self.user,
             password=self.password,
-            port=self.port,
             host=self.host,
+            port=self.port,
             database=ac.app.name,
         )
-        self.url = URL.create(**self.url_kwargs)
+        self._url = URL.create(**url_kwargs)
         async_url_kwargs = dict(drivername=self.async_driver)
-        self.async_url = URL.create(**(url_kwargs | async_url_kwargs))
+        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))
 
 
-class SqlBaseDatabase:
+class SqlBase:
     async def create(self, demo: bool = False) -> None:
-        exists = database_exists(ac.db.url)
+        exists = database_exists(ac.sql.url)
         if exists:
             logger.debug("Database exists.")
 
-        if (
-            (ac.debug.database or ac.debug.models)
-            and not (ac.app.is_deployed or ac.debug.production)
-            and exists
-        ):
+        if ac.debug.sql and not (ac.deployed or ac.debug.production) and exists:
             msg = (
                 "\n\nRESETTING THE DATABASE WILL CAUSE ALL OF YOUR"
                 " CURRENT DATA TO BE LOST!\n"
@@ -128,9 +127,9 @@ class SqlBaseDatabase:
             await aprint(msg)
             delete_db = await ainput("Would you like to reset the database? (Y/N) ")
             if delete_db:
-                drop_database(ac.db.url)
+                drop_database(ac.sq.url)
                 logger.warning("Database dropped.")
-                exists = database_exists(ac.db.url)
+                exists = database_exists(ac.sql.url)
 
         if not exists:
             create_database(ac.db.url)
@@ -147,7 +146,7 @@ class SqlBaseDatabase:
 
     @lru_cache
     def get_async_engine(self) -> AsyncEngine:
-        return ac.db.async_engine
+        return ac.sql.async_engine
 
     @asynccontextmanager
     async def engine(self) -> t.AsyncGenerator:
@@ -163,14 +162,14 @@ class SqlBaseDatabase:
         # print(debug.database)
         # print(type(debug.database))
         await self.create(demo)
-        if ac.debug.database:
+        if ac.debug.sql:
             sql = text("DROP TABLE IF EXISTS alembic_version")
             self.get_async_engine.execute(sql)
         logger.info("Creating database tables...")
         # self.get_async_engine().run_sync(SQLModel.metadata.create_all)
-        if ac.debug.models:
-            table_names = self.get_async_engine().run_sync(self.get_table_names)
-            await apformat(table_names)
+        # if ac.debug.sql:
+        #     table_names = self.get_async_engine().run_sync(self.get_table_names)
+        #     await apformat(table_names)
         logger.info("Database initialized.")
 
 

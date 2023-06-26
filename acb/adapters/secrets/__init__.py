@@ -4,7 +4,7 @@ from acb.config import ac
 from acb.config import Settings
 
 
-class SecretsSettings(Settings):
+class SecretsBaseSettings(Settings):
     ...
 
 

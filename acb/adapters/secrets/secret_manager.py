@@ -14,10 +14,14 @@ from google.auth.transport.requests import Request
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.oauth2.credentials import Credentials
-from icecream import ic
+from . import SecretsBaseSettings
 
 
-class SecretManager:
+class SecretsSettings(SecretsBaseSettings):
+    ...
+
+
+class Secrets:
     parent: str
     client: Optional[SecretManagerServiceAsyncClient]
     authed_session: Optional[AuthorizedSession]
@@ -27,9 +31,8 @@ class SecretManager:
     def extract_secret_name(secret: str) -> str:
         return Path(secret).parts[-1]
 
-    @staticmethod
-    def get_name(name: str) -> str:
-        return "_".join([ac.app.name, name])
+    def get_name(self, name: str) -> str:
+        return "_".join([self.app_name, name])
 
     async def get_access_token(self) -> str:
         self.creds.refresh(Request())
@@ -54,7 +57,7 @@ class SecretManager:
 
     async def get(self, name: str) -> str:
         name = self.get_name(name)
-        path = f"projects/{ac.app.project}/secrets/{name}/versions/latest"
+        path = f"projects/{self.project}/secrets/{name}/versions/latest"
         version = await self.client.access_secret_version(request={"name": path})
         payload = version.payload.data.decode()
         logger.info(f"Fetched secret - {name}")
@@ -120,4 +123,4 @@ class SecretManager:
         self.authed_session = AuthorizedSession(self.creds)
 
 
-secrets = SecretManager
+secrets = Secrets

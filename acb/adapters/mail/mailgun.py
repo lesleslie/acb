@@ -5,26 +5,26 @@ from pprint import pformat
 from pprint import pprint
 from re import search
 
-from . import MailBaseSettings
+from acb.actions import load
+from acb.adapters.dns import dns
+from acb.adapters.dns import DnsRecord
+from acb.adapters.requests import requests
+from acb.config import ac
 from aiopath import AsyncPath
 from httpx import Response as HttpxResponse
 from loguru import logger
 from pydantic import AnyUrl
 from pydantic import BaseModel
 from pydantic import EmailStr
-from acb.adapters.dns import DnsRecord
-from acb.adapters.dns  import dns
-from acb.adapters.requests import requests
-from acb.actions import load
-from acb.config import ac
-from acb.config import AppSettings
+from pydantic import SecretStr
+from . import MailBaseSettings
 
 
 class MailSettings(MailBaseSettings):
-    server: AnyUrl = "smtp.mailgun.com"
-    password = ac.secrets.app_mail_password
+    password: SecretStr
+    api_key: SecretStr
+    server: SecretStr = "smtp.mailgun.com"
     api_url = "https://api.mailgun.net/v3/domains"
-    api_key = ac.secrets.mail_api_key
     default_from: EmailStr = f"info@{ac.app.domain}"
     default_from_name = ac.app.title
     test_receiver: EmailStr = None
@@ -33,8 +33,7 @@ class MailSettings(MailBaseSettings):
     template_folder: t.Optional[AsyncPath]
 
 
-
-class Mailgun(BaseModel):
+class Mail(BaseModel):
     async def get_response(
         self,
         req_type: str,
@@ -232,4 +231,4 @@ class Mailgun(BaseModel):
         await self.create_routes()
 
 
-mail = Mailgun()
+mail = Mail()

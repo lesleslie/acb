@@ -9,14 +9,10 @@ from acb.config import ac
 from cashews import Cache as CashewsCache
 from cashews.serialize import register_type
 from pydantic import field_validator
-from . import CacheSettings
+from . import CacheBaseSettings
 
 
-# class RedisSecrets(CacheBaseSecrets):
-#     ...
-
-
-class RedisSettings(CacheSettings):
+class CacheSettings(CacheBaseSettings):
     db: int = 1
 
     @field_validator("db")
@@ -38,7 +34,7 @@ class RedisSettings(CacheSettings):
         return cache
 
 
-class RedisCache:
+class Cache:
     @staticmethod
     async def encoder(value: t.Any, *args, **kwargs) -> bytes:
         return await dump.msgpack(
@@ -64,4 +60,4 @@ class RedisCache:
         register_type(t.Any, self.encoder, self.decoder)
 
 
-cache = RedisCache()
+cache = Cache()

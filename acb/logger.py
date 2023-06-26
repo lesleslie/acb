@@ -1,45 +1,43 @@
 import logging
 import sys
-from inspect import getmodule
-from inspect import stack
-from pathlib import Path
-from pprint import pformat
 from time import perf_counter
 
 from acb.config import ac
-from aioconsole import aprint
-from icecream import colorizedStderrPrint
-from icecream import ic
 from loguru import logger
 
 
-def get_mod():
-    mod_logger = stack()[3][0]
-    mod = getmodule(mod_logger)
-    mod.name = Path(mod.__file__).stem
-    print(mod.name)
-    return mod
+# def get_mod():
+#     # frame = stack()[3][0]
+#     # frame = logging.currentframe()
+#     mod_logger = stack()[3][0]
+#     mod = getmodule(mod_logger)
+#     mod = Path(mod.__file__).parent
+#     if mod.stem == ac.basedir.stem:
+#         mod = Path(mod.__file__)
+#     return mod
+#
+#
+# def log_debug(s):
+#     mod = get_mod()
+#     debug_mod = dict(ac.debug.model_fields).get(mod.stem)
+#     if debug_mod:
+#         if ac.deployed:
+#             return logger.patch(lambda record: record.update(name=mod.__name__)).debug(
+#                 s
+#             )
+#         return colorizedStderrPrint(s)
+#
+#
+# ic.configureOutput(prefix="    debug:  ", includeContext=True, outputFunction=log_debug)
+# if ac.deployed:
+#     ic.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
 
 
-def log_debug(s):
-    mod = get_mod()
-    if dict(ac.debug.model_fields)[mod.name]:
-        if ac.deployed:
-            return logger.patch(lambda record: record.update(name=mod.__name__)).debug(
-                s
-            )
-        return colorizedStderrPrint(s)
-
-
-ic.configureOutput(prefix="    debug:  ", includeContext=True, outputFunction=log_debug)
-if ac.deployed:
-    ic.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
-
-
-async def apformat(obj, sort_dicts: bool = False) -> None:  # make purple
-    mod = get_mod()
-    if not ac.deployed and not ac.debug.production and ac.debug[mod.name]:
-        await aprint(pformat(obj, sort_dicts=sort_dicts))
+# async def apformat(obj, sort_dicts: bool = False) -> None:  # make purple
+#     mod = get_mod()
+#     debug_mod = dict(ac.debug.model_fields).get(mod.stem)
+#     if not ac.deployed and not ac.debug.production and debug_mod:
+#         await aprint(pformat(obj, sort_dicts=sort_dicts))
 
 
 def timeit(func):

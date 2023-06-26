@@ -2,14 +2,14 @@ from importlib import import_module
 
 from acb.config import ac
 from acb.config import Settings
+from acb.config import gen_password
 from pydantic import SecretStr
 
 
-class CacheSettings(Settings):
+class CacheBaseSettings(Settings):
     db: int
-    host: SecretStr
-    user: SecretStr
-    password: SecretStr
+    host: SecretStr = "127.0.0.1"
+    password: SecretStr = gen_password(10)
     namespace: str = ac.app.name
     default_timeout: int = 86400
     template_timeout: int = 300 if ac.deployed else 1
