@@ -19,4 +19,4 @@ class CacheBaseSettings(Settings):
     health_check_interval: int = 15
 
 
-cache = import_module(f"acb.adapters.cache.{ac.adapters['cache']}").cache
+cache = import_module(f"acb.adapters.cache.{ac.enabled_adapters['cache']}").cache

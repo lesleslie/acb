@@ -172,7 +172,7 @@ class SqlBase:
         logger.info("Database initialized.")
 
 
-sql = import_module(f"acb.adapters.sql.{ac.adapters['sql']}").sql
+sql = import_module(f"acb.adapters.sql.{ac.enabled_adapters['sql']}").sql
 
 # class AppBaseModel(SQLModel):
 #     __table_args__ = {"extend_existing": True}

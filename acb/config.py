@@ -256,7 +256,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
 
 
 class ManagerSecretsSource(FileSecretsSource):
-    adapter_name: t.Optional[...]
+    adapter_name: t.Optional[str] = None
 
     @alru_cache
     async def load_secrets(self) -> t.NoReturn:
@@ -271,8 +271,8 @@ class ManagerSecretsSource(FileSecretsSource):
         unfetched_secrets = {
             n: v for n, v in model_secrets.items() if n not in app_secrets
         }
-        ic(model_secrets.keys())
-        ic(unfetched_secrets.keys())
+        # ic(model_secrets.keys())
+        # ic(unfetched_secrets.keys())
         if len(unfetched_secrets):
             manager = import_module("acb.adapters.secrets").secrets(
                 project=project, app_name=app_name
@@ -280,7 +280,7 @@ class ManagerSecretsSource(FileSecretsSource):
             manager_secrets = await manager.list()
             for field_name, field_value in unfetched_secrets.items():
                 stored_field_name = "_".join((app_name, field_name))
-                ic(field_name)
+                # ic(field_name)
                 secret_path = path / field_name
                 if not await secret_path.exists():
                     if field_name not in manager_secrets:
@@ -313,11 +313,13 @@ class ManagerSecretsSource(FileSecretsSource):
 
 
 class YamlSettingsSource(PydanticBaseSettingsSource):
-    adapter_name: t.Optional[...]
+    adapter_name: t.Optional[str] = None
 
     @alru_cache
     async def load_yml_settings(self) -> dict:
         global project, app_name
+        if self.adapter_name == "secrets":
+            return {}
         yml_path = AsyncPath.cwd() / "settings" / f"{self.adapter_name}.yml"
         if not await yml_path.exists() and not deployed:
             await yml_path.touch(exist_ok=True)
@@ -461,17 +463,21 @@ class AppConfig(BaseSettings, extra="allow"):
     tmp: t.Optional[AsyncPath] = None
     app_settings_path: t.Optional[AsyncPath] = None
     adapter_settings_path: t.Optional[AsyncPath] = None
-    adapters: dict[str, str] = {}
+    available_adapters: dict[str, t.Any] = {}
     adapter_categories: list = []
-    enabled_adapters: list = []
+    enabled_adapters: dict[str, t.Any] = {}
     app: t.Optional[Settings] = None
     debug: t.Optional[Settings] = None
 
-    async def __call__(self, deployed: bool = False) -> None:
+    def model_post_init(self, __context: t.Any) -> None:
         self.tmp = self.basedir / "tmp"
         self.app_settings_path = self.basedir / "settings"
         self.adapter_settings_path = self.app_settings_path / "adapters.yml"
         self.secrets_path = self.basedir / "tmp" / "secrets"
+        self.deployed = True if self.basedir.name == "app" else deployed
+
+
+    async def __call__(self, deployed: bool = False) -> None:
         for path in (
             self.app_settings_path,
             self.tmp,
@@ -479,48 +485,44 @@ class AppConfig(BaseSettings, extra="allow"):
             self.secrets_path,
         ):
             await path.mkdir(exist_ok=True)
-        self.deployed = True if self.basedir.name == "app" else deployed
         mod_dir = self.basedir / "__pypackages__"
         sys.path.append(str(mod_dir))
+        initialized_adapter_settings = {}
         if self.basedir.name != "acb":
-            initialized_adapter_settings = {}
             self.adapter_categories = [
                 path.stem
                 async for path in (self.pkgdir / "adapters").iterdir()
                 if path.is_dir and not path.name.startswith("__")
             ]
+            initialized_adapter_settings["adapter_categories"] = self.adapter_categories
             if not await self.adapter_settings_path.exists() and not self.deployed:
                 await dump.yaml(
                     {cat: None for cat in self.adapter_categories},
                     self.adapter_settings_path,
                 )
-            self.adapters = await load.yaml(self.adapter_settings_path)
-            self.enabled_adapters = [
-                adptr
-                for adptr in self.adapters.keys()
-                if adptr in self.adapter_categories
-            ]
+            self.available_adapters = await load.yaml(self.adapter_settings_path)
+            initialized_adapter_settings["available_adapters"] = self.available_adapters
+            self.enabled_adapters = {c: a for c, a in self.available_adapters.items()
+                                     if c in
+                                     self.adapter_categories and a}
+            initialized_adapter_settings["enabled_adapters"] = self.enabled_adapters
             self.debug = DebugSettings()
-            ic(self.debug.model_dump())
+            initialized_adapter_settings["debug"] = self.debug
             try:
                 self.app = AppSettings(_secrets_dir=self.secrets_path)
+                initialized_adapter_settings["app"] = self.app
             except ModuleNotFoundError:
                 warn("no secrets adapter configured")
                 sys.exit()
-            ic(self.app.model_dump())
-            for category, adapter in {
-                cat: adptr
-                for cat, adptr in self.adapters.items()
-                if cat in self.enabled_adapters and adptr
-            }.items():
+            for category, adapter in self.enabled_adapters.items():
                 ic(category, adapter)
                 module = import_module(".".join(["acb", "adapters", category, adapter]))
                 adapter_settings = getattr(module, f"{camelize(category)}Settings")
                 initialized_settings = adapter_settings(_secrets_dir=self.secrets_path)
-                ic(initialized_settings.model_dump())
+                # ic(initialized_settings.model_dump())
                 initialized_adapter_settings[category] = initialized_settings
-            super().__init__(**initialized_adapter_settings)
-            ic(ac.model_dump())
+            super().__init__(**(initialized_adapter_settings))
+            # ic(ac.model_dump())
 
 
 ac = AppConfig()
