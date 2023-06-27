@@ -21,7 +21,6 @@ from acb.actions import dump
 from acb.actions import load
 from aiopath import AsyncPath
 from async_lru import alru_cache
-from icecream import ic
 from inflection import camelize
 from inflection import titleize
 from inflection import underscore
@@ -271,8 +270,6 @@ class ManagerSecretsSource(FileSecretsSource):
         unfetched_secrets = {
             n: v for n, v in model_secrets.items() if n not in app_secrets
         }
-        # ic(model_secrets.keys())
-        # ic(unfetched_secrets.keys())
         if len(unfetched_secrets):
             manager = import_module("acb.adapters.secrets").secrets(
                 project=project, app_name=app_name
@@ -515,13 +512,15 @@ class AppConfig(BaseSettings, extra="allow"):
                 warn("no secrets adapter configured")
                 sys.exit()
             for category, adapter in self.enabled_adapters.items():
-                ic(category, adapter)
+                if category == "secrets":
+                    continue
+                # ic(category, adapter)
                 module = import_module(".".join(["acb", "adapters", category, adapter]))
                 adapter_settings = getattr(module, f"{camelize(category)}Settings")
                 initialized_settings = adapter_settings(_secrets_dir=self.secrets_path)
                 # ic(initialized_settings.model_dump())
                 initialized_adapter_settings[category] = initialized_settings
-            super().__init__(**(initialized_adapter_settings))
+            super().__init__(**initialized_adapter_settings)
             # ic(ac.model_dump())
 
 
