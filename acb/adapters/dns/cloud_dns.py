@@ -4,23 +4,28 @@ from warnings import catch_warnings
 from warnings import filterwarnings
 
 from acb.config import ac
-from acb.logger import apformat
 from google.api_core.exceptions import BadRequest
 from google.api_core.exceptions import Conflict
 from google.cloud.dns import Client as DnsClient
 from validators import domain
 from validators import ValidationFailure
 from . import DnsRecord
+from . import DnsBaseSettings
 
+
+# put into settings
 with catch_warnings():
     filterwarnings("ignore", category=Warning)
     dns_client = DnsClient(project=ac.project)
-
 dns_zone = dns_client.zone(ac.app_name, f"{ac.raw_domain}.")
 splashstand_zone = dns_client.zone("sstand", "splashstand.com.")
 
 
-class GoogleDNS:
+class DnsSettings(DnsBaseSettings):
+    ...
+
+
+class Dns:
     @staticmethod
     def create_dns_zone() -> None:
         if not dns_zone.exists():
@@ -121,6 +126,3 @@ class GoogleDNS:
                 print("SplashStand development domain detected. No changes made.")
         else:
             print("No DNS changes detected.")
-
-
-dns = GoogleDNS()

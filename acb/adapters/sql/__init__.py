@@ -12,7 +12,6 @@ from datetime import datetime
 from datetime import timedelta
 from functools import cached_property
 from functools import lru_cache
-from importlib import import_module
 from itertools import chain
 
 # from pathlib import Path
@@ -20,6 +19,7 @@ from re import search
 
 import arrow
 from acb.config import ac
+from acb.config import load_adapter
 from acb.config import gen_password
 from acb.config import Settings
 
@@ -28,6 +28,7 @@ from acb.logger import logger
 from aioconsole import ainput
 from aioconsole import aprint
 from aiopath import AsyncPath
+from icecream import ic
 from pydantic import BaseModel
 from pydantic import SecretStr
 
@@ -37,7 +38,6 @@ from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine
-from icecream import ic
 
 # from sqlalchemy.exc import IntegrityError
 # from sqlalchemy.exc import InvalidRequestError
@@ -61,11 +61,6 @@ from sqlalchemy_utils import drop_database
 # from sqlmodel import SQLModel
 
 
-# class EngineKwargs(TypedDict):
-#     poolclass: type[NullPool]
-#     pool_pre_ping: bool
-
-
 class SqlBaseSettings(Settings):
     driver: str
     async_driver: str
@@ -77,12 +72,6 @@ class SqlBaseSettings(Settings):
     password: SecretStr = SecretStr(gen_password(10))
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
-
-    # engine_kwargs: EngineKwargs = None
-
-    # @field_serializer('poolclass')
-    # def serialize_poolclass(self, poolclass: Pool, _info):
-    #     return dump.pickle(poolclass)
 
     @cached_property
     def async_engine(self) -> AsyncEngine:
@@ -172,7 +161,7 @@ class SqlBase:
         logger.info("Database initialized.")
 
 
-sql = import_module(f"acb.adapters.sql.{ac.enabled_adapters['sql']}").sql
+sql = load_adapter("sql")
 
 # class AppBaseModel(SQLModel):
 #     __table_args__ = {"extend_existing": True}

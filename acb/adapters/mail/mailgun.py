@@ -14,7 +14,6 @@ from aiopath import AsyncPath
 from httpx import Response as HttpxResponse
 from loguru import logger
 from pydantic import AnyUrl
-from pydantic import BaseModel
 from pydantic import EmailStr
 from pydantic import SecretStr
 from . import MailBaseSettings
@@ -33,7 +32,7 @@ class MailSettings(MailBaseSettings):
     template_folder: t.Optional[AsyncPath]
 
 
-class Mail(BaseModel):
+class Mail:
     async def get_response(
         self,
         req_type: str,
@@ -229,6 +228,3 @@ class Mail(BaseModel):
         await self.create_dns_records()
         await self.delete_routes()
         await self.create_routes()
-
-
-mail = Mail()

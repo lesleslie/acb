@@ -1,25 +1,21 @@
 # from redis_om import get_redis_connection
 # from redis_om import Migrator
 
-from . import BaseCacheSettings
-from acb.config import BaseSettings
-from acb.config import ac
+from . import NosqlBaseSettings
 from pydantic import field_validator
 
 
-class CacheDbSettings(BaseCacheSettings):
-    db: int = 0
+class NosqlSettings(NosqlBaseSettings):
+    cache_db: int = 0
 
-    @field_validator("db")
-    def db_greater_than_zero(cls, v) -> int:
-        if v > 0:
-            raise ValueError("db must be 0 (0 reserved for redis_om")
+    @field_validator("cache_db")
+    def cache_db_not_zero(cls, v) -> int:
+        if v < 3 and v != 0:
+            raise ValueError("must be > 3 (0-2 are reserved)")
         return 0
 
 
-class CacheDB:
-    ...
-
+class Nosql:
     def __init_(self) -> None:
         ...
         # Migrator().run()

@@ -59,6 +59,13 @@ def secret_alias(raw_name: str) -> str:
             return f"{secret_class.lower()}_{raw_name}"
 
 
+def load_adapter(adapter, **kwargs) -> t.Any:
+    adapter_module = import_module(
+        f"acb.adapters.{adapter}." f"{ac.enabled_adapters[adapter]}"
+    )
+    return getattr(adapter_module, camelize(adapter))(**kwargs)
+
+
 class PydanticBaseSettingsSource(ABC):
     def __init__(self, settings_cls: type["Settings"]) -> None:
         self.settings_cls = settings_cls
@@ -207,7 +214,6 @@ class FileSecretsSource(PydanticBaseSettingsSource):
 
     async def __call__(self) -> dict[str, t.Any]:
         global app_name, app_secrets
-
         data: dict[str, t.Any] = {}
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
@@ -271,13 +277,10 @@ class ManagerSecretsSource(FileSecretsSource):
             n: v for n, v in model_secrets.items() if n not in app_secrets
         }
         if len(unfetched_secrets):
-            manager = import_module("acb.adapters.secrets").secrets(
-                project=project, app_name=app_name
-            )
+            manager = load_adapter("secrets")(project=project, app_name=app_name)
             manager_secrets = await manager.list()
             for field_name, field_value in unfetched_secrets.items():
                 stored_field_name = "_".join((app_name, field_name))
-                # ic(field_name)
                 secret_path = path / field_name
                 if not await secret_path.exists():
                     if field_name not in manager_secrets:
@@ -473,7 +476,6 @@ class AppConfig(BaseSettings, extra="allow"):
         self.secrets_path = self.basedir / "tmp" / "secrets"
         self.deployed = True if self.basedir.name == "app" else deployed
 
-
     async def __call__(self, deployed: bool = False) -> None:
         for path in (
             self.app_settings_path,
@@ -499,9 +501,11 @@ class AppConfig(BaseSettings, extra="allow"):
                 )
             self.available_adapters = await load.yaml(self.adapter_settings_path)
             initialized_adapter_settings["available_adapters"] = self.available_adapters
-            self.enabled_adapters = {c: a for c, a in self.available_adapters.items()
-                                     if c in
-                                     self.adapter_categories and a}
+            self.enabled_adapters = {
+                c: a
+                for c, a in self.available_adapters.items()
+                if c in self.adapter_categories and a
+            }
             initialized_adapter_settings["enabled_adapters"] = self.enabled_adapters
             self.debug = DebugSettings()
             initialized_adapter_settings["debug"] = self.debug
@@ -511,20 +515,19 @@ class AppConfig(BaseSettings, extra="allow"):
             except ModuleNotFoundError:
                 warn("no secrets adapter configured")
                 sys.exit()
-            for category, adapter in self.enabled_adapters.items():
-                if category == "secrets":
+            for adapter, module in self.enabled_adapters.items():
+                if adapter == "secrets":
                     continue
-                # ic(category, adapter)
-                module = import_module(".".join(["acb", "adapters", category, adapter]))
-                adapter_settings = getattr(module, f"{camelize(category)}Settings")
+                module = import_module(".".join(["acb", "adapters", adapter, module]))
+                adapter_settings = getattr(module, f"{camelize(adapter)}Settings")
                 initialized_settings = adapter_settings(_secrets_dir=self.secrets_path)
-                # ic(initialized_settings.model_dump())
-                initialized_adapter_settings[category] = initialized_settings
+                initialized_adapter_settings[adapter] = initialized_settings
             super().__init__(**initialized_adapter_settings)
             # ic(ac.model_dump())
 
 
 ac = AppConfig()
+
 
 # class InspectStack(BaseModel):
 #     @staticmethod

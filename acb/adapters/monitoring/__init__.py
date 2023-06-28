@@ -2,8 +2,8 @@ from acb.config import load_adapter
 from acb.config import Settings
 
 
-class SecretsBaseSettings(Settings):
+class MonitoringBaseSettings(Settings):
     ...
 
 
-secrets = load_adapter("secrets")
+monitoring = load_adapter("monitoring")

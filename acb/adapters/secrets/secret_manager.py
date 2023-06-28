@@ -113,6 +113,3 @@ class Secrets:
         self.creds = creds
         self.client = SecretManagerServiceAsyncClient(credentials=self.creds)
         self.authed_session = AuthorizedSession(self.creds)
-
-
-secrets = Secrets

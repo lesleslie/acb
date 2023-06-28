@@ -1,7 +1,7 @@
 from acb.config import ac
-from acb.config import AppSettings
-from importlib import import_module
 from pydantic import BaseModel
+from acb.config import Settings
+from acb.config import load_adapter
 
 
 class DnsRecord(BaseModel):
@@ -11,9 +11,8 @@ class DnsRecord(BaseModel):
     rrdata: str | list = None
 
 
-
-class BaseDnsSettings(AppSettings):
+class DnsBaseSettings(Settings):
     ...
 
 
-dns = import_module(ac.adapters.dns).dns
+dns = load_adapter("dns")

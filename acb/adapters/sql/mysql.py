@@ -9,7 +9,6 @@ class SqlSettings(SqlBaseSettings):
     async_driver: str = "mysql+asyncmy"
     port: int = 3306
     pool_pre_ping: bool = True
-    # poolclass: t.Any = None
 
     def model_post_init(self, __context: t.Any) -> None:
         self.poolclass = NullPool

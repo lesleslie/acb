@@ -93,22 +93,23 @@ logger.remove()
 # logging.getLogger("uvicorn").handlers.clear()
 logger.add(sys.stderr, **configs)
 logger.level("DEBUG", color="<cyan>")
+_loggers = []
 # _loggers = ["uvicorn.access", "uvicorn.error"]
-# if ac.debug.sql:
-#     _loggers.extend(
-#         [
-#             "sqlalchemy.engine",
-#             "sqlalchemy.orm",
-#             "sqlalchemy.pool",
-#             "sqlalchemy.dialects",
-#         ]
-#     )
-# if ac.debug.cache:
-#     _loggers.extend(["httpx_caching"])
-# for _log in _loggers:
-#     _logger = logging.getLogger(_log)
-#     _logger.handlers.clear()
-#     _logger.handlers = [InterceptHandler(_logger.name)]
+if ac.debug.sql:
+    _loggers.extend(
+        [
+            "sqlalchemy.engine",
+            "sqlalchemy.orm",
+            "sqlalchemy.pool",
+            "sqlalchemy.dialects",
+        ]
+    )
+if ac.debug.cache:
+    _loggers.extend(["httpx_caching"])
+for _log in _loggers:
+    _logger = logging.getLogger(_log)
+    _logger.handlers.clear()
+    _logger.handlers = [InterceptHandler(_logger.name)]
 
 # if ac.debug.logger:
 #     logger.debug("debug")

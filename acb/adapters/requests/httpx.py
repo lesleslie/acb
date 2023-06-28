@@ -1,18 +1,15 @@
 from functools import cached_property
 from functools import lru_cache
 
-from acb.config import AppSettings
 from acb.config import ac
-
 from httpx import Response as HttpxResponse
 from httpx_cache import AsyncClient
 from httpx_cache.cache.redis import RedisCache
 from pydantic import AnyHttpUrl
+from . import RequestsBaseSettings
 
 
-class HttpxSettings(AppSettings):
-    cache_db: int = 2
-
+class RequestsSettings(RequestsBaseSettings):
     @cached_property
     def redis_connection(self):
         return AsyncClient(
@@ -22,11 +19,11 @@ class HttpxSettings(AppSettings):
         )
 
 
-class Httpx:
+class Requests:
     @staticmethod
     @lru_cache
     def connection():
-        return HttpxSettings.redis_connection
+        return RequestsSettings.redis_connection
 
     async def get(self, url: AnyHttpUrl) -> HttpxResponse:
         async with self.connection() as client:
@@ -43,6 +40,3 @@ class Httpx:
     async def delete(self, url: AnyHttpUrl) -> HttpxResponse:
         async with self.connection() as client:
             return await client.delete(url)
-
-
-requests = Httpx()
