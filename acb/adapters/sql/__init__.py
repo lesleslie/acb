@@ -1,6 +1,7 @@
 import typing as t
 from calendar import isleap
 from calendar import monthrange
+from urllib.parse import quote_plus
 
 # from concurrent.futures import as_completed
 # from concurrent.futures import ThreadPoolExecutor
@@ -19,8 +20,8 @@ from re import search
 
 import arrow
 from acb.config import ac
-from acb.config import load_adapter
 from acb.config import gen_password
+from acb.config import load_adapter
 from acb.config import Settings
 
 # from acb.logger import apformat
@@ -82,12 +83,11 @@ class SqlBaseSettings(Settings):
     #     return AsyncSession(self.async_engine, expire_on_commit=False)
 
     def model_post_init(self, __context: t.Any) -> None:
-        ic(self.user.get_secret_value())
         url_kwargs = dict(
             drivername=self.driver,
             username=self.user.get_secret_value(),
             password=self.password.get_secret_value(),
-            host=self.host.get_secret_value(),
+            host="127.0.0.1" if not ac.deployed else self.host.get_secret_value(),
             port=self.port,
             database=ac.app.name,
         )
@@ -146,7 +146,7 @@ class SqlBase:
         inspector = inspect(conn)
         return inspector.get_table_names()
 
-    async def __call__(self, demo: bool = False) -> None:
+    async def init(self, demo: bool = False) -> None:
         # print(debug.database)
         # print(type(debug.database))
         await self.create(demo)

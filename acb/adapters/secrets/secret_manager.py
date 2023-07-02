@@ -18,6 +18,7 @@ from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
 from google.oauth2.credentials import Credentials
+from icecream import ic
 from . import SecretsBaseSettings
 
 
@@ -31,9 +32,9 @@ class Secrets:
     authed_session: Optional[AuthorizedSession]
     creds: Optional[Credentials]
 
-    @staticmethod
-    def extract_secret_name(secret: str) -> str:
-        return Path(secret).parts[-1]
+    # @staticmethod
+    def extract_secret_name(self, secret_path: str) -> str:
+        return secret_path.split('/')[-1].removeprefix(self.prefix)
 
     async def get_access_token(self) -> str:
         self.creds.refresh(Request())
@@ -45,13 +46,14 @@ class Secrets:
         logger.debug(f"Secrets access token verified - {verified}")
         return verified
 
-    async def list(self) -> list:
-        request = ListSecretsRequest(parent=self.parent)
+    async def list(self, adapter: str) -> list:
+        request = ListSecretsRequest(
+            parent=self.parent, filter=f"{self.prefix}{adapter}_"
+        )
         client_secrets = await self.client.list_secrets(request=request)
         client_secrets = [
             self.extract_secret_name(secret.name) async for secret in client_secrets
         ]
-        client_secrets = [s for s in client_secrets if s.split("_")[0] == self.app_name]
         return client_secrets
 
     async def get(self, name: str) -> str:
@@ -95,21 +97,17 @@ class Secrets:
         if not ac.deployed:
             logger.debug(f"Deleted secret - {secret}")
 
-    async def load(
-        self,
-        name: str,
-    ) -> str:
-        secret = await self.get(name)
-        return secret.removeprefix(f"{self.app_name}_")
-
-    def __init__(self, project: str, app_name: str) -> None:
-        super().__init__()
+    async def init(self, project: str, app_name: str) -> None:
         self.project = project
         self.parent = f"projects/{project}"
         self.app_name = app_name
+        self.prefix = f"{app_name}_"
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             creds, projects = default()
         self.creds = creds
         self.client = SecretManagerServiceAsyncClient(credentials=self.creds)
         self.authed_session = AuthorizedSession(self.creds)
+
+
+secrets = Secrets()

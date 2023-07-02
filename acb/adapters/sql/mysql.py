@@ -2,6 +2,7 @@ from sqlalchemy.pool import NullPool
 from . import SqlBase
 from . import SqlBaseSettings
 import typing as t
+from icecream import ic
 
 
 class SqlSettings(SqlBaseSettings):
@@ -11,6 +12,7 @@ class SqlSettings(SqlBaseSettings):
     pool_pre_ping: bool = True
 
     def model_post_init(self, __context: t.Any) -> None:
+        super().model_post_init(self)
         self.poolclass = NullPool
         self.engine_kwargs = dict(
             poolclass=self.poolclass, pool_pre_ping=self.pool_pre_ping

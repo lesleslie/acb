@@ -40,3 +40,9 @@ class Requests:
     async def delete(self, url: AnyHttpUrl) -> HttpxResponse:
         async with self.connection() as client:
             return await client.delete(url)
+
+    async def init(self):
+        ...
+
+
+requests = Requests()
