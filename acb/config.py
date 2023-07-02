@@ -524,13 +524,13 @@ class AppConfig(BaseSettings, extra="allow"):
             except ModuleNotFoundError:
                 warn("no secrets adapter configured")
                 sys.exit()
-
             for adapter, module in self.enabled_adapters.items():
                 if adapter == "secrets":
                     continue
                 module = import_module(".".join(["acb", "adapters", adapter, module]))
                 adapter_settings = getattr(module, f"{camelize(adapter)}Settings")
                 initialized_settings = adapter_settings(_secrets_dir=self.secrets_path)
+                ic(adapter)
                 ic(initialized_settings.model_dump())
                 initialized_adapter_settings[adapter] = initialized_settings
             super().__init__(**initialized_adapter_settings)

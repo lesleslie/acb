@@ -1,3 +1,102 @@
+from . import StorageBaseSettings
+import typing as t
+from aiopathy import AsyncPathy
+from acb.config import ac
+from aiopathy import set_client_params
+from aiopathy import use_fs_cache
+from . import StorageBase
+from icecream import ic
+from acb.logger import logger
+from aiopath import AsyncPath
+# from google.cloud.exceptions import NotFound
+
+
+
+class StorageSettings(StorageBaseSettings):
+    ...
+
+
+
+
+class StorageBucket:
+    prefix: str = ac.app.name
+    cache_control: t.Optional[str] = None
+    user_project: str = ac.app.name  # used for billing
+    bucket: t.Optional[str]
+    path: t.Optional[AsyncPathy]
+
+
+    def __init__(self, bucket: str, prefix: str = None, **data: t.Any) -> None:
+        super().__init__(**data)
+        self.prefix = prefix if prefix else self.prefix
+        self.bucket = ac.storage.buckets[bucket]
+        self.path = AsyncPathy(f"gs://{self.bucket}/{self.prefix}/")
+
+    def save(self, obj_path: AsyncPath, data: t.Any) -> None:
+        stor_path = self.get_path(obj_path)
+        logger.debug(f"Saving {stor_path}...")
+        if isinstance(data, bytes):
+            stor_path.write_bytes(data)
+        else:
+            stor_path.write_text(data)
+        logger.debug(f"Saved - {stor_path}")
+
+    def get(self, obj_path: AsyncPath):
+        stor_path = self.get_path(obj_path)
+        logger.debug(f"Getting {stor_path}...")
+        # try:
+        data = stor_path.read_text()
+        # except NotFound:
+        #     raise FileNotFoundError
+        logger.debug(f"Got - {stor_path}")
+        return data
+
+    def stat(self, obj_path: AsyncPath):
+        return self.get_path(obj_path).stat()
+
+    def list(self, dir_path: AsyncPath):
+        return self.get_path(dir_path).rglob("*")
+
+    def exists(self, obj_path: AsyncPath):
+        return self.get_path(obj_path).exists()
+
+    def get_path(self, obj_path: AsyncPath) -> AsyncPath:
+        ic(self.path / "/".join(obj_path.parts[1:]))
+        return self.path / "/".join(obj_path.parts[1:])
+
+    async def get_url(self, obj_path: AsyncPath):
+        return str(self.get_path(obj_path).resolve()).replace(
+            "gs://", "https://storage.cloud.google.com/"
+        )
+
+
+class Storage(StorageBase):
+    def gcs(self, path):
+        return
+
+    async def init(self) -> t.NoReturn:
+        set_client_params("gcs", project=ac.app.project)
+        await use_fs_cache(root=ac.tmp / "storage")
+        for bucket in ac.storage.buckets:
+            ic(bucket)
+
+        # for bucket in [
+        #     b for b in self.__dict__.values() if isinstance(b, StorageBucket)
+        # ]:
+        #     ic(type(bucket))
+        #     logger.debug(f"{bucket.__name__.title()} initialized.")
+        # logger.info("Storage initialized.")
+
+
+storage = Storage()
+
+
+
+
+
+
+
+
 # import json
 # import os
 # import re

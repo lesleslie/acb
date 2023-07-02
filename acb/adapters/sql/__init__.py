@@ -1,7 +1,6 @@
 import typing as t
 from calendar import isleap
 from calendar import monthrange
-from urllib.parse import quote_plus
 
 # from concurrent.futures import as_completed
 # from concurrent.futures import ThreadPoolExecutor
@@ -29,7 +28,6 @@ from acb.logger import logger
 from aioconsole import ainput
 from aioconsole import aprint
 from aiopath import AsyncPath
-from icecream import ic
 from pydantic import BaseModel
 from pydantic import SecretStr
 

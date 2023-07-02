@@ -1,10 +1,18 @@
-from acb.config import ac
-from acb.config import AppSettings
+from acb.config import Settings
 from importlib import import_module
+from acb.config import load_adapter
+import typing as t
 
 
-class BaseStorageSettings(AppSettings):
+
+class StorageBaseSettings(Settings):
+    cloud: str
+    buckets: t.Optional[dict[str, str]] = None
+
+
+
+class StorageBase:
     ...
 
 
-stor = storage = import_module(ac.adapters.storage)
+storage = load_adapter("storage")
