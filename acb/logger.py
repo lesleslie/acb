@@ -22,13 +22,15 @@ from loguru import logger
 #     debug_mod = dict(ac.debug.model_fields).get(mod.stem)
 #     if debug_mod:
 #         if ac.deployed:
-#             return logger.patch(lambda record: record.update(name=mod.__name__)).debug(
-#                 s
+#             return (
+#             logger.patch(lambda record: record.update(
+#             name=mod.__name__)).debug(s)
 #             )
 #         return colorizedStderrPrint(s)
 #
 #
-# ic.configureOutput(prefix="    debug:  ", includeContext=True, outputFunction=log_debug)
+# ic.configureOutput(prefix="    debug:  ", includeContext=True,
+# outputFunction=log_debug)
 # if ac.deployed:
 #     ic.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
 

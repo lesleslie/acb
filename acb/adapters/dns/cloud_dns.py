@@ -47,8 +47,8 @@ class Dns:
             )
             for record in records
         ]
-        if ac.debug.dns or ac.debug.mail:
-            await apformat(records)
+        # if ac.debug.dns or ac.debug.mail:
+        #     await apformat(records)
         return records
 
     async def create_dns_records(

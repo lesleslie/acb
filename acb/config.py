@@ -53,7 +53,9 @@ def gen_password(size: int) -> str:
 #     calling_class = getouterframes(currentframe())
 #     for frame in [f for f in calling_class if f]:
 #         if frame.code_context[0].startswith("class"):
-#             secret_class = search("class\s(\w+)Se\w+\(", frame.code_context[0]).group(1)
+#             secret_class = (search("class\s(\w+)Se\w+\(", frame.code_context[
+#             0]).group(1)
+#               )
 #             return f"{secret_class.lower()}_{raw_name}"
 
 
@@ -278,7 +280,7 @@ class ManagerSecretsSource(FileSecretsSource):
         unfetched_secrets = {
             n: v for n, v in model_secrets.items() if n not in app_secrets
         }
-        if len(unfetched_secrets):
+        if unfetched_secrets:
             manager = await self.get_manager()
             manager_secrets = await manager.list(self.adapter_name)
             for field_key, field_value in unfetched_secrets.items():
@@ -421,8 +423,7 @@ class Settings(BaseModel):
         )
         if sources:
             return deep_update(*reversed([await source() for source in sources]))
-        else:
-            return {}
+        return {}
 
     @classmethod
     def settings_customise_sources(

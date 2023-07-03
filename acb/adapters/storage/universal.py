@@ -1,21 +1,22 @@
-from . import StorageBaseSettings
 import typing as t
+
 from aiopathy import AsyncPathy
-from acb.config import ac
 from aiopathy import set_client_params
 from aiopathy import use_fs_cache
-from . import StorageBase
-from icecream import ic
+
+from acb.config import ac
 from acb.logger import logger
 from aiopath import AsyncPath
-# from google.cloud.exceptions import NotFound
+from icecream import ic
+from . import StorageBase
+from . import StorageBaseSettings
 
+
+# from google.cloud.exceptions import NotFound
 
 
 class StorageSettings(StorageBaseSettings):
     ...
-
-
 
 
 class StorageBucket:
@@ -25,10 +26,9 @@ class StorageBucket:
     bucket: t.Optional[str]
     path: t.Optional[AsyncPathy]
 
-
     def __init__(self, bucket: str, prefix: str = None, **data: t.Any) -> None:
         super().__init__(**data)
-        self.prefix = prefix if prefix else self.prefix
+        self.prefix = prefix or self.prefix
         self.bucket = ac.storage.buckets[bucket]
         self.path = AsyncPathy(f"gs://{self.bucket}/{self.prefix}/")
 
@@ -71,7 +71,7 @@ class StorageBucket:
 
 
 class Storage(StorageBase):
-    def gcs(self, path):
+    def gcs(self, path) -> None:
         return
 
     async def init(self) -> t.NoReturn:
@@ -89,13 +89,6 @@ class Storage(StorageBase):
 
 
 storage = Storage()
-
-
-
-
-
-
-
 
 # import json
 # import os

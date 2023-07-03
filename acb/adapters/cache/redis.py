@@ -35,7 +35,7 @@ class Cache(CashewsCache):
             secure_salt=ac.app.secure_salt.get_secret_value(),
         )
 
-    async def init(self, *args, **kwargs):
+    async def init(self, *args, **kwargs) -> None:
         await super().init(
             ac.cache._url,
             password=ac.cache.password.get_secret_value(),

@@ -44,7 +44,7 @@ pythonVersion = "3.11"
 
 [project]
 name = "acb"
-version = "0.1.8"
+version = "0.1.10"
 description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",
@@ -61,10 +61,11 @@ dependencies = [
     "google-cloud-secret-manager>=2.16.1",
     "msgspec[toml]>=0.16.0",
     "tomli-w>=1.0.0",
-    "pydantic>=2.0b3",
-    "pydantic-settings @ git+https://github.com/pydantic/pydantic-settings/",
+    "pydantic>=2.0",
     "nest-asyncio>=1.5.6",
     "async-lru>=2.0.2",
+    "aiopathy>=0.1.1",
+    "pydantic-settings>=2.0.0",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -85,7 +86,7 @@ cache = [
     "cashews[redis]>=6.2.0",
 ]
 storage = [
-    "google-cloud-storage>=2.9.0",
+    "google-cloud-storage>=2.10.0",
 ]
 dns = [
     "google-cloud-dns>=0.34.1",
@@ -102,6 +103,8 @@ secrets = [
 sql = [
     "sqlalchemy>=2.0.17",
     "sqlalchemy-utils>=0.41.1",
+    "mysqlclient>=2.2.0",
+    "asyncmy>=0.2.8",
 ]
 
 [build-system]

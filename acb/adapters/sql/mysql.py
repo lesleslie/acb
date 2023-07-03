@@ -2,7 +2,6 @@ from sqlalchemy.pool import NullPool
 from . import SqlBase
 from . import SqlBaseSettings
 import typing as t
-from icecream import ic
 
 
 class SqlSettings(SqlBaseSettings):

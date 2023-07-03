@@ -41,7 +41,7 @@ class Requests:
         async with self.connection() as client:
             return await client.delete(url)
 
-    async def init(self):
+    async def init(self) -> None:
         ...
 
 

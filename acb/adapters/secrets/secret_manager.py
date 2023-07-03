@@ -1,5 +1,4 @@
 from contextlib import suppress
-from pathlib import Path
 from secrets import compare_digest
 from typing import Optional
 from warnings import catch_warnings
@@ -18,7 +17,6 @@ from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
 from google.oauth2.credentials import Credentials
-from icecream import ic
 from . import SecretsBaseSettings
 
 
@@ -34,7 +32,7 @@ class Secrets:
 
     # @staticmethod
     def extract_secret_name(self, secret_path: str) -> str:
-        return secret_path.split('/')[-1].removeprefix(self.prefix)
+        return secret_path.split("/")[-1].removeprefix(self.prefix)
 
     async def get_access_token(self) -> str:
         self.creds.refresh(Request())

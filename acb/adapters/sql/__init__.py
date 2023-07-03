@@ -262,7 +262,7 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
         for dt in dates:
             comp_date = datetime.fromtimestamp(int(dt))
             comparison = method_mapping.get(period)(comp_date)
-            ref_date = datetime.fromtimestamp(int(reference))
+            ref_date = datetime.fromtimestamp(reference)
             if comparison != method_mapping.get(period)(ref_date):
                 reference = dt
                 yield dt
