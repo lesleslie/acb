@@ -20,7 +20,6 @@ from re import search
 import arrow
 from acb.config import ac
 from acb.config import gen_password
-from acb.config import load_adapter
 from acb.config import Settings
 
 # from acb.logger import apformat
@@ -159,7 +158,7 @@ class SqlBase:
         logger.info("Database initialized.")
 
 
-sql = load_adapter("sql")
+# sql = load_adapter("sql")
 
 # class AppBaseModel(SQLModel):
 #     __table_args__ = {"extend_existing": True}

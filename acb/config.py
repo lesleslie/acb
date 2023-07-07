@@ -3,6 +3,7 @@ import sys
 import typing as t
 from abc import ABC
 from abc import abstractmethod
+from contextlib import suppress
 from importlib import import_module
 from pathlib import Path
 from random import choice
@@ -36,6 +37,8 @@ from pydantic_settings.sources import SettingsError
 from pydantic_settings.utils import path_type_label
 from pydantic_settings.utils import path_type_labels
 
+nest_asyncio.apply()
+
 # deployed = True if basedir.name == "srv" else False
 deployed = True if Path.cwd().name == "app" else False
 
@@ -59,11 +62,20 @@ def gen_password(size: int) -> str:
 #             return f"{secret_class.lower()}_{raw_name}"
 
 
-def load_adapter(adapter) -> t.Any:
-    adapter_module = import_module(
-        f"acb.adapters.{adapter}.{ac.enabled_adapters[adapter]}"
+def load_adapter(adapter: str, settings: bool = False) -> t.Any:
+    with suppress(KeyError):
+        module = ac.enabled_adapters[adapter]
+        adapter_module = import_module(".".join(["acb", "adapters", adapter, module]))
+        if settings:
+            return getattr(adapter_module, adapter), getattr(
+                adapter_module, f"{camelize(adapter)}Settings"
+            )
+        return getattr(adapter_module, adapter)
+    warn(
+        "AppConfig is not initialized. Please"
+        " run `await ac.init()` before importing."
     )
-    return getattr(adapter_module, adapter)
+    raise SystemExit(f"Adapter {adapter} not found.")
 
 
 class PydanticBaseSettingsSource(ABC):
@@ -81,11 +93,11 @@ class PydanticBaseSettingsSource(ABC):
     def field_is_complex(field: FieldInfo) -> bool:
         return _annotation_is_complex(field.annotation, field.metadata)
 
-    def prepare_field_value(
+    async def prepare_field_value(
         self, field_name: str, field: FieldInfo, value: t.Any, value_is_complex: bool
     ) -> t.Any:
-        if self.field_is_complex(field) or value_is_complex:
-            return load.json(value)
+        if (self.field_is_complex(field) or value_is_complex) and value:
+            return await load.json(value)
         return value
 
     @abstractmethod
@@ -242,7 +254,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                     f'source "{self.__class__.__name__}"'
                 ) from e
             try:
-                field_value = self.prepare_field_value(
+                field_value = await self.prepare_field_value(
                     field_name, field, field_value, value_is_complex
                 )
             except ValueError:
@@ -262,10 +274,10 @@ class FileSecretsSource(PydanticBaseSettingsSource):
 class ManagerSecretsSource(FileSecretsSource):
     adapter_name: t.Optional[str] = None
 
-    @alru_cache
+    @alru_cache(maxsize=1)
     async def get_manager(self):
         global project, app_name
-        manager = load_adapter("secrets")
+        manager = load_adapter("secrets")[0]
         await manager.init(project=project, app_name=app_name)
         return manager
 
@@ -303,7 +315,7 @@ class ManagerSecretsSource(FileSecretsSource):
     ) -> t.Tuple[t.Any, str, bool]:
         return field, field_name, False
 
-    def prepare_field_value(
+    async def prepare_field_value(
         self, field_name: str, field: FieldInfo, value: t.Any, value_is_complex: bool
     ) -> str:
         return value
@@ -356,7 +368,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
     ) -> t.Tuple[t.Any, str, bool]:
         return field, field_name, False
 
-    def prepare_field_value(
+    async def prepare_field_value(
         self, field_name: str, field: FieldInfo, value: t.Any, value_is_complex: bool
     ) -> t.Any:
         return value
@@ -370,7 +382,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             field_value, field_key, value_is_complex = self.get_field_value(
                 field, field_name
             )
-            field_value = self.prepare_field_value(
+            field_value = await self.prepare_field_value(
                 field_name, field, field_value, value_is_complex
             )
             if field_value is not None:
@@ -379,7 +391,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseModel):
-    model_config = SettingsConfigDict(
+    model_config: SettingsConfigDict = SettingsConfigDict(
         extra="allow",
         arbitrary_types_allowed=True,
         validate_default=True,
@@ -393,7 +405,6 @@ class Settings(BaseModel):
         _secrets_dir: str | Path | None = None,
         **values: t.Any,
     ) -> None:
-        nest_asyncio.apply()
         build_settings = __pydantic_self__._settings_build_values(
             values,
             _secrets_dir=_secrets_dir,
@@ -472,8 +483,9 @@ class AppConfig(BaseSettings, extra="allow"):
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list = []
     enabled_adapters: dict[str, t.Any] = {}
-    app: t.Optional[Settings] = None
-    debug: t.Optional[Settings] = None
+    # app: t.Optional[Settings] = None
+    # debug: t.Optional[Settings] = None
+    secrets_path: t.Optional[AsyncPath] = None
 
     def model_post_init(self, __context: t.Any) -> None:
         self.tmp = self.basedir / "tmp"
@@ -482,7 +494,7 @@ class AppConfig(BaseSettings, extra="allow"):
         self.secrets_path = self.basedir / "tmp" / "secrets"
         self.deployed = True if self.basedir.name == "app" else deployed
 
-    async def init(self, deployed: bool = False) -> None:
+    async def init(self, deployed: bool = False) -> "AppConfig":
         global enabled_adapters
         self.deployed = deployed
         for path in (
@@ -494,49 +506,51 @@ class AppConfig(BaseSettings, extra="allow"):
             await path.mkdir(exist_ok=True)
         mod_dir = self.basedir / "__pypackages__"
         sys.path.append(str(mod_dir))
-        initialized_adapter_settings = {}
+        base_settings = {}
         if self.basedir.name != "acb":
-            self.adapter_categories = [
+            adapter_categories = [
                 path.stem
                 async for path in (self.pkgdir / "adapters").iterdir()
                 if path.is_dir and not path.name.startswith("__")
             ]
-            initialized_adapter_settings["adapter_categories"] = self.adapter_categories
             if not await self.adapter_settings_path.exists() and not self.deployed:
                 await dump.yaml(
                     {cat: None for cat in self.adapter_categories},
                     self.adapter_settings_path,
                 )
-            self.available_adapters = await load.yaml(self.adapter_settings_path)
-            initialized_adapter_settings["available_adapters"] = self.available_adapters
-            self.enabled_adapters = {
+            available_adapters = await load.yaml(self.adapter_settings_path)
+            enabled_adapters = {
                 c: a
-                for c, a in self.available_adapters.items()
-                if c in self.adapter_categories and a
+                for c, a in available_adapters.items()
+                if c in adapter_categories and a
             }
-            initialized_adapter_settings["enabled_adapters"] = self.enabled_adapters
-            self.debug = DebugSettings()
-            initialized_adapter_settings["debug"] = self.debug
-            ic(self.debug.model_dump())
+            ic(enabled_adapters)
+            debug = DebugSettings()
+            ic(debug.model_dump())
             try:
-                self.app = AppSettings(_secrets_dir=self.secrets_path)
-                initialized_adapter_settings["app"] = self.app
-                ic(self.app.model_dump())
+                app = AppSettings(_secrets_dir=self.secrets_path)
+                ic(app.model_dump())
             except ModuleNotFoundError:
                 warn("no secrets adapter configured")
                 sys.exit()
-            for adapter, module in self.enabled_adapters.items():
-                if adapter == "secrets":
-                    continue
-                module = import_module(".".join(["acb", "adapters", adapter, module]))
-                adapter_settings = getattr(module, f"{camelize(adapter)}Settings")
-                initialized_settings = adapter_settings(_secrets_dir=self.secrets_path)
-                ic(adapter)
-                ic(initialized_settings.model_dump())
-                initialized_adapter_settings[adapter] = initialized_settings
-            super().__init__(**initialized_adapter_settings)
-            for adapter in [a for a in self.enabled_adapters if a != "secrets"]:
-                await load_adapter(adapter).init()
+            base_settings.update(
+                dict(
+                    app=app,
+                    debug=debug,
+                    available_adapters=available_adapters,
+                    enabled_adapters=enabled_adapters,
+                    adapter_categories=adapter_categories,
+                )
+            )
+            super().__init__(**base_settings)
+            del enabled_adapters["secrets"]
+            for adapter in enabled_adapters:
+                module_adapter, module_settings = load_adapter(adapter, settings=True)
+                ic(module_settings(_secrets_dir=self.secrets_path).model_dump())
+                base_settings[adapter] = module_settings(_secrets_dir=self.secrets_path)
+                super().__init__(**base_settings)
+                await module_adapter.init()
+        return self
 
 
 ac = AppConfig()

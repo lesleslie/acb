@@ -1,4 +1,3 @@
-from acb.config import load_adapter
 from acb.config import Settings
 from pydantic import field_validator
 
@@ -13,4 +12,4 @@ class RequestsBaseSettings(Settings):
         return 2
 
 
-requests = load_adapter("requests")
+# requests = load_adapter("requests")

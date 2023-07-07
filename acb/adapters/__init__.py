@@ -1,5 +1,5 @@
-from .cache import cache
+from acb.config import ac
+from acb.config import load_adapter
 
-__all__ = [
-    "cache",
-]
+for adapter in ac.enabled_adapters:
+    globals()[adapter] = load_adapter(adapter)

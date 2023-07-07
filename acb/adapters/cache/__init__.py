@@ -2,12 +2,11 @@ import typing as t
 
 from acb.config import ac
 from acb.config import gen_password
-from acb.config import load_adapter
 from acb.config import Settings
+from pydantic import AnyUrl
 from pydantic import field_validator
 from pydantic import RedisDsn
 from pydantic import SecretStr
-from pydantic import AnyUrl
 
 
 class CacheBaseSettings(Settings):
@@ -32,6 +31,3 @@ class CacheBaseSettings(Settings):
         if v < 3 and v != 1:
             raise ValueError("must be greater than 2 (0-2 are reserved)")
         return 1
-
-
-cache = load_adapter("cache")
