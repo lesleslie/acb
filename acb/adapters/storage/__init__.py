@@ -1,20 +1,16 @@
 import asyncio
 import typing as t
 
-# from abc import ABC
-# from abc import abstractmethod
-from datetime import datetime
-
-import atexit
 from acb.config import ac
 from acb.config import Settings
 from acb.logger import logger
 from aiopath import AsyncPath
 from google.cloud.exceptions import NotFound
 from pydantic import HttpUrl
-from fsspec.asyn import get_running_loop
-from fsspec.asyn import AsyncFileSystem
-from icecream import ic
+
+
+# from abc import ABC
+# from abc import abstractmethod
 
 
 # CORS policy for upload bucket - upload-cors.json
@@ -63,11 +59,11 @@ class StorageBucket:
     def get_url(self, path: AsyncPath):
         return self.client.url(self.get_path(path))
 
-    def get_date_created(self, path: AsyncPath) -> datetime:
-        return self.client.created(self.get_path(path))
-
-    def get_date_modified(self, path: AsyncPath) -> datetime:
-        return self.client.modified(self.get_path(path))
+    # def get_date_created(self, path: AsyncPath) -> datetime:
+    #     return self.client.created(self.get_path(path))
+    #
+    # def get_date_modified(self, path: AsyncPath) -> datetime:
+    #     return self.client.modified(self.get_path(path))
 
     async def get_size(self, path: AsyncPath) -> int:
         return await self.client._size(self.get_path(path))
@@ -123,22 +119,13 @@ class StorageBase:
     session: t.Any
 
     async def init(self) -> t.NoReturn:
-        loop = asyncio.get_running_loop() or asyncio.new_event_loop()
-        ic(loop)
-        ic(loop.is_running())
-        ic(loop.is_closed())
+        loop = asyncio.get_running_loop()
         self.client = self.client(asynchronous=True, loop=loop)
-        session = await self.client._set_session()
         for bucket in ac.storage.buckets:
             setattr(self, bucket, StorageBucket(self.client, bucket))
             logger.debug(f"{bucket.title()} storage bucket initialized.")
         logger.info("Storage initialized.")
 
-        @atexit.register
-        def close_storage_session():
-            logger.debug("Closing storage session...")
-            self.client.close_session(loop, session)
-            logger.debug("Storage session closed.")
 
 # class BaseStorage:  # pragma: no cover
 #     def get_name(self, name: str) -> str:
