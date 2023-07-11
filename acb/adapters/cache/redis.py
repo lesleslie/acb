@@ -1,12 +1,15 @@
+import atexit
 import typing as t
 
 from acb.actions import dump
 from acb.actions import load
 from acb.config import ac
+from acb.logger import logger
 from cashews import Cache as CashewsCache
 from cashews.serialize import register_type
 from pydantic import RedisDsn
 from . import CacheBaseSettings
+import asyncio_atexit
 
 
 class CacheSettings(CacheBaseSettings):
@@ -43,6 +46,12 @@ class Cache(CashewsCache):
             client_side_prefix=f"{ac.app.name}:",
         )
         register_type(t.Any, self.encoder, self.decoder)
+
+        @asyncio_atexit.register
+        async def close_cache_session():
+            logger.debug("Closing cache session...")
+            await self.close()
+            logger.debug("Cache session closed.")
 
 
 cache = Cache()

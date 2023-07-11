@@ -1,15 +1,20 @@
+import asyncio
 import typing as t
 
+# from abc import ABC
+# from abc import abstractmethod
+from datetime import datetime
+
+import atexit
 from acb.config import ac
 from acb.config import Settings
 from acb.logger import logger
-from aiopathy import AsyncPathy
-from aiopathy import use_fs_cache
-from icecream import ic
+from aiopath import AsyncPath
+from google.cloud.exceptions import NotFound
 from pydantic import HttpUrl
-
-
-# from google.cloud.exceptions import NotFound
+from fsspec.asyn import get_running_loop
+from fsspec.asyn import AsyncFileSystem
+from icecream import ic
 
 
 # CORS policy for upload bucket - upload-cors.json
@@ -30,84 +35,110 @@ class StorageBaseSettings(Settings):
     prefix: t.Optional[str] = None
     user_project: t.Optional[str] = None  # used for billing
     buckets: dict[str, str] = {}
-    use_fs_cache: bool = False
 
     def model_post_init(self, __context: t.Any) -> None:
         self.prefix: str = ac.app.name
         self.user_project: str = ac.app.name  # used for billing
 
 
+class StorageBucket:
+    client: t.Any
+    bucket: t.Optional[str]
+    root: t.Optional[AsyncPath]
+    prefix: str = ""
+    cache_control: t.Optional[str] = None
+
+    def __init__(self, client, bucket: str, prefix: str = None) -> None:
+        self.client = client
+        self.prefix = prefix or ac.app.name or self.prefix
+        self.bucket = ac.storage.buckets[bucket]
+        self.root = AsyncPath(f"{self.bucket}/{self.prefix}")
+
+    def get_name(self, path: AsyncPath) -> str:
+        return path.name
+
+    def get_path(self, path: AsyncPath) -> str:
+        return str(self.root / path)
+
+    def get_url(self, path: AsyncPath):
+        return self.client.url(self.get_path(path))
+
+    def get_date_created(self, path: AsyncPath) -> datetime:
+        return self.client.created(self.get_path(path))
+
+    def get_date_modified(self, path: AsyncPath) -> datetime:
+        return self.client.modified(self.get_path(path))
+
+    async def get_size(self, path: AsyncPath) -> int:
+        return await self.client._size(self.get_path(path))
+
+    async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> str:
+        return await self.client._sign(self.get_path(path), expires=expires)
+
+    async def stat(self, path: AsyncPath):
+        return await self.client._info(self.get_path(path))
+
+    async def list(self, dir_path: AsyncPath):
+        return await self.client._ls(self.get_path(dir_path))
+
+    async def exists(self, path: AsyncPath):
+        return await self.client._exists(self.get_path(path))
+
+    async def create_bucket(self, path: AsyncPath):
+        return await self.client._mkdir(
+            self.get_path(path),
+            create_parents=True,
+            enable_versioning=False,
+            # acl="public-read",
+        )
+
+    async def get(self, path: AsyncPath):
+        stor_path = self.get_path(path)
+        logger.debug(f"Getting {stor_path}...")
+        try:
+            data = await self.client._cat_file(stor_path)
+        except NotFound:
+            raise FileNotFoundError  # for jinja loaders
+        logger.debug(f"Got - {stor_path}")
+        return data
+
+    async def save(self, path: AsyncPath, data: t.Any) -> None:
+        stor_path = self.get_path(path)
+        logger.debug(f"Saving {stor_path}...")
+        if isinstance(data, bytes):
+            await self.client._pipe_file(stor_path, data)
+        else:
+            await self.client._write_text(stor_path, data)
+        logger.debug(f"Saved - {stor_path}")
+
+    async def delete(self, path: AsyncPath):
+        stor_path = self.get_path(path)
+        logger.debug(f"Deleting {stor_path}...")
+        await self.client._rm_file(stor_path)
+        logger.debug(f"Deleted - {stor_path}")
+
+
 class StorageBase:
+    client: t.Any
+    session: t.Any
+
     async def init(self) -> t.NoReturn:
-        if ac.storage.use_fs_cache:
-            await use_fs_cache(root=ac.tmp / "storage")
+        loop = asyncio.get_running_loop() or asyncio.new_event_loop()
+        ic(loop)
+        ic(loop.is_running())
+        ic(loop.is_closed())
+        self.client = self.client(asynchronous=True, loop=loop)
+        session = await self.client._set_session()
         for bucket in ac.storage.buckets:
-            ic(bucket)
-            # setattr(self, bucket, StorageBucket(bucket))
-            setattr(
-                self,
-                bucket,
-                AsyncPathy(
-                    f"{ac.storage.scheme}://{ac.storage.buckets[bucket]}/"
-                    f"{ac.storage.prefix}/"
-                ),
-            )
+            setattr(self, bucket, StorageBucket(self.client, bucket))
             logger.debug(f"{bucket.title()} storage bucket initialized.")
         logger.info("Storage initialized.")
 
-
-# storage = load_adapter("storage")
-
-
-# class StorageBucket:
-#     bucket: t.Optional[str]
-#     path: t.Optional[AsyncPathy]
-#     prefix: str = ""
-#     cache_control: t.Optional[str] = None
-#
-#     def __init__(self, bucket: str, prefix: str = None, **data: t.Any) -> None:
-#         super().__init__(**data)
-#         self.prefix = prefix or self.prefix
-#         self.bucket = ac.storage.buckets[bucket]
-#         self.path = AsyncPathy(f"{ac.storage.scheme}://{self.bucket}/{self.prefix}/")
-#
-#     def save(self, obj_path: AsyncPath, data: t.Any) -> None:
-#         stor_path = self.get_path(obj_path)
-#         logger.debug(f"Saving {stor_path}...")
-#         if isinstance(data, bytes):
-#             stor_path.write_bytes(data)
-#         else:
-#             stor_path.write_text(data)
-#         logger.debug(f"Saved - {stor_path}")
-#
-#     def get(self, obj_path: AsyncPath):
-#         stor_path = self.get_path(obj_path)
-#         logger.debug(f"Getting {stor_path}...")
-#         # try:
-#         data = stor_path.read_text()
-#         # except NotFound:
-#         #     raise FileNotFoundError
-#         logger.debug(f"Got - {stor_path}")
-#         return data
-#
-#     def stat(self, obj_path: AsyncPath):
-#         return self.get_path(obj_path).stat()
-#
-#     def list(self, dir_path: AsyncPath):
-#         return self.get_path(dir_path).rglob("*")
-#
-#     def exists(self, obj_path: AsyncPath):
-#         return self.get_path(obj_path).exists()
-#
-#     def get_path(self, obj_path: AsyncPath) -> AsyncPath:
-#         ic(self.path / "/".join(obj_path.parts[1:]))
-#         return self.path / "/".join(obj_path.parts[1:])
-#
-#     async def get_url(self, obj_path: AsyncPath):
-#         return str(self.get_path(obj_path).resolve()).replace(
-#             f"{ac.storage.scheme}://", ac.storage.https_url
-#         )
-
+        @atexit.register
+        def close_storage_session():
+            logger.debug("Closing storage session...")
+            self.client.close_session(loop, session)
+            logger.debug("Storage session closed.")
 
 # class BaseStorage:  # pragma: no cover
 #     def get_name(self, name: str) -> str:

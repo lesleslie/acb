@@ -204,6 +204,8 @@ class FileSecretsSource(PydanticBaseSettingsSource):
     async def get_field_value(
         self, field: FieldInfo, field_name: str
     ) -> tuple[t.Any, str, bool]:
+        field_key: str = ""
+        value_is_complex: bool = False
         for field_key, env_name, value_is_complex in self._extract_field_info(
             field, field_name
         ):
