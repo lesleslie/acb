@@ -1,6 +1,7 @@
-import atexit
 import typing as t
+import asyncio
 
+import asyncio_atexit
 from acb.actions import dump
 from acb.actions import load
 from acb.config import ac
@@ -9,7 +10,7 @@ from cashews import Cache as CashewsCache
 from cashews.serialize import register_type
 from pydantic import RedisDsn
 from . import CacheBaseSettings
-import asyncio_atexit
+from icecream import ic
 
 
 class CacheSettings(CacheBaseSettings):
@@ -48,8 +49,10 @@ class Cache(CashewsCache):
         register_type(t.Any, self.encoder, self.decoder)
 
         @asyncio_atexit.register
-        async def close_cache_session():
+        async def close_cache_session() -> None:
             logger.debug("Closing cache session...")
+            loop = asyncio.get_running_loop()
+            ic(loop.is_running())
             await self.close()
             logger.debug("Cache session closed.")
 

@@ -6,7 +6,6 @@ from acb.config import Settings
 from acb.logger import logger
 from aiopath import AsyncPath
 from google.cloud.exceptions import NotFound
-from pydantic import HttpUrl
 
 
 # from abc import ABC
@@ -26,8 +25,6 @@ from pydantic import HttpUrl
 
 
 class StorageBaseSettings(Settings):
-    scheme: t.Literal["gs", "s3", "azure"]
-    https_url: HttpUrl
     prefix: t.Optional[str] = None
     user_project: t.Optional[str] = None  # used for billing
     buckets: dict[str, str] = {}
@@ -59,19 +56,19 @@ class StorageBucket:
     def get_url(self, path: AsyncPath):
         return self.client.url(self.get_path(path))
 
-    # def get_date_created(self, path: AsyncPath) -> datetime:
-    #     return self.client.created(self.get_path(path))
-    #
-    # def get_date_modified(self, path: AsyncPath) -> datetime:
-    #     return self.client.modified(self.get_path(path))
+    async def get_date_created(self, path: AsyncPath) -> str:
+        return (await self.stat(path))["timeCreated"]
+
+    async def get_date_updated(self, path: AsyncPath) -> str:
+        return (await self.stat(path))["updated"]
 
     async def get_size(self, path: AsyncPath) -> int:
-        return await self.client._size(self.get_path(path))
+        return (await self.stat(path))["size"]
 
     async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> str:
         return await self.client._sign(self.get_path(path), expires=expires)
 
-    async def stat(self, path: AsyncPath):
+    async def stat(self, path: AsyncPath) -> dict:
         return await self.client._info(self.get_path(path))
 
     async def list(self, dir_path: AsyncPath):
@@ -88,26 +85,23 @@ class StorageBucket:
             # acl="public-read",
         )
 
-    async def get(self, path: AsyncPath):
+    async def read(self, path: AsyncPath):
         stor_path = self.get_path(path)
         logger.debug(f"Getting {stor_path}...")
         try:
             data = await self.client._cat_file(stor_path)
-        except NotFound:
+        except (NotFound, FileNotFoundError):
             raise FileNotFoundError  # for jinja loaders
         logger.debug(f"Got - {stor_path}")
         return data
 
-    async def save(self, path: AsyncPath, data: t.Any) -> None:
+    async def write(self, path: AsyncPath, data: t.Any) -> None:
         stor_path = self.get_path(path)
         logger.debug(f"Saving {stor_path}...")
-        if isinstance(data, bytes):
-            await self.client._pipe_file(stor_path, data)
-        else:
-            await self.client._write_text(stor_path, data)
+        await self.client._pipe_file(stor_path, data)
         logger.debug(f"Saved - {stor_path}")
 
-    async def delete(self, path: AsyncPath):
+    async def delete(self, path: AsyncPath) -> None:
         stor_path = self.get_path(path)
         logger.debug(f"Deleting {stor_path}...")
         await self.client._rm_file(stor_path)
@@ -116,7 +110,7 @@ class StorageBucket:
 
 class StorageBase:
     client: t.Any
-    session: t.Any
+    # session: t.Any
 
     async def init(self) -> t.NoReturn:
         loop = asyncio.get_running_loop()

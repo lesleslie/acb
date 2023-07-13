@@ -52,16 +52,6 @@ def gen_password(size: int) -> str:
     return "".join(choice(chars) for _ in range(size))
 
 
-# def secret_alias(raw_name: str) -> str:
-#     calling_class = getouterframes(currentframe())
-#     for frame in [f for f in calling_class if f]:
-#         if frame.code_context[0].startswith("class"):
-#             secret_class = (search("class\s(\w+)Se\w+\(", frame.code_context[
-#             0]).group(1)
-#               )
-#             return f"{secret_class.lower()}_{raw_name}"
-
-
 def load_adapter(adapter: str, settings: bool = False) -> t.Any:
     with suppress(KeyError):
         module = ac.enabled_adapters[adapter]
@@ -336,7 +326,7 @@ class ManagerSecretsSource(FileSecretsSource):
 class YamlSettingsSource(PydanticBaseSettingsSource):
     adapter_name: t.Optional[str] = None
 
-    @alru_cache
+    # @alru_cache
     async def load_yml_settings(self) -> dict:
         global project, app_name
         if self.adapter_name == "secrets":
@@ -399,7 +389,6 @@ class Settings(BaseModel):
         validate_default=True,
         secrets_dir=None,
         protected_namespaces=("model_", "settings_"),
-        # alias_generator=secret_alias,
     )
 
     def __init__(
@@ -485,8 +474,6 @@ class AppConfig(BaseSettings, extra="allow"):
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list = []
     enabled_adapters: dict[str, t.Any] = {}
-    # app: t.Optional[Settings] = None
-    # debug: t.Optional[Settings] = None
     secrets_path: t.Optional[AsyncPath] = None
 
     def model_post_init(self, __context: t.Any) -> None:
@@ -556,21 +543,3 @@ class AppConfig(BaseSettings, extra="allow"):
 
 
 ac = AppConfig()
-
-# class InspectStack(BaseModel):
-#     @staticmethod
-#     def calling_function():
-#         frm = stack()[2]
-#         return AsyncPath(getmodule(frm[0]).__file__).stem
-#
-#     @staticmethod
-#     def calling_page(calling_frame):
-#         calling_stack = getouterframes(calling_frame)
-#         page = ""
-#         for f in calling_stack:
-#             if f[3] == "render_template_string":
-#                 page = getargvalues(f[0]).locals["context"]["page"]
-#         return page
-#
-#
-# inspect_ = InspectStack()
