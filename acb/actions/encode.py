@@ -14,6 +14,12 @@ from itsdangerous import Serializer as SecureSerializer
 
 
 class AcbEncoder:
+    json: t.Callable[..., t.Any]
+    yaml: t.Callable[..., t.Any]
+    msgpack: t.Callable[..., t.Any]
+    toml: t.Callable[..., t.Any]
+    pickle: t.Callable[..., t.Any]
+
     serializers: dict = dict(
         json=msgspec.json,
         yaml=msgspec.yaml,
@@ -76,8 +82,8 @@ class AcbEncoder:
         path: t.Optional[AsyncPath] = None,
         # sort_keys: bool = True,
         use_list: bool = False,
-        secret_key: str = None,
-        secure_salt: str = None,
+        secret_key: t.Optional[str] = None,
+        secure_salt: t.Optional[str] = None,
         **kwargs,
     ) -> dict | bytes:
         action, serializer = self.get_vars(sys._getframe(1))
@@ -93,8 +99,8 @@ class AcbEncoder:
             action,
             serializer,
             use_list,
-            **kwargs
-            # obj, path, action, serializer, sort_keys, use_list, **kwargs
+            # sort_keys,
+            **kwargs,
         )
 
 
