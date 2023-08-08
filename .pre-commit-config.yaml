@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.7.4  # a PDM release exposing the hook
+    rev: 2.8.2  # a PDM release exposing the hook
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -17,34 +17,35 @@ repos:
       - id: check-added-large-files
         name: check-added-large-files
   - repo: https://github.com/psf/black
-    rev: '23.3.0'
+    rev: '23.7.0'
     hooks:
       - id: black
         language_version: python3.11
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.272
+    rev: v0.0.283
     hooks:
       - id: ruff
   - repo: https://github.com/fredrikaverpil/creosote
-    rev: v2.6.2
+    rev: v2.6.3
     hooks:
       - id: creosote
-        args: [--paths, "acb", --exclude-deps, "pdm-bump", "tomli-w"]
+        args: [--paths, "acb", --exclude-deps, "pdm-bump", "tomli-w", "google-api-core", "python-ulid"]
   - repo: https://github.com/ikamensh/flynt/
-    rev: '0.78'
+    rev: '1.0.1'
     hooks:
       - id: flynt
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.2.5
     hooks:
       - id: codespell
         additional_dependencies:
           - tomli
+        args: [--ignore-words-list, "crate"]
   - repo: local
     hooks:
       - id: pyanalyze
         name: pyanalyze
-        entry: python -m pyanalyze
+        entry: python -m pyanalyze -v -A
         language: python
         files: \.py$
         additional_dependencies:
@@ -69,11 +70,11 @@ repos:
           - autotyping>=23.3.0
           - libcst>=0.4.9
   - repo: https://github.com/dosisod/refurb
-    rev: v1.16.0
+    rev: v1.19.0
     hooks:
       - id: refurb
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.313
+    rev: v1.1.320
     hooks:
       - id: pyright
   #  - repo: https://github.com/pdoc3/pdoc
@@ -87,17 +88,11 @@ repos:
   #        types: [ python ]
   #        always_run: true
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.272
+    rev: v0.0.283
     hooks:
       - id: ruff
   - repo: https://github.com/psf/black
-    rev: '23.3.0'
+    rev: '23.7.0'
     hooks:
       - id: black
         language_version: python3.11
-  - repo: https://github.com/pdm-project/pdm
-    rev: 2.7.4 # a PDM release exposing the hook
-    hooks:
-      - id: pdm-export
-        args: [ '-o', 'requirements.txt', '--without-hashes' ]
-        files: ^pdm.lock$

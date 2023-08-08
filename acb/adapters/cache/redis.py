@@ -1,16 +1,16 @@
-import typing as t
 import asyncio
+import typing as t
 
 import asyncio_atexit
 from acb.actions import dump
 from acb.actions import load
 from acb.config import ac
 from acb.logger import logger
-from cashews import Cache as CashewsCache
 from cashews.serialize import register_type
+from cashews.wrapper import Cache as CashewsCache
+from icecream import ic
 from pydantic import RedisDsn
 from . import CacheBaseSettings
-from icecream import ic
 
 
 class CacheSettings(CacheBaseSettings):
@@ -39,7 +39,7 @@ class Cache(CashewsCache):
             secure_salt=ac.app.secure_salt.get_secret_value(),
         )
 
-    async def init(self, *args, **kwargs) -> None:
+    async def init(self, *args, **kwargs) -> t.NoReturn:
         await super().init(
             ac.cache._url,
             password=ac.cache.password.get_secret_value(),
@@ -49,12 +49,14 @@ class Cache(CashewsCache):
         register_type(t.Any, self.encoder, self.decoder)
 
         @asyncio_atexit.register
-        async def close_cache_session() -> None:
+        async def close_cache_session() -> t.NoReturn:
             logger.debug("Closing cache session...")
             loop = asyncio.get_running_loop()
             ic(loop.is_running())
             await self.close()
             logger.debug("Cache session closed.")
+
+        logger.debug("App cache initialized.")
 
 
 cache = Cache()

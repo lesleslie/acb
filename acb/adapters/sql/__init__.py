@@ -79,7 +79,7 @@ class SqlBaseSettings(Settings):
     # def async_session(self) -> AsyncSession:
     #     return AsyncSession(self.async_engine, expire_on_commit=False)
 
-    def model_post_init(self, __context: t.Any) -> None:
+    def model_post_init(self, __context: t.Any) -> t.NoReturn:
         url_kwargs = dict(
             drivername=self.driver,
             username=self.user.get_secret_value(),
@@ -94,7 +94,7 @@ class SqlBaseSettings(Settings):
 
 
 class SqlBase:
-    async def create(self, demo: bool = False) -> None:
+    async def create(self, demo: bool = False) -> t.NoReturn:
         exists = database_exists(ac.sql._url)
         if exists:
             logger.debug("Database exists.")
@@ -143,7 +143,7 @@ class SqlBase:
         inspector = inspect(conn)
         return inspector.get_table_names()
 
-    async def init(self, demo: bool = False) -> None:
+    async def init(self, demo: bool = False) -> t.NoReturn:
         # print(debug.database)
         # print(type(debug.database))
         await self.create(demo)
@@ -190,7 +190,7 @@ sure_delete = False
 
 class BackupDbUtils(BaseModel):
     @staticmethod
-    def get_timestamp(name: str):
+    def get_timestamp(name: str) -> object:
         pattern = r"(.*)(-)(?P<timestamp>[\d]{10})(-)(.*)"
         match = search(pattern, name)
         return match.group("timestamp") if match else False
@@ -201,10 +201,9 @@ class BackupDbUtils(BaseModel):
     #         if self.get_timestamp(blob.name):
     #             yield blob.name
 
-    def get_timestamps(self) -> list[str]:
+    def get_timestamps(self) -> list[object]:
         if not self.files:
             self.files = tuple(self.get_files())
-
         different_timestamps = []
         for name in self.files:
             timestamp = self.get_timestamp(name)
@@ -212,10 +211,9 @@ class BackupDbUtils(BaseModel):
                 different_timestamps.append(timestamp)
         return different_timestamps
 
-    def by_timestamp(self, timestamp):
+    def by_timestamp(self, timestamp: object) -> t.Generator:
         if not self.files:
             self.files = tuple(self.get_files())
-
         for name in self.files:
             if timestamp == self.get_timestamp(name):
                 yield name
@@ -266,7 +264,7 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
                 reference = dt
                 yield dt
 
-    def run(self) -> None:
+    def run(self) -> t.NoReturn:
         last_w = self.today.shift(days=-7).int_timestamp
         last_m = self.today.shift(days=-(self.get_last_month_length())).int_timestamp
         last_y = self.today.shift(days=-(self.get_last_year_length())).int_timestamp

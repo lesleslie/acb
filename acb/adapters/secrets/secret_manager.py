@@ -1,3 +1,4 @@
+import typing as t
 from contextlib import suppress
 from secrets import compare_digest
 from typing import Optional
@@ -62,7 +63,7 @@ class Secrets:
         logger.info(f"Fetched secret - {name}")
         return payload
 
-    async def create(self, name: str, value: str) -> None:
+    async def create(self, name: str, value: str) -> t.NoReturn:
         with suppress(AlreadyExists):
             request = CreateSecretRequest(
                 parent=self.parent,
@@ -78,7 +79,7 @@ class Secrets:
             if not ac.deployed:
                 logger.debug(f"Created secret - {name}")
 
-    async def update(self, name: str, value: str) -> None:
+    async def update(self, name: str, value: str) -> t.NoReturn:
         secret = self.client.secret_path(self.project, name)
         request = AddSecretVersionRequest(
             parent=secret,
@@ -88,21 +89,21 @@ class Secrets:
         if not ac.deployed:
             logger.debug(f"Updated secret - {name}")
 
-    async def delete(self, name: str) -> None:
+    async def delete(self, name: str) -> t.NoReturn:
         secret = self.client.secret_path(self.project, name)
         request = DeleteSecretRequest(name=secret)
         await self.client.delete_secret(request=request)
         if not ac.deployed:
             logger.debug(f"Deleted secret - {secret}")
 
-    async def init(self, project: str, app_name: str) -> None:
+    async def init(self, project: str, app_name: str) -> t.NoReturn:
         self.project = project
         self.parent = f"projects/{project}"
         self.app_name = app_name
         self.prefix = f"{app_name}_"
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
-            creds, projects = default()
+            creds, _ = default()
         self.creds = creds
         self.client = SecretManagerServiceAsyncClient(credentials=self.creds)
         self.authed_session = AuthorizedSession(self.creds)

@@ -2,7 +2,7 @@ import logging
 import sys
 from time import perf_counter
 
-from acb.config import ac
+# from acb.config import ac
 from loguru import logger
 
 
@@ -80,13 +80,13 @@ logger_format = dict(
     line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
     message="  <level>{message}</level>",
 )
-level_per_module = {
-    m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.model_dump().items()
-}
+# level_per_module = {
+#     m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.model_dump().items()
+# }
 
 log_format = "".join(logger_format.values())
 configs = dict(
-    filter=level_per_module,
+    # filter=level_per_module,
     format=log_format,
     enqueue=True,
     backtrace=True,
@@ -97,17 +97,17 @@ logger.add(sys.stderr, **configs)
 logger.level("DEBUG", color="<cyan>")
 _loggers = []
 # _loggers = ["uvicorn.access", "uvicorn.error"]
-if ac.debug.sql:
-    _loggers.extend(
-        [
-            "sqlalchemy.engine",
-            "sqlalchemy.orm",
-            "sqlalchemy.pool",
-            "sqlalchemy.dialects",
-        ]
-    )
-if ac.debug.cache:
-    _loggers.extend(["httpx_caching"])
+# if ac.debug.sql:
+#     _loggers.extend(
+#         [
+#             "sqlalchemy.engine",
+#             "sqlalchemy.orm",
+#             "sqlalchemy.pool",
+#             "sqlalchemy.dialects",
+#         ]
+#     )
+# if ac.debug.cache:
+#     _loggers.extend(["httpx_caching"])
 for _log in _loggers:
     _logger = logging.getLogger(_log)
     _logger.handlers.clear()

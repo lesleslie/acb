@@ -67,7 +67,7 @@ class Dns:
             )
             for i, r in enumerate(record.rrdata):
                 with suppress(ValidationFailure):
-                    if type(r) == str and domain(r) and not r.endswith("."):
+                    if isinstance(r, str) and domain(r) and not r.endswith("."):
                         r = f"{r}."
                         record.rrdata[i] = r
                     if record.type == "TXT":
@@ -121,7 +121,7 @@ class Dns:
                     changes.reload()  # API request
                 print()
             except (Conflict, BadRequest) as err:
-                if not changes.additions[0].name.split(".")[1] == "splashstand":
+                if changes.additions[0].name.split(".")[1] != "splashstand":
                     raise err
                 print("SplashStand development domain detected. No changes made.")
         else:

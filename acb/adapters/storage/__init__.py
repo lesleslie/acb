@@ -8,10 +8,6 @@ from aiopath import AsyncPath
 from google.cloud.exceptions import NotFound
 
 
-# from abc import ABC
-# from abc import abstractmethod
-
-
 # CORS policy for upload bucket - upload-cors.json
 #
 # [
@@ -110,6 +106,7 @@ class StorageBucket:
 
 class StorageBase:
     client: t.Any
+
     # session: t.Any
 
     async def init(self) -> t.NoReturn:
@@ -140,7 +137,7 @@ class StorageBase:
 #
 # class StorageFile:
 #     """
-#     The file obect returned by the storage.
+#     The file object returned by the storage.
 #     """
 #
 #     def __init__(self, *, name: str, storage: BaseStorage) -> None:
