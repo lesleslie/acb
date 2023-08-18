@@ -40,14 +40,22 @@ from acb.hash import hash
 hash.blake2b(obj)
 ```
 
-### Configure
+## Configuration
 
 ```
-from acb.configure import (
-    AppConfig,
-    AppSettings,
+from acb.config import (
+    ac,
+    Settings,
 )
 ```
+
+## Logging
+
+```
+from acb.logger import logger
+```
+
+
 
 ## Adapters
 

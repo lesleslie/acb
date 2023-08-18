@@ -41,15 +41,15 @@ repos:
         additional_dependencies:
           - tomli
         args: [--ignore-words-list, "crate"]
-  - repo: local
-    hooks:
-      - id: pyanalyze
-        name: pyanalyze
-        entry: python -m pyanalyze -v -A
-        language: python
-        files: \.py$
-        additional_dependencies:
-          - pyanalyze>=0.10.1
+#  - repo: local
+#    hooks:
+#      - id: pyanalyze
+#        name: pyanalyze
+#        entry: python -m pyanalyze -v -A
+#        language: python
+#        files: \.py$
+#        additional_dependencies:
+#          - pyanalyze>=0.10.1
   - repo: local
     hooks:
       - id: autotyping

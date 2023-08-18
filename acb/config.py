@@ -69,9 +69,13 @@ def gen_password(size: int) -> str:
 
 def load_adapter(adapter: str, settings: bool = False) -> t.Any:
     global enabled_adapters
+    ic()
     ic(enabled_adapters)
     with suppress(KeyError):
+        ic()
+        ic(adapter)
         module = enabled_adapters[adapter]
+        ic(module)
         adapter_module = import_module(".".join(["acb", "adapters", adapter, module]))
         if settings:
             return getattr(adapter_module, adapter), getattr(
@@ -243,7 +247,8 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         self.secrets_path = await AsyncPath(self.secrets_dir).expanduser()
         if not await self.secrets_path.exists():
             warn(f'directory "{self.secrets_path}" does not exist')
-            return data
+            await self.secrets_path.mkdir(parents=True, exist_ok=True)
+            # return data
         if not await self.secrets_path.is_dir():
             raise SettingsError(
                 f"secrets_dir must reference a directory, not a "
@@ -282,7 +287,9 @@ class ManagerSecretsSource(FileSecretsSource):
 
     @alru_cache(maxsize=1)
     async def get_manager(self):
-        global project, app_name
+        global project, app_name, enabled_adapters
+        ic()
+        ic(enabled_adapters)
         manager = load_adapter("secrets")[0]
         await manager.init(project=project, app_name=app_name)
         return manager
@@ -489,7 +496,7 @@ class AppConfig(BaseSettings, extra="allow"):
     adapter_settings_path: t.Optional[AsyncPath] = None
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list = []
-    enabled_adapters: dict[str, t.Any] = {}
+    # enabled_adapters: dict[str, t.Any] = {}
     secrets_path: t.Optional[AsyncPath] = None
     debug: t.Optional[t.Any] = DebugSettings()
     app: t.Optional[t.Any] = None
@@ -532,9 +539,6 @@ class AppConfig(BaseSettings, extra="allow"):
                 for c, a in available_adapters.items()
                 if c in adapter_categories and a
             }
-            ic(enabled_adapters)
-            ic(self.debug.model_dump())
-            ic(self.app.model_dump())
             base_settings.update(
                 dict(
                     available_adapters=available_adapters,
@@ -543,7 +547,7 @@ class AppConfig(BaseSettings, extra="allow"):
                 )
             )
             super().__init__(**base_settings)
-            del self.enabled_adapters["secrets"]
+            del enabled_adapters["secrets"]
         return self
 
 
