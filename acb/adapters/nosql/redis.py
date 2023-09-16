@@ -16,6 +16,6 @@ class NosqlSettings(NosqlBaseSettings):
 
 
 class Nosql:
-    def __init_(self) -> None:
+    def __init__(self) -> None:
         ...
         # Migrator().run()

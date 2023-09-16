@@ -14,6 +14,7 @@ from string import ascii_letters
 from string import digits
 from string import punctuation
 from warnings import warn
+from contextvars import ContextVar
 
 import nest_asyncio
 from acb.actions import dump
@@ -46,7 +47,8 @@ deployed = True if Path.cwd().name == "app" else False
 project: str = ""
 app_name: str = ""
 app_secrets: set = set()
-enabled_adapters: dict = {}
+# enabled_adapters: dict = {}
+enabled_adapters: ContextVar[dict] = ContextVar("enabled_adapters", default={})
 
 
 class PackageRegistry:
@@ -74,7 +76,7 @@ def load_adapter(adapter: str, settings: bool = False) -> t.Any:
     with suppress(KeyError):
         ic()
         ic(adapter)
-        module = enabled_adapters[adapter]
+        module = enabled_adapters.get()[adapter]
         ic(module)
         adapter_module = import_module(".".join(["acb", "adapters", adapter, module]))
         if settings:
@@ -311,7 +313,7 @@ class ManagerSecretsSource(FileSecretsSource):
             for field_key, field_value in unfetched_secrets.items():
                 field_name = field_key.removeprefix(f"{self.adapter_name}_")
                 stored_field_key = "_".join((app_name, field_key))
-                secret_path = ac.secrets_path / field_key
+                secret_path = self.ac.secrets_path / field_key
                 if not await secret_path.exists():
                     if field_key not in manager_secrets:
                         await manager.create(
@@ -362,7 +364,9 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         yml_settings = await load.yaml(yml_path)
         if self.adapter_name == "debug":
             for adptr in [
-                adptr for adptr in enabled_adapters if adptr not in yml_settings.keys()
+                adptr
+                for adptr in enabled_adapters.get()
+                if adptr not in yml_settings.keys()
             ]:
                 yml_settings[adptr] = False
         if not deployed:
@@ -534,11 +538,13 @@ class AppConfig(BaseSettings, extra="allow"):
                     self.adapter_settings_path,
                 )
             available_adapters = await load.yaml(self.adapter_settings_path)
-            enabled_adapters = {
-                c: a
-                for c, a in available_adapters.items()
-                if c in adapter_categories and a
-            }
+            enabled_adapters.set(
+                {
+                    c: a
+                    for c, a in available_adapters.items()
+                    if c in adapter_categories and a
+                }
+            )
             base_settings.update(
                 dict(
                     available_adapters=available_adapters,
@@ -547,8 +553,11 @@ class AppConfig(BaseSettings, extra="allow"):
                 )
             )
             super().__init__(**base_settings)
-            del enabled_adapters["secrets"]
+            del enabled_adapters.get()["secrets"]
         return self
 
 
+# ac: ContextVar["AppConfig"] = ContextVar("ac", default=AppConfig())
 ac = AppConfig()
+
+# ac: AppConfig = dependency()

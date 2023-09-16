@@ -2,14 +2,14 @@ import asyncio
 
 from acb.config import ac
 from acb.config import load_adapter
-from icecream import ic
+from acb.config import enabled_adapters
 
 __all__ = []
 
 
 async def main() -> None:
     await ac.init()
-    for adapter in ac.enabled_adapters:
+    for adapter in enabled_adapters.get():
         __all__.append(adapter)
         globals()[adapter], module_settings = load_adapter(adapter, settings=True)
         setattr(ac, adapter, module_settings(_secrets_dir=ac.secrets_path))

@@ -18,11 +18,11 @@ class MailBaseSettings(AppSettings):
     port: int = 587
     api_url: AnyUrl = None
     default_from: EmailStr = f"info@{ac.app.domain}"
-    default_from_name = ac.app.title
+    default_from_name: str = ac.app.title
     test_receiver: EmailStr = None
-    tls = True
-    ssl = False
-    template_folder: t.Optional[AsyncPath]
+    tls: bool = True
+    ssl: bool = False
+    template_folder: t.Optional[AsyncPath] = None
 
 
 mail = load_adapter("mail")

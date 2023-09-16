@@ -16,7 +16,7 @@ class CacheBaseSettings(Settings):
     password: SecretStr = SecretStr(gen_password(10))
     _url: t.Optional[RedisDsn | AnyUrl] = None
     default_timeout: int = 86400
-    template_timeout: int = 300 if ac.deployed else 1
+    # template_timeout: int = 300 if ac.deployed else 1
     media_timeout: int = 15_768_000
     media_control: str = f"max-age={media_timeout} public"
     port: int = 6379

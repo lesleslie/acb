@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.8.2  # a PDM release exposing the hook
+    rev: 2.9.2  # a PDM release exposing the hook
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -17,12 +17,12 @@ repos:
       - id: check-added-large-files
         name: check-added-large-files
   - repo: https://github.com/psf/black
-    rev: '23.7.0'
+    rev: '23.9.1'
     hooks:
       - id: black
         language_version: python3.11
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.283
+    rev: v0.0.288
     hooks:
       - id: ruff
   - repo: https://github.com/fredrikaverpil/creosote
@@ -41,15 +41,6 @@ repos:
         additional_dependencies:
           - tomli
         args: [--ignore-words-list, "crate"]
-#  - repo: local
-#    hooks:
-#      - id: pyanalyze
-#        name: pyanalyze
-#        entry: python -m pyanalyze -v -A
-#        language: python
-#        files: \.py$
-#        additional_dependencies:
-#          - pyanalyze>=0.10.1
   - repo: local
     hooks:
       - id: autotyping
@@ -70,11 +61,11 @@ repos:
           - autotyping>=23.3.0
           - libcst>=0.4.9
   - repo: https://github.com/dosisod/refurb
-    rev: v1.19.0
+    rev: v1.21.0
     hooks:
       - id: refurb
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.320
+    rev: v1.1.326
     hooks:
       - id: pyright
   #  - repo: https://github.com/pdoc3/pdoc
@@ -88,11 +79,11 @@ repos:
   #        types: [ python ]
   #        always_run: true
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.283
+    rev: v0.0.288
     hooks:
       - id: ruff
   - repo: https://github.com/psf/black
-    rev: '23.7.0'
+    rev: '23.9.1'
     hooks:
       - id: black
         language_version: python3.11

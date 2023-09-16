@@ -116,6 +116,7 @@ class StorageBase:
             setattr(self, bucket, StorageBucket(self.client, bucket))
             logger.debug(f"{bucket.title()} storage bucket initialized.")
         logger.info("Storage initialized.")
+        print(ac.storage.buckets)
 
 
 # class BaseStorage:  # pragma: no cover

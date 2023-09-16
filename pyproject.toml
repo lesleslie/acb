@@ -1,10 +1,9 @@
 [tool.pdm.dev-dependencies]
 dev = [
-    "pytest>=7.4.0",
-    "pre-commit>=3.3.3",
-    "pyanalyze>=0.10.1",
+    "pytest>=7.4.2",
+    "pre-commit>=3.4.0",
     "autotyping>=23.3.0",
-    "crackerjack>=0.3.13",
+    "crackerjack>=0.4.0",
 ]
 
 [tool.ruff]
@@ -57,11 +56,9 @@ dependencies = [
     "dill>=0.3.7",
     "blake3>=0.3.3",
     "python-ulid>=1.1.0",
-    "loguru>=0.7.0",
-    "google-api-core>=2.11.1",
-    "msgspec[toml]>=0.18.1",
-    "tomli-w>=1.0.0",
-    "pydantic>=2.2.0",
+    "loguru>=0.7.2",
+    "msgspec[toml]>=0.18.2",
+    "pydantic>=2.3.0",
     "nest-asyncio>=1.5.7",
     "async-lru>=2.0.4",
     "pydantic-settings>=2.0.3",
@@ -86,16 +83,16 @@ cache = [
     "cashews[redis]>=6.2.0",
 ]
 storage = [
-    "gcsfs>=2023.6.0",
-    "s3fs>=2023.6.0",
+    "gcsfs>=2023.9.1",
+    "s3fs>=2023.9.1",
     "adlfs>=2023.8.0",
 ]
 dns = [
     "google-cloud-dns>=0.34.1",
-    "validators>=0.21.2",
+    "validators>=0.22.0",
 ]
 requests = [
-    "httpx>=0.24.1",
+    "httpx>=0.25.0",
     "httpx-cache>=0.12.0",
 ]
 mail = []

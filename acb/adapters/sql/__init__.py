@@ -68,12 +68,12 @@ class SqlBaseSettings(Settings):
     host: SecretStr = SecretStr("127.0.0.1")
     user: SecretStr = SecretStr("root")
     password: SecretStr = SecretStr(gen_password(10))
-    _url: t.Optional[URL] = None
-    _async_url: t.Optional[URL] = None
+    url: t.Optional[URL] = None
+    async_url: t.Optional[URL] = None
 
     @cached_property
     def async_engine(self) -> AsyncEngine:
-        return create_async_engine(self._async_url, **self.engine_kwargs)
+        return create_async_engine(self.async_url, **self.engine_kwargs)
 
     # @cached_property
     # def async_session(self) -> AsyncSession:
@@ -88,14 +88,14 @@ class SqlBaseSettings(Settings):
             port=self.port,
             database=ac.app.name,
         )
-        self._url = URL.create(**url_kwargs)
+        self.url = URL.create(**url_kwargs)
         async_url_kwargs = dict(drivername=self.async_driver)
-        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))
+        self.async_url = URL.create(**(url_kwargs | async_url_kwargs))
 
 
 class SqlBase:
     async def create(self, demo: bool = False) -> t.NoReturn:
-        exists = database_exists(ac.sql._url)
+        exists = database_exists(ac.sql.url)
         if exists:
             logger.debug("Database exists.")
 
@@ -112,12 +112,12 @@ class SqlBase:
             await aprint(msg)
             delete_db = await ainput("Would you like to reset the database? (Y/N) ")
             if delete_db:
-                drop_database(ac.sql._url)
+                drop_database(ac.sql.url)
                 logger.warning("Database dropped.")
-                exists = database_exists(ac.sql._url)
+                exists = database_exists(ac.sql.url)
 
         if not exists:
-            create_database(ac.sql._url)
+            create_database(ac.sql.url)
             logger.info("Database created.")
 
     # @lru_cache
@@ -157,8 +157,6 @@ class SqlBase:
         #     await apformat(table_names)
         logger.info("Database initialized.")
 
-
-# sql = load_adapter("sql")
 
 # class AppBaseModel(SQLModel):
 #     __table_args__ = {"extend_existing": True}

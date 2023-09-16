@@ -8,7 +8,7 @@ from google.api_core.exceptions import BadRequest
 from google.api_core.exceptions import Conflict
 from google.cloud.dns import Client as DnsClient
 from validators import domain
-from validators import ValidationFailure
+from validators.utils import ValidationError
 from . import DnsRecord
 from . import DnsBaseSettings
 
@@ -54,7 +54,7 @@ class Dns:
     async def create_dns_records(
         self, records: list | DnsRecord, zone: DnsClient.zone = dns_zone
     ):
-        if type(records) == DnsRecord:
+        if isinstance(records, DnsRecord):
             records = [records]
         changes = zone.changes()
         current_record_sets = []
@@ -63,10 +63,12 @@ class Dns:
             if not record.name.endswith("."):
                 record.name = f"{record.name}."
             record.rrdata = (
-                [record.rrdata] if type(record.rrdata) != list else record.rrdata
+                [record.rrdata]
+                if not isinstance(record.rrdata, list)
+                else record.rrdata
             )
             for i, r in enumerate(record.rrdata):
-                with suppress(ValidationFailure):
+                with suppress(ValidationError):
                     if isinstance(r, str) and domain(r) and not r.endswith("."):
                         r = f"{r}."
                         record.rrdata[i] = r
