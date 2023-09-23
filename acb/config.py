@@ -26,7 +26,6 @@ from inflection import titleize
 from inflection import underscore
 from pydantic import AliasChoices
 from pydantic import AliasPath
-from pydantic import AnyUrl
 from pydantic import BaseModel
 from pydantic import SecretStr
 from pydantic._internal._utils import deep_update
@@ -218,14 +217,14 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                 )
             else:
                 warn(
-                    f'attempted to load secret file "{path}" but found a '
+                    f"attempted to load secret file {path!r} but found a "
                     f"{await self.path_type_label(path)} instead",
                     stacklevel=4,
                 )
         return None, field_key, value_is_complex
 
     async def __call__(self) -> dict[str, t.Any]:
-        global app_name, app_secrets
+        global app_secrets
         data: dict[str, t.Any] = {}
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
@@ -238,7 +237,6 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         if not await self.secrets_path.exists():
             warn(f'directory "{self.secrets_path}" does not exist')
             await self.secrets_path.mkdir(parents=True, exist_ok=True)
-            # return data
         if not await self.secrets_path.is_dir():
             raise SettingsError(
                 f"secrets_dir must reference a directory, not a "
@@ -277,13 +275,12 @@ class ManagerSecretsSource(FileSecretsSource):
 
     @alru_cache(maxsize=1)
     async def get_manager(self):
-        global project, app_name
         manager = load_adapter("secrets")[0]
         await manager.init(project=project, app_name=app_name)
         return manager
 
-    async def load_secrets(self) -> t.NoReturn:
-        global project, app_name, app_secrets, app_config
+    async def load_secrets(self) -> dict[str, t.Any]:
+        global app_secrets
         data: dict[str, t.Any] = {}
         model_secrets = {
             "_".join((self.adapter_name, n)): v
@@ -334,7 +331,7 @@ class ManagerSecretsSource(FileSecretsSource):
 class YamlSettingsSource(PydanticBaseSettingsSource):
     adapter_name: t.Optional[str] = None
 
-    async def load_yml_settings(self) -> dict:
+    async def load_yml_settings(self) -> dict[str, t.Any]:
         global project, app_name
         if self.adapter_name == "secrets":
             return {}
@@ -372,7 +369,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
     ) -> t.Any:
         return value
 
-    async def __call__(self) -> t.Dict[str, t.Any]:
+    async def __call__(self) -> dict[str, t.Any]:
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
         )
@@ -399,6 +396,9 @@ class Settings(BaseModel):
         secrets_dir=None,
         protected_namespaces=("model_", "settings_"),
     )
+
+    def __getattr__(self, item):
+        return super().__getattr__(item)
 
     def __init__(
         __pydantic_self__,
@@ -468,18 +468,12 @@ class AppSettings(Settings):
     project: str = "myproject"
     name: str = "myapp"
     title: t.Optional[str] = None
-    domain: t.Optional[AnyUrl] = None
+    domain: t.Optional[str] = None
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
 
     def model_post_init(self, __context: t.Any) -> None:
         self.title = self.title or titleize(self.name)
-
-
-# class EmptyConfig:  # helps with pyright
-#     def __getattr__(self, attr) -> PydanticUndefined:
-#         setattr(self, attr, PydanticUndefined)
-#         return self.attr
 
 
 class AppConfig(BaseSettings, extra="allow"):
@@ -493,12 +487,8 @@ class AppConfig(BaseSettings, extra="allow"):
     adapter_categories: list = []
     enabled_adapters: dict[str, t.Any] = {}
     secrets_path: t.Optional[AsyncPath] = None
-    debug: t.Optional[Settings] = DebugSettings()
+    debug: t.Optional[Settings] = None
     app: t.Optional[Settings] = None
-
-    # def __getattr__(self, attr: str) -> None:
-    #     setattr(self, attr, EmptyConfig())
-    #     return self.attr
 
     def model_post_init(self, __context: t.Any) -> None:
         self.tmp = self.basedir / "tmp"
@@ -506,7 +496,11 @@ class AppConfig(BaseSettings, extra="allow"):
         self.adapter_settings_path = self.app_settings_path / "adapters.yml"
         self.secrets_path = self.basedir / "tmp" / "secrets"
         self.deployed = True if self.basedir.name == "app" else deployed
+        self.debug: t.Optional[Settings] = DebugSettings()
         self.app = AppSettings(_secrets_dir=self.secrets_path)
+
+    def __getattr__(self, item):
+        return super().__getattr__(item)
 
     async def init(self, deployed: bool = False) -> "AppConfig":
         self.deployed = deployed

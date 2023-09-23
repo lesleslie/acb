@@ -61,14 +61,15 @@ class SqlBaseSettings(Settings):
     async_driver: str
     port: int
     pool_pre_ping: bool = False
-    poolclass: t.Any = None
+    poolclass: t.Optional[t.Any] = None
     host: SecretStr = SecretStr("127.0.0.1")
     user: SecretStr = SecretStr("root")
     password: SecretStr = SecretStr(gen_password(10))
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
+    engine_kwargs: t.Optional[dict] = {}
 
-    def model_post_init(self, __context: t.Any) -> t.NoReturn:
+    def model_post_init(self, __context: t.Any) -> None:
         url_kwargs = dict(
             drivername=self.driver,
             username=self.user.get_secret_value(),
@@ -77,15 +78,15 @@ class SqlBaseSettings(Settings):
             port=self.port,
             database=ac.app.name,
         )
-        self._url = URL.create(**url_kwargs)
+        self._url = URL.create(**url_kwargs)  # type: ignore
         async_url_kwargs = dict(drivername=self.async_driver)
-        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))
+        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
 
 
 class SqlBase:
     @cached_property
     def engine(self) -> AsyncEngine:
-        return create_async_engine(ac.sql._async_url, **ac.sql.async_engine_kwargs)
+        return create_async_engine(ac.sql._async_url, **ac.sql.engine_kwargs)
 
     # @cached_property
     # def session(self) -> AsyncSession:
@@ -94,7 +95,7 @@ class SqlBase:
     async def create(self, demo: bool = False) -> t.NoReturn:
         exists = database_exists(ac.sql._url)
         if exists:
-            logger.debug("Database exists.")
+            logger.debug("Database exists")
 
         if ac.debug.sql and not (ac.deployed or ac.debug.production) and exists:
             msg = (
@@ -110,11 +111,11 @@ class SqlBase:
             delete_db = await ainput("Would you like to reset the database? (Y/N) ")
             if delete_db:
                 drop_database(ac.sql._url)
-                logger.warning("Database dropped.")
+                logger.warning("Database dropped")
                 exists = database_exists(ac.sql._url)
         if not exists:
             create_database(ac.sql.url)
-            logger.debug("Database created.")
+            logger.debug("Database created")
 
     # @asynccontextmanager
     # async def session(self) -> t.AsyncGenerator:
@@ -143,7 +144,7 @@ class SqlBase:
         # if ac.debug.sql:
         #     table_names = self.get_async_engine().run_sync(self.get_table_names)
         #     await apformat(table_names)
-        logger.debug("Database initialized.")
+        logger.debug("Database initialized")
 
 
 # class AppBaseModel(SQLModel):
@@ -250,7 +251,7 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
                 reference = dt
                 yield dt
 
-    def run(self) -> t.NoReturn:
+    def run(self) -> None:
         last_w = self.today.shift(days=-7).int_timestamp
         last_m = self.today.shift(days=-(self.get_last_month_length())).int_timestamp
         last_y = self.today.shift(days=-(self.get_last_year_length())).int_timestamp

@@ -26,21 +26,15 @@ class StorageBaseSettings(Settings):
     buckets: dict[str, str] = {}
 
     def model_post_init(self, __context: t.Any) -> None:
-        self.prefix: str = ac.app.name
-        self.user_project: str = ac.app.name  # used for billing
+        self.prefix = ac.app.name
+        self.user_project = ac.app.name  # used for billing
 
 
 class StorageBucket:
-    client: t.Any
-    bucket: t.Optional[str]
-    root: t.Optional[AsyncPath]
-    prefix: str = ""
-    cache_control: t.Optional[str] = None
-
-    def __init__(self, client, bucket: str, prefix: str = None) -> None:
+    def __init__(self, client, bucket: str, prefix: t.Optional[str] = None) -> None:
         self.client = client
-        self.prefix = prefix or ac.app.name or self.prefix
         self.bucket = ac.storage.buckets[bucket]
+        self.prefix = prefix or ac.storage.prefix
         self.root = AsyncPath(f"{self.bucket}/{self.prefix}")
 
     def get_name(self, path: AsyncPath) -> str:
@@ -114,8 +108,8 @@ class StorageBase:
         self.client = self.client(asynchronous=True, loop=loop)
         for bucket in ac.storage.buckets:
             setattr(self, bucket, StorageBucket(self.client, bucket))
-            logger.debug(f"{bucket.title()} storage bucket initialized.")
-        logger.info("Storage initialized.")
+            logger.debug(f"{bucket.title()} storage bucket initialized")
+        logger.debug("Storage initialized")
 
 
 # class BaseStorage:  # pragma: no cover

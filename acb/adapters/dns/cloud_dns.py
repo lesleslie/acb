@@ -9,6 +9,8 @@ from acb.logger import logger
 from google.api_core.exceptions import BadRequest
 from google.api_core.exceptions import Conflict
 from google.cloud.dns import Client as DnsClient
+from google.cloud.dns import ManagedZone
+from google.cloud.dns import Changes
 from validators import domain
 from validators.utils import ValidationError
 from . import DnsBaseSettings
@@ -21,7 +23,7 @@ class DnsSettings(DnsBaseSettings):
 
 class Dns:
     client: t.Optional[DnsClient] = None
-    zone: t.Optional[DnsClient.zone] = None
+    zone: t.Optional[ManagedZone] = None
 
     async def init(self) -> None:
         with catch_warnings():
@@ -50,17 +52,18 @@ class Dns:
         ]
         return records
 
-    async def wait_for_changes(self, changes: zone.changes) -> None:
+    async def wait_for_changes(self, changes: Changes) -> None:
         while changes.status != "done":
             await sleep(3)
             changes.reload()  # API request
 
-    async def apply_changes(self, changes: zone.changes):
+    async def apply_changes(self, changes: Changes):
         try:
             changes.create()  # API request
             await self.wait_for_changes(changes)
         except (Conflict, BadRequest) as err:
-            if changes.additions[0].name.split(".")[1] != ac.app.project:
+            change = changes.additions[0]  # type: ignore
+            if change.name.split(".")[1] != ac.app.project:
                 raise err
             logger.info("Development domain detected. No changes made.")
 

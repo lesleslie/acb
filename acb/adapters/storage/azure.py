@@ -2,6 +2,7 @@ from adlfs import AzureBlobFileSystem
 from pydantic import SecretStr
 from . import StorageBase
 from . import StorageBaseSettings
+import typing as t
 
 
 class StorageSettings(StorageBaseSettings):
@@ -9,7 +10,7 @@ class StorageSettings(StorageBaseSettings):
 
 
 class Storage(StorageBase):
-    client: AzureBlobFileSystem = AzureBlobFileSystem
+    client: t.Any = AzureBlobFileSystem
 
 
 storage = Storage()

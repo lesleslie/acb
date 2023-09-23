@@ -1,11 +1,12 @@
 import typing as t
 from contextlib import suppress
 from secrets import compare_digest
-from typing import Optional
 from warnings import catch_warnings
 from warnings import filterwarnings
 
 from acb.config import ac
+from acb.config import app_name
+from acb.config import project
 from acb.logger import logger
 from google.api_core.exceptions import AlreadyExists
 from google.auth import default
@@ -17,7 +18,6 @@ from google.cloud.secretmanager_v1 import CreateSecretRequest
 from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
-from google.oauth2.credentials import Credentials
 from . import SecretsBaseSettings
 
 
@@ -26,10 +26,12 @@ class SecretsSettings(SecretsBaseSettings):
 
 
 class Secrets:
-    parent: str
-    client: Optional[SecretManagerServiceAsyncClient]
-    authed_session: Optional[AuthorizedSession]
-    creds: Optional[Credentials]
+    project: str = ""
+    parent: str = ""
+    prefix: str = ""
+    client: t.Optional[SecretManagerServiceAsyncClient] = None
+    authed_session: t.Optional[AuthorizedSession] = None
+    creds: t.Optional[t.Any] = None
 
     # @staticmethod
     def extract_secret_name(self, secret_path: str) -> str:
@@ -96,10 +98,9 @@ class Secrets:
         if not ac.deployed:
             logger.debug(f"Deleted secret - {secret}")
 
-    async def init(self, project: str, app_name: str) -> t.NoReturn:
+    async def init(self) -> t.NoReturn:
         self.project = project
         self.parent = f"projects/{project}"
-        self.app_name = app_name
         self.prefix = f"{app_name}_"
         with catch_warnings():
             filterwarnings("ignore", category=Warning)

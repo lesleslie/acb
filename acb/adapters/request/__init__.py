@@ -2,7 +2,6 @@ from acb.config import Settings
 from pydantic import field_validator
 from abc import ABC
 from abc import abstractmethod
-from pydantic import AnyHttpUrl
 from requests import Response
 from httpx import Response as HttpxResponse
 
@@ -23,17 +22,17 @@ class RequestBase(ABC):
         ...
 
     @abstractmethod
-    async def get(self, url: AnyHttpUrl) -> Response | HttpxResponse:
+    async def get(self, url: str) -> Response | HttpxResponse:
         ...
 
     @abstractmethod
-    async def post(self, url: AnyHttpUrl, data: dict) -> Response | HttpxResponse:
+    async def post(self, url: str, data: dict) -> Response | HttpxResponse:
         ...
 
     @abstractmethod
-    async def put(self, url: AnyHttpUrl, data: dict) -> Response | HttpxResponse:
+    async def put(self, url: str, data: dict) -> Response | HttpxResponse:
         ...
 
     @abstractmethod
-    async def delete(self, url: AnyHttpUrl) -> Response | HttpxResponse:
+    async def delete(self, url: str) -> Response | HttpxResponse:
         ...

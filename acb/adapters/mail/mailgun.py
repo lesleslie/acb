@@ -6,61 +6,57 @@ from pprint import pprint
 from re import search
 
 from acb.actions import load
-from acb.adapters.dns import dns
+from acb.adapters import dns
 from acb.adapters.dns import DnsRecord
-from acb.adapters.request import request
+from acb.adapters import request
 from acb.config import ac
 from aiopath import AsyncPath
 from httpx import Response as HttpxResponse
 from loguru import logger
-from pydantic import AnyUrl
-from pydantic import AnyHttpUrl
 from pydantic import EmailStr
-from pydantic import SecretStr
 from . import MailBaseSettings
 
 
 class MailSettings(MailBaseSettings):
-    password: SecretStr
-    api_key: SecretStr
-    server: SecretStr = "smtp.mailgun.com"
-    api_url: AnyHttpUrl = "https://api.mailgun.net/v3/domains"
-    default_from: EmailStr = f"info@{ac.app.domain}"
-    default_from_name: str = ac.app.title
-    test_receiver: EmailStr = None
+    server: str = "smtp.mailgun.com"
+    api_url: str = "https://api.mailgun.net/v3/domains"
+    test_receiver: t.Optional[EmailStr] = None
     tls: bool = True
     ssl: bool = False
-    template_folder: t.Optional[AsyncPath]
+    template_folder: t.Optional[AsyncPath] = None
+
+    def model_post_init(self, __context: t.Any) -> None:
+        self.api_key = ac.secrets.mailgun_api_key
+        self.password = ac.secrets.mailgun_password
 
 
 class Mail:
     async def get_response(
         self,
         req_type: str,
-        domain: AnyUrl = None,
-        data: dict = None,
-        params: dict = None,
+        domain: t.Optional[str] = None,
+        data: t.Optional[dict] = None,
+        params: t.Optional[dict] = None,
     ) -> dict:
+        domain = domain or ac.app.domain
         caller: str = sys._getframe().f_back.f_code.co_name
-        match caller:
-            case search(caller, "domain"):
-                caller = "domain"
-            case search(caller, "route"):
-                caller = "route"
-        url = "/".join([ac.mailgun.api_url, caller, domain])
-        data = dict(auth=("api", ac.mailgun.api_key), params=params, data=data)
+        caller = "domain" if search(caller, "domain") else "route"
+        url = "/".join([ac.mail.api_url, caller, domain])
+        data = dict(
+            auth=("api", ac.mail.api_key.get_secret_value()), params=params, data=data
+        )
         resp = None
         match req_type:
             case "get":
-                resp = await request.get(url)
+                resp = await request.get(url)  # type: ignore
             case "put":
                 url = "".join([url, "/connection"])
-                resp = await request.put(url, data=data)
+                resp = await request.put(url, data=data)  # type: ignore
             case "post":
                 url = "".join([url, "/connection"])
-                resp = await request.post(url, data=data)
+                resp = await request.post(url, data=data)  # type: ignore
             case "delete":
-                resp = await request.delete(url)
+                resp = await request.delete(url)  # type: ignore
         if ac.debug.mail:
             print(resp)
         return await load.json(resp.json())
@@ -70,15 +66,15 @@ class Mail:
         domains = [d["name"] for d in resp["items"]]
         return domains
 
-    async def get_domain(self, domain: AnyUrl) -> dict:
+    async def get_domain(self, domain: str) -> dict:
         return await self.get_response("get", domain=domain)
 
-    async def create_domain(self, domain: AnyUrl) -> dict:
+    async def create_domain(self, domain: str) -> dict:
         resp = await self.get_response(
             "post",
             data={
                 "name": domain,
-                "smtp_password": ac.mail.password,
+                "smtp_password": ac.mail.password.get_secret_value(),
                 "web_scheme": "https",
             },
         )
@@ -89,23 +85,28 @@ class Mail:
         )
         return resp
 
-    async def delete_domain(self, domain: AnyUrl) -> dict:
+    async def delete_domain(self, domain: str) -> dict:
         return await self.get_response("delete", domain=domain)
 
-    async def create_domain_credentials(self, domain: AnyUrl) -> dict:
+    async def create_domain_credentials(self, domain: str) -> dict:
         return await self.get_response(
             "post",
             domain=domain,
-            data={"login": f"postmaster@{domain}", "password": ac.mail.password},
+            data={
+                "login": f"postmaster@{domain}",
+                "password": ac.mail.password.get_secret_value(),
+            },
         )
 
-    async def update_domain_credentials(self, domain: AnyUrl) -> dict:
+    async def update_domain_credentials(self, domain: str) -> dict:
         # this is prob not necessary
         return await self.get_response(
-            "put", domain=domain, data={"password": ac.mail.mailgun.password}
+            "put",
+            domain=domain,
+            data={"password": ac.mail.mailgun.password.get_secret_value()},
         )
 
-    async def get_dns_records(self, domain: AnyUrl) -> list:
+    async def get_dns_records(self, domain: str) -> list:
         records = await self.get_domain(domain)
         mx_records = records["receiving_dns_records"]
         sending_records = records["sending_dns_records"]
@@ -114,7 +115,7 @@ class Mail:
         for r in mx_records:
             mx_host = f"{r['priority']} {r['value']}."
             rrdata.append(mx_host)
-        record = DnsRecord(name=str(domain), type="MX", rrdata=rrdata)
+        record = DnsRecord(name=domain, type="MX", rrdata=rrdata)
         records.append(record)
         for r in sending_records:
             record = DnsRecord(name=r["name"], type=r["record_type"], rrdata=r["value"])
@@ -135,7 +136,7 @@ class Mail:
             await self.delete_domain(ac.mail.mailgun.domain)
         if ac.debug.mail:
             pprint(records)
-            await dns.create_records(records)
+            await dns.create_records(records)  # type: ignore
 
     async def list_routes(self) -> list:
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
@@ -150,7 +151,7 @@ class Mail:
         return domain_routes
 
     async def delete_route(self, route: dict) -> HttpxResponse:
-        resp = await request.delete("delete", domain={route["id"]})
+        resp = await request.delete("delete", domain={route["id"]})  # type: ignore
         logger.info(f"Deleted route for {route['description']}")
         return resp
 
@@ -181,7 +182,7 @@ class Mail:
                 await self.delete_route(d)
 
     async def create_route(self, domain_address, forwarding_addresses) -> dict | None:
-        domain_address = f"{domain_address}@{ac.mail.mailgun.domain}"
+        domain_address = f"{domain_address}@{ac.mail.domain}"
         if not isinstance(forwarding_addresses, list):
             forwarding_addresses = [forwarding_addresses]
         actions = ["stop(self)"]
@@ -216,15 +217,11 @@ class Mail:
         )
         return resp
 
-    async def create_routes(self, ordered: bool = True) -> None:
-        if ac.mail.mailgun.gmail.enabled:
-            logger.info("Using gmail mx servers. No routes created.")
-        else:
-            forwards = await load.yaml(AsyncPath("mail.yml"), ordered=ordered)
-            async for k, v in forwards.items():
-                await self.create_route(k, v)
+    async def create_routes(self) -> None:
+        async for k, v in ac.mail.forwards.items():
+            await self.create_route(k, v)
 
-    async def setup_mail(self) -> None:
+    async def init(self) -> None:
         await self.create_dns_records()
         await self.delete_routes()
         await self.create_routes()

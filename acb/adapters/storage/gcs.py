@@ -1,6 +1,7 @@
 from gcsfs.core import GCSFileSystem
 from . import StorageBase
 from . import StorageBaseSettings
+import typing as t
 
 
 class StorageSettings(StorageBaseSettings):
@@ -8,7 +9,7 @@ class StorageSettings(StorageBaseSettings):
 
 
 class Storage(StorageBase):
-    client: GCSFileSystem = GCSFileSystem
+    client: t.Any = GCSFileSystem
 
 
 storage = Storage()
