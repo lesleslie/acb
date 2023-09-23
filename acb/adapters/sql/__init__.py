@@ -236,9 +236,11 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
         last_day = first_day - timedelta(days=1)  # last year
         return 366 if isleap(last_day.year) else 365
 
-    def filter_dates(self, dates, period) -> t.Coroutine:
+    def filter_dates(
+        self, dates: list[t.Any], period: str = "week"
+    ) -> t.Generator[t.Any, t.Any, t.Any]:
         reference = self.today.int_timestamp
-        method_mapping = {
+        method_mapping: dict[str, t.Any()] = {
             "week": lambda obj: getattr(obj, "isocalendar")()[1],
             "month": lambda obj: getattr(obj, "month"),
             "year": lambda obj: getattr(obj, "year"),
@@ -271,7 +273,7 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
         self.white_list.extend(
             chain(
                 backups_week,
-                self.filter_dates(backups_month, "week"),
+                self.filter_dates(backups_month),
                 self.filter_dates(backups_year, "month"),
                 self.filter_dates(backups_older, "year"),
             )

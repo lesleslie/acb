@@ -775,7 +775,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.4.13"
+version = "0.4.14"
 requires_python = ">=3.11"
 summary = "Crackerjack code style"
 dependencies = [
@@ -789,8 +789,8 @@ dependencies = [
     "pydantic>=2.3.0",
 ]
 files = [
-    {file = "crackerjack-0.4.13-py3-none-any.whl", hash = "sha256:a716478195f26a572d2739db92f03c170b4eb21b9e69e4cc446011d168e820c8"},
-    {file = "crackerjack-0.4.13.tar.gz", hash = "sha256:158f1862634506f36a62523ef97b2249ed568d54b62b9c4776ae7fd4db6dfc8f"},
+    {file = "crackerjack-0.4.14-py3-none-any.whl", hash = "sha256:abecb77cf62a51ca2f29d08d7a5c1cd37fd3efa91e5854153383516e036f2b4a"},
+    {file = "crackerjack-0.4.14.tar.gz", hash = "sha256:796e3069dc9da6ef50c065348a6bafffa72d248fd8d1c36e599e89afe7aed363"},
 ]
 
 [[package]]

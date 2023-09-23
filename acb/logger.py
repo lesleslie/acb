@@ -87,7 +87,7 @@ level_per_module: dict[str, str] = {
 
 log_format = "".join(logger_format.values())
 configs: dict[str, t.Any] = dict(
-    # filter=level_per_module,
+    filter=level_per_module,
     format=log_format,
     enqueue=True,
     backtrace=True,
