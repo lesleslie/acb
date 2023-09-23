@@ -39,11 +39,12 @@ from pydantic_settings.utils import path_type_labels
 
 nest_asyncio.apply()
 
-# deployed = True if basedir.name == "srv" else False
-deployed = True if Path.cwd().name == "app" else False
+deployed: bool = True if Path.cwd().name == "app" else False  # or "srv"?
 
 project: str = ""
 app_name: str = ""
+# tmp_dir: AsyncPath = AsyncPath("tmp")
+# secrets_dir: AsyncPath = tmp_dir / "secrets"
 app_secrets: set = set()
 enabled_adapters: ContextVar[dict] = ContextVar("enabled_adapters", default={})
 
@@ -128,15 +129,13 @@ class FileSecretsSource(PydanticBaseSettingsSource):
     def __init__(
         self,
         settings_cls: type["Settings"],
-        secrets_dir: t.Optional[str | AsyncPath] = None,
+        secrets_dir: t.Optional[str | AsyncPath | Path] = None,
     ) -> None:
         super().__init__(settings_cls)
-        self.secrets_dir = (
-            secrets_dir if secrets_dir is not None else self.config.get("secrets_dir")
-        )
+        self.secrets_dir = secrets_dir or self.config.get("secrets_dir")
 
     @staticmethod
-    async def path_type_label(p: AsyncPath) -> str:
+    async def path_type_label(p: AsyncPath) -> str | None:
         if await p.exists():
             for method, name in path_type_labels.items():
                 if getattr(p, method)():
@@ -159,9 +158,9 @@ class FileSecretsSource(PydanticBaseSettingsSource):
     ) -> list[tuple[str, str, bool]]:
         field_info: list[tuple[str, str, bool]] = []
         if isinstance(field.validation_alias, (AliasChoices, AliasPath)):
-            v_alias: str | list[str | int] | list[
-                list[str | int]
-            ] | None = field.validation_alias.convert_to_aliases()
+            v_alias: t.Optional[
+                str | list[str | int] | list[list[str | int]]
+            ] = field.validation_alias.convert_to_aliases()
         else:
             v_alias = field.validation_alias
         if v_alias:
@@ -267,11 +266,11 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         return data
 
     def __repr__(self) -> str:
-        return f"FileSecretsSource(secrets_dir={self.secrets_dir!r})"
+        return f"FileSecretsSource(_secrets_dir={self.secrets_dir!r})"
 
 
 class ManagerSecretsSource(FileSecretsSource):
-    adapter_name: t.Optional[str] = None
+    adapter_name: str = ""
 
     @alru_cache(maxsize=1)
     async def get_manager(self):
@@ -323,13 +322,14 @@ class ManagerSecretsSource(FileSecretsSource):
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
         )
-        if self.adapter_name == "debug":
+        if self.adapter_name == "debug" or self.secrets_dir is None:
             return data
-        return await self.load_secrets()
+        await self.load_secrets()
+        return await super().__call__()
 
 
 class YamlSettingsSource(PydanticBaseSettingsSource):
-    adapter_name: t.Optional[str] = None
+    adapter_name: str = "app"
 
     async def load_yml_settings(self) -> dict[str, t.Any]:
         global project, app_name
@@ -398,11 +398,11 @@ class Settings(BaseModel):
     )
 
     def __getattr__(self, item):
-        return super().__getattr__(item)
+        return super().__getattr__(item)  # type: ignore
 
     def __init__(
-        __pydantic_self__,
-        _secrets_dir: str | Path | None = None,
+        __pydantic_self__,  # type: ignore
+        _secrets_dir: t.Optional[str | AsyncPath | Path] = None,
         **values: t.Any,
     ) -> None:
         build_settings = __pydantic_self__._settings_build_values(
@@ -415,13 +415,13 @@ class Settings(BaseModel):
     async def _settings_build_values(
         self,
         init_kwargs: dict[str, t.Any],
-        _secrets_dir: str | AsyncPath | None = None,
+        _secrets_dir: t.Optional[str | AsyncPath | Path] = None,
     ) -> dict[str, t.Any]:
-        secrets_dir = (
-            _secrets_dir
-            if _secrets_dir is not None
-            else self.model_config.get("secrets_dir")
-        )
+        #     _secrets_dir
+        #     if _secrets_dir is not None
+        #     else self.model_config.get("secrets_dir")
+        # )
+        secrets_dir = _secrets_dir or self.model_config.get("secrets_dir")
         init_settings = InitSettingsSource(self.__class__, init_kwargs=init_kwargs)
         file_secrets_settings = FileSecretsSource(
             self.__class__,
@@ -467,26 +467,28 @@ class DebugSettings(Settings):
 class AppSettings(Settings):
     project: str = "myproject"
     name: str = "myapp"
-    title: t.Optional[str] = None
-    domain: t.Optional[str] = None
+    title: t.Optional[str] = "My App"
+    domain: str = "mydomain.local"
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
+    _secrets_dir: t.Optional[str | Path | AsyncPath] = None
 
     def model_post_init(self, __context: t.Any) -> None:
+        self.domain = f"{self.name}.local"
         self.title = self.title or titleize(self.name)
 
 
 class AppConfig(BaseSettings, extra="allow"):
     pkgdir: AsyncPath = AsyncPath(__file__).parent
     basedir: AsyncPath = AsyncPath.cwd()
-    deployed: bool = deployed
+    deployed: bool = False
     tmp: t.Optional[AsyncPath] = None
     app_settings_path: t.Optional[AsyncPath] = None
     adapter_settings_path: t.Optional[AsyncPath] = None
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list = []
     enabled_adapters: dict[str, t.Any] = {}
-    secrets_path: t.Optional[AsyncPath] = None
+    secrets_path: AsyncPath = AsyncPath("tmp/secrets")
     debug: t.Optional[Settings] = None
     app: t.Optional[Settings] = None
 
@@ -496,18 +498,18 @@ class AppConfig(BaseSettings, extra="allow"):
         self.adapter_settings_path = self.app_settings_path / "adapters.yml"
         self.secrets_path = self.basedir / "tmp" / "secrets"
         self.deployed = True if self.basedir.name == "app" else deployed
-        self.debug: t.Optional[Settings] = DebugSettings()
         self.app = AppSettings(_secrets_dir=self.secrets_path)
+        self.debug = DebugSettings()
+        self.deployed = deployed
 
     def __getattr__(self, item):
-        return super().__getattr__(item)
+        return super().__getattr__(item)  # type: ignore
 
     async def init(self, deployed: bool = False) -> "AppConfig":
         self.deployed = deployed
         for path in (
             self.app_settings_path,
             self.tmp,
-            self.app_settings_path,
             self.secrets_path,
         ):
             await path.mkdir(exist_ok=True)

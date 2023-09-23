@@ -26,8 +26,8 @@ class StorageBaseSettings(Settings):
     buckets: dict[str, str] = {}
 
     def model_post_init(self, __context: t.Any) -> None:
-        self.prefix = ac.app.name
-        self.user_project = ac.app.name  # used for billing
+        self.prefix = self.prefix or ac.app.name or ""
+        self.user_project = self.user_project or ac.app.name or ""  # used for billing
 
 
 class StorageBucket:
@@ -103,7 +103,7 @@ class StorageBase:
 
     # session: t.Any
 
-    async def init(self) -> t.NoReturn:
+    async def init(self) -> None:
         loop = asyncio.get_running_loop()
         self.client = self.client(asynchronous=True, loop=loop)
         for bucket in ac.storage.buckets:

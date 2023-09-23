@@ -13,7 +13,7 @@ class MailBaseSettings(Settings):
     api_key: t.Optional[SecretStr] = None
     server: t.Optional[SecretStr | str] = None
     password: SecretStr = SecretStr(gen_password(10))
-    domain: t.Optional[EmailStr] = None
+    domain: t.Optional[str] = None
     port: int = 587
     api_url: t.Optional[HttpUrl] = None
     default_from: t.Optional[EmailStr] = None
@@ -28,6 +28,6 @@ class MailBaseSettings(Settings):
     )
 
     def model_post_init(self, __context: t.Any) -> None:
-        self.domain = f"mail@{ac.app.domain}"
+        self.domain = f"mail.{ac.app.domain}"
         self.default_from = f"info@{ac.app.domain}"
         self.default_from_name = ac.app.title
