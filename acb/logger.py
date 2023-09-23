@@ -1,8 +1,9 @@
 import logging
 import sys
 from time import perf_counter
+import typing as t
 
-# from acb.config import ac
+from acb.config import ac
 from loguru import logger
 
 
@@ -55,10 +56,10 @@ def timeit(func):
 
 class InterceptHandler(logging.Handler):
     def __init__(self, logger_name: str) -> None:
-        self.logger_name = logger_name
         super().__init__()
+        self.logger_name = logger_name
 
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             level = logger.level(record.levelname).name
         except ValueError:
@@ -67,12 +68,12 @@ class InterceptHandler(logging.Handler):
         while frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
-        logger.patch(lambda record: record.update(name=self.logger_name)).opt(
-            depth=depth, exception=record.exc_info
-        ).log(level, record.getMessage())
+        logger.patch(
+            patcher=lambda record: record.__dict__.update(name=self.logger_name)
+        ).opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-logger_format = dict(
+logger_format: dict[str, str] = dict(
     time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
     level=" <level>{level:>8}</level>",
     sep=" <b><w>in</w></b> ",
@@ -80,12 +81,12 @@ logger_format = dict(
     line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
     message="  <level>{message}</level>",
 )
-# level_per_module = {
-#     m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.model_dump().items()
-# }
+level_per_module: dict[str, str] = {
+    m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.model_dump().items()
+}
 
 log_format = "".join(logger_format.values())
-configs = dict(
+configs: dict[str, t.Any] = dict(
     # filter=level_per_module,
     format=log_format,
     enqueue=True,
@@ -95,7 +96,7 @@ logger.remove()
 # logging.getLogger("uvicorn").handlers.clear()
 logger.add(sys.stderr, **configs)
 logger.level("DEBUG", color="<cyan>")
-_loggers = []
+_loggers: list[str] = []
 # _loggers = ["uvicorn.access", "uvicorn.error"]
 # if ac.debug.sql:
 #     _loggers.extend(

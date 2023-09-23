@@ -75,10 +75,7 @@ class AcbEncoder:
         calling_method = search(r"await\s(\w+)\.(\w+)\(", code_context)
         return calling_method.group(1), calling_method.group(2)  # type: ignore
 
-    def get_serializer(
-        self,
-        serializer: t.Any,
-    ) -> t.Any:
+    def get_serializer(self, serializer: t.Any) -> t.Any:
         return (
             serializer
             if not self.secure

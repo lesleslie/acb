@@ -48,7 +48,7 @@ pythonVersion = "3.11"
 
 [project]
 name = "acb"
-version = "0.1.14"
+version = "0.1.15"
 description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",
@@ -95,8 +95,9 @@ dns = [
     "validators>=0.22.0",
 ]
 requests = [
-    "httpx>=0.25.0",
-    "httpx-cache>=0.12.0",
+    "httpx[http2]>=0.25.0",
+    "httpx-cache>=0.13.0",
+    "brotli>=1.1.0",
 ]
 mail = []
 secrets = [
