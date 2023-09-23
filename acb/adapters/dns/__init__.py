@@ -1,19 +1,42 @@
-from acb.config import ac
-from pydantic import BaseModel
-from acb.config import Settings
-from acb.config import load_adapter
 import typing as t
+from abc import ABC
+from abc import abstractmethod
+
+from acb.config import ac
+from acb.config import Settings
+from pydantic import BaseModel
 
 
 class DnsRecord(BaseModel):
-    name: str = ac.app.mail_domain
+    name: t.Optional[str] = None
     type: str = "TXT"
     ttl: int = 300
     rrdata: t.Optional[str | list] = None
+
+    def model_post_init(self, __context: t.Any) -> None:
+        self.name = f"mail.{ac.app.domain}"
 
 
 class DnsBaseSettings(Settings):
     ...
 
 
-dns = load_adapter("dns")
+class DnsBase(ABC):
+    client: t.Optional[t.Any] = None
+    zone: t.Optional[t.Any] = None
+
+    @abstractmethod
+    async def init(self) -> None:
+        ...
+
+    @abstractmethod
+    async def create_zone(self) -> None:
+        ...
+
+    @abstractmethod
+    async def list_records(self):
+        ...
+
+    @abstractmethod
+    async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
+        ...

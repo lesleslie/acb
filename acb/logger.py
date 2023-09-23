@@ -76,7 +76,7 @@ logger_format = dict(
     time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
     level=" <level>{level:>8}</level>",
     sep=" <b><w>in</w></b> ",
-    name="{name:>20}",
+    name="{name:>24}",
     line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
     message="  <level>{message}</level>",
 )

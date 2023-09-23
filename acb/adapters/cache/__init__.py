@@ -3,10 +3,9 @@ import typing as t
 from acb.config import ac
 from acb.config import gen_password
 from acb.config import Settings
-from pydantic import AnyUrl
 from pydantic import field_validator
-from pydantic import RedisDsn
 from pydantic import SecretStr
+from pydantic import AnyUrl
 
 
 class CacheBaseSettings(Settings):
@@ -14,7 +13,7 @@ class CacheBaseSettings(Settings):
     db: int = 1
     host: SecretStr = SecretStr("127.0.0.1")
     password: SecretStr = SecretStr(gen_password(10))
-    _url: t.Optional[RedisDsn | AnyUrl] = None
+    _url: t.Optional[AnyUrl] = None
     default_timeout: int = 86400
     # template_timeout: int = 300 if ac.deployed else 1
     media_timeout: int = 15_768_000
@@ -23,6 +22,7 @@ class CacheBaseSettings(Settings):
     health_check_interval: int = 15
 
     def model_post_init(self, __context: t.Any) -> None:
+        self.namespace = ac.app.name
         self.host = SecretStr("127.0.0.1") if not ac.deployed else self.host
         self.password = SecretStr("") if not ac.deployed else self.password
 

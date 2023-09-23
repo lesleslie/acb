@@ -4,14 +4,12 @@ from calendar import monthrange
 
 # from concurrent.futures import as_completed
 # from concurrent.futures import ThreadPoolExecutor
-from contextlib import asynccontextmanager
 
 # from contextlib import suppress
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from functools import cached_property
-from functools import lru_cache
 from itertools import chain
 
 # from pathlib import Path
@@ -32,7 +30,6 @@ from pydantic import SecretStr
 
 # from pydantic import create_model
 from sqlalchemy import inspect
-from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -68,16 +65,8 @@ class SqlBaseSettings(Settings):
     host: SecretStr = SecretStr("127.0.0.1")
     user: SecretStr = SecretStr("root")
     password: SecretStr = SecretStr(gen_password(10))
-    url: t.Optional[URL] = None
-    async_url: t.Optional[URL] = None
-
-    @cached_property
-    def async_engine(self) -> AsyncEngine:
-        return create_async_engine(self.async_url, **self.engine_kwargs)
-
-    # @cached_property
-    # def async_session(self) -> AsyncSession:
-    #     return AsyncSession(self.async_engine, expire_on_commit=False)
+    _url: t.Optional[URL] = None
+    _async_url: t.Optional[URL] = None
 
     def model_post_init(self, __context: t.Any) -> t.NoReturn:
         url_kwargs = dict(
@@ -88,14 +77,22 @@ class SqlBaseSettings(Settings):
             port=self.port,
             database=ac.app.name,
         )
-        self.url = URL.create(**url_kwargs)
+        self._url = URL.create(**url_kwargs)
         async_url_kwargs = dict(drivername=self.async_driver)
-        self.async_url = URL.create(**(url_kwargs | async_url_kwargs))
+        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))
 
 
 class SqlBase:
+    @cached_property
+    def engine(self) -> AsyncEngine:
+        return create_async_engine(ac.sql._async_url, **ac.sql.async_engine_kwargs)
+
+    # @cached_property
+    # def session(self) -> AsyncSession:
+    #     return AsyncSession(self.engine, expire_on_commit=False)
+
     async def create(self, demo: bool = False) -> t.NoReturn:
-        exists = database_exists(ac.sql.url)
+        exists = database_exists(ac.sql._url)
         if exists:
             logger.debug("Database exists.")
 
@@ -112,31 +109,22 @@ class SqlBase:
             await aprint(msg)
             delete_db = await ainput("Would you like to reset the database? (Y/N) ")
             if delete_db:
-                drop_database(ac.sql.url)
+                drop_database(ac.sql._url)
                 logger.warning("Database dropped.")
-                exists = database_exists(ac.sql.url)
-
+                exists = database_exists(ac.sql._url)
         if not exists:
             create_database(ac.sql.url)
-            logger.info("Database created.")
-
-    # @lru_cache
-    # def get_async_session(self) -> AsyncSession:
-    #     return ac.db.async_session
+            logger.debug("Database created.")
 
     # @asynccontextmanager
     # async def session(self) -> t.AsyncGenerator:
     #     async with self.get_async_session() as sess:
     #         yield sess
 
-    @lru_cache
-    def get_async_engine(self) -> AsyncEngine:
-        return ac.sql.async_engine
-
-    @asynccontextmanager
-    async def engine(self) -> t.AsyncGenerator:
-        async with self.get_async_engine() as conn:
-            yield conn
+    # @asynccontextmanager
+    # async def engine(self) -> t.AsyncGenerator:
+    #     async with self.get_async_engine() as conn:
+    #         yield conn
 
     @staticmethod
     def get_table_names(conn) -> list[str]:
@@ -147,15 +135,15 @@ class SqlBase:
         # print(debug.database)
         # print(type(debug.database))
         await self.create(demo)
-        if ac.debug.sql:
-            sql = text("DROP TABLE IF EXISTS alembic_version")
-            self.get_async_engine.execute(sql)
-        logger.info("Creating database tables...")
+        # if ac.debug.sql:
+        #     sql = text("DROP TABLE IF EXISTS alembic_version")
+        #     self.get_async_engine.execute(sql)
+        logger.debug("Creating database tables...")
         # self.get_async_engine().run_sync(SQLModel.metadata.create_all)
         # if ac.debug.sql:
         #     table_names = self.get_async_engine().run_sync(self.get_table_names)
         #     await apformat(table_names)
-        logger.info("Database initialized.")
+        logger.debug("Database initialized.")
 
 
 # class AppBaseModel(SQLModel):

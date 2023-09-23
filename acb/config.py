@@ -5,6 +5,7 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 from contextlib import suppress
+from contextvars import ContextVar
 from importlib import import_module
 from pathlib import Path
 from random import choice
@@ -14,14 +15,12 @@ from string import ascii_letters
 from string import digits
 from string import punctuation
 from warnings import warn
-from contextvars import ContextVar
 
 import nest_asyncio
 from acb.actions import dump
 from acb.actions import load
 from aiopath import AsyncPath
 from async_lru import alru_cache
-from icecream import ic
 from inflection import camelize
 from inflection import titleize
 from inflection import underscore
@@ -47,7 +46,6 @@ deployed = True if Path.cwd().name == "app" else False
 project: str = ""
 app_name: str = ""
 app_secrets: set = set()
-# enabled_adapters: dict = {}
 enabled_adapters: ContextVar[dict] = ContextVar("enabled_adapters", default={})
 
 
@@ -70,24 +68,14 @@ def gen_password(size: int) -> str:
 
 
 def load_adapter(adapter: str, settings: bool = False) -> t.Any:
-    global enabled_adapters
-    ic()
-    ic(enabled_adapters)
     with suppress(KeyError):
-        ic()
-        ic(adapter)
         module = enabled_adapters.get()[adapter]
-        ic(module)
         adapter_module = import_module(".".join(["acb", "adapters", adapter, module]))
         if settings:
             return getattr(adapter_module, adapter), getattr(
                 adapter_module, f"{camelize(adapter)}Settings"
             )
         return getattr(adapter_module, adapter)
-    warn(
-        "AppConfig is not initialized. Please"
-        " run `await ac.init()` before importing."
-    )
     raise SystemExit(f"Adapter {adapter} not found.")
 
 
@@ -141,7 +129,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
     def __init__(
         self,
         settings_cls: type["Settings"],
-        secrets_dir: str | AsyncPath | None = None,
+        secrets_dir: t.Optional[str | AsyncPath] = None,
     ) -> None:
         super().__init__(settings_cls)
         self.secrets_dir = (
@@ -289,15 +277,13 @@ class ManagerSecretsSource(FileSecretsSource):
 
     @alru_cache(maxsize=1)
     async def get_manager(self):
-        global project, app_name, enabled_adapters
-        ic()
-        ic(enabled_adapters)
+        global project, app_name
         manager = load_adapter("secrets")[0]
         await manager.init(project=project, app_name=app_name)
         return manager
 
     async def load_secrets(self) -> t.NoReturn:
-        global project, app_name, app_secrets
+        global project, app_name, app_secrets, app_config
         data: dict[str, t.Any] = {}
         model_secrets = {
             "_".join((self.adapter_name, n)): v
@@ -313,7 +299,7 @@ class ManagerSecretsSource(FileSecretsSource):
             for field_key, field_value in unfetched_secrets.items():
                 field_name = field_key.removeprefix(f"{self.adapter_name}_")
                 stored_field_key = "_".join((app_name, field_key))
-                secret_path = self.ac.secrets_path / field_key
+                secret_path = ac.secrets_path / field_key
                 if not await secret_path.exists():
                     if field_key not in manager_secrets:
                         await manager.create(
@@ -391,7 +377,6 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             self.settings_cls.__name__.replace("Settings", "")
         )
         data: t.Dict[str, t.Any] = {}
-        ic(Path.cwd())
         if Path.cwd().name != "acb":
             for field_name, field in (await self.load_yml_settings()).items():
                 field_value, field_key, value_is_complex = self.get_field_value(
@@ -491,6 +476,12 @@ class AppSettings(Settings):
         self.title = self.title or titleize(self.name)
 
 
+# class EmptyConfig:  # helps with pyright
+#     def __getattr__(self, attr) -> PydanticUndefined:
+#         setattr(self, attr, PydanticUndefined)
+#         return self.attr
+
+
 class AppConfig(BaseSettings, extra="allow"):
     pkgdir: AsyncPath = AsyncPath(__file__).parent
     basedir: AsyncPath = AsyncPath.cwd()
@@ -500,10 +491,14 @@ class AppConfig(BaseSettings, extra="allow"):
     adapter_settings_path: t.Optional[AsyncPath] = None
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list = []
-    # enabled_adapters: dict[str, t.Any] = {}
+    enabled_adapters: dict[str, t.Any] = {}
     secrets_path: t.Optional[AsyncPath] = None
-    debug: t.Optional[t.Any] = DebugSettings()
-    app: t.Optional[t.Any] = None
+    debug: t.Optional[Settings] = DebugSettings()
+    app: t.Optional[Settings] = None
+
+    # def __getattr__(self, attr: str) -> None:
+    #     setattr(self, attr, EmptyConfig())
+    #     return self.attr
 
     def model_post_init(self, __context: t.Any) -> None:
         self.tmp = self.basedir / "tmp"
@@ -514,7 +509,6 @@ class AppConfig(BaseSettings, extra="allow"):
         self.app = AppSettings(_secrets_dir=self.secrets_path)
 
     async def init(self, deployed: bool = False) -> "AppConfig":
-        global enabled_adapters
         self.deployed = deployed
         for path in (
             self.app_settings_path,
@@ -548,7 +542,7 @@ class AppConfig(BaseSettings, extra="allow"):
             base_settings.update(
                 dict(
                     available_adapters=available_adapters,
-                    enabled_adapters=enabled_adapters,
+                    enabled_adapters=enabled_adapters.get(),
                     adapter_categories=adapter_categories,
                 )
             )
@@ -557,7 +551,4 @@ class AppConfig(BaseSettings, extra="allow"):
         return self
 
 
-# ac: ContextVar["AppConfig"] = ContextVar("ac", default=AppConfig())
 ac = AppConfig()
-
-# ac: AppConfig = dependency()

@@ -3,7 +3,6 @@ import typing as t
 from acb.config import ac
 from acb.config import AppSettings
 from acb.config import gen_password
-from acb.config import load_adapter
 from aiopath import AsyncPath
 from pydantic import EmailStr
 from pydantic import SecretStr
@@ -23,6 +22,3 @@ class MailBaseSettings(AppSettings):
     tls: bool = True
     ssl: bool = False
     template_folder: t.Optional[AsyncPath] = None
-
-
-mail = load_adapter("mail")

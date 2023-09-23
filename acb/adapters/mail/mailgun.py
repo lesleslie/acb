@@ -8,12 +8,13 @@ from re import search
 from acb.actions import load
 from acb.adapters.dns import dns
 from acb.adapters.dns import DnsRecord
-from acb.adapters.requests import requests
+from acb.adapters.request import request
 from acb.config import ac
 from aiopath import AsyncPath
 from httpx import Response as HttpxResponse
 from loguru import logger
 from pydantic import AnyUrl
+from pydantic import AnyHttpUrl
 from pydantic import EmailStr
 from pydantic import SecretStr
 from . import MailBaseSettings
@@ -23,12 +24,12 @@ class MailSettings(MailBaseSettings):
     password: SecretStr
     api_key: SecretStr
     server: SecretStr = "smtp.mailgun.com"
-    api_url = "https://api.mailgun.net/v3/domains"
+    api_url: AnyHttpUrl = "https://api.mailgun.net/v3/domains"
     default_from: EmailStr = f"info@{ac.app.domain}"
-    default_from_name = ac.app.title
+    default_from_name: str = ac.app.title
     test_receiver: EmailStr = None
-    tls = True
-    ssl = False
+    tls: bool = True
+    ssl: bool = False
     template_folder: t.Optional[AsyncPath]
 
 
@@ -51,15 +52,15 @@ class Mail:
         resp = None
         match req_type:
             case "get":
-                resp = await requests.get(url)
+                resp = await request.get(url)
             case "put":
                 url = "".join([url, "/connection"])
-                resp = await requests.put(url, data=data)
+                resp = await request.put(url, data=data)
             case "post":
                 url = "".join([url, "/connection"])
-                resp = await requests.post(url, data=data)
+                resp = await request.post(url, data=data)
             case "delete":
-                resp = await requests.delete(url)
+                resp = await request.delete(url)
         if ac.debug.mail:
             print(resp)
         return await load.json(resp.json())
@@ -113,7 +114,7 @@ class Mail:
         for r in mx_records:
             mx_host = f"{r['priority']} {r['value']}."
             rrdata.append(mx_host)
-        record = DnsRecord(name=domain, type="MX", rrdata=rrdata)
+        record = DnsRecord(name=str(domain), type="MX", rrdata=rrdata)
         records.append(record)
         for r in sending_records:
             record = DnsRecord(name=r["name"], type=r["record_type"], rrdata=r["value"])
@@ -134,7 +135,7 @@ class Mail:
             await self.delete_domain(ac.mail.mailgun.domain)
         if ac.debug.mail:
             pprint(records)
-            await dns.create_dns_records(records)
+            await dns.create_records(records)
 
     async def list_routes(self) -> list:
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
@@ -149,7 +150,7 @@ class Mail:
         return domain_routes
 
     async def delete_route(self, route: dict) -> HttpxResponse:
-        resp = await requests.delete("delete", domain={route["id"]})
+        resp = await request.delete("delete", domain={route["id"]})
         logger.info(f"Deleted route for {route['description']}")
         return resp
 
@@ -218,7 +219,6 @@ class Mail:
     async def create_routes(self, ordered: bool = True) -> None:
         if ac.mail.mailgun.gmail.enabled:
             logger.info("Using gmail mx servers. No routes created.")
-            return
         else:
             forwards = await load.yaml(AsyncPath("mail.yml"), ordered=ordered)
             async for k, v in forwards.items():
@@ -228,3 +228,6 @@ class Mail:
         await self.create_dns_records()
         await self.delete_routes()
         await self.create_routes()
+
+
+mail = Mail()

@@ -16,8 +16,7 @@ from . import CacheBaseSettings
 class CacheSettings(CacheBaseSettings):
     def model_post_init(self, __context: t.Any) -> None:
         super().model_post_init(self)
-        self.namespace = ac.app.name
-        self._url: RedisDsn = (
+        self._url: RedisDsn = RedisDsn(
             f"redis://{self.host.get_secret_value()}:{self.port}/{self.db}"
         )
 
@@ -27,21 +26,21 @@ class Cache(CashewsCache):
     async def encoder(value: t.Any, *args, **kwargs) -> bytes:
         return await dump.msgpack(
             value,
-            secret_key=ac.app.secret_key.get_secret_value(),
-            secure_salt=ac.app.secure_salt.get_secret_value(),
+            secret_key=ac.app.secret_key,
+            secure_salt=ac.app.secure_salt,
         )
 
     @staticmethod
     async def decoder(value: bytes, *args, **kwargs) -> t.Any:
         return await load.msgpack(
             value,
-            secret_key=ac.app.secret_key.get_secret_value(),
-            secure_salt=ac.app.secure_salt.get_secret_value(),
+            secret_key=ac.app.secret_key,
+            secure_salt=ac.app.secure_salt,
         )
 
     async def init(self, *args, **kwargs) -> t.NoReturn:
         await super().init(
-            ac.cache._url,
+            str(ac.cache._url),
             password=ac.cache.password.get_secret_value(),
             client_side=True,
             client_side_prefix=f"{ac.app.name}:",
