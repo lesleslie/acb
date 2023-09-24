@@ -44,13 +44,15 @@ deployed: bool = True if Path.cwd().name == "app" else False  # or "srv"?
 
 project: str = ""
 app_name: str = ""
-app_secrets: set = set()
-enabled_adapters: ContextVar = ContextVar("enabled_adapters", default={})
+app_secrets: set[str] = set()
+enabled_adapters: ContextVar[dict[str, t.Any]] = ContextVar(
+    "enabled_adapters", default={}
+)
 
 
 class PackageRegistry:
     def __init__(self) -> None:
-        self.packages: dict = {}
+        self.packages: dict[str, AsyncPath] = {}
 
     def register(self) -> None:
         pkg_path = AsyncPath(inspect.stack()[1][1]).parent
@@ -68,7 +70,7 @@ def gen_password(size: int) -> str:
 
 def load_adapter(adapter: str, settings: bool = False) -> t.Any:
     with suppress(KeyError):
-        module: str = enabled_adapters.get()[adapter]
+        module = enabled_adapters.get()[adapter]
         adapter_module: ModuleType = import_module(
             ".".join(["acb", "adapters", adapter, module])
         )
@@ -86,10 +88,8 @@ class PydanticBaseSettingsSource(ABC):
         self.config = settings_cls.model_config
 
     @abstractmethod
-    def get_field_value(
-        self, field: FieldInfo, field_name: str
-    ) -> tuple[t.Any, str, bool]:
-        pass
+    def get_field_value(self, field: FieldInfo, field_name: str) -> t.Any:
+        raise NotImplementedError()
 
     @staticmethod
     def field_is_complex(field: FieldInfo) -> bool:
@@ -103,8 +103,8 @@ class PydanticBaseSettingsSource(ABC):
         return value
 
     @abstractmethod
-    async def __call__(self) -> dict[str, t.Any]:
-        pass
+    async def __call__(self) -> t.Any:
+        raise NotImplementedError()
 
 
 class InitSettingsSource(PydanticBaseSettingsSource):
@@ -119,7 +119,7 @@ class InitSettingsSource(PydanticBaseSettingsSource):
     ) -> tuple[t.Any, str, bool]:
         return None, "", False
 
-    async def __call__(self) -> dict[str, t.Any]:
+    async def __call__(self) -> t.Any:
         return self.init_kwargs
 
     def __repr__(self) -> str:
@@ -136,7 +136,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         self.secrets_dir = secrets_dir or self.config.get("secrets_dir")
 
     @staticmethod
-    async def path_type_label(p: AsyncPath) -> str | None:
+    async def path_type_label(p: AsyncPath) -> t.Any:
         if await p.exists():
             for method, name in path_type_labels.items():
                 if getattr(p, method)():
@@ -148,7 +148,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         cls,
         dir_path: AsyncPath,
         file_name: str,
-    ) -> AsyncPath | None:
+    ) -> t.Any:
         async for f in dir_path.iterdir():
             if f.name == file_name or f.name.lower() == file_name.lower():
                 return f
@@ -198,9 +198,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
             )
         return field_info
 
-    async def get_field_value(
-        self, field: FieldInfo, field_name: str
-    ) -> tuple[t.Any, str, bool]:
+    async def get_field_value(self, field: FieldInfo, field_name: str) -> t.Any:
         field_key: str = ""
         value_is_complex: bool = False
         for field_key, env_name, value_is_complex in self._extract_field_info(
@@ -223,7 +221,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                 )
         return None, field_key, value_is_complex
 
-    async def __call__(self) -> dict[str, t.Any]:
+    async def __call__(self) -> t.Any:
         global app_secrets
         data: dict[str, t.Any] = {}
         self.adapter_name: str = underscore(
@@ -279,7 +277,7 @@ class ManagerSecretsSource(FileSecretsSource):
         await manager.init(project=project, app_name=app_name)
         return manager
 
-    async def load_secrets(self) -> dict[str, t.Any]:
+    async def load_secrets(self) -> t.Any:
         global app_secrets
         data: dict[str, t.Any] = {}
         model_secrets = {
@@ -308,17 +306,15 @@ class ManagerSecretsSource(FileSecretsSource):
                 app_secrets.add(field_key)
         return data
 
-    async def get_field_value(
-        self, field: FieldInfo, field_name: str
-    ) -> t.Tuple[t.Any, str, bool]:
+    async def get_field_value(self, field: FieldInfo, field_name: str) -> t.Any:
         return field, field_name, False
 
     async def prepare_field_value(
         self, field_name: str, field: FieldInfo, value: t.Any, value_is_complex: bool
-    ) -> str:
+    ) -> t.Any:
         return value
 
-    async def __call__(self) -> dict[str, t.Any]:
+    async def __call__(self) -> t.Any:
         data: dict[str, t.Any] = {}
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
@@ -332,7 +328,7 @@ class ManagerSecretsSource(FileSecretsSource):
 class YamlSettingsSource(PydanticBaseSettingsSource):
     adapter_name: str = "app"
 
-    async def load_yml_settings(self) -> dict[str, t.Any]:
+    async def load_yml_settings(self) -> t.Any:
         global project, app_name
         if self.adapter_name == "secrets":
             return {}
@@ -370,7 +366,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
     ) -> t.Any:
         return value
 
-    async def __call__(self) -> dict[str, t.Any]:
+    async def __call__(self) -> t.Any:
         self.adapter_name: str = underscore(
             self.settings_cls.__name__.replace("Settings", "")
         )
@@ -390,7 +386,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseModel):
-    model_config: SettingsConfigDict = SettingsConfigDict(
+    model_config: SettingsConfigDict = SettingsConfigDict(  # type: ignore
         extra="allow",
         arbitrary_types_allowed=True,
         validate_default=True,
@@ -398,7 +394,7 @@ class Settings(BaseModel):
         protected_namespaces=("model_", "settings_"),
     )
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> t.Any:
         return super().__getattr__(item)  # type: ignore
 
     def __init__(
@@ -417,11 +413,7 @@ class Settings(BaseModel):
         self,
         init_kwargs: dict[str, t.Any],
         _secrets_dir: t.Optional[str | AsyncPath | Path] = None,
-    ) -> dict[str, t.Any]:
-        #     _secrets_dir
-        #     if _secrets_dir is not None
-        #     else self.model_config.get("secrets_dir")
-        # )
+    ) -> t.Any:
         secrets_dir = _secrets_dir or self.model_config.get("secrets_dir")
         init_settings = InitSettingsSource(self.__class__, init_kwargs=init_kwargs)
         file_secrets_settings = FileSecretsSource(
@@ -487,7 +479,7 @@ class AppConfig(BaseSettings, extra="allow"):
     app_settings_path: t.Optional[AsyncPath] = None
     adapter_settings_path: t.Optional[AsyncPath] = None
     available_adapters: dict[str, t.Any] = {}
-    adapter_categories: list = []
+    adapter_categories: list[str] = []
     enabled_adapters: dict[str, str] = {}
     secrets_path: AsyncPath = AsyncPath("tmp/secrets")
     debug: t.Optional[Settings] = None
@@ -503,10 +495,10 @@ class AppConfig(BaseSettings, extra="allow"):
         self.debug = DebugSettings()
         self.deployed = deployed
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> t.Any:
         return super().__getattr__(item)  # type: ignore
 
-    async def init(self, deployed: bool = False) -> "AppConfig":
+    async def init(self, deployed: bool = False) -> t.Any:
         self.deployed = deployed
         for path in (
             self.app_settings_path,
@@ -521,7 +513,7 @@ class AppConfig(BaseSettings, extra="allow"):
             adapter_categories = [
                 path.stem
                 async for path in (self.pkgdir / "adapters").iterdir()
-                if path.is_dir and not path.name.startswith("__")
+                if await path.is_dir() and not path.name.startswith("__")
             ]
             if not await self.adapter_settings_path.exists() and not self.deployed:
                 await dump.yaml(

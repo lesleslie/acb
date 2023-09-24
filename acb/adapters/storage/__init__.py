@@ -1,10 +1,8 @@
 import asyncio
 import typing as t
 
-
 from acb.config import ac
 from acb.config import Settings
-from acb.depends import depends
 from acb.logger import logger
 from aiopath import AsyncPath
 from google.cloud.exceptions import NotFound
@@ -33,7 +31,9 @@ class StorageBaseSettings(Settings):
 
 
 class StorageBucket:
-    def __init__(self, client, bucket: str, prefix: t.Optional[str] = None) -> None:
+    def __init__(
+        self, client: t.Any, bucket: str, prefix: t.Optional[str] = None
+    ) -> None:
         self.client = client
         self.bucket = ac.storage.buckets[bucket]
         self.prefix = prefix or ac.storage.prefix
@@ -48,28 +48,28 @@ class StorageBucket:
     def get_url(self, path: AsyncPath):
         return self.client.url(self.get_path(path))
 
-    async def get_date_created(self, path: AsyncPath) -> str:
+    async def get_date_created(self, path: AsyncPath) -> t.Any:
         return (await self.stat(path))["timeCreated"]
 
-    async def get_date_updated(self, path: AsyncPath) -> str:
+    async def get_date_updated(self, path: AsyncPath) -> t.Any:
         return (await self.stat(path))["updated"]
 
     async def get_size(self, path: AsyncPath) -> int:
         return (await self.stat(path))["size"]
 
-    async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> str:
+    async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> t.Any:
         return await self.client._sign(self.get_path(path), expires=expires)
 
-    async def stat(self, path: AsyncPath) -> dict:
+    async def stat(self, path: AsyncPath) -> t.Any:
         return await self.client._info(self.get_path(path))
 
-    async def list(self, dir_path: AsyncPath):
+    async def list(self, dir_path: AsyncPath) -> t.Any:
         return await self.client._ls(self.get_path(dir_path))
 
-    async def exists(self, path: AsyncPath):
+    async def exists(self, path: AsyncPath) -> t.Any:
         return await self.client._exists(self.get_path(path))
 
-    async def create_bucket(self, path: AsyncPath):
+    async def create_bucket(self, path: AsyncPath) -> t.Any:
         return await self.client._mkdir(
             self.get_path(path),
             create_parents=True,
@@ -77,7 +77,7 @@ class StorageBucket:
             # acl="public-read",
         )
 
-    async def read(self, path: AsyncPath):
+    async def read(self, path: AsyncPath) -> t.Any:
         stor_path = self.get_path(path)
         logger.debug(f"Getting {stor_path}...")
         try:
@@ -87,23 +87,36 @@ class StorageBucket:
         logger.debug(f"Got - {stor_path}")
         return data
 
-    async def write(self, path: AsyncPath, data: t.Any) -> None:
+    async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
         logger.debug(f"Saving {stor_path}...")
         await self.client._pipe_file(stor_path, data)
         logger.debug(f"Saved - {stor_path}")
 
-    async def delete(self, path: AsyncPath) -> None:
+    async def delete(self, path: AsyncPath) -> t.Any:
         stor_path = self.get_path(path)
         logger.debug(f"Deleting {stor_path}...")
         await self.client._rm_file(stor_path)
         logger.debug(f"Deleted - {stor_path}")
 
+    # async def get_name(self, name: str) -> t.Any:
+    #     ...
+    #
+    # async def get_path(self, name: str) -> t.Any:
+    #     ...
+    #
+    # def get_size(self, name: str) -> int:
+    #     ...
+    #
+    # def open(self, name: str) -> t.BinaryIO:
+    #     ...
+    #
+    # def write(self, file: t.BinaryIO, name: str) -> str:
+    #     ...
+
 
 class StorageBase:
     client: t.Any
-
-    # session: t.Any
 
     async def init(self) -> None:
         loop = asyncio.get_running_loop()
@@ -113,45 +126,29 @@ class StorageBase:
             logger.debug(f"{bucket.title()} storage bucket initialized")
         logger.debug("Storage initialized")
 
-    def get_name(self, name: str) -> str:
-        ...
-
-    def get_path(self, name: str) -> str:
-        ...
-
-    def get_size(self, name: str) -> int:
-        ...
-
-    def open(self, name: str) -> t.BinaryIO:
-        ...
-
-    def write(self, file: t.BinaryIO, name: str) -> str:
-        ...
-
 
 class StorageFile:
-    _storage: StorageBase = depends()
-
-    def __init__(self, *, name: str) -> None:
-        self._name = name
+    def __init__(self, *, name: str, storage: StorageBucket) -> None:
+        self._storage: StorageBucket = storage
+        self._name: str = name
 
     @property
     def name(self) -> str:
-        return self._storage.get_name(self._name)
+        return self._storage.get_name(AsyncPath(self._name))
 
     @property
     def path(self) -> str:
-        return self._storage.get_path(self._name)
+        return self._storage.get_path(AsyncPath(self._name))
 
     @property
-    def size(self) -> int:
-        return self._storage.get_size(self._name)
+    async def size(self) -> t.Any:
+        return await self._storage.get_size(AsyncPath(self._name))
 
-    def open(self) -> t.BinaryIO:
-        return self._storage.open(self._name)
+    # async def open(self) -> t.Any:
+    #     return await self._storage.open(self._name)
 
-    def write(self, file: t.BinaryIO) -> str:
-        return self._storage.write(file=file, name=self._name)
+    async def write(self, file: t.BinaryIO) -> t.Any:
+        return await self._storage.write(path=AsyncPath(self._name), data=file)
 
     def __str__(self) -> str:
         return self.path
@@ -159,7 +156,7 @@ class StorageFile:
 
 class StorageImage(StorageFile):
     def __init__(
-        self, *, name: str, storage: StorageBase, height: int, width: int
+        self, *, name: str, storage: StorageBucket, height: int, width: int
     ) -> None:
         super().__init__(name=name, storage=storage)
         self._width = width

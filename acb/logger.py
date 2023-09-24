@@ -1,39 +1,39 @@
 import logging
 import sys
-from time import perf_counter
 import typing as t
 from inspect import getmodule
 from inspect import stack
 from pathlib import Path
+from time import perf_counter
 
-from aiopath import AsyncPath
 from acb.config import ac
-from loguru import logger
-from icecream import ic as debug
-from pydantic import FilePath
+from aiopath import AsyncPath
 from icecream import colorizedStderrPrint
+from icecream import ic as debug
+from loguru import logger
 
 
-def get_mod() -> FilePath:
+def get_mod() -> AsyncPath:
     # frame = stack()[3][0]
     # frame = logging.currentframe()
     mod_logger = stack()[3][0]
-    mod = getmodule(mod_logger)
-    mod = Path(mod.__file__).parent
-    if mod.stem == ac.basedir.stem:
-        mod = Path(mod.__file__)
+    module = getmodule(mod_logger)
+    mod = ac.basedir
+    if module:
+        mod = Path(module.__file__).parent  # type: ignore
+        if mod.stem == ac.basedir.stem:
+            mod = Path(mod)
     return AsyncPath(mod)
 
 
-def log_debug(s: str):
+def log_debug(msg: str) -> t.Any:
     mod = get_mod()
-    debug_mod = dict(ac.debug.model_fields).get(mod.stem)
+    debug_mod: str = getattr(ac.debug, mod.stem)
     if debug_mod:
         if ac.deployed:
-            return logger.patch(lambda record: record.update(name=mod.__name__)).debug(
-                s
-            )
-        return colorizedStderrPrint(s)
+            logger.patch(lambda rec: rec.update(mod.name)).debug(msg)  # type: ignore
+            return
+        colorizedStderrPrint(msg)
 
 
 debug.configureOutput(
@@ -50,8 +50,8 @@ if ac.deployed:
 #         await aprint(pformat(obj, sort_dicts=sort_dicts))
 
 
-def timeit(func: t.Callable) -> t.Callable[..., t.Any]:
-    def wrapped(*args: object, **kwargs: object):
+def timeit(func: t.Any) -> t.Any:
+    def wrapped(*args: object, **kwargs: t.Any) -> t.Any:
         start = perf_counter()
         result = func(*args, **kwargs)
         end = perf_counter()

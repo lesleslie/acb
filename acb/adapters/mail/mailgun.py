@@ -37,7 +37,7 @@ class Mail(MailBase):
     async def get_response(
         self,
         req_type: str,
-        domain: t.Optional[str] = None,
+        domain: str = "",
         data: t.Optional[dict[str, t.Any]] = None,
         params: t.Optional[dict[str, t.Any]] = None,
     ) -> dict[str, t.Any]:
@@ -162,7 +162,8 @@ class Mail(MailBase):
 
     @staticmethod
     def get_name(address: str) -> str:
-        name = search("'(.+)@.+", address)
+        pattern = r"'(.+)@.+"
+        name = search(pattern, address)
         return name.group(1) if name else ""
 
     async def delete_routes(self, delete_all: bool = False) -> None:
