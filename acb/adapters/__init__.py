@@ -5,7 +5,7 @@ from acb.config import load_adapter
 from acb.config import enabled_adapters
 from acb.logger import logger
 
-__all__ = []
+__all__: list[str] = []
 
 
 async def main() -> None:

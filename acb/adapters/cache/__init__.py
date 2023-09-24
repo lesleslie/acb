@@ -22,12 +22,12 @@ class CacheBaseSettings(Settings):
     health_check_interval: int = 15
 
     def model_post_init(self, __context: t.Any) -> None:
-        self.namespace = ac.app.name
+        self.namespace = self.namespace or ac.app.name or ""
         self.host = SecretStr("127.0.0.1") if not ac.deployed else self.host
         self.password = SecretStr("") if not ac.deployed else self.password
 
     @field_validator("db")
-    def db_less_than_three(cls, v) -> int:
+    def db_less_than_three(cls, v: int) -> int:
         if v < 3 and v != 1:
             raise ValueError("must be greater than 2 (0-2 are reserved)")
         return 1

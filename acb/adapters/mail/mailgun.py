@@ -8,18 +8,21 @@ from re import search
 from acb.actions import load
 from acb.adapters import dns
 from acb.adapters.dns import DnsRecord
-from acb.adapters import request
+from acb.logger import debug
+from acb.adapters import requests
 from acb.config import ac
 from aiopath import AsyncPath
 from httpx import Response as HttpxResponse
 from loguru import logger
 from pydantic import EmailStr
+from pydantic import HttpUrl
 from . import MailBaseSettings
+from . import MailBase
 
 
 class MailSettings(MailBaseSettings):
     server: str = "smtp.mailgun.com"
-    api_url: str = "https://api.mailgun.net/v3/domains"
+    api_url: HttpUrl = HttpUrl("https://api.mailgun.net/v3/domains")
     test_receiver: t.Optional[EmailStr] = None
     tls: bool = True
     ssl: bool = False
@@ -30,46 +33,45 @@ class MailSettings(MailBaseSettings):
         self.password = ac.secrets.mailgun_password
 
 
-class Mail:
+class Mail(MailBase):
     async def get_response(
         self,
         req_type: str,
         domain: t.Optional[str] = None,
-        data: t.Optional[dict] = None,
-        params: t.Optional[dict] = None,
-    ) -> dict:
+        data: t.Optional[dict[str, t.Any]] = None,
+        params: t.Optional[dict[str, t.Any]] = None,
+    ) -> dict[str, t.Any]:
         domain = domain or ac.app.domain
-        caller: str = sys._getframe().f_back.f_code.co_name
+        caller = sys._getframe().f_back.f_code.co_name
         caller = "domain" if search(caller, "domain") else "route"
-        url = "/".join([ac.mail.api_url, caller, domain])
+        url = "/".join([str(ac.mail.api_url), caller, domain])
         data = dict(
             auth=("api", ac.mail.api_key.get_secret_value()), params=params, data=data
         )
-        resp = None
         match req_type:
             case "get":
-                resp = await request.get(url)  # type: ignore
+                resp = await requests.get(url)  # type: ignore
             case "put":
                 url = "".join([url, "/connection"])
-                resp = await request.put(url, data=data)  # type: ignore
+                resp = await requests.put(url, data=data)  # type: ignore
             case "post":
                 url = "".join([url, "/connection"])
-                resp = await request.post(url, data=data)  # type: ignore
+                resp = await requests.post(url, data=data)  # type: ignore
             case "delete":
-                resp = await request.delete(url)  # type: ignore
-        if ac.debug.mail:
-            print(resp)
+                resp = await requests.delete(url)  # type: ignore
+            case _:
+                return {}
         return await load.json(resp.json())
 
-    async def list_domains(self) -> list:
+    async def list_domains(self) -> list[str]:
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
-        domains = [d["name"] for d in resp["items"]]
+        domains = [d.get("name") for d in resp.get("items", {})]
         return domains
 
-    async def get_domain(self, domain: str) -> dict:
+    async def get_domain(self, domain: str) -> dict[str, t.Any]:
         return await self.get_response("get", domain=domain)
 
-    async def create_domain(self, domain: str) -> dict:
+    async def create_domain(self, domain: str) -> dict[str, t.Any]:
         resp = await self.get_response(
             "post",
             data={
@@ -85,10 +87,10 @@ class Mail:
         )
         return resp
 
-    async def delete_domain(self, domain: str) -> dict:
+    async def delete_domain(self, domain: str) -> dict[str, t.Any]:
         return await self.get_response("delete", domain=domain)
 
-    async def create_domain_credentials(self, domain: str) -> dict:
+    async def create_domain_credentials(self, domain: str) -> dict[str, t.Any]:
         return await self.get_response(
             "post",
             domain=domain,
@@ -98,7 +100,7 @@ class Mail:
             },
         )
 
-    async def update_domain_credentials(self, domain: str) -> dict:
+    async def update_domain_credentials(self, domain: str) -> dict[str, t.Any]:
         # this is prob not necessary
         return await self.get_response(
             "put",
@@ -106,7 +108,7 @@ class Mail:
             data={"password": ac.mail.mailgun.password.get_secret_value()},
         )
 
-    async def get_dns_records(self, domain: str) -> list:
+    async def get_dns_records(self, domain: str) -> list[DnsRecord]:
         records = await self.get_domain(domain)
         mx_records = records["receiving_dns_records"]
         sending_records = records["sending_dns_records"]
@@ -138,10 +140,12 @@ class Mail:
             pprint(records)
             await dns.create_records(records)  # type: ignore
 
-    async def list_routes(self) -> list:
-        resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
-        domain_routes = [
-            r for r in resp["items"] if ac.mail.mailgun.domain in r["expression"]
+    async def list_routes(self) -> list[t.Any]:
+        resp: dict[str, t.Any] = await self.get_response(
+            "get", params={"skip": 0, "limit": 1000}
+        )
+        domain_routes: list[str] = [
+            r for r in resp["items"] if ac.mail.domain in r["expression"]
         ]
         if ac.debug.mail:
             logger.debug(pformat(resp["items"]))
@@ -150,8 +154,9 @@ class Mail:
             logger.debug(len(domain_routes))
         return domain_routes
 
-    async def delete_route(self, route: dict) -> HttpxResponse:
-        resp = await request.delete("delete", domain={route["id"]})  # type: ignore
+    @staticmethod
+    async def delete_route(route: dict[str, t.Any]) -> HttpxResponse:
+        resp = await requests.delete("delete", domain={route["id"]})  # type: ignore
         logger.info(f"Deleted route for {route['description']}")
         return resp
 
@@ -161,35 +166,34 @@ class Mail:
         return name.group(1) if name else ""
 
     async def delete_routes(self, delete_all: bool = False) -> None:
-        forwards = ac.mail.forwards.keys()
-        routes = await self.list_routes()
+        forwards: list[str] = ac.mail.forwards.keys()
+        routes: list[t.Any] = await self.list_routes()
         deletes = []
         deletes.extend(
             [r for r in routes if self.get_name(r["expression"]) not in forwards]
         )
-        if ac.debug.mail:
-            pprint(deletes)
+        debug(deletes)
         for f in forwards:
             fs = [r for r in routes if self.get_name(r["expression"]) == f]
             deletes.extend(fs[1:])
         if delete_all or ac.mail.mailgun.gmail.enabled:
             deletes = [r for r in routes if len(self.get_name(r["expression"]))]
-        if ac.debug.mail:
-            pprint(deletes)
-            print(len(deletes))
+            debug(deletes)
+            debug(len(deletes))
         else:
             for d in deletes:
                 await self.delete_route(d)
 
-    async def create_route(self, domain_address, forwarding_addresses) -> dict | None:
+    async def create_route(
+        self, domain_address: str, forwarding_addresses: list[str] | str
+    ) -> (dict[str, t.Any] | None):
         domain_address = f"{domain_address}@{ac.mail.domain}"
         if not isinstance(forwarding_addresses, list):
             forwarding_addresses = [forwarding_addresses]
         actions = ["stop(self)"]
         for addr in forwarding_addresses:
             actions.insert(0, f"forward('{addr}')")
-        if ac.debug.mail:
-            print(actions)
+        debug(actions)
         route = {
             "priority": 0,
             "description": domain_address,

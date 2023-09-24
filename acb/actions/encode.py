@@ -51,11 +51,7 @@ class AcbEncoder:
         for s in self.serializers:
             setattr(self, s, self.__call__)
 
-    async def process(
-        self,
-        obj: t.Any,
-        **kwargs,
-    ) -> bytes | int | None:
+    async def process(self, obj: t.Any, **kwargs: object) -> t.Any:
         if self.action in ("load", "decode"):
             if self.serializer is msgspec.msgpack:
                 kwargs["use_list"] = self.use_list
@@ -65,7 +61,7 @@ class AcbEncoder:
         elif self.action in ("dump", "encode"):
             # if self.serializer is msgspec.yaml:
             #     kwargs["sort_keys"] = self.sort_keys
-            data = self.serializer.encode(obj, **kwargs)  # type: ignore
+            data: bytes = self.serializer.encode(obj, **kwargs)  # type: ignore
             if isinstance(self.path, AsyncPath):
                 return await self.path.write_bytes(data)
             return data
@@ -95,8 +91,8 @@ class AcbEncoder:
         use_list: bool = False,
         secret_key: t.Optional[SecretStr] = None,
         secure_salt: t.Optional[SecretStr] = None,
-        **kwargs,
-    ) -> dict | bytes:
+        **kwargs: object,
+    ) -> dict[str, str] | bytes:
         self.path = path
         self.sort_keys = sort_keys
         self.use_list = use_list

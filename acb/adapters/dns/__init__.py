@@ -11,7 +11,7 @@ class DnsRecord(BaseModel):
     name: t.Optional[str] = None
     type: str = "TXT"
     ttl: int = 300
-    rrdata: t.Optional[str | list] = None
+    rrdata: t.Optional[str | list[t.Any]] = None
 
     def model_post_init(self, __context: t.Any) -> None:
         self.name = f"mail.{ac.app.domain}"

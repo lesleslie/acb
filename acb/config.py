@@ -14,6 +14,7 @@ from secrets import token_urlsafe
 from string import ascii_letters
 from string import digits
 from string import punctuation
+from types import ModuleType
 from warnings import warn
 
 import nest_asyncio
@@ -46,14 +47,14 @@ app_name: str = ""
 # tmp_dir: AsyncPath = AsyncPath("tmp")
 # secrets_dir: AsyncPath = tmp_dir / "secrets"
 app_secrets: set = set()
-enabled_adapters: ContextVar[dict] = ContextVar("enabled_adapters", default={})
+enabled_adapters: ContextVar = ContextVar("enabled_adapters", default={})
 
 
 class PackageRegistry:
     def __init__(self) -> None:
         self.packages: dict = {}
 
-    def register(self) -> t.Any:
+    def register(self) -> None:
         pkg_path = AsyncPath(inspect.stack()[1][1]).parent
         pkg_name = pkg_path.stem
         self.packages[pkg_name] = pkg_path
@@ -69,8 +70,10 @@ def gen_password(size: int) -> str:
 
 def load_adapter(adapter: str, settings: bool = False) -> t.Any:
     with suppress(KeyError):
-        module = enabled_adapters.get()[adapter]
-        adapter_module = import_module(".".join(["acb", "adapters", adapter, module]))
+        module: str = enabled_adapters.get()[adapter]
+        adapter_module: ModuleType = import_module(
+            ".".join(["acb", "adapters", adapter, module])
+        )
         if settings:
             return getattr(adapter_module, adapter), getattr(
                 adapter_module, f"{camelize(adapter)}Settings"
@@ -487,7 +490,7 @@ class AppConfig(BaseSettings, extra="allow"):
     adapter_settings_path: t.Optional[AsyncPath] = None
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list = []
-    enabled_adapters: dict[str, t.Any] = {}
+    enabled_adapters: dict[str, str] = {}
     secrets_path: AsyncPath = AsyncPath("tmp/secrets")
     debug: t.Optional[Settings] = None
     app: t.Optional[Settings] = None
@@ -547,4 +550,4 @@ class AppConfig(BaseSettings, extra="allow"):
         return self
 
 
-ac = AppConfig()
+ac: AppConfig = AppConfig()

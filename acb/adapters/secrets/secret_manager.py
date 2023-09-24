@@ -47,7 +47,7 @@ class Secrets:
         logger.debug(f"Secrets access token verified - {verified}")
         return verified
 
-    async def list(self, adapter: str) -> list:
+    async def list(self, adapter: str) -> list[str]:
         request = ListSecretsRequest(
             parent=self.parent, filter=f"{self.prefix}{adapter}_"
         )

@@ -129,4 +129,4 @@ class Dns:
             logger.info("No DNS changes detected.")
 
 
-dns = Dns()
+dns: Dns = Dns()

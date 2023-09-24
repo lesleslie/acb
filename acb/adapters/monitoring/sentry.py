@@ -4,6 +4,7 @@ from acb.config import ac
 from pydantic import SecretStr
 
 from . import MonitoringBaseSettings
+from . import MonitoringBase
 
 
 class MonitoringSettings(MonitoringBaseSettings):
@@ -16,3 +17,10 @@ class MonitoringSettings(MonitoringBaseSettings):
         self.sample_rate = self.sample_rate if ac.deployed else 1.0
         self.enabled = ac.deployed or not ac.debug.production
         self.dsn = ac.secres.sentry_dsn
+
+
+class Monitoring(MonitoringBase):
+    ...
+
+
+monitoring: Monitoring = Monitoring()

@@ -4,19 +4,20 @@ from abc import ABC
 from abc import abstractmethod
 from requests import Response
 from httpx import Response as HttpxResponse
+import typing as t
 
 
-class RequestBaseSettings(Settings):
+class RequestsBaseSettings(Settings):
     cache_db: int = 2
 
     @field_validator("cache_db")
-    def cache_db_less_than_three(cls, v) -> int:
+    def cache_db_less_than_three(cls, v: int) -> int:
         if v < 3 and v != 2:
             raise ValueError("must be greater than 2 (0-2 are reserved)")
         return 2
 
 
-class RequestBase(ABC):
+class RequestsBase(ABC):
     @abstractmethod
     async def init(self) -> None:
         ...
@@ -26,11 +27,11 @@ class RequestBase(ABC):
         ...
 
     @abstractmethod
-    async def post(self, url: str, data: dict) -> Response | HttpxResponse:
+    async def post(self, url: str, data: dict[str, t.Any]) -> Response | HttpxResponse:
         ...
 
     @abstractmethod
-    async def put(self, url: str, data: dict) -> Response | HttpxResponse:
+    async def put(self, url: str, data: dict[str, t.Any]) -> Response | HttpxResponse:
         ...
 
     @abstractmethod

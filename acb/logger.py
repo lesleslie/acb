@@ -2,38 +2,45 @@ import logging
 import sys
 from time import perf_counter
 import typing as t
+from inspect import getmodule
+from inspect import stack
+from pathlib import Path
 
+from aiopath import AsyncPath
 from acb.config import ac
 from loguru import logger
+from icecream import ic as debug
+from pydantic import FilePath
+from icecream import colorizedStderrPrint
 
 
-# def get_mod():
-#     # frame = stack()[3][0]
-#     # frame = logging.currentframe()
-#     mod_logger = stack()[3][0]
-#     mod = getmodule(mod_logger)
-#     mod = Path(mod.__file__).parent
-#     if mod.stem == ac.basedir.stem:
-#         mod = Path(mod.__file__)
-#     return mod
-#
-#
-# def log_debug(s):
-#     mod = get_mod()
-#     debug_mod = dict(ac.debug.model_fields).get(mod.stem)
-#     if debug_mod:
-#         if ac.deployed:
-#             return (
-#             logger.patch(lambda record: record.update(
-#             name=mod.__name__)).debug(s)
-#             )
-#         return colorizedStderrPrint(s)
-#
-#
-# ic.configureOutput(prefix="    debug:  ", includeContext=True,
-# outputFunction=log_debug)
-# if ac.deployed:
-#     ic.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
+def get_mod() -> FilePath:
+    # frame = stack()[3][0]
+    # frame = logging.currentframe()
+    mod_logger = stack()[3][0]
+    mod = getmodule(mod_logger)
+    mod = Path(mod.__file__).parent
+    if mod.stem == ac.basedir.stem:
+        mod = Path(mod.__file__)
+    return AsyncPath(mod)
+
+
+def log_debug(s: str):
+    mod = get_mod()
+    debug_mod = dict(ac.debug.model_fields).get(mod.stem)
+    if debug_mod:
+        if ac.deployed:
+            return logger.patch(lambda record: record.update(name=mod.__name__)).debug(
+                s
+            )
+        return colorizedStderrPrint(s)
+
+
+debug.configureOutput(
+    prefix="    debug:  ", includeContext=True, outputFunction=log_debug
+)
+if ac.deployed:
+    debug.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
 
 
 # async def apformat(obj, sort_dicts: bool = False) -> None:  # make purple
@@ -43,8 +50,8 @@ from loguru import logger
 #         await aprint(pformat(obj, sort_dicts=sort_dicts))
 
 
-def timeit(func):
-    def wrapped(*args, **kwargs):
+def timeit(func: t.Callable) -> t.Callable[..., t.Any]:
+    def wrapped(*args: object, **kwargs: object):
         start = perf_counter()
         result = func(*args, **kwargs)
         end = perf_counter()
@@ -110,7 +117,7 @@ _loggers: list[str] = []
 # if ac.debug.cache:
 #     _loggers.extend(["httpx_caching"])
 for _log in _loggers:
-    _logger = logging.getLogger(_log)
+    _logger: logging.Logger = logging.getLogger(_log)
     _logger.handlers.clear()
     _logger.handlers = [InterceptHandler(_logger.name)]
 

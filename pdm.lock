@@ -6,7 +6,7 @@ groups = ["default", "storage", "mail", "cache", "dev", "requests", "sql", "dns"
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:32ce4595a7065c06052b4b869ad5db857a987befe58ec3a8bce0720e1e568e0a"
+content_hash = "sha256:9a351bf0445a6d46ab33ad331fe976866385a3255a5f6d05d5ef9fab1208f257"
 
 [[package]]
 name = "adlfs"
@@ -775,8 +775,10 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.4.14"
+version = "0.4.15"
 requires_python = ">=3.11"
+editable = true
+path = "../crackerjack"
 summary = "Crackerjack code style"
 dependencies = [
     "acb>=0.1.12",
@@ -787,10 +789,6 @@ dependencies = [
     "inflection>=0.5.1",
     "pdm-bump>=0.7.3",
     "pydantic>=2.3.0",
-]
-files = [
-    {file = "crackerjack-0.4.14-py3-none-any.whl", hash = "sha256:abecb77cf62a51ca2f29d08d7a5c1cd37fd3efa91e5854153383516e036f2b4a"},
-    {file = "crackerjack-0.4.14.tar.gz", hash = "sha256:796e3069dc9da6ef50c065348a6bafffa72d248fd8d1c36e599e89afe7aed363"},
 ]
 
 [[package]]

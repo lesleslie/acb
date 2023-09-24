@@ -22,8 +22,20 @@ class CacheSettings(CacheBaseSettings):
 
 
 class Cache(CashewsCache):
+    def __init__(self) -> None:
+        async def close_cache_session() -> None:
+            logger.debug("Closing cache session...")
+            loop = asyncio.get_running_loop()
+            ic(loop.is_running())
+            await self.close()
+            logger.debug("Cache session closed.")
+
+        asyncio_atexit.register(close_cache_session)
+
+        super().__init__()
+
     @staticmethod
-    async def encoder(value: t.Any, *args, **kwargs) -> bytes:
+    async def encoder(value: t.Any, *args: object, **kwargs: object) -> bytes:
         return await dump.msgpack(
             value,
             secret_key=ac.app.secret_key,
@@ -31,14 +43,14 @@ class Cache(CashewsCache):
         )
 
     @staticmethod
-    async def decoder(value: bytes, *args, **kwargs) -> t.Any:
+    async def decoder(value: bytes, *args: object, **kwargs: object) -> t.Any:
         return await load.msgpack(
             value,
             secret_key=ac.app.secret_key,
             secure_salt=ac.app.secure_salt,
         )
 
-    async def init(self, *args, **kwargs) -> t.NoReturn:
+    async def init(self, *args: object, **kwargs: object) -> t.NoReturn:
         await super().init(
             str(ac.cache._url),
             password=ac.cache.password.get_secret_value(),
@@ -47,15 +59,7 @@ class Cache(CashewsCache):
         )
         register_type(t.Any, self.encoder, self.decoder)
 
-        @asyncio_atexit.register
-        async def close_cache_session() -> t.NoReturn:
-            logger.debug("Closing cache session...")
-            loop = asyncio.get_running_loop()
-            ic(loop.is_running())
-            await self.close()
-            logger.debug("Cache session closed.")
-
         logger.debug("App cache initialized.")
 
 
-cache = Cache()
+cache: Cache = Cache()

@@ -8,7 +8,7 @@ from google_crc32c import value as crc32c
 
 class Hash:
     @staticmethod
-    async def blake3(obj: Path | AsyncPath | list | bytes | str) -> str:
+    async def blake3(obj: Path | AsyncPath | list[str] | bytes | str) -> str:
         if not obj:
             timestamp = arrow.utcnow().float_timestamp
             obj = str(timestamp)
@@ -27,4 +27,4 @@ class Hash:
         return crc32c(obj.encode())
 
 
-hash = Hash()
+hash: Hash = Hash()

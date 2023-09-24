@@ -31,3 +31,7 @@ class MailBaseSettings(Settings):
         self.domain = f"mail.{ac.app.domain}"
         self.default_from = f"info@{ac.app.domain}"
         self.default_from_name = ac.app.title
+
+
+class MailBase:
+    ...
