@@ -1,57 +1,52 @@
 import typing as t
-from calendar import isleap
-from calendar import monthrange
-
-# from concurrent.futures import as_completed
-# from concurrent.futures import ThreadPoolExecutor
-
-# from contextlib import suppress
-from datetime import date
-from datetime import datetime
-from datetime import timedelta
+from contextlib import asynccontextmanager
 from functools import cached_property
-from itertools import chain
 
-# from pathlib import Path
-from re import search
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-import arrow
 from acb.config import ac
 from acb.config import gen_password
 from acb.config import Settings
-
-# from acb.logger import apformat
+from acb.logger import debug
 from acb.logger import logger
 from aioconsole import ainput
 from aioconsole import aprint
-from aiopath import AsyncPath
-from pydantic import BaseModel
 from pydantic import SecretStr
-
-# from pydantic import create_model
 from sqlalchemy import inspect
+from sqlalchemy import text
 from sqlalchemy.engine import URL
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine
-
-# from sqlalchemy.exc import IntegrityError
-# from sqlalchemy.exc import InvalidRequestError
-# from sqlalchemy.ext.serializer import dumps as sdumps
-# from sqlalchemy.ext.serializer import loads as sloads
 from sqlalchemy_utils import create_database
 from sqlalchemy_utils import database_exists
 from sqlalchemy_utils import drop_database
 
 
+# from calendar import isleap
+# from calendar import monthrange
+# from datetime import date
+# from datetime import datetime
+# from datetime import timedelta
+# from itertools import chain
+# from re import search
 # import arrow
+# from acb.adapters import storage
+# from acb.depends import depends
+# from aiopath import AsyncPath
+# from pydantic import BaseModel
+# from sqlalchemy.exc import IntegrityError
+# from sqlalchemy.exc import InvalidRequestError
+# from sqlalchemy.ext.serializer import dumps as sdumps
+# from sqlalchemy.ext.serializer import loads as sloads
 # from acb.actions import dump
 # from acb.actions import load
 # from inflection import underscore
-# from sqlalchemy.ext.hybrid import hybrid_property
+# # from sqlalchemy.ext.hybrid import hybrid_property
+# from sqlalchemy.orm.exc import UnmappedInstanceError
 # from sqlalchemy.orm import declared_attr
 # from sqlmodel import Field
 # from ulid import ULID
-# from sqlmodel.ext.asyncio.session import AsyncSession
 # from sqlmodel import select
 # from sqlmodel import SQLModel
 
@@ -67,7 +62,7 @@ class SqlBaseSettings(Settings):
     password: SecretStr = SecretStr(gen_password(10))
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
-    engine_kwargs: t.Optional[dict] = {}
+    engine_kwargs: t.Optional[dict[str, t.Any]] = {}
 
     def model_post_init(self, __context: t.Any) -> None:
         url_kwargs = dict(
@@ -88,11 +83,11 @@ class SqlBase:
     def engine(self) -> AsyncEngine:
         return create_async_engine(ac.sql._async_url, **ac.sql.engine_kwargs)
 
-    # @cached_property
-    # def session(self) -> AsyncSession:
-    #     return AsyncSession(self.engine, expire_on_commit=False)
+    @cached_property
+    def session(self) -> AsyncSession:
+        return AsyncSession(self.engine, expire_on_commit=False)
 
-    async def create(self, demo: bool = False) -> t.NoReturn:
+    async def create(self, demo: bool = False) -> None:
         exists = database_exists(ac.sql._url)
         if exists:
             logger.debug("Database exists")
@@ -117,32 +112,35 @@ class SqlBase:
             create_database(ac.sql.url)
             logger.debug("Database created")
 
-    # @asynccontextmanager
-    # async def session(self) -> t.AsyncGenerator:
-    #     async with self.get_async_session() as sess:
-    #         yield sess
+    @asynccontextmanager
+    async def get_session(self) -> t.AsyncGenerator[AsyncSession, None]:
+        async with self.session as sess:
+            yield sess
 
-    # @asynccontextmanager
-    # async def engine(self) -> t.AsyncGenerator:
-    #     async with self.get_async_engine() as conn:
-    #         yield conn
+    @asynccontextmanager
+    async def get_engine(self) -> t.AsyncGenerator[AsyncConnection, None]:
+        async with self.engine.begin() as conn:
+            yield conn
 
     @staticmethod
-    def get_table_names(conn) -> list[str]:
+    def get_table_names(conn: object) -> list[str]:
         inspector = inspect(conn)
-        return inspector.get_table_names()
+        return inspector.get_table_names() or []
 
-    async def init(self, demo: bool = False) -> t.NoReturn:
+    async def init(self, demo: bool = False) -> None:
         # print(debug.database)
         # print(type(debug.database))
         await self.create(demo)
-        # if ac.debug.sql:
-        #     sql = text("DROP TABLE IF EXISTS alembic_version")
-        #     self.get_async_engine.execute(sql)
+        if ac.debug.sql:
+            sql = text("DROP TABLE IF EXISTS alembic_version")
+            async with self.get_engine() as conn:
+                await conn.execute(sql)
         logger.debug("Creating database tables...")
         # self.get_async_engine().run_sync(SQLModel.metadata.create_all)
-        # if ac.debug.sql:
-        #     table_names = self.get_async_engine().run_sync(self.get_table_names)
+        if ac.debug.sql:
+            async with self.get_engine() as conn:
+                table_names = conn.run_sync(self.get_table_names)
+            debug(table_names)
         #     await apformat(table_names)
         logger.debug("Database initialized")
 
@@ -152,9 +150,9 @@ class SqlBase:
 #     __mapper_args__ = {"always_refresh": True}
 #     id: t.Optional[ULID] = Field(default_factory=ULID, primary_key=True)
 #
-#     @property
-#     def date_created(self):
-#         return arrow.get(ULID(self.id).timestamp)
+#     # @property
+#     # def date_created(self) -> arrow.Arrow:
+#     #     return arrow.get(ULID(self.id).timestamp)
 #
 #     @declared_attr
 #     def __tablename__(cls):
@@ -167,124 +165,128 @@ class SqlBase:
 #         json_dumps = dump.json
 #
 #     async def save(self) -> None:
-#         async with db.async_session() as session:
+#         async with sql.get_session() as session:
 #             session.add(self)
 #             await session.commit()
 
 
-sure_delete = False
 
 
-class BackupDbUtils(BaseModel):
-    @staticmethod
-    def get_timestamp(name: str) -> object:
-        pattern = r"(.*)(-)(?P<timestamp>[\d]{10})(-)(.*)"
-        match = search(pattern, name)
-        return match.group("timestamp") if match else False
 
-    # def get_files(self):
-    #     blobs = stor.db.list()
-    #     for blob in blobs:
-    #         if self.get_timestamp(blob.name):
-    #             yield blob.name
-
-    def get_timestamps(self) -> list[object]:
-        if not self.files:
-            self.files = tuple(self.get_files())
-        different_timestamps = []
-        for name in self.files:
-            timestamp = self.get_timestamp(name)
-            if timestamp and timestamp not in different_timestamps:
-                different_timestamps.append(timestamp)
-        return different_timestamps
-
-    def by_timestamp(self, timestamp: object) -> t.Generator:
-        if not self.files:
-            self.files = tuple(self.get_files())
-        for name in self.files:
-            if timestamp == self.get_timestamp(name):
-                yield name
-
-    def valid(self, timestamp: str) -> bool:
-        if timestamp in self.get_timestamps():
-            return True
-        # print('==> Invalid id. Use "history" to list existing downloads')
-        return False
-
-    def get_path(self, class_name: str, timestamp: int = None) -> AsyncPath:
-        timestamp = timestamp or arrow.utcnow().int_timestamp
-        self.backup_path = AsyncPath(f"{ac.app.name}-{timestamp}-{class_name}.sqla")
-        return self.backup_path
-
-
-class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
-    today: arrow.Arrow = arrow.utcnow()
-    white_list: list = []
-    black_list: list = []
-    dates: list = []
-
-    def __init__(self, dates=None, **data: t.Any) -> None:
-        super().__init__(**data)
-        self.dates = sorted(dates, reverse=True) if dates else []
-        self.run()  # feed self.white_list & self.black_list
-
-    def get_last_month_length(self) -> datetime.month:
-        return monthrange(self.today.year, self.today.shift(months=-1).month)[1]
-
-    def get_last_year_length(self):
-        first_day = date(self.today.year, 1, 1)  # current year
-        last_day = first_day - timedelta(days=1)  # last year
-        return 366 if isleap(last_day.year) else 365
-
-    def filter_dates(
-        self, dates: list[t.Any], period: str = "week"
-    ) -> t.Generator[t.Any, t.Any, t.Any]:
-        reference = self.today.int_timestamp
-        method_mapping: dict[str, t.Any()] = {
-            "week": lambda obj: getattr(obj, "isocalendar")()[1],
-            "month": lambda obj: getattr(obj, "month"),
-            "year": lambda obj: getattr(obj, "year"),
-        }
-        for dt in dates:
-            comp_date = datetime.fromtimestamp(int(dt))
-            comparison = method_mapping.get(period)(comp_date)
-            ref_date = datetime.fromtimestamp(reference)
-            if comparison != method_mapping.get(period)(ref_date):
-                reference = dt
-                yield dt
-
-    def run(self) -> None:
-        last_w = self.today.shift(days=-7).int_timestamp
-        last_m = self.today.shift(days=-(self.get_last_month_length())).int_timestamp
-        last_y = self.today.shift(days=-(self.get_last_year_length())).int_timestamp
-        backups_week = []
-        backups_month = []
-        backups_year = []
-        backups_older = []
-        for timestamp in self.dates:
-            if int(timestamp) >= last_w:
-                backups_week.append(timestamp)
-            elif int(timestamp) >= last_m:
-                backups_month.append(timestamp)
-            elif int(timestamp) >= last_y:
-                backups_year.append(timestamp)
-            else:
-                backups_older.append(timestamp)
-        self.white_list.extend(
-            chain(
-                backups_week,
-                self.filter_dates(backups_month),
-                self.filter_dates(backups_year, "month"),
-                self.filter_dates(backups_older, "year"),
-            )
-        )
-        diff_as_list = [d for d in self.dates if d not in self.white_list]
-        self.black_list.extend(sorted(diff_as_list, reverse=True))
+# class BackupDbUtils(BaseModel):
+#     storage: storage = depends()
+#
+#     @staticmethod
+#     def get_timestamp(name: str) -> str | None:
+#         pattern = r"(.*)(-)(?P<timestamp>[\d]{10})(-)(.*)"
+#         match = search(pattern, name)
+#         return match.group("timestamp") or None
+#
+#     def get_files(self):
+#         blobs = self.storage.sql.list()
+#         for blob in blobs:
+#             if self.get_timestamp(blob.name):
+#                 yield blob.name
+#
+#     def get_timestamps(self) -> list[str]:
+#         if not self.files:
+#             self.files = tuple(self.get_files())
+#         different_timestamps = []
+#         for name in self.files:
+#             timestamp = self.get_timestamp(name)
+#             if timestamp and timestamp not in different_timestamps:
+#                 different_timestamps.append(timestamp)
+#         return different_timestamps
+#
+#     async def by_timestamp(self, timestamp: int) -> t.Generator:
+#         if not self.files:
+#             self.files = tuple(self.get_files())
+#         for name in self.files:
+#             if timestamp == self.get_timestamp(name):
+#                 yield name
+#
+#     def valid(self, timestamp: str) -> bool:
+#         if timestamp in self.get_timestamps():
+#             return True
+#         # print('==> Invalid id. Use "history" to list existing downloads')
+#         return False
+#
+#     def get_path(self, class_name: str, timestamp: t.Optional[int] = None) -> AsyncPath:
+#         timestamp = timestamp or arrow.utcnow().int_timestamp
+#         self.backup_path = AsyncPath(f"{ac.app.name}-{timestamp}-{class_name}.sqla")
+#         return self.backup_path
+#
+#
+# class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
+#     today: arrow.Arrow = arrow.utcnow()
+#     white_list: list[int] = []
+#     black_list: list[int] = []
+#     dates: list[int] = []
+#
+#     def __init__(self, dates=None, **data: t.Any) -> None:
+#         super().__init__(**data)
+#         self.dates = sorted(dates, reverse=True) if dates else []
+#         self.run()  # feed self.white_list & self.black_list
+#
+#     def get_last_month_length(self) -> int:
+#         return monthrange(self.today.year, self.today.shift(months=-1).month)[1]
+#
+#     def get_last_year_length(self):
+#         first_day = date(self.today.year, 1, 1)  # current year
+#         last_day = first_day - timedelta(days=1)  # last year
+#         return 366 if isleap(last_day.year) else 365
+#
+#     def filter_dates(
+#         self, dates: list[t.Any], period: str = "week"
+#     ) -> t.Generator[t.Any, t.Any, t.Any]:
+#         reference = self.today.int_timestamp
+#         method_mapping: dict[str, t.Any()] = {
+#             "week": lambda obj: getattr(obj, "isocalendar")()[1],
+#             "month": lambda obj: getattr(obj, "month"),
+#             "year": lambda obj: getattr(obj, "year"),
+#         }
+#         for dt in dates:
+#             comp_date = datetime.fromtimestamp(int(dt))
+#             comparison = method_mapping.get(period)(comp_date)
+#             ref_date = datetime.fromtimestamp(reference)
+#             if comparison != method_mapping.get(period)(ref_date):
+#                 reference = dt
+#                 yield dt
+#
+#     def run(self) -> None:
+#         last_w = self.today.shift(days=-7).int_timestamp
+#         last_m = self.today.shift(days=-(self.get_last_month_length())).int_timestamp
+#         last_y = self.today.shift(days=-(self.get_last_year_length())).int_timestamp
+#         backups_week = []
+#         backups_month = []
+#         backups_year = []
+#         backups_older = []
+#         for timestamp in self.dates:
+#             if timestamp >= last_w:
+#                 backups_week.append(timestamp)
+#             elif timestamp >= last_m:
+#                 backups_month.append(timestamp)
+#             elif timestamp >= last_y:
+#                 backups_year.append(timestamp)
+#             else:
+#                 backups_older.append(timestamp)
+#         self.white_list.extend(
+#             chain(
+#                 backups_week,
+#                 self.filter_dates(backups_month),
+#                 self.filter_dates(backups_year, "month"),
+#                 self.filter_dates(backups_older, "year"),
+#             )
+#         )
+#         diff_as_list = [d for d in self.dates if d not in self.white_list]
+#         self.black_list.extend(sorted(diff_as_list, reverse=True))
 
 
 # class BackupDb(BackupDbDates, BackupDbUtils):
 #     do_not_backup: list = []
 #     models: list = []
+#     sql: SqlBase = depends()
+#     sure_delete: bool = False
 #
 #     def show(self):
 #         return [
@@ -306,7 +308,7 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
 #
 #     async def get_data(self) -> dict[str, str]:
 #         data = {}
-#         async with db.session() as session:
+#         async with self.session() as session:
 #             for model in self.get_mapped_classes():
 #                 query = select(model)
 #                 results = session.exec(query)
@@ -318,17 +320,17 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
 #             contents = sloads(
 #                 contents,
 #                 metadata=SQLModel.metadata,
-#                 engine=db.engine,
-#                 scoped_session=db.session(),
+#                 engine=self.sql.engine,
+#                 scoped_session=self.sql.session(),
 #             )
 #         return contents
 #
 #     async def backup(self, class_name: str, data, now) -> None:
 #         path = self.get_path(class_name, now)
-#         await stor.db.save(data, path)
+#         await self.storage.sql.save(data, path)
 #
 #     async def save(self) -> None:
-#         data = self.get_data()
+#         data = await self.get_data()
 #         now = arrow.utcnow().int_timestamp
 #
 #         for class_name in data.keys():
@@ -343,9 +345,13 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
 #             adate = arrow.Arrow.fromtimestamp(timestamp)
 #             date_formatted = adate.humanize()
 #             backups[timestamp] = []
-#             fps = [AsyncPath(b) for b in stor.db.list() if timestamp in b.name]
+#             fps = [
+#                 AsyncPath(b)
+#                 async for b in self.storage.sql.list()
+#                 if timestamp in b.name
+#             ]
 #             for fp in fps:
-#                 if await stor.db.exists(fp):
+#                 if await self.storage.sql.exists(fp):
 #                     backups[timestamp].append(fp.name)
 #             adate_formatted = adate.format("MM-DD-YYYY HH:mm:ss ZZ")
 #             logger.debug(f"{date_formatted} ==> {adate_formatted}:")
@@ -353,71 +359,74 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
 #
 #     def get_last_backup(self) -> str | bool:
 #         timestamps = self.get_timestamps()
-#         if not len(timestamps):
+#         if not timestamps:
 #             return False
 #         timestamp = sorted(timestamps, reverse=True)[0]
 #         adate = arrow.Arrow.fromtimestamp(timestamp)
 #         logger.info(f"Last backup: {adate.format('MM-DD-YYYY HH:mm:ss ZZ')}")
 #         return timestamp
 #
-#     def restore_rows(self, path: Path) -> None:
-#         stor.db.get(path)
-#         # try:
-#         #     model = search("-(\D+).sqla", path.name).group(1)
-#         #     if contents:
-#         #         contents = sub(
-#         #             b"_sp.{31,32}\.",
-#         #             bytes(f"{plugin_source.spaceid}.", encoding="utf8"),
-#         #             contents,
-#         #         )
-#         #         is_pickled = load.pickle(contents)
-#         #         if not isinstance(is_pickled, list):
-#         #             contents = is_pickled
-#         #         loaded = self.parse_data(contents)
-#         #         if "app" in path.stem:
-#         #             loaded = [loaded[0]]
-#         #         if loaded != []:
-#         #             for m in self.show():
-#         #                 m_name = m.__name__
-#         #                 if m_name == model:
-#         #                     self.async_session.query(m).delete()
-#         #             self.async_session.commit()
-#         #             for row in loaded:
-#         #                 try:
-#         #                     with suppress(UnmappedInstanceError):
-#         #                         self.async_session.merge(row)
-#         #                     self.async_session.commit()
-#         #                 except (IntegrityError, InvalidRequestError) as err:
-#         #                     self.async_session.rollback()
-#         #                     fails.append(row)
-#         #             status = "partially" if len(fails) else "totally"
-#         #             status = f"\t==> {path.name} {status} " \
-#         #                      f"restored{':' if len(fails) else '.'}"
-#         #         else:
-#         #             status = f"\t!=> No or bad data for {model}."
-#         #     else:
-#         #         status = f"\t!=> File {path.name} does not exist."
-#         # except Exception as err:
-#         #     status = err
-#         # return status, fails
+#     async def restore_rows(self, path: AsyncPath) -> tuple[str, list]:
+#         contents = await self.storage.sql.get(path)
+#         fails = []
+#         try:
+#             model = search("-(\D+).sqla", path.name).group(1)
+#             if contents:
+#                 # contents = sub(
+#                 #     b"_sp.{31,32}\.",
+#                 #     bytes(f"{plugin_source.spaceid}.", encoding="utf8"),
+#                 #     contents,
+#                 # )
+#                 is_pickled = load.pickle(contents)
+#                 if not isinstance(is_pickled, list):
+#                     contents = is_pickled
+#                 loaded = self.parse_data(contents)
+#                 if "app" in path.stem:
+#                     loaded = [loaded[0]]
+#                 if loaded != []:
+#                     for m in self.show():
+#                         m_name = m.__name__
+#                         if m_name == model:
+#                             self.async_session.query(m).delete()
+#                     await self.session.commit()
+#                     for row in loaded:
+#                         try:
+#                             with suppress(UnmappedInstanceError):
+#                                 self.async_session.merge(row)
+#                             await self.session.commit()
+#                         except (IntegrityError, InvalidRequestError):
+#                             self.async_session.rollback()
+#                             fails.append(row)
+#                     status = "partially" if fails else "totally"
+#                     status = (
+#                         f"\t==> {path.name} {status} "
+#                         f"restored{':' if fails else '.'}"
+#                     )
+#                 else:
+#                     status = f"\t!=> No or bad data for {model}."
+#             else:
+#                 status = f"\t!=> File {path.name} does not exist."
+#         except Exception as err:
+#             status = err
+#         return status, fails
 #
-#     def restore_backup(self, timestamp: str) -> None:
-#         paths = [Path(b.name) for b in stor.db.list() if timestamp in b.name]
+#     async def restore_backup(self, timestamp: str) -> None:
+#         paths = [
+#             AsyncPath(b.name)
+#             async for b in self.storage.sql.list()
+#             if (timestamp in b.name)
+#         ]
 #         when = arrow.Arrow.fromtimestamp(timestamp).humanize()
 #         logger.info(f"Restoring backup from {when}.....")
-#         with ThreadPoolExecutor(max_workers=5) as executor:
-#             all_tasks = []
-#             for path in paths:
-#                 logger.debug(f"\tRestoring:  {path.name}")
-#                 all_tasks.append(executor.submit(self.restore_rows, path))
-#
-#             for future in as_completed(all_tasks):
-#                 status, fails = future.result()
-#                 for f in fails:
-#                     logger.error(f"\t\tRestore of {f} failed!")
+#         for path in paths:
+#             logger.debug(f"\tRestoring:  {path.name}")
+#             status, fails = await self.restore_rows(path)
+#             logger.info(status)
+#             for f in fails:
+#                 logger.error(f"\t\tRestore of {f} failed!")
 #
 #     def delete_backups(self, delete_list: list[str]) -> None:
-#         delete_me = stor.db.delete(delete_list)
+#         delete_me = self.storage.sql.delete(delete_list)
 #         if delete_me:
 #             for name in delete_list:
 #                 logger.debug(f"Deleted {name}")
@@ -463,17 +472,17 @@ class BackupDbDates(BaseModel, arbitrary_types_allowed=True):
 #     async def run(self) -> None:
 #         if not ac.deployed:
 #             last_backup = self.get_last_backup()
-#             if ac.debug.database and sure_delete:
-#                 blobs = [b.name for b in stor.db.list()]
+#             if ac.debug.database and self.sure_delete:
+#                 blobs = [b.name for b in self.storage.sql.list()]
 #                 for b in blobs:
-#                     stor.db.delete(b)
+#                     self.storage.sql.delete(b)
 #                 # clear_resized_images()
 #                 last_backup = None
 #             if not last_backup:
 #                 await self.save()
-#             elif last_backup and ac.debug.database and not sure_delete:
+#             elif last_backup and ac.debug.database and not self.sure_delete:
 #                 logger.info(f"Restoring last backup - {last_backup}")
-#                 self.restore_backup(last_backup)
+#                 await self.restore_backup(last_backup)
 #             self.clean()
 #             logger.info("Backups complete.")
 #

@@ -44,8 +44,6 @@ deployed: bool = True if Path.cwd().name == "app" else False  # or "srv"?
 
 project: str = ""
 app_name: str = ""
-# tmp_dir: AsyncPath = AsyncPath("tmp")
-# secrets_dir: AsyncPath = tmp_dir / "secrets"
 app_secrets: set = set()
 enabled_adapters: ContextVar = ContextVar("enabled_adapters", default={})
 
@@ -79,7 +77,7 @@ def load_adapter(adapter: str, settings: bool = False) -> t.Any:
                 adapter_module, f"{camelize(adapter)}Settings"
             )
         return getattr(adapter_module, adapter)
-    raise SystemExit(f"Adapter {adapter} not found.")
+    raise SystemExit(f"Adapter {adapter!r} not found.")
 
 
 class PydanticBaseSettingsSource(ABC):
