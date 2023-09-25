@@ -5,7 +5,6 @@ from acb.config import load_adapter
 from acb.config import enabled_adapters
 from acb.logger import logger
 from acb.depends import get_repo
-from acb.logger import debug
 
 __all__: list[str] = []
 
@@ -21,7 +20,6 @@ async def main() -> None:
         await globals()[adapter].init()
         repo.set(adapter, globals()[adapter])
         logger.info(f"Adapter loaded: {adapter}")
-    debug(repo)
 
 
 loop = asyncio.new_event_loop() or asyncio.get_running_loop()

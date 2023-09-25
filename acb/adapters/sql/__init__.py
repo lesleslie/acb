@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from functools import cached_property
 
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import SQLModel
 
 from acb.config import ac
 from acb.config import gen_password
@@ -13,7 +14,6 @@ from aioconsole import ainput
 from aioconsole import aprint
 from pydantic import SecretStr
 from sqlalchemy import inspect
-from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -103,13 +103,14 @@ class SqlBase:
                     "REPLACED WITH DEMO DATA.\nALL OF YOUR CURRENT DATA WILL BE LOST!\n"
                 )
             await aprint(msg)
-            delete_db = await ainput("Would you like to reset the database? (Y/N) ")
-            if delete_db:
+            delete_db = await ainput("Would you like to reset the database? (y/N) ")
+            await aprint()
+            if delete_db.upper().strip() == "Y":
                 drop_database(ac.sql._url)
                 logger.warning("Database dropped")
                 exists = database_exists(ac.sql._url)
         if not exists:
-            create_database(ac.sql.url)
+            create_database(ac.sql._url)
             logger.debug("Database created")
 
     @asynccontextmanager
@@ -118,7 +119,7 @@ class SqlBase:
             yield sess
 
     @asynccontextmanager
-    async def get_engine(self) -> t.AsyncGenerator[AsyncConnection, None]:
+    async def get_conn(self) -> t.AsyncGenerator[AsyncConnection, None]:
         async with self.engine.begin() as conn:
             yield conn
 
@@ -128,20 +129,17 @@ class SqlBase:
         return inspector.get_table_names() or []
 
     async def init(self, demo: bool = False) -> None:
-        # print(debug.database)
-        # print(type(debug.database))
         await self.create(demo)
-        if ac.debug.sql:
-            sql = text("DROP TABLE IF EXISTS alembic_version")
-            async with self.get_engine() as conn:
-                await conn.execute(sql)
-        logger.debug("Creating database tables...")
-        # self.get_async_engine().run_sync(SQLModel.metadata.create_all)
-        if ac.debug.sql:
-            async with self.get_engine() as conn:
-                table_names = conn.run_sync(self.get_table_names)
-            debug(table_names)
-        #     await apformat(table_names)
+        async with self.get_conn() as conn:
+            # if ac.debug.sql:
+            #     sql = text("DROP TABLE IF EXISTS alembic_version")
+            #     await conn.execute(sql)
+            logger.debug("Creating database tables...")
+
+            await conn.run_sync(SQLModel.metadata.create_all)
+            if ac.debug.sql:
+                table_names = await conn.run_sync(self.get_table_names)
+                debug(table_names)
         logger.debug("Database initialized")
 
 

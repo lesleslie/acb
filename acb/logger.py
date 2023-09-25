@@ -1,57 +1,64 @@
 import logging
 import sys
 import typing as t
-from inspect import getmodule
-from inspect import stack
-from pathlib import Path
+from pprint import pformat
 from time import perf_counter
 
 from acb.config import ac
+from aioconsole import aprint
 from aiopath import AsyncPath
 from icecream import colorizedStderrPrint
-from icecream import ic as debug
+from icecream import install
 from loguru import logger
 
 
-def get_mod() -> AsyncPath:
-    # frame = stack()[3][0]
-    # frame = logging.currentframe()
-    mod_logger = stack()[3][0]
-    module = getmodule(mod_logger)
-    mod = ac.basedir
-    if module:
-        mod = Path(module.__file__).parent  # type: ignore
-        if mod.stem == ac.basedir.stem:
-            mod = Path(mod)
-    return AsyncPath(mod)
+def patch_record(mod: AsyncPath, msg: str) -> None:
+    logger.patch(lambda record: record.update(name=mod.name)).debug(msg)  # type:ignore
 
 
 def log_debug(msg: str) -> t.Any:
     mod = get_mod()
-    debug_mod: str = getattr(ac.debug, mod.stem)
-    if debug_mod:
-        if ac.deployed:
-            logger.patch(lambda rec: rec.update(mod.name)).debug(msg)  # type: ignore
-            return
-        colorizedStderrPrint(msg)
+    if mod:
+        if ac.deployed or ac.debug.production:
+            patch_record(mod, msg)
+        else:
+            colorizedStderrPrint(msg)
 
 
-debug.configureOutput(
-    prefix="    debug:  ", includeContext=True, outputFunction=log_debug
-)
-if ac.deployed:
-    debug.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
+try:
+    from icecream import ic as debug
+
+    install()
+    debug.configureOutput(
+        prefix="    debug:  ", includeContext=True, outputFunction=log_debug
+    )
+    if ac.deployed or ac.debug.production:
+        debug.configureOutput(prefix="", includeContext=False, outputFunction=log_debug)
+
+except ImportError:  # Graceful fallback if IceCream isn't installed.
+
+    def debug(*a: t.Any) -> t.Any:
+        fake_ic = a[0] if len(a) == 1 else a
+        return None if not a else fake_ic
 
 
-# async def apformat(obj, sort_dicts: bool = False) -> None:  # make purple
-#     mod = get_mod()
-#     debug_mod = dict(ac.debug.model_fields).get(mod.stem)
-#     if not ac.deployed and not ac.debug.production and debug_mod:
-#         await aprint(pformat(obj, sort_dicts=sort_dicts))
+def get_mod() -> AsyncPath | None:
+    mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
+    mod = AsyncPath(mod).parent
+    debug_mod = getattr(ac.debug, mod.stem, None) or (
+        mod.stem == ac.app.name and ac.debug.main
+    )
+    return mod if debug_mod else None
+
+
+async def apprint(obj: t.Any, sort_dicts: bool = False) -> t.Any:  # make purple
+    mod = get_mod()
+    if mod and not ac.deployed and not ac.debug.production:
+        await aprint(pformat(obj, sort_dicts=sort_dicts))
 
 
 def timeit(func: t.Any) -> t.Any:
-    def wrapped(*args: object, **kwargs: t.Any) -> t.Any:
+    def wrapped(*args: t.Any, **kwargs: t.Any) -> t.Any:
         start = perf_counter()
         result = func(*args, **kwargs)
         end = perf_counter()
@@ -64,7 +71,7 @@ def timeit(func: t.Any) -> t.Any:
 class InterceptHandler(logging.Handler):
     def __init__(self, logger_name: str) -> None:
         super().__init__()
-        self.logger_name = logger_name
+        self.log_name = logger_name
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
@@ -75,9 +82,16 @@ class InterceptHandler(logging.Handler):
         while frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
-        logger.patch(
-            patcher=lambda record: record.__dict__.update(name=self.logger_name)
-        ).opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+        (
+            logger.patch(
+                lambda record: record.update(name=self.log_name)  # type: ignore
+            )
+            .opt(
+                depth=depth,
+                exception=record.exc_info,
+            )
+            .log(level, record.getMessage())
+        )
 
 
 logger_format: dict[str, str] = dict(
@@ -88,6 +102,7 @@ logger_format: dict[str, str] = dict(
     line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
     message="  <level>{message}</level>",
 )
+
 level_per_module: dict[str, str] = {
     m: "DEBUG" if v is True else "INFO" for (m, v) in ac.debug.model_dump().items()
 }
@@ -100,31 +115,34 @@ configs: dict[str, t.Any] = dict(
     backtrace=True,
 )
 logger.remove()
-# logging.getLogger("uvicorn").handlers.clear()
 logger.add(sys.stderr, **configs)
 logger.level("DEBUG", color="<cyan>")
 _loggers: list[str] = []
-# _loggers = ["uvicorn.access", "uvicorn.error"]
-# if ac.debug.sql:
-#     _loggers.extend(
-#         [
-#             "sqlalchemy.engine",
-#             "sqlalchemy.orm",
-#             "sqlalchemy.pool",
-#             "sqlalchemy.dialects",
-#         ]
-#     )
-# if ac.debug.cache:
-#     _loggers.extend(["httpx_caching"])
-for _log in _loggers:
-    _logger: logging.Logger = logging.getLogger(_log)
-    _logger.handlers.clear()
-    _logger.handlers = [InterceptHandler(_logger.name)]
+if ac.debug.sql:
+    _loggers.extend(
+        [
+            "sqlalchemy.engine",
+            "sqlalchemy.orm",
+            "sqlalchemy.pool",
+            "sqlalchemy.dialects",
+        ]
+    )
+if ac.debug.requests:
+    _loggers.extend(["httpx_caching"])
 
-# if ac.debug.logger:
-#     logger.debug("debug")
-#     logger.info("info")
-#     logger.warning("warning")
-#     logger.error("error")
-#     logger.critical("critical")
-#     pprint(level_per_module)
+
+def load_loggers(loggers: list[str]) -> None:
+    for _logger in loggers:
+        _logger = logging.getLogger(_logger)
+        _logger.handlers.clear()
+        _logger.handlers = [InterceptHandler(_logger.name)]
+
+
+load_loggers(_loggers)
+
+if ac.debug.logger:
+    logger.debug("debug")
+    logger.info("info")
+    logger.warning("warning")
+    logger.error("error")
+    logger.critical("critical")
