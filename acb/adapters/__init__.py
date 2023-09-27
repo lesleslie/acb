@@ -6,6 +6,7 @@ from acb.depends import depends
 from inflection import camelize
 from pluginbase import PluginBase
 
+
 __all__: list[str] = []
 
 adapters_base = PluginBase(package="acb.adapters")

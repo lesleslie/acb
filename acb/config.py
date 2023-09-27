@@ -45,7 +45,14 @@ _app_secrets: set[str] = set()
 _secrets_path: AsyncPath = AsyncPath("tmp/secrets")
 project: str = ""
 app_name: str = ""
-enabled_adapters: ContextVar[dict[str, t.Any]] = ContextVar(
+required_adapters: ContextVar[list[str]] = ContextVar(
+    "required_adapters", default=["logger"]
+)
+adapter_categories: ContextVar[list[str]] = ContextVar("adapter_categories", default=[])
+available_adapters: ContextVar[dict[str, str]] = ContextVar(
+    "available_adapters", default={}
+)
+enabled_adapters: ContextVar[dict[str, str]] = ContextVar(
     "enabled_adapters", default={}
 )
 package_registry: ContextVar[dict[str, AsyncPath]] = ContextVar(
@@ -78,21 +85,9 @@ def import_adapter(adapter: t.Optional[str] = None) -> t.Any:
         return getattr(adapter_module, adapter_class), getattr(
             adapter_module, adapter_settings_class
         )
-    raise SystemExit(f"Adapter {adapter!r} not found.")
-
-
-# def load_adapter(adapter: str, settings: bool = False) -> t.Any:
-#     with suppress(KeyError):
-#         module = enabled_adapters.get()[adapter]
-#         adapter_module = import_module(".".join(["acb", "adapters", adapter, module]))
-#         adapter_class_name = camelize(adapter)
-#         adapter_class = getattr(adapter_module, adapter_class_name)
-#         if settings:
-#             return adapter_class, getattr(
-#                 adapter_module, f"{adapter_class_name}Settings"
-#             )
-#         return adapter_class
-#     raise SystemExit(f"Adapter {adapter!r} not found.")
+    if adapter in required_adapters.get():
+        raise SystemExit(f"Required adapter {adapter!r} not found.")
+    warn(f"Adapter {adapter!r} not found.")
 
 
 class PydanticBaseSettingsSource(ABC):
@@ -271,7 +266,7 @@ class ManagerSecretsSource(FileSecretsSource):
     @alru_cache(maxsize=1)
     async def get_manager(self):
         # manager = load_adapter("secrets")[0]()
-        print('blah')
+        print("blah")
         manager = import_adapter("secrets")
         await manager.init()
         return manager
@@ -480,7 +475,6 @@ class Config(BaseSettings, extra="allow"):
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list[str] = []
     enabled_adapters: dict[str, str] = {}
-    required_adapters: dict[str, str] = dict(secrets="secret_manager", logger="loguru")
     debug: t.Optional[Settings] = None
     app: t.Optional[Settings] = None
 
@@ -498,7 +492,6 @@ class Config(BaseSettings, extra="allow"):
         return super().__getattr__(item)  # type: ignore
 
     async def init(self, deployed: bool = False) -> t.Any:
-        global logger
         self.deployed = deployed
         for path in (
             self.app_settings_path,
@@ -508,38 +501,41 @@ class Config(BaseSettings, extra="allow"):
             await path.mkdir(exist_ok=True)
         mod_dir = self.basedir / "__pypackages__"
         sys.path.append(str(mod_dir))
-        base_settings = {}
         if self.basedir.name != "acb":
-            adapter_categories = [
+            self.adapter_categories = [
                 path.stem
                 async for path in (self.pkgdir / "adapters").iterdir()
                 if await path.is_dir() and not path.name.startswith("__")
             ]
             if not await self.adapter_settings_path.exists():
                 await dump.yaml(
-                    {cat: None for cat in adapter_categories} | self.required_adapters,
+                    {cat: None for cat in self.adapter_categories},
                     self.adapter_settings_path,
                 )
-            available_adapters = await load.yaml(self.adapter_settings_path)
+            self.available_adapters = await load.yaml(self.adapter_settings_path)
             for adapter in [
-                a for a in adapter_categories if a not in available_adapters
+                a for a in self.adapter_categories if a not in self.available_adapters
             ]:
-                available_adapters[adapter] = self.required_adapters[adapter] or None
-            await dump.yaml(available_adapters, self.adapter_settings_path)
-            enabled_adapters.set(
-                {
-                    c: a
-                    for c, a in available_adapters.items()
-                    if c in adapter_categories and a
+                self.available_adapters[adapter] = None
+            await dump.yaml(self.available_adapters, self.adapter_settings_path)
+            self.enabled_adapters = {
+                c: a
+                for c, a in self.available_adapters.items()
+                if c in self.adapter_categories and a
+            }
+            for a in required_adapters.get():
+                self.enabled_adapters = {
+                    a: self.enabled_adapters.pop(a),
+                    **self.enabled_adapters,
                 }
-            )
-            base_settings.update(
-                dict(
-                    available_adapters=available_adapters,
-                    enabled_adapters=enabled_adapters.get(),
-                    adapter_categories=adapter_categories,
-                    package_registry=package_registry,
-                )
+            adapter_categories.set(self.adapter_categories)
+            available_adapters.set(self.available_adapters)
+            enabled_adapters.set(self.enabled_adapters)
+            base_settings = dict(
+                adapter_categories=adapter_categories.get(),
+                available_adapters=available_adapters.get(),
+                enabled_adapters=enabled_adapters.get(),
+                package_registry=package_registry.get(),
             )
             super().__init__(**base_settings)
         return self

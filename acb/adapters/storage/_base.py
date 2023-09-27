@@ -136,7 +136,7 @@ class StorageBase:
         for bucket in self.config.storage.buckets:
             setattr(self, bucket, StorageBucket(self.client, bucket))
             self.logger.debug(f"{bucket.title()} storage bucket initialized")
-        self.logger.debug("Storage initialized")
+        self.logger.info("Storage initialized")
 
 
 class StorageFile:

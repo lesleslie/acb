@@ -33,7 +33,7 @@ class Cache(CashewsCache):
             loop = asyncio.get_running_loop()
             debug(loop.is_running())
             await self.close()
-            self.logger.debug("Cache session closed.")
+            self.logger.debug("Cache session closed")
 
         asyncio_atexit.register(close_cache_session)
         super().__init__()
@@ -60,7 +60,7 @@ class Cache(CashewsCache):
             client_side_prefix=f"{self.config.app.name}:",
         )
         register_type(t.Any, self.encoder, self.decoder)
-        self.logger.debug("App cache initialized.")
+        self.logger.info("Cache initialized")
 
 
 depends.set(Cache, Cache())

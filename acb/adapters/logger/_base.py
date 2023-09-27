@@ -5,7 +5,6 @@ from acb.config import Settings
 from acb.depends import depends
 
 
-
 class LoggerBaseSettings(Settings):
     loggers: dict[str, list[str]] = {}
 

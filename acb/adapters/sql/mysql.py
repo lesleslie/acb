@@ -1,5 +1,6 @@
 import typing as t
 
+from acb.config import Config
 from acb.depends import depends
 from sqlalchemy.pool import NullPool
 from ._base import SqlBase
@@ -12,7 +13,7 @@ class SqlSettings(SqlBaseSettings):
     port: int = 3306
     pool_pre_ping: bool = True
 
-    def model_post_init(self, __context: t.Any) -> None:
+    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
         super().model_post_init(self)
         self.poolclass = NullPool
         self.engine_kwargs = dict(
