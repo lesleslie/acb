@@ -1,8 +1,10 @@
+import typing as t
+
+from acb.config import depends
 from pydantic import SecretStr
 from s3fs import S3FileSystem
-from . import StorageBase
-from . import StorageBaseSettings
-import typing as t
+from ._base import StorageBase
+from ._base import StorageBaseSettings
 
 
 class StorageSettings(StorageBaseSettings):
@@ -14,4 +16,4 @@ class Storage(StorageBase):
     client: t.Any = S3FileSystem
 
 
-storage = Storage()
+depends.set(Storage, Storage())

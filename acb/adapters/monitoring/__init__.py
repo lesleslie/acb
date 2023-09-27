@@ -1,9 +1,3 @@
-from acb.config import Settings
+from acb.config import import_adapter
 
-
-class MonitoringBaseSettings(Settings):
-    ...
-
-
-class MonitoringBase:
-    ...
+Monitoring, MonitoringSettings = import_adapter()

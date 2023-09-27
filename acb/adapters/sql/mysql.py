@@ -1,7 +1,9 @@
-from sqlalchemy.pool import NullPool
-from . import SqlBase
-from . import SqlBaseSettings
 import typing as t
+
+from acb.depends import depends
+from sqlalchemy.pool import NullPool
+from ._base import SqlBase
+from ._base import SqlBaseSettings
 
 
 class SqlSettings(SqlBaseSettings):
@@ -22,4 +24,4 @@ class Sql(SqlBase):
     ...
 
 
-sql = Sql()
+depends.set(Sql, Sql())

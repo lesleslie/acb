@@ -1,15 +1,16 @@
 import typing as t
 
-from acb.config import ac
+from acb.config import Config
+from acb.depends import depends
 from httpx import Response as HttpxResponse
 from httpx_cache import AsyncClient
 from httpx_cache.cache.redis import RedisCache
-from . import RequestsBase
-from . import RequestsBaseSettings
+from ._base import RequestsBase
+from ._base import RequestsBaseSettings
 
 
 class RequestsSettings(RequestsBaseSettings):
-    ...
+    loggers: list[str] = ["httpx_caching"]
 
 
 class Requests(RequestsBase):
@@ -33,9 +34,9 @@ class Requests(RequestsBase):
 
     async def init(self) -> None:
         self.cache = RedisCache(
-            redis_url=f"redis://{ac.cache.host.get_secret_value()}:{ac.cache.port}/"
-            f"{ac.requests.cache_db}"
+            redis_url=f"redis://{self.config.cache.host.get_secret_value()}:{self.config.cache.port}/"
+            f"{self.config.requests.cache_db}"
         )
 
 
-requests = Requests()
+depends.set(Requests, Requests())

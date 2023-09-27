@@ -1,15 +1,25 @@
-from bevy import dependency as depends
-from bevy import inject as inject_depends
-from bevy import get_repository
 import typing as t
 
-
-__all__: list[str] = [
-    "depends",
-    "inject_depends",
-    "get_repo",
-]
+from bevy import dependency
+from bevy import get_repository
+from bevy import inject as inject_dependency
 
 
-def get_repo() -> t.Any:
-    return get_repository()
+class Depends:
+    @staticmethod
+    def inject(func):
+        return inject_dependency(func)
+
+    @staticmethod
+    def set(cls: t.TypeVar, value: t.Any) -> t.Any:
+        return get_repository().set(cls, value)
+
+    @staticmethod
+    def get(cls: t.TypeVar) -> t.Any:
+        return get_repository().get(cls)
+
+    def __call__(self, *args, **kwargs):
+        return dependency()
+
+
+depends = Depends()

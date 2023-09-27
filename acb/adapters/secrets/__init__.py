@@ -1,5 +1,3 @@
-from acb.config import Settings
+from acb.config import import_adapter
 
-
-class SecretsBaseSettings(Settings):
-    ...
+Secrets, SecretsSettings = import_adapter()

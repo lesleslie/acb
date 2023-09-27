@@ -73,6 +73,7 @@ dependencies = [
     "asyncio-atexit>=1.0.1",
     "sqlalchemy==2.0.11",
     "bevy>=2.0.1",
+    "pluginbase>=1.0.1",
 ]
 requires-python = ">=3.11"
 readme = "README.md"

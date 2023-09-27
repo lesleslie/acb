@@ -4,8 +4,6 @@ from warnings import filterwarnings
 import typing as t
 from asyncio import sleep
 
-from acb.config import ac
-from acb.logger import logger
 from google.api_core.exceptions import BadRequest
 from google.api_core.exceptions import Conflict
 from google.cloud.dns import Client as DnsClient
@@ -13,27 +11,29 @@ from google.cloud.dns import ManagedZone
 from google.cloud.dns import Changes
 from validators import domain
 from validators.utils import ValidationError
-from . import DnsBaseSettings
-from . import DnsRecord
+from ._base import DnsBaseSettings
+from ._base import DnsRecord
+from ._base import DnsBase
+from acb.config import logger
 
 
 class DnsSettings(DnsBaseSettings):
     ...
 
 
-class Dns:
+class Dns(DnsBase):
     client: t.Optional[DnsClient] = None
     zone: t.Optional[ManagedZone] = None
 
     async def init(self) -> None:
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
-            self.client = DnsClient(project=ac.app.project)
+            self.client = DnsClient(project=self.config.app.project)
 
     async def create_zone(self) -> None:
-        self.zone = self.client.zone(ac.app.name, f"{ac.app.domain}.")
+        self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")
         if not self.zone.exists():
-            logger.info(f"Creating gdns zone '{ac.app.name}...")
+            logger.info(f"Creating gdns zone '{self.config.app.name}...")
             self.zone.create()
             logger.info(f"Zone '{self.zone.name}' successfully created.")
         else:
@@ -63,7 +63,7 @@ class Dns:
             await self.wait_for_changes(changes)
         except (Conflict, BadRequest) as err:
             change = changes.additions[0]  # type: ignore
-            if change.name.split(".")[1] != ac.app.project:
+            if change.name.split(".")[1] != self.config.app.project:
                 raise err
             logger.info("Development domain detected. No changes made.")
 

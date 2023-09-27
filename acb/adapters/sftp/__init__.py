@@ -1,5 +1,3 @@
-from acb.config import AppSettings
+from acb.config import import_adapter
 
-
-class BaseSftpSettings(AppSettings):
-    ...
+Sftp, SftpSettings = import_adapter()

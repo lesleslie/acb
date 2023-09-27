@@ -1,9 +1,3 @@
-from acb.config import Settings
+from acb.config import import_adapter
 
-
-class NosqlBaseSettings(Settings):
-    ...
-
-
-class NosqlBase:
-    ...
+Nosql, NosqlSettings = import_adapter()

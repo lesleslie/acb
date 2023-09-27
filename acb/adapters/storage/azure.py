@@ -1,8 +1,10 @@
+import typing as t
+
+from acb.depends import depends
 from adlfs import AzureBlobFileSystem
 from pydantic import SecretStr
-from . import StorageBase
-from . import StorageBaseSettings
-import typing as t
+from ._base import StorageBase
+from ._base import StorageBaseSettings
 
 
 class StorageSettings(StorageBaseSettings):
@@ -13,4 +15,4 @@ class Storage(StorageBase):
     client: t.Any = AzureBlobFileSystem
 
 
-storage = Storage()
+depends.set(Storage, Storage())

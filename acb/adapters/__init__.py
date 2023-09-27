@@ -1,25 +1,37 @@
 import asyncio
 
-from acb.config import ac
-from acb.config import load_adapter
+from acb.config import Config
 from acb.config import enabled_adapters
-from acb.logger import logger
-from acb.depends import get_repo
+from acb.depends import depends
+from inflection import camelize
+from pluginbase import PluginBase
 
 __all__: list[str] = []
 
+adapters_base = PluginBase(package="acb.adapters")
 
-async def main() -> None:
-    await ac.init()
-    repo = get_repo()
-    for adapter in enabled_adapters.get():
-        __all__.append(adapter)
-        logger.info(f"Loading adapter: {adapter}")
-        globals()[adapter], module_settings = load_adapter(adapter, settings=True)
-        setattr(ac, adapter, module_settings(_secrets_dir=ac.secrets_path))
-        await globals()[adapter].init()
-        repo.set(adapter, globals()[adapter])
-        logger.info(f"Adapter loaded: {adapter}")
+
+@depends.inject
+async def main(config: Config = depends()) -> None:
+    await config.init()
+    adapters = enabled_adapters.get()
+    adapters_path = config.pkgdir / "adapters"
+    adapters_source = adapters_base.make_plugin_source(
+        searchpath=[str(adapters_path)], identifier="acb-adapters"
+    )
+    for adapter_name in adapters:
+        adapter_class_name = camelize(adapter_name)
+        with adapters_source:
+            adapter_module = adapters_source.load_plugin(adapter_name)
+        adapter_class = getattr(adapter_module, adapter_class_name)
+        adapter_settings = getattr(adapter_module, f"{adapter_class_name}Settings")
+        setattr(
+            config, adapter_name, adapter_settings(_secrets_dir=config.secrets_path)
+        )
+        adapter = depends.get(adapter_class)
+        await adapter.init()
+        __all__.append(adapter_class_name)
+        globals()[adapter_class_name] = adapter_class
 
 
 loop = asyncio.new_event_loop() or asyncio.get_running_loop()

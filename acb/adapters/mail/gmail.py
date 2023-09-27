@@ -1,5 +1,5 @@
-from . import MailBaseSettings
-from . import MailBase
+from ._base import MailBaseSettings
+from ._base import MailBase
 
 
 class MailSettings(MailBaseSettings):

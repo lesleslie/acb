@@ -1,10 +1,11 @@
 import typing as t
 
-from acb.config import ac
+from acb.config import Config
 from pydantic import SecretStr
+from acb.depends import depends
 
-from . import MonitoringBaseSettings
-from . import MonitoringBase
+from ._base import MonitoringBaseSettings
+from ._base import MonitoringBase
 
 
 class MonitoringSettings(MonitoringBaseSettings):
@@ -12,11 +13,12 @@ class MonitoringSettings(MonitoringBaseSettings):
     dsn: t.Optional[SecretStr] = None
     sample_rate: float = 0.5
 
-    def model_post_init(self, __context: t.Any) -> None:
+    @depends.inject
+    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
         super().model_post_init(__context)
-        self.sample_rate = self.sample_rate if ac.deployed else 1.0
-        self.enabled = ac.deployed or not ac.debug.production
-        self.dsn = ac.secres.sentry_dsn
+        self.sample_rate = self.sample_rate if self.config.deployed else 1.0
+        self.enabled = self.config.deployed or not self.config.debug.production
+        self.dsn = self.config.secres.sentry_dsn
 
 
 class Monitoring(MonitoringBase):
