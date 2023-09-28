@@ -24,6 +24,7 @@ class CacheBaseSettings(Settings):
 
     @depends.inject
     def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
+        super().model_post_init(__context)
         self.namespace = self.namespace or config.app.name or ""
         self.host = SecretStr("127.0.0.1") if not config.deployed else self.host
         self.password = SecretStr("") if not config.deployed else self.password

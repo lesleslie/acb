@@ -12,9 +12,10 @@ from google.cloud.dns import Changes
 from validators import domain
 from validators.utils import ValidationError
 from ._base import DnsBaseSettings
-from ._base import DnsRecord
+from acb.adapters.dns import DnsRecord
 from ._base import DnsBase
-from acb.config import logger
+from acb.adapters.logger import Logger
+from acb.depends import depends
 
 
 class DnsSettings(DnsBaseSettings):
@@ -22,6 +23,7 @@ class DnsSettings(DnsBaseSettings):
 
 
 class Dns(DnsBase):
+    logger: Logger = depends()
     client: t.Optional[DnsClient] = None
     zone: t.Optional[ManagedZone] = None
 
@@ -33,11 +35,11 @@ class Dns(DnsBase):
     async def create_zone(self) -> None:
         self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")
         if not self.zone.exists():
-            logger.info(f"Creating gdns zone '{self.config.app.name}...")
+            self.logger.info(f"Creating gdns zone '{self.config.app.name}...")
             self.zone.create()
-            logger.info(f"Zone '{self.zone.name}' successfully created.")
+            self.logger.info(f"Zone '{self.zone.name}' successfully created.")
         else:
-            logger.info(f"Zone for '{self.zone.name}' exists.")
+            self.logger.info(f"Zone for '{self.zone.name}' exists.")
 
     async def list_records(self):
         records = self.zone.list_resource_record_sets()
@@ -65,7 +67,7 @@ class Dns(DnsBase):
             change = changes.additions[0]  # type: ignore
             if change.name.split(".")[1] != self.config.app.project:
                 raise err
-            logger.info("Development domain detected. No changes made.")
+            self.logger.info("Development domain detected. No changes made.")
 
     async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         if isinstance(records, DnsRecord):
@@ -105,7 +107,7 @@ class Dns(DnsBase):
                     rrdatas=current_record.rrdata,
                 )
                 current_record_sets.append(current_record_set)
-                logger.info(f"Deleting - {current_record}")
+                self.logger.info(f"Deleting - {current_record}")
             record_set = self.zone.resource_record_set(
                 name=record.name,
                 record_type=record.type,
@@ -113,20 +115,20 @@ class Dns(DnsBase):
                 rrdatas=record.rrdata,
             )
             new_record_sets.append(record_set)
-            logger.info(f"Creating - {record}")
+            self.logger.info(f"Creating - {record}")
         if current_record_sets:
             for record_set in current_record_sets:
                 changes.delete_record_set(record_set)
-            logger.info("Deleting record sets")
+            self.logger.info("Deleting record sets")
             await self.apply_changes(changes)
         changes = self.zone.changes()
         if new_record_sets:
             for record_set in new_record_sets:
                 changes.add_record_set(record_set)
-            logger.info("Creating record sets")
+            self.logger.info("Creating record sets")
             await self.apply_changes(changes)
         else:
-            logger.info("No DNS changes detected.")
+            self.logger.info("No DNS changes detected.")
 
 
 dns: Dns = Dns()

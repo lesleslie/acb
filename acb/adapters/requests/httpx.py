@@ -1,6 +1,5 @@
 import typing as t
 
-from acb.config import Config
 from acb.depends import depends
 from httpx import Response as HttpxResponse
 from httpx_cache import AsyncClient

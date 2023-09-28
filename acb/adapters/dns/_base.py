@@ -5,18 +5,7 @@ from abc import abstractmethod
 from acb.config import Config
 from acb.config import Settings
 from acb.depends import depends
-from pydantic import BaseModel
-
-
-class DnsRecord(BaseModel):
-    name: t.Optional[str] = None
-    type: str = "TXT"
-    ttl: int = 300
-    rrdata: t.Optional[str | list[t.Any]] = None
-
-    @depends.inject
-    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
-        self.name = f"mail.{self.config.app.domain}"
+from acb.adapters.dns import DnsRecord
 
 
 class DnsBaseSettings(Settings):
@@ -29,17 +18,17 @@ class DnsBase(ABC):
     zone: t.Optional[t.Any] = None
 
     @abstractmethod
-    async def init(self) -> t.NoReturn:
+    async def init(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def create_zone(self) -> t.NoReturn:
+    async def create_zone(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def list_records(self) -> t.NoReturn:
+    async def list_records(self) -> list[DnsRecord]:
         raise NotImplementedError
 
     @abstractmethod
-    async def create_records(self, records: list[DnsRecord] | DnsRecord) -> t.NoReturn:
+    async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         raise NotImplementedError

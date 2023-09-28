@@ -17,7 +17,7 @@ from ._base import CacheBaseSettings
 class CacheSettings(CacheBaseSettings):
     @depends.inject
     def model_post_init(self, __context: t.Any, ac: Config = depends()) -> None:
-        super().model_post_init(self)
+        super().model_post_init(__context)
         self._url: RedisDsn = RedisDsn(
             f"redis://{self.host.get_secret_value()}:{self.port}/{self.db}"
         )

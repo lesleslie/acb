@@ -50,7 +50,9 @@ class Mail(MailBase):
         caller = "domain" if search(caller, "domain") else "route"
         url = "/".join([str(self.config.mail.api_url), caller, domain])
         data = dict(
-            auth=("api", self.config.mail.api_key.get_secret_value()), params=params, data=data
+            auth=("api", self.config.mail.api_key.get_secret_value()),
+            params=params,
+            data=data,
         )
         match req_type:
             case "get":
@@ -135,7 +137,9 @@ class Mail(MailBase):
         if self.config.mail.mailgun.gmail.enabled:
             await self.delete_domain(self.config.mail.mailgun.domain)
             rrdata = self.config.mail.gmail.mx_servers
-            record = DnsRecord(name=self.config.mail.mailgun.domain, type="MX", rrdata=rrdata)
+            record = DnsRecord(
+                name=self.config.mail.mailgun.domain, type="MX", rrdata=rrdata
+            )
             records.append(record)
         else:
             await self.delete_domain(self.config.mail.mailgun.domain)

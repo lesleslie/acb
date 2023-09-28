@@ -64,7 +64,7 @@ class Logger(_Logger):
     config: Config = depends()
     settings: t.Optional[dict[str, t.Any]] = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             core=_Core(),
             exception=None,
@@ -78,7 +78,7 @@ class Logger(_Logger):
             extra={},
         )
 
-    async def init(self):
+    async def init(self) -> None:
         self.remove()
         self.settings = dict(
             filter=self.config.logger.level_per_module,

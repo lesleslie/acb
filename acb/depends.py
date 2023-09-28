@@ -11,11 +11,11 @@ class Depends:
         return inject_dependency(func)
 
     @staticmethod
-    def set(cls: t.TypeVar, value: t.Any) -> t.Any:
+    def set(cls: t.Any, value: t.Any) -> t.Any:
         return get_repository().set(cls, value)
 
     @staticmethod
-    def get(cls: t.TypeVar) -> t.Any:
+    def get(cls: t.Any) -> t.Any:
         return get_repository().get(cls)
 
     def __call__(self, *args, **kwargs):
