@@ -226,6 +226,7 @@ class Email(EmailBase):
         await self.create_dns_records()  # type: ignore
         await self.delete_routes()
         await self.create_routes()
+        self.logger.info("Email adapter loaded")
 
 
 depends.set(Email, Email())

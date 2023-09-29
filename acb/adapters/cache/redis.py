@@ -57,7 +57,7 @@ class Cache(CashewsCache):
 
         asyncio_atexit.register(close_cache_session)
 
-        self.logger.info("Cache initialized")
+        self.logger.info("Cache adapter loaded")
 
 
 depends.set(Cache, Cache())

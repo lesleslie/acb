@@ -44,10 +44,11 @@ _secrets_path: AsyncPath = AsyncPath("tmp/secrets")
 project: str = ""
 app_name: str = ""
 required_adapters: ContextVar[set[str]] = ContextVar(
-    "required_adapters", default=set("logger")
+    "required_adapters", default={"logger", "secrets"}
 )
-adapter_categories: ContextVar[ser[str]] = ContextVar("adapter_categories",
-                                                      default=set())
+adapter_categories: ContextVar[set[str]] = ContextVar(
+    "adapter_categories", default=set()
+)
 available_adapters: ContextVar[dict[str, str]] = ContextVar(
     "available_adapters", default={}
 )
@@ -471,7 +472,7 @@ class Config(BaseSettings, extra="allow"):
     adapter_settings_path: t.Optional[AsyncPath] = None
     secrets_path: t.Optional[AsyncPath] = None
     available_adapters: dict[str, t.Any] = {}
-    adapter_categories: list[str] = []
+    adapter_categories: set[str] = set()
     enabled_adapters: dict[str, str] = {}
     debug: t.Optional[Settings] = None
     app: t.Optional[Settings] = None
@@ -501,11 +502,11 @@ class Config(BaseSettings, extra="allow"):
         mod_dir = self.basedir / "__pypackages__" / py_version / "lib"
         sys.path.append(str(mod_dir))
         if self.basedir.name != "acb":
-            self.adapter_categories = [
+            self.adapter_categories = {
                 path.stem
                 async for path in (self.pkgdir / "adapters").iterdir()
                 if await path.is_dir() and not path.name.startswith("__")
-            ]
+            }
             if not await self.adapter_settings_path.exists():
                 await dump.yaml(
                     {cat: None for cat in self.adapter_categories},
@@ -531,13 +532,6 @@ class Config(BaseSettings, extra="allow"):
             adapter_categories.set(self.adapter_categories)
             available_adapters.set(self.available_adapters)
             enabled_adapters.set(self.enabled_adapters)
-            # base_settings = dict(
-            #     adapter_categories=self.adapter_categories,
-            #     available_adapters=self.available_adapters,
-            #     enabled_adapters=self.enabled_adapters,
-            #     package_registry=package_registry.get(),
-            # )
-            # super().__init__(**base_settings)
         return self
 
 

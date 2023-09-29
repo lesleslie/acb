@@ -24,15 +24,16 @@ class Dns(DnsBase):
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             self.client = DnsClient(project=self.config.app.project)
+        self.logger.info("Dns adapter loaded")
 
     async def create_zone(self) -> None:
         self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")
         if not self.zone.exists():
             self.logger.info(f"Creating gdns zone '{self.config.app.name}...")
             self.zone.create()
-            self.logger.info(f"Zone '{self.zone.name}' successfully created.")
+            self.logger.info(f"Zone '{self.zone.name}' successfully created")
         else:
-            self.logger.info(f"Zone for '{self.zone.name}' exists.")
+            self.logger.info(f"Zone for '{self.zone.name}' exists")
 
     def list_records(self) -> list[DnsRecord]:
         records = self.zone.list_resource_record_sets()
@@ -62,7 +63,7 @@ class Dns(DnsBase):
             change = changes.additions[0]  # type: ignore
             if change.name.split(".")[1] != self.config.app.project:
                 raise err
-            self.logger.info("Development domain detected. No changes made.")
+            self.logger.info("Development domain detected - no changes made")
 
     async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         if isinstance(records, DnsRecord):
@@ -123,7 +124,7 @@ class Dns(DnsBase):
             self.logger.info("Creating record sets")
             await self.apply_changes(changes)
         else:
-            self.logger.info("No DNS changes detected.")
+            self.logger.info("No DNS changes detected")
 
 
 depends.set(Dns, Dns())

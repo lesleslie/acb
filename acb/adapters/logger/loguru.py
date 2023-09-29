@@ -1,10 +1,8 @@
-import logging
 import sys
 import typing as t
 
 from acb.config import Config
 from acb.depends import depends
-from loguru import logger as _logger
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
 from ._base import LoggerBaseSettings
@@ -32,32 +30,6 @@ class LoggerSettings(LoggerBaseSettings):
             }
             if not config.deployed
             else "ERROR"
-        )
-
-
-class InterceptHandler(logging.Handler):
-    def __init__(self, logger_name: str) -> None:
-        super().__init__()
-        self.logger_name = logger_name
-
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            level = _logger.level(record.levelname).name
-        except ValueError:
-            level = record.levelno
-        frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__:
-            frame = frame.f_back
-            depth += 1
-        (
-            _logger.patch(
-                lambda record: record.update(name=self.logger_name)  # type: ignore
-            )
-            .opt(
-                depth=depth,
-                exception=record.exc_info,
-            )
-            .log(level, record.getMessage())
         )
 
 
@@ -90,12 +62,7 @@ class Logger(_Logger):
         )
         self.add(sys.stderr, **self.settings)
 
-        # for log in self.config.logger.loggers:
-        #     _log = logging.getLogger(log)
-        #     _log.handlers.clear()
-        #     _log.handlers = [InterceptHandler(log.name)]
-
-        self.info("Logger initialized")
+        self.info("Logger adapter loaded")
 
         if self.config.debug.logger:
             self.debug("debug")

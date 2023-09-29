@@ -1,5 +1,6 @@
 import typing as t
 
+from acb.adapters.logger import Logger
 from acb.depends import depends
 from httpx import Response as HttpxResponse
 from httpx_cache import AsyncClient
@@ -35,11 +36,13 @@ class Requests(RequestsBase):
         async with AsyncClient(cache=self.cache) as client:
             return await client.delete(url, timeout=timeout)
 
-    async def init(self) -> None:
+    @depends.inject
+    async def init(self, logger: Logger = depends) -> None:  # type: ignore
         self.cache = RedisCache(
             redis_url=f"redis://{self.config.cache.host.get_secret_value()}:{self.config.cache.port}/"
             f"{self.config.requests.cache_db}"
         )
+        logger.info("Requests adapter loaded")
 
 
 depends.set(Requests, Requests())

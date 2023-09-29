@@ -129,4 +129,4 @@ class SqlBase:
             if self.config.debug.sql:
                 table_names = await conn.run_sync(self.get_table_names)
                 debug(table_names)
-        self.logger.info("Database initialized")
+        self.logger.info("Database adapter loaded")
