@@ -64,7 +64,7 @@ pythonVersion = "3.11"
 
 [project]
 name = "acb"
-version = "0.2.3"
+version = "0.2.4"
 description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",
