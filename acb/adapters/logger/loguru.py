@@ -19,12 +19,13 @@ class LoggerSettings(LoggerBaseSettings):
         line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
         message="  <level>{message}</level>",
     )
-    level_per_module: t.Optional[dict[str, str]] = None
+    level_per_module: t.Optional[dict[str, str]] | t.Literal["ERROR"] = None
     serialize: t.Optional[bool] = False
 
     @depends.inject
-    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
-        self.level_per_module: dict[str, str] = (
+    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+        super().__init__(**values)
+        self.level_per_module = (
             {
                 m: "DEBUG" if v is True else "INFO"
                 for (m, v) in config.debug.model_dump().items()
@@ -89,10 +90,10 @@ class Logger(_Logger):
         )
         self.add(sys.stderr, **self.settings)
 
-        for log in self.config.logger.loggers:
-            _log = logging.getLogger(log)
-            _log.handlers.clear()
-            _log.handlers = [InterceptHandler(log.name)]
+        # for log in self.config.logger.loggers:
+        #     _log = logging.getLogger(log)
+        #     _log.handlers.clear()
+        #     _log.handlers = [InterceptHandler(log.name)]
 
         self.info("Logger initialized")
 

@@ -1,21 +1,18 @@
+from asyncio import sleep
 from contextlib import suppress
 from warnings import catch_warnings
 from warnings import filterwarnings
-import typing as t
-from asyncio import sleep
 
+from acb.adapters.dns import DnsRecord
+from acb.depends import depends
 from google.api_core.exceptions import BadRequest
 from google.api_core.exceptions import Conflict
-from google.cloud.dns import Client as DnsClient
-from google.cloud.dns import ManagedZone
 from google.cloud.dns import Changes
+from google.cloud.dns import Client as DnsClient
 from validators import domain
 from validators.utils import ValidationError
-from ._base import DnsBaseSettings
-from acb.adapters.dns import DnsRecord
 from ._base import DnsBase
-from acb.adapters.logger import Logger
-from acb.depends import depends
+from ._base import DnsBaseSettings
 
 
 class DnsSettings(DnsBaseSettings):
@@ -23,10 +20,6 @@ class DnsSettings(DnsBaseSettings):
 
 
 class Dns(DnsBase):
-    logger: Logger = depends()
-    client: t.Optional[DnsClient] = None
-    zone: t.Optional[ManagedZone] = None
-
     async def init(self) -> None:
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
@@ -41,14 +34,16 @@ class Dns(DnsBase):
         else:
             self.logger.info(f"Zone for '{self.zone.name}' exists.")
 
-    async def list_records(self):
+    def list_records(self) -> list[DnsRecord]:
         records = self.zone.list_resource_record_sets()
         records = [
-            DnsRecord(
-                name=record.name,
-                type=record.record_type,
-                ttl=record.ttl,
-                rrdata=record.rrdatas,
+            DnsRecord.model_validate(
+                dict(
+                    name=record.name,
+                    type=record.record_type,
+                    ttl=record.ttl,
+                    rrdata=record.rrdatas,
+                )
             )
             for record in records
         ]
@@ -92,7 +87,7 @@ class Dns(DnsBase):
                         record.rrdata[i] = f'"{r}"'
             current_record = [
                 r
-                for r in await self.list_records()
+                for r in self.list_records()
                 if r.name == record.name and r.type == record.type
             ]
             if len(current_record) == 1:
@@ -131,4 +126,4 @@ class Dns(DnsBase):
             self.logger.info("No DNS changes detected.")
 
 
-dns: Dns = Dns()
+depends.set(Dns, Dns())

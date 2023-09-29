@@ -32,7 +32,7 @@ class SqlBaseSettings(Settings):
     poolclass: t.Optional[t.Any] = None
     host: SecretStr = SecretStr("127.0.0.1")
     user: SecretStr = SecretStr("root")
-    password: SecretStr = SecretStr(gen_password(10))
+    password: SecretStr = SecretStr(gen_password())
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
     engine_kwargs: t.Optional[dict[str, t.Any]] = {}
@@ -44,7 +44,8 @@ class SqlBaseSettings(Settings):
     ]
 
     @depends.inject
-    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
+    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+        super().__init__(**values)
         url_kwargs = dict(
             drivername=self.driver,
             username=self.user.get_secret_value(),
@@ -60,7 +61,7 @@ class SqlBaseSettings(Settings):
 
 class SqlBase:
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore
 
     @cached_property
     def engine(self) -> AsyncEngine:
@@ -124,7 +125,6 @@ class SqlBase:
             #     sql = text("DROP TABLE IF EXISTS alembic_version")
             #     await conn.execute(sql)
             self.logger.debug("Creating database tables...")
-
             await conn.run_sync(SQLModel.metadata.create_all)
             if self.config.debug.sql:
                 table_names = await conn.run_sync(self.get_table_names)

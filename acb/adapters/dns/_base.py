@@ -6,6 +6,7 @@ from acb.config import Config
 from acb.config import Settings
 from acb.depends import depends
 from acb.adapters.dns import DnsRecord
+from acb.adapters.logger import Logger
 
 
 class DnsBaseSettings(Settings):
@@ -14,6 +15,7 @@ class DnsBaseSettings(Settings):
 
 class DnsBase(ABC):
     config: Config = depends()
+    logger: Logger = depends()  # type: ignore
     client: t.Optional[t.Any] = None
     zone: t.Optional[t.Any] = None
 
@@ -26,7 +28,7 @@ class DnsBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list_records(self) -> list[DnsRecord]:
+    def list_records(self) -> list[DnsRecord]:
         raise NotImplementedError
 
     @abstractmethod

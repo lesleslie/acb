@@ -24,7 +24,7 @@ class SqlModel(SQLModel):
     #     return arrow.get(ULID(self.id).timestamp)
 
     @declared_attr
-    def __tablename__(cls):
+    def __tablename__(cls) -> t.Any:  # type: ignore
         return underscore(cls.__name__)
 
     class Config:
@@ -32,7 +32,7 @@ class SqlModel(SQLModel):
         extra = "allow"
 
     @depends.inject
-    async def save(self, sql: Sql = depends()) -> None:
+    async def save(self, sql: Sql = depends()) -> None:  # type: ignore
         async with sql.get_session() as session:
             session.add(self)
             await session.commit()

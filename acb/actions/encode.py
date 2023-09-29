@@ -68,7 +68,8 @@ class AcbEncoder:
 
     def get_vars(self, frame: FrameType) -> tuple[str, t.Any]:
         code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
-        calling_method = search(r"await\s(\w+)\.(\w+)\(", code_context)
+        pattern = r"await\s(\w+)\.(\w+)\("
+        calling_method = search(pattern, code_context)
         return calling_method.group(1), calling_method.group(2)  # type: ignore
 
     def get_serializer(self, serializer: t.Any) -> t.Any:

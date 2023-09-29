@@ -22,21 +22,21 @@ class RequestsBase(ABC):
     config: Config = depends()
 
     @abstractmethod
-    async def init(self) -> t.NoReturn:
+    async def init(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get(self, url: str) -> t.NoReturn:
+    async def get(self, url: str, timeout: int) -> t.Any:
         raise NotImplementedError
 
     @abstractmethod
-    async def post(self, url: str, data: dict[str, t.Any]) -> t.NoReturn:
+    async def post(self, url: str, data: dict[str, t.Any], timeout: int) -> t.Any:
         raise NotImplementedError
 
     @abstractmethod
-    async def put(self, url: str, data: dict[str, t.Any]) -> t.NoReturn:
+    async def put(self, url: str, data: dict[str, t.Any], timeout: int) -> t.Any:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, url: str) -> t.NoReturn:
+    async def delete(self, url: str, timeout: int) -> t.Any:
         raise NotImplementedError

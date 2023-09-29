@@ -6,7 +6,6 @@ from acb.depends import depends
 from inflection import camelize
 from pluginbase import PluginBase
 
-
 __all__: list[str] = []
 
 adapters_base = PluginBase(package="acb.adapters")
@@ -29,6 +28,7 @@ async def main(config: Config = depends()) -> None:
         setattr(
             config, adapter_name, adapter_settings(_secrets_dir=config.secrets_path)
         )
+        # depends.set(Config, config)
         adapter = depends.get(adapter_class)
         await adapter.init()
         __all__.append(adapter_class_name)
@@ -36,4 +36,4 @@ async def main(config: Config = depends()) -> None:
 
 
 loop = asyncio.new_event_loop() or asyncio.get_running_loop()
-loop.run_until_complete(main())
+loop.run_until_complete(main())  # type: ignore

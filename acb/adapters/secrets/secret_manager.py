@@ -29,7 +29,7 @@ class SecretsSettings(SecretsBaseSettings):
 
 class Secrets(SecretsBase):
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore
     project: str = ""
     parent: str = ""
     prefix: str = ""
@@ -37,20 +37,20 @@ class Secrets(SecretsBase):
     authed_session: t.Optional[AuthorizedSession] = None
     creds: t.Optional[t.Any] = None
 
-    def extract_secret_name(self, secret_path: str) -> str:
+    def extract_secret_name(self, secret_path: str) -> t.Any:
         return secret_path.split("/")[-1].removeprefix(self.prefix)
 
-    async def get_access_token(self) -> str:
+    async def get_access_token(self) -> t.Any:
         self.creds.refresh(Request())
         self.logger.debug(f"Secrets access token:\n{self.creds.token}")
         return self.creds.token
 
-    async def verify_access_token(self, token: str) -> bool:
+    async def verify_access_token(self, token: str) -> t.Any:
         verified = compare_digest(self.creds.token, token)
         self.logger.debug(f"Secrets access token verified - {verified}")
         return verified
 
-    async def list(self, adapter: str) -> list[str]:
+    async def list(self, adapter: str) -> t.Any:
         request = ListSecretsRequest(
             parent=self.parent, filter=f"{self.prefix}{adapter}_"
         )
@@ -60,7 +60,7 @@ class Secrets(SecretsBase):
         ]
         return client_secrets
 
-    async def get(self, name: str) -> str:
+    async def get(self, name: str) -> t.Any:
         path = f"projects/{self.project}/secrets/{name}/versions/latest"
         request = AccessSecretVersionRequest(name=path)
         version = await self.client.access_secret_version(request=request)
@@ -68,7 +68,7 @@ class Secrets(SecretsBase):
         self.logger.info(f"Fetched secret - {name}")
         return payload
 
-    async def create(self, name: str, value: str) -> None:
+    async def create(self, name: str, value: str) -> t.NoReturn:
         with suppress(AlreadyExists):
             request = CreateSecretRequest(
                 parent=self.parent,
@@ -84,7 +84,7 @@ class Secrets(SecretsBase):
             if not self.config.deployed:
                 self.logger.debug(f"Created secret - {name}")
 
-    async def update(self, name: str, value: str) -> None:
+    async def update(self, name: str, value: str) -> t.NoReturn:
         secret = self.client.secret_path(self.project, name)
         request = AddSecretVersionRequest(
             parent=secret,
@@ -94,14 +94,14 @@ class Secrets(SecretsBase):
         if not self.config.deployed:
             self.logger.debug(f"Updated secret - {name}")
 
-    async def delete(self, name: str) -> None:
+    async def delete(self, name: str) -> t.NoReturn:
         secret = self.client.secret_path(self.project, name)
         request = DeleteSecretRequest(name=secret)
         await self.client.delete_secret(request=request)
         if not self.config.deployed:
             self.logger.debug(f"Deleted secret - {secret}")
 
-    async def init(self) -> None:
+    async def init(self) -> t.NoReturn:
         self.project = project
         self.parent = f"projects/{project}"
         self.prefix = f"{app_name}_"

@@ -25,9 +25,11 @@ class StorageBaseSettings(Settings):
     prefix: t.Optional[str] = None
     user_project: t.Optional[str] = None  # used for billing
     buckets: dict[str, str] = {}
+    loggers: t.Optional[list[str]] = []
 
     @depends.inject
-    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
+    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+        super().__init__(**values)
         self.prefix = self.prefix or config.app.name or ""
         self.user_project = (
             self.user_project or config.app.name or ""
@@ -36,7 +38,7 @@ class StorageBaseSettings(Settings):
 
 class StorageBucket:
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore
 
     def __init__(
         self,
@@ -127,7 +129,7 @@ class StorageBucket:
 
 class StorageBase:
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore
     client: t.Any
 
     async def init(self) -> None:

@@ -27,7 +27,7 @@ pdm add acb
 ### Encode
 
 ```
-from acb.encode import load
+from acb.actions.encode import load
 
 load.json(obj)
 ```
@@ -35,7 +35,7 @@ load.json(obj)
 ### Hash
 
 ```
-from acb.hash import hash
+from acb.actions.hash import hash
 
 hash.blake2b(obj)
 ```
@@ -44,7 +44,7 @@ hash.blake2b(obj)
 
 ```
 from acb.config import (
-    ac,
+    Config,
     Settings,
 )
 ```
@@ -52,7 +52,7 @@ from acb.config import (
 ## Logging
 
 ```
-from acb.logger import logger
+from acb.adapters.logger import Logger
 ```
 
 

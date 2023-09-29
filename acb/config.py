@@ -1,4 +1,5 @@
 import asyncio
+import secrets
 import sys
 import typing as t
 from abc import ABC
@@ -8,13 +9,10 @@ from contextvars import ContextVar
 from importlib import import_module
 from inspect import currentframe
 from pathlib import Path
-from random import choice
 from secrets import token_bytes
 from secrets import token_urlsafe
-from string import ascii_letters
-from string import digits
-from string import punctuation
 from warnings import warn
+from platform import python_version_tuple
 
 import nest_asyncio
 from acb.actions import dump
@@ -45,10 +43,11 @@ _app_secrets: set[str] = set()
 _secrets_path: AsyncPath = AsyncPath("tmp/secrets")
 project: str = ""
 app_name: str = ""
-required_adapters: ContextVar[list[str]] = ContextVar(
-    "required_adapters", default=["logger"]
+required_adapters: ContextVar[set[str]] = ContextVar(
+    "required_adapters", default=set("logger")
 )
-adapter_categories: ContextVar[list[str]] = ContextVar("adapter_categories", default=[])
+adapter_categories: ContextVar[ser[str]] = ContextVar("adapter_categories",
+                                                      default=set())
 available_adapters: ContextVar[dict[str, str]] = ContextVar(
     "available_adapters", default={}
 )
@@ -68,9 +67,8 @@ def register_package() -> None:
     package_registry.set(packages)
 
 
-def gen_password(size: int) -> str:
-    chars = ascii_letters + digits + punctuation
-    return "".join(choice(chars) for _ in range(size))
+def gen_password(size: int = 10) -> str:
+    return secrets.token_urlsafe(size)
 
 
 def import_adapter(adapter: t.Optional[str] = None) -> t.Any:
@@ -266,8 +264,7 @@ class ManagerSecretsSource(FileSecretsSource):
     @alru_cache(maxsize=1)
     async def get_manager(self):
         # manager = load_adapter("secrets")[0]()
-        print("blah")
-        manager = import_adapter("secrets")
+        manager, _ = import_adapter("secrets")
         await manager.init()
         return manager
 
@@ -472,6 +469,7 @@ class Config(BaseSettings, extra="allow"):
     tmp: t.Optional[AsyncPath] = None
     app_settings_path: t.Optional[AsyncPath] = None
     adapter_settings_path: t.Optional[AsyncPath] = None
+    secrets_path: t.Optional[AsyncPath] = None
     available_adapters: dict[str, t.Any] = {}
     adapter_categories: list[str] = []
     enabled_adapters: dict[str, str] = {}
@@ -499,7 +497,8 @@ class Config(BaseSettings, extra="allow"):
             self.secrets_path,
         ):
             await path.mkdir(exist_ok=True)
-        mod_dir = self.basedir / "__pypackages__"
+        py_version = ".".join(python_version_tuple()[0:2])
+        mod_dir = self.basedir / "__pypackages__" / py_version / "lib"
         sys.path.append(str(mod_dir))
         if self.basedir.name != "acb":
             self.adapter_categories = [
@@ -528,16 +527,17 @@ class Config(BaseSettings, extra="allow"):
                     a: self.enabled_adapters.pop(a),
                     **self.enabled_adapters,
                 }
+            del self.enabled_adapters["secrets"]
             adapter_categories.set(self.adapter_categories)
             available_adapters.set(self.available_adapters)
             enabled_adapters.set(self.enabled_adapters)
-            base_settings = dict(
-                adapter_categories=adapter_categories.get(),
-                available_adapters=available_adapters.get(),
-                enabled_adapters=enabled_adapters.get(),
-                package_registry=package_registry.get(),
-            )
-            super().__init__(**base_settings)
+            # base_settings = dict(
+            #     adapter_categories=self.adapter_categories,
+            #     available_adapters=self.available_adapters,
+            #     enabled_adapters=self.enabled_adapters,
+            #     package_registry=package_registry.get(),
+            # )
+            # super().__init__(**base_settings)
         return self
 
 

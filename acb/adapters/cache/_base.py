@@ -7,24 +7,26 @@ from acb.depends import depends
 from pydantic import AnyUrl
 from pydantic import field_validator
 from pydantic import SecretStr
+from pydantic import RedisDsn
 
 
 class CacheBaseSettings(Settings):
     namespace: t.Optional[str] = None
     db: int = 1
     host: SecretStr = SecretStr("127.0.0.1")
-    password: SecretStr = SecretStr(gen_password(10))
-    _url: t.Optional[AnyUrl] = None
+    password: SecretStr = SecretStr(gen_password())
+    _url: t.Optional[AnyUrl | RedisDsn] = None
     default_timeout: int = 86400
     template_timeout: t.Optional[int] = 300
     media_timeout: int = 15_768_000
     media_control: str = f"max-age={media_timeout} public"
     port: int = 6379
     health_check_interval: int = 15
+    loggers: t.Optional[list[str]] = []
 
     @depends.inject
-    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
-        super().model_post_init(__context)
+    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+        super().__init__(**values)
         self.namespace = self.namespace or config.app.name or ""
         self.host = SecretStr("127.0.0.1") if not config.deployed else self.host
         self.password = SecretStr("") if not config.deployed else self.password

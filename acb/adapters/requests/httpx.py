@@ -15,21 +15,25 @@ class RequestsSettings(RequestsBaseSettings):
 class Requests(RequestsBase):
     cache: t.Optional[RedisCache] = None
 
-    async def get(self, url: str) -> HttpxResponse:
+    async def get(self, url: str, timeout: int = 5) -> HttpxResponse:
         async with AsyncClient(cache=self.cache) as client:
-            return await client.get(url)
+            return await client.get(url, timeout=timeout)
 
-    async def post(self, url: str, data: dict[str, t.Any]) -> HttpxResponse:
+    async def post(
+        self, url: str, data: dict[str, t.Any], timeout: int = 5
+    ) -> HttpxResponse:
         async with AsyncClient(cache=self.cache) as client:
-            return await client.post(url, data=data)
+            return await client.post(url, data=data, timeout=timeout)
 
-    async def put(self, url: str, data: dict[str, t.Any]) -> HttpxResponse:
+    async def put(
+        self, url: str, data: dict[str, t.Any], timeout: int = 5
+    ) -> HttpxResponse:
         async with AsyncClient(cache=self.cache) as client:
-            return await client.put(url, data=data)
+            return await client.put(url, data=data, timeout=timeout)
 
-    async def delete(self, url: str) -> HttpxResponse:
+    async def delete(self, url: str, timeout: int = 5) -> HttpxResponse:
         async with AsyncClient(cache=self.cache) as client:
-            return await client.delete(url)
+            return await client.delete(url, timeout=timeout)
 
     async def init(self) -> None:
         self.cache = RedisCache(

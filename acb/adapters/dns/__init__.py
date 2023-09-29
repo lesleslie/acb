@@ -1,8 +1,9 @@
-from acb.config import import_adapter
-from pydantic import BaseModel
 import typing as t
-from acb.depends import depends
+
 from acb.config import Config
+from acb.config import import_adapter
+from acb.depends import depends
+from pydantic import BaseModel
 
 Dns, DnsSettings = import_adapter()
 
@@ -14,6 +15,6 @@ class DnsRecord(BaseModel):
     rrdata: t.Optional[str | list[t.Any]] = None
 
     @depends.inject
-    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
-        super().model_post_init(__context)
+    def __init__(self, config: Config = depends(), **data: t.Any) -> None:
+        super().__init__(**data)
         self.name = f"mail.{config.app.domain}"

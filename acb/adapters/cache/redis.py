@@ -15,28 +15,15 @@ from ._base import CacheBaseSettings
 
 
 class CacheSettings(CacheBaseSettings):
-    @depends.inject
-    def model_post_init(self, __context: t.Any, ac: Config = depends()) -> None:
-        super().model_post_init(__context)
-        self._url: RedisDsn = RedisDsn(
+    def model_post_init(self, __context: t.Any) -> None:
+        self._url = RedisDsn(
             f"redis://{self.host.get_secret_value()}:{self.port}/{self.db}"
         )
 
 
 class Cache(CashewsCache):
     config: Config = depends()
-    logger: Logger = depends()
-
-    def __init__(self) -> None:
-        async def close_cache_session() -> None:
-            self.logger.debug("Closing cache session...")
-            loop = asyncio.get_running_loop()
-            debug(loop.is_running())
-            await self.close()
-            self.logger.debug("Cache session closed")
-
-        asyncio_atexit.register(close_cache_session)
-        super().__init__()
+    logger: Logger = depends()  # type: ignore
 
     async def encoder(self, value: t.Any, *args: object, **kwargs: object) -> bytes:
         return await dump.msgpack(
@@ -60,6 +47,16 @@ class Cache(CashewsCache):
             client_side_prefix=f"{self.config.app.name}:",
         )
         register_type(t.Any, self.encoder, self.decoder)
+
+        async def close_cache_session() -> None:
+            self.logger.debug("Closing cache session...")
+            loop = asyncio.get_running_loop()
+            debug(loop.is_running())
+            await self.close()
+            self.logger.debug("Cache session closed")
+
+        asyncio_atexit.register(close_cache_session)
+
         self.logger.info("Cache initialized")
 
 

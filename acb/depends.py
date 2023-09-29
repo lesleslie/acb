@@ -7,18 +7,18 @@ from bevy import inject as inject_dependency
 
 class Depends:
     @staticmethod
-    def inject(func):
+    def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         return inject_dependency(func)
 
     @staticmethod
-    def set(cls: t.Any, value: t.Any) -> t.Any:
-        return get_repository().set(cls, value)
+    def set(class_: t.Any, value: t.Any) -> t.Any:
+        return get_repository().set(class_, value)
 
     @staticmethod
-    def get(cls: t.Any) -> t.Any:
-        return get_repository().get(cls)
+    def get(class_: t.Any) -> t.Any:
+        return get_repository().get(class_)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: t.Any, **kwargs: t.Any):
         return dependency()
 
 
