@@ -3,7 +3,7 @@ import typing as t
 from pprint import pformat
 from re import search
 
-from acb.actions import load
+from acb.actions.encode import load
 from acb.adapters.dns import Dns
 from acb.adapters.dns import DnsRecord
 from acb.adapters.requests import Requests

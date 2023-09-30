@@ -37,7 +37,7 @@ class Requests(RequestsBase):
             return await client.delete(url, timeout=timeout)
 
     @depends.inject
-    async def init(self, logger: Logger = depends) -> None:  # type: ignore
+    async def init(self, logger: Logger = depends()) -> None:  # type: ignore
         self.cache = RedisCache(
             redis_url=f"redis://{self.config.cache.host.get_secret_value()}:{self.config.cache.port}/"
             f"{self.config.requests.cache_db}"

@@ -785,7 +785,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.6.9"
+version = "0.6.10"
 requires_python = ">=3.11"
 summary = "Crackerjack code style"
 dependencies = [
@@ -801,8 +801,8 @@ dependencies = [
     "pytest>=7.4.2",
 ]
 files = [
-    {file = "crackerjack-0.6.9-py3-none-any.whl", hash = "sha256:41c528877515a91dfe0cad13dc31b316ac2c821e0783c6fcafed5bda6a856686"},
-    {file = "crackerjack-0.6.9.tar.gz", hash = "sha256:4b3c05d71e732d3b4acdf9f8ecf315c816b33b9e060f62a928919b076e6b8433"},
+    {file = "crackerjack-0.6.10-py3-none-any.whl", hash = "sha256:cc4c2f3140c36d2267d23a2aed0b3ce2cf5069446f06e7d7bd9f4f1527f27a90"},
+    {file = "crackerjack-0.6.10.tar.gz", hash = "sha256:c62da97d2653cb8efa93ce30a682ece047c15db77ff9be6112019905bbb95f21"},
 ]
 
 [[package]]

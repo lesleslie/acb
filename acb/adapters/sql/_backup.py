@@ -12,7 +12,7 @@ from sqlmodel import select
 from sqlmodel import SQLModel
 
 import arrow
-from acb.actions import load
+from acb.actions.encode import load
 from acb.adapters.logger import Logger
 from acb.adapters.sql import Sql
 from acb.adapters.sql import SqlModel

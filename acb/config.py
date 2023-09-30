@@ -15,8 +15,8 @@ from warnings import warn
 from platform import python_version_tuple
 
 import nest_asyncio
-from acb.actions import dump
-from acb.actions import load
+from acb.actions.encode import dump
+from acb.actions.encode import load
 from acb.depends import depends
 from aiopath import AsyncPath
 from async_lru import alru_cache

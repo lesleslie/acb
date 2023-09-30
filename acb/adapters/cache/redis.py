@@ -2,8 +2,8 @@ import asyncio
 import typing as t
 
 import asyncio_atexit
-from acb.actions import dump
-from acb.actions import load
+from acb.actions.encode import dump
+from acb.actions.encode import load
 from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.debug import debug

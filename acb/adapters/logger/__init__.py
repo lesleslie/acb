@@ -48,7 +48,7 @@ class InterceptHandler(logging.Handler):
             #     ...
 
 
-def register_loggers(loggers: tuple[str]) -> None:
+def register_loggers(loggers: list[str]) -> None:
     for logger in loggers:
         _logger = logging.getLogger(logger)
         _logger.handlers.clear()
