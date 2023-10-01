@@ -10,7 +10,8 @@ from ._base import RequestsBaseSettings
 
 
 class RequestsSettings(RequestsBaseSettings):
-    loggers: list[str] = ["httpx_caching"]
+    _requires: list[str] = ["cache"]
+    loggers: t.Optional[list[str]] = ["httpx_caching"]
 
 
 class Requests(RequestsBase):

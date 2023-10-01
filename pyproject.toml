@@ -78,7 +78,6 @@ dependencies = [
     "msgspec[toml]>=0.18.2",
     "pydantic>=2.3.0",
     "nest-asyncio>=1.5.8",
-    "async-lru>=2.0.4",
     "pydantic-settings>=2.0.3",
     "asyncio-atexit>=1.0.1",
     "sqlalchemy==2.0.11",

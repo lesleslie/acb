@@ -25,9 +25,9 @@ from sqlalchemy_utils import drop_database
 
 
 class SqlBaseSettings(Settings):
-    driver: str
-    async_driver: str
-    port: int
+    driver: t.Optional[str]
+    async_driver: t.Optional[str]
+    port: t.Optional[int] = 3306
     pool_pre_ping: t.Optional[bool] = False
     poolclass: t.Optional[t.Any] = None
     host: SecretStr = SecretStr("127.0.0.1")
@@ -36,6 +36,7 @@ class SqlBaseSettings(Settings):
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
     engine_kwargs: t.Optional[dict[str, t.Any]] = {}
+    bucket: list[str] = []
     loggers: t.Optional[list[str]] = [
         "sqlalchemy.engine",
         "sqlalchemy.orm",

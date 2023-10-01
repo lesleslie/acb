@@ -8,8 +8,8 @@ from acb.adapters.dns import Dns
 from acb.adapters.dns import DnsRecord
 from acb.adapters.requests import Requests
 from acb.config import Config
+from acb.config import enabled_adapters
 from acb.debug import debug
-from acb.debug import pprint
 from acb.depends import depends
 from httpx import Response as HttpxResponse
 from ._base import EmailBase
@@ -123,11 +123,11 @@ class Email(EmailBase):
                 dict(name=r["name"], type=r["record_type"], rrdata=r["value"])
             )
             records.append(record)
+        debug(records)
         return records
 
     @depends.inject
     async def create_dns_records(self, dns: Dns = depends()) -> None:  # type: ignore
-        # if not self.config.mail.mailgun.domain in list_domains(self):
         await self.create_domain(self.config.email.domain)
         await self.create_domain_credentials(self.config.email.domain)
         records = await self.get_dns_records(self.config.email.domain)
@@ -140,7 +140,6 @@ class Email(EmailBase):
             records.append(record)
         else:
             await self.delete_domain(self.config.email.domain)
-        await pprint(records)
         await dns.create_records(records)
 
     async def list_routes(self) -> list[t.Any]:
@@ -176,7 +175,7 @@ class Email(EmailBase):
         for f in forwards:
             fs = [r for r in routes if self.get_name(r["expression"]) == f]
             deletes.extend(fs[1:])
-        if delete_all or self.config.enabled_adapters["email"] == "gmail":
+        if delete_all or enabled_adapters.get()["email"] == "gmail":
             deletes = [r for r in routes if len(self.get_name(r["expression"]))]
             debug(deletes)
             debug(len(deletes))

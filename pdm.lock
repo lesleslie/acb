@@ -6,7 +6,7 @@ groups = ["default", "storage", "mail", "cache", "dev", "requests", "sql", "dns"
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:b02c378c92805ccfc3d6345056b20bd81544be881716df61b9660a2c8ae94ee7"
+content_hash = "sha256:0ab409550b5439d57a44aaa6d6251e7f9f8872a99317749bdb5a22f3f821efb5"
 
 [[package]]
 name = "adlfs"

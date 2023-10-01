@@ -1,10 +1,9 @@
+import typing as t
 from abc import ABC
 from abc import abstractmethod
-import typing as t
 
-
-from acb.config import Settings
 from acb.config import Config
+from acb.config import Settings
 from acb.depends import depends
 
 

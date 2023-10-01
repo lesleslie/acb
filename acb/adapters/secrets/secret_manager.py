@@ -52,7 +52,8 @@ class Secrets(SecretsBase):
 
     async def list(self, adapter: str) -> t.Any:
         request = ListSecretsRequest(
-            parent=self.parent, filter=f"{self.prefix}{adapter}_"
+            parent=self.parent,
+            filter=f"{self.prefix}{adapter}_"
         )
         client_secrets = await self.client.list_secrets(request=request)
         client_secrets = [

@@ -9,9 +9,9 @@ from ._base import SqlBaseSettings
 class SqlSettings(SqlBaseSettings):
     driver: str = "mysql+mysqldb"
     async_driver: str = "mysql+asyncmy"
-    port: int = 3306
 
     def model_post_init(self, __context: t.Any) -> None:
+        self.port = 3306
         self.poolclass = NullPool
         self.pool_pre_ping = True
         self.engine_kwargs = dict(

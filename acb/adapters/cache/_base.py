@@ -12,15 +12,15 @@ from pydantic import RedisDsn
 
 class CacheBaseSettings(Settings):
     namespace: t.Optional[str] = None
-    db: int = 1
+    db: t.Optional[int] = 1
     host: SecretStr = SecretStr("127.0.0.1")
     password: SecretStr = SecretStr(gen_password())
     _url: t.Optional[AnyUrl | RedisDsn] = None
     default_timeout: int = 86400
-    template_timeout: t.Optional[int] = 300
+    template_timeout: int = 300
     media_timeout: int = 15_768_000
     media_control: str = f"max-age={media_timeout} public"
-    port: int = 6379
+    port: t.Optional[int] = 6379
     health_check_interval: int = 15
     loggers: t.Optional[list[str]] = []
 

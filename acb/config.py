@@ -1,6 +1,5 @@
 import asyncio
 import secrets
-import sys
 import typing as t
 from abc import ABC
 from abc import abstractmethod
@@ -12,7 +11,6 @@ from pathlib import Path
 from secrets import token_bytes
 from secrets import token_urlsafe
 from warnings import warn
-from platform import python_version_tuple
 
 import nest_asyncio
 from acb.actions.encode import dump
@@ -20,6 +18,7 @@ from acb.actions.encode import load
 from acb.depends import depends
 from aiopath import AsyncPath
 from async_lru import alru_cache
+from icecream import ic
 from inflection import camelize
 from inflection import titleize
 from inflection import underscore
@@ -40,49 +39,128 @@ nest_asyncio.apply()
 
 _deployed: bool = True if Path.cwd().name == "app" else False  # or "srv"?
 _app_secrets: set[str] = set()
-_secrets_path: AsyncPath = AsyncPath("tmp/secrets")
+_pkg_path: AsyncPath = AsyncPath(__file__).parent
+_base_path: AsyncPath = AsyncPath.cwd()
+_tmp_path: AsyncPath = _base_path / "tmp"
+_secrets_path: AsyncPath = _tmp_path / "secrets"
+_settings_path: AsyncPath = _base_path / "settings"
+_app_settings_path: AsyncPath = _settings_path / "app.yml"
+_adapter_settings_path: AsyncPath = _settings_path / "adapters.yml"
 project: str = ""
 app_name: str = ""
-required_adapters: ContextVar[set[str]] = ContextVar(
-    "required_adapters", default={"logger", "secrets"}
+required_adapters: ContextVar[dict[str, str]] = ContextVar(
+    "required_adapters", default={"secrets": "secret_manager", "logger": "loguru"}
 )
-adapter_categories: ContextVar[set[str]] = ContextVar(
-    "adapter_categories", default=set()
-)
-available_adapters: ContextVar[dict[str, str]] = ContextVar(
+loaded_adapters: ContextVar[set[str]] = ContextVar("loaded_adapters", default=set())
+available_adapters: ContextVar[dict[str, str | None]] = ContextVar(
     "available_adapters", default={}
+)
+available_modules: ContextVar[dict[str, dict[str, AsyncPath]]] = ContextVar(
+    "available_modules", default={}
 )
 enabled_adapters: ContextVar[dict[str, str]] = ContextVar(
     "enabled_adapters", default={}
 )
-package_registry: ContextVar[dict[str, AsyncPath]] = ContextVar(
+package_registry: ContextVar[dict[str, str]] = ContextVar(
     "package_registry", default={}
 )
+logger_registry: ContextVar[set[str]] = ContextVar("logger_registry", default=set())
 
 
-def register_package() -> None:
-    packages = package_registry.get()
-    pkg_path = AsyncPath(currentframe().f_code.co_filename).parent
-    pkg_name = pkg_path.stem
-    packages[pkg_name] = pkg_path
-    package_registry.set(packages)
+# py_version = ".".join(python_version_tuple()[0:2])
+# pkgs_path = _base_path / "__pypackages__" / py_version / "lib"
+# sys.path.insert(0, str(pkgs_path))
+
+
+async def init_app():
+    for path in (
+        _tmp_path,
+        _secrets_path,
+        _settings_path,
+    ):
+        await path.mkdir(exist_ok=True)
+    enabled_adapters.get().update(required_adapters.get())
+
+
+asyncio.run(init_app())
 
 
 def gen_password(size: int = 10) -> str:
     return secrets.token_urlsafe(size)
 
 
+async def update_available_modules(
+    adapters_path: AsyncPath,
+) -> dict[str, dict[str, AsyncPath]]:
+    _available_modules = available_modules.get()
+    for adapter, module in {
+        a.stem: {m.stem: m async for m in a.rglob("*.py") if not m.name.startswith("_")}
+        async for a in adapters_path.iterdir()
+        if await a.is_dir() and not a.name.startswith("__")
+    }.items():
+        _available_modules.update({adapter: module})
+    ic(_available_modules)
+    available_modules.set(_available_modules)
+    return _available_modules
+
+
+async def update_available_adapters(adapters_path: AsyncPath) -> dict[str, str | None]:
+    await update_available_modules(adapters_path)
+    _available_modules = available_modules.get()
+    if not await _adapter_settings_path.exists():
+        await dump.yaml(
+            {cat: None for cat in _available_modules} | required_adapters.get(),
+            _adapter_settings_path,
+        )
+    _available_adapters = await load.yaml(_adapter_settings_path)
+    _available_adapters.update(
+        {a: None for a in _available_modules if a not in _available_adapters}
+    )
+    available_adapters.set(_available_adapters)
+    await dump.yaml(_available_adapters, _adapter_settings_path)
+    ic(_available_adapters)
+    return _available_adapters
+
+
+async def update_enabled_adapters() -> dict[str, str]:
+    _enabled_adapters = enabled_adapters.get()
+    _enabled_adapters.update(
+        ({a: m for (a, m) in available_adapters.get().items() if m})
+    )
+    ic(_enabled_adapters)
+    enabled_adapters.set(_enabled_adapters)
+    return _enabled_adapters
+
+
+async def register_package() -> tuple[str, AsyncPath, AsyncPath, dict[str, str | None]]:
+    _packages = package_registry.get()
+    _pkg_path = AsyncPath(currentframe().f_code.co_filename).parent
+    _pkg_name = _pkg_path.name
+    _adapters_path = _pkg_path / "adapters"
+    ic(_adapters_path)
+    package_registry.set({_pkg_name: str(_adapters_path)} | _packages)
+    ic(package_registry.get())
+    _available_adapters = await update_available_adapters(_adapters_path)
+    return _pkg_name, _pkg_path, _adapters_path, _available_adapters
+
+
 def import_adapter(adapter: t.Optional[str] = None) -> t.Any:
     with suppress(KeyError):
-        adapter_dir = Path(currentframe().f_back.f_code.co_filename).parent
-        if not adapter:
-            adapter = adapter_dir.stem
-        adapter_class = camelize(adapter)
-        adapter_settings_class = f"{adapter_class}Settings"
-        adapter_path = adapter_dir / enabled_adapters.get()[adapter]
-        adapter_module = import_module(".".join(adapter_path.parts[-4:]))
-        return getattr(adapter_module, adapter_class), getattr(
-            adapter_module, adapter_settings_class
+        _pkg_path = Path(currentframe().f_code.co_filename).parent
+        if adapter is None:
+            adapter = Path(currentframe().f_back.f_code.co_filename).parent.stem
+        _adapter_path = _pkg_path / "adapters" / adapter
+        _adapter_class = camelize(adapter)
+        _adapter_settings_class = f"{_adapter_class}Settings"
+        _module_path = (
+            _pkg_path / "adapters" / adapter / enabled_adapters.get()[adapter]
+        )
+        _adapter_module = ".".join(_module_path.parts[-4:])
+        ic(_adapter_module)
+        _module = import_module(_adapter_module)
+        loaded_adapters.get().add(adapter)
+        return getattr(_module, _adapter_class), getattr(
+            _module, _adapter_settings_class
         )
     if adapter in required_adapters.get():
         raise SystemExit(f"Required adapter {adapter!r} not found.")
@@ -137,10 +215,12 @@ class FileSecretsSource(PydanticBaseSettingsSource):
     def __init__(
         self,
         settings_cls: type["Settings"],
-        secrets_dir: t.Optional[str | AsyncPath | Path] = None,
+        secrets_dir: t.Optional[AsyncPath] = None,
     ) -> None:
         super().__init__(settings_cls)
-        self.secrets_dir = secrets_dir or self.config.get("secrets_dir")
+        self.secrets_dir = (
+            secrets_dir or self.config.get("secrets_dir") or _secrets_path
+        )
 
     @staticmethod
     async def path_type_label(p: AsyncPath) -> t.Any:
@@ -214,8 +294,8 @@ class FileSecretsSource(PydanticBaseSettingsSource):
 
     async def __call__(self) -> t.Any:
         global _app_secrets
-        data: dict[str, t.Any] = {}
-        self.adapter_name: str = underscore(
+        data = {}
+        self.adapter_name = underscore(
             self.settings_cls.__name__.replace("Settings", "")
         )
         if self.adapter_name == "debug":
@@ -231,7 +311,12 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                 f"secrets_dir must reference a directory, not a "
                 f"{path_type_label(self.secrets_path)}"
             )
-        for field_name, field in self.settings_cls.model_fields.items():
+        model_secrets = {
+            "_".join((self.adapter_name, n)): v
+            for n, v in self.settings_cls.model_fields.items()
+            if v.annotation is SecretStr
+        }
+        for field_name, field in model_secrets.items():
             try:
                 field_value, field_key, value_is_complex = await self.get_field_value(
                     field, "_".join([self.adapter_name, field_name])
@@ -251,6 +336,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                     f' source "{self.__class__.__name__}"'
                 )
             if field_value is not None:
+                ic(field_key)
                 _app_secrets.add(field_key)
                 data[field_name] = field_value
         return data
@@ -264,8 +350,7 @@ class ManagerSecretsSource(FileSecretsSource):
 
     @alru_cache(maxsize=1)
     async def get_manager(self):
-        # manager = load_adapter("secrets")[0]()
-        manager, _ = import_adapter("secrets")
+        manager = import_adapter("secrets")[0]()
         await manager.init()
         return manager
 
@@ -277,15 +362,17 @@ class ManagerSecretsSource(FileSecretsSource):
             for n, v in self.settings_cls.model_fields.items()
             if v.annotation is SecretStr
         }
+        ic(model_secrets)
         unfetched_secrets = {
             n: v for n, v in model_secrets.items() if n not in _app_secrets
         }
+        ic(unfetched_secrets)
         if unfetched_secrets:
             manager = await self.get_manager()
             manager_secrets = await manager.list(self.adapter_name)
             for field_key, field_value in unfetched_secrets.items():
                 field_name = field_key.removeprefix(f"{self.adapter_name}_")
-                stored_field_key = "_".join((_app_name, field_key))
+                stored_field_key = "_".join((app_name, field_key))
                 secret_path = _secrets_path / field_key
                 if not await secret_path.exists():
                     if field_key not in manager_secrets:
@@ -295,7 +382,10 @@ class ManagerSecretsSource(FileSecretsSource):
                     secret = await manager.get(stored_field_key)
                     await secret_path.write_text(secret)
                     data[field_name] = secret
+                ic(field_key)
                 _app_secrets.add(field_key)
+        ic()
+        ic(_app_secrets)
         return data
 
     async def get_field_value(self, field: FieldInfo, field_name: str) -> t.Any:
@@ -321,16 +411,16 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
     adapter_name: str = "app"
 
     async def load_yml_settings(self) -> t.Any:
-        global _project, _app_name
+        global project, app_name
         if self.adapter_name == "secrets":
             return {}
         yml_path = AsyncPath.cwd() / "settings" / f"{self.adapter_name}.yml"
         if not await yml_path.exists() and not _deployed:
-            await yml_path.touch(exist_ok=True)
             dump_settings = {
-                k: v.default
-                for k, v in self.settings_cls.model_fields.items()
-                if v.annotation is not SecretStr
+                name: info.default
+                for name, info in self.settings_cls.model_fields.items()
+                if (info.annotation is not SecretStr)
+                and ("Optional" not in (str(info.annotation)))
             }
             await dump.yaml(dump_settings, yml_path)
         yml_settings = await load.yaml(yml_path)
@@ -344,8 +434,8 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         if not _deployed:
             await dump.yaml(yml_settings, yml_path)
         if self.adapter_name == "app":
-            _project = yml_settings["project"]
-            _app_name = yml_settings["name"]
+            project = yml_settings["project"]
+            app_name = yml_settings["name"]
         return yml_settings
 
     def get_field_value(
@@ -391,7 +481,7 @@ class Settings(BaseModel):
 
     def __init__(
         __pydantic_self__,  # type: ignore
-        _secrets_dir: t.Optional[str | AsyncPath | Path] = None,
+        _secrets_dir: t.Optional[AsyncPath] = None,
         **values: t.Any,
     ) -> None:
         build_settings = __pydantic_self__._settings_build_values(
@@ -404,7 +494,7 @@ class Settings(BaseModel):
     async def _settings_build_values(
         self,
         init_kwargs: dict[str, t.Any],
-        _secrets_dir: t.Optional[str | AsyncPath | Path] = None,
+        _secrets_dir: t.Optional[AsyncPath] = None,
     ) -> t.Any:
         secrets_dir = _secrets_dir or self.model_config.get("secrets_dir")
         init_settings = InitSettingsSource(self.__class__, init_kwargs=init_kwargs)
@@ -447,92 +537,46 @@ class DebugSettings(Settings):
     secrets: bool = False
     logger: bool = False
     app: bool = False
+    adapters: bool = False
 
 
 class AppSettings(Settings):
     project: str = "myproject"
     name: str = "myapp"
-    title: t.Optional[str] = "My App"
+    title: str = "My App"
     domain: str = "mydomain.local"
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
-    _secrets_dir: t.Optional[str | Path | AsyncPath] = None
 
     def model_post_init(self, __context: t.Any) -> None:
-        self.domain = f"{self.name}.local"
         self.title = self.title or titleize(self.name)
 
 
 class Config(BaseSettings, extra="allow"):
-    pkgdir: AsyncPath = AsyncPath(__file__).parent
-    basedir: AsyncPath = AsyncPath.cwd()
     deployed: bool = False
-    tmp: t.Optional[AsyncPath] = None
-    app_settings_path: t.Optional[AsyncPath] = None
-    adapter_settings_path: t.Optional[AsyncPath] = None
-    secrets_path: t.Optional[AsyncPath] = None
-    available_adapters: dict[str, t.Any] = {}
-    adapter_categories: set[str] = set()
-    enabled_adapters: dict[str, str] = {}
     debug: t.Optional[Settings] = None
     app: t.Optional[Settings] = None
 
     def model_post_init(self, __context: t.Any) -> None:
-        self.tmp = self.basedir / "tmp"
-        self.app_settings_path = self.basedir / "settings"
-        self.adapter_settings_path = self.app_settings_path / "adapters.yml"
-        self.secrets_path = self.basedir / _secrets_path
-        self.deployed = True if self.basedir.name == "app" else _deployed
-        self.app = AppSettings(_secrets_dir=self.secrets_path)
-        self.debug = DebugSettings()
         self.deployed = _deployed
 
     def __getattr__(self, item: str) -> t.Any:
         return super().__getattr__(item)  # type: ignore
 
-    async def init(self, deployed: bool = False) -> t.Any:
-        self.deployed = deployed
-        for path in (
-            self.app_settings_path,
-            self.tmp,
-            self.secrets_path,
-        ):
-            await path.mkdir(exist_ok=True)
-        py_version = ".".join(python_version_tuple()[0:2])
-        mod_dir = self.basedir / "__pypackages__" / py_version / "lib"
-        sys.path.append(str(mod_dir))
-        if self.basedir.name != "acb":
-            self.adapter_categories = {
-                path.stem
-                async for path in (self.pkgdir / "adapters").iterdir()
-                if await path.is_dir() and not path.name.startswith("__")
-            }
-            if not await self.adapter_settings_path.exists():
-                await dump.yaml(
-                    {cat: None for cat in self.adapter_categories},
-                    self.adapter_settings_path,
-                )
-            self.available_adapters = await load.yaml(self.adapter_settings_path)
-            for adapter in [
-                a for a in self.adapter_categories if a not in self.available_adapters
-            ]:
-                self.available_adapters[adapter] = None
-            await dump.yaml(self.available_adapters, self.adapter_settings_path)
-            self.enabled_adapters = {
-                c: a
-                for c, a in self.available_adapters.items()
-                if c in self.adapter_categories and a
-            }
-            for a in required_adapters.get():
-                self.enabled_adapters = {
-                    a: self.enabled_adapters.pop(a),
-                    **self.enabled_adapters,
-                }
-            del self.enabled_adapters["secrets"]
-            adapter_categories.set(self.adapter_categories)
-            available_adapters.set(self.available_adapters)
-            enabled_adapters.set(self.enabled_adapters)
-        return self
+    async def init(self) -> t.Any:
+        (
+            _pkg_name,
+            _pkg_path,
+            _adapters_path,
+            _available_adapters,
+        ) = await register_package()
+        _enabled_adapters = await update_enabled_adapters()
+        for a in required_adapters.get():
+            _enabled_adapters = {a: _enabled_adapters.pop(a)} | _enabled_adapters
+        enabled_adapters.set(_enabled_adapters)
+        self.debug = DebugSettings()
+        self.app = AppSettings()
+
 
 
 depends.set(Config, Config())
