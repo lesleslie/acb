@@ -52,8 +52,7 @@ class Secrets(SecretsBase):
 
     async def list(self, adapter: str) -> t.Any:
         request = ListSecretsRequest(
-            parent=self.parent,
-            filter=f"{self.prefix}{adapter}_"
+            parent=self.parent, filter=f"{self.prefix}{adapter}_"
         )
         client_secrets = await self.client.list_secrets(request=request)
         client_secrets = [
@@ -82,8 +81,7 @@ class Secrets(SecretsBase):
                 payload={"data": f"{value}".encode()},
             )
             await self.client.add_secret_version(request)
-            if not self.config.deployed:
-                self.logger.debug(f"Created secret - {name}")
+            self.logger.debug(f"Created secret - {name}")
 
     async def update(self, name: str, value: str) -> t.NoReturn:
         secret = self.client.secret_path(self.project, name)
@@ -92,15 +90,13 @@ class Secrets(SecretsBase):
             payload={"data": f"{value}".encode()},
         )
         await self.client.add_secret_version(request)
-        if not self.config.deployed:
-            self.logger.debug(f"Updated secret - {name}")
+        self.logger.debug(f"Updated secret - {name}")
 
     async def delete(self, name: str) -> t.NoReturn:
         secret = self.client.secret_path(self.project, name)
         request = DeleteSecretRequest(name=secret)
         await self.client.delete_secret(request=request)
-        if not self.config.deployed:
-            self.logger.debug(f"Deleted secret - {secret}")
+        self.logger.debug(f"Deleted secret - {secret}")
 
     async def init(self) -> t.NoReturn:
         self.project = project

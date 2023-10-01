@@ -1,4 +1,3 @@
-import asyncio
 import typing as t
 
 from acb.adapters.logger import Logger
@@ -128,13 +127,12 @@ class StorageBucket:
 
 
 class StorageBase:
+    client: t.Any
     config: Config = depends()
     logger: Logger = depends()  # type: ignore
-    client: t.Any
 
     async def init(self) -> None:
-        loop = asyncio.get_running_loop()
-        self.client = self.client(asynchronous=True, loop=loop)
+        self.client = self.client(asynchronous=True)
         for bucket in self.config.storage.buckets:
             setattr(self, bucket, StorageBucket(self.client, bucket))
             self.logger.debug(f"{bucket.title()} storage bucket initialized")

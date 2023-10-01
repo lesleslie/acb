@@ -7,8 +7,8 @@ from ._base import SqlBaseSettings
 
 
 class SqlSettings(SqlBaseSettings):
-    driver: str = "mysql+mysqldb"
-    async_driver: str = "mysql+asyncmy"
+    _driver: str = "mysql+mysqldb"
+    _async_driver: str = "mysql+asyncmy"
 
     def model_post_init(self, __context: t.Any) -> None:
         self.port = 3306

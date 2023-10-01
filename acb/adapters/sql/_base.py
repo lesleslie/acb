@@ -5,17 +5,18 @@ from functools import cached_property
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from acb.debug import debug
+from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import gen_password
 from acb.config import Settings
+from acb.debug import debug
 from acb.depends import depends
-from acb.adapters.logger import Logger
 from aioconsole import ainput
 from aioconsole import aprint
 from pydantic import SecretStr
 from sqlalchemy import inspect
 from sqlalchemy.engine import URL
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -25,8 +26,8 @@ from sqlalchemy_utils import drop_database
 
 
 class SqlBaseSettings(Settings):
-    driver: t.Optional[str]
-    async_driver: t.Optional[str]
+    _driver: str
+    _async_driver: str
     port: t.Optional[int] = 3306
     pool_pre_ping: t.Optional[bool] = False
     poolclass: t.Optional[t.Any] = None
@@ -47,17 +48,17 @@ class SqlBaseSettings(Settings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        url_kwargs = dict(
-            drivername=self.driver,
+        _url_kwargs = dict(
+            drivername=self._driver,
             username=self.user.get_secret_value(),
             password=self.password.get_secret_value(),
             host=("127.0.0.1" if not config.deployed else self.host.get_secret_value()),
             port=self.port,
             database=config.app.name,
         )
-        self._url = URL.create(**url_kwargs)  # type: ignore
-        async_url_kwargs = dict(drivername=self.async_driver)
-        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
+        self._url = URL.create(**_url_kwargs)  # type: ignore
+        _async_url_kwargs = dict(drivername=self._async_driver)
+        self._async_url = URL.create(**(_url_kwargs | _async_url_kwargs))  # type:ignore
 
 
 class SqlBase:
@@ -75,9 +76,16 @@ class SqlBase:
         return AsyncSession(self.engine, expire_on_commit=False)
 
     async def create(self, demo: bool = False) -> None:
-        exists = database_exists(self.config.sql._url)
-        if exists:
-            self.logger.debug("Database exists")
+        try:
+            exists = database_exists(self.config.sql._url)
+            if exists:
+                self.logger.debug("Database exists")
+        except OperationalError:
+            print(self.config.sql._url)
+            print(self.config.sql._async_url)
+            print(self.config.sql.password.get_secret_value())
+            print(self.config.sql.user.get_secret_value())
+            exists = False
 
         if (
             self.config.debug.sql

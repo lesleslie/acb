@@ -17,7 +17,7 @@ class MonitoringSettings(MonitoringBaseSettings):
         super().__init__(**values)
         self.sample_rate = self.sample_rate if config.deployed else 1.0
         self.enabled = config.deployed or not config.debug.production
-        self.dsn = config.secres.sentry_dsn
+        self.dsn = config.secrets.sentry_dsn
 
 
 class Monitoring(MonitoringBase):

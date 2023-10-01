@@ -3,7 +3,6 @@ from contextlib import suppress
 from warnings import catch_warnings
 from warnings import filterwarnings
 
-from acb.adapters.dns import DnsRecord
 from acb.depends import depends
 from google.api_core.exceptions import BadRequest
 from google.api_core.exceptions import Conflict
@@ -13,6 +12,7 @@ from validators import domain
 from validators.utils import ValidationError
 from ._base import DnsBase
 from ._base import DnsBaseSettings
+from ._base import DnsRecord
 
 
 class DnsSettings(DnsBaseSettings):

@@ -5,7 +5,6 @@ from re import search
 
 from acb.actions.encode import load
 from acb.adapters.dns import Dns
-from acb.adapters.dns import DnsRecord
 from acb.adapters.requests import Requests
 from acb.config import Config
 from acb.config import enabled_adapters
@@ -14,6 +13,7 @@ from acb.depends import depends
 from httpx import Response as HttpxResponse
 from ._base import EmailBase
 from ._base import EmailBaseSettings
+from acb.adapters.dns import DnsRecord
 
 
 class EmailSettings(EmailBaseSettings):
