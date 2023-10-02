@@ -37,7 +37,7 @@ class SqlBaseSettings(Settings):
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
     engine_kwargs: t.Optional[dict[str, t.Any]] = {}
-    bucket: list[str] = []
+    backup_bucket: str | None = None
     loggers: t.Optional[list[str]] = [
         "sqlalchemy.engine",
         "sqlalchemy.orm",
@@ -75,16 +75,13 @@ class SqlBase:
     def session(self) -> AsyncSession:
         return AsyncSession(self.engine, expire_on_commit=False)
 
+    @depends.inject
     async def create(self, demo: bool = False) -> None:
         try:
             exists = database_exists(self.config.sql._url)
             if exists:
                 self.logger.debug("Database exists")
         except OperationalError:
-            print(self.config.sql._url)
-            print(self.config.sql._async_url)
-            print(self.config.sql.password.get_secret_value())
-            print(self.config.sql.user.get_secret_value())
             exists = False
 
         if (
@@ -127,7 +124,11 @@ class SqlBase:
         inspector = inspect(conn)
         return inspector.get_table_names() or []
 
-    async def init(self, demo: bool = False) -> None:
+    async def init(
+        self,
+        demo: bool = False,
+    ) -> None:
+        self.logger.info("Loading database adapter...")
         await self.create(demo)
         async with self.get_conn() as conn:
             # if self.config.debug.sql:

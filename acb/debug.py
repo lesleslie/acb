@@ -8,11 +8,12 @@ from acb.config import Config
 from acb.config import enabled_adapters
 from acb.depends import depends
 from icecream import colorizedStderrPrint
-from icecream import ic as debug
+
+config = depends.get(Config)
+logger = depends.get(Logger)
 
 
-@depends.inject
-def get_calling_module(config: Config = depends()) -> Path | None:
+def get_calling_module() -> Path | None:
     mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
     mod = Path(mod).parent
     debug_mod = getattr(config.debug, mod.stem, None) or (
@@ -21,18 +22,14 @@ def get_calling_module(config: Config = depends()) -> Path | None:
     return mod if debug_mod else None
 
 
-@depends.inject
-def patch_record(
-    mod: Path, msg: str, logger: Logger = depends()  # type: ignore
-) -> None:
+def patch_record(mod: Path, msg: str) -> None:
     if enabled_adapters.get()["logger"] == "loguru":
-        logger.patch(  # type: ignore
+        logger.patch(
             lambda record: record.update(name=mod.name),  # type: ignore
         ).debug(msg)
 
 
-@depends.inject
-def print_debug_info(msg: str, config: Config = depends()) -> t.Any:
+def print_debug_info(msg: str) -> t.Any:
     mod = get_calling_module()
     if mod:
         if config.deployed or config.debug.production:
@@ -41,8 +38,9 @@ def print_debug_info(msg: str, config: Config = depends()) -> t.Any:
             colorizedStderrPrint(msg)
 
 
-@depends.inject
-def configure_debug(config: Config = depends()) -> None:
+try:
+    from icecream import ic as debug
+
     debug_args = dict(
         outputFunction=print_debug_info,
         argToStringFunction=lambda o: pformat(o, sort_dicts=False),
@@ -59,5 +57,8 @@ def configure_debug(config: Config = depends()) -> None:
             **debug_args,
         )
 
+except ImportError:
 
-configure_debug()
+    def debug(*a: t.Any) -> t.Any:
+        fake_ic = a[0] if len(a) == 1 else a
+        return None if not a else fake_ic

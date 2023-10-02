@@ -18,7 +18,7 @@ class LoggerSettings(LoggerBaseSettings):
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
         level=" <level>{level:>8}</level>",
         sep=" <b><w>in</w></b> ",
-        name="{name:>26}",
+        name="{name:>28}",
         line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
         message="  <level>{message}</level>",
     )
@@ -62,7 +62,7 @@ class Logger(_Logger):
             record["extra"]["mod_name"] = ".".join(record["name"].split(".")[0:-1])
 
         self.remove()
-        self.patch(patching)
+        # self.patch(patching)
         self.add(sys.stderr, **config.logger.settings)
         if config.deployed:
             self.level = config.logger.deployed_level

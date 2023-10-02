@@ -9,7 +9,7 @@ from pydantic import field_validator
 
 
 class RequestsBaseSettings(Settings):
-    cache_db: int = 2
+    cache_db: t.Optional[int] = 2
 
     @field_validator("cache_db")
     def cache_db_less_than_three(cls, v: int) -> int:
