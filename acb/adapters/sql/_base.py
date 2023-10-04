@@ -48,7 +48,7 @@ class SqlBaseSettings(Settings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        _url_kwargs = dict(
+        url_kwargs = dict(
             drivername=self._driver,
             username=self.user.get_secret_value(),
             password=self.password.get_secret_value(),
@@ -56,9 +56,9 @@ class SqlBaseSettings(Settings):
             port=self.port,
             database=config.app.name,
         )
-        self._url = URL.create(**_url_kwargs)  # type: ignore
-        _async_url_kwargs = dict(drivername=self._async_driver)
-        self._async_url = URL.create(**(_url_kwargs | _async_url_kwargs))  # type:ignore
+        self._url = URL.create(**url_kwargs)  # type: ignore
+        async_url_kwargs = dict(drivername=self._async_driver)
+        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
 
 
 class SqlBase:
@@ -75,12 +75,11 @@ class SqlBase:
     def session(self) -> AsyncSession:
         return AsyncSession(self.engine, expire_on_commit=False)
 
-    @depends.inject
     async def create(self, demo: bool = False) -> None:
         try:
             exists = database_exists(self.config.sql._url)
             if exists:
-                self.logger.debug("Database exists")
+                self.logger.debug("Sql database exists")
         except OperationalError:
             exists = False
 
@@ -90,12 +89,13 @@ class SqlBase:
             and exists
         ):
             msg = (
-                "\n\nRESETTING THE DATABASE WILL CAUSE ALL OF YOUR"
+                "\n\nRESETTING THE SQL DATABASE WILL CAUSE ALL OF YOUR"
                 " CURRENT DATA TO BE LOST!\n"
             )
             if demo:
                 msg = (
-                    "\nBy running this module,\n\nYOUR DATABASE WILL BE DELETED AND "
+                    "\nBy running this module,\n\nYOUR SQL DATABASE WILL BE DELETED "
+                    "AND "
                     "REPLACED WITH DEMO DATA.\nALL OF YOUR CURRENT DATA WILL BE LOST!\n"
                 )
             await aprint(msg)
@@ -103,11 +103,11 @@ class SqlBase:
             await aprint()
             if delete_db.upper().strip() == "Y":
                 drop_database(self.config.sql._url)
-                self.logger.warning("Database dropped")
+                self.logger.warning("Sql database dropped")
                 exists = database_exists(self.config.sql._url)
         if not exists:
             create_database(self.config.sql._url)
-            self.logger.debug("Database created")
+            self.logger.debug("Sql database created")
 
     @asynccontextmanager
     async def get_session(self) -> t.AsyncGenerator[AsyncSession, None]:
@@ -139,4 +139,4 @@ class SqlBase:
             if self.config.debug.sql:
                 table_names = await conn.run_sync(self.get_table_names)
                 debug(table_names)
-        self.logger.info("Database adapter loaded")
+        self.logger.info("Sql database adapter loaded")

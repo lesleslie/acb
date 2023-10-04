@@ -12,7 +12,6 @@ from ._base import LoggerBaseSettings
 
 
 class LoggerSettings(LoggerBaseSettings):
-    deployed_level: str = "ERROR"
     serialize: t.Optional[bool] = False
     format: t.Optional[dict[str, str]] = dict(
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
@@ -58,8 +57,8 @@ class Logger(_Logger):
 
     @depends.inject
     async def init(self, config: Config = depends()) -> None:
-        def patching(record) -> None:  # type: ignore
-            record["extra"]["mod_name"] = ".".join(record["name"].split(".")[0:-1])
+        # def patching(record) -> None:  # type: ignore
+        #     record["extra"]["mod_name"] = ".".join(record["name"].split(".")[0:-1])
 
         self.remove()
         # self.patch(patching)

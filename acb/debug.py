@@ -8,9 +8,9 @@ from acb.config import Config
 from acb.config import enabled_adapters
 from acb.depends import depends
 from icecream import colorizedStderrPrint
+from icecream import ic as debug
 
 config = depends.get(Config)
-logger = depends.get(Logger)
 
 
 def get_calling_module() -> Path | None:
@@ -22,11 +22,13 @@ def get_calling_module() -> Path | None:
     return mod if debug_mod else None
 
 
-def patch_record(mod: Path, msg: str) -> None:
+def patch_record(
+    mod: Path, msg: str, logger: Logger = depends()  # type: ignore
+) -> None:
     if enabled_adapters.get()["logger"] == "loguru":
-        logger.patch(
-            lambda record: record.update(name=mod.name),  # type: ignore
-        ).debug(msg)
+        logger.patch(lambda record: record.update(name=mod.name)).debug(  # type: ignore
+            msg
+        )
 
 
 def print_debug_info(msg: str) -> t.Any:
@@ -38,27 +40,18 @@ def print_debug_info(msg: str) -> t.Any:
             colorizedStderrPrint(msg)
 
 
-try:
-    from icecream import ic as debug
-
-    debug_args = dict(
-        outputFunction=print_debug_info,
-        argToStringFunction=lambda o: pformat(o, sort_dicts=False),
-    )
+debug_args = dict(
+    outputFunction=print_debug_info,
+    argToStringFunction=lambda o: pformat(o, sort_dicts=False),
+)
+debug.configureOutput(
+    prefix="    debug:  ",
+    includeContext=True,
+    **debug_args,
+)
+if config.deployed or config.debug.production:
     debug.configureOutput(
-        prefix="    debug:  ",
-        includeContext=True,
+        prefix="",
+        includeContext=False,
         **debug_args,
     )
-    if config.deployed or config.debug.production:
-        debug.configureOutput(
-            prefix="",
-            includeContext=False,
-            **debug_args,
-        )
-
-except ImportError:
-
-    def debug(*a: t.Any) -> t.Any:
-        fake_ic = a[0] if len(a) == 1 else a
-        return None if not a else fake_ic

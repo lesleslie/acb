@@ -15,36 +15,47 @@ from ._base import CacheBaseSettings
 
 
 class CacheSettings(CacheBaseSettings):
-    def model_post_init(self, __context: t.Any) -> None:
+    @depends.inject
+    def model_post_init(self, __context: t.Any, config: Config = depends()) -> None:
+        super().model_post_init(__context)
         self._url = RedisDsn(
             f"redis://{self.host.get_secret_value()}:{self.port}/{self.db}"
         )
 
 
 class Cache(CashewsCache):
-    config: Config = depends()
+    # config: Config = depends()
     logger: Logger = depends()  # type: ignore
 
-    async def encoder(self, value: t.Any, *args: object, **kwargs: object) -> bytes:
+    @depends.inject
+    async def encoder(
+        self, value: t.Any, config: Config = depends(), *args: t.Any, **kwargs: t.Any
+    ) -> (bytes):
         return await dump.msgpack(
             value,
-            secret_key=self.config.app.secret_key,
-            secure_salt=self.config.app.secure_salt,
+            secret_key=config.app.secret_key,
+            secure_salt=config.app.secure_salt,
         )
 
-    async def decoder(self, value: bytes, *args: object, **kwargs: object) -> t.Any:
+    @depends.inject
+    async def decoder(
+        self, value: bytes, config: Config = depends(), *args: t.Any, **kwargs: t.Any
+    ) -> t.Any:
         return await load.msgpack(
             value,
-            secret_key=self.config.app.secret_key,
-            secure_salt=self.config.app.secure_salt,
+            secret_key=config.app.secret_key,
+            secure_salt=config.app.secure_salt,
         )
 
-    async def init(self, *args: object, **kwargs: object) -> t.NoReturn:
+    @depends.inject
+    async def init(
+        self, config: Config = depends(), *args: t.Any, **kwargs: t.Any
+    ) -> t.NoReturn:
         await super().init(
-            str(self.config.cache._url),
-            password=self.config.cache.password.get_secret_value(),
+            str(config.cache._url),
+            password=config.cache.password.get_secret_value(),
             client_side=True,
-            client_side_prefix=f"{self.config.app.name}:",
+            client_side_prefix=f"{config.app.name}:",
         )
         register_type(t.Any, self.encoder, self.decoder)
 

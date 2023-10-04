@@ -159,8 +159,11 @@ class PydanticBaseSettingsSource(ABC):
         settings_cls: type["Settings"],
         secrets_dir: AsyncPath = _secrets_path,
     ) -> None:
-        self.secrets_dir = secrets_dir
         self.settings_cls = settings_cls
+        self.adapter_name = underscore(
+            self.settings_cls.__name__.replace("Settings", "")
+        )
+        self.secrets_dir = secrets_dir
         self.config = settings_cls.model_config
 
     def get_model_secrets(self) -> dict[str, FieldInfo]:
@@ -172,10 +175,7 @@ class PydanticBaseSettingsSource(ABC):
 
     @abstractmethod
     async def __call__(self) -> dict[str, t.Any]:
-        self.adapter_name = underscore(
-            self.settings_cls.__name__.replace("Settings", "")
-        )
-        return {}
+        raise NotImplementedError
 
 
 class InitSettingsSource(PydanticBaseSettingsSource):
@@ -193,14 +193,25 @@ class InitSettingsSource(PydanticBaseSettingsSource):
 
 
 class FileSecretsSource(PydanticBaseSettingsSource):
+    # def __init__(
+    #     self,
+    #     settings_cls: type[BaseSettings],
+    #     secrets_dir: str | Path | None = None,
+    #     case_sensitive: bool | None = None,
+    #     env_prefix: str | None = None,
+    # ) -> None:
+    #     super().__init__(settings_cls)
+    #     self.secrets_dir = (
+    #         secrets_dir if secrets_dir is not None else self.config.get("secrets_dir")
+    #     )
+
     async def get_field_value(self, field_name: str) -> SecretStr | None:
         path = self.secrets_path / field_name
         if await path.is_file():
             return SecretStr((await path.read_text()).strip())
-        return None
 
     async def __call__(self) -> dict[str, t.Any]:
-        data = await super().__call__()
+        data = {}
         if self.adapter_name == "debug":
             return data
         self.secrets_path = await AsyncPath(self.secrets_dir).expanduser()
@@ -219,7 +230,8 @@ class FileSecretsSource(PydanticBaseSettingsSource):
                     f'source "{self.__class__.__name__}"'
                 ) from e
             if field_value is not None:
-                data[field_key] = field_value
+                field_name = field_key.removeprefix(f"{self.adapter_name}_")
+                data[field_name] = field_value
                 _app_secrets.get().add(field_key)
         return data
 
@@ -236,29 +248,29 @@ class ManagerSecretsSource(PydanticBaseSettingsSource):
 
     async def load_secrets(self) -> t.Any:
         data = {}
-        model_secrets = self.get_model_secrets()
+        adapter_secrets = self.get_model_secrets()
         missing_secrets = {
-            n: v for n, v in model_secrets.items() if n not in _app_secrets.get()
+            n: v for n, v in adapter_secrets.items() if n not in _app_secrets.get()
         }
         if missing_secrets:
             manager = await self.get_manager()
             manager_secrets = await manager.list(self.adapter_name)
             for field_key, field_value in missing_secrets.items():
                 stored_field_key = "_".join((app_name, field_key))
-                secret_path = _secrets_path / field_key
+                secret_path = self.secrets_dir / field_key
                 if not await secret_path.exists():
                     if field_key not in manager_secrets:
                         await manager.create(
                             stored_field_key, field_value.default.get_secret_value()
                         )
-                    secret = await manager.get(stored_field_key)
-                    await secret_path.write_text(secret)
-                    data[field_key] = secret
-                    _app_secrets.get().add(field_key)
+                secret = await manager.get(stored_field_key)
+                await secret_path.write_text(secret)
+                field_name = field_key.removeprefix(f"{self.adapter_name}_")
+                data[field_name] = SecretStr(secret)
+                _app_secrets.get().add(field_key)
         return data
 
     async def __call__(self) -> t.Any:
-        await super().__call__()
         if self.adapter_name == "debug":
             return {}
         data = await self.load_secrets()
@@ -295,7 +307,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         return yml_settings
 
     async def __call__(self) -> dict[str, t.Any]:
-        data = await super().__call__()
+        data = {}
         if Path.cwd().name != "acb":
             for field_name, field in (await self.load_yml_settings()).items():
                 if field is not None:
@@ -305,7 +317,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseModel):
-    model_config: SettingsConfigDict = SettingsConfigDict(  # type: ignore
+    model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(  # type: ignore
         extra="allow",
         arbitrary_types_allowed=True,
         validate_default=True,
@@ -313,24 +325,27 @@ class Settings(BaseModel):
         protected_namespaces=("model_", "settings_"),
     )
 
-    def __getattr__(self, item: str) -> t.Any:
-        return super().__getattr__(item)  # type: ignore
-
     def __init__(
         __pydantic_self__,  # type: ignore
+        _secrets_dir: AsyncPath = _secrets_path,
         **values: t.Any,
     ) -> None:
         build_settings = __pydantic_self__._settings_build_values(
             values,
+            _secrets_dir=_secrets_dir,
         )
         build_settings = asyncio.run(build_settings)
         super().__init__(**build_settings)
 
+    def __getattr__(self, item: str) -> t.Any:
+        return super().__getattr__(item)  # type: ignore
+
     async def _settings_build_values(
         self,
         init_kwargs: dict[str, t.Any],
-        secrets_dir: AsyncPath = _secrets_path,
-    ) -> t.Any:
+        _secrets_dir: AsyncPath = _secrets_path,
+    ) -> dict[str, t.Any]:
+        secrets_dir = _secrets_dir or self.model_config.get("secrets_dir")
         init_settings = InitSettingsSource(self.__class__, init_kwargs=init_kwargs)
         file_secrets_settings = FileSecretsSource(
             self.__class__,
@@ -341,6 +356,7 @@ class Settings(BaseModel):
             secrets_dir=secrets_dir,
         )
         yaml_settings = YamlSettingsSource(self.__class__)
+
         sources = self.settings_customize_sources(
             self.__class__,
             init_settings=init_settings,
@@ -348,24 +364,18 @@ class Settings(BaseModel):
             file_secrets_settings=file_secrets_settings,
             manager_secrets_settings=manager_secrets_settings,
         )
-        if sources:
-            return deep_update(*reversed([await source() for source in sources]))
-        return {}
+        return deep_update(*reversed([await source() for source in sources]))
 
     @classmethod
     def settings_customize_sources(
         cls,
         settings_cls: t.Type["Settings"],
+        # settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         yaml_settings: PydanticBaseSettingsSource,
         file_secrets_settings: PydanticBaseSettingsSource,
-        manager_secrets_settings: ManagerSecretsSource,
-    ) -> tuple[
-        PydanticBaseSettingsSource,
-        PydanticBaseSettingsSource,
-        PydanticBaseSettingsSource,
-        ManagerSecretsSource,
-    ]:
+        manager_secrets_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             init_settings,
             yaml_settings,
@@ -375,8 +385,8 @@ class Settings(BaseModel):
 
 
 class DebugSettings(Settings):
-    production: bool = False
     main: bool = False
+    production: bool = False
     secrets: bool = False
     logger: bool = False
     app: bool = False
