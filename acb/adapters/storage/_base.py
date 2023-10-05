@@ -136,7 +136,6 @@ class StorageBase:
         for bucket in self.config.storage.buckets:
             setattr(self, bucket, StorageBucket(self.client, bucket))
             self.logger.debug(f"{bucket.title()} storage bucket initialized")
-        self.logger.info("Storage adapter loaded")
 
 
 class StorageFile:

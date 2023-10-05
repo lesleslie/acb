@@ -1,5 +1,5 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
 requires = ["cache"]
 
-Requests, RequestsSettings = import_adapter()
+Requests, RequestsSettings = load_adapter()

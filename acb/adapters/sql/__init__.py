@@ -1,5 +1,5 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
 # requires = ["storage"]
 
-Sql, SqlSettings = import_adapter()
+Sql, SqlSettings = load_adapter()

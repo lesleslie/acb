@@ -128,7 +128,6 @@ class SqlBase:
         self,
         demo: bool = False,
     ) -> None:
-        self.logger.info("Loading database adapter...")
         await self.create(demo)
         async with self.get_conn() as conn:
             # if self.config.debug.sql:
@@ -139,4 +138,3 @@ class SqlBase:
             if self.config.debug.sql:
                 table_names = await conn.run_sync(self.get_table_names)
                 debug(table_names)
-        self.logger.info("Sql database adapter loaded")

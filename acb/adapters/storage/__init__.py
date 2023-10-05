@@ -1,3 +1,3 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
-Storage, StorageSettings = import_adapter()
+Storage, StorageSettings = load_adapter()

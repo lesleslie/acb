@@ -1,3 +1,3 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
-Monitoring, MonitoringSettings = import_adapter()
+Monitoring, MonitoringSettings = load_adapter()

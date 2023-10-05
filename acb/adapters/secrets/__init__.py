@@ -1,5 +1,5 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
 requires = ["logger"]
 
-Secrets, SecretsSettings = import_adapter()
+Secrets, SecretsSettings = load_adapter()

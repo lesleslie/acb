@@ -1,3 +1,3 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
-Cache, CacheSettings = import_adapter()
+Cache, CacheSettings = load_adapter()

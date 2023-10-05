@@ -42,7 +42,6 @@ class Requests(RequestsBase):
             redis_url=f"redis://{self.config.cache.host.get_secret_value()}:{self.config.cache.port}/"
             f"{self.config.requests.cache_db}"
         )
-        logger.info("Requests adapter loaded")
 
 
 depends.set(Requests, Requests())

@@ -1,5 +1,5 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
 required_adapters = ["requests"]
 
-Mail, MailSettings = import_adapter()
+Mail, MailSettings = load_adapter()

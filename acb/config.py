@@ -4,26 +4,26 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 from contextvars import ContextVar
-from importlib import import_module
-from inspect import currentframe
 from pathlib import Path
 from secrets import token_bytes
 from secrets import token_urlsafe
 
 import nest_asyncio
+from acb import base_path
+from acb import enabled_adapters
+from acb import load_adapter
+from acb import settings_path
 from acb.actions.encode import dump
 from acb.actions.encode import load
 from acb.depends import depends
 from aiopath import AsyncPath
 from async_lru import alru_cache
-from inflection import camelize
 from inflection import titleize
 from inflection import underscore
 from pydantic import BaseModel
 from pydantic import SecretStr
 from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
-from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
 
@@ -32,42 +32,19 @@ nest_asyncio.apply()
 project: str = ""
 app_name: str = ""
 _deployed: bool = True if Path.cwd().name == "app" else False  # or "srv"?
-_pkg_path: AsyncPath = AsyncPath(__file__).parent
-_base_path: AsyncPath = AsyncPath.cwd()
-_tmp_path: AsyncPath = _base_path / "tmp"
+_tmp_path: AsyncPath = base_path / "tmp"
 _secrets_path: AsyncPath = _tmp_path / "secrets"
-_settings_path: AsyncPath = _base_path / "settings"
-_app_settings_path: AsyncPath = _settings_path / "app.yml"
-_adapter_settings_path: AsyncPath = _settings_path / "adapters.yml"
-_adapters_path = _pkg_path / "adapters"
-required_adapters: ContextVar[dict[str, str]] = ContextVar(
-    "required_adapters", default={"secrets": "secret_manager", "logger": "loguru"}
-)
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
-loaded_adapters: ContextVar[set[str]] = ContextVar("loaded_adapters", default=set())
-available_adapters: ContextVar[dict[str, str | None]] = ContextVar(
-    "available_adapters", default={}
-)
-available_modules: ContextVar[dict[str, dict[str, AsyncPath]]] = ContextVar(
-    "available_modules", default={}
-)
-enabled_adapters: ContextVar[dict[str, str]] = ContextVar(
-    "enabled_adapters", default={}
-)
-package_registry: ContextVar[dict[str, str]] = ContextVar(
-    "package_registry", default={}
-)
-logger_registry: ContextVar[set[str]] = ContextVar("logger_registry", default=set())
 
 
 async def init_app() -> None:
     for path in (
         _tmp_path,
         _secrets_path,
-        _settings_path,
+        settings_path,
     ):
         await path.mkdir(exist_ok=True)
-    enabled_adapters.get().update(required_adapters.get())
+    # enabled_adapters.get().update(required_adapters.get())
 
 
 asyncio.run(init_app())
@@ -75,80 +52,6 @@ asyncio.run(init_app())
 
 def gen_password(size: int = 10) -> str:
     return secrets.token_urlsafe(size)
-
-
-async def update_available_modules(
-    adapters_path: AsyncPath,
-) -> dict[str, dict[str, AsyncPath]]:
-    _available_modules = available_modules.get()
-    for adapter, module in {
-        a.stem: {m.stem: m async for m in a.rglob("*.py") if not m.name.startswith("_")}
-        async for a in adapters_path.iterdir()
-        if await a.is_dir() and not a.name.startswith("__")
-    }.items():
-        _available_modules.update({adapter: module})
-    available_modules.set(_available_modules)
-    return _available_modules
-
-
-async def update_available_adapters(adapters_path: AsyncPath) -> dict[str, str | None]:
-    await update_available_modules(adapters_path)
-    _available_modules = available_modules.get()
-    if not await _adapter_settings_path.exists():
-        await dump.yaml(
-            {cat: None for cat in _available_modules} | required_adapters.get(),
-            _adapter_settings_path,
-        )
-    _available_adapters = await load.yaml(_adapter_settings_path)
-    _available_adapters.update(
-        {a: None for a in _available_modules if a not in _available_adapters}
-    )
-    available_adapters.set(_available_adapters)
-    await dump.yaml(_available_adapters, _adapter_settings_path)
-    return _available_adapters
-
-
-async def update_enabled_adapters() -> dict[str, str]:
-    _enabled_adapters = enabled_adapters.get()
-    _enabled_adapters.update(
-        ({a: m for (a, m) in available_adapters.get().items() if m})
-    )
-    enabled_adapters.set(_enabled_adapters)
-    return _enabled_adapters
-
-
-async def register_package() -> tuple[str, AsyncPath, AsyncPath, dict[str, str | None]]:
-    _packages = package_registry.get()
-    _pkg_path = AsyncPath(currentframe().f_code.co_filename).parent
-    _pkg_name = _pkg_path.name
-    _adapters_path = _pkg_path / "adapters"
-    package_registry.set({_pkg_name: str(_adapters_path)} | _packages)
-    _available_adapters = await update_available_adapters(_adapters_path)
-    return _pkg_name, _pkg_path, _adapters_path, _available_adapters
-
-
-def import_adapter(adapter_name: t.Optional[str] = None) -> t.Any:
-    # with suppress(KeyError):
-    _pkg_path = Path(currentframe().f_code.co_filename).parent
-    if adapter_name is None:
-        adapter_name = Path(currentframe().f_back.f_code.co_filename).parent.stem
-    _adapter_path = _pkg_path / "adapters" / adapter_name
-    _adapter_class_name = camelize(adapter_name)
-    _adapter_settings_class_name = f"{_adapter_class_name}Settings"
-    _module_name = (
-        enabled_adapters.get().get(adapter_name)
-        or required_adapters.get().get(adapter_name)
-        or ""
-    )
-    _module_path = _pkg_path / "adapters" / adapter_name / _module_name
-    _imported_module = import_module(".".join(_module_path.parts[-4:]))
-    _adapter_settings_class = getattr(_imported_module, _adapter_settings_class_name)
-    _adapter_class = getattr(_imported_module, _adapter_class_name)
-    loaded_adapters.get().add(adapter_name)
-    return _adapter_class, _adapter_settings_class
-    # if adapter_name in required_adapters.get():
-    #     raise SystemExit(f"Required adapter {adapter_name!r} not found.")
-    # warn(f"Adapter {adapter_name!r} not found.")
 
 
 class PydanticBaseSettingsSource(ABC):
@@ -193,18 +96,6 @@ class InitSettingsSource(PydanticBaseSettingsSource):
 
 
 class FileSecretsSource(PydanticBaseSettingsSource):
-    # def __init__(
-    #     self,
-    #     settings_cls: type[BaseSettings],
-    #     secrets_dir: str | Path | None = None,
-    #     case_sensitive: bool | None = None,
-    #     env_prefix: str | None = None,
-    # ) -> None:
-    #     super().__init__(settings_cls)
-    #     self.secrets_dir = (
-    #         secrets_dir if secrets_dir is not None else self.config.get("secrets_dir")
-    #     )
-
     async def get_field_value(self, field_name: str) -> SecretStr | None:
         path = self.secrets_path / field_name
         if await path.is_file():
@@ -242,8 +133,7 @@ class FileSecretsSource(PydanticBaseSettingsSource):
 class ManagerSecretsSource(PydanticBaseSettingsSource):
     @alru_cache(maxsize=1)
     async def get_manager(self):
-        manager = import_adapter("secrets")[0]()
-        await manager.init()
+        manager = load_adapter("secrets")[0]()
         return manager
 
     async def load_secrets(self) -> t.Any:
@@ -282,7 +172,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         global project, app_name
         if self.adapter_name == "secrets":
             return {}
-        yml_path = _settings_path / f"{self.adapter_name}.yml"
+        yml_path = settings_path / f"{self.adapter_name}.yml"
         if not await yml_path.exists() and not _deployed:
             dump_settings = {
                 name: info.default
@@ -405,28 +295,13 @@ class AppSettings(Settings):
         self.title = self.title or titleize(self.name)
 
 
-class Config(BaseSettings, extra="allow"):
+class Config(BaseModel, extra="allow"):
     deployed: bool = _deployed
-    debug: t.Optional[Settings] = None
-    app: t.Optional[Settings] = None
+    app: Settings = AppSettings()
+    debug: Settings = DebugSettings()
 
     def __getattr__(self, item: str) -> t.Any:
         return super().__getattr__(item)  # type: ignore
-
-    async def init(self) -> t.Any:
-        (
-            _pkg_name,
-            _pkg_path,
-            _adapters_path,
-            _available_adapters,
-        ) = await register_package()
-        _enabled_adapters = await update_enabled_adapters()
-        for a in required_adapters.get():
-            _enabled_adapters = {a: _enabled_adapters.pop(a)} | _enabled_adapters
-        del _enabled_adapters["secrets"]
-        enabled_adapters.set(_enabled_adapters)
-        self.app = AppSettings()
-        self.debug = DebugSettings()
 
 
 depends.set(Config, Config())

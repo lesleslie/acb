@@ -24,7 +24,6 @@ class Dns(DnsBase):
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             self.client = DnsClient(project=self.config.app.project)
-        self.logger.info("Dns adapter loaded")
 
     async def create_zone(self) -> None:
         self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")

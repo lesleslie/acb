@@ -1,3 +1,3 @@
-from acb.config import import_adapter
+from acb import load_adapter
 
-Logger, LoggerSettings = import_adapter()
+Logger, LoggerSettings = load_adapter()

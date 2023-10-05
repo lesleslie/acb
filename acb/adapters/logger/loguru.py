@@ -2,12 +2,12 @@ import logging
 import sys
 import typing as t
 
+from acb import enabled_adapters
 from acb.config import Config
-from acb.config import enabled_adapters
-from acb.config import logger_registry
 from acb.depends import depends
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
+from acb import logger_registry
 from ._base import LoggerBaseSettings
 
 
@@ -29,7 +29,7 @@ class LoggerSettings(LoggerBaseSettings):
         super().__init__(**values)
         self.level_per_module = {
             m: "DEBUG" if v is True else "INFO"
-            for (m, v) in config.debug.model_dump().items()
+            for m, v in config.debug.model_dump().items()
         }
         self.settings = dict(
             filter=self.level_per_module,
@@ -65,7 +65,6 @@ class Logger(_Logger):
         self.add(sys.stderr, **config.logger.settings)
         if config.deployed:
             self.level = config.logger.deployed_level
-        self.info("Logger adapter loaded")
         if config.debug.logger:
             self.debug("debug")
             self.info("info")
