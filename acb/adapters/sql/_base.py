@@ -26,6 +26,7 @@ from sqlalchemy_utils import drop_database
 
 
 class SqlBaseSettings(Settings):
+    requires: list[str] = []
     _driver: str
     _async_driver: str
     port: t.Optional[int] = 3306
@@ -37,6 +38,7 @@ class SqlBaseSettings(Settings):
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
     engine_kwargs: t.Optional[dict[str, t.Any]] = {}
+    backup_enabled: bool = False
     backup_bucket: str | None = None
     loggers: t.Optional[list[str]] = [
         "sqlalchemy.engine",
@@ -48,6 +50,8 @@ class SqlBaseSettings(Settings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
+        if self.backup_enabled:
+            self.requires.append("storage")
         url_kwargs = dict(
             drivername=self._driver,
             username=self.user.get_secret_value(),

@@ -6,7 +6,6 @@ from warnings import filterwarnings
 
 from acb.adapters.logger import Logger
 from acb.config import app_name
-from acb.config import Config
 from acb.config import project
 from acb.depends import depends
 from google.api_core.exceptions import AlreadyExists
@@ -28,8 +27,7 @@ class SecretsSettings(SecretsBaseSettings):
 
 
 class Secrets(SecretsBase):
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore
+    logger: Logger = depends()
     project: str = ""
     parent: str = ""
     prefix: str = ""

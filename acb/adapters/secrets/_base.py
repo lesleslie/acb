@@ -2,18 +2,14 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 
-from acb.config import Config
 from acb.config import Settings
-from acb.depends import depends
 
 
 class SecretsBaseSettings(Settings):
-    ...
+    requires: list = ["logger"]
 
 
 class SecretsBase(ABC):
-    config: Config = depends()
-
     @abstractmethod
     async def init(self) -> t.NoReturn:
         raise NotImplementedError

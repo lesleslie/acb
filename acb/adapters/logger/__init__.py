@@ -1,3 +1,3 @@
 from acb import load_adapter
 
-Logger, LoggerSettings = load_adapter()
+Logger = load_adapter()

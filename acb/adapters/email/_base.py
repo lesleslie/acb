@@ -11,6 +11,7 @@ from pydantic import SecretStr
 
 
 class EmailBaseSettings(Settings):
+    requires: list[str] = ["requests"]
     api_key: t.Optional[SecretStr] = None
     mx_servers: t.Optional[list[str]] = []
     password: SecretStr = SecretStr(gen_password())

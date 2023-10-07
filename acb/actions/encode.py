@@ -30,7 +30,7 @@ class Serializers:
 serializers = Serializers()
 
 
-class AcbEncoder:
+class Encode:
     json: t.Callable[..., t.Any]
     yaml: t.Callable[..., t.Any]
     msgpack: t.Callable[..., t.Any]
@@ -111,4 +111,4 @@ class AcbEncoder:
         return await self.process(obj, **kwargs)  # type: ignore
 
 
-dump = load = encode = decode = AcbEncoder()
+dump = load = encode = decode = Encode()
