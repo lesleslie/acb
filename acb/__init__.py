@@ -1,11 +1,11 @@
 import asyncio
+import sys
 import typing as t
 from contextlib import suppress
 from contextvars import ContextVar
 from importlib import import_module
 from inspect import currentframe
 from pathlib import Path
-from pprint import pprint
 from warnings import warn
 
 from acb.actions.encode import dump
@@ -13,45 +13,60 @@ from acb.actions.encode import load
 from acb.depends import depends
 from aiopath import AsyncPath
 from inflection import camelize
-from pydantic import ConfigDict
-from pydantic import create_model
+from pydantic import BaseModel
 
 pkg_path: AsyncPath = AsyncPath(__file__).parent
 base_path: AsyncPath = AsyncPath.cwd()
+actions_path = pkg_path / "actions"
 adapters_path = pkg_path / "adapters"
 settings_path: AsyncPath = base_path / "settings"
 app_settings_path: AsyncPath = settings_path / "app.yml"
 adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
-available_adapters: ContextVar[dict[str, dict[str, AsyncPath]]] = ContextVar(
+
+
+class Module(BaseModel, arbitrary_types_allowed=True):
+    name: str
+    package: str
+    path: AsyncPath
+
+
+class Action(BaseModel, arbitrary_types_allowed=True):
+    package: str
+    path: AsyncPath
+
+
+available_adapters: ContextVar[dict[str, list[Module]]] = ContextVar(
     "available_adapters", default={}
 )
-required_adapters: ContextVar[dict[str, dict[str, AsyncPath]]] = ContextVar(
+required_adapters: ContextVar[dict[str, Module]] = ContextVar(
     "required_adapters",
-    default={
-        "secrets": dict(
-            module="secret_manager", path=adapters_path / "secrets/secret_manager.py"
+    default=dict(
+        secrets=Module(
+            name="secret_manager",
+            package="acb",
+            path=adapters_path / "secrets/secret_manager.py",
         ),
-        "logger": dict(module="loguru", path=adapters_path / "logger/loguru.py"),
-    },
+        logger=Module(
+            name="loguru", package="acb", path=adapters_path / "logger/loguru.py"
+        ),
+    ),
 )
-enabled_adapters: ContextVar[dict[str, dict[str, AsyncPath]]] = ContextVar(
+enabled_adapters: ContextVar[dict[str, Module]] = ContextVar(
     "enabled_adapters", default={}
 )
-adapter_registry: ContextVar[dict[str, dict[str, AsyncPath]]] = ContextVar(
+adapter_registry: ContextVar[dict[str, Module]] = ContextVar(
     "adapter_registry", default={}
 )
-logger_registry: ContextVar[dict[str, t.Iterable]] = ContextVar(
-    "logger_registry", default={}
-)
-action_registry: ContextVar[dict[str, dict[str, AsyncPath]]] = ContextVar(
+action_registry: ContextVar[dict[str, Action]] = ContextVar(
     "action_registry", default={}
 )
-actions_path = pkg_path / "actions"
-package_registry: ContextVar[dict[str, str]] = ContextVar(
+package_registry: ContextVar[dict[str, AsyncPath]] = ContextVar(
     "package_registry", default={}
 )
+logger_registry: ContextVar[dict[str, t.Iterable[str]]] = ContextVar(
+    "logger_registry", default={}
+)
 enabled_adapters.get().update(required_adapters.get())
-actions = create_model("Actions", __config__=ConfigDict(extra="allow"))
 
 
 def install_required_adapters(adapter_settings: t.Any) -> None:
@@ -75,7 +90,7 @@ def load_adapter(adapter_name: t.Optional[str] = None) -> t.Any:
             initialize = True
         _adapter_class_name = camelize(adapter_name)
         _adapter_settings_class_name = f"{_adapter_class_name}Settings"
-        _module_path = enabled_adapters.get()[adapter_name]["path"]
+        _module_path = enabled_adapters.get()[adapter_name].path
         _module = ".".join(_module_path.parts[-4:]).removesuffix(".py")
         try:
             _imported_module = import_module(_module)
@@ -91,10 +106,12 @@ def load_adapter(adapter_name: t.Optional[str] = None) -> t.Any:
             from acb.config import Config
 
             config = depends.get(Config)
+            if config.debug.model_dump().get(adapter_name):
+                logger_registry.get().update({adapter_name: _adapter_settings.loggers})
             setattr(config, adapter_name, _adapter_settings)
             _adapter = depends.get(_adapter_class)
             asyncio.run(_adapter.init())
-            if adapter_name not in ["logger"]:
+            if adapter_name != "logger":
                 from acb.adapters.logger import Logger
 
                 logger = depends.get(Logger)
@@ -111,15 +128,17 @@ def load_adapter(adapter_name: t.Optional[str] = None) -> t.Any:
 
 
 async def update_adapters(_adapters_path: AsyncPath) -> None:
+    _pkg = _adapters_path.parent.stem
     _available_adapters = available_adapters.get()
-    for adapter, module in {
-        a.stem: {m.stem: m async for m in a.rglob("*.py") if not m.name.startswith("_")}
+    for adapter, modules in {
+        a.stem: [m async for m in a.rglob("*.py") if not m.name.startswith("_")]
         async for a in _adapters_path.iterdir()
         if await a.is_dir() and not a.name.startswith("__")
     }.items():
-        _available_adapters.update({adapter: module})
+        modules = [Module(name=m.stem, package=_pkg, path=m) for m in modules]
+        _available_adapters.update({adapter: modules})
     if not await adapter_settings_path.exists():
-        required = {a: m["module"] for a, m in required_adapters.get().items()}
+        required = {a: m for a, m in required_adapters.get().items()}
         await dump.yaml(
             {cat: None for cat in _available_adapters} | required,
             adapter_settings_path,
@@ -135,8 +154,8 @@ async def update_adapters(_adapters_path: AsyncPath) -> None:
     _enabled_adapters = enabled_adapters.get()
     _enabled_adapters.update(
         {
-            a: dict(module=_adapters[a], path=_available_adapters[a][_adapters[a]])
-            for a in _available_adapters
+            a: [m for m in modules if m.name == _adapters.get(a)][0]
+            for a, modules in _available_adapters.items()
             if _adapters.get(a)
         }
     )
@@ -154,19 +173,19 @@ async def update_actions(
         async for a in _actions_path.iterdir()
         if await a.is_file() and not a.name.startswith("_")
     }
+    actions_module = sys.modules["acb.actions"]
+    _pkg_path = actions_path.parent
     for action_name, path in _actions.items():
         with suppress(KeyError):
             del action_registry.get()[action_name]
         try:
-            globals()[action_name] = import_module(
-                ".".join(path.parts[-3:]).removesuffix(".py")
+            action_module = import_module(".".join(path.parts[-3:]).removesuffix(".py"))
+            action_registry.get().update(
+                {action_name: Action(package=_pkg_path.name, path=path)}
             )
-            setattr(actions, action_name, globals()[action_name])
-            action_registry.get().update({action_name: path})
+            actions_module.__dict__.update({action_name: action_module})
         except ImportError as e:
             warn(f"Error importing {action_name!r} adapter: {e}")
-    # print(dir(sys.modules[__name__]))
-    pprint(action_registry.get())
 
 
 def register_package(_pkg_path: Path | None = None) -> None:
@@ -179,7 +198,8 @@ def register_package(_pkg_path: Path | None = None) -> None:
         asyncio.run(update_actions(AsyncPath(_actions_path)))
     if _adapters_path.exists():
         asyncio.run(update_adapters(AsyncPath(_adapters_path)))
-    package_registry.get().update({_pkg_name: str(_pkg_path)} | _packages)
+    package_registry.get().update({_pkg_name: AsyncPath(_pkg_path)} | _packages)
 
 
-register_package()
+if base_path.name != "acb":
+    register_package()

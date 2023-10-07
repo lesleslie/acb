@@ -27,7 +27,7 @@ class SecretsSettings(SecretsBaseSettings):
 
 
 class Secrets(SecretsBase):
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore
     project: str = ""
     parent: str = ""
     prefix: str = ""

@@ -175,7 +175,7 @@ class Email(EmailBase):
         for f in forwards:
             fs = [r for r in routes if self.get_name(r["expression"]) == f]
             deletes.extend(fs[1:])
-        if delete_all or enabled_adapters.get()["email"] == "gmail":
+        if delete_all or enabled_adapters.get()["email"].name == "gmail":
             deletes = [r for r in routes if len(self.get_name(r["expression"]))]
             debug(deletes)
             debug(len(deletes))

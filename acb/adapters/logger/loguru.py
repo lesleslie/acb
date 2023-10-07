@@ -27,9 +27,7 @@ class LoggerSettings(LoggerBaseSettings):
     @depends.inject
     def __init__(self, **values: t.Any) -> None:
         super().__init__(**values)
-        self.level_per_module = {
-            m: "DEBUG" if v is True else "INFO" for m, v in debug.items()
-        }
+        self.level_per_module = {m: "DEBUG" if v else "INFO" for m, v in debug.items()}
         self.settings = dict(
             filter=self.level_per_module,
             format="".join(self.format.values()),
@@ -95,7 +93,7 @@ class InterceptHandler(logging.Handler):
         while frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
-            enabled_logger = enabled_adapters.get()["logger"]
+            enabled_logger = enabled_adapters.get()["logger"].name
             if enabled_logger == "loguru":
                 logger.patch(
                     lambda record: record.update(name=self.logger_name)  # type: ignore

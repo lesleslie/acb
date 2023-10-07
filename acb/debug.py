@@ -25,7 +25,7 @@ def get_calling_module() -> Path | None:
 def patch_record(
     mod: Path, msg: str, logger: Logger = depends()  # type: ignore
 ) -> None:
-    if enabled_adapters.get()["logger"] == "loguru":
+    if enabled_adapters.get()["logger"].name == "loguru":
         logger.patch(lambda record: record.update(name=mod.name)).debug(  # type: ignore
             msg
         )
