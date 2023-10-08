@@ -24,7 +24,7 @@ app_settings_path: AsyncPath = settings_path / "app.yml"
 adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
 
 
-class Module(BaseModel, arbitrary_types_allowed=True):
+class AdapterModule(BaseModel, arbitrary_types_allowed=True):
     name: str
     package: str
     path: AsyncPath
@@ -35,26 +35,26 @@ class Action(BaseModel, arbitrary_types_allowed=True):
     path: AsyncPath
 
 
-available_adapters: ContextVar[dict[str, list[Module]]] = ContextVar(
+available_adapters: ContextVar[dict[str, list[AdapterModule]]] = ContextVar(
     "available_adapters", default={}
 )
-required_adapters: ContextVar[dict[str, Module]] = ContextVar(
+required_adapters: ContextVar[dict[str, AdapterModule]] = ContextVar(
     "required_adapters",
     default=dict(
-        secrets=Module(
+        secrets=AdapterModule(
             name="secret_manager",
             package="acb",
             path=adapters_path / "secrets/secret_manager.py",
         ),
-        logger=Module(
+        logger=AdapterModule(
             name="loguru", package="acb", path=adapters_path / "logger/loguru.py"
         ),
     ),
 )
-enabled_adapters: ContextVar[dict[str, Module]] = ContextVar(
+enabled_adapters: ContextVar[dict[str, AdapterModule]] = ContextVar(
     "enabled_adapters", default={}
 )
-adapter_registry: ContextVar[dict[str, Module]] = ContextVar(
+adapter_registry: ContextVar[dict[str, AdapterModule]] = ContextVar(
     "adapter_registry", default={}
 )
 action_registry: ContextVar[dict[str, Action]] = ContextVar(
@@ -135,7 +135,7 @@ async def update_adapters(_adapters_path: AsyncPath) -> None:
         async for a in _adapters_path.iterdir()
         if await a.is_dir() and not a.name.startswith("__")
     }.items():
-        modules = [Module(name=m.stem, package=_pkg, path=m) for m in modules]
+        modules = [AdapterModule(name=m.stem, package=_pkg, path=m) for m in modules]
         _available_adapters.update({adapter: modules})
     if not await adapter_settings_path.exists():
         required = {a: m for a, m in required_adapters.get().items()}
