@@ -138,7 +138,7 @@ async def update_adapters(_adapters_path: AsyncPath) -> None:
         modules = [AdapterModule(name=m.stem, package=_pkg, path=m) for m in modules]
         _available_adapters.update({adapter: modules})
     if not await adapter_settings_path.exists():
-        required = {a: m for a, m in required_adapters.get().items()}
+        required = {a: m.name for a, m in required_adapters.get().items()}
         await dump.yaml(
             {cat: None for cat in _available_adapters} | required,
             adapter_settings_path,
@@ -201,5 +201,5 @@ def register_package(_pkg_path: Path | None = None) -> None:
     package_registry.get().update({_pkg_name: AsyncPath(_pkg_path)} | _packages)
 
 
-if base_path.name != "acb":
+if base_path.name not in ("acb", "crackerjack"):
     register_package()
