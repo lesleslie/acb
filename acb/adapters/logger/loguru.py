@@ -3,11 +3,11 @@ import sys
 import typing as t
 
 from acb import enabled_adapters
+from acb import logger_registry
 from acb.config import debug
 from acb.depends import depends
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
-from acb import logger_registry
 from ._base import LoggerBaseSettings
 
 
@@ -17,7 +17,7 @@ class LoggerSettings(LoggerBaseSettings):
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
         level=" <level>{level:>8}</level>",
         sep=" <b><w>in</w></b> ",
-        name="{name:>28}",
+        name="{extra[mod_name]:>24}",
         line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
         message="  <level>{message}</level>",
     )
@@ -52,16 +52,24 @@ class Logger(_Logger):
             extra={},
         )
 
-    @depends.inject
     async def init(self) -> None:
         from acb.config import Config
 
         config = depends.get(Config)
-        # def patching(record) -> None:  # type: ignore
-        #     record["extra"]["mod_name"] = ".".join(record["name"].split(".")[0:-1])
+
+        def patch_name(record) -> str:  # type: ignore
+            mod_parts = record["name"].split(".")
+            mod_name = ".".join(mod_parts)
+            if len(mod_name) > 3:
+                mod_name = ".".join(mod_parts[:-1])
+            return mod_name
 
         self.remove()
-        # self.patch(patching)
+        self.configure(
+            patcher=lambda record: record["extra"].update(  # type: ignore
+                mod_name=patch_name(record)
+            )
+        )
         self.add(sys.stderr, **config.logger.settings)
         if config.deployed:
             self.level = config.logger.deployed_level

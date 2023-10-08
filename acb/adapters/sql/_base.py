@@ -26,7 +26,7 @@ from sqlalchemy_utils import drop_database
 
 
 class SqlBaseSettings(Settings):
-    requires: list[str] = []
+    requires: t.Optional[list[str]] = []
     _driver: str
     _async_driver: str
     port: t.Optional[int] = 3306

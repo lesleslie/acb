@@ -138,10 +138,13 @@ async def update_adapters(_adapters_path: AsyncPath) -> None:
         modules = [AdapterModule(name=m.stem, package=_pkg, path=m) for m in modules]
         _available_adapters.update({adapter: modules})
     if not await adapter_settings_path.exists():
+        await settings_path.mkdir(exist_ok=True)
+        # await adapter_settings_path.touch(exist_ok=True)
         required = {a: m.name for a, m in required_adapters.get().items()}
         await dump.yaml(
             {cat: None for cat in _available_adapters} | required,
             adapter_settings_path,
+            sort_keys=True,
         )
     _adapters = await load.yaml(adapter_settings_path)
     newly_available_adapters = {
@@ -150,7 +153,7 @@ async def update_adapters(_adapters_path: AsyncPath) -> None:
     _adapters.update(newly_available_adapters)
     for adapter in [n for n in newly_available_adapters if n in adapter_registry.get()]:
         del adapter_registry.get()[adapter]
-    await dump.yaml(_adapters, adapter_settings_path)
+    await dump.yaml(_adapters, adapter_settings_path, sort_keys=True)
     _enabled_adapters = enabled_adapters.get()
     _enabled_adapters.update(
         {

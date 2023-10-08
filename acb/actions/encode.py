@@ -1,3 +1,4 @@
+import datetime as _datetime
 import linecache
 import sys
 import typing as t
@@ -8,10 +9,42 @@ from warnings import warn
 
 import dill
 import msgspec
+import yaml
 from aiopath import AsyncPath
 from blake3 import blake3  # type: ignore
 from itsdangerous import Serializer as SecureSerializer
 from pydantic import SecretStr
+
+
+def yaml_encode(
+    obj: t.Any,
+    *,
+    enc_hook: t.Optional[t.Callable[[t.Any], t.Any]] = None,
+    sort_keys: bool = False,
+) -> bytes:
+    dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
+
+    dumper.add_representer(
+        type(None),
+        lambda dumper, value: dumper.represent_scalar("tag:yaml.org,2002:null", ""),
+    )
+
+    return yaml.dump_all(
+        [
+            msgspec.yaml._to_builtins(
+                obj,
+                builtin_types=(_datetime.datetime, _datetime.date),
+                enc_hook=enc_hook,
+            )
+        ],
+        encoding="utf-8",
+        Dumper=dumper,
+        allow_unicode=True,
+        sort_keys=sort_keys,
+    )
+
+
+msgspec.yaml.encode = yaml_encode
 
 
 @dataclass
@@ -59,8 +92,8 @@ class Encode:
                 obj = await obj.read_text()
             return self.serializer.decode(obj, **kwargs)  # type: ignore
         elif self.action in ("dump", "encode"):
-            # if self.serializer is msgspec.yaml:
-            #     kwargs["sort_keys"] = self.sort_keys
+            if self.serializer is msgspec.yaml:
+                kwargs["sort_keys"] = self.sort_keys
             data: bytes = self.serializer.encode(obj, **kwargs)  # type: ignore
             if isinstance(self.path, AsyncPath):
                 return await self.path.write_bytes(data)
@@ -88,7 +121,7 @@ class Encode:
         self,
         obj: t.Any,
         path: t.Optional[AsyncPath] = None,
-        sort_keys: bool = True,
+        sort_keys: bool = False,
         use_list: bool = False,
         secret_key: t.Optional[SecretStr] = None,
         secure_salt: t.Optional[SecretStr] = None,
