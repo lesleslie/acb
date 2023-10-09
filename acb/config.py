@@ -286,6 +286,7 @@ class AppSettings(Settings):
     name: str = "test"
     title: str = "Test App"
     domain: str = "test_app.local"
+    timezone: str = "US/Pacific"
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
 

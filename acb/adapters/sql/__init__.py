@@ -1,4 +1,4 @@
-from _model import SqlModel
+from ._model import SqlModel
 from acb import load_adapter
 
 __all__: list[str] = ["Sql", "SqlModel"]
