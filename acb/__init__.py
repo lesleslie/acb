@@ -1,5 +1,4 @@
 import asyncio
-import sys
 import typing as t
 from contextlib import suppress
 from contextvars import ContextVar
@@ -63,9 +62,6 @@ action_registry: ContextVar[dict[str, Action]] = ContextVar(
 package_registry: ContextVar[dict[str, AsyncPath]] = ContextVar(
     "package_registry", default={}
 )
-logger_registry: ContextVar[dict[str, t.Iterable[str]]] = ContextVar(
-    "logger_registry", default={}
-)
 enabled_adapters.get().update(required_adapters.get())
 
 
@@ -106,8 +102,6 @@ def load_adapter(adapter_name: t.Optional[str] = None) -> t.Any:
             from acb.config import Config
 
             config = depends.get(Config)
-            if config.debug.model_dump().get(adapter_name):
-                logger_registry.get().update({adapter_name: _adapter_settings.loggers})
             setattr(config, adapter_name, _adapter_settings)
             _adapter = depends.get(_adapter_class)
             asyncio.run(_adapter.init())
@@ -176,19 +170,13 @@ async def update_actions(
         async for a in _actions_path.iterdir()
         if await a.is_file() and not a.name.startswith("_")
     }
-    actions_module = sys.modules["acb.actions"]
     _pkg_path = actions_path.parent
     for action_name, path in _actions.items():
         with suppress(KeyError):
             del action_registry.get()[action_name]
-        try:
-            action_module = import_module(".".join(path.parts[-3:]).removesuffix(".py"))
-            action_registry.get().update(
-                {action_name: Action(package=_pkg_path.name, path=path)}
-            )
-            actions_module.__dict__.update({action_name: action_module})
-        except ImportError as e:
-            warn(f"Error importing {action_name!r} adapter: {e}")
+        action_registry.get().update(
+            {action_name: Action(package=_pkg_path.name, path=path)}
+        )
 
 
 def register_package(_pkg_path: Path | None = None) -> None:

@@ -1,5 +1,6 @@
 import typing as t
 
+from acb.actions import hash
 from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import Settings
@@ -56,7 +57,7 @@ class StorageBucket:
     def get_path(self, path: AsyncPath) -> str:
         return str(self.root / path)
 
-    def get_url(self, path: AsyncPath):
+    def get_url(self, path: AsyncPath) -> str:
         return self.client.url(self.get_path(path))
 
     async def get_date_created(self, path: AsyncPath) -> t.Any:
@@ -67,6 +68,10 @@ class StorageBucket:
 
     async def get_size(self, path: AsyncPath) -> int:
         return (await self.stat(path))["size"]
+
+    @staticmethod
+    async def get_checksum(path: AsyncPath) -> int:
+        return await hash.crc32c(path)  # type: ignore
 
     async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> t.Any:
         return await self.client._sign(self.get_path(path), expires=expires)
@@ -98,6 +103,10 @@ class StorageBucket:
         self.logger.debug(f"Got - {stor_path}")
         return data
 
+    async def open(self, path: AsyncPath) -> t.BinaryIO:
+        async with self.client.open(self.get_path(path), "rb") as f:
+            return f.read()
+
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
         self.logger.debug(f"Saving {stor_path}...")
@@ -109,21 +118,6 @@ class StorageBucket:
         self.logger.debug(f"Deleting {stor_path}...")
         await self.client._rm_file(stor_path)
         self.logger.debug(f"Deleted - {stor_path}")
-
-    # async def get_name(self, name: str) -> t.Any:
-    #     ...
-    #
-    # async def get_path(self, name: str) -> t.Any:
-    #     ...
-    #
-    # def get_size(self, name: str) -> int:
-    #     ...
-    #
-    # def open(self, name: str) -> t.BinaryIO:
-    #     ...
-    #
-    # def write(self, file: t.BinaryIO, name: str) -> str:
-    #     ...
 
 
 class StorageBase:
@@ -155,8 +149,12 @@ class StorageFile:
     async def size(self) -> t.Any:
         return await self._storage.get_size(AsyncPath(self._name))
 
-    # async def open(self) -> t.Any:
-    #     return await self._storage.open(self._name)
+    @property
+    async def checksum(self) -> t.Any:
+        return await self._storage.get_checksum(AsyncPath(self._name))
+
+    async def open(self) -> t.Any:
+        return await self._storage.open(AsyncPath(self._name))
 
     async def write(self, file: t.BinaryIO) -> t.Any:
         return await self._storage.write(path=AsyncPath(self._name), data=file)

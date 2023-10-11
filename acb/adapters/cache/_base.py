@@ -1,4 +1,5 @@
 import typing as t
+from abc import ABC
 
 from acb.config import Config
 from acb.config import gen_password
@@ -6,8 +7,8 @@ from acb.config import Settings
 from acb.depends import depends
 from pydantic import AnyUrl
 from pydantic import field_validator
-from pydantic import SecretStr
 from pydantic import RedisDsn
+from pydantic import SecretStr
 
 
 class CacheBaseSettings(Settings):
@@ -31,9 +32,14 @@ class CacheBaseSettings(Settings):
         self.host = SecretStr("127.0.0.1") if not config.deployed else self.host
         self.password = SecretStr("") if not config.deployed else self.password
         self.template_timeout = self.template_timeout if config.deployed else 1
+        self.default_timeout = self.default_timeout if config.deployed else 1
 
     @field_validator("db")
     def db_less_than_three(cls, v: int) -> int:
         if v < 3 and v != 1:
             raise ValueError("must be greater than 2 (0-2 are reserved)")
         return 1
+
+
+class CacheBase(ABC):
+    ...

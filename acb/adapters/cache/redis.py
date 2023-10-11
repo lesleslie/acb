@@ -8,6 +8,7 @@ from acb.depends import depends
 from cashews.serialize import register_type
 from cashews.wrapper import Cache as CashewsCache
 from pydantic import RedisDsn
+from ._base import CacheBase
 from ._base import CacheBaseSettings
 
 
@@ -20,7 +21,7 @@ class CacheSettings(CacheBaseSettings):
         )
 
 
-class Cache(CashewsCache):
+class Cache(CashewsCache, CacheBase):
     logger: Logger = depends()  # type: ignore
 
     @depends.inject

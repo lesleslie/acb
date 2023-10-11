@@ -3,11 +3,15 @@ import sys
 import typing as t
 
 from acb import enabled_adapters
-from acb import logger_registry
+
+# from acb import logger_registry
+from acb.config import Config
 from acb.config import debug
 from acb.depends import depends
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
+from ._base import ExternalLogger
+from ._base import LoggerBase
 from ._base import LoggerBaseSettings
 
 
@@ -37,7 +41,7 @@ class LoggerSettings(LoggerBaseSettings):
         )
 
 
-class Logger(_Logger):
+class Logger(_Logger, LoggerBase):
     def __init__(self) -> None:
         super().__init__(
             core=_Core(),
@@ -52,11 +56,8 @@ class Logger(_Logger):
             extra={},
         )
 
-    async def init(self) -> None:
-        from acb.config import Config
-
-        config = depends.get(Config)
-
+    @depends.inject
+    async def init(self, config: Config = depends()) -> None:
         def patch_name(record) -> str:  # type: ignore
             mod_parts = record["name"].split(".")
             mod_name = ".".join(mod_parts)
@@ -79,6 +80,17 @@ class Logger(_Logger):
             self.warning("warning")
             self.error("error")
             self.critical("critical")
+
+    @staticmethod
+    @depends.inject
+    def register_external_loggers(
+        loggers: list[ExternalLogger], config: Config = depends()
+    ) -> None:
+        for external_logger in loggers:
+            _logger = logging.getLogger(external_logger.name)
+            _logger.handlers.clear()
+            _logger.handlers = [InterceptHandler(_logger.name)]
+            config.logger.external_loggers.append(external_logger)
 
 
 depends.set(Logger, Logger())
@@ -113,11 +125,3 @@ class InterceptHandler(logging.Handler):
                 )
             # elif enabled_logger == "structlog":
             #     ...
-
-
-def register_loggers(loggers: tuple[str, list[str]]) -> None:
-    for logger in loggers[1]:
-        _logger = logging.getLogger(logger)
-        _logger.handlers.clear()
-        _logger.handlers = [InterceptHandler(_logger.name)]
-    return logger_registry.get().update({loggers[0]: loggers[1]})

@@ -14,6 +14,7 @@ from sqlmodel import SQLModel
 import arrow
 from acb.actions.encode import load
 from acb.adapters.logger import Logger
+from acb.adapters.models._sqlmodel import SqlModel
 from acb.adapters.sql import Sql
 from acb.adapters.storage import Storage
 from acb.config import Config
@@ -21,7 +22,6 @@ from acb.depends import depends
 from aiopath import AsyncPath
 from pydantic import BaseModel
 from pydantic import create_model
-from ._model import SqlModel
 
 
 # from contextlib import suppress

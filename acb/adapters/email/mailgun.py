@@ -13,7 +13,7 @@ from acb.depends import depends
 from httpx import Response as HttpxResponse
 from ._base import EmailBase
 from ._base import EmailBaseSettings
-from acb.adapters.dns import DnsRecord
+from acb.adapters.dns._base import DnsRecord
 
 
 class EmailSettings(EmailBaseSettings):

@@ -21,7 +21,7 @@ class Hash:
         return blake3(obj).hexdigest()
 
     @staticmethod
-    async def crc32c(obj: Path | AsyncPath | str) -> bytes | int:
+    async def crc32c(obj: Path | AsyncPath | str) -> int:
         if isinstance(obj, Path | AsyncPath):
             obj = await AsyncPath(obj).read_text()
         return crc32c(obj.encode())
