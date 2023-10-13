@@ -6,7 +6,7 @@ groups = ["default", "storage", "cache", "dev", "requests", "sql", "dns", "secre
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:5e7e4fe2831466010a17939d7ac11c93b42d5fd60ac8e993cc03a2ca671b8a1a"
+content_hash = "sha256:3ebf6966a77331217db4ace967642a4441bbee3e3ec121728a5740cfc17d3832"
 
 [[package]]
 name = "about-time"
