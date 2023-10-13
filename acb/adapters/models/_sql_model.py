@@ -18,7 +18,9 @@ from acb.adapters.models import Models
 class SqlModel(SQLModel, arbitrary_types_allowed=True, extra="allow"):
     __table_args__ = {"extend_existing": True}
     __mapper_args__ = {"always_refresh": True}
-    id: t.Optional[t.Any] = Field(default_factory=ulid.new, primary_key=True)
+    id: t.Optional[t.Any] = Field(
+        default_factory=ulid.new, primary_key=True  # type: ignore
+    )
 
     @declared_attr
     def __tablename__(self) -> t.Any:  # type: ignore

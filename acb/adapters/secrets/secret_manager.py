@@ -1,6 +1,5 @@
 import typing as t
 from contextlib import suppress
-from secrets import compare_digest
 from warnings import catch_warnings
 from warnings import filterwarnings
 
@@ -9,6 +8,7 @@ from acb.config import app_name
 from acb.config import project
 from acb.depends import depends
 from google.api_core.exceptions import AlreadyExists
+from google.api_core.exceptions import PermissionDenied
 from google.auth import default
 from google.auth.transport.requests import AuthorizedSession
 from google.auth.transport.requests import Request
@@ -18,6 +18,7 @@ from google.cloud.secretmanager_v1 import CreateSecretRequest
 from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
+from secrets import compare_digest
 from ._base import SecretsBase
 from ._base import SecretsBaseSettings
 
@@ -52,6 +53,12 @@ class Secrets(SecretsBase):
         request = ListSecretsRequest(
             parent=self.parent, filter=f"{self.prefix}{adapter}_"
         )
+        try:
+            client_secrets = await self.client.list_secrets(request=request)
+        except PermissionDenied:
+            raise SystemExit(
+                "\n ERROR:  'project' id in 'settings/app.yml' is invalid or not set!\n"
+            )
         client_secrets = await self.client.list_secrets(request=request)
         client_secrets = [
             self.extract_secret_name(secret.name) async for secret in client_secrets

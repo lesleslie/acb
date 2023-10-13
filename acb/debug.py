@@ -5,7 +5,7 @@ from pprint import pformat
 
 from acb.adapters.logger import Logger
 from acb.config import Config
-from acb.config import enabled_adapters
+from acb.config import adapter_registry
 from acb.depends import depends
 from icecream import colorizedStderrPrint
 from icecream import ic as debug
@@ -25,7 +25,11 @@ def get_calling_module() -> Path | None:
 def patch_record(
     mod: Path, msg: str, logger: Logger = depends()  # type: ignore
 ) -> None:
-    if enabled_adapters.get()["logger"].name == "loguru":
+    if next(
+        a
+        for a in adapter_registry.get()
+        if a.category == "logger" and a.name == "loguru"
+    ):
         logger.patch(lambda record: record.update(name=mod.name)).debug(  # type: ignore
             msg
         )

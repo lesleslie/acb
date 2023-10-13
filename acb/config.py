@@ -11,7 +11,7 @@ from functools import lru_cache
 
 import nest_asyncio
 from acb import base_path
-from acb import enabled_adapters
+from acb import adapter_registry
 from acb import load_adapter
 from acb import settings_path
 from acb.actions.encode import dump
@@ -182,8 +182,8 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         if self.adapter_name == "debug":
             for adptr in [
                 adptr
-                for adptr in enabled_adapters.get()
-                if adptr not in yml_settings.keys()
+                for adptr in adapter_registry.get()
+                if adptr.name not in yml_settings.keys()
             ]:
                 yml_settings[adptr] = False
             debug = yml_settings

@@ -24,7 +24,7 @@ from google.cloud.exceptions import NotFound
 class StorageBaseSettings(Settings):
     prefix: t.Optional[str] = None
     user_project: t.Optional[str] = None  # used for billing
-    buckets: dict[str, str] = {}
+    buckets: dict[str, str] = {"test": "test-bucket"}
     loggers: t.Optional[list[str]] = []
 
     @depends.inject

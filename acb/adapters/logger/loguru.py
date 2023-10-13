@@ -2,9 +2,7 @@ import logging
 import sys
 import typing as t
 
-from acb import enabled_adapters
-
-# from acb import logger_registry
+from acb import adapter_registry
 from acb.config import Config
 from acb.config import debug
 from acb.depends import depends
@@ -113,8 +111,14 @@ class InterceptHandler(logging.Handler):
         while frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
-            enabled_logger = enabled_adapters.get()["logger"].name
-            if enabled_logger == "loguru":
+            enabled_logger = next(
+                (
+                    a
+                    for a in adapter_registry.get()
+                    if a.category == "logger" and a.enabled
+                ),
+            )
+            if enabled_logger and enabled_logger.name == "loguru":
                 logger.patch(
                     lambda record: record.update(name=self.logger_name)  # type: ignore
                 ).opt(

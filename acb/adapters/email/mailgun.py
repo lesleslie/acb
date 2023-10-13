@@ -7,7 +7,7 @@ from acb.actions.encode import load
 from acb.adapters.dns import Dns
 from acb.adapters.requests import Requests
 from acb.config import Config
-from acb.config import enabled_adapters
+from acb.config import adapter_registry
 from acb.debug import debug
 from acb.depends import depends
 from httpx import Response as HttpxResponse
@@ -175,7 +175,10 @@ class Email(EmailBase):
         for f in forwards:
             fs = [r for r in routes if self.get_name(r["expression"]) == f]
             deletes.extend(fs[1:])
-        if delete_all or enabled_adapters.get()["email"].name == "gmail":
+        adapter = [
+            a for a in adapter_registry.get() if a.category == "email" and a.enabled
+        ][0]
+        if delete_all or adapter.name == "gmail":
             deletes = [r for r in routes if len(self.get_name(r["expression"]))]
             debug(deletes)
             debug(len(deletes))

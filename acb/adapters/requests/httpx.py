@@ -3,44 +3,49 @@ import typing as t
 from acb.adapters.logger import Logger
 from acb.depends import depends
 from httpx import Response as HttpxResponse
-from httpx_cache import AsyncClient
-from httpx_cache.cache.redis import RedisCache
+from hishel import AsyncCacheClient  # type: ignore
+from hishel import RedisStorage  # type: ignore
 from ._base import RequestsBase
 from ._base import RequestsBaseSettings
+from redis.asyncio import Redis as AsyncRedis
 
 
 class RequestsSettings(RequestsBaseSettings):
-    loggers: t.Optional[list[str]] = ["httpx_caching"]
+    loggers: t.Optional[list[str]] = ["hishel", "httpx"]
 
 
 class Requests(RequestsBase):
-    cache: t.Optional[RedisCache] = None
+    storage: RedisStorage  # type: ignore
 
     async def get(self, url: str, timeout: int = 5) -> HttpxResponse:
-        async with AsyncClient(cache=self.cache) as client:
+        async with AsyncCacheClient() as client:
             return await client.get(url, timeout=timeout)
 
     async def post(
         self, url: str, data: dict[str, t.Any], timeout: int = 5
     ) -> HttpxResponse:
-        async with AsyncClient(cache=self.cache) as client:
+        async with AsyncCacheClient() as client:
             return await client.post(url, data=data, timeout=timeout)
 
     async def put(
         self, url: str, data: dict[str, t.Any], timeout: int = 5
     ) -> HttpxResponse:
-        async with AsyncClient(cache=self.cache) as client:
+        async with AsyncCacheClient() as client:
             return await client.put(url, data=data, timeout=timeout)
 
     async def delete(self, url: str, timeout: int = 5) -> HttpxResponse:
-        async with AsyncClient(cache=self.cache) as client:
+        async with AsyncCacheClient(storage=self.storage) as client:
             return await client.delete(url, timeout=timeout)
 
     @depends.inject
     async def init(self, logger: Logger = depends()) -> None:  # type: ignore
-        self.cache = RedisCache(
-            redis_url=f"redis://{self.config.cache.host.get_secret_value()}:{self.config.cache.port}/"
-            f"{self.config.requests.cache_db}"
+        self.storage = RedisStorage(
+            client=AsyncRedis(
+                host=self.config.cache.host.get_secret_value(),
+                port=self.config.cache.port,
+                db=self.config.requests.cache_db,
+            ),
+            ttl=self.config.requests.cache_ttl,
         )
 
 
