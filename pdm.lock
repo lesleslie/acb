@@ -686,11 +686,11 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.2"
+version = "0.7.3"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
-    "acb>=0.2.15",
+    "acb>=0.3.1",
     "aioconsole>=0.6.2",
     "aiopath>=0.7.5",
     "autotyping>=23.3.0",
@@ -702,8 +702,8 @@ dependencies = [
     "pytest>=7.4.2",
 ]
 files = [
-    {file = "crackerjack-0.7.2-py3-none-any.whl", hash = "sha256:7bf185ca1f858e93b768fae4b7a31a1370db52e0703b18c941ccbd10a3cf9ec3"},
-    {file = "crackerjack-0.7.2.tar.gz", hash = "sha256:c905a9c9bf74a3a8e942ae6b483d37f31d6048cff876e8765dfba17a410a62db"},
+    {file = "crackerjack-0.7.3-py3-none-any.whl", hash = "sha256:5bda3b6f3fa9d782108af81362313418ebc4e968e9e2c6bf502b16590172b7bc"},
+    {file = "crackerjack-0.7.3.tar.gz", hash = "sha256:a1516c6438181bfa54c2226fb66fb0847af82a195151fd4c223aa3171d104a24"},
 ]
 
 [[package]]

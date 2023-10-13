@@ -36,13 +36,13 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "alive-progress",
     "autotyping",
     "pyfiglet",
-    "ulid-py",
-    "pre-commit",
     "pdm-bump",
     "pytest",
+    "pre-commit",
+    "ulid-py",
+    "alive-progress",
 ]
 
 [tool.refurb]
@@ -53,10 +53,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B113",
-    "B403",
     "B404",
+    "B403",
+    "B113",
+    "B603",
 ]
 
 [tool.pyright]
@@ -75,7 +75,7 @@ pythonVersion = "3.12"
 
 [project]
 name = "acb"
-version = "0.3.1"
+version = "0.3.2"
 description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",
