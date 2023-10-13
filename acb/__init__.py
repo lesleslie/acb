@@ -123,7 +123,7 @@ async def update_adapters(pkg: Package, adapters_path: Path) -> None:
         if a.is_dir() and not a.name.startswith("__")
     }.items():
         modules = [
-            Adapter(name=m.stem, category=m.parent.stem, pkg=pkg, path=m)
+            Adapter(name=m.stem, category=m.parent.stem, pkg=pkg, path=AsyncPath(m))
             for m in modules
         ]
         adapter_registry.get().extend(modules)
@@ -142,8 +142,8 @@ async def update_adapters(pkg: Package, adapters_path: Path) -> None:
                 sort_keys=True,
             )
     _adapters = await load.yaml(adapter_settings_path)
-    _adapters.extend(
-        {a.name: None} for a in adapter_registry.get() if a.name not in _adapters
+    _adapters.update(
+        {a.name: None for a in adapter_registry.get() if a.name not in _adapters}
     )
     await dump.yaml(_adapters, adapter_settings_path, sort_keys=True)
     _enabled_adapters = {a: m for a, m in _adapters.items() if m}
@@ -165,7 +165,9 @@ def update_actions(pkg: Package, actions_path: Path) -> None:
     }
     _pkg_path = actions_path.parent
     for action_name, path in _actions.items():
-        _action = next(a for a in action_registry.get() if a.name == action_name)
+        _action = next(
+            (a for a in action_registry.get() if a.name == action_name), None
+        )
         if _action:
             del _action
         action_registry.get().append(

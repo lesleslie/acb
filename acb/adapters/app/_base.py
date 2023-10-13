@@ -8,9 +8,5 @@ class AppBaseSettings(AppConfigSettings):
 
 class AppBase(ABC):
     @abstractmethod
-    async def init(self):
-        ...
-
-    # @abstractmethod
-    # async def main(self):
-    #     ...
+    async def init(self) -> None:
+        raise NotImplementedError

@@ -273,12 +273,10 @@ class Settings(BaseModel):
 
 
 class DebugSettings(Settings):
-    main: bool = False
+    all: bool = False
     production: bool = False
     secrets: bool = False
     logger: bool = False
-    app: bool = False
-    adapters: bool = False
 
 
 class AppSettings(Settings):

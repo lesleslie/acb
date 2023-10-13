@@ -38,11 +38,11 @@ deps-file = "pyproject.toml"
 exclude-deps = [
     "autotyping",
     "pyfiglet",
-    "pdm-bump",
-    "pytest",
+    "alive-progress",
     "pre-commit",
     "ulid-py",
-    "alive-progress",
+    "pytest",
+    "pdm-bump",
 ]
 
 [tool.refurb]
@@ -75,7 +75,7 @@ pythonVersion = "3.12"
 
 [project]
 name = "acb"
-version = "0.3.2"
+version = "0.3.3"
 description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",

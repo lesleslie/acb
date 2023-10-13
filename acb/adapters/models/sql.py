@@ -1,5 +1,4 @@
 from importlib import import_module
-import typing as t
 
 from sqlmodel import SQLModel
 
@@ -22,4 +21,4 @@ class Models(ModelsBase):
             setattr(self, model.__name__, model)
 
 
-depends.set(t.Annotated[Models, "sql"], Models())
+depends.set(Models)
