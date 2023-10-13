@@ -6,7 +6,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.0",
+    "crackerjack>=0.7.1",
 ]
 
 [tool.ruff]
@@ -36,12 +36,12 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
     "alive-progress",
-    "autotyping",
-    "pre-commit",
     "pytest",
+    "autotyping",
     "ulid-py",
+    "pre-commit",
+    "pdm-bump",
     "pyfiglet",
 ]
 
@@ -53,8 +53,8 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
     "B404",
+    "B403",
     "B113",
     "B603",
 ]
@@ -97,7 +97,7 @@ dependencies = [
     "pluginbase>=1.0.1",
     "inflection>=0.5.1",
     "aiopath>=0.7.5",
-    "hishel @ git+https://github.com/karpetrosyan/hishel.git",
+    "hishel>=0.0.13",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
@@ -107,7 +107,7 @@ authors = [
 classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python ::3.12",
+    "Programming Language :: Python :: 3.12",
     "Framework :: Pydantic",
     "Framework :: Pydantic :: 2",
     "Framework :: AsyncIO",
@@ -153,7 +153,6 @@ sql = [
     "sqlalchemy-utils>=0.41.1",
     "mysqlclient>=2.2.0",
     "asyncmy>=0.2.8",
-    "sqlmodel @ git+https://github.com/honglei/sqlmodel.git",
 ]
 nosql = [
     "google-cloud-firestore>=2.12.0",
