@@ -185,7 +185,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                 for adptr in adapter_registry.get()
                 if adptr.name not in yml_settings.keys()
             ]:
-                yml_settings[adptr] = False
+                yml_settings[adptr.name] = False
             debug = yml_settings
         if not _deployed:
             await dump.yaml(yml_settings, yml_path)

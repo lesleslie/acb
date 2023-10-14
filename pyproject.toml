@@ -6,7 +6,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.3",
+    "crackerjack>=0.7.5",
 ]
 
 [tool.ruff]
@@ -36,13 +36,14 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
-    "autotyping",
-    "pytest",
+    "ulid-py",
     "alive-progress",
     "pre-commit",
+    "pyyaml",
+    "pytest",
+    "pdm-bump",
     "pyfiglet",
-    "ulid-py",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -53,15 +54,19 @@ target = [
     "acb",
 ]
 skips = [
+    "B403",
     "B113",
     "B404",
-    "B403",
     "B603",
 ]
 
 [tool.pyright]
+verboseOutput = true
 include = [
     "acb",
+]
+extraPaths = [
+    "__pypackages__/3.12/lib/",
 ]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
@@ -72,10 +77,11 @@ reportUnknownVariableType = false
 reportUnknownArgumentType = false
 reportPrivateUsage = "warning"
 pythonVersion = "3.12"
+pythonPlatform = "Darwin"
 
 [project]
 name = "acb"
-version = "0.3.4"
+version = "0.3.5"
 description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",
@@ -97,6 +103,7 @@ dependencies = [
     "pluginbase>=1.0.1",
     "inflection>=0.5.1",
     "aiopath>=0.7.5",
+    "pyyaml>=6.0.1",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
@@ -152,6 +159,7 @@ sql = [
     "sqlalchemy-utils>=0.41.1",
     "mysqlclient>=2.2.0",
     "asyncmy>=0.2.8",
+    "sqlmodel",
 ]
 nosql = [
     "google-cloud-firestore>=2.12.0",
