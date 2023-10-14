@@ -6,7 +6,7 @@ groups = ["default", "storage", "cache", "dev", "requests", "sql", "dns", "secre
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:3ebf6966a77331217db4ace967642a4441bbee3e3ec121728a5740cfc17d3832"
+content_hash = "sha256:3813588d22968a4171fb1db1d50dfc9d4d5e27305e459375c0c1ea57292e2cb1"
 
 [[package]]
 name = "about-time"
@@ -686,11 +686,11 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.3"
+version = "0.7.4"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
-    "acb>=0.3.1",
+    "acb>=0.3.3",
     "aioconsole>=0.6.2",
     "aiopath>=0.7.5",
     "autotyping>=23.3.0",
@@ -702,8 +702,8 @@ dependencies = [
     "pytest>=7.4.2",
 ]
 files = [
-    {file = "crackerjack-0.7.3-py3-none-any.whl", hash = "sha256:5bda3b6f3fa9d782108af81362313418ebc4e968e9e2c6bf502b16590172b7bc"},
-    {file = "crackerjack-0.7.3.tar.gz", hash = "sha256:a1516c6438181bfa54c2226fb66fb0847af82a195151fd4c223aa3171d104a24"},
+    {file = "crackerjack-0.7.4-py3-none-any.whl", hash = "sha256:cb934a9ee35f1eaec0e482af672d663b3e2097c2a9a970b66247efb79a9066e6"},
+    {file = "crackerjack-0.7.4.tar.gz", hash = "sha256:ddae23221b279ac78803b050dcd674904cf85eee25f79e2af02ccc6f340cf159"},
 ]
 
 [[package]]
@@ -1825,7 +1825,7 @@ files = [
 
 [[package]]
 name = "pre-commit"
-version = "3.4.0"
+version = "3.5.0"
 requires_python = ">=3.8"
 summary = "A framework for managing and maintaining multi-language pre-commit hooks."
 dependencies = [
@@ -1836,8 +1836,8 @@ dependencies = [
     "virtualenv>=20.10.0",
 ]
 files = [
-    {file = "pre_commit-3.4.0-py2.py3-none-any.whl", hash = "sha256:96d529a951f8b677f730a7212442027e8ba53f9b04d217c4c67dc56c393ad945"},
-    {file = "pre_commit-3.4.0.tar.gz", hash = "sha256:6bbd5129a64cad4c0dfaeeb12cd8f7ea7e15b77028d985341478c8af3c759522"},
+    {file = "pre_commit-3.5.0-py2.py3-none-any.whl", hash = "sha256:841dc9aef25daba9a0238cd27984041fa0467b4199fc4852e27950664919f660"},
+    {file = "pre_commit-3.5.0.tar.gz", hash = "sha256:5804465c675b659b0862f07907f96295d490822a450c4c40e747d0b1c6ebcb32"},
 ]
 
 [[package]]

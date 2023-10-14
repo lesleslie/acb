@@ -6,7 +6,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.1",
+    "crackerjack>=0.7.3",
 ]
 
 [tool.ruff]
@@ -36,13 +36,13 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
+    "pdm-bump",
     "autotyping",
-    "pyfiglet",
+    "pytest",
     "alive-progress",
     "pre-commit",
+    "pyfiglet",
     "ulid-py",
-    "pytest",
-    "pdm-bump",
 ]
 
 [tool.refurb]
@@ -53,9 +53,9 @@ target = [
     "acb",
 ]
 skips = [
+    "B113",
     "B404",
     "B403",
-    "B113",
     "B603",
 ]
 
@@ -75,7 +75,7 @@ pythonVersion = "3.12"
 
 [project]
 name = "acb"
-version = "0.3.3"
+version = "0.3.4"
 description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",
