@@ -1,12 +1,19 @@
 import typing as t
+from functools import cached_property
 
+from acb import tmp_path
 from acb.actions import hash
 from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import Settings
 from acb.depends import depends
 from aiopath import AsyncPath
+from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
+
+import nest_asyncio
+
+nest_asyncio.apply()
 
 
 # CORS policy for upload bucket - upload-cors.json
@@ -23,6 +30,7 @@ from google.cloud.exceptions import NotFound
 
 class StorageBaseSettings(Settings):
     prefix: t.Optional[str] = None
+    local_path: t.Optional[AsyncPath] = None
     user_project: t.Optional[str] = None  # used for billing
     buckets: dict[str, str] = {"test": "test-bucket"}
     loggers: t.Optional[list[str]] = []
@@ -31,6 +39,7 @@ class StorageBaseSettings(Settings):
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or config.app.name or ""
+        self.directory = tmp_path / "storage"
         self.user_project = (
             self.user_project or config.app.name or ""
         )  # used for billing
@@ -121,12 +130,15 @@ class StorageBucket:
 
 
 class StorageBase:
-    client: t.Any
+    file_system: t.Type[AsyncFileSystem]
     config: Config = depends()
     logger: Logger = depends()  # type: ignore
 
+    @cached_property
+    def client(self) -> AsyncFileSystem:
+        return self.file_system(asynchronous=True)
+
     async def init(self) -> None:
-        self.client = self.client(asynchronous=True)
         for bucket in self.config.storage.buckets:
             setattr(self, bucket, StorageBucket(self.client, bucket))
             self.logger.debug(f"{bucket.title()} storage bucket initialized")

@@ -11,7 +11,7 @@ class StorageSettings(StorageBaseSettings):
 
 
 class Storage(StorageBase):
-    client: t.Any = GCSFileSystem
+    file_system: t.Any = GCSFileSystem
 
 
 depends.set(Storage, Storage())

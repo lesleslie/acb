@@ -1,10 +1,14 @@
+import asyncio
+import re
 import typing as t
+from ast import literal_eval
 from contextlib import asynccontextmanager
 from functools import cached_property
+from importlib import import_module
 
-from sqlmodel import SQLModel
-from sqlmodel.ext.asyncio.session import AsyncSession
-
+import nest_asyncio
+import ulid
+from acb import pkg_path
 from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import gen_password
@@ -13,20 +17,28 @@ from acb.debug import debug
 from acb.depends import depends
 from aioconsole import ainput
 from aioconsole import aprint
+from inflection import underscore
 from pydantic import SecretStr
 from sqlalchemy import inspect
+from sqlalchemy import ScalarResult
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy_utils import create_database
 from sqlalchemy_utils import database_exists
 from sqlalchemy_utils import drop_database
+from sqlmodel import Field
+from sqlmodel import select
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+nest_asyncio.apply()
 
 
 class SqlBaseSettings(Settings):
-    requires: t.Optional[list[str]] = ["models"]
     _driver: str
     _async_driver: str
     port: t.Optional[int] = 3306
@@ -142,3 +154,63 @@ class SqlBase:
             if self.config.debug.sql:
                 table_names = await conn.run_sync(self.get_table_names)
                 debug(table_names)
+
+
+class SqlModels:
+    def __init__(self) -> None:
+        models_path = pkg_path / "models.py"
+        asyncio.run(models_path.touch(exist_ok=True))
+        models = import_module(".".join(models_path.parts[-2:]).removesuffix(".py"))
+        for model in [
+            getattr(models, m.__name__) for m in dir(models) if isinstance(m, SQLModel)
+        ]:
+            setattr(self, model.__name__, model)
+
+
+depends.set(SqlModels)
+
+
+def primary_key_factory() -> str:
+    return ulid.new().str()
+
+
+class SqlModel(SQLModel, arbitrary_types_allowed=True, extra="allow"):
+    __table_args__ = {"extend_existing": True}
+    __mapper_args__ = {"always_refresh": True}
+    id: t.Optional[t.Any] = Field(
+        default_factory=primary_key_factory, primary_key=True  # type: ignore
+    )
+
+    @declared_attr
+    def __tablename__(self) -> t.Any:  # type: ignore
+        return underscore(self.__name__)
+
+    @depends.inject
+    async def save(self, sql: t.Type[SqlBase] = depends()) -> None:  # type: ignore
+        async with sql.get_session() as session:
+            session.add(self)
+            await session.commit()
+
+    @depends.inject
+    async def delete(self, sql: t.Type[SqlBase] = depends()) -> None:  # type: ignore
+        async with sql.get_session() as session:
+            session.delete(self)
+            await session.commit()
+
+    @depends.inject
+    async def query(
+        self,
+        query: str,
+        models: SqlModels = depends(),  # type: ignore
+        sql: t.Type[SqlBase] = depends(),  # type: ignore
+    ) -> t.Coroutine[t.Any, t.Any, ScalarResult[t.Any]]:
+        async with sql.get_session() as session:
+            pattern = r"\s(\w)(\w+)\."
+            models = [
+                getattr(models, m[0] + m[1])
+                for m in re.findall(pattern, query)
+                if m[0].isupper()
+            ]
+            statement = select(self, *models).where(literal_eval(query))  # type: ignore
+            results = session.exec(statement)
+            return results

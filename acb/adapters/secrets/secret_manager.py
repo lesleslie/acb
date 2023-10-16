@@ -115,4 +115,4 @@ class Secrets(SecretsBase):
         self.authed_session = AuthorizedSession(self.creds)
 
 
-depends.set(Secrets, Secrets())
+depends.set(Secrets)

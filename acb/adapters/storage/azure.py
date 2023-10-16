@@ -12,7 +12,7 @@ class StorageSettings(StorageBaseSettings):
 
 
 class Storage(StorageBase):
-    client: t.Any = AzureBlobFileSystem
+    file_system: t.Any = AzureBlobFileSystem
 
 
 depends.set(Storage, Storage())

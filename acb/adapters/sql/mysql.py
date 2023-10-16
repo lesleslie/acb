@@ -25,4 +25,4 @@ class Sql(SqlBase):
     ...
 
 
-depends.set(Sql, Sql())
+depends.set(Sql)

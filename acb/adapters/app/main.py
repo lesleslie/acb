@@ -25,6 +25,8 @@ class App(AppBase):
     ) -> None:
         logger.info("Application starting...")
 
+        # put app startup code here
+
         async def post_startup() -> None:
             if not config.deployed:
                 from aioconsole import aprint

@@ -1,19 +1,17 @@
 import asyncio
-import secrets
 import typing as t
 from abc import ABC
 from abc import abstractmethod
 from contextvars import ContextVar
+from functools import cached_property
 from pathlib import Path
-from secrets import token_bytes
-from secrets import token_urlsafe
-from functools import lru_cache
 
 import nest_asyncio
-from acb import base_path
+import secrets
 from acb import adapter_registry
 from acb import load_adapter
 from acb import settings_path
+from acb import tmp_path
 from acb.actions.encode import dump
 from acb.actions.encode import load
 from acb.depends import depends
@@ -26,21 +24,22 @@ from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
+from secrets import token_bytes
+from secrets import token_urlsafe
 
 nest_asyncio.apply()
 
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
-_deployed: bool = True if Path.cwd().name == "app" else False  # or "srv"?
-_tmp_path: AsyncPath = base_path / "tmp"
-_secrets_path: AsyncPath = _tmp_path / "secrets"
+_deployed: bool = True if Path.cwd().name == "app" else False
+_secrets_path: AsyncPath = tmp_path / "secrets"
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
 
 async def init_app() -> None:
     for path in (
-        _tmp_path,
+        tmp_path,
         _secrets_path,
         settings_path,
     ):
@@ -129,8 +128,8 @@ class FileSecretsSource(PydanticBaseSettingsSource):
 
 
 class ManagerSecretsSource(PydanticBaseSettingsSource):
-    @lru_cache(maxsize=1)
-    def get_manager(self):
+    @cached_property
+    def manager(self):
         manager_class = load_adapter("secrets")
         manager = depends.get(manager_class)
         return manager
@@ -141,18 +140,17 @@ class ManagerSecretsSource(PydanticBaseSettingsSource):
         missing_secrets = {
             n: v for n, v in adapter_secrets.items() if n not in _app_secrets.get()
         }
-        if missing_secrets:
-            manager = self.get_manager()
-            manager_secrets = await manager.list(self.adapter_name)
+        if missing_secrets and self.manager:
+            manager_secrets = await self.manager.list(self.adapter_name)
             for field_key, field_value in missing_secrets.items():
                 stored_field_key = "_".join((app_name, field_key))
                 secret_path = self.secrets_dir / field_key
                 if not await secret_path.exists():
                     if field_key not in manager_secrets:
-                        await manager.create(
+                        await self.manager.create(
                             stored_field_key, field_value.default.get_secret_value()
                         )
-                secret = await manager.get(stored_field_key)
+                secret = await self.manager.get(stored_field_key)
                 await secret_path.write_text(secret)
                 field_name = field_key.removeprefix(f"{self.adapter_name}_")
                 data[field_name] = SecretStr(secret)
@@ -180,12 +178,12 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             await dump.yaml(dump_settings, yml_path)
         yml_settings = await load.yaml(yml_path)
         if self.adapter_name == "debug":
-            for adptr in [
-                adptr
-                for adptr in adapter_registry.get()
-                if adptr.name not in yml_settings.keys()
+            for adapter in [
+                a
+                for a in adapter_registry.get()
+                if a.category not in yml_settings.keys()
             ]:
-                yml_settings[adptr.name] = False
+                yml_settings[adapter.category] = False
             debug = yml_settings
         if not _deployed:
             await dump.yaml(yml_settings, yml_path)
@@ -205,6 +203,9 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseModel):
+    requires: t.Optional[list[str]] = []
+    loggers: t.Optional[list[str]] = []
+
     model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(  # type: ignore
         extra="allow",
         arbitrary_types_allowed=True,
@@ -224,9 +225,6 @@ class Settings(BaseModel):
         )
         build_settings = asyncio.run(build_settings)
         super().__init__(**build_settings)
-
-    def __getattr__(self, item: str) -> t.Any:
-        return super().__getattr__(item)  # type: ignore
 
     async def _settings_build_values(
         self,
@@ -258,7 +256,6 @@ class Settings(BaseModel):
     def settings_customize_sources(
         cls,
         settings_cls: t.Type["Settings"],
-        # settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         yaml_settings: PydanticBaseSettingsSource,
         file_secrets_settings: PydanticBaseSettingsSource,
@@ -301,8 +298,5 @@ class Config(BaseModel, extra="allow"):
         self.debug = DebugSettings()
         self.app = AppSettings()
 
-    def __getattr__(self, item: str) -> t.Any:
-        return super().__getattr__(item)  # type: ignore
 
-
-depends.set(Config, Config())
+depends.set(Config)

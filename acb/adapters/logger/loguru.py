@@ -91,7 +91,7 @@ class Logger(_Logger, LoggerBase):
             config.logger.external_loggers.append(external_logger)
 
 
-depends.set(Logger, Logger())
+depends.set(Logger)
 
 
 class InterceptHandler(logging.Handler):

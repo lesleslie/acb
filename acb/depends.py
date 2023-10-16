@@ -17,8 +17,6 @@ class Depends:
 
     @staticmethod
     def set(class_: t.Any, value: t.Any = None) -> t.Any:
-        print(get_module_name, value)
-        # return get_repository().set(class_, value)
         return get_repository().set(
             t.Annotated[class_, get_module_name], value or class_()
         )
