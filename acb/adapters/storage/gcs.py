@@ -14,4 +14,4 @@ class Storage(StorageBase):
     file_system: t.Any = GCSFileSystem
 
 
-depends.set(Storage, Storage())
+depends.set(Storage)

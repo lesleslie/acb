@@ -15,4 +15,4 @@ class Storage(StorageBase):
     file_system: t.Any = AzureBlobFileSystem
 
 
-depends.set(Storage, Storage())
+depends.set(Storage)

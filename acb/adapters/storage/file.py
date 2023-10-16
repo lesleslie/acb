@@ -20,4 +20,4 @@ class Storage(StorageBase):
         return self.file_system(path=self.config.storage.local_path, asynchronous=True)
 
 
-depends.set(Storage, Storage())
+depends.set(Storage)

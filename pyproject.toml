@@ -36,14 +36,14 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "ulid-py",
+    "autotyping",
     "alive-progress",
-    "pre-commit",
     "pyyaml",
-    "pytest",
     "pdm-bump",
     "pyfiglet",
-    "autotyping",
+    "pytest",
+    "pre-commit",
+    "ulid-py",
 ]
 
 [tool.refurb]
@@ -54,10 +54,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
-    "B113",
-    "B404",
     "B603",
+    "B113",
+    "B403",
+    "B404",
 ]
 
 [tool.pyright]
@@ -86,7 +86,6 @@ description = "Asynchronous Code Base"
 dependencies = [
     "itsdangerous>=2.1.2",
     "arrow>=1.3.0",
-    "google-crc32c>=1.5.0",
     "dill>=0.3.7",
     "blake3>=0.3.3",
     "loguru>=0.7.2",
@@ -104,6 +103,9 @@ dependencies = [
     "inflection>=0.5.1",
     "aiopath>=0.7.5",
     "pyyaml>=6.0.1",
+    "fusepy>=3.0.1",
+    "crcmod>=1.7",
+    "google-crc32c>=1.5.0",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
@@ -139,6 +141,7 @@ storage = [
     "gcsfs>=2023.9.2",
     "s3fs>=2023.9.2",
     "adlfs>=2023.9.0",
+    "fusepy>=3.0.1",
 ]
 dns = [
     "google-cloud-dns>=0.34.1",
@@ -159,7 +162,7 @@ sql = [
     "sqlalchemy-utils>=0.41.1",
     "mysqlclient>=2.2.0",
     "asyncmy>=0.2.8",
-    "sqlmodel",
+    "sqlmodel @ git+https://github.com/honglei/sqlmodel.git",
 ]
 nosql = [
     "google-cloud-firestore>=2.12.0",
@@ -167,6 +170,10 @@ nosql = [
 ]
 demo = [
     "faker>=19.10.0",
+]
+ftp = [
+    "aioftp>=0.21.4",
+    "asyncssh>=2.14.0",
 ]
 
 [build-system]

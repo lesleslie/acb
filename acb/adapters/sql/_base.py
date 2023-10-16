@@ -8,6 +8,8 @@ from importlib import import_module
 
 import nest_asyncio
 import ulid
+from acb import base_path
+from acb import package_registry
 from acb import pkg_path
 from acb.adapters.logger import Logger
 from acb.config import Config
@@ -158,9 +160,9 @@ class SqlBase:
 
 class SqlModels:
     def __init__(self) -> None:
-        models_path = pkg_path / "models.py"
+        models_path = base_path / "models.py"
         asyncio.run(models_path.touch(exist_ok=True))
-        models = import_module(".".join(models_path.parts[-2:]).removesuffix(".py"))
+        models = import_module(".".join(models_path.parts[-1:]).removesuffix(".py"))
         for model in [
             getattr(models, m.__name__) for m in dir(models) if isinstance(m, SQLModel)
         ]:

@@ -11,7 +11,6 @@ from acb.actions.encode import dump
 from acb.actions.encode import load
 from acb.depends import depends
 from aiopath import AsyncPath
-from icecream import ic
 from inflection import camelize
 from pydantic import BaseModel
 
@@ -128,6 +127,12 @@ async def update_adapters(pkg: Package, adapters_path: Path) -> None:
             Adapter(name=m.stem, category=m.parent.stem, pkg=pkg, path=AsyncPath(m))
             for m in modules
         ]
+        current_adapter = next(
+            (a for a in adapter_registry.get() if a.category == adapter and a.enabled),
+            None,
+        )
+        if current_adapter:
+            adapter_registry.get().remove(current_adapter)
         adapter_registry.get().extend(modules)
     if not await adapter_settings_path.exists():
         await settings_path.mkdir(exist_ok=True)
@@ -155,9 +160,23 @@ async def update_adapters(pkg: Package, adapters_path: Path) -> None:
     await dump.yaml(_adapters, adapter_settings_path, sort_keys=True)
     _enabled_adapters = {a: m for a, m in _adapters.items() if m}
     for a in [
-        a for a in adapter_registry.get() if a.name in _enabled_adapters.values()
+        a for a in adapter_registry.get() if _enabled_adapters.get(a.category) == a.name
     ]:
         a.enabled = True
+    if pkg.name != "acb":
+        adapters_init = adapters_path / "__init__.py"
+        init_all = []
+        init_all.extend([a.category for a in adapter_registry.get() if a.enabled])
+        with open(adapters_init, "w") as f:
+            for adapter in [a for a in adapter_registry.get() if a.enabled]:
+                if adapter.pkg.name == pkg.name:
+                    f.write(f"from . import {adapter.category}\n")
+                else:
+                    f.write(
+                        f"from {adapter.pkg.name}.adapters import"
+                        f" {adapter.category}\n"
+                    )
+            f.write(f"\n__all__: list[str] = {init_all!r}\n")
 
 
 def update_actions(pkg: Package, actions_path: Path) -> None:
@@ -176,6 +195,14 @@ def update_actions(pkg: Package, actions_path: Path) -> None:
         action_registry.get().append(
             Action(name=action_name, pkg=pkg, path=AsyncPath(path))
         )
+    if pkg.name != "acb":
+        actions_init = actions_path / "__init__.py"
+        init_all = []
+        init_all.extend([a.name for a in action_registry.get()])
+        with open(actions_init, "w") as f:
+            for action in action_registry.get():
+                f.write(f"from {action.pkg.name}.actions import {action.name}\n")
+            f.write(f"\n__all__: list[str] = {init_all!r}\n")
 
 
 def register_package(_pkg_path: Path | None = None) -> None:

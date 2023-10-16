@@ -16,4 +16,4 @@ class Storage(StorageBase):
     file_system: t.Any = S3FileSystem
 
 
-depends.set(Storage, Storage())
+depends.set(Storage)
