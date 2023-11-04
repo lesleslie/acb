@@ -8,9 +8,9 @@ from pathlib import Path
 
 import nest_asyncio
 import secrets
-from acb import adapter_registry
-from acb import load_adapter
-from acb import settings_path
+from acb.adapters import adapter_registry
+from acb.adapters import load_adapter
+from acb.adapters import settings_path
 from acb import tmp_path
 from acb.actions.encode import dump
 from acb.actions.encode import load
@@ -300,3 +300,5 @@ class Config(BaseModel, extra="allow"):
 
 
 depends.set(Config)
+
+depends.get(Config).init()

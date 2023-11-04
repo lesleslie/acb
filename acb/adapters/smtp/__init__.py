@@ -1,3 +1,3 @@
-from acb import load_adapter
+from acb.adapters import load_adapter
 
 Mail = load_adapter()

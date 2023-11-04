@@ -2,18 +2,21 @@ from asyncssh import Error
 from asyncssh import listen
 from asyncssh import SFTPServer
 from pydantic import SecretStr
-from ._base import FtpServerBase
-from ._base import FtpServerBaseSettings
+from ._base import FtpdBase
+from ._base import FtpdBaseSettings
+from acb.depends import depends
+from acb.adapters.logger import Logger
 
 
-class FtpServerSettings(FtpServerBaseSettings):
+class FtpdSettings(FtpdBaseSettings):
     port: int = 8022
     server_host_keys: SecretStr
     authorized_client_keys: SecretStr
 
 
-class FtpServer(FtpServerBase):
-    async def init(self) -> None:
+class Ftpd(FtpdBase):
+    @depends.inject
+    async def init(self, logger: Logger = depends()) -> None:
         try:
             await listen(
                 "",
@@ -26,6 +29,10 @@ class FtpServer(FtpServerBase):
                 ),
                 sftp_factory=SFTPServer,
             )
+            logger.info(f"FTP server started on port {self.config.ftpd.port}")
         except (OSError, Error) as exc:
             # close server?
             raise SystemExit(f"\nError starting sftp server: {str(exc)}\n")
+
+
+depends.set(Ftpd)

@@ -1,17 +1,13 @@
-from time import time
-from contextlib import suppress
+import asyncio
+from time import perf_counter
 
-import anyio
-from acb import register_package
 from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.depends import depends
 from ._base import AppBase
 from ._base import AppBaseSettings
 
-main_start = time()
-
-register_package()
+main_start = perf_counter()
 
 
 class AppSettings(AppBaseSettings):
@@ -38,36 +34,19 @@ class App(AppBase):
                 logger.info("Entering production mode...")
 
         await post_startup()
-        main_start_time = time() - main_start
+        main_start_time = perf_counter() - main_start
         logger.info(f"App started in {main_start_time} s")
 
-    @staticmethod
     @depends.inject
-    async def task(number: int, logger: Logger = depends()) -> None:  # type: ignore
-        logger.info("Task", number, "started")
-        await anyio.sleep(2)
-        logger.info("Task", number, "finished")
+    async def main(
+        self, config: Config = depends(), logger: Logger = depends()  # type: ignore
+    ):
+        ...
 
-    @staticmethod
-    @depends.inject
-    async def main(self, logger: Logger = depends()):  # type: ignore
-        start = anyio.current_time()
-        try:
-            async with anyio.create_task_group() as tg:
-                for i in range(5):
-                    tg.start_soon(self.task, i)
-        except BaseException:
-            with suppress(ImportError):
-                from acb.adapters.cache import Cache
-
-                cache = depends.get(Cache)
-                await cache.close()
-            runtime = anyio.current_time() - start
-            logger.info(f"App ran {runtime:.2f}s")
-            logger.critical("Application shut down")
-            raise SystemExit(0)
+        # put app main code here
 
 
-depends.set(App, App())
+depends.set(App)
+
 app = depends.get(App)
-anyio.run(app.main())
+asyncio.run(app.main())

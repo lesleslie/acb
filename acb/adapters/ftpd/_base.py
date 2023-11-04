@@ -6,12 +6,12 @@ from acb.config import Settings
 from acb.config import Config
 
 
-class FtpServerBaseSettings(Settings):
+class FtpdBaseSettings(Settings):
     port: int = 8021
     max_connections: int = 42
 
 
-class FtpServerBase(ABC):
+class FtpdBase(ABC):
     config: Config = depends()  # type: ignore
 
     @abstractmethod

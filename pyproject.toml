@@ -37,13 +37,13 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "autotyping",
-    "alive-progress",
-    "pyyaml",
-    "pdm-bump",
+    "pre-commit",
     "pyfiglet",
     "pytest",
-    "pre-commit",
     "ulid-py",
+    "alive-progress",
+    "pdm-bump",
+    "pyyaml",
 ]
 
 [tool.refurb]
@@ -54,10 +54,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B113",
     "B403",
     "B404",
+    "B113",
+    "B603",
 ]
 
 [tool.pyright]
@@ -99,12 +99,9 @@ dependencies = [
     "ulid-py>=1.1.0",
     "pyfiglet>=1.0.2",
     "alive-progress>=3.1.4",
-    "pluginbase>=1.0.1",
     "inflection>=0.5.1",
     "aiopath>=0.7.5",
     "pyyaml>=6.0.1",
-    "fusepy>=3.0.1",
-    "crcmod>=1.7",
     "google-crc32c>=1.5.0",
 ]
 requires-python = ">=3.12"

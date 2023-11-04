@@ -1,6 +1,8 @@
 import typing as t
 from functools import cached_property
+import asyncio
 
+import nest_asyncio
 from acb import tmp_path
 from acb.actions import hash
 from acb.adapters.logger import Logger
@@ -9,23 +11,10 @@ from acb.config import Settings
 from acb.depends import depends
 from aiopath import AsyncPath
 from fsspec.asyn import AsyncFileSystem
+from fsspec.fuse import run
 from google.cloud.exceptions import NotFound
 
-import nest_asyncio
-
 nest_asyncio.apply()
-
-
-# CORS policy for upload bucket - upload-cors.json
-#
-# [
-#     {
-#       "origin": ["*"],
-#       "method": ["*"],
-#       "responseHeader": ["*"],
-#       "maxAgeSeconds": 600
-#     }
-# ]
 
 
 class StorageBaseSettings(Settings):
