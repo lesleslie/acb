@@ -1,6 +1,5 @@
 import typing as t
 from functools import cached_property
-import asyncio
 
 import nest_asyncio
 from acb import tmp_path
@@ -11,7 +10,6 @@ from acb.config import Settings
 from acb.depends import depends
 from aiopath import AsyncPath
 from fsspec.asyn import AsyncFileSystem
-from fsspec.fuse import run
 from google.cloud.exceptions import NotFound
 
 nest_asyncio.apply()

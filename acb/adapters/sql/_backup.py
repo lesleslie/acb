@@ -14,7 +14,7 @@ from sqlmodel import SQLModel
 import arrow
 from acb.actions.encode import load
 from acb.adapters.logger import Logger
-from acb.adapters.models._sql_model import SqlModel
+from ._base import SqlModel
 from acb.adapters.sql import Sql
 from acb.adapters.storage import Storage
 from acb.config import Config
@@ -234,7 +234,7 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
                 __base__=SqlModel,
                 __cls_kwargs__={"table": True},
                 **load.json(contents),
-            ).save()
+            ).save()  # type: ignore
             if loaded_model:
                 async with self.sql.session() as session:
                     for m in self.show():

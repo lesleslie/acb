@@ -9,20 +9,20 @@ import nest_asyncio
 from acb import Adapter
 from acb import adapter_registry
 from acb import base_path
-from acb.actions.encode import dump
-from acb.actions.encode import load
+from acb.actions.encode import yaml_encode
 from acb.depends import depends
 from aiopath import AsyncPath
 from inflection import camelize
+from msgspec.yaml import decode as yaml_decode
 
 nest_asyncio.apply()
 
-settings_path: AsyncPath = base_path / "settings"
-app_settings_path: AsyncPath = settings_path / "app.yml"
-adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
+settings_path: Path = Path(base_path / "settings")
+app_settings_path: Path = settings_path / "app.yml"
+adapter_settings_path: Path = settings_path / "adapters.yml"
 
 
-def get_adapter(category: str) -> Adapter:
+def get_adapter(category: str) -> Adapter | None:
     _adapter = next(
         (
             a
@@ -48,10 +48,7 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
     if adapter_category is None:
         adapter_category = Path(currentframe().f_back.f_code.co_filename).parent.stem
     try:
-        print(adapter_category)
         _adapter = get_adapter(adapter_category)
-        print(_adapter)
-
         if _adapter and _adapter.enabled and not _adapter.installed:
             _adapter_class_name = camelize(_adapter.category)
             _adapter_settings_class_name = f"{_adapter_class_name}Settings"
@@ -90,7 +87,7 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
         warn(f"\n\nERROR: adapter {adapter_category!r} not found: {err}\n")
 
 
-async def register_adapters() -> None:
+def register_adapters() -> None:
     _adapters_path = Path.cwd() / "adapters"
     _pkg = _adapters_path.parent.name
     for adapter, modules in {
@@ -109,8 +106,8 @@ async def register_adapters() -> None:
         if current_adapter:
             adapter_registry.get().remove(current_adapter)
         adapter_registry.get().extend(modules)
-    if not await adapter_settings_path.exists():
-        await settings_path.mkdir(exist_ok=True)
+    if not adapter_settings_path.exists():
+        settings_path.mkdir(exist_ok=True)
         for i, adapter in enumerate(
             [a for a in adapter_registry.get() if a.category in ("logger", "secrets")]
         ):
@@ -119,12 +116,14 @@ async def register_adapters() -> None:
             adapter_registry.get().insert(0, _adapter)
         required = [a for a in adapter_registry.get() if a.required]
         categories = {a.category for a in adapter_registry.get()}
-        await dump.yaml(
-            {cat: None for cat in categories} | {a.category: a.name for a in required},
-            adapter_settings_path,
-            sort_keys=True,
+        adapter_settings_path.write_bytes(
+            yaml_encode(
+                {cat: None for cat in categories}
+                | {a.category: a.name for a in required},
+                sort_keys=True,
+            )
         )
-    _adapters = await load.yaml(adapter_settings_path)
+    _adapters = yaml_decode(adapter_settings_path.read_text())
     _adapters.update(
         {
             a.category: None
@@ -132,7 +131,7 @@ async def register_adapters() -> None:
             if a.category not in _adapters
         }
     )
-    await dump.yaml(_adapters, adapter_settings_path, sort_keys=True)
+    adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
     _enabled_adapters = {a: m for a, m in _adapters.items() if m}
     for a in [
         a for a in adapter_registry.get() if _enabled_adapters.get(a.category) == a.name
@@ -142,7 +141,7 @@ async def register_adapters() -> None:
         adapters_init = _adapters_path / "__init__.py"
         init_all = []
         init_all.extend([a.category for a in adapter_registry.get() if a.enabled])
-        with open(adapters_init, "w") as f:
+        with adapters_init.open("w") as f:
             for adapter in [a for a in adapter_registry.get() if a.enabled]:
                 if adapter.pkg == _pkg:
                     f.write(f"from . import {adapter.category}\n")

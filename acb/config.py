@@ -8,12 +8,12 @@ from pathlib import Path
 
 import nest_asyncio
 import secrets
-from acb.adapters import adapter_registry
-from acb.adapters import load_adapter
-from acb.adapters import settings_path
 from acb import tmp_path
 from acb.actions.encode import dump
 from acb.actions.encode import load
+from acb.adapters import adapter_registry
+from acb.adapters import load_adapter
+from acb.adapters import settings_path
 from acb.depends import depends
 from aiopath import AsyncPath
 from inflection import titleize
@@ -41,7 +41,7 @@ async def init_app() -> None:
     for path in (
         tmp_path,
         _secrets_path,
-        settings_path,
+        AsyncPath(settings_path),
     ):
         await path.mkdir(exist_ok=True)
 
@@ -167,7 +167,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         global project, app_name, debug
         if self.adapter_name == "secrets":
             return {}
-        yml_path = settings_path / f"{self.adapter_name}.yml"
+        yml_path = AsyncPath(settings_path / f"{self.adapter_name}.yml")
         if not await yml_path.exists() and not _deployed:
             dump_settings = {
                 name: info.default
@@ -225,6 +225,9 @@ class Settings(BaseModel):
         )
         build_settings = asyncio.run(build_settings)
         super().__init__(**build_settings)
+
+    def __getattr__(self, item: str) -> t.Any:
+        return super().__getattr__(item)  # type: ignore
 
     async def _settings_build_values(
         self,
@@ -294,11 +297,13 @@ class Config(BaseModel, extra="allow"):
     debug: t.Optional[Settings] = None
     app: t.Optional[Settings] = None
 
+    def __getattr__(self, item: str) -> t.Any:
+        return super().__getattr__(item)  # type: ignore
+
     def init(self) -> None:
         self.debug = DebugSettings()
         self.app = AppSettings()
 
 
 depends.set(Config)
-
 depends.get(Config).init()

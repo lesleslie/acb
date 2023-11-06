@@ -99,7 +99,8 @@ class Encode:
                 return await self.path.write_bytes(data)
             return data
 
-    def get_vars(self, frame: FrameType) -> tuple[str, t.Any]:
+    @staticmethod
+    def get_vars(frame: FrameType) -> tuple[str, t.Any]:
         code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
         pattern = r"await\s(\w+)\.(\w+)\("
         calling_method = search(pattern, code_context)

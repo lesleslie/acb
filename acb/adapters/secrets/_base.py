@@ -6,7 +6,7 @@ from acb.config import Settings
 
 
 class SecretsBaseSettings(Settings):
-    requires: list[str] = ["logger"]
+    requires: t.Optional[list[str]] = ["logger"]
 
 
 class SecretsBase(ABC):

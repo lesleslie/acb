@@ -1,4 +1,3 @@
-import asyncio
 from time import perf_counter
 
 from acb.adapters.logger import Logger
@@ -40,7 +39,7 @@ class App(AppBase):
     @depends.inject
     async def main(
         self, config: Config = depends(), logger: Logger = depends()  # type: ignore
-    ):
+    ) -> None:
         ...
 
         # put app main code here
@@ -49,4 +48,3 @@ class App(AppBase):
 depends.set(App)
 
 app = depends.get(App)
-asyncio.run(app.main())

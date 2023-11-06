@@ -16,7 +16,7 @@ class FtpdSettings(FtpdBaseSettings):
 
 class Ftpd(FtpdBase):
     @depends.inject
-    async def init(self, logger: Logger = depends()) -> None:
+    async def init(self, logger: Logger = depends()) -> None:  # type: ignore
         try:
             await listen(
                 "",
@@ -32,7 +32,7 @@ class Ftpd(FtpdBase):
             logger.info(f"FTP server started on port {self.config.ftpd.port}")
         except (OSError, Error) as exc:
             # close server?
-            raise SystemExit(f"\nError starting sftp server: {str(exc)}\n")
+            raise SystemExit(f"\nError starting sftp server: {exc}\n")
 
 
 depends.set(Ftpd)

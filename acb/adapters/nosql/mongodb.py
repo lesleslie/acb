@@ -1,0 +1,1 @@
+# placehold for mongodb adapter

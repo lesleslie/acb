@@ -171,7 +171,7 @@ depends.set(SqlModels)
 
 
 def primary_key_factory() -> str:
-    return ulid.new().str()
+    return ulid.new().str
 
 
 class SqlModel(SQLModel, arbitrary_types_allowed=True, extra="allow"):
@@ -186,15 +186,15 @@ class SqlModel(SQLModel, arbitrary_types_allowed=True, extra="allow"):
         return underscore(self.__name__)
 
     @depends.inject
-    async def save(self, sql: t.Type[SqlBase] = depends()) -> None:  # type: ignore
+    async def save(self, sql: SqlBase = depends()) -> None:  # type: ignore
         async with sql.get_session() as session:
             session.add(self)
             await session.commit()
 
     @depends.inject
-    async def delete(self, sql: t.Type[SqlBase] = depends()) -> None:  # type: ignore
+    async def delete(self, sql: SqlBase = depends()) -> None:  # type: ignore
         async with sql.get_session() as session:
-            session.delete(self)
+            await session.delete(self)
             await session.commit()
 
     @depends.inject
@@ -202,15 +202,17 @@ class SqlModel(SQLModel, arbitrary_types_allowed=True, extra="allow"):
         self,
         query: str,
         models: SqlModels = depends(),  # type: ignore
-        sql: t.Type[SqlBase] = depends(),  # type: ignore
+        sql: SqlBase = depends(),  # type: ignore
     ) -> t.Coroutine[t.Any, t.Any, ScalarResult[t.Any]]:
         async with sql.get_session() as session:
             pattern = r"\s(\w)(\w+)\."
-            models = [
+            query_models = [
                 getattr(models, m[0] + m[1])
                 for m in re.findall(pattern, query)
                 if m[0].isupper()
             ]
-            statement = select(self, *models).where(literal_eval(query))  # type: ignore
+            statement = select(self, *query_models).where(  # type: ignore
+                literal_eval(query)
+            )
             results = session.exec(statement)
             return results

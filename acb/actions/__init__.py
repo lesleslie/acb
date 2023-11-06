@@ -1,12 +1,15 @@
 from pathlib import Path
 
 from acb import Action
+from acb import base_path
 from acb import action_registry
 from aiopath import AsyncPath
 
 
 def register_actions() -> None:
-    _actions_path = Path.cwd() / "actions"
+    _actions_path = Path(base_path / "actions")
+    if not _actions_path.exists():
+        _actions_path = Path(__file__).parent
     _pkg = _actions_path.parent.name
     _actions = {
         a.stem: a
@@ -25,7 +28,7 @@ def register_actions() -> None:
         actions_init = _actions_path / "__init__.py"
         init_all = []
         init_all.extend([a.name for a in action_registry.get()])
-        with open(actions_init, "w") as f:
+        with actions_init.open("w") as f:
             for action in action_registry.get():
                 f.write(f"from {action.pkg}.actions import {action.name}\n")
             f.write(f"\n__all__: list[str] = {init_all!r}\n")
