@@ -36,15 +36,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
+    "autotyping",
+    "pyfiglet",
+    "pyyaml",
     "pdm",
     "ulid-py",
-    "pdm-bump",
-    "pyfiglet",
-    "autotyping",
+    "pre-commit",
     "pytest",
     "alive-progress",
-    "pre-commit",
-    "pyyaml",
+    "pdm-bump",
 ]
 
 [tool.refurb]
@@ -80,10 +80,15 @@ reportPrivateUsage = "warning"
 pythonVersion = "3.12"
 pythonPlatform = "Darwin"
 
+[tool.codespell]
+skip = "*/data/*"
+quiet-level = 3
+ignore-words-list = "crate,uptodate"
+
 [project]
 name = "acb"
 version = "0.3.6"
-description = "Asynchronous Code Base"
+description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.1.2",
     "arrow>=1.3.0",
@@ -160,7 +165,6 @@ sql = [
     "sqlalchemy-utils>=0.41.1",
     "mysqlclient>=2.2.0",
     "asyncmy>=0.2.8",
-    "sqlmodel @ git+https://github.com/honglei/sqlmodel.git",
 ]
 nosql = [
     "google-cloud-firestore>=2.12.0",
