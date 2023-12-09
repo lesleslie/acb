@@ -83,7 +83,7 @@ class Secrets(SecretsBase):
             version = await self.client.create_secret(request)
             request = AddSecretVersionRequest(
                 parent=version.name,
-                payload={"data": f"{value}".encode()},
+                payload={"data": value.encode()},
             )
             await self.client.add_secret_version(request)
             self.logger.debug(f"Created secret - {name}")
@@ -92,7 +92,7 @@ class Secrets(SecretsBase):
         secret = self.client.secret_path(self.project, name)
         request = AddSecretVersionRequest(
             parent=secret,
-            payload={"data": f"{value}".encode()},
+            payload={"data": value.encode()},
         )
         await self.client.add_secret_version(request)
         self.logger.debug(f"Updated secret - {name}")
@@ -111,7 +111,9 @@ class Secrets(SecretsBase):
             filterwarnings("ignore", category=Warning)
             creds, _ = default()
         self.creds = creds
-        self.client = SecretManagerServiceAsyncClient(credentials=self.creds)
+        self.client = SecretManagerServiceAsyncClient(
+            credentials=self.creds  # type: ignore
+        )
         self.authed_session = AuthorizedSession(self.creds)
 
 

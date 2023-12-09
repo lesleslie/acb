@@ -23,12 +23,12 @@ def yaml_encode(
     sort_keys: bool = False,
 ) -> bytes:
     dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
-
     dumper.add_representer(
         type(None),
-        lambda dumper, value: dumper.represent_scalar("tag:yaml.org,2002:null", ""),
+        lambda dumper, value: dumper.represent_scalar(  # type: ignore
+            "tag:yaml.org,2002:null", ""
+        ),
     )
-
     return yaml.dump_all(
         [
             msgspec.yaml._to_builtins(
@@ -38,7 +38,7 @@ def yaml_encode(
             )
         ],
         encoding="utf-8",
-        Dumper=dumper,
+        Dumper=dumper,  # type: ignore
         allow_unicode=True,
         sort_keys=sort_keys,
     )

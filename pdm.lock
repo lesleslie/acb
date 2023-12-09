@@ -5,7 +5,7 @@
 groups = ["default", "storage", "cache", "dev", "requests", "sql", "dns", "secrets", "nosql", "email", "demo", "ftp"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:e3a392e0732f3e50c89c2ecd3ae42db72d1e5a0ed416700c1a0aed3693cfe8e1"
+content_hash = "sha256:f512dacc4aa104a3a703890a2242b92681db8993fe39a791426e35e6701216d7"
 
 [[package]]
 name = "about-time"
@@ -709,25 +709,25 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.15"
+version = "0.7.16"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
-    "acb>=0.3.4",
+    "acb>=0.3.5",
     "aioconsole>=0.6.2",
-    "aiopath>=0.7.5",
+    "aiopath>=0.7.7",
     "autotyping>=23.3.0",
     "click>=8.1.7",
     "inflection>=0.5.1",
     "pdm-bump>=0.7.3",
-    "pdm>=2.10.0",
-    "pre-commit>=3.4.0",
-    "pydantic>=2.4.0",
-    "pytest>=7.4.2",
+    "pdm>=2.10.4",
+    "pre-commit>=3.5.0",
+    "pydantic>=2.5.2",
+    "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.15-py3-none-any.whl", hash = "sha256:313dce749d105683e204e6a1d25998ef267819846ab32885a17ee2a63e1006a2"},
-    {file = "crackerjack-0.7.15.tar.gz", hash = "sha256:45aa6fe31f063536efcff05c0f1fbeb035837fb09ffb225400ec2a502d58fbeb"},
+    {file = "crackerjack-0.7.16-py3-none-any.whl", hash = "sha256:6f125c89ec86ad62fa807eb9fbbc50a79d53418cd13ca28243474980f8d986aa"},
+    {file = "crackerjack-0.7.16.tar.gz", hash = "sha256:56316b9cfe5c894fabf4cd1b525135d207c953b24a6150c7fefb77e47de34a6d"},
 ]
 
 [[package]]
@@ -919,12 +919,12 @@ files = [
 
 [[package]]
 name = "fsspec"
-version = "2023.10.0"
+version = "2023.12.1"
 requires_python = ">=3.8"
 summary = "File-system specification"
 files = [
-    {file = "fsspec-2023.10.0-py3-none-any.whl", hash = "sha256:346a8f024efeb749d2a5fca7ba8854474b1ff9af7c3faaf636a4548781136529"},
-    {file = "fsspec-2023.10.0.tar.gz", hash = "sha256:330c66757591df346ad3091a53bd907e15348c2ba17d63fd54f5c39c4457d2a5"},
+    {file = "fsspec-2023.12.1-py3-none-any.whl", hash = "sha256:6271f1d3075a378bfe432f6f42bf7e1d2a6ba74f78dd9b512385474c579146a0"},
+    {file = "fsspec-2023.12.1.tar.gz", hash = "sha256:c4da01a35ac65c853f833e43f67802c25213f560820d54ddf248f92eddd5e990"},
 ]
 
 [[package]]
@@ -937,21 +937,21 @@ files = [
 
 [[package]]
 name = "gcsfs"
-version = "2023.10.0"
+version = "2023.12.1"
 requires_python = ">=3.8"
 summary = "Convenient Filesystem interface over GCS"
 dependencies = [
     "aiohttp!=4.0.0a0,!=4.0.0a1",
     "decorator>4.1.2",
-    "fsspec==2023.10.0",
+    "fsspec==2023.12.1",
     "google-auth-oauthlib",
     "google-auth>=1.2",
     "google-cloud-storage",
     "requests",
 ]
 files = [
-    {file = "gcsfs-2023.10.0-py2.py3-none-any.whl", hash = "sha256:f3ad41652a596ca56e44778e041f428d022add3eff62b97a47302014affd270f"},
-    {file = "gcsfs-2023.10.0.tar.gz", hash = "sha256:1915e6d766faad9a295e815b13c59966b925a274108b8a56f673623bf4aef83f"},
+    {file = "gcsfs-2023.12.1-py2.py3-none-any.whl", hash = "sha256:c1ccfa9f84dca019cd334aaf7eb03cc1dc13c296717346927a9fd40255348f9c"},
+    {file = "gcsfs-2023.12.1.tar.gz", hash = "sha256:e86cc583fdf879e5ea2f87bab61738d26ec7e8972762a1e6c6ab758b1e1af99c"},
 ]
 
 [[package]]
@@ -1035,15 +1035,15 @@ files = [
 
 [[package]]
 name = "google-cloud-dns"
-version = "0.34.2"
+version = "0.35.0"
 requires_python = ">=3.7"
 summary = "Google Cloud DNS API client library"
 dependencies = [
     "google-cloud-core<3.0dev,>=1.4.4",
 ]
 files = [
-    {file = "google-cloud-dns-0.34.2.tar.gz", hash = "sha256:fc61bd8cf070e87aacb62762eb2a5af1550706c98881d7aeaebaeed11280afd3"},
-    {file = "google_cloud_dns-0.34.2-py2.py3-none-any.whl", hash = "sha256:c943867f59dd3557a3304abdd2b083ff788f2eee7f83b45ca8a9d24179dfbb5c"},
+    {file = "google-cloud-dns-0.35.0.tar.gz", hash = "sha256:0ac44da9eb0fa0b1229513cd888074abd0211992c4042300afd1c16d41474553"},
+    {file = "google_cloud_dns-0.35.0-py2.py3-none-any.whl", hash = "sha256:305e046bd12a0661da050b45682bea0d4089bf39d4f3ea44a8b818961e1c150c"},
 ]
 
 [[package]]
@@ -1065,19 +1065,18 @@ files = [
 
 [[package]]
 name = "google-cloud-secret-manager"
-version = "2.16.4"
+version = "2.17.0"
 requires_python = ">=3.7"
 summary = "Google Cloud Secret Manager API client library"
 dependencies = [
     "google-api-core[grpc]!=2.0.*,!=2.1.*,!=2.10.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*,!=2.8.*,!=2.9.*,<3.0.0dev,>=1.34.0",
     "grpc-google-iam-v1<1.0.0dev,>=0.12.4",
-    "proto-plus<2.0.0dev,>=1.22.0",
-    "proto-plus<2.0.0dev,>=1.22.2; python_version >= \"3.11\"",
+    "proto-plus<2.0.0dev,>=1.22.3",
     "protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.19.5",
 ]
 files = [
-    {file = "google-cloud-secret-manager-2.16.4.tar.gz", hash = "sha256:371dc72f9145af323e8a813c8e50380e6ac4bd6a5dbcd42dcf3162d8f37e5080"},
-    {file = "google_cloud_secret_manager-2.16.4-py2.py3-none-any.whl", hash = "sha256:5031c45dd84dc584d91ee0baae2bbd5df6710efe0c42719ee370a3ab62aaf618"},
+    {file = "google-cloud-secret-manager-2.17.0.tar.gz", hash = "sha256:8254e2960c06a8dc91aeac3c894afba0893a674582f0e0ecfc22f894e6173c2f"},
+    {file = "google_cloud_secret_manager-2.17.0-py2.py3-none-any.whl", hash = "sha256:2bf58be569710773f0757d7a788e2860767aa1c148a5255e53b228da3fbcf446"},
 ]
 
 [[package]]
@@ -1769,7 +1768,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.10.0"
+version = "2.10.4"
 requires_python = ">=3.7"
 summary = "A modern Python package and dependency manager supporting the latest PEP standards"
 dependencies = [
@@ -1792,8 +1791,8 @@ dependencies = [
     "virtualenv>=20",
 ]
 files = [
-    {file = "pdm-2.10.0-py3-none-any.whl", hash = "sha256:2486cb9e66d4a3e3723fd5a8178ebb285d50f8448ecc165e1a2e80124ff066a9"},
-    {file = "pdm-2.10.0.tar.gz", hash = "sha256:ce2249595af9f61b0926a0899632df49b1c711261e8056a4fae14b53f93d9193"},
+    {file = "pdm-2.10.4-py3-none-any.whl", hash = "sha256:b7caf7d94435440b1d5e19789c4bd651f994ada254fee71c7274629d408a3764"},
+    {file = "pdm-2.10.4.tar.gz", hash = "sha256:6dfd9d4cb59043edecb2d0b47d208e55d89d333ba7197deb05cca2dfbc7a4bfb"},
 ]
 
 [[package]]
@@ -2120,7 +2119,7 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "7.4.2"
+version = "7.4.3"
 requires_python = ">=3.7"
 summary = "pytest: simple powerful testing with Python"
 dependencies = [
@@ -2130,8 +2129,8 @@ dependencies = [
     "pluggy<2.0,>=0.12",
 ]
 files = [
-    {file = "pytest-7.4.2-py3-none-any.whl", hash = "sha256:1d881c6124e08ff0a1bb75ba3ec0bfd8b5354a01c194ddd5a0a870a48d99b002"},
-    {file = "pytest-7.4.2.tar.gz", hash = "sha256:a766259cfab564a2ad52cb1aae1b881a75c3eb7e34ca3779697c23ed47c47069"},
+    {file = "pytest-7.4.3-py3-none-any.whl", hash = "sha256:0d009c083ea859a71b76adf7c1d502e4bc170b80a8ef002da5806527b9591fac"},
+    {file = "pytest-7.4.3.tar.gz", hash = "sha256:d989d136982de4e3b29dabcc838ad581c64e8ed52c11fbe86ddebd9da0818cd5"},
 ]
 
 [[package]]
@@ -2284,17 +2283,17 @@ files = [
 
 [[package]]
 name = "s3fs"
-version = "2023.10.0"
+version = "2023.12.1"
 requires_python = ">= 3.8"
 summary = "Convenient Filesystem interface over S3"
 dependencies = [
-    "aiobotocore~=2.7.0",
+    "aiobotocore<3.0.0,>=2.5.4",
     "aiohttp!=4.0.0a0,!=4.0.0a1",
-    "fsspec==2023.10.0",
+    "fsspec==2023.12.1",
 ]
 files = [
-    {file = "s3fs-2023.10.0-py3-none-any.whl", hash = "sha256:3df68ff4f5f70c3338219a66df92e91fd15c6b78d0f559e57f617dfdd49feb41"},
-    {file = "s3fs-2023.10.0.tar.gz", hash = "sha256:c40f238ccc9fefff3f6d09d4b5762abd6c913ba42e1a328976b54d038901b835"},
+    {file = "s3fs-2023.12.1-py3-none-any.whl", hash = "sha256:ed0b7df8cc20a2b5cefe607b1cf4e860d37c5ca4ac2d68f55464805d75d18710"},
+    {file = "s3fs-2023.12.1.tar.gz", hash = "sha256:63e429bb6b5e814568cacd3f2a8551fc35493e8c418ddfcb44e6f86aa8696ccd"},
 ]
 
 [[package]]
@@ -2370,6 +2369,20 @@ dependencies = [
 files = [
     {file = "SQLAlchemy-Utils-0.41.1.tar.gz", hash = "sha256:a2181bff01eeb84479e38571d2c0718eb52042f9afd8c194d0d02877e84b7d74"},
     {file = "SQLAlchemy_Utils-0.41.1-py3-none-any.whl", hash = "sha256:6c96b0768ea3f15c0dc56b363d386138c562752b84f647fb8d31a2223aaab801"},
+]
+
+[[package]]
+name = "sqlmodel"
+version = "0.0.14"
+requires_python = ">=3.7,<4.0"
+summary = "SQLModel, SQL databases in Python, designed for simplicity, compatibility, and robustness."
+dependencies = [
+    "SQLAlchemy<2.1.0,>=2.0.0",
+    "pydantic<3.0.0,>=1.10.13",
+]
+files = [
+    {file = "sqlmodel-0.0.14-py3-none-any.whl", hash = "sha256:accea3ff5d878e41ac439b11e78613ed61ce300cfcb860e87a2d73d4884cbee4"},
+    {file = "sqlmodel-0.0.14.tar.gz", hash = "sha256:0bff8fc94af86b44925aa813f56cf6aabdd7f156b73259f2f60692c6a64ac90e"},
 ]
 
 [[package]]
