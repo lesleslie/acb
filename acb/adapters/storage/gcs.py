@@ -32,15 +32,13 @@ class Storage(StorageBase):
             return Client(project=config.app.project)
 
     def set_cors(self, bucket_name: str, cors_config: str) -> None:
-        storage_client = self.get_client()
-        bucket = storage_client.get_bucket(bucket_name)
+        bucket = self.get_client().get_bucket(bucket_name)
         bucket.cors = [self.config.storage.cors[cors_config]]
         bucket.patch()
         self.logger.debug(f"CORS policies for {bucket.name!r} bucket set")
 
     def remove_cors(self, bucket_name: str) -> None:
-        storage_client = self.get_client()
-        bucket = storage_client.get_bucket(bucket_name)
+        bucket = self.get_client().storage_client.get_bucket(bucket_name)
         bucket.cors = []
         bucket.patch()
         self.logger.debug(f"CORS policies for {bucket.name!r} bucket removed")
