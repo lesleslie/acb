@@ -6,7 +6,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.17",
+    "crackerjack>=0.7.19",
 ]
 
 [tool.ruff]
@@ -36,14 +36,14 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "ulid-py",
-    "pytest",
-    "pyfiglet",
-    "pre-commit",
     "pyyaml",
-    "autotyping",
-    "alive-progress",
+    "pytest",
     "pdm",
+    "pre-commit",
+    "pyfiglet",
+    "ulid-py",
+    "alive-progress",
+    "autotyping",
     "pdm-bump",
 ]
 
@@ -55,9 +55,9 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
     "B404",
     "B113",
+    "B403",
     "B603",
 ]
 
@@ -87,7 +87,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.4.1"
+version = "0.4.2"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.1.2",
@@ -138,7 +138,7 @@ Repository = "https://github.com/lesleslie/acb"
 
 [project.optional-dependencies]
 cache = [
-    "cashews[redis]>=6.3.0",
+    "cashews[redis]>=6.4.0",
 ]
 storage = [
     "gcsfs>=2023.12.2.post1",
@@ -152,7 +152,7 @@ dns = [
 ]
 requests = [
     "httpx[http2]>=0.26.0",
-    "hishel>=0.0.20",
+    "hishel>=0.0.21",
 ]
 email = [
     "mailgun>=0.1.1",
@@ -161,7 +161,7 @@ secrets = [
     "google-cloud-secret-manager>=2.17.0",
 ]
 sql = [
-    "sqlalchemy>=2.0.24",
+    "sqlalchemy>=2.0.25",
     "sqlalchemy-utils>=0.41.1",
     "mysqlclient>=2.2.1",
     "asyncmy>=0.2.9",
@@ -172,10 +172,10 @@ nosql = [
     "motor>=3.3.2",
 ]
 demo = [
-    "faker>=21.0.0",
+    "faker>=22.0.0",
 ]
 ftp = [
-    "aioftp>=0.21.4",
+    "aioftp>=0.22.3",
     "asyncssh>=2.14.2",
 ]
 

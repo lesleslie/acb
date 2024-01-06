@@ -5,7 +5,7 @@
 groups = ["default", "storage", "cache", "dev", "requests", "sql", "dns", "secrets", "nosql", "email", "demo", "ftp"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:e9554b7a9744b9d91516814da0c68fbff2d459d540b621ed4ff8c2b0403e1236"
+content_hash = "sha256:e76cbe4b35c95b410ea7204afb61e0e7cc17642026446e7de9e6a88e428aaf04"
 
 [[package]]
 name = "about-time"
@@ -76,12 +76,12 @@ files = [
 
 [[package]]
 name = "aioftp"
-version = "0.21.4"
-requires_python = ">=3.7"
+version = "0.22.3"
+requires_python = ">=3.8"
 summary = "ftp client/server for asyncio"
 files = [
-    {file = "aioftp-0.21.4-py3-none-any.whl", hash = "sha256:ad7c1136754799808fca890ea41ea7ec8fcd1bb5167a1f46e04db15267242324"},
-    {file = "aioftp-0.21.4.tar.gz", hash = "sha256:28bb26d4616c7c381a1543281f987051b8d2d1d5bfaf023d9e7e2c2105c51bb9"},
+    {file = "aioftp-0.22.3-py3-none-any.whl", hash = "sha256:93d17d5d3b8033570f2dfee013172d49e52323437925120ec87190539113ebd0"},
+    {file = "aioftp-0.22.3.tar.gz", hash = "sha256:baa2b13186aa01622e4b82f27c2f48f4dafb48e457a6b18fcda99a925e0dc270"},
 ]
 
 [[package]]
@@ -489,27 +489,27 @@ files = [
 
 [[package]]
 name = "cashews"
-version = "6.3.0"
-requires_python = ">=3.7"
+version = "6.4.0"
+requires_python = ">=3.8"
 summary = "cache tools with async power"
 files = [
-    {file = "cashews-6.3.0-py3-none-any.whl", hash = "sha256:ed74dbd445678b6aa74318df8189a2d0c6f9f72715f87436e73be23e371c2a28"},
-    {file = "cashews-6.3.0.tar.gz", hash = "sha256:33108a793734a3cceb74037b58719a50e1f6e95d598ea71476e79e21130df90e"},
+    {file = "cashews-6.4.0-py3-none-any.whl", hash = "sha256:6b7121a0629a17aa72d22bf4007462a9fbcdcd418b8ec1083f2806950c265e58"},
+    {file = "cashews-6.4.0.tar.gz", hash = "sha256:0f5ec89b4e8d2944e9403c5fc24fb2947003d279e338de40f2fd3ebc9145c4e3"},
 ]
 
 [[package]]
 name = "cashews"
-version = "6.3.0"
+version = "6.4.0"
 extras = ["redis"]
-requires_python = ">=3.7"
+requires_python = ">=3.8"
 summary = "cache tools with async power"
 dependencies = [
-    "cashews==6.3.0",
-    "redis>=4.3.1",
+    "cashews==6.4.0",
+    "redis!=5.0.1,>=4.3.1",
 ]
 files = [
-    {file = "cashews-6.3.0-py3-none-any.whl", hash = "sha256:ed74dbd445678b6aa74318df8189a2d0c6f9f72715f87436e73be23e371c2a28"},
-    {file = "cashews-6.3.0.tar.gz", hash = "sha256:33108a793734a3cceb74037b58719a50e1f6e95d598ea71476e79e21130df90e"},
+    {file = "cashews-6.4.0-py3-none-any.whl", hash = "sha256:6b7121a0629a17aa72d22bf4007462a9fbcdcd418b8ec1083f2806950c265e58"},
+    {file = "cashews-6.4.0.tar.gz", hash = "sha256:0f5ec89b4e8d2944e9403c5fc24fb2947003d279e338de40f2fd3ebc9145c4e3"},
 ]
 
 [[package]]
@@ -714,7 +714,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.17"
+version = "0.7.19"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
@@ -731,8 +731,8 @@ dependencies = [
     "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.17-py3-none-any.whl", hash = "sha256:e4783a3a183583d5190a0e8592954f6c5cca1679506f0288db274a884535de23"},
-    {file = "crackerjack-0.7.17.tar.gz", hash = "sha256:86b0d9f011a477f220da4b1cdf192a11a1b06369141b1a36ae84c17128e86436"},
+    {file = "crackerjack-0.7.19-py3-none-any.whl", hash = "sha256:ac5be88880f5c5bd0a78d250a472f7456a4149e215a05529bf076839e051d1ac"},
+    {file = "crackerjack-0.7.19.tar.gz", hash = "sha256:fbdff29a3d5786813673cc0c61a8e6c0806117efb19ca8b151663d3ce82d8b25"},
 ]
 
 [[package]]
@@ -832,15 +832,15 @@ files = [
 
 [[package]]
 name = "faker"
-version = "21.0.0"
+version = "22.0.0"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
     "python-dateutil>=2.4",
 ]
 files = [
-    {file = "Faker-21.0.0-py3-none-any.whl", hash = "sha256:ff61cca42547795bee8a11319792a8fee6d0f0cd191e831f7f3050c5851fcd8a"},
-    {file = "Faker-21.0.0.tar.gz", hash = "sha256:2d8a350e952225a145307d7461881c44a1c9320e90fbe8bd903d5947f133f3ec"},
+    {file = "Faker-22.0.0-py3-none-any.whl", hash = "sha256:9c22c0a734ca01c6e4f2259eab5dab9081905a9d67b27272aea5c9feeb5a3789"},
+    {file = "Faker-22.0.0.tar.gz", hash = "sha256:1d5dc0a75da7bc40741ee4c84d99dc087b97bd086d4222ad06ac4dd2219bcf3f"},
 ]
 
 [[package]]
@@ -1298,15 +1298,15 @@ files = [
 
 [[package]]
 name = "hishel"
-version = "0.0.20"
+version = "0.0.21"
 requires_python = ">=3.8"
 summary = "Persistent cache implementation for httpx and httpcore"
 dependencies = [
     "httpx>=0.22.0",
 ]
 files = [
-    {file = "hishel-0.0.20-py3-none-any.whl", hash = "sha256:a08caeb393602af7844d559fc78448c6825336368fb47136e014c4367af6b95e"},
-    {file = "hishel-0.0.20.tar.gz", hash = "sha256:74f7cfcf0a7c9ae1cf1dd5a876fc3024de281693b476c264aa41a6a8a7277265"},
+    {file = "hishel-0.0.21-py3-none-any.whl", hash = "sha256:2347180fb2396700f0616cdfd4bb9d04ba0c543694d19f2d0156226dfa5a511d"},
+    {file = "hishel-0.0.21.tar.gz", hash = "sha256:62de30930e7fc02551d17d0f653f6e79499eaeffe32be9e36664ea7e0c0b82bd"},
 ]
 
 [[package]]
@@ -2359,24 +2359,24 @@ files = [
 
 [[package]]
 name = "sqlalchemy"
-version = "2.0.24"
+version = "2.0.25"
 requires_python = ">=3.7"
 summary = "Database Abstraction Library"
 dependencies = [
     "greenlet!=0.4.17; platform_machine == \"win32\" or platform_machine == \"WIN32\" or platform_machine == \"AMD64\" or platform_machine == \"amd64\" or platform_machine == \"x86_64\" or platform_machine == \"ppc64le\" or platform_machine == \"aarch64\"",
-    "typing-extensions>=4.2.0",
+    "typing-extensions>=4.6.0",
 ]
 files = [
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:9f992e0f916201731993eab8502912878f02287d9f765ef843677ff118d0e0b1"},
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:2587e108463cc2e5b45a896b2e7cc8659a517038026922a758bde009271aed11"},
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0bb7cedcddffca98c40bb0becd3423e293d1fef442b869da40843d751785beb3"},
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:83fa6df0e035689df89ff77a46bf8738696785d3156c2c61494acdcddc75c69d"},
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:cc889fda484d54d0b31feec409406267616536d048a450fc46943e152700bb79"},
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:57ef6f2cb8b09a042d0dbeaa46a30f2df5dd1e1eb889ba258b0d5d7d6011b81c"},
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-win32.whl", hash = "sha256:ea490564435b5b204d8154f0e18387b499ea3cedc1e6af3b3a2ab18291d85aa7"},
-    {file = "SQLAlchemy-2.0.24-cp312-cp312-win_amd64.whl", hash = "sha256:ccfd336f96d4c9bbab0309f2a565bf15c468c2d8b2d277a32f89c5940f71fcf9"},
-    {file = "SQLAlchemy-2.0.24-py3-none-any.whl", hash = "sha256:8f358f5cfce04417b6ff738748ca4806fe3d3ae8040fb4e6a0c9a6973ccf9b6e"},
-    {file = "SQLAlchemy-2.0.24.tar.gz", hash = "sha256:6db97656fd3fe3f7e5b077f12fa6adb5feb6e0b567a3e99f47ecf5f7ea0a09e3"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:0dacf67aee53b16f365c589ce72e766efaabd2b145f9de7c917777b575e3659d"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:b801154027107461ee992ff4b5c09aa7cc6ec91ddfe50d02bca344918c3265c6"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:59a21853f5daeb50412d459cfb13cb82c089ad4c04ec208cd14dddd99fc23b39"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:29049e2c299b5ace92cbed0c1610a7a236f3baf4c6b66eb9547c01179f638ec5"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:b64b183d610b424a160b0d4d880995e935208fc043d0302dd29fee32d1ee3f95"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:4f7a7d7fcc675d3d85fbf3b3828ecd5990b8d61bd6de3f1b260080b3beccf215"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-win32.whl", hash = "sha256:cf18ff7fc9941b8fc23437cc3e68ed4ebeff3599eec6ef5eebf305f3d2e9a7c2"},
+    {file = "SQLAlchemy-2.0.25-cp312-cp312-win_amd64.whl", hash = "sha256:91f7d9d1c4dd1f4f6e092874c128c11165eafcf7c963128f79e28f8445de82d5"},
+    {file = "SQLAlchemy-2.0.25-py3-none-any.whl", hash = "sha256:a86b4240e67d4753dc3092d9511886795b3c2852abe599cffe108952f7af7ac3"},
+    {file = "SQLAlchemy-2.0.25.tar.gz", hash = "sha256:a2c69a7664fb2d54b8682dd774c3b54f67f84fa123cf84dda2a5f40dcaa04e08"},
 ]
 
 [[package]]
