@@ -5,7 +5,7 @@
 groups = ["default", "storage", "cache", "dev", "requests", "sql", "dns", "secrets", "nosql", "email", "demo", "ftp"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:e76cbe4b35c95b410ea7204afb61e0e7cc17642026446e7de9e6a88e428aaf04"
+content_hash = "sha256:dc2f8145ad715f03624a2164268aaee25eb13f79e295246a3a90164c0a90fc7c"
 
 [[package]]
 name = "about-time"
@@ -943,14 +943,6 @@ summary = "File-system specification"
 files = [
     {file = "fsspec-2023.12.2-py3-none-any.whl", hash = "sha256:d800d87f72189a745fa3d6b033b9dc4a34ad069f60ca60b943a63599f5501960"},
     {file = "fsspec-2023.12.2.tar.gz", hash = "sha256:8548d39e8810b59c38014934f6b31e57f40c1b20f911f4cc2b85389c7e9bf0cb"},
-]
-
-[[package]]
-name = "fusepy"
-version = "3.0.1"
-summary = "Simple ctypes bindings for FUSE"
-files = [
-    {file = "fusepy-3.0.1.tar.gz", hash = "sha256:72ff783ec2f43de3ab394e3f7457605bf04c8cf288a2f4068b4cde141d4ee6bd"},
 ]
 
 [[package]]
