@@ -19,6 +19,7 @@ from aioconsole import ainput
 from aioconsole import aprint
 from inflection import underscore
 from pydantic import SecretStr
+from pydantic import BaseModel
 from sqlalchemy import inspect
 from sqlalchemy import ScalarResult
 from sqlalchemy.engine import URL
@@ -156,7 +157,7 @@ class SqlBase:
                 debug(table_names)
 
 
-class SqlModels:
+class SqlModels(BaseModel):
     def __init__(self) -> None:
         models_path = base_path / "models.py"
         asyncio.run(models_path.touch(exist_ok=True))
