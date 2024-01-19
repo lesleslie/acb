@@ -49,4 +49,4 @@ class Requests(RequestsBase):
         )
 
 
-depends.set(Requests, Requests())
+depends.set(Requests)

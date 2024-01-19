@@ -34,13 +34,13 @@ def get_adapter(category: str) -> Adapter | None:
     return _adapter
 
 
-def install_required_adapters(adapter_settings: dict[str, t.Any]) -> None:
-    required = getattr(adapter_settings, "requires")
-    if isinstance(required, list) and len(required):
-        for adapter in required:
-            _adapter = get_adapter(adapter)
-            load_adapter(_adapter.category)
-            _adapter.required = True
+# def install_required_adapters(adapter_settings: dict[str, t.Any]) -> None:
+#     required = getattr(adapter_settings, "requires")
+#     if isinstance(required, list) and len(required):
+#         for adapter in required:
+#             _adapter = get_adapter(adapter)
+#             load_adapter(_adapter.category)
+#             _adapter.required = True
 
 
 def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
@@ -68,7 +68,7 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
             config = depends.get(Config)
             _adapter_settings = _adapter_settings_class()
             setattr(config, adapter_category, _adapter_settings)
-            install_required_adapters(_adapter_settings)
+            # install_required_adapters(_adapter_settings)
             asyncio.run(depends.get(_adapter_class).init())
             _adapter.installed = True
             if adapter_category != "logger":
@@ -87,25 +87,51 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
         warn(f"\n\nERROR: adapter {adapter_category!r} not found: {err}\n")
 
 
-def register_adapters() -> None:
-    _adapters_path = Path.cwd() / "adapters"
-    _pkg = _adapters_path.parent.name
-    for adapter, modules in {
+def path_adapters(path: Path) -> dict[str, list[Path]]:
+    return {
         a.stem: [m for m in a.rglob("*.py") if not m.name.startswith("_")]
-        for a in _adapters_path.iterdir()
+        for a in path.iterdir()
         if a.is_dir() and not a.name.startswith("__")
-    }.items():
-        modules = [
-            Adapter(name=m.stem, category=m.parent.stem, path=AsyncPath(m))
-            for m in modules
-        ]
-        current_adapter = next(
-            (a for a in adapter_registry.get() if a.category == adapter and a.enabled),
-            None,
+    }
+
+
+def create_adapter(path: Path, pkg: str) -> Adapter:
+    return Adapter(
+        name=path.stem, category=path.parent.stem, path=AsyncPath(path), pkg=pkg
+    )
+
+
+def extract_adapter_modules(
+    modules: list[Path], adapter: str, pkg: str
+) -> list[Adapter]:
+    adapter_modules = [create_adapter(p, pkg) for p in modules]
+    return [a for a in adapter_modules if a.category == adapter]
+
+
+def register_adapters() -> None:
+    _adapters_path = Path(currentframe().f_back.f_code.co_filename).parent
+    _pkg = _adapters_path.parent.name
+    pkg_adapter_paths = path_adapters(Path(base_path / "adapters"))
+    for adapter_name, modules in path_adapters(_adapters_path).items():
+        pkg_modules = extract_adapter_modules(
+            pkg_adapter_paths.get(adapter_name, []), adapter_name, base_path.name
         )
-        if current_adapter:
-            adapter_registry.get().remove(current_adapter)
-        adapter_registry.get().extend(modules)
+        modules = extract_adapter_modules(modules, adapter_name, _pkg)
+        # current_adapter_module = next(
+        #     (
+        #         a
+        #         for a in adapter_registry.get()
+        #         if a.category == adapter_name and a.enabled
+        #     ),
+        #     None,
+        # )
+        for module in modules:
+            if (
+                len([m for m in pkg_modules if m.name == module.name])
+                and base_path.stem != _pkg
+            ):
+                continue
+            adapter_registry.get().append(module)
     if not adapter_settings_path.exists():
         settings_path.mkdir(exist_ok=True)
         for i, adapter in enumerate(
@@ -137,17 +163,6 @@ def register_adapters() -> None:
         a for a in adapter_registry.get() if _enabled_adapters.get(a.category) == a.name
     ]:
         a.enabled = True
-    if _pkg != "acb":
-        adapters_init = _adapters_path / "__init__.py"
-        init_all = []
-        init_all.extend([a.category for a in adapter_registry.get() if a.enabled])
-        with adapters_init.open("w") as f:
-            for adapter in [a for a in adapter_registry.get() if a.enabled]:
-                if adapter.pkg == _pkg:
-                    f.write(f"from . import {adapter.category}\n")
-                else:
-                    f.write(f"from {adapter.pkg}.adapters import {adapter.category}\n")
-            f.write(f"\n__all__: list[str] = {init_all!r}\n")
 
 
 register_adapters()

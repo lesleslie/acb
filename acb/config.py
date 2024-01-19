@@ -7,7 +7,6 @@ from functools import cached_property
 from pathlib import Path
 
 import nest_asyncio
-import secrets
 from acb import tmp_path
 from acb.actions.encode import dump
 from acb.actions.encode import load
@@ -24,8 +23,8 @@ from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
-from secrets import token_bytes
 from secrets import token_urlsafe
+from secrets import token_bytes
 
 nest_asyncio.apply()
 
@@ -50,7 +49,7 @@ asyncio.run(init_app())
 
 
 def gen_password(size: int = 10) -> str:
-    return secrets.token_urlsafe(size)
+    return token_urlsafe(size)
 
 
 class PydanticBaseSettingsSource(ABC):
@@ -203,7 +202,6 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseModel):
-    requires: t.Optional[list[str]] = []
     loggers: t.Optional[list[str]] = []
 
     model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(  # type: ignore

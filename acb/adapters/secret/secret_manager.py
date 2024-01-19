@@ -18,7 +18,7 @@ from google.cloud.secretmanager_v1 import CreateSecretRequest
 from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
-from secrets import compare_digest
+from secret import compare_digest
 from ._base import SecretsBase
 from ._base import SecretsBaseSettings
 

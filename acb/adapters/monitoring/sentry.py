@@ -24,4 +24,4 @@ class Monitoring(MonitoringBase):
     ...
 
 
-depends.set(Monitoring, Monitoring())
+depends.set(Monitoring)

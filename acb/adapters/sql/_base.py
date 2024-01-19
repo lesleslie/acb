@@ -1,14 +1,17 @@
-import asyncio
-import re
+# import asyncio
+# import re
 import typing as t
-from ast import literal_eval
+
+# from ast import literal_eval
 from contextlib import asynccontextmanager
 from functools import cached_property
-from importlib import import_module
+
+# from importlib import import_module
 
 import nest_asyncio
 import ulid
-from acb import base_path
+
+# from acb import base_path
 from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import gen_password
@@ -19,9 +22,12 @@ from aioconsole import ainput
 from aioconsole import aprint
 from inflection import underscore
 from pydantic import SecretStr
-from pydantic import BaseModel
+from pydantic import ConfigDict
+
+# from pydantic import BaseModel
 from sqlalchemy import inspect
-from sqlalchemy import ScalarResult
+
+# from sqlalchemy import ScalarResult
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -32,7 +38,8 @@ from sqlalchemy_utils import create_database
 from sqlalchemy_utils import database_exists
 from sqlalchemy_utils import drop_database
 from sqlmodel import Field
-from sqlmodel import select
+
+# from sqlmodel import select
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -157,25 +164,26 @@ class SqlBase:
                 debug(table_names)
 
 
-class SqlModels(BaseModel):
-    def __init__(self) -> None:
-        models_path = base_path / "models.py"
-        asyncio.run(models_path.touch(exist_ok=True))
-        models = import_module(".".join(models_path.parts[-1:]).removesuffix(".py"))
-        for model in [
-            getattr(models, m.__name__) for m in dir(models) if isinstance(m, SQLModel)
-        ]:
-            setattr(self, model.__name__, model)
-
-
-depends.set(SqlModels)
+# class SqlModels(BaseModel):
+#     def __init__(self) -> None:
+#         models_path = base_path / "models.py"
+#         asyncio.run(models_path.touch(exist_ok=True))
+#         models = import_module(".".join(models_path.parts[-1:]).removesuffix(".py"))
+#         for model in [
+#             getattr(models, m.__name__) for m in dir(models) if isinstance(m, SQLModel)
+#         ]:
+#             setattr(self, model.__name__, model)
+#
+#
+# depends.set(SqlModels)
 
 
 def primary_key_factory() -> str:
     return ulid.new().str
 
 
-class SqlModel(SQLModel, arbitrary_types_allowed=True, extra="allow"):
+class SqlModel(SQLModel):
+    model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True, extra="allow")
     __table_args__ = {"extend_existing": True}
     __mapper_args__ = {"always_refresh": True}
     id: t.Optional[t.Any] = Field(
@@ -198,22 +206,22 @@ class SqlModel(SQLModel, arbitrary_types_allowed=True, extra="allow"):
             await session.delete(self)
             await session.commit()
 
-    @depends.inject
-    async def query(
-        self,
-        query: str,
-        models: SqlModels = depends(),  # type: ignore
-        sql: SqlBase = depends(),  # type: ignore
-    ) -> t.Coroutine[t.Any, t.Any, ScalarResult[t.Any]]:
-        async with sql.get_session() as session:
-            pattern = r"\s(\w)(\w+)\."
-            query_models = [
-                getattr(models, m[0] + m[1])
-                for m in re.findall(pattern, query)
-                if m[0].isupper()
-            ]
-            statement = select(self, *query_models).where(  # type: ignore
-                literal_eval(query)
-            )
-            results = session.exec(statement)
-            return results
+    # @depends.inject
+    # async def query(
+    #     self,
+    #     query: str,
+    #     models: Models = depends(),  # type: ignore
+    #     sql: SqlBase = depends(),  # type: ignore
+    # ) -> t.Coroutine[t.Any, t.Any, ScalarResult[t.Any]]:
+    #     async with sql.get_session() as session:
+    #         pattern = r"\s(\w)(\w+)\."
+    #         query_models = [
+    #             getattr(models, m[0] + m[1])
+    #             for m in re.findall(pattern, query)
+    #             if m[0].isupper()
+    #         ]
+    #         statement = select(self, *query_models).where(  # type: ignore
+    #             literal_eval(query)
+    #         )
+    #         results = session.exec(statement)
+    #         return results
