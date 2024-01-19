@@ -230,4 +230,4 @@ class Email(EmailBase):
         await self.create_routes()
 
 
-depends.set(Email, Email())
+depends.set(Email)

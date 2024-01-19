@@ -126,4 +126,4 @@ class Dns(DnsBase):
             self.logger.info("No DNS changes detected")
 
 
-depends.set(Dns, Dns())
+depends.set(Dns)

@@ -321,4 +321,4 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
             self.logger.info("Backups complete.")
 
 
-depends.set(SqlBackup, SqlBackup())
+depends.set(SqlBackup)

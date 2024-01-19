@@ -20,4 +20,4 @@ class Email(EmailBase):
     ...
 
 
-depends.set(Email, Email())
+depends.set(Email)

@@ -11,7 +11,7 @@ class AppBaseSettings(AppConfigSettings):
 
 class AppBase(ABC):
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore
 
     @abstractmethod
     async def init(self) -> None:
