@@ -8,13 +8,9 @@ from itertools import chain
 from pathlib import Path
 from re import search
 
-from sqlmodel import select
-from sqlmodel import SQLModel
-
 import arrow
 from acb.actions.encode import load
 from acb.adapters.logger import Logger
-from ._base import SqlModel
 from acb.adapters.sql import Sql
 from acb.adapters.storage import Storage
 from acb.config import Config
@@ -22,6 +18,8 @@ from acb.depends import depends
 from aiopath import AsyncPath
 from pydantic import BaseModel
 from pydantic import create_model
+from sqlmodel import select
+from sqlmodel import SQLModel
 
 
 # from contextlib import suppress
@@ -158,11 +156,11 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         return [
             m
             for m in SQLModel.metadata.schema  # type: ignore
-            if isinstance(m, type) and issubclass(m, SqlModel)
+            if isinstance(m, type) and issubclass(m, SQLModel)
         ]
 
     def get_mapped_classes(self) -> list[t.Any]:
-        self.add_subclasses(SqlModel)
+        self.add_subclasses(SQLModel)
         return self.models
 
     def add_subclasses(self, model: t.Any) -> None:
@@ -231,7 +229,7 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         if contents:
             loaded_model = create_model(
                 model,
-                __base__=SqlModel,
+                __base__=SQLModel,
                 __cls_kwargs__={"table": True},
                 **load.json(contents),
             ).save()  # type: ignore

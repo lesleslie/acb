@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.12.1  # a PDM release exposing the hook
+    rev: 2.12.2  # a PDM release exposing the hook
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -58,16 +58,16 @@ repos:
           - autotyping>=23.3.0
           - libcst>=0.4.9
   - repo: https://github.com/dosisod/refurb
-    rev: v1.27.0
+    rev: v1.28.0
     hooks:
       - id: refurb
   - repo: https://github.com/PyCQA/bandit
-    rev: '1.7.6'
+    rev: '1.7.7'
     hooks:
       - id: bandit
         args: ["-c", "pyproject.toml"]
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.347
+    rev: v1.1.348
     hooks:
       - id: pyright
   #  - repo: https://github.com/pdoc3/pdoc
