@@ -7,7 +7,6 @@ from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import gen_password
 from acb.config import Settings
-from acb.debug import debug
 from acb.depends import depends
 from aioconsole import ainput
 from aioconsole import aprint
@@ -27,7 +26,6 @@ from sqlalchemy_utils import drop_database
 # from sqlmodel import select
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 
 nest_asyncio.apply()
 
@@ -69,6 +67,9 @@ class SqlBaseSettings(Settings):
         self._url = URL.create(**url_kwargs)  # type: ignore
         async_url_kwargs = dict(drivername=self._async_driver)
         self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
+        self.engine_kwargs["echo"] = (  # type: ignore
+            "debug" if config.debug.sql else False
+        )
 
 
 class SqlBase:
@@ -136,15 +137,18 @@ class SqlBase:
 
     async def init(
         self,
-        demo: bool = False,
     ) -> None:
-        await self.create(demo)
+        await self.create()
         async with self.get_conn() as conn:
             # if self.config.debug.sql:
             #     sql = text("DROP TABLE IF EXISTS alembic_version")
             #     await conn.execute(sql)
-            self.logger.debug("Creating database tables...")
-            await conn.run_sync(SQLModel.metadata.create_all)
+            self.logger.info("Creating database tables...")
+            try:
+                await conn.run_sync(SQLModel.metadata.create_all)
+            except Exception as e:
+                self.logger.error(e)
             if self.config.debug.sql:
                 table_names = await conn.run_sync(self.get_table_names)
-                debug(table_names)
+                for name in table_names:
+                    self.logger.debug(f"Created table: {name}")

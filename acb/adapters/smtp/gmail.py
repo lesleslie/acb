@@ -16,8 +16,7 @@ class EmailSettings(EmailBaseSettings):
         ]
 
 
-class Email(EmailBase):
-    ...
+class Email(EmailBase): ...
 
 
 depends.set(Email)

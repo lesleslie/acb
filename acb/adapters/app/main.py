@@ -9,8 +9,7 @@ from ._base import AppBaseSettings
 main_start = perf_counter()
 
 
-class AppSettings(AppBaseSettings):
-    ...
+class AppSettings(AppBaseSettings): ...
 
 
 class App(AppBase):

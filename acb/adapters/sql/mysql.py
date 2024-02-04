@@ -16,13 +16,12 @@ class SqlSettings(SqlBaseSettings):
         super().__init__(config, **values)
         self.poolclass = NullPool
         self.pool_pre_ping = True
-        self.engine_kwargs = dict(
+        self.engine_kwargs = self.engine_kwargs | dict(  # type: ignore
             poolclass=self.poolclass, pool_pre_ping=self.pool_pre_ping
         )
 
 
-class Sql(SqlBase):
-    ...
+class Sql(SqlBase): ...
 
 
 depends.set(Sql)

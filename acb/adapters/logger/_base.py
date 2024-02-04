@@ -26,5 +26,4 @@ class LoggerBaseSettings(Settings):
     external_loggers: t.Optional[list[ExternalLogger]] = []
 
 
-class LoggerBase:
-    ...
+class LoggerBase: ...

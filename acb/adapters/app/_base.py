@@ -5,8 +5,7 @@ from acb.adapters.logger import Logger
 from acb.depends import depends
 
 
-class AppBaseSettings(AppConfigSettings):
-    ...
+class AppBaseSettings(AppConfigSettings): ...
 
 
 class AppBase(ABC):

@@ -8,8 +8,7 @@ from ._base import StorageBase
 from ._base import StorageBaseSettings
 
 
-class StorageSettings(StorageBaseSettings):
-    ...
+class StorageSettings(StorageBaseSettings): ...
 
 
 class Storage(StorageBase):

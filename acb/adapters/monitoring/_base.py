@@ -6,12 +6,10 @@ from acb.config import Settings
 from acb.depends import depends
 
 
-class MonitoringBaseSettings(Settings):
-    ...
+class MonitoringBaseSettings(Settings): ...
 
 
-class MonitoringBase:
-    ...
+class MonitoringBase: ...
 
 
 @depends.inject

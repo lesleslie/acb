@@ -6,5 +6,4 @@ class NosqlBaseSettings(Settings):
     requires: t.Optional[list[str]] = ["models"]
 
 
-class NosqlBase:
-    ...
+class NosqlBase: ...

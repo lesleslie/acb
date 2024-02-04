@@ -20,8 +20,7 @@ class MonitoringSettings(MonitoringBaseSettings):
         self.dsn = config.secrets.sentry_dsn
 
 
-class Monitoring(MonitoringBase):
-    ...
+class Monitoring(MonitoringBase): ...
 
 
 depends.set(Monitoring)

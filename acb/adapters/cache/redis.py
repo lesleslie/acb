@@ -8,6 +8,7 @@ from cashews.serialize import register_type
 from pydantic import RedisDsn
 from ._base import CacheBase
 from ._base import CacheBaseSettings
+from cashews.serialize import Serializer
 
 
 class CacheSettings(CacheBaseSettings):
@@ -41,7 +42,7 @@ class Cache(CacheBase):
             client_side=True,
             client_side_prefix=self.config.cache.prefix,
         )
-        register_type(t.Any, self.encoder, self.decoder)
+        register_type(Serializer, self.encoder, self.decoder)
 
 
 depends.set(Cache)

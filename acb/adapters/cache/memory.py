@@ -5,10 +5,10 @@ from cashews.serialize import register_type
 from msgspec import msgpack
 from ._base import CacheBase
 from ._base import CacheBaseSettings
+from cashews.serialize import Serializer
 
 
-class CacheSettings(CacheBaseSettings):
-    ...
+class CacheSettings(CacheBaseSettings): ...
 
 
 class Cache(CacheBase):
@@ -25,7 +25,7 @@ class Cache(CacheBase):
             "mem://",
             prefix=self.config.cache.prefix,
         )
-        register_type(t.Any, self.encoder, self.decoder)
+        register_type(Serializer, self.encoder, self.decoder)
 
 
 depends.set(Cache)

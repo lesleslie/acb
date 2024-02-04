@@ -15,8 +15,7 @@ from ._base import DnsBaseSettings
 from ._base import DnsRecord
 
 
-class DnsSettings(DnsBaseSettings):
-    ...
+class DnsSettings(DnsBaseSettings): ...
 
 
 class Dns(DnsBase):

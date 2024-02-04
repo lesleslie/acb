@@ -23,8 +23,7 @@ from ._base import SecretsBase
 from ._base import SecretsBaseSettings
 
 
-class SecretsSettings(SecretsBaseSettings):
-    ...
+class SecretsSettings(SecretsBaseSettings): ...
 
 
 class Secrets(SecretsBase):

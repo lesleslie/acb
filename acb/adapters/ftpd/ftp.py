@@ -8,8 +8,7 @@ from ._base import FtpdBase
 from ._base import FtpdBaseSettings
 
 
-class FtpdSettings(FtpdBaseSettings):
-    ...
+class FtpdSettings(FtpdBaseSettings): ...
 
 
 class Ftpd(FtpdBase):

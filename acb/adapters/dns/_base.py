@@ -21,8 +21,7 @@ class DnsRecord(BaseModel):
         self.name = f"mail.{config.app.domain}"
 
 
-class DnsBaseSettings(Settings):
-    ...
+class DnsBaseSettings(Settings): ...
 
 
 class DnsBase(ABC):
