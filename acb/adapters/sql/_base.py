@@ -44,18 +44,10 @@ class SqlBaseSettings(Settings):
     engine_kwargs: t.Optional[dict[str, t.Any]] = {}
     backup_enabled: bool = False
     backup_bucket: str | None = None
-    loggers: t.Optional[list[str]] = [
-        "sqlalchemy.engine",
-        "sqlalchemy.orm",
-        "sqlalchemy.pool",
-        "sqlalchemy.dialects",
-    ]
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        if self.backup_enabled:
-            self.requires.append("storage")
         url_kwargs = dict(
             drivername=self._driver,
             username=self.user.get_secret_value(),
@@ -67,9 +59,7 @@ class SqlBaseSettings(Settings):
         self._url = URL.create(**url_kwargs)  # type: ignore
         async_url_kwargs = dict(drivername=self._async_driver)
         self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
-        self.engine_kwargs["echo"] = (  # type: ignore
-            "debug" if config.debug.sql else False
-        )
+        # self.engine_kwargs["echo"] = config.debug.sql
 
 
 class SqlBase:

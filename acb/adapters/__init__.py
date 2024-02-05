@@ -3,7 +3,6 @@ import typing as t
 from importlib import import_module
 from inspect import currentframe
 from pathlib import Path
-from warnings import warn
 
 import nest_asyncio
 from acb import Adapter
@@ -47,44 +46,31 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
     _pkg_path = Path(currentframe().f_code.co_filename).parent
     if adapter_category is None:
         adapter_category = Path(currentframe().f_back.f_code.co_filename).parent.stem
-    try:
-        _adapter = get_adapter(adapter_category)
-        if _adapter and _adapter.enabled and not _adapter.installed:
-            _adapter_class_name = camelize(_adapter.category)
-            _adapter_settings_class_name = f"{_adapter_class_name}Settings"
-            _module = ".".join(_adapter.path.parts[-4:]).removesuffix(".py")
-            try:
-                _imported_module = import_module(_module)
-            except ImportError as err:
-                return warn(
-                    f"\n\nERROR: could not import {adapter_category!r} adapter: {err}\n"
-                )
-            _adapter_class = getattr(_imported_module, _adapter_class_name)
-            _adapter_settings_class = getattr(
-                _imported_module, _adapter_settings_class_name
-            )
-            from acb.config import Config
+    _adapter = get_adapter(adapter_category)
+    if _adapter and _adapter.enabled and not _adapter.installed:
+        _adapter_class_name = camelize(_adapter.category)
+        _adapter_settings_class_name = f"{_adapter_class_name}Settings"
+        _module = ".".join(_adapter.path.parts[-4:]).removesuffix(".py")
+        _imported_module = import_module(_module)
+        _adapter_class = getattr(_imported_module, _adapter_class_name)
+        _adapter_settings_class = getattr(
+            _imported_module, _adapter_settings_class_name
+        )
+        from acb.config import Config
 
-            config = depends.get(Config)
-            _adapter_settings = _adapter_settings_class()
-            setattr(config, adapter_category, _adapter_settings)
-            # install_required_adapters(_adapter_settings)
-            asyncio.run(depends.get(_adapter_class).init())
-            _adapter.installed = True
-            if adapter_category != "logger":
-                from acb.adapters.logger import Logger
+        config = depends.get(Config)
+        _adapter_settings = _adapter_settings_class()
+        setattr(config, adapter_category, _adapter_settings)
+        asyncio.run(depends.get(_adapter_class).init())
+        _adapter.installed = True
+        if adapter_category != "logger":
+            from acb.adapters.logger import Logger
 
-                logger = depends.get(Logger)
-            else:
-                logger = depends.get(_adapter_class)
-            logger.info(f"{_adapter_class_name} adapter loaded")
-            return _adapter_class
-    except KeyError as err:
-        if get_adapter(adapter_category).required:
-            raise SystemExit(
-                f"\n\nERROR: required adapter {adapter_category!r} not found: {err}\n"
-            )
-        warn(f"\n\nERROR: adapter {adapter_category!r} not found: {err}\n")
+            logger = depends.get(Logger)
+        else:
+            logger = depends.get(_adapter_class)
+        logger.info(f"{_adapter_class_name} adapter loaded")
+        return _adapter_class
 
 
 def path_adapters(path: Path) -> dict[str, list[Path]]:

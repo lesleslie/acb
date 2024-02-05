@@ -1,6 +1,7 @@
 import logging
 import sys
 import typing as t
+from inspect import currentframe
 
 # from acb import adapter_registry
 from acb.config import Config
@@ -8,7 +9,6 @@ from acb.config import debug
 from acb.depends import depends
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
-from ._base import ExternalLogger
 from ._base import LoggerBase
 from ._base import LoggerBaseSettings
 
@@ -58,9 +58,9 @@ class Logger(_Logger, LoggerBase):
     async def init(self, config: Config = depends()) -> None:
         def patch_name(record) -> str:  # type: ignore
             mod_parts = record["name"].split(".")
-            mod_name = ".".join(mod_parts)
-            if len(mod_name) > 3:
-                mod_name = ".".join(mod_parts[:-1])
+            mod_name = ".".join(mod_parts[:-1])
+            if len(mod_parts) > 3:
+                mod_name = ".".join(mod_parts[1:-1])
             return mod_name
 
         self.remove()
@@ -79,53 +79,27 @@ class Logger(_Logger, LoggerBase):
             self.error("error")
             self.critical("critical")
 
-    @staticmethod
-    @depends.inject
-    def register_external_loggers(
-        loggers: list[ExternalLogger], config: Config = depends()
-    ) -> None:
-        for external_logger in loggers:
-            _logger = logging.getLogger(external_logger.name)
-            _logger.handlers.clear()
-            _logger.handlers = [InterceptHandler(_logger.name)]
-            config.logger.external_loggers.append(external_logger)
-
 
 depends.set(Logger)
 
 
 class InterceptHandler(logging.Handler):
-    def __init__(self, logger_name: str) -> None:
-        super().__init__()
-        self.logger_name = logger_name
-
-    @depends.inject
-    def emit(
-        self, record: logging.LogRecord, logger: Logger = depends()  # type: ignore
-    ) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
+        logger = depends.get(Logger)
+        level: str | int
         try:
             level = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
-        frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__:
+
+        frame, depth = currentframe(), 0
+        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
             frame = frame.f_back
             depth += 1
-            # enabled_logger = next(
-            #     (
-            #         a
-            #         for a in adapter_registry.get()
-            #         if a.category == "logger" and a.enabled
-            #     ),
-            # )
-            # if enabled_logger and enabled_logger.name == "loguru":
-            logger.patch(
-                lambda record: record.update(name=self.logger_name)  # type: ignore
-            ).opt(
-                depth=depth,
-                exception=record.exc_info,
-            ).log(
-                level, record.getMessage()
-            )
-            # elif enabled_logger == "structlog":
-            #     ...
+
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
+
+logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
