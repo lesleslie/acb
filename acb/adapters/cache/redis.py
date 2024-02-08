@@ -43,6 +43,7 @@ class Cache(CacheBase):
             client_side_prefix=self.config.cache.prefix,
         )
         register_type(Serializer, self.encoder, self.decoder)
+        self.logger.debug(await self.ping())
 
 
 depends.set(Cache)

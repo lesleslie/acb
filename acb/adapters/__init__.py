@@ -1,5 +1,7 @@
 import asyncio
 import typing as t
+from abc import ABC
+from abc import abstractmethod
 from importlib import import_module
 from inspect import currentframe
 from pathlib import Path
@@ -33,13 +35,15 @@ def get_adapter(category: str) -> Adapter | None:
     return _adapter
 
 
-# def install_required_adapters(adapter_settings: dict[str, t.Any]) -> None:
-#     required = getattr(adapter_settings, "requires")
-#     if isinstance(required, list) and len(required):
-#         for adapter in required:
-#             _adapter = get_adapter(adapter)
-#             load_adapter(_adapter.category)
-#             _adapter.required = True
+def get_installed_adapters() -> list[Adapter]:
+    return [a for a in adapter_registry.get() if a.installed]
+
+
+def import_adapter(adapter_category: str) -> t.Any:
+    _adapter_path = get_adapter(adapter_category).path
+    _adapter_module = ".".join(_adapter_path.parts[-4:-1])
+    _adapter_class = getattr(import_module(_adapter_module), camelize(adapter_category))
+    return _adapter_class
 
 
 def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
@@ -64,9 +68,7 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
         asyncio.run(depends.get(_adapter_class).init())
         _adapter.installed = True
         if adapter_category != "logger":
-            from acb.adapters.logger import Logger
-
-            logger = depends.get(Logger)
+            logger = depends.get(import_adapter("logger"))
         else:
             logger = depends.get(_adapter_class)
         logger.info(f"{_adapter_class_name} adapter loaded")
@@ -81,42 +83,28 @@ def path_adapters(path: Path) -> dict[str, list[Path]]:
     }
 
 
-def create_adapter(path: Path, pkg: str) -> Adapter:
+def create_adapter(path: Path) -> Adapter:
+    pkg = path.parent.parent.parent.stem
     return Adapter(
-        name=path.stem, category=path.parent.stem, path=AsyncPath(path), pkg=pkg
+        name=path.stem,
+        category=path.parent.stem,
+        pkg=pkg,
+        path=AsyncPath(path),
     )
 
 
-def extract_adapter_modules(
-    modules: list[Path], adapter: str, pkg: str
-) -> list[Adapter]:
-    adapter_modules = [create_adapter(p, pkg) for p in modules]
+def extract_adapter_modules(modules: list[Path], adapter: str) -> list[Adapter]:
+    adapter_modules = [create_adapter(p) for p in modules]
     return [a for a in adapter_modules if a.category == adapter]
 
 
 def register_adapters() -> None:
-    _adapters_path = Path(currentframe().f_back.f_code.co_filename).parent
-    _pkg = _adapters_path.parent.name
-    pkg_adapter_paths = path_adapters(Path(base_path / "adapters"))
-    for adapter_name, modules in path_adapters(_adapters_path).items():
-        pkg_modules = extract_adapter_modules(
-            pkg_adapter_paths.get(adapter_name, []), adapter_name, base_path.name
-        )
-        modules = extract_adapter_modules(modules, adapter_name, _pkg)
-        # current_adapter_module = next(
-        #     (
-        #         a
-        #         for a in adapter_registry.get()
-        #         if a.category == adapter_name and a.enabled
-        #     ),
-        #     None,
-        # )
+    _adapters_path = Path(currentframe().f_back.f_code.co_filename).parent / "adapters"
+    base_adapters = path_adapters(Path(base_path / "adapters"))
+    pkg_adapters = path_adapters(_adapters_path)
+    for adapter_name, modules in (pkg_adapters | base_adapters).items():
+        modules = extract_adapter_modules(modules, adapter_name)
         for module in modules:
-            if (
-                len([m for m in pkg_modules if m.name == module.name])
-                and base_path.stem != _pkg
-            ):
-                continue
             adapter_registry.get().append(module)
     if not adapter_settings_path.exists():
         settings_path.mkdir(exist_ok=True)
@@ -151,4 +139,15 @@ def register_adapters() -> None:
         a.enabled = True
 
 
-register_adapters()
+from acb.config import Config  # noqa: E402
+
+Logger = import_adapter("logger")
+
+
+class AdapterBase(ABC):
+    config: Config = depends()
+    logger: Logger = depends()  # type: ignore
+
+    @abstractmethod
+    async def init(self) -> None:
+        raise NotImplementedError

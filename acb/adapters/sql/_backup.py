@@ -10,9 +10,7 @@ from re import search
 
 import arrow
 from acb.actions.encode import load
-from acb.adapters.logger import Logger
-from acb.adapters.sql import Sql
-from acb.adapters.storage import Storage
+from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
 from aiopath import AsyncPath
@@ -26,6 +24,11 @@ from sqlmodel import SQLModel
 # from sqlalchemy.exc import IntegrityError
 # from sqlalchemy.exc import InvalidRequestError
 # from sqlalchemy.orm.exc import UnmappedInstanceError
+
+
+Logger = import_adapter("logger").Logger
+Sql = import_adapter("sqlmodel")
+Storage = import_adapter("storage")
 
 
 class SqlBackupUtils(BaseModel):

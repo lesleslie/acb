@@ -24,8 +24,11 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
     required: bool = False
     enabled: bool = False
     installed: bool = False
-    path: AsyncPath = AsyncPath(Path.cwd())
-    pkg: str = path.parent.stem
+    pkg: str = "acb"
+    path: AsyncPath = AsyncPath(Path(__file__) / "adapters")
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])

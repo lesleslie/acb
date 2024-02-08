@@ -13,6 +13,7 @@ from acb.actions.encode import load
 from acb.adapters import adapter_registry
 from acb.adapters import load_adapter
 from acb.adapters import settings_path
+from acb.adapters import register_adapters
 from acb.depends import depends
 from aiopath import AsyncPath
 from inflection import titleize
@@ -27,6 +28,9 @@ from secrets import token_urlsafe
 from secrets import token_bytes
 
 nest_asyncio.apply()
+
+register_adapters()
+
 
 project: str = ""
 app_name: str = ""

@@ -3,7 +3,6 @@ import sys
 import typing as t
 from inspect import currentframe
 
-# from acb import adapter_registry
 from acb.config import Config
 from acb.config import debug
 from acb.depends import depends
@@ -19,7 +18,7 @@ class LoggerSettings(LoggerBaseSettings):
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
         level=" <level>{level:>8}</level>",
         sep=" <b><w>in</w></b> ",
-        name="{extra[mod_name]:>24}",
+        name="{extra[mod_name]:>18}",
         line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
         message="  <level>{message}</level>",
     )

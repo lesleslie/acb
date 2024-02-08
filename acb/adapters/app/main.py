@@ -1,12 +1,14 @@
 from time import perf_counter
 
-from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.depends import depends
 from ._base import AppBase
 from ._base import AppBaseSettings
+from acb.adapters import import_adapter
 
 main_start = perf_counter()
+
+Logger = import_adapter("logger")
 
 
 class AppSettings(AppBaseSettings): ...

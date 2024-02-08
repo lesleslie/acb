@@ -1,17 +1,11 @@
-from abc import ABC, abstractmethod
+from acb.adapters import AdapterBase
+from acb.adapters import import_adapter
 from acb.config import AppSettings as AppConfigSettings
-from acb.config import Config
-from acb.adapters.logger import Logger
-from acb.depends import depends
+
+Logger = import_adapter("logger")
 
 
 class AppBaseSettings(AppConfigSettings): ...
 
 
-class AppBase(ABC):
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore
-
-    @abstractmethod
-    async def init(self) -> None:
-        raise NotImplementedError
+class AppBase(AdapterBase): ...

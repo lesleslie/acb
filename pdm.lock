@@ -373,15 +373,15 @@ files = [
 
 [[package]]
 name = "blake3"
-version = "0.4.0"
+version = "0.4.1"
 summary = "Python bindings for the Rust blake3 crate"
 files = [
-    {file = "blake3-0.4.0-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:128f299de476facdeefaac4d1488b43fd93e17e4f18539bfb53e109df06928c5"},
-    {file = "blake3-0.4.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:17eecaea1ed497bbc4c6d906599ca5235f7ce8aa89d69584aa3267f1f6effcef"},
-    {file = "blake3-0.4.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cf1d61ba5520fb0bf0a9a1f20ec07deafafc292a5c379e2c536c48fa242f2ebb"},
-    {file = "blake3-0.4.0-cp312-none-win32.whl", hash = "sha256:0f37381027e2e01a0ec2ef48283ea73c4af2431a39981cf5d3d58406a2605b09"},
-    {file = "blake3-0.4.0-cp312-none-win_amd64.whl", hash = "sha256:b6dfce20ccaab3637e317b403c6c02e4dcbd1e7186b243a09d91c3abca57b381"},
-    {file = "blake3-0.4.0.tar.gz", hash = "sha256:4238c834f94fb370b8f13c9f4de9576ee9a4824a6b9725d65cf6146fe72203d6"},
+    {file = "blake3-0.4.1-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:fb98f18bc5e218ff1134acb3b9f0e3588ad5e6f38b7279cce4559c8ae9d780e6"},
+    {file = "blake3-0.4.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:fe31163eb08fc3f82a2325e90cea88f2d7ad0265314a03de716f906b2a43be96"},
+    {file = "blake3-0.4.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a51f48ec21706a22b4954fc17da72bd177d82d22ee434da0c5dc3aafeef5b8d3"},
+    {file = "blake3-0.4.1-cp312-none-win32.whl", hash = "sha256:510fd32d207ef2e28df3597847d5044117d110b0e549b2e467afa30a9f3ab7ee"},
+    {file = "blake3-0.4.1-cp312-none-win_amd64.whl", hash = "sha256:2a08eeb324da701b212f348e91ba5d2708c0a596bd6691207f2504f4f771644c"},
+    {file = "blake3-0.4.1.tar.gz", hash = "sha256:0625c8679203d5a1d30f859696a3fd75b2f50587984690adab839ef112f4c043"},
 ]
 
 [[package]]
@@ -724,7 +724,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.22"
+version = "0.7.23"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
@@ -735,14 +735,14 @@ dependencies = [
     "click>=8.1.7",
     "inflection>=0.5.1",
     "pdm-bump>=0.7.3",
-    "pdm>=2.11.1",
+    "pdm>=2.12.3",
     "pre-commit>=3.6.0",
     "pydantic>=2.5.3",
     "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.22-py3-none-any.whl", hash = "sha256:6dca9483daa62bb2542ff78cda7bab5a824a954813918a473cc24003a7a902d8"},
-    {file = "crackerjack-0.7.22.tar.gz", hash = "sha256:441c0ab899d4b218a3865c334c0af529be9ca7e5dcedd302bb4a3b08d2dc7b9d"},
+    {file = "crackerjack-0.7.23-py3-none-any.whl", hash = "sha256:b9dd3de47f3ae611b7d3a8b1ac06c49344d7a3947582e1809e8354c159d6d455"},
+    {file = "crackerjack-0.7.23.tar.gz", hash = "sha256:aeba773500c7d4513fc3ea44df1cfb7835be889e92e01a76758a037b8e21615e"},
 ]
 
 [[package]]
@@ -1805,7 +1805,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.11.1"
+version = "2.12.3"
 requires_python = ">=3.8"
 summary = "A modern Python package and dependency manager supporting the latest PEP standards"
 dependencies = [
@@ -1829,8 +1829,8 @@ dependencies = [
     "virtualenv>=20",
 ]
 files = [
-    {file = "pdm-2.11.1-py3-none-any.whl", hash = "sha256:6e18eab6f92ca7a31c68ea078d09d0a64b5f2aebf4f0e60ae81b1c5ca84a4189"},
-    {file = "pdm-2.11.1.tar.gz", hash = "sha256:b10bc4e5394856f1639ddc9bc754d9c26323ec5b828a135c6ed35f935b054b83"},
+    {file = "pdm-2.12.3-py3-none-any.whl", hash = "sha256:27eddf71434906e39db3f448d35ea5ee1f4d0f557de39fc932205f7dfc82f902"},
+    {file = "pdm-2.12.3.tar.gz", hash = "sha256:53cdab727c1469fdc196efd8d7ff8404a3ca91ee43c0a5714736f2020d0a5ddf"},
 ]
 
 [[package]]
@@ -2485,15 +2485,6 @@ dependencies = [
 files = [
     {file = "typing_inspect-0.9.0-py3-none-any.whl", hash = "sha256:9ee6fc59062311ef8547596ab6b955e1b8aa46242d854bfc78f4f6b0eff35f9f"},
     {file = "typing_inspect-0.9.0.tar.gz", hash = "sha256:b23fc42ff6f6ef6954e4852c1fb512cdd18dbea03134f91f856a95ccc9461f78"},
-]
-
-[[package]]
-name = "ulid-py"
-version = "1.1.0"
-summary = "Universally Unique Lexicographically Sortable Identifier"
-files = [
-    {file = "ulid-py-1.1.0.tar.gz", hash = "sha256:dc6884be91558df077c3011b9fb0c87d1097cb8fc6534b11f310161afd5738f0"},
-    {file = "ulid_py-1.1.0-py2.py3-none-any.whl", hash = "sha256:b56a0f809ef90d6020b21b89a87a48edc7c03aea80e5ed5174172e82d76e3987"},
 ]
 
 [[package]]

@@ -5,7 +5,9 @@ from pydantic import SecretStr
 from ._base import FtpdBase
 from ._base import FtpdBaseSettings
 from acb.depends import depends
-from acb.adapters.logger import Logger
+from acb.adapters import import_adapter
+
+Logger = import_adapter("logger")
 
 
 class FtpdSettings(FtpdBaseSettings):

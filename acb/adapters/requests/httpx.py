@@ -1,6 +1,5 @@
 import typing as t
 
-from acb.adapters.logger import Logger
 from acb.depends import depends
 from httpx import Response as HttpxResponse
 from hishel import AsyncCacheClient  # type: ignore
@@ -38,7 +37,7 @@ class Requests(RequestsBase):
             return await client.delete(url, timeout=timeout)
 
     @depends.inject
-    async def init(self, logger: Logger = depends()) -> None:  # type: ignore
+    async def init(self) -> None:  # type: ignore
         self.storage = RedisStorage(
             client=AsyncRedis(
                 host=self.config.cache.host.get_secret_value(),

@@ -2,9 +2,8 @@ import typing as t
 from abc import ABC
 from abc import abstractmethod
 
-from acb.config import Config
+from acb.adapters import AdapterBase
 from acb.config import Settings
-from acb.depends import depends
 from pydantic import field_validator
 
 
@@ -20,13 +19,7 @@ class RequestsBaseSettings(Settings):
         return 2
 
 
-class RequestsBase(ABC):
-    config: Config = depends()
-
-    @abstractmethod
-    async def init(self) -> None:
-        raise NotImplementedError
-
+class RequestsBase(AdapterBase, ABC):
     @abstractmethod
     async def get(self, url: str, timeout: int) -> t.Any:
         raise NotImplementedError

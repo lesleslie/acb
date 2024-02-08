@@ -1,9 +1,10 @@
 import typing as t
 from contextlib import suppress
+from secrets import compare_digest
 from warnings import catch_warnings
 from warnings import filterwarnings
 
-from acb.adapters.logger import Logger
+from acb.adapters import import_adapter
 from acb.config import app_name
 from acb.config import project
 from acb.depends import depends
@@ -18,9 +19,10 @@ from google.cloud.secretmanager_v1 import CreateSecretRequest
 from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
-from secrets import compare_digest
 from ._base import SecretsBase
 from ._base import SecretsBaseSettings
+
+Logger = import_adapter("logger").Logger
 
 
 class SecretsSettings(SecretsBaseSettings): ...

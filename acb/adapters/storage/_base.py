@@ -3,15 +3,18 @@ from functools import cached_property
 
 import nest_asyncio
 from acb import tmp_path
+from acb.adapters import import_adapter
 from acb.actions import hash
-from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import Settings
 from acb.depends import depends
 from aiopath import AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
+from acb.adapters import AdapterBase
 
+
+Logger = import_adapter("logger")
 nest_asyncio.apply()
 
 
@@ -116,10 +119,8 @@ class StorageBucket:
         self.logger.debug(f"Deleted - {stor_path}")
 
 
-class StorageBase:
+class StorageBase(AdapterBase):
     file_system: t.Type[AsyncFileSystem]
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore
 
     @cached_property
     def client(self) -> AsyncFileSystem:

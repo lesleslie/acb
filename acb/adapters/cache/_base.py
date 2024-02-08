@@ -1,6 +1,6 @@
 import typing as t
 
-from acb.adapters.logger import Logger
+from acb.adapters import AdapterBase
 from acb.config import Config
 from acb.config import gen_password
 from acb.config import Settings
@@ -42,6 +42,7 @@ class CacheBaseSettings(Settings):
         return 1
 
 
-class CacheBase(Cache):
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore
+class CacheBase(Cache, AdapterBase):
+    ...
+    # def __call__(self, *args, **kwargs):
+    #     return DecoratorsWrapper.__call__(*args, **kwargs)

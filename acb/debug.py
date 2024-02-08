@@ -2,13 +2,16 @@ import logging
 import typing as t
 from pathlib import Path
 from pprint import pformat
+from time import perf_counter
 
-from acb.adapters.logger import Logger
-from acb.config import Config
+from acb.adapters import import_adapter
 from acb.config import adapter_registry
+from acb.config import Config
 from acb.depends import depends
 from icecream import colorizedStderrPrint
 from icecream import ic as debug
+
+Logger = import_adapter("logger")
 
 config = depends.get(Config)
 
@@ -20,6 +23,7 @@ def get_calling_module() -> Path | None:
     return mod if debug_mod else None
 
 
+@depends.inject
 def patch_record(
     mod: Path, msg: str, logger: Logger = depends()  # type: ignore
 ) -> None:
@@ -57,3 +61,15 @@ if config.deployed or config.debug.production:
         includeContext=False,
         **debug_args,
     )
+
+
+@depends.inject
+def timeit(func: t.Any, logger: Logger = depends()) -> t.Any:  # type: ignore
+    def wrapped(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        start = perf_counter()
+        result = func(*args, **kwargs)
+        end = perf_counter()
+        logger.debug(f"Function '{func.__name__}' executed in {end - start} s")
+        return result
+
+    return wrapped
