@@ -14,8 +14,8 @@ from httpx import Response as HttpxResponse
 from ._base import EmailBase
 from ._base import EmailBaseSettings
 
-Dns = import_adapter("dns")
-Requests = import_adapter("requests")
+Dns = import_adapter()
+Requests = import_adapter()
 
 
 class EmailSettings(EmailBaseSettings):

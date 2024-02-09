@@ -8,7 +8,6 @@ from pydantic import field_validator
 
 
 class RequestsBaseSettings(Settings):
-    requires: t.Optional[list[str]] = ["cache"]
     cache_db: t.Optional[int] = 2
     cache_ttl: int = 3600
 

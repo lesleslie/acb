@@ -26,15 +26,18 @@ class LoggerSettings(LoggerBaseSettings):
     settings: t.Optional[dict[str, t.Any]] = {}
 
     @depends.inject
-    def __init__(self, **values: t.Any) -> None:
+    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
+        self.serialize = True if config.deployed else False
         self.level_per_module = {m: "DEBUG" if v else "INFO" for m, v in debug.items()}
         self.settings = dict(
             filter=self.level_per_module,
             format="".join(self.format.values()),
             enqueue=True,
             backtrace=True,
+            catch=True,
             serialize=self.serialize,
+            diagnose=False,
         )
 
 

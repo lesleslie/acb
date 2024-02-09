@@ -8,7 +8,7 @@ from acb.adapters import import_adapter
 
 main_start = perf_counter()
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 
 class AppSettings(AppBaseSettings): ...

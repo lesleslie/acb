@@ -14,7 +14,7 @@ from google.cloud.exceptions import NotFound
 from acb.adapters import AdapterBase
 
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 nest_asyncio.apply()
 
 

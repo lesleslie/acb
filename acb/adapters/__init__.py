@@ -4,6 +4,7 @@ from abc import ABC
 from abc import abstractmethod
 from importlib import import_module
 from inspect import currentframe
+from inspect import stack
 from pathlib import Path
 
 import nest_asyncio
@@ -39,10 +40,18 @@ def get_installed_adapters() -> list[Adapter]:
     return [a for a in adapter_registry.get() if a.installed]
 
 
-def import_adapter(adapter_category: str) -> t.Any:
+def get_module_name(adapter_path: Path) -> str:
+    return ".".join(adapter_path.parts[-4:-1])
+
+
+def import_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
+    if not adapter_category:
+        adapter_category = (
+            stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
+        )
     _adapter_path = get_adapter(adapter_category).path
-    _adapter_module = ".".join(_adapter_path.parts[-4:-1])
-    _adapter_class = getattr(import_module(_adapter_module), camelize(adapter_category))
+    _module_name = get_module_name(_adapter_path)
+    _adapter_class = getattr(import_module(_module_name), camelize(adapter_category))
     return _adapter_class
 
 
@@ -54,8 +63,8 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
     if _adapter and _adapter.enabled and not _adapter.installed:
         _adapter_class_name = camelize(_adapter.category)
         _adapter_settings_class_name = f"{_adapter_class_name}Settings"
-        _module = ".".join(_adapter.path.parts[-4:]).removesuffix(".py")
-        _imported_module = import_module(_module)
+        _module_name = ".".join(_adapter.path.parts[-4:]).removesuffix(".py")
+        _imported_module = import_module(_module_name)
         _adapter_class = getattr(_imported_module, _adapter_class_name)
         _adapter_settings_class = getattr(
             _imported_module, _adapter_settings_class_name
@@ -67,6 +76,7 @@ def load_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
         setattr(config, adapter_category, _adapter_settings)
         asyncio.run(depends.get(_adapter_class).init())
         _adapter.installed = True
+        _adapter.module = _module_name
         if adapter_category != "logger":
             logger = depends.get(import_adapter("logger"))
         else:
@@ -141,7 +151,7 @@ def register_adapters() -> None:
 
 from acb.config import Config  # noqa: E402
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 
 class AdapterBase(ABC):

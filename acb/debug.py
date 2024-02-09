@@ -11,7 +11,7 @@ from acb.depends import depends
 from icecream import colorizedStderrPrint
 from icecream import ic as debug
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 config = depends.get(Config)
 

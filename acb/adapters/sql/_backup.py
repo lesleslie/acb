@@ -19,16 +19,15 @@ from pydantic import create_model
 from sqlmodel import select
 from sqlmodel import SQLModel
 
-
 # from contextlib import suppress
 # from sqlalchemy.exc import IntegrityError
 # from sqlalchemy.exc import InvalidRequestError
 # from sqlalchemy.orm.exc import UnmappedInstanceError
 
 
-Logger = import_adapter("logger").Logger
-Sql = import_adapter("sqlmodel")
-Storage = import_adapter("storage")
+Logger = import_adapter()
+Sql = import_adapter()
+Storage = import_adapter()
 
 
 class SqlBackupUtils(BaseModel):

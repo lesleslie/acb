@@ -189,7 +189,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                 yml_settings[adapter.category] = False
             debug = yml_settings
         if not _deployed:
-            await dump.yaml(yml_settings, yml_path)
+            await dump.yaml(yml_settings, yml_path, sort_keys=True)
         if self.adapter_name == "app":
             project = yml_settings["project"]
             app_name = yml_settings["name"]
@@ -285,7 +285,7 @@ class AppSettings(Settings):
     project: str = "test-project"
     name: str = "test"
     title: str = "Test App"
-    domain: str = "test_app.local"
+    domain: str = "splashstand.org"
     timezone: str = "US/Pacific"
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))

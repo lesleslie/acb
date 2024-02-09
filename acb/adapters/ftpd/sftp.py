@@ -7,7 +7,7 @@ from ._base import FtpdBaseSettings
 from acb.depends import depends
 from acb.adapters import import_adapter
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 
 class FtpdSettings(FtpdBaseSettings):

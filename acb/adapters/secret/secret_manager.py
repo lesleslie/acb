@@ -22,7 +22,7 @@ from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
 from ._base import SecretsBase
 from ._base import SecretsBaseSettings
 
-Logger = import_adapter("logger").Logger
+Logger = import_adapter()
 
 
 class SecretsSettings(SecretsBaseSettings): ...

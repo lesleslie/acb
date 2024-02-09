@@ -9,8 +9,7 @@ from ._base import RequestsBaseSettings
 from redis.asyncio import Redis as AsyncRedis
 
 
-class RequestsSettings(RequestsBaseSettings):
-    loggers: t.Optional[list[str]] = ["hishel", "httpx"]
+class RequestsSettings(RequestsBaseSettings): ...
 
 
 class Requests(RequestsBase):

@@ -7,7 +7,7 @@ from aioftp import Server
 from ._base import FtpdBase
 from ._base import FtpdBaseSettings
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 
 class FtpdSettings(FtpdBaseSettings): ...

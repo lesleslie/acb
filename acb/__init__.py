@@ -11,8 +11,9 @@ tmp_path = base_path / "tmp"
 
 class Action(BaseModel, arbitrary_types_allowed=True):
     name: str
-    path: AsyncPath = AsyncPath(Path.cwd())
-    pkg: str = path.parent.stem
+    pkg: str = "acb"
+    module: str = ""
+    path: AsyncPath = AsyncPath(__file__) / "actions"
 
 
 action_registry: ContextVar[list[Action]] = ContextVar("action_registry", default=[])
@@ -25,6 +26,7 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
     enabled: bool = False
     installed: bool = False
     pkg: str = "acb"
+    module: str = ""
     path: AsyncPath = AsyncPath(Path(__file__) / "adapters")
 
     def __str__(self) -> str:
