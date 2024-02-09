@@ -42,7 +42,4 @@ class CacheBaseSettings(Settings):
         return 1
 
 
-class CacheBase(Cache, AdapterBase):
-    ...
-    # def __call__(self, *args, **kwargs):
-    #     return DecoratorsWrapper.__call__(*args, **kwargs)
+class CacheBase(Cache, AdapterBase): ...

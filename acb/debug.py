@@ -19,7 +19,7 @@ config = depends.get(Config)
 def get_calling_module() -> Path | None:
     mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
     mod = Path(mod).parent
-    debug_mod = getattr(config.debug, mod.stem, None) or config.debug.all
+    debug_mod = getattr(config.debug, mod.stem, None)
     return mod if debug_mod else None
 
 

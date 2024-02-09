@@ -275,7 +275,6 @@ class Settings(BaseModel):
 
 
 class DebugSettings(Settings):
-    all: bool = False
     production: bool = False
     secrets: bool = False
     logger: bool = False
