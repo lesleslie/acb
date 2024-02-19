@@ -12,8 +12,6 @@ from aioconsole import ainput
 from aioconsole import aprint
 from pydantic import SecretStr
 from sqlalchemy import inspect
-
-# from sqlalchemy import ScalarResult
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -22,10 +20,9 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy_utils import create_database
 from sqlalchemy_utils import database_exists
 from sqlalchemy_utils import drop_database
-
-# from sqlmodel import select
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import log as sqlalchemy_log
 
 nest_asyncio.apply()
 
@@ -59,10 +56,12 @@ class SqlBaseSettings(Settings):
         self._url = URL.create(**url_kwargs)  # type: ignore
         async_url_kwargs = dict(drivername=self._async_driver)
         self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
-        # self.engine_kwargs["echo"] = config.debug.sql
+        self.engine_kwargs["echo"] = config.debug.sql  # type: ignore
 
 
 class SqlBase(AdapterBase):
+    exists: bool = False
+
     @cached_property
     def engine(self) -> AsyncEngine:
         return create_async_engine(
@@ -75,16 +74,16 @@ class SqlBase(AdapterBase):
 
     async def create(self, demo: bool = False) -> None:
         try:
-            exists = database_exists(self.config.sql._url)
-            if exists:
+            self.exists = database_exists(self.config.sql._url)
+            if self.exists:
                 self.logger.debug("Sql database exists")
         except OperationalError:
-            exists = False
+            self.exists = False
 
         if (
             self.config.debug.sql
             and not (self.config.deployed or self.config.debug.production)
-            and exists
+            and self.exists
         ):
             msg = (
                 "\n\nRESETTING THE SQL DATABASE WILL CAUSE ALL OF YOUR"
@@ -102,8 +101,8 @@ class SqlBase(AdapterBase):
             if delete_db.upper().strip() == "Y":
                 drop_database(self.config.sql._url)
                 self.logger.warning("Sql database dropped")
-                exists = database_exists(self.config.sql._url)
-        if not exists:
+                self.exists = database_exists(self.config.sql._url)
+        if not self.exists:
             create_database(self.config.sql._url)
             self.logger.debug("Sql database created")
 
@@ -125,17 +124,20 @@ class SqlBase(AdapterBase):
     async def init(
         self,
     ) -> None:
+        sqlalchemy_log._add_default_handler = lambda x: None  # type: ignore
         await self.create()
         async with self.get_conn() as conn:
             # if self.config.debug.sql:
             #     sql = text("DROP TABLE IF EXISTS alembic_version")
             #     await conn.execute(sql)
-            self.logger.info("Creating database tables...")
+            action = "Creating" if not self.exists else "Updating"
+            self.logger.info(f"{action} database tables...")
             try:
                 await conn.run_sync(SQLModel.metadata.create_all)
             except Exception as e:
                 self.logger.error(e)
-            if self.config.debug.sql:
+            if not self.exists:
                 table_names = await conn.run_sync(self.get_table_names)
                 for name in table_names:
                     self.logger.debug(f"Created table: {name}")
+                self.exists = True
