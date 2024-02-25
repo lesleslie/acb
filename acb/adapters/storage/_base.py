@@ -3,16 +3,15 @@ from functools import cached_property
 
 import nest_asyncio
 from acb import tmp_path
-from acb.adapters import import_adapter
 from acb.actions import hash
+from acb.adapters import AdapterBase
+from acb.adapters import import_adapter
 from acb.config import Config
 from acb.config import Settings
 from acb.depends import depends
 from aiopath import AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
-from acb.adapters import AdapterBase
-
 
 Logger = import_adapter()
 nest_asyncio.apply()
@@ -92,31 +91,20 @@ class StorageBucket:
             # acl="public-read",
         )
 
-    async def read(self, path: AsyncPath) -> t.Any:
-        stor_path = self.get_path(path)
-        self.logger.debug(f"Getting {stor_path}...")
+    async def open(self, path: AsyncPath) -> t.BinaryIO:
         try:
-            data = await self.client._cat_file(stor_path)
+            async with self.client.open(self.get_path(path), "rb") as f:
+                return f.read()
         except (NotFound, FileNotFoundError):
             raise FileNotFoundError  # for jinja loaders
-        self.logger.debug(f"Got - {stor_path}")
-        return data
-
-    async def open(self, path: AsyncPath) -> t.BinaryIO:
-        async with self.client.open(self.get_path(path), "rb") as f:
-            return f.read()
 
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
-        self.logger.debug(f"Saving {stor_path}...")
         await self.client._pipe_file(stor_path, data)
-        self.logger.debug(f"Saved - {stor_path}")
 
     async def delete(self, path: AsyncPath) -> t.Any:
         stor_path = self.get_path(path)
-        self.logger.debug(f"Deleting {stor_path}...")
         await self.client._rm_file(stor_path)
-        self.logger.debug(f"Deleted - {stor_path}")
 
 
 class StorageBase(AdapterBase):
