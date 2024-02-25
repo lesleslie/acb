@@ -24,40 +24,15 @@ pdm add acb
 
 ## Actions
 
-### Encode
-
-```
-from acb.actions.encode import load
-
-load.json(obj)
-```
-
-### Hash
-
-```
-from acb.actions.hash import hash
-
-hash.blake2b(obj)
-```
-
-## Configuration
-
-```
-from acb.config import (
-    Config,
-    Settings,
-)
-```
-
-## Logging
-
-```
-from acb.adapters.logger import Logger
-```
-
-
 
 ## Adapters
+
+### Configuration
+
+### Dependency Injection
+
+### Debug
+
 
 
 ## Acknowledgements
