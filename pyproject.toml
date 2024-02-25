@@ -36,16 +36,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyyaml",
-    "pdm-bump",
-    "pdm",
-    "autotyping",
-    "pyfiglet",
-    "alive-progress",
-    "phonenumbers",
     "pytest",
-    "ulid-py",
+    "phonenumbers",
+    "pyyaml",
     "pre-commit",
+    "pdm-bump",
+    "autotyping",
+    "alive-progress",
+    "pyfiglet",
+    "ulid-py",
+    "pdm",
 ]
 
 [tool.refurb]
@@ -56,10 +56,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
-    "B603",
     "B404",
     "B113",
+    "B603",
+    "B403",
 ]
 
 [tool.pyright]
@@ -88,7 +88,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.5.4"
+version = "0.5.5"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.1.2",
@@ -156,9 +156,6 @@ requests = [
 email = [
     "mailgun>=0.1.1",
 ]
-secrets = [
-    "google-cloud-secret-manager>=2.18.1",
-]
 sql = [
     "sqlalchemy>=2.0.27",
     "sqlalchemy-utils>=0.41.1",
@@ -177,6 +174,9 @@ demo = [
 ftp = [
     "aioftp>=0.22.3",
     "asyncssh>=2.14.2",
+]
+secret = [
+    "google-cloud-secret-manager>=2.18.2",
 ]
 
 [build-system]
