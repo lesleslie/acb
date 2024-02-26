@@ -8,6 +8,7 @@ from acb.adapters import AdapterBase
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.config import Settings
+from acb.debug import debug
 from acb.depends import depends
 from aiopath import AsyncPath
 from fsspec.asyn import AsyncFileSystem
@@ -95,8 +96,11 @@ class StorageBucket:
         try:
             async with self.client.open(self.get_path(path), "rb") as f:
                 return f.read()
-        except (NotFound, FileNotFoundError):
+        except (NotFound, FileNotFoundError, RuntimeError):
             raise FileNotFoundError  # for jinja loaders
+        except Exception as e:
+            debug(e)
+            raise e
 
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
