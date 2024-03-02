@@ -724,7 +724,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.26"
+version = "0.7.27"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
@@ -741,8 +741,8 @@ dependencies = [
     "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.26-py3-none-any.whl", hash = "sha256:eda31913a8f44411837e48fe00e0763859eea35734361a45bc7079ecafbb4288"},
-    {file = "crackerjack-0.7.26.tar.gz", hash = "sha256:01cc013d988a2d2cadbd9b15b2a1f171669780c09b4ce6c2f38df7b52d1070d4"},
+    {file = "crackerjack-0.7.27-py3-none-any.whl", hash = "sha256:ef987103289594e6ad674d4892c58afab97360781bc32192c8c5af1997fa2cdd"},
+    {file = "crackerjack-0.7.27.tar.gz", hash = "sha256:b3d6914999c15c99c5c6df13dd3119f21fde694c09e8be77cae8c6cdff9e501e"},
 ]
 
 [[package]]
@@ -856,15 +856,15 @@ files = [
 
 [[package]]
 name = "faker"
-version = "23.2.1"
+version = "23.3.0"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
     "python-dateutil>=2.4",
 ]
 files = [
-    {file = "Faker-23.2.1-py3-none-any.whl", hash = "sha256:0520a6b97e07c658b2798d7140971c1d5bc4bcd5013e7937fe075fd054aa320c"},
-    {file = "Faker-23.2.1.tar.gz", hash = "sha256:f07b64d27f67b62c7f0536a72f47813015b3b51cd4664918454011094321e464"},
+    {file = "Faker-23.3.0-py3-none-any.whl", hash = "sha256:117ce1a2805c1bc5ca753b3dc6f9d567732893b2294b827d3164261ee8f20267"},
+    {file = "Faker-23.3.0.tar.gz", hash = "sha256:458d93580de34403a8dec1e8d5e6be2fee96c4deca63b95d71df7a6a80a690de"},
 ]
 
 [[package]]
@@ -1978,7 +1978,7 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.6.2"
+version = "2.6.3"
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 dependencies = [
@@ -1987,8 +1987,8 @@ dependencies = [
     "typing-extensions>=4.6.1",
 ]
 files = [
-    {file = "pydantic-2.6.2-py3-none-any.whl", hash = "sha256:37a5432e54b12fecaa1049c5195f3d860a10e01bdfd24f1840ef14bd0d3aeab3"},
-    {file = "pydantic-2.6.2.tar.gz", hash = "sha256:a09be1c3d28f3abe37f8a78af58284b236a92ce520105ddc91a6d29ea1176ba7"},
+    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
+    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
 ]
 
 [[package]]
@@ -2048,17 +2048,17 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.6.2"
+version = "2.6.3"
 extras = ["email"]
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 dependencies = [
     "email-validator>=2.0.0",
-    "pydantic==2.6.2",
+    "pydantic==2.6.3",
 ]
 files = [
-    {file = "pydantic-2.6.2-py3-none-any.whl", hash = "sha256:37a5432e54b12fecaa1049c5195f3d860a10e01bdfd24f1840ef14bd0d3aeab3"},
-    {file = "pydantic-2.6.2.tar.gz", hash = "sha256:a09be1c3d28f3abe37f8a78af58284b236a92ce520105ddc91a6d29ea1176ba7"},
+    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
+    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
 ]
 
 [[package]]

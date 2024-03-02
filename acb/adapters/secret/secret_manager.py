@@ -19,16 +19,16 @@ from google.cloud.secretmanager_v1 import CreateSecretRequest
 from google.cloud.secretmanager_v1 import DeleteSecretRequest
 from google.cloud.secretmanager_v1 import ListSecretsRequest
 from google.cloud.secretmanager_v1 import SecretManagerServiceAsyncClient
-from ._base import SecretsBase
-from ._base import SecretsBaseSettings
+from ._base import SecretBase
+from ._base import SecretBaseSettings
 
 Logger = import_adapter()
 
 
-class SecretsSettings(SecretsBaseSettings): ...
+class SecretSettings(SecretBaseSettings): ...
 
 
-class Secrets(SecretsBase):
+class Secret(SecretBase):
     logger: Logger = depends()  # type: ignore
     project: str = ""
     parent: str = ""
@@ -60,7 +60,6 @@ class Secrets(SecretsBase):
             raise SystemExit(
                 "\n ERROR:  'project' id in 'settings/app.yml' is invalid or not set!\n"
             )
-        client_secrets = await self.client.list_secrets(request=request)
         client_secrets = [
             self.extract_secret_name(secret.name) async for secret in client_secrets
         ]
@@ -118,4 +117,4 @@ class Secrets(SecretsBase):
         self.authed_session = AuthorizedSession(self.creds)
 
 
-depends.set(Secrets)
+depends.set(Secret)

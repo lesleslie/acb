@@ -5,15 +5,17 @@ from abc import abstractmethod
 from contextvars import ContextVar
 from functools import cached_property
 from pathlib import Path
+from secrets import token_bytes
+from secrets import token_urlsafe
 
 import nest_asyncio
 from acb import tmp_path
 from acb.actions.encode import dump
 from acb.actions.encode import load
 from acb.adapters import adapter_registry
-from acb.adapters import load_adapter
-from acb.adapters import settings_path
+from acb.adapters import import_adapter
 from acb.adapters import register_adapters
+from acb.adapters import settings_path
 from acb.depends import depends
 from aiopath import AsyncPath
 from inflection import titleize
@@ -24,13 +26,10 @@ from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
-from secrets import token_urlsafe
-from secrets import token_bytes
 
 nest_asyncio.apply()
 
 register_adapters()
-
 
 project: str = ""
 app_name: str = ""
@@ -97,7 +96,7 @@ class InitSettingsSource(PydanticBaseSettingsSource):
         return f"InitSettingsSource(init_kwargs={self.init_kwargs!r})"
 
 
-class FileSecretsSource(PydanticBaseSettingsSource):
+class FileSecretSource(PydanticBaseSettingsSource):
     async def get_field_value(self, field_name: str) -> SecretStr | None:
         path = self.secrets_path / field_name
         if await path.is_file():
@@ -127,13 +126,13 @@ class FileSecretsSource(PydanticBaseSettingsSource):
         return data
 
     def __repr__(self) -> str:
-        return f"FileSecretsSource(_secrets_dir={self.secrets_dir!r})"
+        return f"FileSecretSource(_secrets_dir={self.secrets_dir!r})"
 
 
-class ManagerSecretsSource(PydanticBaseSettingsSource):
+class ManagerSecretSource(PydanticBaseSettingsSource):
     @cached_property
     def manager(self):
-        manager_class = load_adapter("secrets")
+        manager_class = import_adapter("secret")
         manager = depends.get(manager_class)
         return manager
 
@@ -168,7 +167,7 @@ class ManagerSecretsSource(PydanticBaseSettingsSource):
 class YamlSettingsSource(PydanticBaseSettingsSource):
     async def load_yml_settings(self) -> t.Any:
         global project, app_name, debug
-        if self.adapter_name == "secrets":
+        if self.adapter_name == "secret":
             return {}
         yml_path = AsyncPath(settings_path / f"{self.adapter_name}.yml")
         if not await yml_path.exists() and not _deployed:
@@ -238,11 +237,11 @@ class Settings(BaseModel):
     ) -> dict[str, t.Any]:
         secrets_dir = _secrets_dir or self.model_config.get("secrets_dir")
         init_settings = InitSettingsSource(self.__class__, init_kwargs=init_kwargs)
-        file_secrets_settings = FileSecretsSource(
+        file_secret_settings = FileSecretSource(
             self.__class__,
             secrets_dir=secrets_dir,
         )
-        manager_secrets_settings = ManagerSecretsSource(
+        manager_secret_settings = ManagerSecretSource(
             self.__class__,
             secrets_dir=secrets_dir,
         )
@@ -252,8 +251,8 @@ class Settings(BaseModel):
             self.__class__,
             init_settings=init_settings,
             yaml_settings=yaml_settings,
-            file_secrets_settings=file_secrets_settings,
-            manager_secrets_settings=manager_secrets_settings,
+            file_secret_settings=file_secret_settings,
+            manager_secret_settings=manager_secret_settings,
         )
         return deep_update(*reversed([await source() for source in sources]))
 
@@ -263,14 +262,14 @@ class Settings(BaseModel):
         settings_cls: t.Type["Settings"],
         init_settings: PydanticBaseSettingsSource,
         yaml_settings: PydanticBaseSettingsSource,
-        file_secrets_settings: PydanticBaseSettingsSource,
-        manager_secrets_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+        manager_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             init_settings,
             yaml_settings,
-            file_secrets_settings,
-            manager_secrets_settings,
+            file_secret_settings,
+            manager_secret_settings,
         )
 
 

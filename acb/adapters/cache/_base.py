@@ -29,7 +29,7 @@ class CacheBaseSettings(Settings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        self.prefix = self.prefix or config.app.name or ""
+        self.prefix = self.prefix or f"{config.app.name}:"
         self.host = SecretStr("127.0.0.1") if not config.deployed else self.host
         self.password = SecretStr("") if not config.deployed else self.password
         self.template_timeout = self.template_timeout if config.deployed else 1

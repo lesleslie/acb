@@ -46,6 +46,7 @@ class StorageBucket:
         prefix: t.Optional[str] = None,
     ) -> None:
         self.client = client
+        self.name = bucket
         self.bucket = self.config.storage.buckets[bucket]
         self.prefix = prefix or self.config.storage.prefix
         self.root = AsyncPath(f"{self.bucket}/{self.prefix}")
