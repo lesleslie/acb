@@ -12,6 +12,8 @@ from aioconsole import ainput
 from aioconsole import aprint
 from pydantic import SecretStr
 from sqlalchemy import inspect
+from sqlalchemy import log as sqlalchemy_log
+from sqlalchemy import pool
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -22,7 +24,6 @@ from sqlalchemy_utils import database_exists
 from sqlalchemy_utils import drop_database
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import log as sqlalchemy_log
 
 nest_asyncio.apply()
 
@@ -38,7 +39,7 @@ class SqlBaseSettings(Settings):
     password: SecretStr = SecretStr(gen_password())
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
-    engine_kwargs: t.Optional[dict[str, t.Any]] = {}
+    engine_kwargs: t.Optional[dict[str, t.Any | None]] = {}
     backup_enabled: bool = False
     backup_bucket: str | None = None
 
@@ -53,10 +54,15 @@ class SqlBaseSettings(Settings):
             port=self.port,
             database=config.app.name,
         )
+        self.poolclass = getattr(pool, self.poolclass) if self.poolclass else None
         self._url = URL.create(**url_kwargs)  # type: ignore
         async_url_kwargs = dict(drivername=self._async_driver)
         self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
         self.engine_kwargs["echo"] = config.debug.sql  # type: ignore
+        self.engine_kwargs = (  # type: ignore
+            dict(poolclass=self.poolclass, pool_pre_ping=self.pool_pre_ping)
+            | self.engine_kwargs
+        )
 
 
 class SqlBase(AdapterBase):
