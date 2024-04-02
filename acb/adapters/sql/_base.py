@@ -7,6 +7,7 @@ from acb.adapters import AdapterBase
 from acb.config import Config
 from acb.config import gen_password
 from acb.config import Settings
+from acb.debug import debug
 from acb.depends import depends
 from aioconsole import ainput
 from aioconsole import aprint
@@ -14,6 +15,7 @@ from pydantic import SecretStr
 from sqlalchemy import inspect
 from sqlalchemy import log as sqlalchemy_log
 from sqlalchemy import pool
+from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -39,7 +41,7 @@ class SqlBaseSettings(Settings):
     password: SecretStr = SecretStr(gen_password())
     _url: t.Optional[URL] = None
     _async_url: t.Optional[URL] = None
-    engine_kwargs: t.Optional[dict[str, t.Any | None]] = {}
+    engine_kwargs: dict[str, t.Any] = {}
     backup_enabled: bool = False
     backup_bucket: str | None = None
 
@@ -55,10 +57,19 @@ class SqlBaseSettings(Settings):
             database=config.app.name,
         )
         self.poolclass = getattr(pool, self.poolclass) if self.poolclass else None
+        debug(self.poolclass)
+        debug(type(self.poolclass))
         self._url = URL.create(**url_kwargs)  # type: ignore
+        debug(self._url)
         async_url_kwargs = dict(drivername=self._async_driver)
         self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
-        self.engine_kwargs["echo"] = config.debug.sql  # type: ignore
+        debug(self._async_url)
+        self.engine_kwargs["echo"] = (
+            "debug" if config.logger.verbose else config.debug.sql
+        )
+        self.engine_kwargs["echo_pool"] = (
+            "debug" if config.logger.verbose else config.debug.sql
+        )
         self.engine_kwargs = (  # type: ignore
             dict(poolclass=self.poolclass, pool_pre_ping=self.pool_pre_ping)
             | self.engine_kwargs
@@ -81,11 +92,8 @@ class SqlBase(AdapterBase):
     async def create(self, demo: bool = False) -> None:
         try:
             self.exists = database_exists(self.config.sql._url)
-            if self.exists:
-                self.logger.debug("Sql database exists")
         except OperationalError:
             self.exists = False
-
         if (
             self.config.debug.sql
             and not (self.config.deployed or self.config.debug.production)
@@ -111,6 +119,8 @@ class SqlBase(AdapterBase):
         if not self.exists:
             create_database(self.config.sql._url)
             self.logger.debug("Sql database created")
+        else:
+            self.logger.debug("Sql database exists")
 
     @asynccontextmanager
     async def get_session(self) -> t.AsyncGenerator[AsyncSession, None]:
@@ -133,12 +143,31 @@ class SqlBase(AdapterBase):
         sqlalchemy_log._add_default_handler = lambda x: None  # type: ignore
         await self.create()
         async with self.get_conn() as conn:
-            # if self.config.debug.sql:
-            #     sql = text("DROP TABLE IF EXISTS alembic_version")
-            #     await conn.execute(sql)
+            if self.config.debug.sql:
+                ps = await conn.execute(text("SHOW FULL PROCESSLIST"))
+                # inno = await conn.execute(text("SHOW INNODB STATUS"))
+                # debug(inno)
+                show_ps = [p for p in ps]
+                debug(show_ps)
+                ids = [
+                    a[0]
+                    for a in show_ps
+                    if (
+                        a[1] == self.config.sql.user.get_secret_value()
+                        and a[3] == self.config.app.name
+                        # and a[3] == "gmb"
+                    )
+                ]
+                debug(ids)
+                # if force:
+                # for id in ids:
+                #     await conn.execute(text(f"KILL {id}"))
+                #     sql = text("DROP TABLE IF EXISTS alembic_version")
+                #     await conn.execute(sql)
             action = "Creating" if not self.exists else "Updating"
             self.logger.info(f"{action} database tables...")
             try:
+                await conn.run_sync(SQLModel.metadata.drop_all)
                 await conn.run_sync(SQLModel.metadata.create_all)
             except Exception as e:
                 self.logger.error(e)

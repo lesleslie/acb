@@ -75,8 +75,8 @@ class Encode:
     sort_keys: bool = True
     use_list: bool = False
     secure: bool = False
-    secret_key: str = ""
-    secure_salt: str = ""
+    secret_key: t.Optional[str] = None
+    secure_salt: t.Optional[str] = None
     serializer: t.Optional[t.Callable[..., t.Any]] = None
 
     def __init__(self) -> None:
@@ -111,7 +111,7 @@ class Encode:
             serializer
             if not self.secure
             else SecureSerializer(
-                secret_key=self.secret_key,
+                secret_key=self.secret_key,  # type: ignore
                 salt=self.secure_salt,
                 serializer=serializer,
                 signer_kwargs=dict(digest_method=blake3),
@@ -131,11 +131,11 @@ class Encode:
         self.path = path
         self.sort_keys = sort_keys
         self.use_list = use_list
-        self.secret_key = "" if not secret_key else secret_key.get_secret_value()
-        self.secure_salt = "" if not secure_salt else secure_salt.get_secret_value()
+        self.secret_key = secret_key.get_secret_value() if secret_key else None
+        self.secure_salt = secure_salt.get_secret_value() if secure_salt else None
         self.action, serializer_name = self.get_vars(sys._getframe(1))
         self.secure = all((secret_key, secure_salt))
-        if not self.secure and (len(self.secret_key) and len(self.secure_salt)):
+        if not self.secure and (secret_key or secure_salt):
             warn(
                 f"{serializer_name.title()} serializer won't sign "
                 f"objects unless both "

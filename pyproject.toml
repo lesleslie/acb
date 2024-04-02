@@ -16,6 +16,11 @@ fix = true
 show-fixes = true
 output-format = "full"
 
+[tool.ruff.lint]
+ignore = [
+    "F821",
+]
+
 [tool.ruff.lint.isort]
 force-single-line = true
 
@@ -37,15 +42,15 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "pre-commit",
-    "ulid-py",
-    "alive-progress",
     "pyfiglet",
-    "pyyaml",
-    "pdm-bump",
-    "autotyping",
     "phonenumbers",
-    "pytest",
+    "pdm-bump",
+    "ulid-py",
     "pdm",
+    "pytest",
+    "alive-progress",
+    "pyyaml",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -56,10 +61,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B113",
-    "B404",
     "B603",
+    "B113",
     "B403",
+    "B404",
 ]
 
 [tool.pyright]
@@ -88,7 +93,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.5.10"
+version = "0.5.11"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.1.2",
@@ -109,6 +114,7 @@ dependencies = [
     "pyyaml>=6.0.1",
     "google-crc32c>=1.5.0",
     "pydantic[email]>=2.6.1",
+    "devtools>=0.12.2",
 ]
 requires-python = ">=3.12"
 readme = "README.md"

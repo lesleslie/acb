@@ -26,11 +26,7 @@ adapter_settings_path: Path = settings_path / "adapters.yml"
 
 def get_adapter(category: str) -> Adapter | None:
     _adapter = next(
-        (
-            a
-            for a in adapter_registry.get()
-            if a.category == category and a.enabled is True
-        ),
+        (a for a in adapter_registry.get() if a.category == category and a.enabled),
         None,
     )
     return _adapter

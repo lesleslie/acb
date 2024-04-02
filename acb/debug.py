@@ -1,15 +1,18 @@
+import asyncio
 import logging
 import typing as t
 from pathlib import Path
-from pprint import pformat
 from time import perf_counter
 
 from acb.adapters import import_adapter
 from acb.config import adapter_registry
 from acb.config import Config
 from acb.depends import depends
-from icecream import colorizedStderrPrint
+from aioconsole import aprint
+from devtools import pformat
+from icecream import colorize
 from icecream import ic as debug
+from icecream import supportTerminalColorsInWindows
 
 Logger = import_adapter()
 
@@ -37,18 +40,24 @@ def patch_record(
         )
 
 
+def colorized_stderr_print(s: str) -> None:
+    colored = colorize(s)
+    with supportTerminalColorsInWindows():
+        asyncio.run(aprint(colored, use_stderr=True))
+
+
 def print_debug_info(msg: str) -> t.Any:
     mod = get_calling_module()
     if mod:
         if config.deployed or config.debug.production:
             patch_record(mod, msg)
         else:
-            colorizedStderrPrint(msg)
+            colorized_stderr_print(msg)
 
 
 debug_args = dict(
     outputFunction=print_debug_info,
-    argToStringFunction=lambda o: pformat(o, sort_dicts=False),
+    argToStringFunction=lambda o: pformat(o, highlight=False),
 )
 debug.configureOutput(
     prefix="    debug:  ",

@@ -71,7 +71,7 @@ class Logger(_Logger, LoggerBase):
                 mod_name=patch_name(record)
             )
         )
-        self.add(sys.stderr, **config.logger.settings)
+        self.add(sys.stdout, **config.logger.settings)
         if config.deployed:
             self.level = config.logger.deployed_level
         if config.debug.logger:
