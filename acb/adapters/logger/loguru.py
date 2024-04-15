@@ -18,11 +18,12 @@ class LoggerSettings(LoggerBaseSettings):
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
         level=" <level>{level:>8}</level>",
         sep=" <b><w>in</w></b> ",
-        name="{extra[mod_name]:>18}",
+        name="<b>{extra[mod_name]:>18}</b>",
         line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
         message="  <level>{message}</level>",
     )
     level_per_module: t.Optional[dict[str, str]] = {}
+    level_colors: t.Optional[dict[str, str]] = {}
     settings: t.Optional[dict[str, t.Any]] = {}
 
     @depends.inject
@@ -72,6 +73,8 @@ class Logger(_Logger, LoggerBase):
             )
         )
         self.add(sys.stdout, **config.logger.settings)
+        for level, color in config.logger.level_colors.items():
+            self.level(level.upper(), color=f"<{color}>")
         if config.deployed:
             self.level = config.logger.deployed_level
         if config.debug.logger:
