@@ -1,6 +1,8 @@
+<a href="https://andycoeband.com>">
 <p align="center">
-<a href="https://andycoeband.com>"><img src="https://drive.google.com/uc?id=1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC"></a>
+<img src="https://drive.google.com/uc?id=1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC">
 </p>
+</a>
 
 # <u>A</u>synchronous <u>C</u>omponent <u>B</u>ase
 
@@ -36,8 +38,7 @@ pdm add acb
 
 ## Acknowledgements
 
-ACB "blocks" logo used by permission from [Andy Coe Band]
-(https://andycoeband.com)
+ACB "blocks" logo used by permission from <a href="https://andycoeband.com">Andy Coe Band</a>
 
 
 ## License
