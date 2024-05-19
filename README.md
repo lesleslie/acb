@@ -1,8 +1,6 @@
-<a href="https://andycoeband.com>">
 <p align="center">
 <img src="https://drive.google.com/uc?id=1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC">
 </p>
-</a>
 
 # <u>A</u>synchronous <u>C</u>omponent <u>B</u>ase
 

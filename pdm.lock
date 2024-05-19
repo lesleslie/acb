@@ -53,12 +53,12 @@ files = [
 
 [[package]]
 name = "aioconsole"
-version = "0.7.0"
+version = "0.7.1"
 requires_python = ">=3.8"
 summary = "Asynchronous console and interfaces for asyncio"
 files = [
-    {file = "aioconsole-0.7.0-py3-none-any.whl", hash = "sha256:ee799435f77e8c3a2a7207c465feae2343a2aa537c38e8f56b629c8a321a02d0"},
-    {file = "aioconsole-0.7.0.tar.gz", hash = "sha256:c702d24406378d37d9873f91e03ce71520bac503d5ab03f81d8b563ff010bd54"},
+    {file = "aioconsole-0.7.1-py3-none-any.whl", hash = "sha256:1867a7cc86897a87398e6e6fba302738548f1cf76cbc6c76e06338e091113bdc"},
+    {file = "aioconsole-0.7.1.tar.gz", hash = "sha256:a3e52428d32623c96746ec3862d97483c61c12a2f2dfba618886b709415d4533"},
 ]
 
 [[package]]
@@ -278,15 +278,15 @@ files = [
 
 [[package]]
 name = "autotyping"
-version = "23.3.0"
-requires_python = ">=3.7"
+version = "24.3.0"
+requires_python = ">=3.8"
 summary = "A tool for autoadding simple type annotations."
 dependencies = [
     "libcst",
 ]
 files = [
-    {file = "autotyping-23.3.0-py3-none-any.whl", hash = "sha256:cf05803574f4172ccea59aa43d405d8e0b05d33ccca1b587ea82f23706e7cae1"},
-    {file = "autotyping-23.3.0.tar.gz", hash = "sha256:9f45d8e32ef3f25091c64f13a31464576fc9fbf7ecb9ce2325166652a23abded"},
+    {file = "autotyping-24.3.0-py3-none-any.whl", hash = "sha256:0637343190b858be19e00ff20a2f0344426357b9f8b849e28862d1a01cf12fe7"},
+    {file = "autotyping-24.3.0.tar.gz", hash = "sha256:bce5bffec7033b6487d45d57c409adf4065a1835f60113a6186c180bc61da4e4"},
 ]
 
 [[package]]
@@ -427,35 +427,6 @@ files = [
     {file = "Brotli-1.1.0-cp312-cp312-win32.whl", hash = "sha256:5f4d5ea15c9382135076d2fb28dde923352fe02951e66935a9efaac8f10e81b0"},
     {file = "Brotli-1.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:906bc3a79de8c4ae5b86d3d75a8b77e44404b0f4261714306e3ad248d8ab0951"},
     {file = "Brotli-1.1.0.tar.gz", hash = "sha256:81de08ac11bcb85841e440c13611c00b67d3bf82698314928d0b676362546724"},
-]
-
-[[package]]
-name = "cachecontrol"
-version = "0.13.1"
-requires_python = ">=3.7"
-summary = "httplib2 caching for requests"
-dependencies = [
-    "msgpack>=0.5.2",
-    "requests>=2.16.0",
-]
-files = [
-    {file = "cachecontrol-0.13.1-py3-none-any.whl", hash = "sha256:95dedbec849f46dda3137866dc28b9d133fc9af55f5b805ab1291833e4457aa4"},
-    {file = "cachecontrol-0.13.1.tar.gz", hash = "sha256:f012366b79d2243a6118309ce73151bf52a38d4a5dac8ea57f09bd29087e506b"},
-]
-
-[[package]]
-name = "cachecontrol"
-version = "0.13.1"
-extras = ["filecache"]
-requires_python = ">=3.7"
-summary = "httplib2 caching for requests"
-dependencies = [
-    "cachecontrol==0.13.1",
-    "filelock>=3.8.0",
-]
-files = [
-    {file = "cachecontrol-0.13.1-py3-none-any.whl", hash = "sha256:95dedbec849f46dda3137866dc28b9d133fc9af55f5b805ab1291833e4457aa4"},
-    {file = "cachecontrol-0.13.1.tar.gz", hash = "sha256:f012366b79d2243a6118309ce73151bf52a38d4a5dac8ea57f09bd29087e506b"},
 ]
 
 [[package]]
@@ -724,25 +695,25 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.33"
+version = "0.7.34"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
-    "acb>=0.4.0",
-    "aioconsole>=0.7.0",
+    "acb>=0.6.0",
+    "aioconsole>=0.7.1",
     "aiopath>=0.7.7",
-    "autotyping>=23.3.0",
+    "autotyping>=24.3.0",
     "click>=8.1.7",
     "inflection>=0.5.1",
-    "pdm-bump>=0.7.3",
-    "pdm>=2.12.3",
-    "pre-commit>=3.6.0",
-    "pydantic>=2.5.3",
-    "pytest>=7.4.3",
+    "pdm-bump>=0.9.0",
+    "pdm>=2.15.2",
+    "pre-commit>=3.7.1",
+    "pydantic>=2.7.1",
+    "pytest>=8.2.1",
 ]
 files = [
-    {file = "crackerjack-0.7.33-py3-none-any.whl", hash = "sha256:5cbb9d7a4b80d8d59d9a69e63553bd694335dd1ed81b8d37c0447eadfa8a2fd4"},
-    {file = "crackerjack-0.7.33.tar.gz", hash = "sha256:148a33a47e662e2d809c7b96786dde700b1542ab7662dc193713f1a2585b84b6"},
+    {file = "crackerjack-0.7.34-py3-none-any.whl", hash = "sha256:7713a94cbc79df52fdfa24368bac987838b39094ba871253041b250692ecf7e4"},
+    {file = "crackerjack-0.7.34.tar.gz", hash = "sha256:e919b4f80472d3272e1ea55691bba75fd82bc1fde80929db18dbc18d91b0e47c"},
 ]
 
 [[package]]
@@ -791,15 +762,15 @@ files = [
 
 [[package]]
 name = "dep-logic"
-version = "0.0.4"
+version = "0.2.0"
 requires_python = ">=3.8"
 summary = "Python dependency specifications supporting logical operations"
 dependencies = [
     "packaging>=22",
 ]
 files = [
-    {file = "dep_logic-0.0.4-py3-none-any.whl", hash = "sha256:65ab4122d5aaf4ec188dafc4cfdce55064929cf9e83d1aedcd57d6f586833b34"},
-    {file = "dep_logic-0.0.4.tar.gz", hash = "sha256:1830e784e0d58fc93511e77da164887629641b65b38876b274db974ec5f3889f"},
+    {file = "dep_logic-0.2.0-py3-none-any.whl", hash = "sha256:af439c2acaf7522dd321a71f30e0c4fd59b7553eb99967af07d53320902cde39"},
+    {file = "dep_logic-0.2.0.tar.gz", hash = "sha256:cff502b515aff2d413d19d6afc70174fc67da19e821be4a9b68460ccee2514c9"},
 ]
 
 [[package]]
@@ -884,25 +855,25 @@ files = [
 
 [[package]]
 name = "filelock"
-version = "3.12.4"
+version = "3.14.0"
 requires_python = ">=3.8"
 summary = "A platform independent file lock."
 files = [
-    {file = "filelock-3.12.4-py3-none-any.whl", hash = "sha256:08c21d87ded6e2b9da6728c3dff51baf1dcecf973b768ef35bcbc3447edb9ad4"},
-    {file = "filelock-3.12.4.tar.gz", hash = "sha256:2e6f249f1f3654291606e046b09f1fd5eac39b360664c27f5aad072012f8bcbd"},
+    {file = "filelock-3.14.0-py3-none-any.whl", hash = "sha256:43339835842f110ca7ae60f1e1c160714c5a6afd15a2873419ab185334975c0f"},
+    {file = "filelock-3.14.0.tar.gz", hash = "sha256:6ea72da3be9b8c82afd3edcf99f2fffbb5076335a5ae4d03248bb5b6c3eae78a"},
 ]
 
 [[package]]
 name = "findpython"
-version = "0.4.0"
-requires_python = ">=3.7"
+version = "0.6.1"
+requires_python = ">=3.8"
 summary = "A utility to find python versions on your system"
 dependencies = [
     "packaging>=20",
 ]
 files = [
-    {file = "findpython-0.4.0-py3-none-any.whl", hash = "sha256:087148ac5935f9be458f36a05f3fa479efdf2c629f5d386c73ea481cfecff15e"},
-    {file = "findpython-0.4.0.tar.gz", hash = "sha256:18b14d115678da18ae92ee22d7001cc30915ea531053f77010ee05a39680f438"},
+    {file = "findpython-0.6.1-py3-none-any.whl", hash = "sha256:1fb4d709205de185b0561900267dfff64a841c910fe28d6038b2394ff925a81a"},
+    {file = "findpython-0.6.1.tar.gz", hash = "sha256:56e52b409a92bcbd495cf981c85acf137f3b3e51cc769b46eba219bb1ab7533c"},
 ]
 
 [[package]]
@@ -1400,6 +1371,21 @@ files = [
 ]
 
 [[package]]
+name = "httpx"
+version = "0.27.0"
+extras = ["socks"]
+requires_python = ">=3.8"
+summary = "The next generation HTTP client."
+dependencies = [
+    "httpx==0.27.0",
+    "socksio==1.*",
+]
+files = [
+    {file = "httpx-0.27.0-py3-none-any.whl", hash = "sha256:71d5465162c13681bff01ad59b2cc68dd838ea1f10e51574bac27103f00c91a5"},
+    {file = "httpx-0.27.0.tar.gz", hash = "sha256:a0cb88a46f32dc874e04ee956e4c2764aba2aa228f650b06788ba6bda2962ab5"},
+]
+
+[[package]]
 name = "hyperframe"
 version = "6.0.1"
 requires_python = ">=3.6.1"
@@ -1821,50 +1807,92 @@ files = [
 ]
 
 [[package]]
+name = "pbs-installer"
+version = "2024.4.24"
+requires_python = ">=3.8"
+summary = "Installer for Python Build Standalone"
+files = [
+    {file = "pbs_installer-2024.4.24-py3-none-any.whl", hash = "sha256:f8291f0231003d279d0de8fde88fa87b7c6d7fabc2671235113cf67513ff74f5"},
+    {file = "pbs_installer-2024.4.24.tar.gz", hash = "sha256:19224733068b0ffa39b53afbb61544bee8ecb9503e7222ba034f07b9913e2c1c"},
+]
+
+[[package]]
+name = "pbs-installer"
+version = "2024.4.24"
+extras = ["install"]
+requires_python = ">=3.8"
+summary = "Installer for Python Build Standalone"
+dependencies = [
+    "pbs-installer==2024.4.24",
+    "zstandard>=0.21.0",
+]
+files = [
+    {file = "pbs_installer-2024.4.24-py3-none-any.whl", hash = "sha256:f8291f0231003d279d0de8fde88fa87b7c6d7fabc2671235113cf67513ff74f5"},
+    {file = "pbs_installer-2024.4.24.tar.gz", hash = "sha256:19224733068b0ffa39b53afbb61544bee8ecb9503e7222ba034f07b9913e2c1c"},
+]
+
+[[package]]
 name = "pdm"
-version = "2.12.3"
+version = "2.15.2"
 requires_python = ">=3.8"
 summary = "A modern Python package and dependency manager supporting the latest PEP standards"
 dependencies = [
     "blinker",
-    "cachecontrol[filecache]>=0.13.0",
-    "certifi",
-    "dep-logic<1.0,>=0.0.2",
-    "findpython<1.0.0a0,>=0.4.0",
+    "dep-logic<1.0,>=0.2.0",
+    "filelock>=3.13",
+    "findpython<1.0.0a0,>=0.6.0",
+    "hishel<0.1.0,>=0.0.24",
+    "httpx[socks]<1,>0.20",
     "installer<0.8,>=0.7",
+    "msgpack>=1.0",
     "packaging!=22.0,>=20.9",
+    "pbs-installer[install]",
     "platformdirs",
     "pyproject-hooks",
     "python-dotenv>=0.15",
-    "requests-toolbelt",
     "resolvelib>=1.0.1",
     "rich>=12.3.0",
     "shellingham>=1.3.2",
     "tomlkit<1,>=0.11.1",
     "truststore; python_version >= \"3.10\"",
-    "unearth>=0.12.1",
+    "unearth>=0.15.0",
     "virtualenv>=20",
 ]
 files = [
-    {file = "pdm-2.12.3-py3-none-any.whl", hash = "sha256:27eddf71434906e39db3f448d35ea5ee1f4d0f557de39fc932205f7dfc82f902"},
-    {file = "pdm-2.12.3.tar.gz", hash = "sha256:53cdab727c1469fdc196efd8d7ff8404a3ca91ee43c0a5714736f2020d0a5ddf"},
+    {file = "pdm-2.15.2-py3-none-any.whl", hash = "sha256:04cf106fbf2cf4564eda70b40ffb33acf4637e1cee55d6cec8f8c21fe1f70b65"},
+    {file = "pdm-2.15.2.tar.gz", hash = "sha256:c08e87078c29c00e7ad9681dc6a23419dc5617dcbe6cc205024ef4b4e7e28475"},
 ]
 
 [[package]]
 name = "pdm-bump"
-version = "0.7.3"
+version = "0.9.0"
 requires_python = ">=3.9"
 summary = "A plugin for PDM providing the ability to modify the version according to PEP440"
 dependencies = [
     "annotated-types>=0.2.0",
+    "pdm-pfsc>=0.10.0",
     "pdm>=2.00",
     "pyproject-metadata>=0.6.1",
     "tomli-w>=1.0.0",
     "tomlkit>=0.11.6",
 ]
 files = [
-    {file = "pdm_bump-0.7.3-py3-none-any.whl", hash = "sha256:ef2ec85de6b9052c27edbc45fcc17a61dd82a0cb209fc67549820ea0aa6274ae"},
-    {file = "pdm_bump-0.7.3.tar.gz", hash = "sha256:b5299dc5e3337b4d43354088ba33fed533fbdd3ba6acd0cc51fe111717889827"},
+    {file = "pdm_bump-0.9.0-py3-none-any.whl", hash = "sha256:0de179203adb5db6fc5a8e9f23d829a59ff207099d9b8599d5f6f2beed514bbc"},
+    {file = "pdm_bump-0.9.0.tar.gz", hash = "sha256:7ce9534035ad2e7e16c47a0b7c8031303ccc1c3cdb88ef7dcedd74b683a5397a"},
+]
+
+[[package]]
+name = "pdm-pfsc"
+version = "0.11.3"
+requires_python = ">=3.9"
+summary = "Core functionPlug-In Foundation Service Collection)"
+dependencies = [
+    "pdm>=2.12.4",
+    "pyproject-metadata>=0.7.1",
+    "tomli-w>=1.0.0",
+]
+files = [
+    {file = "pdm_pfsc-0.11.3-py3-none-any.whl", hash = "sha256:97cd9a2e56fbf09f0016c786f169d7b7cf517302c4331e090192c5b9a5640b46"},
 ]
 
 [[package]]
@@ -1879,12 +1907,12 @@ files = [
 
 [[package]]
 name = "pluggy"
-version = "1.3.0"
+version = "1.5.0"
 requires_python = ">=3.8"
 summary = "plugin and hook calling mechanisms for python"
 files = [
-    {file = "pluggy-1.3.0-py3-none-any.whl", hash = "sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7"},
-    {file = "pluggy-1.3.0.tar.gz", hash = "sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12"},
+    {file = "pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669"},
+    {file = "pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1"},
 ]
 
 [[package]]
@@ -1902,7 +1930,7 @@ files = [
 
 [[package]]
 name = "pre-commit"
-version = "3.6.0"
+version = "3.7.1"
 requires_python = ">=3.9"
 summary = "A framework for managing and maintaining multi-language pre-commit hooks."
 dependencies = [
@@ -1913,8 +1941,8 @@ dependencies = [
     "virtualenv>=20.10.0",
 ]
 files = [
-    {file = "pre_commit-3.6.0-py2.py3-none-any.whl", hash = "sha256:c255039ef399049a5544b6ce13d135caba8f2c28c3b4033277a788f434308376"},
-    {file = "pre_commit-3.6.0.tar.gz", hash = "sha256:d30bad9abf165f7785c15a21a1f46da7d0677cb00ee7ff4c579fd38922efe15d"},
+    {file = "pre_commit-3.7.1-py2.py3-none-any.whl", hash = "sha256:fae36fd1d7ad7d6a5a1c0b0d5adb2ed1a3bda5a21bf6c3e5372073d7a11cd4c5"},
+    {file = "pre_commit-3.7.1.tar.gz", hash = "sha256:8ca3ad567bc78a4972a3f1a477e94a79d4597e8140a6e0b651c5e33899c3654a"},
 ]
 
 [[package]]
@@ -2175,18 +2203,18 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "7.4.3"
-requires_python = ">=3.7"
+version = "8.2.1"
+requires_python = ">=3.8"
 summary = "pytest: simple powerful testing with Python"
 dependencies = [
     "colorama; sys_platform == \"win32\"",
     "iniconfig",
     "packaging",
-    "pluggy<2.0,>=0.12",
+    "pluggy<2.0,>=1.5",
 ]
 files = [
-    {file = "pytest-7.4.3-py3-none-any.whl", hash = "sha256:0d009c083ea859a71b76adf7c1d502e4bc170b80a8ef002da5806527b9591fac"},
-    {file = "pytest-7.4.3.tar.gz", hash = "sha256:d989d136982de4e3b29dabcc838ad581c64e8ed52c11fbe86ddebd9da0818cd5"},
+    {file = "pytest-8.2.1-py3-none-any.whl", hash = "sha256:faccc5d332b8c3719f40283d0d44aa5cf101cec36f88cde9ed8f2bc0538612b1"},
+    {file = "pytest-8.2.1.tar.gz", hash = "sha256:5046e5b46d8e4cac199c373041f26be56fdb81eb4e67dc11d4e10811fc3408fd"},
 ]
 
 [[package]]
@@ -2290,19 +2318,6 @@ files = [
 ]
 
 [[package]]
-name = "requests-toolbelt"
-version = "1.0.0"
-requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-summary = "A utility belt for advanced users of python-requests"
-dependencies = [
-    "requests<3.0.0,>=2.0.1",
-]
-files = [
-    {file = "requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6"},
-    {file = "requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06"},
-]
-
-[[package]]
 name = "resolvelib"
 version = "1.0.1"
 summary = "Resolve abstract dependencies into concrete ones"
@@ -2391,6 +2406,16 @@ summary = "Sniff out which async library your code is running under"
 files = [
     {file = "sniffio-1.3.0-py3-none-any.whl", hash = "sha256:eecefdce1e5bbfb7ad2eeaabf7c1eeb404d7757c379bd1f7e5cce9d8bf425384"},
     {file = "sniffio-1.3.0.tar.gz", hash = "sha256:e60305c5e5d314f5389259b7f22aaa33d8f7dee49763119234af3755c55b9101"},
+]
+
+[[package]]
+name = "socksio"
+version = "1.0.0"
+requires_python = ">=3.6"
+summary = "Sans-I/O implementation of SOCKS4, SOCKS4A, and SOCKS5."
+files = [
+    {file = "socksio-1.0.0-py3-none-any.whl", hash = "sha256:95dc1f15f9b34e8d7b16f06d74b8ccf48f609af32ab33c608d08761c5dcbb1f3"},
+    {file = "socksio-1.0.0.tar.gz", hash = "sha256:f88beb3da5b5c38b9890469de67d0cb0f9d494b78b106ca1845f96c10b91c4ac"},
 ]
 
 [[package]]
@@ -2506,16 +2531,16 @@ files = [
 
 [[package]]
 name = "unearth"
-version = "0.12.1"
-requires_python = ">=3.7"
+version = "0.15.2"
+requires_python = ">=3.8"
 summary = "A utility to fetch and download python packages"
 dependencies = [
+    "httpx<1,>=0.27.0",
     "packaging>=20",
-    "requests>=2.25",
 ]
 files = [
-    {file = "unearth-0.12.1-py3-none-any.whl", hash = "sha256:a5a5c51ca44965cbe3618116bd592bb0bbe3705af5fe14e5792660d904aad7c8"},
-    {file = "unearth-0.12.1.tar.gz", hash = "sha256:4caad941b60f51e50fdc109866234d407910aef77f1233aa1b6b5d168c7427ee"},
+    {file = "unearth-0.15.2-py3-none-any.whl", hash = "sha256:e715be44174f47111b9e2b723a46efe21bfbe5f3b5f55c207a2c4ebc11b1ef8b"},
+    {file = "unearth-0.15.2.tar.gz", hash = "sha256:381f3e6969db0b28d9fc2fbfb216860579bf341bd695472f2c62e2bcce9e6d3d"},
 ]
 
 [[package]]
@@ -2730,4 +2755,25 @@ files = [
     {file = "yarl-1.9.2-cp39-cp39-win32.whl", hash = "sha256:b124e2a6d223b65ba8768d5706d103280914d61f5cae3afbc50fc3dfcc016623"},
     {file = "yarl-1.9.2-cp39-cp39-win_amd64.whl", hash = "sha256:61016e7d582bc46a5378ffdd02cd0314fb8ba52f40f9cf4d9a5e7dbef88dee18"},
     {file = "yarl-1.9.2.tar.gz", hash = "sha256:04ab9d4b9f587c06d801c2abfe9317b77cdf996c65a90d5e84ecc45010823571"},
+]
+
+[[package]]
+name = "zstandard"
+version = "0.22.0"
+requires_python = ">=3.8"
+summary = "Zstandard bindings for Python"
+dependencies = [
+    "cffi>=1.11; platform_python_implementation == \"PyPy\"",
+]
+files = [
+    {file = "zstandard-0.22.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:6c25b8eb733d4e741246151d895dd0308137532737f337411160ff69ca24f93a"},
+    {file = "zstandard-0.22.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f9b2cde1cd1b2a10246dbc143ba49d942d14fb3d2b4bccf4618d475c65464912"},
+    {file = "zstandard-0.22.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a88b7df61a292603e7cd662d92565d915796b094ffb3d206579aaebac6b85d5f"},
+    {file = "zstandard-0.22.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:466e6ad8caefb589ed281c076deb6f0cd330e8bc13c5035854ffb9c2014b118c"},
+    {file = "zstandard-0.22.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a1d67d0d53d2a138f9e29d8acdabe11310c185e36f0a848efa104d4e40b808e4"},
+    {file = "zstandard-0.22.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:39b2853efc9403927f9065cc48c9980649462acbdf81cd4f0cb773af2fd734bc"},
+    {file = "zstandard-0.22.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8a1b2effa96a5f019e72874969394edd393e2fbd6414a8208fea363a22803b45"},
+    {file = "zstandard-0.22.0-cp312-cp312-win32.whl", hash = "sha256:88c5b4b47a8a138338a07fc94e2ba3b1535f69247670abfe422de4e0b344aae2"},
+    {file = "zstandard-0.22.0-cp312-cp312-win_amd64.whl", hash = "sha256:de20a212ef3d00d609d0b22eb7cc798d5a69035e81839f549b538eff4105d01c"},
+    {file = "zstandard-0.22.0.tar.gz", hash = "sha256:8226a33c542bcb54cd6bd0a366067b610b41713b64c9abec1bc4533d69f51e70"},
 ]
