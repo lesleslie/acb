@@ -5,7 +5,7 @@
 groups = ["default", "storage", "cache", "dev", "requests", "sql", "dns", "nosql", "email", "demo", "ftp", "secret"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:586442b10a621359f3591807f5781af780287c8d89e45d1d01b748e2286c8f43"
+content_hash = "sha256:ab3128bf9256c3071526c31df76ca74261b4b21f65f80569cf45dfdebd797211"
 
 [[package]]
 name = "about-time"

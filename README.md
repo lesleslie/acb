@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://drive.google.com/uc?id=1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC">
+<a href="https://andycoeband.com>"><img src="https://drive.google.com/file/d/1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC/view?usp=sharing"></a>
 </p>
 
 # <u>A</u>synchronous <u>C</u>omponent <u>B</u>ase
@@ -10,9 +10,6 @@
 Asynchronous Component Base, or 'acb', is a collection of modular
 components (actions / adapters) that provide the building blocks for rapid,
 asynchronous, application development.
-This codebase should be considered alpha right now as it is under
-heavy development. A majority of the components are currently being back-ported from
-other apps and may not currently work as intended.
 
 More documentation is on the way!
 
@@ -27,15 +24,20 @@ pdm add acb
 
 ## Adapters
 
+
 ### Configuration
 
+
 ### Dependency Injection
+
 
 ### Debug
 
 
-
 ## Acknowledgements
+
+ACB "blocks" logo used by permission from [Andy Coe Band]
+(https://andycoeband.com)
 
 
 ## License
