@@ -41,16 +41,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest",
-    "pdm-bump",
-    "pdm",
-    "pyfiglet",
-    "pre-commit",
     "autotyping",
-    "ulid-py",
-    "phonenumbers",
     "alive-progress",
+    "pdm-bump",
+    "pyfiglet",
     "pyyaml",
+    "ulid-py",
+    "pytest",
+    "pdm",
+    "phonenumbers",
+    "pre-commit",
 ]
 
 [tool.refurb]
@@ -61,10 +61,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B403",
     "B404",
     "B113",
+    "B403",
+    "B603",
 ]
 
 [tool.pyright]
