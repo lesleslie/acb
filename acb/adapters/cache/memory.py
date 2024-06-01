@@ -1,11 +1,9 @@
 import typing as t
 
-from acb.depends import depends
-from cashews.serialize import register_type
+from cashews.serialize import Serializer, register_type
 from msgspec import msgpack
-from ._base import CacheBase
-from ._base import CacheBaseSettings
-from cashews.serialize import Serializer
+from acb.depends import depends
+from ._base import CacheBase, CacheBaseSettings
 
 
 class CacheSettings(CacheBaseSettings): ...

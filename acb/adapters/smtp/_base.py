@@ -1,13 +1,10 @@
 import typing as t
 
-from acb.adapters import AdapterBase
-from acb.config import Config
-from acb.config import gen_password
-from acb.config import Settings
-from acb.depends import depends
 from aiopath import AsyncPath
-from pydantic import EmailStr
-from pydantic import SecretStr
+from pydantic import EmailStr, SecretStr
+from acb.adapters import AdapterBase
+from acb.config import Config, Settings, gen_password
+from acb.depends import depends
 
 
 class EmailBaseSettings(Settings):

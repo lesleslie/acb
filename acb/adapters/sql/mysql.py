@@ -1,6 +1,5 @@
 from acb.depends import depends
-from ._base import SqlBase
-from ._base import SqlBaseSettings
+from ._base import SqlBase, SqlBaseSettings
 
 
 class SqlSettings(SqlBaseSettings):

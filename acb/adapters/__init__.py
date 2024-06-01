@@ -1,21 +1,17 @@
 import asyncio
 import typing as t
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from importlib import import_module
-from inspect import currentframe
-from inspect import stack
+from inspect import currentframe, stack
 from pathlib import Path
 
 import nest_asyncio
-from acb import Adapter
-from acb import adapter_registry
-from acb import base_path
-from acb.actions.encode import yaml_encode
-from acb.depends import depends
 from aiopath import AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
+from acb import Adapter, adapter_registry, base_path
+from acb.actions.encode import yaml_encode
+from acb.depends import depends
 
 nest_asyncio.apply()
 

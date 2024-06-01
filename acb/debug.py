@@ -4,15 +4,13 @@ import typing as t
 from pathlib import Path
 from time import perf_counter
 
-from acb.adapters import import_adapter
-from acb.config import adapter_registry
-from acb.config import Config
-from acb.depends import depends
 from aioconsole import aprint
 from devtools import pformat
-from icecream import colorize
+from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
-from icecream import supportTerminalColorsInWindows
+from acb.adapters import import_adapter
+from acb.config import Config, adapter_registry
+from acb.depends import depends
 
 Logger = import_adapter()
 
@@ -28,7 +26,9 @@ def get_calling_module() -> Path | None:
 
 @depends.inject
 def patch_record(
-    mod: Path, msg: str, logger: Logger = depends()  # type: ignore
+    mod: Path,
+    msg: str,
+    logger: Logger = depends(),  # type: ignore
 ) -> None:
     if next(
         a

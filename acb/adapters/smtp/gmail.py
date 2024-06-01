@@ -1,8 +1,7 @@
 import typing as t
 
 from acb.depends import depends
-from ._base import EmailBase
-from ._base import EmailBaseSettings
+from ._base import EmailBase, EmailBaseSettings
 
 
 class EmailSettings(EmailBaseSettings):

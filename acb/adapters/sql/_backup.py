@@ -1,23 +1,18 @@
 import typing as t
-from calendar import isleap
-from calendar import monthrange
-from datetime import date
-from datetime import datetime
-from datetime import timedelta
+from calendar import isleap, monthrange
+from datetime import date, datetime, timedelta
 from itertools import chain
 from pathlib import Path
 from re import search
 
 import arrow
+from aiopath import AsyncPath
+from pydantic import BaseModel, create_model
+from sqlmodel import SQLModel, select
 from acb.actions.encode import load
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-from aiopath import AsyncPath
-from pydantic import BaseModel
-from pydantic import create_model
-from sqlmodel import select
-from sqlmodel import SQLModel
 
 # from contextlib import suppress
 # from sqlalchemy.exc import IntegrityError
@@ -266,14 +261,13 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
                 self.logger.debug(f"Deleted {name}")
 
     def clean(self) -> bool:
-        """
-        Remove a series of backup files based on the following rules:
+        """Remove a series of old backup files.
+
         * Keeps all the backups from the last 7 days
         * Keeps the most recent backup from each week of the last month
         * Keeps the most recent backup from each month of the last year
         * Keeps the most recent backup from each year of the remaining years
         """
-
         # get black and white list
         cleaning = SqlBackupDates(self.get_timestamps())
         white_list = cleaning.white_list

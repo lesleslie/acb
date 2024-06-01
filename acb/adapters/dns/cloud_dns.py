@@ -1,24 +1,27 @@
+import typing as t
 from asyncio import sleep
 from contextlib import suppress
-from warnings import catch_warnings
-from warnings import filterwarnings
+from warnings import catch_warnings, filterwarnings
 
-from acb.depends import depends
-from google.api_core.exceptions import BadRequest
-from google.api_core.exceptions import Conflict
+from google.api_core.exceptions import BadRequest, Conflict
 from google.cloud.dns import Changes
 from google.cloud.dns import Client as DnsClient
+from google.cloud.dns.resource_record_set import ResourceRecordSet
+from google.cloud.dns.zone import ManagedZone
 from validators import domain
 from validators.utils import ValidationError
-from ._base import DnsBase
-from ._base import DnsBaseSettings
-from ._base import DnsRecord
+from acb.depends import depends
+from ._base import DnsBase, DnsBaseSettings, DnsRecord
 
 
 class DnsSettings(DnsBaseSettings): ...
 
 
 class Dns(DnsBase):
+    current_record_sets: list[ResourceRecordSet] = []
+    new_record_sets: list[ResourceRecordSet] = []
+    zone: ManagedZone | None = None
+
     async def init(self) -> None:
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
@@ -63,20 +66,44 @@ class Dns(DnsBase):
                 raise err
             self.logger.info("Development domain detected - no changes made")
 
-    async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
-        if isinstance(records, DnsRecord):
-            records = [records]
+    async def delete_record_sets(self) -> None:
         changes = self.zone.changes()
-        current_record_sets = []
-        new_record_sets = []
+        for record_set in self.current_record_sets:
+            changes.delete_record_set(record_set)
+        self.logger.info("Deleting record sets")
+        await self.apply_changes(changes)
+
+    async def add_record_sets(self) -> None:
+        changes = self.zone.changes()
+        for record_set in self.new_record_sets:
+            changes.add_record_set(record_set)
+        self.logger.info("Creating record sets")
+        await self.apply_changes(changes)
+
+    def get_record_set(self, record: DnsRecord) -> ResourceRecordSet:
+        return self.zone.resource_record_set(
+            name=record.name,
+            record_type=record.type,
+            ttl=record.ttl,
+            rrdatas=record.rrdata,
+        )
+
+    def get_current_record(self, record: DnsRecord) -> t.Any:
+        current_record = [
+            r
+            for r in self.list_records()
+            if r.name == record.name and r.type == record.type
+        ]
+        if len(current_record) == 1:
+            return current_record[0]
+
+    async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
+        records = [records] if isinstance(records, DnsRecord) else records
         for record in records:
             if not record.name.endswith("."):
                 record.name = f"{record.name}."
-            record.rrdata = (
-                [record.rrdata]
-                if not isinstance(record.rrdata, list)
-                else record.rrdata
-            )
+            if not isinstance(record.rrdata, list):
+                record.rrdata = [record.rrdata]
             for i, r in enumerate(record.rrdata):
                 with suppress(ValidationError):
                     if isinstance(r, str) and domain(r) and not r.endswith("."):
@@ -84,45 +111,20 @@ class Dns(DnsBase):
                         record.rrdata[i] = r
                     if record.type == "TXT":
                         record.rrdata[i] = f'"{r}"'
-            current_record = [
-                r
-                for r in self.list_records()
-                if r.name == record.name and r.type == record.type
-            ]
-            if len(current_record) == 1:
-                # print(current_record[0])
-                current_record = current_record[0]
+            current_record = self.get_current_record(record)
+            if current_record:
                 if current_record.__dict__ == record.__dict__:
                     continue
-                current_record_set = self.zone.resource_record_set(
-                    name=current_record.name,
-                    record_type=current_record.type,
-                    ttl=current_record.ttl,
-                    rrdatas=current_record.rrdata,
-                )
-                current_record_sets.append(current_record_set)
+                self.current_record_sets.append(self.get_record_set(current_record))
                 self.logger.info(f"Deleting - {current_record}")
-            record_set = self.zone.resource_record_set(
-                name=record.name,
-                record_type=record.type,
-                ttl=record.ttl,
-                rrdatas=record.rrdata,
-            )
-            new_record_sets.append(record_set)
+            record_set = self.get_record_set(record)
+            self.new_record_sets.append(record_set)
             self.logger.info(f"Creating - {record}")
-        if current_record_sets:
-            for record_set in current_record_sets:
-                changes.delete_record_set(record_set)
-            self.logger.info("Deleting record sets")
-            await self.apply_changes(changes)
-        changes = self.zone.changes()
-        if new_record_sets:
-            for record_set in new_record_sets:
-                changes.add_record_set(record_set)
-            self.logger.info("Creating record sets")
-            await self.apply_changes(changes)
-        else:
-            self.logger.info("No DNS changes detected")
+        if self.current_record_sets:
+            await self.delete_record_sets()
+        if self.new_record_sets:
+            return await self.add_record_sets()
+        self.logger.info("No DNS changes detected")
 
 
 depends.set(Dns)

@@ -1,14 +1,11 @@
 import typing as t
 
-from acb.actions.encode import dump
-from acb.actions.encode import load
+from cashews.serialize import Serializer, register_type
+from pydantic import RedisDsn
+from acb.actions.encode import dump, load
 from acb.config import Config
 from acb.depends import depends
-from cashews.serialize import register_type
-from pydantic import RedisDsn
-from ._base import CacheBase
-from ._base import CacheBaseSettings
-from cashews.serialize import Serializer
+from ._base import CacheBase, CacheBaseSettings
 
 
 class CacheSettings(CacheBaseSettings):

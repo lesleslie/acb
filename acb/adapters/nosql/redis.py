@@ -1,9 +1,8 @@
 # from redis_om import get_redis_connection
 # from redis_om import Migrator
 
-from ._base import NosqlBaseSettings
-from ._base import NosqlBase
 from pydantic import field_validator
+from ._base import NosqlBase, NosqlBaseSettings
 
 
 class NosqlSettings(NosqlBaseSettings):

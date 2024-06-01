@@ -6,7 +6,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.33",
+    "crackerjack>=0.8.2",
 ]
 
 [tool.ruff]
@@ -16,16 +16,35 @@ fix = true
 show-fixes = true
 output-format = "full"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
 ignore = [
     "F821",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+]
+extend-select = [
+    "I",
+    "C901",
+    "D",
 ]
 
 [tool.ruff.lint.isort]
-force-single-line = true
+no-lines-before = [
+    "first-party",
+    "local-folder",
+]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 10
+max-complexity = 11
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -41,16 +60,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest",
-    "pdm",
-    "pre-commit",
-    "ulid-py",
     "pdm-bump",
-    "phonenumbers",
-    "pyyaml",
+    "pytest",
+    "pre-commit",
     "pyfiglet",
-    "autotyping",
     "alive-progress",
+    "pyyaml",
+    "phonenumbers",
+    "ulid-py",
+    "pdm",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -63,8 +82,8 @@ target = [
 skips = [
     "B603",
     "B113",
-    "B404",
     "B403",
+    "B404",
 ]
 
 [tool.pyright]
@@ -93,7 +112,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.6.2"
+version = "0.6.3"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -113,7 +132,7 @@ dependencies = [
     "aiopath>=0.7.7",
     "pyyaml>=6.0.1",
     "google-crc32c>=1.5.0",
-    "pydantic[email]>=2.7.1",
+    "pydantic[email]>=2.7.2",
     "devtools>=0.12.2",
 ]
 requires-python = ">=3.12"
@@ -153,11 +172,11 @@ storage = [
 ]
 dns = [
     "google-cloud-dns>=0.35.0",
-    "validators>=0.28.1",
+    "validators>=0.28.3",
 ]
 requests = [
     "httpx[http2]>=0.27.0",
-    "hishel>=0.0.26",
+    "hishel>=0.0.27",
 ]
 email = [
     "mailgun>=0.1.1",
@@ -175,7 +194,7 @@ nosql = [
     "motor>=3.4.0",
 ]
 demo = [
-    "faker>=25.2.0",
+    "faker>=25.3.0",
 ]
 ftp = [
     "aioftp>=0.22.3",

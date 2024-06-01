@@ -1,10 +1,9 @@
 import typing as t
 
+from pydantic import SecretStr
 from acb.config import Config
 from acb.depends import depends
-from pydantic import SecretStr
-from ._base import MonitoringBase
-from ._base import MonitoringBaseSettings
+from ._base import MonitoringBase, MonitoringBaseSettings
 
 
 class MonitoringSettings(MonitoringBaseSettings):

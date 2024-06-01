@@ -1,12 +1,13 @@
 import typing as t
 
-from acb.depends import depends
+from hishel import (
+    AsyncCacheClient,  # type: ignore
+    RedisStorage,  # type: ignore
+)
 from httpx import Response as HttpxResponse
-from hishel import AsyncCacheClient  # type: ignore
-from hishel import RedisStorage  # type: ignore
-from ._base import RequestsBase
-from ._base import RequestsBaseSettings
 from redis.asyncio import Redis as AsyncRedis
+from acb.depends import depends
+from ._base import RequestsBase, RequestsBaseSettings
 
 
 class RequestsSettings(RequestsBaseSettings): ...

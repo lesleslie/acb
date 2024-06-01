@@ -3,13 +3,12 @@ from contextvars import ContextVar
 from importlib import import_module
 from inspect import isclass
 
+from aiopath import AsyncPath
+from sqlmodel import SQLModel
 from acb import base_path
 from acb.adapters import get_installed_adapters
 from acb.depends import depends
-from aiopath import AsyncPath
-from sqlmodel import SQLModel
-from ._base import ModelsBase
-from ._base import ModelsBaseSettings
+from ._base import ModelsBase, ModelsBaseSettings
 
 imported_models: ContextVar[list[t.Any]] = ContextVar("imported_models", default=[])
 

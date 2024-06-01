@@ -1,12 +1,10 @@
 import typing as t
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
-from acb.config import Config
-from acb.config import Settings
-from acb.depends import depends
 from pydantic import BaseModel
 from acb.adapters import AdapterBase
+from acb.config import Config, Settings
+from acb.depends import depends
 
 
 class DnsRecord(BaseModel):

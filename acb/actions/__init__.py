@@ -1,9 +1,7 @@
 from pathlib import Path
 
-from acb import Action
-from acb import action_registry
-from acb import base_path
 from aiopath import AsyncPath
+from acb import Action, action_registry, base_path
 
 
 def register_actions() -> None:

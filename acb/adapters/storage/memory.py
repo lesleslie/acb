@@ -1,9 +1,8 @@
 import typing as t
 
-from acb.depends import depends
 from fsspec.implementations.memory import MemoryFileSystem
-from ._base import StorageBase
-from ._base import StorageBaseSettings
+from acb.depends import depends
+from ._base import StorageBase, StorageBaseSettings
 
 
 class StorageSettings(StorageBaseSettings): ...

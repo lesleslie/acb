@@ -3,13 +3,11 @@ import sys
 import typing as t
 from inspect import currentframe
 
-from acb.config import Config
-from acb.config import debug
-from acb.depends import depends
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
-from ._base import LoggerBase
-from ._base import LoggerBaseSettings
+from acb.config import Config, debug
+from acb.depends import depends
+from ._base import LoggerBase, LoggerBaseSettings
 
 
 class LoggerSettings(LoggerBaseSettings):

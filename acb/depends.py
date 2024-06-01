@@ -1,7 +1,6 @@
 import typing as t
 
-from bevy import dependency
-from bevy import get_repository
+from bevy import dependency, get_repository
 from bevy import inject as inject_dependency
 
 

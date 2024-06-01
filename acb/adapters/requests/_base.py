@@ -1,10 +1,9 @@
 import typing as t
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
+from pydantic import field_validator
 from acb.adapters import AdapterBase
 from acb.config import Settings
-from pydantic import field_validator
 
 
 class RequestsBaseSettings(Settings):
