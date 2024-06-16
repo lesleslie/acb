@@ -3,8 +3,8 @@ from ._base import SqlBase, SqlBaseSettings
 
 
 class SqlSettings(SqlBaseSettings):
-    _driver: str = "mysql+mysqldb"
-    _async_driver: str = "mysql+asyncmy"
+    _driver: str = "mysql+pymysql"
+    _async_driver: str = "mysql+aiomysql"
 
 
 class Sql(SqlBase): ...

@@ -60,16 +60,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
     "pytest",
+    "autotyping",
     "pre-commit",
-    "pyfiglet",
-    "alive-progress",
-    "pyyaml",
-    "phonenumbers",
     "ulid-py",
     "pdm",
-    "autotyping",
+    "pdm-bump",
+    "phonenumbers",
+    "alive-progress",
+    "pyyaml",
+    "pyfiglet",
 ]
 
 [tool.refurb]
@@ -80,10 +80,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B113",
-    "B403",
     "B404",
+    "B403",
+    "B113",
+    "B603",
 ]
 
 [tool.pyright]
@@ -112,7 +112,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.6.3"
+version = "0.6.4"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -184,10 +184,10 @@ email = [
 sql = [
     "sqlalchemy>=2.0.30",
     "sqlalchemy-utils>=0.41.2",
-    "mysqlclient>=2.2.4",
-    "asyncmy>=0.2.9",
     "sqlmodel>=0.0.18",
     "babel>=2.15.0",
+    "pymysql>=1.1.1",
+    "aiomysql>=0.2.0",
 ]
 nosql = [
     "google-cloud-firestore>=2.16.0",
