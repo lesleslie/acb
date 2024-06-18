@@ -1,7 +1,8 @@
 import asyncio
+import sys
 import typing as t
 from abc import ABC, abstractmethod
-from importlib import import_module
+from importlib import import_module, util
 from inspect import currentframe, stack
 from pathlib import Path
 
@@ -43,7 +44,14 @@ def import_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
         )
     _adapter_path = get_adapter(adapter_category).path
     _module_name = get_module_name(_adapter_path)
-    _adapter_class = getattr(import_module(_module_name), camelize(adapter_category))
+    try:
+        _module = import_module(_module_name)
+    except ModuleNotFoundError:
+        spec = util.spec_from_file_location(_adapter_path.stem, _adapter_path)
+        _module = util.module_from_spec(spec)  # type: ignore
+        sys.modules[_adapter_path.stem] = _module
+        spec.loader.exec_module(_module)
+    _adapter_class = getattr(_module, camelize(adapter_category))
     return _adapter_class
 
 
