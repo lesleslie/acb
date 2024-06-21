@@ -45,5 +45,3 @@ class App(AppBase):
 
 
 depends.set(App)
-
-app = depends.get(App)

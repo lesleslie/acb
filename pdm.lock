@@ -833,15 +833,15 @@ files = [
 
 [[package]]
 name = "faker"
-version = "25.8.0"
+version = "25.9.1"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
     "python-dateutil>=2.4",
 ]
 files = [
-    {file = "Faker-25.8.0-py3-none-any.whl", hash = "sha256:4c40b34a9c569018d4f9d6366d71a4da8a883d5ddf2b23197be5370f29b7e1b6"},
-    {file = "Faker-25.8.0.tar.gz", hash = "sha256:bdec5f2fb057d244ebef6e0ed318fea4dcbdf32c3a1a010766fc45f5d68fc68d"},
+    {file = "Faker-25.9.1-py3-none-any.whl", hash = "sha256:f1dc27dc8035cb7e97e96afbb5fe1305eed6aeea53374702cbac96acfe851626"},
+    {file = "Faker-25.9.1.tar.gz", hash = "sha256:0e1cf7a8d3c94de91a65ab1e9cf7050903efae1e97901f8e5924a9f45147ae44"},
 ]
 
 [[package]]
@@ -2393,24 +2393,24 @@ files = [
 
 [[package]]
 name = "sqlalchemy"
-version = "2.0.30"
+version = "2.0.31"
 requires_python = ">=3.7"
 summary = "Database Abstraction Library"
 dependencies = [
-    "greenlet!=0.4.17; platform_machine == \"win32\" or platform_machine == \"WIN32\" or platform_machine == \"AMD64\" or platform_machine == \"amd64\" or platform_machine == \"x86_64\" or platform_machine == \"ppc64le\" or platform_machine == \"aarch64\"",
+    "greenlet!=0.4.17; (platform_machine == \"win32\" or platform_machine == \"WIN32\" or platform_machine == \"AMD64\" or platform_machine == \"amd64\" or platform_machine == \"x86_64\" or platform_machine == \"ppc64le\" or platform_machine == \"aarch64\") and python_version < \"3.13\"",
     "typing-extensions>=4.6.0",
 ]
 files = [
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:5a79d65395ac5e6b0c2890935bad892eabb911c4aa8e8015067ddb37eea3d56c"},
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9a5baf9267b752390252889f0c802ea13b52dfee5e369527da229189b8bd592e"},
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3cb5a646930c5123f8461f6468901573f334c2c63c795b9af350063a736d0134"},
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:296230899df0b77dec4eb799bcea6fbe39a43707ce7bb166519c97b583cfcab3"},
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:c62d401223f468eb4da32627bffc0c78ed516b03bb8a34a58be54d618b74d472"},
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:3b69e934f0f2b677ec111b4d83f92dc1a3210a779f69bf905273192cf4ed433e"},
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-win32.whl", hash = "sha256:77d2edb1f54aff37e3318f611637171e8ec71472f1fdc7348b41dcb226f93d90"},
-    {file = "SQLAlchemy-2.0.30-cp312-cp312-win_amd64.whl", hash = "sha256:b6c7ec2b1f4969fc19b65b7059ed00497e25f54069407a8701091beb69e591a5"},
-    {file = "SQLAlchemy-2.0.30-py3-none-any.whl", hash = "sha256:7108d569d3990c71e26a42f60474b4c02c8586c4681af5fd67e51a044fdea86a"},
-    {file = "SQLAlchemy-2.0.30.tar.gz", hash = "sha256:2b1708916730f4830bc69d6f49d37f7698b5bd7530aca7f04f785f8849e95255"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:3b74570d99126992d4b0f91fb87c586a574a5872651185de8297c6f90055ae42"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6f77c4f042ad493cb8595e2f503c7a4fe44cd7bd59c7582fd6d78d7e7b8ec52c"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cd1591329333daf94467e699e11015d9c944f44c94d2091f4ac493ced0119449"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:74afabeeff415e35525bf7a4ecdab015f00e06456166a2eba7590e49f8db940e"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:b9c01990d9015df2c6f818aa8f4297d42ee71c9502026bb074e713d496e26b67"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:66f63278db425838b3c2b1c596654b31939427016ba030e951b292e32b99553e"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-win32.whl", hash = "sha256:0b0f658414ee4e4b8cbcd4a9bb0fd743c5eeb81fc858ca517217a8013d282c96"},
+    {file = "SQLAlchemy-2.0.31-cp312-cp312-win_amd64.whl", hash = "sha256:fa4b1af3e619b5b0b435e333f3967612db06351217c58bfb50cee5f003db2a5a"},
+    {file = "SQLAlchemy-2.0.31-py3-none-any.whl", hash = "sha256:69f3e3c08867a8e4856e92d7afb618b95cdee18e0bc1647b77599722c9a28911"},
+    {file = "SQLAlchemy-2.0.31.tar.gz", hash = "sha256:b607489dd4a54de56984a0c7656247504bd5523d9d0ba799aef59d4add009484"},
 ]
 
 [[package]]
