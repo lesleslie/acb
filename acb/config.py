@@ -31,7 +31,7 @@ register_adapters()
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
-_deployed: bool = True if Path.cwd().name == "app" else False
+_deployed: bool = True if Path.cwd().parent.name == "app" else False
 _secrets_path: AsyncPath = tmp_path / "secrets"
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
@@ -302,5 +302,6 @@ class Config(BaseModel, extra="allow"):
         self.app = AppSettings()
 
 
+print(_deployed)
 depends.set(Config)
 depends.get(Config).init()

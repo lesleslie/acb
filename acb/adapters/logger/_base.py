@@ -1,3 +1,4 @@
+from acb.adapters import AdapterBase
 from acb.config import Settings
 
 
@@ -6,4 +7,4 @@ class LoggerBaseSettings(Settings):
     deployed_level: str = "ERROR"
 
 
-class LoggerBase: ...
+class LoggerBase(AdapterBase): ...

@@ -5,7 +5,8 @@ from inspect import currentframe
 
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
-from acb.config import Config, debug
+from acb import base_path
+from acb.config import Config, _deployed, debug
 from acb.depends import depends
 from ._base import LoggerBase, LoggerBaseSettings
 
@@ -75,6 +76,8 @@ class Logger(_Logger, LoggerBase):
             self.level(level.upper(), color=f"<{color}>")
         if config.deployed:
             self.level = config.logger.deployed_level
+        self.info(f"App path: {base_path}")
+        self.info(f"App deployed: {_deployed}")
         if config.debug.logger:
             self.debug("debug")
             self.info("info")
