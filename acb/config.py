@@ -302,6 +302,5 @@ class Config(BaseModel, extra="allow"):
         self.app = AppSettings()
 
 
-print(_deployed)
 depends.set(Config)
 depends.get(Config).init()
