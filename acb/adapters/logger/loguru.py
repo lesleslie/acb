@@ -3,10 +3,9 @@ import sys
 import typing as t
 from inspect import currentframe
 
-from loguru import Record
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
-from acb import base_path, local_container
+from acb import base_path
 from acb.config import Config, _deployed, debug
 from acb.depends import depends
 from ._base import LoggerBase, LoggerBaseSettings
@@ -65,14 +64,14 @@ class Logger(_Logger, LoggerBase):
 
     @depends.inject
     async def init(self, config: Config = depends()) -> None:
-        def patch_name(record: Record) -> str:  # type: ignore
+        def patch_name(record: dict[str, t.Any]) -> str:  # type: ignore
             mod_parts = record["name"].split(".")
             mod_name = ".".join(mod_parts[:-1])
             if len(mod_parts) > 3:
                 mod_name = ".".join(mod_parts[1:-1])
             return mod_name
 
-        def filter_by_module(record: Record) -> bool:
+        def filter_by_module(record: dict[str, t.Any]) -> bool:
             try:
                 name = record["name"].split(".")[-2]
             except IndexError:
@@ -104,7 +103,6 @@ class Logger(_Logger, LoggerBase):
             self.level(level.upper(), color=f"<{color}>")
         self.info(f"App path: {base_path}")
         self.info(f"App deployed: {_deployed}")
-        self.info(f"Local container: {local_container}")
         if config.debug.logger:
             self.debug("debug")
             self.info("info")

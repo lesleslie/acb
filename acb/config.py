@@ -1,4 +1,5 @@
 import asyncio
+import os
 import typing as t
 from abc import ABC, abstractmethod
 from contextvars import ContextVar
@@ -31,7 +32,7 @@ register_adapters()
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
-_deployed: bool = True if Path.cwd().parent.name == "app" else False
+_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 _secrets_path: AsyncPath = tmp_path / "secrets"
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 

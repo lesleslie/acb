@@ -1,4 +1,3 @@
-import os
 from contextvars import ContextVar
 from pathlib import Path
 
@@ -7,7 +6,6 @@ from pydantic import BaseModel
 
 base_path: AsyncPath = AsyncPath(Path.cwd())
 tmp_path: AsyncPath = base_path / "tmp"
-local_container: bool = os.getenv("LOCAL_CONTAINER", "False").lower() == "true"
 
 
 class Action(BaseModel, arbitrary_types_allowed=True):

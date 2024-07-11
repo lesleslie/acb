@@ -2,7 +2,6 @@ import typing as t
 
 from cashews.wrapper import Cache
 from pydantic import AnyUrl, RedisDsn, SecretStr, field_validator
-from acb import local_container
 from acb.adapters import AdapterBase, import_adapter
 from acb.config import Config, Settings, gen_password
 from acb.depends import depends
@@ -29,8 +28,6 @@ class CacheBaseSettings(Settings):
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or f"{config.app.name}:"
-        if local_container:
-            self.local_host = "host.docker.internal"
         self.host = SecretStr(self.local_host) if not config.deployed else self.host
         self.password = SecretStr("") if not config.deployed else self.password
         self.template_timeout = self.template_timeout if config.deployed else 1
