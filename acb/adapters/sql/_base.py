@@ -28,6 +28,7 @@ class SqlBaseSettings(Settings):
     pool_pre_ping: t.Optional[bool] = False
     poolclass: t.Optional[t.Any] = None
     host: SecretStr = SecretStr("127.0.0.1")
+    local_host: str = "127.0.0.1"
     user: SecretStr = SecretStr("root")
     password: SecretStr = SecretStr(gen_password())
     _url: t.Optional[URL] = None
@@ -43,7 +44,9 @@ class SqlBaseSettings(Settings):
             drivername=self._driver,
             username=self.user.get_secret_value(),
             password=self.password.get_secret_value(),
-            host=("127.0.0.1" if not config.deployed else self.host.get_secret_value()),
+            host=(
+                self.local_host if not config.deployed else self.host.get_secret_value()
+            ),
             port=self.port,
             database=config.app.name,
         )
