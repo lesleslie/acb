@@ -17,14 +17,14 @@ class Hash:
         elif isinstance(obj, list):
             obj = "".join([str(a) for a in obj])
         if not isinstance(obj, bytes):
-            obj = obj.encode()
+            obj = obj.encode()  # type: ignore
         return blake3(obj).hexdigest()
 
     @staticmethod
     async def crc32c(obj: Path | AsyncPath | str) -> int:
         if isinstance(obj, Path | AsyncPath):
             obj = await AsyncPath(obj).read_text()
-        return crc32c(obj.encode())
+        return crc32c(obj.encode())  # type: ignore
 
 
 hash: Hash = Hash()
