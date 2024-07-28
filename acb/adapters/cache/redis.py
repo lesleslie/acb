@@ -35,7 +35,7 @@ class Cache(CacheBase):
     async def init(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
         await super().init(
             str(self.config.cache._url),
-            password=self.config.cache.password.get_secret_value(),
+            # password=self.config.cache.password.get_secret_value(),
             client_side=True,
             client_side_prefix=self.config.cache.prefix,
         )

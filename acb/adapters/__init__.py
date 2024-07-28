@@ -21,6 +21,10 @@ app_settings_path: Path = settings_path / "app.yml"
 adapter_settings_path: Path = settings_path / "adapters.yml"
 
 
+class AdapterNotFound(Exception):
+    pass
+
+
 def get_adapter(category: str) -> Adapter | None:
     _adapter = next(
         (a for a in adapter_registry.get() if a.category == category and a.enabled),
@@ -42,7 +46,13 @@ def import_adapter(adapter_category: t.Optional[str] = None) -> t.Any:
         adapter_category = (
             stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
         )
-    _adapter_path = get_adapter(adapter_category).path
+    try:
+        _adapter_path = get_adapter(adapter_category).path
+    except AttributeError:
+        raise AdapterNotFound(
+            f"{adapter_category} adapter not found - please make sure one is "
+            f" configured in app.yml"
+        )
     _module_name = get_module_name(_adapter_path)
     try:
         _module = import_module(_module_name)

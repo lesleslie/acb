@@ -26,11 +26,12 @@ class Dns(DnsBase):
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             self.client = DnsClient(project=self.config.app.project)
+            self.create_zone()
 
-    async def create_zone(self) -> None:
+    def create_zone(self) -> None:
         self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")
         if not self.zone.exists():
-            self.logger.info(f"Creating gdns zone '{self.config.app.name}...")
+            self.logger.info(f"Creating cloud_dns zone '{self.config.app.name}...")
             self.zone.create()
             self.logger.info(f"Zone '{self.zone.name}' successfully created")
         else:

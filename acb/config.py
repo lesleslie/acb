@@ -282,6 +282,7 @@ class AppSettings(Settings):
     name: str = "myapp"
     title: str = "Asynchronous Component Base"
     domain: str = ""
+    region: str = ""
     timezone: str = "US/Pacific"
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))

@@ -27,7 +27,7 @@ class DnsBase(AdapterBase, ABC):
     zone: t.Optional[t.Any] = None
 
     @abstractmethod
-    async def create_zone(self) -> None:
+    def create_zone(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
