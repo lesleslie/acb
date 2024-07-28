@@ -54,16 +54,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
+    "pre-commit",
     "alive-progress",
     "pyyaml",
     "pdm",
-    "pre-commit",
     "ulid-py",
     "phonenumbers",
     "pyfiglet",
-    "autotyping",
     "pytest",
+    "autotyping",
+    "pdm-bump",
 ]
 
 [tool.refurb]
@@ -75,9 +75,9 @@ target = [
 ]
 skips = [
     "B603",
-    "B113",
     "B404",
     "B403",
+    "B113",
 ]
 
 [tool.pyright]
@@ -109,7 +109,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.6.13"
+version = "0.6.14"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
