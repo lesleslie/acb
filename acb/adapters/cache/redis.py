@@ -9,8 +9,7 @@ from ._base import CacheBase, CacheBaseSettings
 
 
 class CacheSettings(CacheBaseSettings):
-    socket_connect_timeout: t.Optional[float] = 0.5
-    wait_for_connection_timeout: t.Optional[float] = 0.5
+    socket_timeout: t.Optional[float] = 0.5
     disable: t.Optional[bool] = False
 
     @depends.inject
@@ -42,8 +41,7 @@ class Cache(CacheBase):
             # password=self.config.cache.password.get_secret_value(),
             client_side=True,
             client_side_prefix=self.config.cache.prefix,
-            socket_connect_timeout=self.config.cache.socket_connect_timeout,
-            wait_for_connection_timeout=self.config.cache.wait_for_connection_timeout,
+            socket_timeout=self.config.cache.socket_timeout,
             disable=self.config.cache.disable,
         )
         register_type(Serializer, self.encoder, self.decoder)
