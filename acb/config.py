@@ -3,6 +3,7 @@ import os
 import typing as t
 from abc import ABC, abstractmethod
 from contextvars import ContextVar
+from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from secrets import token_bytes, token_urlsafe
@@ -35,6 +36,12 @@ debug: dict[str, bool] = {}
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 _secrets_path: AsyncPath = tmp_path / "secrets"
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
+
+
+class Platform(str, Enum):
+    aws = "aws"
+    gcp = "gcp"
+    azure = "azure"
 
 
 async def init_app() -> None:
@@ -278,14 +285,15 @@ class DebugSettings(Settings):
 
 
 class AppSettings(Settings):
-    project: str = "my-project"
     name: str = "myapp"
-    title: str = "Asynchronous Component Base"
-    domain: str = ""
-    region: str = ""
-    timezone: str = "US/Pacific"
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
+    title: t.Optional[str] = None
+    domain: t.Optional[str] = None
+    platform: t.Optional[Platform] = None
+    project: t.Optional[str] = None
+    region: t.Optional[str] = None
+    timezone: t.Optional[str] = "US/Pacific"
 
     def model_post_init(self, __context: t.Any) -> None:
         self.title = self.title or titleize(self.name)

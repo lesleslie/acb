@@ -1,3 +1,4 @@
+import os
 import typing as t
 
 from cashews.wrapper import Cache
@@ -14,22 +15,24 @@ class CacheBaseSettings(Settings):
     db: t.Optional[int] = 1
     host: SecretStr = SecretStr("127.0.0.1")
     local_host: str = "127.0.0.1"
-    # password: SecretStr = SecretStr(gen_password())
     _url: t.Optional[AnyUrl | RedisDsn] = None
     default_timeout: int = 86400
     template_timeout: int = 300
     media_timeout: int = 15_768_000
     media_control: str = f"max-age={media_timeout} public"
     port: t.Optional[int] = 6379
-    health_check_interval: int = 15
+    health_check_interval: int = 10
     loggers: t.Optional[list[str]] = []
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or f"{config.app.name}:"
-        self.host = SecretStr(self.local_host) if not config.deployed else self.host
-        # self.password = SecretStr("") if not config.deployed else self.password
+        self.host = os.environ.get(  # type: ignore
+            "REDISHOST",
+            self.local_host if not config.deployed else self.host.get_secret_value(),
+        )
+        self.port = int(os.environ.get("REDISPORT", self.port))  # type: ignore
         self.template_timeout = self.template_timeout if config.deployed else 1
         self.default_timeout = self.default_timeout if config.deployed else 1
 

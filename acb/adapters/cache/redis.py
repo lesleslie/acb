@@ -9,14 +9,17 @@ from ._base import CacheBase, CacheBaseSettings
 
 
 class CacheSettings(CacheBaseSettings):
-    socket_timeout: t.Optional[float] = 0.5
+    socket_timeout: t.Optional[float] = 1
+    wait_for_connection_timeout: t.Optional[float] = 10
+    retry_on_timeout: t.Optional[bool] = False
     disable: t.Optional[bool] = False
+    max_connections: t.Optional[int] = 10
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(config, **values)
         self._url = RedisDsn(  # type: ignore
-            f"redis://{self.host.get_secret_value()}:{self.port}/{self.db}"
+            f"redis://{self.host}:{self.port}/{self.db}"
         )
 
 
@@ -38,11 +41,11 @@ class Cache(CacheBase):
     async def init(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
         await super().init(
             str(self.config.cache._url),
-            # password=self.config.cache.password.get_secret_value(),
             client_side=True,
             client_side_prefix=self.config.cache.prefix,
             socket_timeout=self.config.cache.socket_timeout,
             disable=self.config.cache.disable,
+            client_name=self.config.app.name,
         )
         register_type(Serializer, self.encoder, self.decoder)
         if not self.config.cache.disable:
