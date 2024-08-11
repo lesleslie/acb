@@ -39,6 +39,7 @@ class Cache(CacheBase):
         )
 
     async def init(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
+        self.logger.info(f"Cache url: {self.config.cache._url}")
         await super().init(
             str(self.config.cache._url),
             client_side=True,
