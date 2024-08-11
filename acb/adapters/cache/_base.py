@@ -28,9 +28,10 @@ class CacheBaseSettings(Settings):
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or f"{config.app.name}:"
-        self.host = os.environ.get(  # type: ignore
-            "REDISHOST",
-            self.local_host if not config.deployed else self.host.get_secret_value(),
+        self.host = (  # type: ignore
+            self.local_host
+            if not config.deployed
+            else os.environ.get("REDISHOST", self.host.get_secret_value())
         )
         self.port = int(os.environ.get("REDISPORT", self.port))  # type: ignore
         self.template_timeout = self.template_timeout if config.deployed else 1

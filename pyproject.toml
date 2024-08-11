@@ -1,6 +1,6 @@
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.8.10",
+    "crackerjack>=0.8.12",
 ]
 
 [tool.ruff]
@@ -54,16 +54,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "ulid-py",
-    "pyfiglet",
-    "pre-commit",
     "pdm-bump",
-    "autotyping",
-    "pyyaml",
-    "phonenumbers",
-    "alive-progress",
-    "pytest",
+    "ulid-py",
     "pdm",
+    "pyfiglet",
+    "pytest",
+    "alive-progress",
+    "pyyaml",
+    "pre-commit",
+    "phonenumbers",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -74,10 +74,10 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B404",
-    "B403",
     "B113",
+    "B403",
+    "B404",
+    "B603",
 ]
 
 [tool.pyright]
@@ -109,7 +109,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.6.17"
+version = "0.6.18"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -119,7 +119,7 @@ dependencies = [
     "loguru>=0.7.2",
     "msgspec[toml]>=0.18.6",
     "nest-asyncio>=1.6.0",
-    "pydantic-settings>=2.3.4",
+    "pydantic-settings>=2.4.0",
     "bevy>=2.0.2",
     "icecream>=2.1.3",
     "brotli>=1.1.0",
@@ -127,7 +127,7 @@ dependencies = [
     "alive-progress>=3.1.5",
     "inflection>=0.5.1",
     "aiopath>=0.7.7",
-    "pyyaml>=6.0.1",
+    "pyyaml>=6.0.2",
     "google-crc32c>=1.5.0",
     "pydantic[email]>=2.8.2",
     "devtools>=0.12.2",
@@ -165,7 +165,7 @@ cache = [
 storage = [
     "gcsfs>=2024.6.1",
     "s3fs>=2024.6.1",
-    "adlfs>=2024.4.1",
+    "adlfs>=2024.7.0",
 ]
 dns = [
     "google-cloud-dns>=0.35.0",
@@ -175,30 +175,30 @@ requests = [
     "httpx[http2]>=0.27.0",
     "hishel>=0.0.30",
 ]
-email = [
+smtp = [
     "mailgun>=0.1.1",
 ]
 sql = [
-    "sqlalchemy>=2.0.31",
+    "sqlalchemy>=2.0.32",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.21",
-    "babel>=2.15.0",
+    "babel>=2.16.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
 ]
 nosql = [
-    "google-cloud-firestore>=2.16.1",
+    "google-cloud-firestore>=2.17.0",
     "motor>=3.5.1",
 ]
 demo = [
-    "faker>=26.0.0",
+    "faker>=26.3.0",
 ]
 ftp = [
     "aioftp>=0.22.3",
     "asyncssh>=2.15.0",
 ]
 secret = [
-    "google-cloud-secret-manager>=2.20.1",
+    "google-cloud-secret-manager>=2.20.2",
 ]
 
 [build-system]
