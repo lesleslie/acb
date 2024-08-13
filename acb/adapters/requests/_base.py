@@ -1,20 +1,19 @@
 import typing as t
 from abc import ABC, abstractmethod
 
-from pydantic import field_validator
 from acb.adapters import AdapterBase
 from acb.config import Settings
 
 
 class RequestsBaseSettings(Settings):
-    cache_db: t.Optional[int] = 2
+    # cache_db: t.Optional[int] = 2
     cache_ttl: int = 3600
 
-    @field_validator("cache_db")
-    def cache_db_less_than_three(cls, v: int) -> int:
-        if v < 3 and v != 2:
-            raise ValueError("must be greater than 2 (0-2 are reserved)")
-        return 2
+    # @field_validator("cache_db")
+    # def cache_db_less_than_three(cls, v: int) -> int:
+    #     if v < 3 and v != 2:
+    #         raise ValueError("must be greater than 2 (0-2 are reserved)")
+    #     return 2
 
 
 class RequestsBase(AdapterBase, ABC):
