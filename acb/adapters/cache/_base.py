@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 from cashews.wrapper import Cache
@@ -28,12 +27,7 @@ class CacheBaseSettings(Settings):
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or f"{config.app.name}:"
-        self.host = (  # type: ignore
-            self.local_host
-            if not config.deployed
-            else os.environ.get("REDISHOST", self.host.get_secret_value())
-        )
-        self.port = int(os.environ.get("REDISPORT", self.port))  # type: ignore
+        self.host = SecretStr(self.local_host) if not config.deployed else self.host
         self.template_timeout = self.template_timeout if config.deployed else 1
         self.default_timeout = self.default_timeout if config.deployed else 1
 

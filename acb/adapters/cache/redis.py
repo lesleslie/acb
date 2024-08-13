@@ -19,7 +19,7 @@ class CacheSettings(CacheBaseSettings):
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(config, **values)
         self._url = RedisDsn(  # type: ignore
-            f"redis://{self.host}:{self.port}/{self.db}"
+            f"redis://{self.host.get_secret_value()}:{self.port}/{self.db}"
         )
 
 

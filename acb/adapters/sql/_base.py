@@ -36,6 +36,7 @@ class SqlBaseSettings(Settings):
     engine_kwargs: dict[str, t.Any] = {}
     backup_enabled: bool = False
     backup_bucket: str | None = None
+    cloudsql_instance: t.Optional[str] = None
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -139,8 +140,6 @@ class SqlBase(AdapterBase):
         async with self.get_conn() as conn:
             if self.config.debug.sql:
                 ps = await conn.execute(text("SHOW FULL PROCESSLIST"))
-                # inno = await conn.execute(text("SHOW INNODB STATUS"))
-                # debug(inno)
                 show_ps = [p for p in ps]
                 debug(show_ps)
                 ids = [
@@ -149,7 +148,6 @@ class SqlBase(AdapterBase):
                     if (
                         a[1] == self.config.sql.user.get_secret_value()
                         and a[3] == self.config.app.name
-                        # and a[3] == "gmb"
                     )
                 ]
                 debug(ids)
