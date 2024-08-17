@@ -112,7 +112,7 @@ class Cache(CacheBase):
         self.logger.info(f"Cache url: {self.config.cache._url}")
         _logger = logging.getLogger("push_response")
         _logger.handlers.clear()
-        cluster = False if not self.config.deployed else self.config.cache.cluster
+        cluster = self.config.cache.cluster
         if cluster:
             self.logger.info("RedisCluster mode enabled")
         if not suppress:
@@ -121,6 +121,8 @@ class Cache(CacheBase):
         else:
             self._pipeline_class = SafePipeline if not cluster else SafeClusterPipeline
             self._client_class = SafeRedis if not cluster else SafeRedisCluster
+        self.logger.debug(self._client_class)
+        self.logger.debug(self._pipeline_class)
         super().__init__()
         await super().init(
             str(self.config.cache._url),
@@ -131,6 +133,9 @@ class Cache(CacheBase):
             client_name=self.config.app.name,
         )
         register_type(Serializer, self.encoder, self.decoder)
+        self.logger.debug(self.__class__.__bases__)
+        self.logger.debug(self._client_class.__bases__)
+        self.logger.debug(self._pipeline_class.__bases__)
         if not self.config.cache.disable:
             self.logger.debug(f"Ping:  {(await self.ping()).decode()}")
 
