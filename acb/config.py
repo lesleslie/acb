@@ -7,11 +7,12 @@ from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from secrets import token_bytes, token_urlsafe
+from string import punctuation
 
 import nest_asyncio
 from aiopath import AsyncPath
 from inflection import titleize, underscore
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr, field_validator
 from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
@@ -297,6 +298,22 @@ class AppSettings(Settings):
 
     def model_post_init(self, __context: t.Any) -> None:
         self.title = self.title or titleize(self.name)
+
+    @field_validator("name")
+    @classmethod
+    def cloud_compliant_app_name(cls, v: str) -> str:
+        not_ok = [" ", "_", "."]
+        _name = v
+        for p in not_ok:
+            _name = _name.replace(p, "-")
+        for p in punctuation.replace("-", ""):
+            _name = _name.replace(p, "")
+        app = _name.strip("-").lower()
+        if len(app) < 3:
+            raise SystemExit("App name to short")
+        elif len(app) > 63:
+            raise SystemExit("App name to long")
+        return app
 
 
 class Config(BaseModel, extra="allow"):

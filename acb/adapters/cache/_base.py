@@ -11,7 +11,6 @@ Logger = import_adapter()
 
 class CacheBaseSettings(Settings):
     prefix: t.Optional[str] = None
-    # db: t.Optional[int] = 1
     host: SecretStr = SecretStr("127.0.0.1")
     local_host: str = "127.0.0.1"
     _url: t.Optional[AnyUrl | RedisDsn] = None
@@ -26,12 +25,6 @@ class CacheBaseSettings(Settings):
         self.prefix = self.prefix or f"{config.app.name}:"
         self.host = SecretStr(self.local_host) if not config.deployed else self.host
         self.default_timeout = self.default_timeout if config.deployed else 1
-
-    # @field_validator("db")
-    # def db_less_than_three(cls, v: int) -> int:
-    #     if v < 3 and v != 1:
-    #         raise ValueError("must be greater than 2 (0-2 are reserved)")
-    #     return 1
 
 
 class CacheBase(Cache, AdapterBase): ...
