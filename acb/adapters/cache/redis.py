@@ -47,7 +47,7 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
             self.client = RedisCluster(**redis_kwargs)
         else:
             self.client = Redis(**redis_kwargs)
-        await self.clear()
+        # await self.clear()
 
 
 depends.set(Cache)
