@@ -27,6 +27,9 @@ class CacheSettings(CacheBaseSettings):
 
 
 class Cache(CacheBase, RedisBackend):  # type: ignore
+    async def _close(self, *args: t.Any, _conn: t.Any = None, **kwargs: t.Any) -> None:
+        pass
+
     async def init(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
         super().__init__(
             serializer=SecurePickleSerializer(),
@@ -47,7 +50,9 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
             self.client = RedisCluster(**redis_kwargs)
         else:
             self.client = Redis(**redis_kwargs)
-        # await self.clear()
+        if self.config.debug.cache:
+            await self.clear()
+            self.logger.warning("Redis cache cleared")
 
 
 depends.set(Cache)
