@@ -5,15 +5,11 @@ import typing as t
 from dataclasses import dataclass
 from re import search
 from types import FrameType
-from warnings import warn
 
 import dill
 import msgspec
 import yaml
 from aiopath import AsyncPath
-from blake3 import blake3  # type: ignore
-from itsdangerous import Serializer as SecureSerializer
-from pydantic import SecretStr
 
 
 def yaml_encode(
@@ -99,24 +95,11 @@ class Encode:
                 return await self.path.write_bytes(data)
             return data
 
-    @staticmethod
-    def get_vars(frame: FrameType) -> tuple[str, t.Any]:
+    def get_vars(self, frame: FrameType) -> tuple[str, t.Any]:
         code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
         pattern = r"await\s(\w+)\.(\w+)\("
         calling_method = search(pattern, code_context)
-        return calling_method.group(1), calling_method.group(2)  # type: ignore
-
-    def get_serializer(self, serializer: t.Any) -> t.Any:
-        return (
-            serializer
-            if not self.secure
-            else SecureSerializer(
-                secret_key=self.secret_key,  # type: ignore
-                salt=self.secure_salt,
-                serializer=serializer,
-                signer_kwargs=dict(digest_method=blake3),
-            )
-        )
+        return calling_method.group(1), self.serializers[calling_method.group(2)]  # type: ignore
 
     async def __call__(
         self,
@@ -124,24 +107,12 @@ class Encode:
         path: t.Optional[AsyncPath] = None,
         sort_keys: bool = False,
         use_list: bool = False,
-        secret_key: t.Optional[SecretStr] = None,
-        secure_salt: t.Optional[SecretStr] = None,
         **kwargs: object,
     ) -> dict[str, str] | bytes:
         self.path = path
         self.sort_keys = sort_keys
         self.use_list = use_list
-        self.secret_key = secret_key.get_secret_value() if secret_key else None
-        self.secure_salt = secure_salt.get_secret_value() if secure_salt else None
-        self.action, serializer_name = self.get_vars(sys._getframe(1))
-        self.secure = all((secret_key, secure_salt))
-        if not self.secure and (secret_key or secure_salt):
-            warn(
-                f"{serializer_name.title()} serializer won't sign "
-                f"objects unless both "
-                f"secret_key and secure_salt are set"
-            )
-        self.serializer = self.get_serializer(self.serializers[serializer_name])
+        self.action, self.serializer = self.get_vars(sys._getframe(1))
         return await self.process(obj, **kwargs)  # type: ignore
 
 
