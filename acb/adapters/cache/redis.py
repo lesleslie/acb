@@ -30,6 +30,10 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
     async def _close(self, *args: t.Any, _conn: t.Any = None, **kwargs: t.Any) -> None:
         pass
 
+    async def _exists(self, key: str, _conn: t.Any = None) -> bool:
+        number = await self.client.exists([key])
+        return bool(number)
+
     async def init(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
         super().__init__(
             serializer=SecurePickleSerializer(),
