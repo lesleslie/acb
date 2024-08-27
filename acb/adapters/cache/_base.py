@@ -5,6 +5,7 @@ from aiocache.serializers import BaseSerializer
 from blake3 import blake3  # type: ignore
 from itsdangerous.serializer import Serializer as SecureSerializer
 from msgspec import msgpack
+from acb.actions.compress import compress, decompress
 from acb.adapters import AdapterBase, import_adapter
 from acb.config import Config, Settings
 from acb.depends import depends
@@ -27,12 +28,12 @@ class MsgSpecSerializer(BaseSerializer):
         super().__init__(*args, **kwargs)
 
     def dumps(self, value: t.Any) -> bytes:  # type: ignore
-        return msgpack.encode(value)
+        return compress.brotli(msgpack.encode(value))
 
     def loads(self, value: bytes | None) -> t.Any:  # type: ignore
         if value is None:
             return None
-        return msgpack.decode(value)
+        return msgpack.decode(decompress.brotli(value))  # type: ignore
 
 
 class SecurePickleSerializer(BaseSerializer):
@@ -51,12 +52,12 @@ class SecurePickleSerializer(BaseSerializer):
         )
 
     def dumps(self, value: t.Any) -> bytes:  # type: ignore
-        return self.serializer.dumps(value)
+        return compress.brotli(self.serializer.dumps(value))
 
     def loads(self, value: bytes | None) -> t.Any:  # type: ignore
         if value is None:
             return None
-        return self.serializer.loads(value)
+        return self.serializer.loads(decompress.brotli(value))
 
 
 class CacheBase(AdapterBase): ...

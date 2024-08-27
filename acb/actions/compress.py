@@ -37,7 +37,7 @@ compress = Compress()
 class Decompress(BaseModel):
     @staticmethod
     def brotli(data: bytes) -> str:
-        return brotli.decompress(data).decode()
+        return brotli.decompress(data)
 
     @staticmethod
     def gzip(content: t.Any) -> str:
