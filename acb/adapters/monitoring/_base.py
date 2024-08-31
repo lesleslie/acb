@@ -1,10 +1,11 @@
-from acb.adapters import AdapterBase, import_adapter
+import typing as t
+
+from acb.adapters import AdapterBase
 from acb.config import Settings
 
-Logger = import_adapter()
 
-
-class MonitoringBaseSettings(Settings): ...
+class MonitoringBaseSettings(Settings):
+    traces_sample_rate: t.Optional[float] = 0
 
 
 class MonitoringBase(AdapterBase): ...

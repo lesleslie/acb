@@ -17,7 +17,7 @@ from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
-from acb import tmp_path
+from acb import base_path, tmp_path
 from acb.actions.encode import dump, load
 from acb.adapters import (
     adapter_registry,
@@ -30,6 +30,19 @@ from acb.depends import depends
 nest_asyncio.apply()
 
 register_adapters()
+
+
+async def get_version() -> str:
+    pyproject_toml = base_path.parent / "pyproject.toml"
+    version_file = base_path / "_version"
+    if await pyproject_toml.exists():
+        _version = (await load.toml(pyproject_toml)).get("project").get("version")
+        await version_file.write_text(_version)
+        return _version
+    elif await version_file.exists():
+        return await version_file.read_text()
+    return "0.0.1"
+
 
 project: str = ""
 app_name: str = ""
@@ -295,6 +308,7 @@ class AppSettings(Settings):
     project: t.Optional[str] = None
     region: t.Optional[str] = None
     timezone: t.Optional[str] = "US/Pacific"
+    version: t.Optional[str] = asyncio.run(get_version())
 
     def model_post_init(self, __context: t.Any) -> None:
         self.title = self.title or titleize(self.name)

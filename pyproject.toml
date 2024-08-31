@@ -54,13 +54,13 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm",
-    "pyfiglet",
-    "pre-commit",
     "pdm-bump",
+    "pdm",
     "autotyping",
-    "pytest",
+    "pre-commit",
+    "pyfiglet",
     "pyyaml",
+    "pytest",
 ]
 
 [tool.refurb]
@@ -71,13 +71,13 @@ target = [
     "acb",
 ]
 skips = [
-    "B301",
-    "B311",
     "B602",
-    "B607",
-    "B404",
-    "B403",
     "B603",
+    "B311",
+    "B404",
+    "B301",
+    "B403",
+    "B607",
 ]
 
 [tool.pyright]
@@ -109,7 +109,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.6.25"
+version = "0.6.26"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -161,6 +161,7 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.17.0",
     "aiocache[redis]>=0.12.2",
+    "logfire[redis]>=0.51.0",
 ]
 storage = [
     "gcsfs>=2024.6.1",
@@ -172,8 +173,10 @@ dns = [
     "validators>=0.33.0",
 ]
 requests = [
-    "httpx[http2]>=0.27.0",
+    "httpx[http2]>=0.27.2",
     "hishel>=0.0.30",
+    "sentry-sdk[httpx]>=2.13.0",
+    "logfire[httpx]>=0.51.0",
 ]
 smtp = [
     "mailgun>=0.1.1",
@@ -181,17 +184,19 @@ smtp = [
 sql = [
     "sqlalchemy>=2.0.32",
     "sqlalchemy-utils>=0.41.2",
-    "sqlmodel>=0.0.21",
+    "sqlmodel>=0.0.22",
     "babel>=2.16.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
+    "logfire[sqlalchemy]>=0.51.0",
+    "sentry-sdk[sqlalchemy]>=2.13.0",
 ]
 nosql = [
-    "google-cloud-firestore>=2.17.2",
+    "google-cloud-firestore>=2.18.0",
     "motor>=3.5.1",
 ]
 demo = [
-    "faker>=28.0.0",
+    "faker>=28.1.0",
 ]
 ftp = [
     "aioftp>=0.22.3",
@@ -199,6 +204,10 @@ ftp = [
 ]
 secret = [
     "google-cloud-secret-manager>=2.20.2",
+]
+monitoring = [
+    "sentry-sdk[loguru]>=2.13.0",
+    "logfire[system-metrics]>=0.51.0",
 ]
 
 [build-system]

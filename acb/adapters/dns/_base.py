@@ -3,8 +3,7 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
 from acb.adapters import AdapterBase
-from acb.config import Config, Settings
-from acb.depends import depends
+from acb.config import Settings
 
 
 class DnsRecord(BaseModel):
@@ -12,11 +11,6 @@ class DnsRecord(BaseModel):
     type: str = "TXT"
     ttl: int = 300
     rrdata: t.Optional[str | list[t.Any]] = None
-
-    @depends.inject
-    def __init__(self, config: Config = depends(), **data: t.Any) -> None:
-        super().__init__(**data)
-        self.name = f"mail.{config.app.domain}"
 
 
 class DnsBaseSettings(Settings): ...
