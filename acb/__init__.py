@@ -20,12 +20,13 @@ action_registry: ContextVar[list[Action]] = ContextVar("action_registry", defaul
 
 class Adapter(BaseModel, arbitrary_types_allowed=True):
     name: str
+    class_name: str
     category: str
-    required: bool = False
-    enabled: bool = False
-    installed: bool = False
     pkg: str = "acb"
     module: str = ""
+    enabled: bool = False
+    installed: bool = False
+
     path: AsyncPath = AsyncPath(Path(__file__) / "adapters")
 
     def __str__(self) -> str:

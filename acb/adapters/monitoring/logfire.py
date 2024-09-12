@@ -24,7 +24,7 @@ class Monitoring(MonitoringBase):
     @depends.inject
     async def init(self) -> None:
         configure(
-            token=self.config.monitoring.logfire_token.get_secret_value(),
+            token=self.config.secret.logfire_token.get_secret_value(),
             project_name=self.config.monitoring.project_name or self.config.app.project,
             service_name=self.config.app.name,
             service_version=self.config.app.version,

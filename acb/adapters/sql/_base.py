@@ -2,7 +2,6 @@ import typing as t
 from contextlib import asynccontextmanager
 from functools import cached_property
 
-import nest_asyncio
 from aioconsole import ainput, aprint
 from pydantic import SecretStr
 from sqlalchemy import inspect, pool, text
@@ -17,8 +16,6 @@ from acb.adapters import AdapterBase
 from acb.config import Config, Settings, gen_password
 from acb.debug import debug
 from acb.depends import depends
-
-nest_asyncio.apply()
 
 
 class SqlBaseSettings(Settings):
@@ -52,13 +49,9 @@ class SqlBaseSettings(Settings):
             database=config.app.name,
         )
         self.poolclass = getattr(pool, self.poolclass) if self.poolclass else None
-        debug(self.poolclass)
-        debug(type(self.poolclass))
         self._url = URL.create(**url_kwargs)  # type: ignore
-        debug(self._url)
         async_url_kwargs = dict(drivername=self._async_driver)
         self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
-        debug(self._async_url)
         self.engine_kwargs["echo"] = (
             "debug" if config.logger.verbose else config.debug.sql
         )
@@ -135,7 +128,7 @@ class SqlBase(AdapterBase):
     async def init(
         self,
     ) -> None:
-        sqlalchemy_log._add_default_handler = lambda x: None  # type: ignore
+        sqlalchemy_log._add_default_handler = lambda _: None  # type: ignore
         await self.create()
         async with self.get_conn() as conn:
             if self.config.debug.sql:
@@ -151,11 +144,6 @@ class SqlBase(AdapterBase):
                     )
                 ]
                 debug(ids)
-                # if force:
-                # for id in ids:
-                #     await conn.execute(text(f"KILL {id}"))
-                #     sql = text("DROP TABLE IF EXISTS alembic_version")
-                #     await conn.execute(sql)
             action = "Creating" if not self.exists else "Updating"
             self.logger.info(f"{action} database tables...")
             try:

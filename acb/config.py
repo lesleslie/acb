@@ -151,8 +151,7 @@ class FileSecretSource(PydanticBaseSettingsSource):
 class ManagerSecretSource(PydanticBaseSettingsSource):
     @cached_property
     def manager(self):
-        manager_class = import_adapter("secret")
-        manager = depends.get(manager_class)
+        manager = depends.get(import_adapter("secret"))
         return manager
 
     async def load_secrets(self) -> t.Any:
@@ -211,7 +210,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         if self.adapter_name == "app":
             project = yml_settings["project"]
             app_name = yml_settings["name"]
-        return yml_settings
+        return yml_settings or {}
 
     async def __call__(self) -> dict[str, t.Any]:
         data = {}
@@ -322,12 +321,12 @@ class AppSettings(Settings):
             _name = _name.replace(p, "-")
         for p in punctuation.replace("-", ""):
             _name = _name.replace(p, "")
-        app = _name.strip("-").lower()
-        if len(app) < 3:
+        app_name = _name.strip("-").lower()
+        if len(app_name) < 3:
             raise SystemExit("App name to short")
-        elif len(app) > 63:
+        elif len(app_name) > 63:
             raise SystemExit("App name to long")
-        return app
+        return app_name
 
 
 class Config(BaseModel, extra="allow"):

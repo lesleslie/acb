@@ -1,8 +1,9 @@
-import pickle
+import hashlib
 import typing as t
 
+import dill
+from aiocache import BaseCache
 from aiocache.serializers import BaseSerializer
-from blake3 import blake3  # type: ignore
 from itsdangerous.serializer import Serializer as SecureSerializer
 from msgspec import msgpack
 from acb.actions.compress import compress, decompress
@@ -22,7 +23,7 @@ class CacheBaseSettings(Settings):
         self.default_timeout = self.default_timeout if config.deployed else 1
 
 
-class MsgSpecSerializer(BaseSerializer):
+class MsgPackSerializer(BaseSerializer):
     def __init__(self, *args: t.Any, use_list: bool = True, **kwargs: t.Any) -> None:
         self.use_list = use_list
         super().__init__(*args, **kwargs)
@@ -47,8 +48,8 @@ class SecurePickleSerializer(BaseSerializer):
         self.serializer = SecureSerializer(
             secret_key=config.app.secret_key.get_secret_value(),
             salt=config.app.secure_salt.get_secret_value(),
-            serializer=pickle,
-            signer_kwargs=dict(digest_method=blake3),
+            serializer=dill,
+            signer_kwargs=dict(digest_method=hashlib.sha256),
         )
 
     def dumps(self, value: t.Any) -> bytes:  # type: ignore
@@ -60,4 +61,4 @@ class SecurePickleSerializer(BaseSerializer):
         return self.serializer.loads(decompress.brotli(value))
 
 
-class CacheBase(AdapterBase): ...
+class CacheBase(AdapterBase, BaseCache): ...

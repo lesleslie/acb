@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 
 import arrow
@@ -25,6 +26,15 @@ class Hash:
         if isinstance(obj, Path | AsyncPath):
             obj = await AsyncPath(obj).read_text()
         return crc32c(obj.encode())  # type: ignore
+
+    @staticmethod
+    async def md5(obj: Path | AsyncPath | str) -> str:
+        if isinstance(obj, Path | AsyncPath):
+            obj = await AsyncPath(obj).read_text()
+        return hashlib.md5(
+            obj.encode(),  # type: ignore
+            usedforsecurity=False,
+        ).hexdigest()
 
 
 hash: Hash = Hash()

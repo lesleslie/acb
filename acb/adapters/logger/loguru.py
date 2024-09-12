@@ -17,7 +17,7 @@ class LoggerSettings(LoggerBaseSettings):
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
         level=" <level>{level:>8}</level>",
         sep=" <b><w>in</w></b> ",
-        name="<b>{extra[mod_name]:>18}</b>",
+        name="<b>{extra[mod_name]:>20}</b>",
         line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
         message="  <level>{message}</level>",
     )
@@ -40,8 +40,8 @@ class LoggerSettings(LoggerBaseSettings):
         self.settings = dict(
             format="".join(self.format.values()),
             enqueue=True,
-            backtrace=True,
-            catch=True,
+            backtrace=False,
+            catch=False,
             serialize=self.serialize,
             diagnose=False,
         )
@@ -69,7 +69,7 @@ class Logger(_Logger, LoggerBase):
             mod_name = ".".join(mod_parts[:-1])
             if len(mod_parts) > 3:
                 mod_name = ".".join(mod_parts[1:-1])
-            return mod_name
+            return mod_name.replace("_sdk", "")
 
         def filter_by_module(record: dict[str, t.Any]) -> bool:
             try:
@@ -96,11 +96,15 @@ class Logger(_Logger, LoggerBase):
         self.configure(
             patcher=lambda record: record["extra"].update(  # type: ignore
                 mod_name=patch_name(record)
-            )
+            ),
         )
-        self.add(sys.stdout, filter=filter_by_module, **config.logger.settings)  # type: ignore
+        self.add(
+            sys.stdout,
+            filter=filter_by_module,  # type: ignore
+            **config.logger.settings,
+        )
         for level, color in config.logger.level_colors.items():
-            self.level(level.upper(), color=f"<{color}>")
+            self.level(level.upper(), color=f"[{color}]")
         self.info(f"App path: {base_path}")
         self.info(f"App deployed: {_deployed}")
         if config.debug.logger:

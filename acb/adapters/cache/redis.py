@@ -19,6 +19,7 @@ class CacheSettings(CacheBaseSettings):
     cluster: t.Optional[bool] = False
     connect_timeout: t.Optional[float] = None
     max_connections: t.Optional[int] = None
+    health_check_interval: t.Optional[int] = 0
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -48,9 +49,11 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
             decode_responses=False,
             connect_timeout=self.config.cache.connect_timeout,
             max_connections=self.config.cache.max_connections,
+            health_check_interval=self.config.cache.health_check_interval,
         )
         if self.config.cache.cluster:
             self.logger.info("RedisCluster mode enabled")
+            del redis_kwargs["health_check_interval"]
             self.client = RedisCluster(**redis_kwargs)
         else:
             self.client = Redis(**redis_kwargs)
