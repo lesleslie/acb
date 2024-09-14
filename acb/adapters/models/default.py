@@ -5,14 +5,13 @@ from inspect import isclass
 
 from aiopath import AsyncPath
 from sqlmodel import SQLModel
-from acb import base_path
-from acb.adapters import get_adapter, get_installed_adapters, import_adapter
+from acb.adapters import get_adapter, get_installed_adapters, import_adapter, root_path
 from acb.depends import depends
 from ._base import ModelsBase, ModelsBaseSettings
 
 imported_models: ContextVar[list[t.Any]] = ContextVar("imported_models", default=[])
 
-base_models_paths = [AsyncPath(base_path / p) for p in ("models", "models.py")]
+base_models_paths = [AsyncPath(root_path / p) for p in ("models", "models.py")]
 
 if get_adapter("schemas"):
     import_adapter("schemas")

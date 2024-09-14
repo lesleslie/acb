@@ -2,8 +2,7 @@ import typing as t
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
-from acb.adapters import AdapterBase
-from acb.config import Settings
+from acb.config import AdapterBase, Settings
 
 
 class DnsRecord(BaseModel):

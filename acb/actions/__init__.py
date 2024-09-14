@@ -1,27 +1,41 @@
+from contextvars import ContextVar
 from pathlib import Path
 
 from aiopath import AsyncPath
-from acb import Action, action_registry, base_path
+from pydantic import BaseModel
+
+root_path: AsyncPath = AsyncPath(Path.cwd())
 
 
-def register_actions() -> None:
-    _actions_path = Path(base_path / "actions")
-    if not _actions_path.exists():
-        _actions_path = Path(__file__).parent
-    _pkg = _actions_path.parent.name
-    _actions = {
+class Action(BaseModel, arbitrary_types_allowed=True):
+    name: str
+    pkg: str = "acb"
+    module: str = ""
+    path: AsyncPath = AsyncPath(__file__) / "actions"
+
+
+action_registry: ContextVar[list[Action]] = ContextVar("action_registry", default=[])
+
+
+class AdapterNotFound(Exception):
+    pass
+
+
+def register_actions() -> list[Action]:
+    actions_path = Path(root_path / "actions")
+    if not actions_path.exists():
+        actions_path = Path(__file__).parent
+    actions = {
         a.stem: a
-        for a in _actions_path.iterdir()
+        for a in actions_path.iterdir()
         if a.is_file() and not a.name.startswith("_")
     }
-    _pkg_path = _actions_path.parent
-    for action_name, path in _actions.items():
-        _action = next(
-            (a for a in action_registry.get() if a.name == action_name), None
-        )
-        if _action:
-            del _action
-        action_registry.get().append(Action(name=action_name, path=AsyncPath(path)))
-
-
-register_actions()
+    _actions = []
+    for action_name, path in actions.items():
+        action = next((a for a in action_registry.get() if a.name == action_name), None)
+        if action:
+            del action
+        _action = Action(name=action_name, path=AsyncPath(path))
+        action_registry.get().append(_action)
+        _actions.append(_action)
+    return _actions

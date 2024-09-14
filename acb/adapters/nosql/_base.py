@@ -1,7 +1,6 @@
 import typing as t
 
-from acb.adapters import AdapterBase
-from acb.config import Settings
+from acb.config import AdapterBase, Settings
 
 
 class NosqlBaseSettings(Settings):

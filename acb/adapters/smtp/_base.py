@@ -2,8 +2,7 @@ import typing as t
 
 from aiopath import AsyncPath
 from pydantic import EmailStr, SecretStr
-from acb.adapters import AdapterBase
-from acb.config import Config, Settings, gen_password
+from acb.config import AdapterBase, Config, Settings, gen_password
 from acb.depends import depends
 
 

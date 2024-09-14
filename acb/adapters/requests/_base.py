@@ -1,8 +1,7 @@
 import typing as t
 from abc import ABC, abstractmethod
 
-from acb.adapters import AdapterBase
-from acb.config import Settings
+from acb.config import AdapterBase, Settings
 
 
 class RequestsBaseSettings(Settings):

@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import typing as t
-from abc import ABC, abstractmethod
+from contextvars import ContextVar
 from importlib import import_module, util
 from inspect import currentframe, stack
 from pathlib import Path
@@ -9,11 +9,38 @@ from pathlib import Path
 from aiopath import AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
-from acb import Adapter, adapter_registry, base_path
+from pydantic import BaseModel
+from rich import box
+from rich.console import Console
+from rich.padding import Padding
+from rich.table import Table
 from acb.actions.encode import yaml_encode
 from acb.depends import depends
 
-settings_path: Path = Path(base_path / "settings")
+root_path: AsyncPath = AsyncPath(Path.cwd())
+tmp_path: AsyncPath = root_path / "tmp"
+
+console = Console()
+
+
+class Adapter(BaseModel, arbitrary_types_allowed=True):
+    name: str
+    class_name: str
+    category: str
+    pkg: str = "acb"
+    module: str = ""
+    enabled: bool = False
+    installed: bool = False
+
+    path: AsyncPath = AsyncPath(Path(__file__) / "adapters")
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
+
+settings_path: Path = Path(root_path / "settings")
 app_settings_path: Path = settings_path / "app.yml"
 adapter_settings_path: Path = settings_path / "adapters.yml"
 
@@ -36,6 +63,37 @@ def get_enabled_adapters() -> list[Adapter]:
 
 def get_installed_adapters() -> list[Adapter]:
     return [a for a in adapter_registry.get() if a.installed]
+
+
+def display_adapters() -> None:
+    table = Table(
+        title="[b][u bright_white]A[/u bright_white][bright_green]synchronous "
+        "[u bright_white]C[/u bright_white][bright_green]omponent "
+        "[u bright_white]B[/u bright_white][bright_green]ase[/b]",
+        show_lines=True,
+        box=box.ROUNDED,
+        min_width=88,
+        border_style="bold blue",
+        style="bold white",
+    )
+    for prop in ("Category", "Name", "Pkg", "Enabled"):
+        table.add_column(prop)
+    for adapter in adapter_registry.get():
+        if adapter.enabled:
+            table.add_row(
+                adapter.category,
+                adapter.name,
+                adapter.pkg,
+                str(adapter.enabled),
+                style="bold blue on white",
+            )
+
+        else:
+            table.add_row(
+                adapter.category, adapter.name, adapter.pkg, str(adapter.enabled)
+            )
+    table = Padding(table, (2, 4))
+    console.print(table)
 
 
 async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
@@ -64,9 +122,7 @@ async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
         adapter.installed = True
         if adapter_category != "logger":
             logger = depends.get(import_adapter("logger"))
-        else:
-            logger = depends.get(adapter_class)
-        logger.info(f"{adapter.class_name} adapter installed")
+            logger.info(f"{adapter.class_name} adapter installed")
     return adapter_class
 
 
@@ -88,14 +144,14 @@ def import_adapter(adapter_categories: t.Optional[str | list[str]] = None) -> t.
             *[_import_adapter(c, config) for c in adapter_categories]
         )
     )
-    if len(adapter_categories) < 2:
-        return classes[0]
-    return classes
+    return classes[0] if len(adapter_categories) < 2 else classes
 
 
 def path_adapters(path: Path) -> dict[str, list[Path]]:
     return {
-        a.stem: [m for m in a.rglob("*.py") if not m.name.startswith("_")]
+        a.stem: [
+            m for m in a.iterdir() if not m.name.startswith("_") and m.suffix == ".py"
+        ]
         for a in path.iterdir()
         if a.is_dir() and not a.name.startswith("__")
     }
@@ -117,44 +173,46 @@ def extract_adapter_modules(modules: list[Path], adapter: str) -> list[Adapter]:
     return [a for a in adapter_modules if a.category == adapter]
 
 
-def register_adapters() -> None:
-    adapters_path = Path(currentframe().f_back.f_code.co_filename).parent / "adapters"
-    base_adapters = path_adapters(Path(base_path / "adapters"))
+def register_adapters() -> list[Adapter]:
+    adapters_path = (
+        Path(currentframe().f_back.f_back.f_code.co_filename).parent / "adapters"
+    )
     pkg_adapters = path_adapters(adapters_path)
-    for adapter_name, modules in (pkg_adapters | base_adapters).items():
-        modules = extract_adapter_modules(modules, adapter_name)
-        for module in modules:
-            adapter_registry.get().append(module)
+    adapters: list[Adapter] = []
+    for adapter_name, modules in pkg_adapters.items():
+        _modules = extract_adapter_modules(modules, adapter_name)
+        adapters.extend(_modules)
     if not adapter_settings_path.exists():
         settings_path.mkdir(exist_ok=True)
-        categories = {a.category for a in adapter_registry.get()}
+        categories = {a.category for a in set(adapter_registry.get() + adapters)}
         adapter_settings_path.write_bytes(
             yaml_encode(
                 {cat: None for cat in categories},
                 sort_keys=True,
             )
         )
-    adapters = yaml_decode(adapter_settings_path.read_text())
-    adapters.update(
-        {a.category: None for a in adapter_registry.get() if a.category not in adapters}
+    _adapters = yaml_decode(adapter_settings_path.read_text())
+    _adapters.update(
+        {a.category: None for a in adapters if a.category not in _adapters}
     )
-    adapter_settings_path.write_bytes(yaml_encode(adapters, sort_keys=True))
-    enabled_adapters = {a: m for a, m in adapters.items() if m}
-    for a in [
-        a for a in adapter_registry.get() if enabled_adapters.get(a.category) == a.name
-    ]:
+    adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
+    enabled_adapters = {a: m for a, m in _adapters.items() if m}
+    for a in [a for a in adapters if enabled_adapters.get(a.category) == a.name]:
         a.enabled = True
-
-
-from acb.config import Config  # noqa: E402
-
-Logger = import_adapter()
-
-
-class AdapterBase(ABC):
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore
-
-    @abstractmethod
-    async def init(self) -> None:
-        raise NotImplementedError
+    registry = adapter_registry.get()
+    for a in adapters:
+        module = ".".join(a.module.split(".")[-2:])
+        remove = next(
+            (
+                _a
+                for _a in registry
+                if ".".join(_a.module.split(".")[-2:]) == module and _a.pkg == "acb"
+            ),
+            None,
+        )
+        if remove:
+            registry.remove(remove)
+        if module in [".".join(_a.module.split(".")[-2:]) for _a in registry]:
+            continue
+        registry.append(a)
+    return adapters

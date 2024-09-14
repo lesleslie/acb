@@ -12,8 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_en
 from sqlalchemy_utils import create_database, database_exists, drop_database
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
-from acb.adapters import AdapterBase
-from acb.config import Config, Settings, gen_password
+from acb.config import AdapterBase, Config, Settings, gen_password
 from acb.debug import debug
 from acb.depends import depends
 

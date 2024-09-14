@@ -17,24 +17,25 @@ from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
-from acb import base_path, tmp_path
+from acb import register_pkg
 from acb.actions.encode import dump, load
 from acb.adapters import (
     adapter_registry,
     import_adapter,
-    register_adapters,
+    root_path,
     settings_path,
+    tmp_path,
 )
 from acb.depends import depends
 
 nest_asyncio.apply()
 
-register_adapters()
+register_pkg()
 
 
 async def get_version() -> str:
-    pyproject_toml = base_path.parent / "pyproject.toml"
-    version_file = base_path / "_version"
+    pyproject_toml = root_path.parent / "pyproject.toml"
+    version_file = root_path / "_version"
     if await pyproject_toml.exists():
         _version = (await load.toml(pyproject_toml)).get("project").get("version")
         await version_file.write_text(_version)
@@ -344,3 +345,15 @@ class Config(BaseModel, extra="allow"):
 
 depends.set(Config)
 depends.get(Config).init()
+
+
+Logger = import_adapter()
+
+
+class AdapterBase(ABC):
+    config: Config = depends()
+    logger: Logger = depends()  # type: ignore
+
+    @abstractmethod
+    async def init(self) -> None:
+        raise NotImplementedError

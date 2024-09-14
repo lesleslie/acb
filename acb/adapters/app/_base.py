@@ -1,4 +1,4 @@
-from acb.adapters import AdapterBase, import_adapter
+from acb.config import AdapterBase, import_adapter
 from acb.config import AppSettings as AppConfigSettings
 
 Logger = import_adapter()

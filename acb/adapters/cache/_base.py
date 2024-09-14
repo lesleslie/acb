@@ -7,8 +7,7 @@ from aiocache.serializers import BaseSerializer
 from itsdangerous.serializer import Serializer as SecureSerializer
 from msgspec import msgpack
 from acb.actions.compress import compress, decompress
-from acb.adapters import AdapterBase, import_adapter
-from acb.config import Config, Settings
+from acb.config import AdapterBase, Config, Settings, import_adapter
 from acb.depends import depends
 
 Logger = import_adapter()
