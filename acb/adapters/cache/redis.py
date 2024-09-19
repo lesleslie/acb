@@ -6,6 +6,7 @@ from coredis.client import Redis, RedisCluster
 from pydantic import SecretStr
 from acb.adapters import import_adapter
 from acb.config import Config
+from acb.debug import debug
 from acb.depends import depends
 from ._base import CacheBase, CacheBaseSettings, SecurePickleSerializer
 
@@ -30,6 +31,20 @@ class CacheSettings(CacheBaseSettings):
 class Cache(CacheBase, RedisBackend):  # type: ignore
     async def _close(self, *args: t.Any, _conn: t.Any = None, **kwargs: t.Any) -> None:
         pass
+
+    async def _clear(
+        self, namespace: t.Optional[str] = None, _conn: t.Any = None
+    ) -> t.Literal[True]:
+        if not namespace:
+            pattern = f"{self.config.app.name}:*"
+        else:
+            pattern = f"{self.config.app.name}:{namespace}:*"
+        keys = await self.client.keys(pattern)
+        if keys:
+            debug(keys)
+            for key in keys:
+                await self.client.unlink((key,))
+        return True
 
     async def _exists(self, key: str, _conn: t.Any = None) -> bool:
         number = await self.client.exists([key])
@@ -57,9 +72,6 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
             self.client = RedisCluster(**redis_kwargs)
         else:
             self.client = Redis(**redis_kwargs)
-        if self.config.debug.cache:
-            await self.clear()
-            self.logger.warning("Redis cache cleared")
 
 
 depends.set(Cache)

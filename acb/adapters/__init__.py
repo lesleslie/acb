@@ -10,17 +10,11 @@ from aiopath import AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
 from pydantic import BaseModel
-from rich import box
-from rich.console import Console
-from rich.padding import Padding
-from rich.table import Table
 from acb.actions.encode import yaml_encode
 from acb.depends import depends
 
 root_path: AsyncPath = AsyncPath(Path.cwd())
 tmp_path: AsyncPath = root_path / "tmp"
-
-console = Console()
 
 
 class Adapter(BaseModel, arbitrary_types_allowed=True):
@@ -63,37 +57,6 @@ def get_enabled_adapters() -> list[Adapter]:
 
 def get_installed_adapters() -> list[Adapter]:
     return [a for a in adapter_registry.get() if a.installed]
-
-
-def display_adapters() -> None:
-    table = Table(
-        title="[b][u bright_white]A[/u bright_white][bright_green]synchronous "
-        "[u bright_white]C[/u bright_white][bright_green]omponent "
-        "[u bright_white]B[/u bright_white][bright_green]ase[/b]",
-        show_lines=True,
-        box=box.ROUNDED,
-        min_width=88,
-        border_style="bold blue",
-        style="bold white",
-    )
-    for prop in ("Category", "Name", "Pkg", "Enabled"):
-        table.add_column(prop)
-    for adapter in adapter_registry.get():
-        if adapter.enabled:
-            table.add_row(
-                adapter.category,
-                adapter.name,
-                adapter.pkg,
-                str(adapter.enabled),
-                style="bold blue on white",
-            )
-
-        else:
-            table.add_row(
-                adapter.category, adapter.name, adapter.pkg, str(adapter.enabled)
-            )
-    table = Padding(table, (2, 4))
-    console.print(table)
 
 
 async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
@@ -184,6 +147,7 @@ def register_adapters() -> list[Adapter]:
         adapters.extend(_modules)
     if not adapter_settings_path.exists():
         settings_path.mkdir(exist_ok=True)
+        print(adapter_registry.get())
         categories = {a.category for a in set(adapter_registry.get() + adapters)}
         adapter_settings_path.write_bytes(
             yaml_encode(

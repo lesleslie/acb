@@ -346,8 +346,16 @@ class Config(BaseModel, extra="allow"):
 depends.set(Config)
 depends.get(Config).init()
 
-
 Logger = import_adapter()
+
+
+@depends.inject
+def initialize_acb(config: Config = depends(), logger: Logger = depends()) -> None:  # type: ignore
+    logger.info(f"App path: {root_path}")
+    logger.info(f"App deployed: {config.deployed}")
+
+
+initialize_acb()
 
 
 class AdapterBase(ABC):

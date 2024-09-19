@@ -1,8 +1,8 @@
 import logging
-import sys
 import typing as t
 from inspect import currentframe
 
+from aioconsole import aprint
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
 from acb.config import Config, debug
@@ -43,6 +43,7 @@ class LoggerSettings(LoggerBaseSettings):
             catch=False,
             serialize=self.serialize,
             diagnose=False,
+            colorize=True,
         )
 
 
@@ -61,6 +62,10 @@ class Logger(_Logger, LoggerBase):
             extra={},
         )
 
+    @staticmethod
+    async def async_sink(message: str) -> None:
+        await aprint(message, end="")
+
     @depends.inject
     async def init(self, config: Config = depends()) -> None:
         def patch_name(record: dict[str, t.Any]) -> str:  # type: ignore
@@ -75,8 +80,6 @@ class Logger(_Logger, LoggerBase):
                 name = record["name"].split(".")[-2]
             except IndexError:
                 name = record["name"]
-            if config.debug.logger:
-                print(name)
             level_ = config.logger.log_level
             if name in config.logger.level_per_module:
                 level_ = config.logger.level_per_module[name]
@@ -98,7 +101,7 @@ class Logger(_Logger, LoggerBase):
             ),
         )
         self.add(
-            sys.stdout,
+            self.async_sink,
             filter=filter_by_module,  # type: ignore
             **config.logger.settings,
         )

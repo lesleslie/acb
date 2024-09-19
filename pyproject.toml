@@ -1,6 +1,6 @@
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.8.17",
+    "crackerjack>=0.8.18",
 ]
 
 [tool.ruff]
@@ -54,13 +54,13 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyyaml",
-    "pdm",
     "pyfiglet",
-    "pre-commit",
+    "pyyaml",
     "autotyping",
-    "pytest",
     "pdm-bump",
+    "pre-commit",
+    "pytest",
+    "pdm",
 ]
 
 [tool.refurb]
@@ -71,13 +71,13 @@ target = [
     "acb",
 ]
 skips = [
-    "B404",
-    "B603",
     "B311",
-    "B602",
+    "B603",
     "B301",
-    "B607",
+    "B404",
+    "B602",
     "B403",
+    "B607",
 ]
 
 [tool.pyright]
@@ -109,7 +109,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.6.28"
+version = "0.6.29"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -128,8 +128,9 @@ dependencies = [
     "aiopath>=0.7.7",
     "pyyaml>=6.0.2",
     "google-crc32c>=1.6.0",
-    "pydantic[email]>=2.9.1",
+    "pydantic[email]>=2.9.2",
     "devtools>=0.12.2",
+    "typer>=0.12.5",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
@@ -161,7 +162,7 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.17.0",
     "aiocache[redis]>=0.12.2",
-    "logfire[redis]>=0.52.0",
+    "logfire[redis]>=0.53.0",
 ]
 storage = [
     "gcsfs>=2024.9.0.post1",
@@ -176,24 +177,24 @@ requests = [
     "httpx[http2]>=0.27.2",
     "hishel>=0.0.30",
     "sentry-sdk[httpx]>=2.14.0",
-    "logfire[httpx]>=0.52.0",
+    "logfire[httpx]>=0.53.0",
 ]
 smtp = [
     "mailgun>=0.1.1",
 ]
 sql = [
-    "sqlalchemy>=2.0.34",
+    "sqlalchemy>=2.0.35",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.22",
     "babel>=2.16.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=0.52.0",
+    "logfire[sqlalchemy]>=0.53.0",
     "sentry-sdk[sqlalchemy]>=2.14.0",
 ]
 nosql = [
     "google-cloud-firestore>=2.18.0",
-    "motor>=3.5.1",
+    "motor>=3.6.0",
 ]
 demo = [
     "faker>=28.4.1",
@@ -207,7 +208,7 @@ secret = [
 ]
 monitoring = [
     "sentry-sdk[loguru]>=2.14.0",
-    "logfire[system-metrics]>=0.52.0",
+    "logfire[system-metrics]>=0.53.0",
 ]
 
 [build-system]
