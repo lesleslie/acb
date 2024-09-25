@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftp", "monitoring", "nosql", "requests", "secret", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:ec471d20618eb20e26a0a13c672018b255dd22d5f35b396e92e29de335b1874c"
+content_hash = "sha256:c4a719fdb8871f132ea674bae6d54327d03cc5df988aa2e0450ad69f0f47485b"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -310,15 +310,16 @@ files = [
 
 [[package]]
 name = "autotyping"
-version = "24.3.0"
+version = "24.9.0"
 requires_python = ">=3.8"
 summary = "A tool for autoadding simple type annotations."
 dependencies = [
     "libcst",
+    "typing-extensions",
 ]
 files = [
-    {file = "autotyping-24.3.0-py3-none-any.whl", hash = "sha256:0637343190b858be19e00ff20a2f0344426357b9f8b849e28862d1a01cf12fe7"},
-    {file = "autotyping-24.3.0.tar.gz", hash = "sha256:bce5bffec7033b6487d45d57c409adf4065a1835f60113a6186c180bc61da4e4"},
+    {file = "autotyping-24.9.0-py3-none-any.whl", hash = "sha256:9c16b0bcab310a2dfe5228bb01c4d1dd5499e7bf67fc6b7915c35267c665b498"},
+    {file = "autotyping-24.9.0.tar.gz", hash = "sha256:d7e9787aca0f69b089431581f703c53210d2cf39e792e2106759d04034c1251b"},
 ]
 
 [[package]]
@@ -618,25 +619,25 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.8.18"
+version = "0.8.19"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
-    "acb>=0.6.28",
+    "acb>=0.6.29",
     "aioconsole>=0.8.0",
     "aiopath>=0.7.7",
-    "autotyping>=24.3.0",
+    "autotyping>=24.9.0",
     "click>=8.1.7",
     "inflection>=0.5.1",
     "pdm-bump>=0.9.8",
-    "pdm>=2.18.2",
+    "pdm>=2.19.1",
     "pre-commit>=3.8.0",
     "pydantic>=2.9.2",
     "pytest>=8.3.3",
 ]
 files = [
-    {file = "crackerjack-0.8.18-py3-none-any.whl", hash = "sha256:b71a1425060df648e5909e00f7350dc81dad3f0fab6a5644c8556486a0d34ec1"},
-    {file = "crackerjack-0.8.18.tar.gz", hash = "sha256:5f31a977ce265236b8e095db600f96fcfd31539e23dc1428127c6b7b10dcc34c"},
+    {file = "crackerjack-0.8.19-py3-none-any.whl", hash = "sha256:052a6976ffc17d3aee60beb919f32801ea4a678f7584f7a84f3c81fe9223c0dc"},
+    {file = "crackerjack-0.8.19.tar.gz", hash = "sha256:c1b182e235e08fed33a8982569db2a6b394f4aeb72f441ed065bdc5786da2e2e"},
 ]
 
 [[package]]
@@ -775,15 +776,15 @@ files = [
 
 [[package]]
 name = "faker"
-version = "28.4.1"
+version = "29.0.0"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
     "python-dateutil>=2.4",
 ]
 files = [
-    {file = "Faker-28.4.1-py3-none-any.whl", hash = "sha256:e59c01d1e8b8e20a83255ab8232c143cb2af3b4f5ab6a3f5ce495f385ad8ab4c"},
-    {file = "faker-28.4.1.tar.gz", hash = "sha256:4294d169255a045990720d6f3fa4134b764a4cdf46ef0d3c7553d2506f1adaa1"},
+    {file = "Faker-29.0.0-py3-none-any.whl", hash = "sha256:32d0ee7d42925ff06e4a7d906ee7efbf34f5052a41a2a1eb8bb174a422a5498f"},
+    {file = "faker-29.0.0.tar.gz", hash = "sha256:34e89aec594cad9773431ca479ee95c7ce03dd9f22fda2524e2373b880a2fa77"},
 ]
 
 [[package]]
@@ -1161,7 +1162,7 @@ files = [
 
 [[package]]
 name = "hishel"
-version = "0.0.30"
+version = "0.0.31"
 requires_python = ">=3.8"
 summary = "Persistent cache implementation for httpx and httpcore"
 dependencies = [
@@ -1169,8 +1170,8 @@ dependencies = [
     "typing-extensions>=4.8.0",
 ]
 files = [
-    {file = "hishel-0.0.30-py3-none-any.whl", hash = "sha256:0c73a779a6b554b52dff75e5962057df25764fd798c31b9435ce6398b1b171c8"},
-    {file = "hishel-0.0.30.tar.gz", hash = "sha256:656393ee77e9c39a0d6c527c74810e15d96e598dcb9b191f20a788608ceaca99"},
+    {file = "hishel-0.0.31-py3-none-any.whl", hash = "sha256:8c0b4b3e6861d3eb643dccbedbe84e559d8422bdc58ebfea8ea8a5419ca18f52"},
+    {file = "hishel-0.0.31.tar.gz", hash = "sha256:0577291a0159a466152096e2b8ac33c476707eb6a44e5dca6de5a855d7fbd38b"},
 ]
 
 [[package]]
@@ -1850,7 +1851,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.18.2"
+version = "2.19.1"
 requires_python = ">=3.8"
 summary = "A modern Python package and dependency manager supporting the latest PEP standards"
 dependencies = [
@@ -1879,8 +1880,8 @@ dependencies = [
     "virtualenv>=20",
 ]
 files = [
-    {file = "pdm-2.18.2-py3-none-any.whl", hash = "sha256:cb794c3d7c4d57494b039662932ac758babafb047e3c49cb18fa7bff30687262"},
-    {file = "pdm-2.18.2.tar.gz", hash = "sha256:6d93a18d52edca056fafed7b262fe48ddc61984dabf73eb9365ad61a90caebb6"},
+    {file = "pdm-2.19.1-py3-none-any.whl", hash = "sha256:3b63ef645aaa4f4010ed9390550bda5cdfa7a9e70bc7780a555c8496cedfccc2"},
+    {file = "pdm-2.19.1.tar.gz", hash = "sha256:7fe235a9cb27b7ec17b762dc85bc9ae71e0776e4b7a8b6f64203f24bb915aa2c"},
 ]
 
 [[package]]

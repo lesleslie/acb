@@ -62,5 +62,5 @@ def display_adapters(config: Config = depends()) -> None:
                 table.add_row(
                     adapter.category, adapter.name, adapter.pkg, str(adapter.enabled)
                 )
-        table = Padding(table, (2, 8))
+        table = Padding(table, (2, 4))
         console.print(table)

@@ -1,6 +1,6 @@
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.8.18",
+    "crackerjack>=0.8.19",
 ]
 
 [tool.ruff]
@@ -55,12 +55,12 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "pyfiglet",
+    "pytest",
+    "pdm",
+    "pre-commit",
     "pyyaml",
     "autotyping",
     "pdm-bump",
-    "pre-commit",
-    "pytest",
-    "pdm",
 ]
 
 [tool.refurb]
@@ -71,13 +71,13 @@ target = [
     "acb",
 ]
 skips = [
+    "B301",
     "B311",
     "B603",
-    "B301",
     "B404",
-    "B602",
-    "B403",
     "B607",
+    "B403",
+    "B602",
 ]
 
 [tool.pyright]
@@ -109,7 +109,7 @@ ignore-words-list = "crate,uptodate"
 
 [project]
 name = "acb"
-version = "0.6.29"
+version = "0.6.30"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -175,7 +175,7 @@ dns = [
 ]
 requests = [
     "httpx[http2]>=0.27.2",
-    "hishel>=0.0.30",
+    "hishel>=0.0.31",
     "sentry-sdk[httpx]>=2.14.0",
     "logfire[httpx]>=0.53.0",
 ]
@@ -197,7 +197,7 @@ nosql = [
     "motor>=3.6.0",
 ]
 demo = [
-    "faker>=28.4.1",
+    "faker>=29.0.0",
 ]
 ftp = [
     "aioftp>=0.22.3",
