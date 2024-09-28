@@ -33,6 +33,7 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
 
 
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
+_install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
 
 settings_path: Path = Path(root_path / "settings")
 app_settings_path: Path = settings_path / "app.yml"
@@ -75,14 +76,16 @@ async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
         spec.loader.exec_module(module)
         sys.modules[adapter.name] = module
     adapter_class = getattr(module, adapter.class_name)
-    if not adapter.installed:
+    if not adapter.installed and adapter.name not in _install_lock.get():
+        _install_lock.get().append(adapter.name)
         adapter_settings_class_name = f"{adapter.class_name}Settings"
-        adapter_class = getattr(module, adapter.class_name)
+        # adapter_class = getattr(module, adapter.class_name)
         adapter_settings_class = getattr(module, adapter_settings_class_name)
         adapter_settings = adapter_settings_class()
         setattr(config, adapter_category, adapter_settings)
         await depends.get(adapter_class).init()
         adapter.installed = True
+        _install_lock.get().remove(adapter.name)
         if adapter_category != "logger":
             logger = depends.get(import_adapter("logger"))
             logger.info(f"{adapter.class_name} adapter installed")

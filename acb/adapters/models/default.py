@@ -43,7 +43,6 @@ class Models(ModelsBase):
 
     async def init(self) -> None:
         SQLModel.metadata.clear()
-        self.logger.info("Importing models...")
         adapter_paths = []
         for adapter in get_installed_adapters():
             model_paths = [

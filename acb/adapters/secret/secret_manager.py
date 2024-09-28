@@ -1,11 +1,8 @@
 import typing as t
 from contextlib import suppress
-from secrets import compare_digest
-from warnings import catch_warnings, filterwarnings
+from functools import cached_property
 
 from google.api_core.exceptions import AlreadyExists, PermissionDenied
-from google.auth import default
-from google.auth.transport.requests import AuthorizedSession, Request
 from google.cloud.secretmanager_v1 import (
     AccessSecretVersionRequest,
     AddSecretVersionRequest,
@@ -27,25 +24,12 @@ class SecretSettings(SecretBaseSettings): ...
 
 class Secret(SecretBase):
     logger: Logger = depends()  # type: ignore
-    project: str = ""
-    parent: str = ""
-    prefix: str = ""
-    client: t.Optional[SecretManagerServiceAsyncClient] = None
-    authed_session: t.Optional[AuthorizedSession] = None
-    creds: t.Optional[t.Any] = None
+    project: str = project
+    parent: str = f"projects/{project}"
+    prefix: str = f"{app_name}_"
 
     def extract_secret_name(self, secret_path: str) -> t.Any:
         return secret_path.split("/")[-1].removeprefix(self.prefix)
-
-    async def get_access_token(self) -> t.Any:
-        self.creds.refresh(Request())
-        self.logger.debug(f"Secrets access token:\n{self.creds.token}")
-        return self.creds.token
-
-    async def verify_access_token(self, token: str) -> t.Any:
-        verified = compare_digest(self.creds.token, token)
-        self.logger.debug(f"Secrets access token verified - {verified}")
-        return verified
 
     async def list(self, adapter: str) -> t.Any:
         request = ListSecretsRequest(
@@ -100,18 +84,11 @@ class Secret(SecretBase):
         await self.client.delete_secret(request=request)
         self.logger.debug(f"Deleted secret - {secret}")
 
-    async def init(self) -> t.NoReturn:
-        self.project = project
-        self.parent = f"projects/{project}"
-        self.prefix = f"{app_name}_"
-        with catch_warnings():
-            filterwarnings("ignore", category=Warning)
-            creds, _ = default()
-        self.creds = creds
-        self.client = SecretManagerServiceAsyncClient(
-            credentials=self.creds  # type: ignore
-        )
-        self.authed_session = AuthorizedSession(self.creds)
+    @cached_property
+    def client(self) -> SecretManagerServiceAsyncClient:
+        return SecretManagerServiceAsyncClient()
+
+    async def init(self) -> t.NoReturn: ...
 
 
 depends.set(Secret)

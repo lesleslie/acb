@@ -2,16 +2,14 @@ import typing as t
 from contextlib import asynccontextmanager
 from functools import cached_property
 
-from aioconsole import ainput, aprint
 from pydantic import SecretStr
-from sqlalchemy import inspect, pool, text
 from sqlalchemy import log as sqlalchemy_log
+from sqlalchemy import pool, text
 from sqlalchemy.engine import URL
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
-from sqlalchemy_utils import create_database, database_exists, drop_database
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
+from acb.adapters import import_adapter
 from acb.config import AdapterBase, Config, Settings, gen_password
 from acb.debug import debug
 from acb.depends import depends
@@ -76,39 +74,6 @@ class SqlBase(AdapterBase):
     def session(self) -> AsyncSession:
         return AsyncSession(self.engine, expire_on_commit=False)
 
-    async def create(self, demo: bool = False) -> None:
-        try:
-            self.exists = database_exists(self.config.sql._url)
-        except OperationalError:
-            self.exists = False
-        if (
-            self.config.debug.sql
-            and not (self.config.deployed or self.config.debug.production)
-            and self.exists
-        ):
-            msg = (
-                "\n\nRESETTING THE SQL DATABASE WILL CAUSE ALL OF YOUR"
-                " CURRENT DATA TO BE LOST!\n"
-            )
-            if demo:
-                msg = (
-                    "\nBy running this module,\n\nYOUR SQL DATABASE WILL BE DELETED "
-                    "AND "
-                    "REPLACED WITH DEMO DATA.\nALL OF YOUR CURRENT DATA WILL BE LOST!\n"
-                )
-            await aprint(msg)
-            delete_db = await ainput("Would you like to reset the database? (y/N) ")
-            await aprint()
-            if delete_db.upper().strip() == "Y":
-                drop_database(self.config.sql._url)
-                self.logger.warning("Sql database dropped")
-                self.exists = database_exists(self.config.sql._url)
-        if not self.exists:
-            create_database(self.config.sql._url)
-            self.logger.debug("Sql database created")
-        else:
-            self.logger.debug("Sql database exists")
-
     @asynccontextmanager
     async def get_session(self) -> t.AsyncGenerator[AsyncSession, None]:
         async with self.session as sess:
@@ -119,16 +84,10 @@ class SqlBase(AdapterBase):
         async with self.engine.begin() as conn:
             yield conn
 
-    @staticmethod
-    def get_table_names(conn: object) -> list[str]:
-        inspector = inspect(conn)
-        return inspector.get_table_names() or []
-
     async def init(
         self,
     ) -> None:
         sqlalchemy_log._add_default_handler = lambda _: None  # type: ignore
-        await self.create()
         async with self.get_conn() as conn:
             if self.config.debug.sql:
                 ps = await conn.execute(text("SHOW FULL PROCESSLIST"))
@@ -143,15 +102,9 @@ class SqlBase(AdapterBase):
                     )
                 ]
                 debug(ids)
-            action = "Creating" if not self.exists else "Updating"
-            self.logger.info(f"{action} database tables...")
             try:
                 await conn.run_sync(SQLModel.metadata.drop_all)
+                import_adapter("models")
                 await conn.run_sync(SQLModel.metadata.create_all)
             except Exception as e:
                 self.logger.error(e)
-            if not self.exists:
-                table_names = await conn.run_sync(self.get_table_names)
-                for name in table_names:
-                    self.logger.debug(f"Created table: {name}")
-                self.exists = True
