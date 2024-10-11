@@ -5,11 +5,19 @@ from rich import box
 from rich.console import Console
 from rich.padding import Padding
 from rich.table import Table
+from rich.traceback import install
 from acb.config import Config, adapter_registry
 from acb.depends import depends
 
 
 class RichConsole(Console):
+    config: Config = depends()
+
+    def __init__(self) -> None:
+        super().__init__()
+        if not self.config.deployed:
+            install(console=self)
+
     def _write_buffer(self) -> None:
         with self._lock:
             if self.record and not self._buffer_index:

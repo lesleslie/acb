@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftp", "monitoring", "nosql", "requests", "secret", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:c4a719fdb8871f132ea674bae6d54327d03cc5df988aa2e0450ad69f0f47485b"
+content_hash = "sha256:0e777f403e1f343e5eacc43f05bacc722cd67766d8b91fd44e332141c8181a5d"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -46,25 +46,25 @@ files = [
 
 [[package]]
 name = "aiocache"
-version = "0.12.2"
+version = "0.12.3"
 summary = "multi backend asyncio cache"
 files = [
-    {file = "aiocache-0.12.2-py2.py3-none-any.whl", hash = "sha256:9b6fa30634ab0bfc3ecc44928a91ff07c6ea16d27d55469636b296ebc6eb5918"},
-    {file = "aiocache-0.12.2.tar.gz", hash = "sha256:b41c9a145b050a5dcbae1599f847db6dd445193b1f3bd172d8e0fe0cb9e96684"},
+    {file = "aiocache-0.12.3-py2.py3-none-any.whl", hash = "sha256:889086fc24710f431937b87ad3720a289f7fc31c4fd8b68e9f918b9bacd8270d"},
+    {file = "aiocache-0.12.3.tar.gz", hash = "sha256:f528b27bf4d436b497a1d0d1a8f59a542c153ab1e37c3621713cb376d44c4713"},
 ]
 
 [[package]]
 name = "aiocache"
-version = "0.12.2"
+version = "0.12.3"
 extras = ["redis"]
 summary = "multi backend asyncio cache"
 dependencies = [
-    "aiocache==0.12.2",
+    "aiocache==0.12.3",
     "redis>=4.2.0",
 ]
 files = [
-    {file = "aiocache-0.12.2-py2.py3-none-any.whl", hash = "sha256:9b6fa30634ab0bfc3ecc44928a91ff07c6ea16d27d55469636b296ebc6eb5918"},
-    {file = "aiocache-0.12.2.tar.gz", hash = "sha256:b41c9a145b050a5dcbae1599f847db6dd445193b1f3bd172d8e0fe0cb9e96684"},
+    {file = "aiocache-0.12.3-py2.py3-none-any.whl", hash = "sha256:889086fc24710f431937b87ad3720a289f7fc31c4fd8b68e9f918b9bacd8270d"},
+    {file = "aiocache-0.12.3.tar.gz", hash = "sha256:f528b27bf4d436b497a1d0d1a8f59a542c153ab1e37c3621713cb376d44c4713"},
 ]
 
 [[package]]
@@ -619,25 +619,25 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.8.19"
+version = "0.8.20"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
-    "acb>=0.6.29",
+    "acb>=0.6.31",
     "aioconsole>=0.8.0",
     "aiopath>=0.7.7",
     "autotyping>=24.9.0",
     "click>=8.1.7",
     "inflection>=0.5.1",
     "pdm-bump>=0.9.8",
-    "pdm>=2.19.1",
-    "pre-commit>=3.8.0",
+    "pdm>=2.19.2",
+    "pre-commit>=4.0.1",
     "pydantic>=2.9.2",
     "pytest>=8.3.3",
 ]
 files = [
-    {file = "crackerjack-0.8.19-py3-none-any.whl", hash = "sha256:052a6976ffc17d3aee60beb919f32801ea4a678f7584f7a84f3c81fe9223c0dc"},
-    {file = "crackerjack-0.8.19.tar.gz", hash = "sha256:c1b182e235e08fed33a8982569db2a6b394f4aeb72f441ed065bdc5786da2e2e"},
+    {file = "crackerjack-0.8.20-py3-none-any.whl", hash = "sha256:da6a57207e78fae4632b5e46a8df488deef1c0778a5acd08539b5d2c2e748e25"},
+    {file = "crackerjack-0.8.20.tar.gz", hash = "sha256:36cebec5583f191e943133838c1006e93e9e8dd6925bec400c339efe4d1af54a"},
 ]
 
 [[package]]
@@ -723,12 +723,12 @@ files = [
 
 [[package]]
 name = "dill"
-version = "0.3.8"
+version = "0.3.9"
 requires_python = ">=3.8"
 summary = "serialize all of Python"
 files = [
-    {file = "dill-0.3.8-py3-none-any.whl", hash = "sha256:c36ca9ffb54365bdd2f8eb3eff7d2a21237f8452b57ace88b1ac615b7e815bd7"},
-    {file = "dill-0.3.8.tar.gz", hash = "sha256:3ebe3c479ad625c4553aca177444d89b486b1d84982eeacded644afc0cf797ca"},
+    {file = "dill-0.3.9-py3-none-any.whl", hash = "sha256:468dff3b89520b474c0397703366b7b95eebe6303f108adf9b19da1f702be87a"},
+    {file = "dill-0.3.9.tar.gz", hash = "sha256:81aa267dddf68cbfe8029c42ca9ec6a4ab3b22371d1c450abc54422577b4512c"},
 ]
 
 [[package]]
@@ -776,15 +776,16 @@ files = [
 
 [[package]]
 name = "faker"
-version = "29.0.0"
+version = "30.3.0"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
     "python-dateutil>=2.4",
+    "typing-extensions",
 ]
 files = [
-    {file = "Faker-29.0.0-py3-none-any.whl", hash = "sha256:32d0ee7d42925ff06e4a7d906ee7efbf34f5052a41a2a1eb8bb174a422a5498f"},
-    {file = "faker-29.0.0.tar.gz", hash = "sha256:34e89aec594cad9773431ca479ee95c7ce03dd9f22fda2524e2373b880a2fa77"},
+    {file = "Faker-30.3.0-py3-none-any.whl", hash = "sha256:e8a15fd1b0f72992b008f5ea94c70d3baa0cb51b0d5a0e899c17b1d1b23d2771"},
+    {file = "faker-30.3.0.tar.gz", hash = "sha256:8760fbb34564fbb2f394345eef24aec5b8f6506b6cfcefe8195ed66dd1032bdb"},
 ]
 
 [[package]]
@@ -958,7 +959,7 @@ files = [
 
 [[package]]
 name = "google-cloud-firestore"
-version = "2.18.0"
+version = "2.19.0"
 requires_python = ">=3.7"
 summary = "Google Cloud Firestore API client library"
 dependencies = [
@@ -970,8 +971,8 @@ dependencies = [
     "protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<6.0.0dev,>=3.20.2",
 ]
 files = [
-    {file = "google_cloud_firestore-2.18.0-py2.py3-none-any.whl", hash = "sha256:9a735860b692f39f93f900dd3390713ceb9b47ea82cda98360bb551f03d2b916"},
-    {file = "google_cloud_firestore-2.18.0.tar.gz", hash = "sha256:3db5dd42334b9904d82b3786703a5a4b576810fb50f61b8fa83ecf4f17b7fdae"},
+    {file = "google_cloud_firestore-2.19.0-py2.py3-none-any.whl", hash = "sha256:b49f0019d7bd0d4ab5972a4cff13994b0aabe72d24242200d904db2fb49df7f7"},
+    {file = "google_cloud_firestore-2.19.0.tar.gz", hash = "sha256:1b2ce6e0b791aee89a1e4f072beba1012247e89baca361eed721fb467fe054b0"},
 ]
 
 [[package]]
@@ -1162,7 +1163,7 @@ files = [
 
 [[package]]
 name = "hishel"
-version = "0.0.31"
+version = "0.0.33"
 requires_python = ">=3.8"
 summary = "Persistent cache implementation for httpx and httpcore"
 dependencies = [
@@ -1170,8 +1171,8 @@ dependencies = [
     "typing-extensions>=4.8.0",
 ]
 files = [
-    {file = "hishel-0.0.31-py3-none-any.whl", hash = "sha256:8c0b4b3e6861d3eb643dccbedbe84e559d8422bdc58ebfea8ea8a5419ca18f52"},
-    {file = "hishel-0.0.31.tar.gz", hash = "sha256:0577291a0159a466152096e2b8ac33c476707eb6a44e5dca6de5a855d7fbd38b"},
+    {file = "hishel-0.0.33-py3-none-any.whl", hash = "sha256:6e6c6cdaf432ff4c4981e7792ef7d1fa4c8ede58b9dbbcefb9ab3fc9770f2a07"},
+    {file = "hishel-0.0.33.tar.gz", hash = "sha256:ab5b2661d5e2252f305fd0fb20e8c76bfab3ea73458f20f2591c53c37b270089"},
 ]
 
 [[package]]
@@ -1386,7 +1387,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "1.0.1"
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
     "executing>=2.0.1",
@@ -1399,64 +1400,64 @@ dependencies = [
     "typing-extensions>=4.1.0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
+    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "1.0.1"
 extras = ["httpx"]
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==1.0.1",
     "opentelemetry-instrumentation-httpx>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
+    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "1.0.1"
 extras = ["redis"]
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==1.0.1",
     "opentelemetry-instrumentation-redis>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
+    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "1.0.1"
 extras = ["sqlalchemy"]
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==1.0.1",
     "opentelemetry-instrumentation-sqlalchemy>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
+    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "1.0.1"
 extras = ["system-metrics"]
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==1.0.1",
     "opentelemetry-instrumentation-system-metrics>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
+    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
 ]
 
 [[package]]
@@ -1851,7 +1852,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.19.1"
+version = "2.19.2"
 requires_python = ">=3.8"
 summary = "A modern Python package and dependency manager supporting the latest PEP standards"
 dependencies = [
@@ -1859,7 +1860,7 @@ dependencies = [
     "dep-logic>=0.4.4",
     "filelock>=3.13",
     "findpython<1.0.0a0,>=0.6.0",
-    "hishel<0.1.0,>=0.0.24",
+    "hishel<0.1.0,>=0.0.32",
     "httpx[socks]<1,>0.20",
     "importlib-metadata>=3.6; python_version < \"3.10\"",
     "importlib-resources>=5; python_version < \"3.9\"",
@@ -1880,8 +1881,8 @@ dependencies = [
     "virtualenv>=20",
 ]
 files = [
-    {file = "pdm-2.19.1-py3-none-any.whl", hash = "sha256:3b63ef645aaa4f4010ed9390550bda5cdfa7a9e70bc7780a555c8496cedfccc2"},
-    {file = "pdm-2.19.1.tar.gz", hash = "sha256:7fe235a9cb27b7ec17b762dc85bc9ae71e0776e4b7a8b6f64203f24bb915aa2c"},
+    {file = "pdm-2.19.2-py3-none-any.whl", hash = "sha256:42af4e0897b139656e003767e99c4f77014bf36d9a7b759d3e09b49ee5979143"},
+    {file = "pdm-2.19.2.tar.gz", hash = "sha256:efb39264569181d0375536ef81c556648f16b540d429a53715730490a2283567"},
 ]
 
 [[package]]
@@ -1951,7 +1952,7 @@ files = [
 
 [[package]]
 name = "pre-commit"
-version = "3.8.0"
+version = "4.0.1"
 requires_python = ">=3.9"
 summary = "A framework for managing and maintaining multi-language pre-commit hooks."
 dependencies = [
@@ -1962,8 +1963,8 @@ dependencies = [
     "virtualenv>=20.10.0",
 ]
 files = [
-    {file = "pre_commit-3.8.0-py2.py3-none-any.whl", hash = "sha256:9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f"},
-    {file = "pre_commit-3.8.0.tar.gz", hash = "sha256:8bb6494d4a20423842e198980c9ecf9f96607a07ea29549e180eef9ae80fe7af"},
+    {file = "pre_commit-4.0.1-py2.py3-none-any.whl", hash = "sha256:efde913840816312445dc98787724647c65473daefe420785f885e8ed9a06878"},
+    {file = "pre_commit-4.0.1.tar.gz", hash = "sha256:80905ac375958c0444c65e9cebebd948b3cdb518f335a091a670a89d652139d2"},
 ]
 
 [[package]]
@@ -2422,7 +2423,7 @@ files = [
 
 [[package]]
 name = "sentry-sdk"
-version = "2.14.0"
+version = "2.16.0"
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
@@ -2430,53 +2431,53 @@ dependencies = [
     "urllib3>=1.26.11",
 ]
 files = [
-    {file = "sentry_sdk-2.14.0-py2.py3-none-any.whl", hash = "sha256:b8bc3dc51d06590df1291b7519b85c75e2ced4f28d9ea655b6d54033503b5bf4"},
-    {file = "sentry_sdk-2.14.0.tar.gz", hash = "sha256:1e0e2eaf6dad918c7d1e0edac868a7bf20017b177f242cefe2a6bcd47955961d"},
+    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
+    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.14.0"
+version = "2.16.0"
 extras = ["httpx"]
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
     "httpx>=0.16.0",
-    "sentry-sdk==2.14.0",
+    "sentry-sdk==2.16.0",
 ]
 files = [
-    {file = "sentry_sdk-2.14.0-py2.py3-none-any.whl", hash = "sha256:b8bc3dc51d06590df1291b7519b85c75e2ced4f28d9ea655b6d54033503b5bf4"},
-    {file = "sentry_sdk-2.14.0.tar.gz", hash = "sha256:1e0e2eaf6dad918c7d1e0edac868a7bf20017b177f242cefe2a6bcd47955961d"},
+    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
+    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.14.0"
+version = "2.16.0"
 extras = ["loguru"]
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
     "loguru>=0.5",
-    "sentry-sdk==2.14.0",
+    "sentry-sdk==2.16.0",
 ]
 files = [
-    {file = "sentry_sdk-2.14.0-py2.py3-none-any.whl", hash = "sha256:b8bc3dc51d06590df1291b7519b85c75e2ced4f28d9ea655b6d54033503b5bf4"},
-    {file = "sentry_sdk-2.14.0.tar.gz", hash = "sha256:1e0e2eaf6dad918c7d1e0edac868a7bf20017b177f242cefe2a6bcd47955961d"},
+    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
+    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.14.0"
+version = "2.16.0"
 extras = ["sqlalchemy"]
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
-    "sentry-sdk==2.14.0",
+    "sentry-sdk==2.16.0",
     "sqlalchemy>=1.2",
 ]
 files = [
-    {file = "sentry_sdk-2.14.0-py2.py3-none-any.whl", hash = "sha256:b8bc3dc51d06590df1291b7519b85c75e2ced4f28d9ea655b6d54033503b5bf4"},
-    {file = "sentry_sdk-2.14.0.tar.gz", hash = "sha256:1e0e2eaf6dad918c7d1e0edac868a7bf20017b177f242cefe2a6bcd47955961d"},
+    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
+    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
 ]
 
 [[package]]

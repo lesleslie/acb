@@ -1,9 +1,9 @@
 import typing as t
 
 from logfire import (
-    PydanticPlugin,
     configure,
     instrument_httpx,
+    instrument_pydantic,
     instrument_redis,
     instrument_sqlalchemy,
     instrument_system_metrics,
@@ -25,8 +25,8 @@ class Monitoring(MonitoringBase):
             token=self.config.secret.logfire_token.get_secret_value(),
             service_name=self.config.app.name,
             service_version=self.config.app.version,
-            pydantic_plugin=PydanticPlugin(record="all"),
         )
+        instrument_pydantic(record="all")
         for adapter in [a.name for a in get_installed_adapters()]:
             match adapter:
                 case "loguru":

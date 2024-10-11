@@ -82,13 +82,13 @@ class Encode:
 
     async def process(self, obj: t.Any, **kwargs: object) -> t.Any:
         if self.action in ("load", "decode"):
-            if self.serializer is msgspec.msgpack:
+            if self.serializer is msgspec.msgpack:  # type: ignore
                 kwargs["use_list"] = self.use_list
             if isinstance(obj, AsyncPath):
                 obj = await obj.read_text()
             return self.serializer.decode(obj, **kwargs)  # type: ignore
         elif self.action in ("dump", "encode"):
-            if self.serializer is msgspec.yaml:
+            if self.serializer is msgspec.yaml:  # type: ignore
                 kwargs["sort_keys"] = self.sort_keys
             data: bytes = self.serializer.encode(obj, **kwargs)  # type: ignore
             if isinstance(self.path, AsyncPath):
