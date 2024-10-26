@@ -1,6 +1,6 @@
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.8.20",
+    "crackerjack>=0.9.1",
 ]
 
 [tool.ruff]
@@ -55,12 +55,12 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "pdm-bump",
+    "pre-commit",
     "pyyaml",
     "autotyping",
-    "pre-commit",
-    "pdm",
     "pyfiglet",
     "pytest",
+    "pdm",
 ]
 
 [tool.refurb]
@@ -71,13 +71,13 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
     "B301",
-    "B403",
-    "B607",
-    "B311",
     "B602",
+    "B311",
+    "B403",
+    "B603",
     "B404",
+    "B607",
 ]
 
 [tool.pyright]
@@ -107,9 +107,15 @@ skip = "*/data/*"
 quiet-level = 3
 ignore-words-list = "crate,uptodate"
 
+[tool.vulture]
+min_confidence = 84
+paths = [
+    "acb",
+]
+
 [project]
 name = "acb"
-version = "0.6.32"
+version = "0.6.33"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -119,7 +125,7 @@ dependencies = [
     "loguru>=0.7.2",
     "msgspec[toml]>=0.18.6",
     "nest-asyncio>=1.6.0",
-    "pydantic-settings>=2.5.2",
+    "pydantic-settings>=2.6.0",
     "bevy>=2.0.2",
     "icecream>=2.1.3",
     "brotli>=1.1.0",
@@ -162,11 +168,11 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.17.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=1.0.1",
+    "logfire[redis]>=1.3.0",
 ]
 storage = [
-    "gcsfs>=2024.9.0.post1",
-    "s3fs>=2024.9.0",
+    "gcsfs>=2024.10.0",
+    "s3fs>=2024.10.0",
     "adlfs>=2024.7.0",
 ]
 dns = [
@@ -176,39 +182,39 @@ dns = [
 requests = [
     "httpx[http2]>=0.27.2",
     "hishel>=0.0.33",
-    "sentry-sdk[httpx]>=2.16.0",
-    "logfire[httpx]>=1.0.1",
+    "sentry-sdk[httpx]>=2.17.0",
+    "logfire[httpx]>=1.3.0",
 ]
 smtp = [
     "mailgun>=0.1.1",
 ]
 sql = [
-    "sqlalchemy>=2.0.35",
+    "sqlalchemy>=2.0.36",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.22",
     "babel>=2.16.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=1.0.1",
-    "sentry-sdk[sqlalchemy]>=2.16.0",
+    "logfire[sqlalchemy]>=1.3.0",
+    "sentry-sdk[sqlalchemy]>=2.17.0",
 ]
 nosql = [
     "google-cloud-firestore>=2.19.0",
     "motor>=3.6.0",
 ]
 demo = [
-    "faker>=30.3.0",
+    "faker>=30.8.1",
 ]
 ftp = [
-    "aioftp>=0.22.3",
+    "aioftp>=0.23.1",
     "asyncssh>=2.17.0",
 ]
 secret = [
-    "google-cloud-secret-manager>=2.20.2",
+    "google-cloud-secret-manager>=2.21.0",
 ]
 monitoring = [
-    "sentry-sdk[loguru]>=2.16.0",
-    "logfire[system-metrics]>=1.0.1",
+    "sentry-sdk[loguru]>=2.17.0",
+    "logfire[system-metrics]>=1.3.0",
 ]
 
 [build-system]

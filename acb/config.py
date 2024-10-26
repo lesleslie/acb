@@ -311,6 +311,7 @@ class AppSettings(Settings):
     version: t.Optional[str] = asyncio.run(get_version())
 
     def model_post_init(self, __context: t.Any) -> None:
+        del __context
         self.title = self.title or titleize(self.name)
 
     @field_validator("name")

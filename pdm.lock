@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftp", "monitoring", "nosql", "requests", "secret", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:0e777f403e1f343e5eacc43f05bacc722cd67766d8b91fd44e332141c8181a5d"
+content_hash = "sha256:5fb829119b1461aa9f1a2c08724b9f0b681ba62025568e86d2380e00380364aa"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -92,12 +92,12 @@ files = [
 
 [[package]]
 name = "aioftp"
-version = "0.22.3"
-requires_python = ">=3.8"
+version = "0.23.1"
+requires_python = ">=3.9"
 summary = "ftp client/server for asyncio"
 files = [
-    {file = "aioftp-0.22.3-py3-none-any.whl", hash = "sha256:93d17d5d3b8033570f2dfee013172d49e52323437925120ec87190539113ebd0"},
-    {file = "aioftp-0.22.3.tar.gz", hash = "sha256:baa2b13186aa01622e4b82f27c2f48f4dafb48e457a6b18fcda99a925e0dc270"},
+    {file = "aioftp-0.23.1-py3-none-any.whl", hash = "sha256:62d1e59804afc7e42c57e8b3fa44e03e39630323cc666018a4e870d79dc58ec0"},
+    {file = "aioftp-0.23.1.tar.gz", hash = "sha256:b80eadd8ca95d2bbbcfabe7de15cbe01ac117b2e7467717374de467bad93570b"},
 ]
 
 [[package]]
@@ -454,6 +454,8 @@ name = "brotli"
 version = "1.1.0"
 summary = "Python bindings for the Brotli compression library"
 files = [
+    {file = "Brotli-1.1.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:32d95b80260d79926f5fab3c41701dbb818fde1c9da590e77e571eefd14abe28"},
+    {file = "Brotli-1.1.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:b760c65308ff1e462f65d69c12e4ae085cff3b332d894637f6273a12a482d09f"},
     {file = "Brotli-1.1.0-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:316cc9b17edf613ac76b1f1f305d2a748f1b976b033b049a6ecdfd5612c70409"},
     {file = "Brotli-1.1.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:caf9ee9a5775f3111642d33b86237b05808dafcd6268faa492250e9b78046eb2"},
     {file = "Brotli-1.1.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:70051525001750221daa10907c77830bc889cb6d865cc0b813d9db7fefc21451"},
@@ -464,8 +466,24 @@ files = [
     {file = "Brotli-1.1.0-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:4093c631e96fdd49e0377a9c167bfd75b6d0bad2ace734c6eb20b348bc3ea180"},
     {file = "Brotli-1.1.0-cp312-cp312-musllinux_1_1_ppc64le.whl", hash = "sha256:7e4c4629ddad63006efa0ef968c8e4751c5868ff0b1c5c40f76524e894c50248"},
     {file = "Brotli-1.1.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:861bf317735688269936f755fa136a99d1ed526883859f86e41a5d43c61d8966"},
+    {file = "Brotli-1.1.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:87a3044c3a35055527ac75e419dfa9f4f3667a1e887ee80360589eb8c90aabb9"},
+    {file = "Brotli-1.1.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:c5529b34c1c9d937168297f2c1fde7ebe9ebdd5e121297ff9c043bdb2ae3d6fb"},
+    {file = "Brotli-1.1.0-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:ca63e1890ede90b2e4454f9a65135a4d387a4585ff8282bb72964fab893f2111"},
+    {file = "Brotli-1.1.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:e79e6520141d792237c70bcd7a3b122d00f2613769ae0cb61c52e89fd3443839"},
     {file = "Brotli-1.1.0-cp312-cp312-win32.whl", hash = "sha256:5f4d5ea15c9382135076d2fb28dde923352fe02951e66935a9efaac8f10e81b0"},
     {file = "Brotli-1.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:906bc3a79de8c4ae5b86d3d75a8b77e44404b0f4261714306e3ad248d8ab0951"},
+    {file = "Brotli-1.1.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:8bf32b98b75c13ec7cf774164172683d6e7891088f6316e54425fde1efc276d5"},
+    {file = "Brotli-1.1.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:7bc37c4d6b87fb1017ea28c9508b36bbcb0c3d18b4260fcdf08b200c74a6aee8"},
+    {file = "Brotli-1.1.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3c0ef38c7a7014ffac184db9e04debe495d317cc9c6fb10071f7fefd93100a4f"},
+    {file = "Brotli-1.1.0-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:91d7cc2a76b5567591d12c01f019dd7afce6ba8cba6571187e21e2fc418ae648"},
+    {file = "Brotli-1.1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a93dde851926f4f2678e704fadeb39e16c35d8baebd5252c9fd94ce8ce68c4a0"},
+    {file = "Brotli-1.1.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f0db75f47be8b8abc8d9e31bc7aad0547ca26f24a54e6fd10231d623f183d089"},
+    {file = "Brotli-1.1.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:6967ced6730aed543b8673008b5a391c3b1076d834ca438bbd70635c73775368"},
+    {file = "Brotli-1.1.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:7eedaa5d036d9336c95915035fb57422054014ebdeb6f3b42eac809928e40d0c"},
+    {file = "Brotli-1.1.0-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:d487f5432bf35b60ed625d7e1b448e2dc855422e87469e3f450aa5552b0eb284"},
+    {file = "Brotli-1.1.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:832436e59afb93e1836081a20f324cb185836c617659b07b129141a8426973c7"},
+    {file = "Brotli-1.1.0-cp313-cp313-win32.whl", hash = "sha256:43395e90523f9c23a3d5bdf004733246fba087f2948f87ab28015f12359ca6a0"},
+    {file = "Brotli-1.1.0-cp313-cp313-win_amd64.whl", hash = "sha256:9011560a466d2eb3f5a6e4929cf4a09be405c64154e12df0dd72713f6500e32b"},
     {file = "Brotli-1.1.0.tar.gz", hash = "sha256:81de08ac11bcb85841e440c13611c00b67d3bf82698314928d0b676362546724"},
 ]
 
@@ -619,25 +637,25 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.8.20"
+version = "0.9.1"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
-    "acb>=0.6.31",
+    "acb>=0.6.32",
     "aioconsole>=0.8.0",
     "aiopath>=0.7.7",
     "autotyping>=24.9.0",
     "click>=8.1.7",
     "inflection>=0.5.1",
     "pdm-bump>=0.9.8",
-    "pdm>=2.19.2",
+    "pdm>=2.19.3",
     "pre-commit>=4.0.1",
     "pydantic>=2.9.2",
     "pytest>=8.3.3",
 ]
 files = [
-    {file = "crackerjack-0.8.20-py3-none-any.whl", hash = "sha256:da6a57207e78fae4632b5e46a8df488deef1c0778a5acd08539b5d2c2e748e25"},
-    {file = "crackerjack-0.8.20.tar.gz", hash = "sha256:36cebec5583f191e943133838c1006e93e9e8dd6925bec400c339efe4d1af54a"},
+    {file = "crackerjack-0.9.1-py3-none-any.whl", hash = "sha256:9703d1c4d512177577b61a245c7d3d240c2e47dfaf300cb509a7ae0ad8b4fc73"},
+    {file = "crackerjack-0.9.1.tar.gz", hash = "sha256:a79be03eb40155a815d22ef3315bb2ca109a5607b092c3eaad4ec1629206977d"},
 ]
 
 [[package]]
@@ -776,7 +794,7 @@ files = [
 
 [[package]]
 name = "faker"
-version = "30.3.0"
+version = "30.8.1"
 requires_python = ">=3.8"
 summary = "Faker is a Python package that generates fake data for you."
 dependencies = [
@@ -784,8 +802,8 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "Faker-30.3.0-py3-none-any.whl", hash = "sha256:e8a15fd1b0f72992b008f5ea94c70d3baa0cb51b0d5a0e899c17b1d1b23d2771"},
-    {file = "faker-30.3.0.tar.gz", hash = "sha256:8760fbb34564fbb2f394345eef24aec5b8f6506b6cfcefe8195ed66dd1032bdb"},
+    {file = "Faker-30.8.1-py3-none-any.whl", hash = "sha256:4f7f133560b9d4d2a915581f4ba86f9a6a83421b89e911f36c4c96cff58135a5"},
+    {file = "faker-30.8.1.tar.gz", hash = "sha256:93e8b70813f76d05d98951154681180cb795cfbcff3eced7680d963bcc0da2a9"},
 ]
 
 [[package]]
@@ -838,31 +856,31 @@ files = [
 
 [[package]]
 name = "fsspec"
-version = "2024.9.0"
+version = "2024.10.0"
 requires_python = ">=3.8"
 summary = "File-system specification"
 files = [
-    {file = "fsspec-2024.9.0-py3-none-any.whl", hash = "sha256:a0947d552d8a6efa72cc2c730b12c41d043509156966cca4fb157b0f2a0c574b"},
-    {file = "fsspec-2024.9.0.tar.gz", hash = "sha256:4b0afb90c2f21832df142f292649035d80b421f60a9e1c027802e5a0da2b04e8"},
+    {file = "fsspec-2024.10.0-py3-none-any.whl", hash = "sha256:03b9a6785766a4de40368b88906366755e2819e758b83705c88cd7cb5fe81871"},
+    {file = "fsspec-2024.10.0.tar.gz", hash = "sha256:eda2d8a4116d4f2429db8550f2457da57279247dd930bb12f821b58391359493"},
 ]
 
 [[package]]
 name = "gcsfs"
-version = "2024.9.0.post1"
+version = "2024.10.0"
 requires_python = ">=3.8"
 summary = "Convenient Filesystem interface over GCS"
 dependencies = [
     "aiohttp!=4.0.0a0,!=4.0.0a1",
     "decorator>4.1.2",
-    "fsspec==2024.9.0",
+    "fsspec==2024.10.0",
     "google-auth-oauthlib",
     "google-auth>=1.2",
     "google-cloud-storage",
     "requests",
 ]
 files = [
-    {file = "gcsfs-2024.9.0.post1-py2.py3-none-any.whl", hash = "sha256:f3ab9d3bedc45da8cf40baed7c3a1e1694e8f599160d9138d78f0ef25e4a3ca1"},
-    {file = "gcsfs-2024.9.0.post1.tar.gz", hash = "sha256:7ca70ee9d7c7dbce1a3e36b4883e14102c2d7b4284f49e242843a437bc684684"},
+    {file = "gcsfs-2024.10.0-py2.py3-none-any.whl", hash = "sha256:bb2d23547e61203ea2dda5fa6c4b91a0c34b74ebe8bb6ab1926f6c33381bceb2"},
+    {file = "gcsfs-2024.10.0.tar.gz", hash = "sha256:5df54cfe568e8fdeea5aafa7fed695cdc69a9a674e991ca8c1ce634f5df1d314"},
 ]
 
 [[package]]
@@ -977,7 +995,7 @@ files = [
 
 [[package]]
 name = "google-cloud-secret-manager"
-version = "2.20.2"
+version = "2.21.0"
 requires_python = ">=3.7"
 summary = "Google Cloud Secret Manager API client library"
 dependencies = [
@@ -985,11 +1003,12 @@ dependencies = [
     "google-auth!=2.24.0,!=2.25.0,<3.0.0dev,>=2.14.1",
     "grpc-google-iam-v1<1.0.0dev,>=0.12.4",
     "proto-plus<2.0.0dev,>=1.22.3",
+    "proto-plus<2.0.0dev,>=1.25.0; python_version >= \"3.13\"",
     "protobuf!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<6.0.0dev,>=3.20.2",
 ]
 files = [
-    {file = "google_cloud_secret_manager-2.20.2-py2.py3-none-any.whl", hash = "sha256:99b342ff722feef78aa5bad1c05c6be204f8fee01373a2eb6f05dba710b32879"},
-    {file = "google_cloud_secret_manager-2.20.2.tar.gz", hash = "sha256:bbe24825e334f9e679e825e70d932118a7ff536e67c1ceb048da44111c87a45c"},
+    {file = "google_cloud_secret_manager-2.21.0-py2.py3-none-any.whl", hash = "sha256:b7fed5c2f3be5e10d94053ea3a7c6a7c5813d38da39c678ef6c1137d6e25a310"},
+    {file = "google_cloud_secret_manager-2.21.0.tar.gz", hash = "sha256:d1ae84ecf98cfc319c9a3f1012355cebd19317b662cc9dff1a2c36234580807b"},
 ]
 
 [[package]]
@@ -1387,7 +1406,8 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "1.0.1"
+version = "1.3.0"
+requires_python = ">=3.8"
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
     "executing>=2.0.1",
@@ -1400,64 +1420,68 @@ dependencies = [
     "typing-extensions>=4.1.0",
 ]
 files = [
-    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
-    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
+    {file = "logfire-1.3.0-py3-none-any.whl", hash = "sha256:8f9364acbcde4fa2a24d9d1722fc59573d7a675b81f5d7729ba8dd1d641a21f0"},
+    {file = "logfire-1.3.0.tar.gz", hash = "sha256:58927b33c2753ef0eb8b55f2d0e9ebaa08eb33b46dbce10c30570db792f5af3b"},
 ]
 
 [[package]]
 name = "logfire"
-version = "1.0.1"
+version = "1.3.0"
 extras = ["httpx"]
+requires_python = ">=3.8"
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==1.0.1",
+    "logfire==1.3.0",
     "opentelemetry-instrumentation-httpx>=0.42b0",
 ]
 files = [
-    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
-    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
+    {file = "logfire-1.3.0-py3-none-any.whl", hash = "sha256:8f9364acbcde4fa2a24d9d1722fc59573d7a675b81f5d7729ba8dd1d641a21f0"},
+    {file = "logfire-1.3.0.tar.gz", hash = "sha256:58927b33c2753ef0eb8b55f2d0e9ebaa08eb33b46dbce10c30570db792f5af3b"},
 ]
 
 [[package]]
 name = "logfire"
-version = "1.0.1"
+version = "1.3.0"
 extras = ["redis"]
+requires_python = ">=3.8"
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==1.0.1",
+    "logfire==1.3.0",
     "opentelemetry-instrumentation-redis>=0.42b0",
 ]
 files = [
-    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
-    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
+    {file = "logfire-1.3.0-py3-none-any.whl", hash = "sha256:8f9364acbcde4fa2a24d9d1722fc59573d7a675b81f5d7729ba8dd1d641a21f0"},
+    {file = "logfire-1.3.0.tar.gz", hash = "sha256:58927b33c2753ef0eb8b55f2d0e9ebaa08eb33b46dbce10c30570db792f5af3b"},
 ]
 
 [[package]]
 name = "logfire"
-version = "1.0.1"
+version = "1.3.0"
 extras = ["sqlalchemy"]
+requires_python = ">=3.8"
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==1.0.1",
+    "logfire==1.3.0",
     "opentelemetry-instrumentation-sqlalchemy>=0.42b0",
 ]
 files = [
-    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
-    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
+    {file = "logfire-1.3.0-py3-none-any.whl", hash = "sha256:8f9364acbcde4fa2a24d9d1722fc59573d7a675b81f5d7729ba8dd1d641a21f0"},
+    {file = "logfire-1.3.0.tar.gz", hash = "sha256:58927b33c2753ef0eb8b55f2d0e9ebaa08eb33b46dbce10c30570db792f5af3b"},
 ]
 
 [[package]]
 name = "logfire"
-version = "1.0.1"
+version = "1.3.0"
 extras = ["system-metrics"]
+requires_python = ">=3.8"
 summary = "The best Python observability tool! 🪵🔥"
 dependencies = [
-    "logfire==1.0.1",
+    "logfire==1.3.0",
     "opentelemetry-instrumentation-system-metrics>=0.42b0",
 ]
 files = [
-    {file = "logfire-1.0.1-py2.py3-none-any.whl", hash = "sha256:2da95d144337d5ddebdd4a5311f8982d4fc585358791f5ed98aa0d7e56acb801"},
-    {file = "logfire-1.0.1.tar.gz", hash = "sha256:9a7d2b073abd82657c5b36ac058f3a79dbf3fb249424492793b70e3283b2778f"},
+    {file = "logfire-1.3.0-py3-none-any.whl", hash = "sha256:8f9364acbcde4fa2a24d9d1722fc59573d7a675b81f5d7729ba8dd1d641a21f0"},
+    {file = "logfire-1.3.0.tar.gz", hash = "sha256:58927b33c2753ef0eb8b55f2d0e9ebaa08eb33b46dbce10c30570db792f5af3b"},
 ]
 
 [[package]]
@@ -1852,7 +1876,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.19.2"
+version = "2.19.3"
 requires_python = ">=3.8"
 summary = "A modern Python package and dependency manager supporting the latest PEP standards"
 dependencies = [
@@ -1881,8 +1905,8 @@ dependencies = [
     "virtualenv>=20",
 ]
 files = [
-    {file = "pdm-2.19.2-py3-none-any.whl", hash = "sha256:42af4e0897b139656e003767e99c4f77014bf36d9a7b759d3e09b49ee5979143"},
-    {file = "pdm-2.19.2.tar.gz", hash = "sha256:efb39264569181d0375536ef81c556648f16b540d429a53715730490a2283567"},
+    {file = "pdm-2.19.3-py3-none-any.whl", hash = "sha256:80594e5d6167fb17ea724df09b68cdfe9c601ad7f218f1beea2c032b61bf30e9"},
+    {file = "pdm-2.19.3.tar.gz", hash = "sha256:a9cc7f2078cd3b25ac645ffb5eca9d6b3d5dfcd788eaddfb6083432da71c97c2"},
 ]
 
 [[package]]
@@ -1969,15 +1993,15 @@ files = [
 
 [[package]]
 name = "proto-plus"
-version = "1.24.0"
+version = "1.25.0"
 requires_python = ">=3.7"
 summary = "Beautiful, Pythonic protocol buffers."
 dependencies = [
     "protobuf<6.0.0dev,>=3.19.0",
 ]
 files = [
-    {file = "proto-plus-1.24.0.tar.gz", hash = "sha256:30b72a5ecafe4406b0d339db35b56c4059064e69227b8c3bda7462397f966445"},
-    {file = "proto_plus-1.24.0-py3-none-any.whl", hash = "sha256:402576830425e5f6ce4c2a6702400ac79897dab0b4343821aa5188b0fab81a12"},
+    {file = "proto_plus-1.25.0-py3-none-any.whl", hash = "sha256:c91fc4a65074ade8e458e95ef8bac34d4008daa7cce4a12d6707066fca648961"},
+    {file = "proto_plus-1.25.0.tar.gz", hash = "sha256:fbb17f57f7bd05a68b7707e745e26528b0b3c34e378db91eef93912c54982d91"},
 ]
 
 [[package]]
@@ -2098,7 +2122,7 @@ files = [
 
 [[package]]
 name = "pydantic-settings"
-version = "2.5.2"
+version = "2.6.0"
 requires_python = ">=3.8"
 summary = "Settings management using Pydantic"
 dependencies = [
@@ -2106,8 +2130,8 @@ dependencies = [
     "python-dotenv>=0.21.0",
 ]
 files = [
-    {file = "pydantic_settings-2.5.2-py3-none-any.whl", hash = "sha256:2c912e55fd5794a59bf8c832b9de832dcfdf4778d79ff79b708744eed499a907"},
-    {file = "pydantic_settings-2.5.2.tar.gz", hash = "sha256:f90b139682bee4d2065273d5185d71d37ea46cfe57e1b5ae184fc6a0b2484ca0"},
+    {file = "pydantic_settings-2.6.0-py3-none-any.whl", hash = "sha256:4a819166f119b74d7f8c765196b165f95cc7487ce58ea27dec8a5a26be0970e0"},
+    {file = "pydantic_settings-2.6.0.tar.gz", hash = "sha256:44a1804abffac9e6a30372bb45f6cafab945ef5af25e66b1c634c01dd39e0188"},
 ]
 
 [[package]]
@@ -2408,22 +2432,22 @@ files = [
 
 [[package]]
 name = "s3fs"
-version = "2024.9.0"
+version = "2024.10.0"
 requires_python = ">=3.8"
 summary = "Convenient Filesystem interface over S3"
 dependencies = [
     "aiobotocore<3.0.0,>=2.5.4",
     "aiohttp!=4.0.0a0,!=4.0.0a1",
-    "fsspec==2024.9.0.*",
+    "fsspec==2024.10.0.*",
 ]
 files = [
-    {file = "s3fs-2024.9.0-py3-none-any.whl", hash = "sha256:3a7dc7acae4358af8e8dfb693e82a8477f9f2c847de5d44cf65fee75752eaca3"},
-    {file = "s3fs-2024.9.0.tar.gz", hash = "sha256:6493705abb50374d6b7994f9616d27adbdd8a219c8635100bdc286382efd91f5"},
+    {file = "s3fs-2024.10.0-py3-none-any.whl", hash = "sha256:7a2025d60d5b1a6025726b3a5e292a8e5aa713abc3b16fd1f81735181f7bb282"},
+    {file = "s3fs-2024.10.0.tar.gz", hash = "sha256:58b8c3650f8b99dbedf361543da3533aac8707035a104db5d80b094617ad4a3f"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.16.0"
+version = "2.17.0"
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
@@ -2431,53 +2455,53 @@ dependencies = [
     "urllib3>=1.26.11",
 ]
 files = [
-    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
-    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
+    {file = "sentry_sdk-2.17.0-py2.py3-none-any.whl", hash = "sha256:625955884b862cc58748920f9e21efdfb8e0d4f98cca4ab0d3918576d5b606ad"},
+    {file = "sentry_sdk-2.17.0.tar.gz", hash = "sha256:dd0a05352b78ffeacced73a94e86f38b32e2eae15fff5f30ca5abb568a72eacf"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.16.0"
+version = "2.17.0"
 extras = ["httpx"]
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
     "httpx>=0.16.0",
-    "sentry-sdk==2.16.0",
+    "sentry-sdk==2.17.0",
 ]
 files = [
-    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
-    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
+    {file = "sentry_sdk-2.17.0-py2.py3-none-any.whl", hash = "sha256:625955884b862cc58748920f9e21efdfb8e0d4f98cca4ab0d3918576d5b606ad"},
+    {file = "sentry_sdk-2.17.0.tar.gz", hash = "sha256:dd0a05352b78ffeacced73a94e86f38b32e2eae15fff5f30ca5abb568a72eacf"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.16.0"
+version = "2.17.0"
 extras = ["loguru"]
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
     "loguru>=0.5",
-    "sentry-sdk==2.16.0",
+    "sentry-sdk==2.17.0",
 ]
 files = [
-    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
-    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
+    {file = "sentry_sdk-2.17.0-py2.py3-none-any.whl", hash = "sha256:625955884b862cc58748920f9e21efdfb8e0d4f98cca4ab0d3918576d5b606ad"},
+    {file = "sentry_sdk-2.17.0.tar.gz", hash = "sha256:dd0a05352b78ffeacced73a94e86f38b32e2eae15fff5f30ca5abb568a72eacf"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.16.0"
+version = "2.17.0"
 extras = ["sqlalchemy"]
 requires_python = ">=3.6"
 summary = "Python client for Sentry (https://sentry.io)"
 dependencies = [
-    "sentry-sdk==2.16.0",
+    "sentry-sdk==2.17.0",
     "sqlalchemy>=1.2",
 ]
 files = [
-    {file = "sentry_sdk-2.16.0-py2.py3-none-any.whl", hash = "sha256:49139c31ebcd398f4f6396b18910610a0c1602f6e67083240c33019d1f6aa30c"},
-    {file = "sentry_sdk-2.16.0.tar.gz", hash = "sha256:90f733b32e15dfc1999e6b7aca67a38688a567329de4d6e184154a73f96c6892"},
+    {file = "sentry_sdk-2.17.0-py2.py3-none-any.whl", hash = "sha256:625955884b862cc58748920f9e21efdfb8e0d4f98cca4ab0d3918576d5b606ad"},
+    {file = "sentry_sdk-2.17.0.tar.gz", hash = "sha256:dd0a05352b78ffeacced73a94e86f38b32e2eae15fff5f30ca5abb568a72eacf"},
 ]
 
 [[package]]
@@ -2532,7 +2556,7 @@ files = [
 
 [[package]]
 name = "sqlalchemy"
-version = "2.0.35"
+version = "2.0.36"
 requires_python = ">=3.7"
 summary = "Database Abstraction Library"
 dependencies = [
@@ -2541,16 +2565,24 @@ dependencies = [
     "typing-extensions>=4.6.0",
 ]
 files = [
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:eb60b026d8ad0c97917cb81d3662d0b39b8ff1335e3fabb24984c6acd0c900a2"},
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6921ee01caf375363be5e9ae70d08ce7ca9d7e0e8983183080211a062d299468"},
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8cdf1a0dbe5ced887a9b127da4ffd7354e9c1a3b9bb330dce84df6b70ccb3a8d"},
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:93a71c8601e823236ac0e5d087e4f397874a421017b3318fd92c0b14acf2b6db"},
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:e04b622bb8a88f10e439084486f2f6349bf4d50605ac3e445869c7ea5cf0fa8c"},
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:1b56961e2d31389aaadf4906d453859f35302b4eb818d34a26fab72596076bb8"},
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-win32.whl", hash = "sha256:0f9f3f9a3763b9c4deb8c5d09c4cc52ffe49f9876af41cc1b2ad0138878453cf"},
-    {file = "SQLAlchemy-2.0.35-cp312-cp312-win_amd64.whl", hash = "sha256:25b0f63e7fcc2a6290cb5f7f5b4fc4047843504983a28856ce9b35d8f7de03cc"},
-    {file = "SQLAlchemy-2.0.35-py3-none-any.whl", hash = "sha256:2ab3f0336c0387662ce6221ad30ab3a5e6499aab01b9790879b6578fd9b8faa1"},
-    {file = "sqlalchemy-2.0.35.tar.gz", hash = "sha256:e11d7ea4d24f0a262bccf9a7cd6284c976c5369dac21db237cff59586045ab9f"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:f7b64e6ec3f02c35647be6b4851008b26cff592a95ecb13b6788a54ef80bbdd4"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:46331b00096a6db1fdc052d55b101dbbfc99155a548e20a0e4a8e5e4d1362855"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fdf3386a801ea5aba17c6410dd1dc8d39cf454ca2565541b5ac42a84e1e28f53"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ac9dfa18ff2a67b09b372d5db8743c27966abf0e5344c555d86cc7199f7ad83a"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:90812a8933df713fdf748b355527e3af257a11e415b613dd794512461eb8a686"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:1bc330d9d29c7f06f003ab10e1eaced295e87940405afe1b110f2eb93a233588"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-win32.whl", hash = "sha256:79d2e78abc26d871875b419e1fd3c0bca31a1cb0043277d0d850014599626c2e"},
+    {file = "SQLAlchemy-2.0.36-cp312-cp312-win_amd64.whl", hash = "sha256:b544ad1935a8541d177cb402948b94e871067656b3a0b9e91dbec136b06a2ff5"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:b5cc79df7f4bc3d11e4b542596c03826063092611e481fcf1c9dfee3c94355ef"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:3c01117dd36800f2ecaa238c65365b7b16497adc1522bf84906e5710ee9ba0e8"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9bc633f4ee4b4c46e7adcb3a9b5ec083bf1d9a97c1d3854b92749d935de40b9b"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9e46ed38affdfc95d2c958de328d037d87801cfcbea6d421000859e9789e61c2"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:b2985c0b06e989c043f1dc09d4fe89e1616aadd35392aea2844f0458a989eacf"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:4a121d62ebe7d26fec9155f83f8be5189ef1405f5973ea4874a26fab9f1e262c"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-win32.whl", hash = "sha256:0572f4bd6f94752167adfd7c1bed84f4b240ee6203a95e05d1e208d488d0d436"},
+    {file = "SQLAlchemy-2.0.36-cp313-cp313-win_amd64.whl", hash = "sha256:8c78ac40bde930c60e0f78b3cd184c580f89456dd87fc08f9e3ee3ce8765ce88"},
+    {file = "SQLAlchemy-2.0.36-py3-none-any.whl", hash = "sha256:fddbe92b4760c6f5d48162aef14824add991aeda8ddadb3c31d56eb15ca69f8e"},
+    {file = "sqlalchemy-2.0.36.tar.gz", hash = "sha256:7f2767680b6d2398aea7082e45a774b2b0767b5c8d8ffb9c8b683088ea9b29c5"},
 ]
 
 [[package]]
