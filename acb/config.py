@@ -277,7 +277,7 @@ class Settings(BaseModel):
 
     @classmethod
     def settings_customize_sources(
-        cls,
+        cls,  # noqa: F841
         settings_cls: t.Type["Settings"],
         init_settings: PydanticBaseSettingsSource,
         yaml_settings: PydanticBaseSettingsSource,
@@ -310,13 +310,12 @@ class AppSettings(Settings):
     timezone: t.Optional[str] = "US/Pacific"
     version: t.Optional[str] = asyncio.run(get_version())
 
-    def model_post_init(self, __context: t.Any) -> None:
-        del __context
+    def model_post_init(self, __context: t.Any) -> None:  # noqa: F841
         self.title = self.title or titleize(self.name)
 
     @field_validator("name")
     @classmethod
-    def cloud_compliant_app_name(cls, v: str) -> str:
+    def cloud_compliant_app_name(cls, v: str) -> str:  # noqa: F841
         not_ok = [" ", "_", "."]
         _name = v
         for p in not_ok:

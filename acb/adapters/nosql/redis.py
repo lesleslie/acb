@@ -9,7 +9,8 @@ class NosqlSettings(NosqlBaseSettings):
     cache_db: int = 0
 
     @field_validator("cache_db")
-    def cache_db_not_zero(cls, v: int) -> int:
+    @classmethod
+    def cache_db_not_zero(cls, v: int) -> int:  # noqa: F841
         if v < 3 and v != 0:
             raise ValueError("must be > 3 (0-2 are reserved)")
         return 0

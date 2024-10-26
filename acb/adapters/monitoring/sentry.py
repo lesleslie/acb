@@ -17,7 +17,7 @@ class MonitoringSettings(MonitoringBaseSettings):
 
     @field_validator("sample_rate", "profiles_sample_rate")
     @classmethod
-    def check_sentry_sample_rates(cls, v: float) -> float:
+    def check_sentry_sample_rates(cls, v: float) -> float:  # noqa: F841
         if v > 1 or v < 0:
             raise ValueError("sample rate must be between 0 and 1")
         return v
