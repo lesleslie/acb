@@ -54,12 +54,12 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
-    "pre-commit",
-    "pyyaml",
-    "autotyping",
     "pyfiglet",
+    "pyyaml",
+    "pre-commit",
     "pytest",
+    "autotyping",
+    "pdm-bump",
     "pdm",
 ]
 
@@ -71,12 +71,12 @@ target = [
     "acb",
 ]
 skips = [
-    "B301",
     "B602",
+    "B603",
+    "B301",
+    "B404",
     "B311",
     "B403",
-    "B603",
-    "B404",
     "B607",
 ]
 
@@ -115,7 +115,7 @@ paths = [
 
 [project]
 name = "acb"
-version = "0.6.33"
+version = "0.7.0"
 description = "Asynchronous Component Base"
 dependencies = [
     "itsdangerous>=2.2.0",
