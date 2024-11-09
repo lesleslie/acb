@@ -5,7 +5,7 @@
 groups = ["default", "cache", "dev", "dns", "ftpd", "monitoring", "secret", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:66543b50b561c164cccadd2b2cd954b9379aa8788c4f4b69a35e212cf073fb43"
+content_hash = "sha256:4077f7a79d4772d96ea7f781f756025552b43126c6f92ff00f29bb854c776490"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
