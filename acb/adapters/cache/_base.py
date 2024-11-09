@@ -15,6 +15,7 @@ Logger = import_adapter()
 
 class CacheBaseSettings(Settings):
     default_timeout: int = 86400
+    query_timeout: int = 600
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
