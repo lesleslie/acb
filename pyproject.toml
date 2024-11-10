@@ -50,15 +50,15 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "pdm",
+    "tomli-w",
+    "uv",
+    "autotyping",
+    "pdm-bump",
+    "msgspec-python313-pre",
+    "pyyaml",
     "pytest",
     "pre-commit",
-    "autotyping",
-    "pyyaml",
-    "uv",
-    "pdm-bump",
-    "tomli-w",
     "pyfiglet",
-    "msgspec-python313-pre",
 ]
 
 [tool.refurb]
@@ -69,13 +69,13 @@ target = [
     "acb",
 ]
 skips = [
+    "B403",
     "B404",
-    "B603",
     "B607",
     "B311",
-    "B403",
-    "B602",
+    "B603",
     "B301",
+    "B602",
 ]
 
 [tool.pyright]
@@ -113,7 +113,7 @@ paths = [
 
 [project]
 name = "acb"
-version = "0.8.8"
+version = "0.8.9"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -196,6 +196,7 @@ sql = [
     "aiomysql>=0.2.0",
     "logfire[sqlalchemy]>=2.1.2",
     "sentry-sdk[sqlalchemy]>=2.18.0",
+    "greenlet>=3.1.1",
 ]
 nosql = [
     "google-cloud-firestore>=2.19.0",
