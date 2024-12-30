@@ -538,7 +538,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.10.5"
+version = "0.10.6"
 summary = ""
 dependencies = [
     "acb",
@@ -555,8 +555,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.10.5-py3-none-any.whl", hash = "sha256:50860aecf8b62708c69efd299d7d70550121c0804414af189ef5b552cb6d879e"},
-    {file = "crackerjack-0.10.5.tar.gz", hash = "sha256:9fe19d706a107ced0a348d3dd304b1bccc359992d0469c95b0490ff2b36746d0"},
+    {file = "crackerjack-0.10.6-py3-none-any.whl", hash = "sha256:2362aed6f734843ac26304c9d6e29519f22096dfada29ce0b7e85a368609e43e"},
+    {file = "crackerjack-0.10.6.tar.gz", hash = "sha256:e2ee0efedcee6c9cded6d0e0c91b4d601c89fca210989cd3eeba2cfde66ff31f"},
 ]
 
 [[package]]
