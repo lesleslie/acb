@@ -107,4 +107,5 @@ class SqlBase(AdapterBase):
                 import_adapter("models")
                 await conn.run_sync(SQLModel.metadata.create_all)
             except Exception as e:
+                debug(SQLModel.metadata.tables)
                 self.logger.error(e)

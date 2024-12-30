@@ -14,13 +14,15 @@ Logger = import_adapter()
 
 
 class CacheBaseSettings(Settings):
-    default_timeout: int = 86400
-    query_timeout: int = 600
+    default_ttl: int = 86400
+    query_ttl: int = 600
+    response_ttl: t.Optional[int] = 3600
+    template_ttl: t.Optional[int] = 86400
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        self.default_timeout = self.default_timeout if config.deployed else 1
+        self.response_ttl = self.default_ttl if config.deployed else 1
 
 
 class MsgPackSerializer(BaseSerializer):
