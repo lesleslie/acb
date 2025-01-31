@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:ac547a38c4e83996b43be06b9bb05f71c60756b9f849490bc7b6bb2ad69315d5"
+content_hash = "sha256:3e6073e11c7aa0b4f9c7238ab92bd01f06fb1ccffc466c4e8d6479b4e6a27aeb"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -706,15 +706,15 @@ files = [
 
 [[package]]
 name = "faker"
-version = "35.0.0"
+version = "35.2.0"
 summary = ""
 dependencies = [
     "python-dateutil",
     "typing-extensions",
 ]
 files = [
-    {file = "Faker-35.0.0-py3-none-any.whl", hash = "sha256:926d2301787220e0554c2e39afc4dc535ce4b0a8d0a089657137999f66334ef4"},
-    {file = "faker-35.0.0.tar.gz", hash = "sha256:42f2da8cf561e38c72b25e9891168b1e25fec42b6b0b5b0b6cd6041da54af885"},
+    {file = "Faker-35.2.0-py3-none-any.whl", hash = "sha256:609abe555761ff31b0e5e16f958696e9b65c9224a7ac612ac96bfc2b8f09fe35"},
+    {file = "faker-35.2.0.tar.gz", hash = "sha256:28c24061780f83b45d9cb15a72b8f143b09d276c9ff52eb557744b7a89e8ba19"},
 ]
 
 [[package]]
@@ -1263,7 +1263,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "3.3.0"
+version = "3.4.0"
 summary = ""
 dependencies = [
     "executing",
@@ -1275,64 +1275,64 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "logfire-3.3.0-py3-none-any.whl", hash = "sha256:907a4819d814dab0af48562c64aab44a48b39db4107f2e9e9c0698f5f044da8c"},
-    {file = "logfire-3.3.0.tar.gz", hash = "sha256:b45494284d6ce61ddfaa2b9f69f5fa48fb3fd109cd787aeab453c10e398afc98"},
+    {file = "logfire-3.4.0-py3-none-any.whl", hash = "sha256:69ee2b6a9c917f0cd0859ccb470ff6916cb41a50ca5b7192684f76a5268551ab"},
+    {file = "logfire-3.4.0.tar.gz", hash = "sha256:66139ffff01edcf95c56f998d00b5458f01959af7d3d34c21517493fb9529f65"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.3.0"
+version = "3.4.0"
 extras = ["httpx"]
 summary = ""
 dependencies = [
-    "logfire==3.3.0",
+    "logfire==3.4.0",
     "opentelemetry-instrumentation-httpx",
 ]
 files = [
-    {file = "logfire-3.3.0-py3-none-any.whl", hash = "sha256:907a4819d814dab0af48562c64aab44a48b39db4107f2e9e9c0698f5f044da8c"},
-    {file = "logfire-3.3.0.tar.gz", hash = "sha256:b45494284d6ce61ddfaa2b9f69f5fa48fb3fd109cd787aeab453c10e398afc98"},
+    {file = "logfire-3.4.0-py3-none-any.whl", hash = "sha256:69ee2b6a9c917f0cd0859ccb470ff6916cb41a50ca5b7192684f76a5268551ab"},
+    {file = "logfire-3.4.0.tar.gz", hash = "sha256:66139ffff01edcf95c56f998d00b5458f01959af7d3d34c21517493fb9529f65"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.3.0"
+version = "3.4.0"
 extras = ["redis"]
 summary = ""
 dependencies = [
-    "logfire==3.3.0",
+    "logfire==3.4.0",
     "opentelemetry-instrumentation-redis",
 ]
 files = [
-    {file = "logfire-3.3.0-py3-none-any.whl", hash = "sha256:907a4819d814dab0af48562c64aab44a48b39db4107f2e9e9c0698f5f044da8c"},
-    {file = "logfire-3.3.0.tar.gz", hash = "sha256:b45494284d6ce61ddfaa2b9f69f5fa48fb3fd109cd787aeab453c10e398afc98"},
+    {file = "logfire-3.4.0-py3-none-any.whl", hash = "sha256:69ee2b6a9c917f0cd0859ccb470ff6916cb41a50ca5b7192684f76a5268551ab"},
+    {file = "logfire-3.4.0.tar.gz", hash = "sha256:66139ffff01edcf95c56f998d00b5458f01959af7d3d34c21517493fb9529f65"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.3.0"
+version = "3.4.0"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "logfire==3.3.0",
+    "logfire==3.4.0",
     "opentelemetry-instrumentation-sqlalchemy",
 ]
 files = [
-    {file = "logfire-3.3.0-py3-none-any.whl", hash = "sha256:907a4819d814dab0af48562c64aab44a48b39db4107f2e9e9c0698f5f044da8c"},
-    {file = "logfire-3.3.0.tar.gz", hash = "sha256:b45494284d6ce61ddfaa2b9f69f5fa48fb3fd109cd787aeab453c10e398afc98"},
+    {file = "logfire-3.4.0-py3-none-any.whl", hash = "sha256:69ee2b6a9c917f0cd0859ccb470ff6916cb41a50ca5b7192684f76a5268551ab"},
+    {file = "logfire-3.4.0.tar.gz", hash = "sha256:66139ffff01edcf95c56f998d00b5458f01959af7d3d34c21517493fb9529f65"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.3.0"
+version = "3.4.0"
 extras = ["system-metrics"]
 summary = ""
 dependencies = [
-    "logfire==3.3.0",
+    "logfire==3.4.0",
     "opentelemetry-instrumentation-system-metrics",
 ]
 files = [
-    {file = "logfire-3.3.0-py3-none-any.whl", hash = "sha256:907a4819d814dab0af48562c64aab44a48b39db4107f2e9e9c0698f5f044da8c"},
-    {file = "logfire-3.3.0.tar.gz", hash = "sha256:b45494284d6ce61ddfaa2b9f69f5fa48fb3fd109cd787aeab453c10e398afc98"},
+    {file = "logfire-3.4.0-py3-none-any.whl", hash = "sha256:69ee2b6a9c917f0cd0859ccb470ff6916cb41a50ca5b7192684f76a5268551ab"},
+    {file = "logfire-3.4.0.tar.gz", hash = "sha256:66139ffff01edcf95c56f998d00b5458f01959af7d3d34c21517493fb9529f65"},
 ]
 
 [[package]]
@@ -1382,14 +1382,14 @@ files = [
 
 [[package]]
 name = "motor"
-version = "3.6.1"
+version = "3.7.0"
 summary = ""
 dependencies = [
     "pymongo",
 ]
 files = [
-    {file = "motor-3.6.1-py3-none-any.whl", hash = "sha256:7fe552353aded4fa9f05ae515a179df5b1d192b1da56726f422dbb2d8c3b5962"},
-    {file = "motor-3.6.1.tar.gz", hash = "sha256:ee2b18386292f9ceb3cc8279a4cd34e4c641c5ac8de3500c30374081c76a9d03"},
+    {file = "motor-3.7.0-py3-none-any.whl", hash = "sha256:61bdf1afded179f008d423f98066348157686f25a90776ea155db5f47f57d605"},
+    {file = "motor-3.7.0.tar.gz", hash = "sha256:0dfa1f12c812bd90819c519b78bed626b5a9dbb29bba079ccff2bfa8627e0fec"},
 ]
 
 [[package]]

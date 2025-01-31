@@ -25,7 +25,6 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
     module: str = ""
     enabled: bool = False
     installed: bool = False
-
     path: AsyncPath = AsyncPath(Path(__file__) / "adapters")
 
     def __str__(self) -> str:
@@ -76,16 +75,15 @@ async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
         spec.loader.exec_module(module)
         sys.modules[adapter.name] = module
     adapter_class = getattr(module, adapter.class_name)
-    if not adapter.installed and adapter.name not in _install_lock.get():
-        _install_lock.get().append(adapter.name)
+    if not adapter.installed and adapter.category not in _install_lock.get():
+        _install_lock.get().append(adapter.category)
         adapter_settings_class_name = f"{adapter.class_name}Settings"
-        # adapter_class = getattr(module, adapter.class_name)
         adapter_settings_class = getattr(module, adapter_settings_class_name)
         adapter_settings = adapter_settings_class()
         setattr(config, adapter_category, adapter_settings)
         await depends.get(adapter_class).init()
         adapter.installed = True
-        _install_lock.get().remove(adapter.name)
+        _install_lock.get().remove(adapter.category)
         if adapter_category != "logger":
             logger = depends.get(import_adapter("logger"))
             logger.info(f"{adapter.class_name} adapter installed")
