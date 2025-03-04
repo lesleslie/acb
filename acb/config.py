@@ -358,10 +358,8 @@ def initialize_acb(config: Config = depends(), logger: Logger = depends()) -> No
 initialize_acb()
 
 
-class AdapterBase(ABC):
+class AdapterBase(t.Protocol):
     config: Config = depends()
     logger: Logger = depends()  # type: ignore
 
-    @abstractmethod
-    async def init(self) -> None:
-        raise NotImplementedError
+    async def init(self) -> None: ...

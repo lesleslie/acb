@@ -4,6 +4,7 @@ target-version = "py313"
 fix = true
 show-fixes = true
 output-format = "full"
+unsafe-fixes = true
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -49,16 +50,19 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "uv",
     "pyyaml",
-    "pyfiglet",
-    "msgspec-python313-pre",
+    "pytest-cov",
+    "pytest-asyncio",
     "pdm",
     "autotyping",
-    "pytest",
     "pdm-bump",
+    "msgspec-python313-pre",
     "tomli-w",
+    "pytest",
+    "uv",
     "pre-commit",
+    "pytest-mock",
+    "pyfiglet",
 ]
 
 [tool.refurb]
@@ -69,13 +73,15 @@ target = [
     "acb",
 ]
 skips = [
+    "B704",
     "B404",
+    "B607",
+    "B403",
+    "B311",
     "B603",
     "B301",
-    "B311",
-    "B403",
     "B602",
-    "B607",
+    "B101",
 ]
 
 [tool.pyright]
@@ -111,9 +117,13 @@ paths = [
     "acb",
 ]
 
+[tool.pytest.ini_options]
+addopts = "--cov=crackerjack"
+asyncio_default_fixture_loop_scope = "function"
+
 [project]
 name = "acb"
-version = "0.8.14"
+version = "0.8.15"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",

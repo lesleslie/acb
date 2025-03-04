@@ -9,4 +9,5 @@ class LoggerBaseSettings(Settings):
     log_level: t.Optional[str] = "INFO"
 
 
-class LoggerBase: ...
+class LoggerBase(t.Protocol):
+    async def init(self) -> None: ...
