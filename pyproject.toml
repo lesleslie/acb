@@ -50,20 +50,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "msgspec-python313-pre",
-    "pdm",
-    "pyfiglet",
-    "tomli-w",
-    "pytest-asyncio",
     "pytest-cov",
-    "pytest",
     "autotyping",
-    "pre-commit",
-    "uv",
-    "pytest-mock",
+    "pytest",
+    "pyfiglet",
+    "pdm",
+    "tomli-w",
     "google-crc32c",
-    "pyyaml",
+    "pytest-asyncio",
+    "uv",
+    "pre-commit",
     "pdm-bump",
+    "pyyaml",
+    "pytest-mock",
+    "msgspec-python313-pre",
 ]
 
 [tool.refurb]
@@ -74,15 +74,15 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
     "B403",
-    "B602",
-    "B301",
     "B704",
-    "B101",
-    "B311",
-    "B607",
+    "B301",
     "B404",
+    "B602",
+    "B101",
+    "B607",
+    "B603",
+    "B311",
 ]
 
 [tool.pyright]
@@ -127,7 +127,7 @@ asyncio_default_fixture_loop_scope = "function"
 
 [project]
 name = "acb"
-version = "0.8.17"
+version = "0.8.18"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -136,7 +136,7 @@ dependencies = [
     "blake3>=1.0.4",
     "loguru>=0.7.3",
     "nest-asyncio>=1.6.0",
-    "pydantic-settings>=2.7.1",
+    "pydantic-settings>=2.8.1",
     "bevy>=2.0.2",
     "icecream>=2.1.4",
     "brotli>=1.1.0",
@@ -147,7 +147,7 @@ dependencies = [
     "google-crc32c>=1.6.0",
     "pydantic[email]>=2.10.6",
     "devtools>=0.12.2",
-    "typer>=0.15.1",
+    "typer>=0.15.2",
     "tomli-w>=1.2.0",
     "msgspec>=0.19.0",
     "aioconsole>=0.8.1",
@@ -180,13 +180,13 @@ Repository = "https://github.com/lesleslie/acb"
 
 [project.optional-dependencies]
 cache = [
-    "coredis>=4.18.0",
+    "coredis>=4.20.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.4.0",
+    "logfire[redis]>=3.7.1",
 ]
 storage = [
-    "gcsfs>=2024.12.0",
-    "s3fs>=2024.12.0",
+    "gcsfs>=2025.2.0",
+    "s3fs>=2025.2.0",
     "adlfs>=2024.12.0",
 ]
 dns = [
@@ -196,43 +196,43 @@ dns = [
 requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.1",
-    "sentry-sdk[httpx]>=2.20.0",
-    "logfire[httpx]>=3.4.0",
+    "sentry-sdk[httpx]>=2.22.0",
+    "logfire[httpx]>=3.7.1",
 ]
 smtp = [
     "mailgun>=0.1.1",
 ]
 sql = [
-    "sqlalchemy>=2.0.37",
+    "sqlalchemy>=2.0.38",
     "sqlalchemy-utils>=0.41.2",
-    "sqlmodel>=0.0.22",
-    "babel>=2.16.0",
+    "sqlmodel>=0.0.23",
+    "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.4.0",
-    "sentry-sdk[sqlalchemy]>=2.20.0",
+    "logfire[sqlalchemy]>=3.7.1",
+    "sentry-sdk[sqlalchemy]>=2.22.0",
     "greenlet>=3.1.1",
 ]
 nosql = [
-    "google-cloud-firestore>=2.20.0",
+    "google-cloud-firestore>=2.20.1",
     "motor>=3.7.0",
 ]
 demo = [
-    "faker>=35.2.0",
+    "faker>=36.2.2",
 ]
 ftpd = [
     "aioftp>=0.24.1",
-    "asyncssh>=2.19.0",
+    "asyncssh>=2.20.0",
 ]
 secret = [
-    "google-cloud-secret-manager>=2.22.1",
+    "google-cloud-secret-manager>=2.23.1",
 ]
 monitoring = [
-    "sentry-sdk[loguru]>=2.20.0",
-    "logfire[system-metrics]>=3.4.0",
+    "sentry-sdk[loguru]>=2.22.0",
+    "logfire[system-metrics]>=3.7.1",
 ]
 dev = [
-    "crackerjack>=0.11.3",
+    "crackerjack>=0.11.4",
 ]
 
 [build-system]
