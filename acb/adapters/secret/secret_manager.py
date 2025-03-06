@@ -23,7 +23,7 @@ class SecretSettings(SecretBaseSettings): ...
 
 
 class Secret(SecretBase):
-    logger: Logger = depends()  # type: ignore
+    logger: Logger = depends()
     project: str = project
     parent: str = f"projects/{project}"
     prefix: str = f"{app_name}_"

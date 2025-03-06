@@ -50,19 +50,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyyaml",
-    "pytest-cov",
+    "pdm-bump",
+    "tomli-w",
+    "pyfiglet",
     "pytest-asyncio",
     "pdm",
-    "autotyping",
-    "pdm-bump",
-    "msgspec-python313-pre",
-    "tomli-w",
+    "pyyaml",
     "pytest",
+    "msgspec-python313-pre",
+    "pytest-mock",
+    "pytest-cov",
+    "google-crc32c",
     "uv",
     "pre-commit",
-    "pytest-mock",
-    "pyfiglet",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -74,14 +75,14 @@ target = [
 ]
 skips = [
     "B704",
-    "B404",
-    "B607",
-    "B403",
-    "B311",
-    "B603",
-    "B301",
-    "B602",
     "B101",
+    "B311",
+    "B607",
+    "B404",
+    "B301",
+    "B603",
+    "B403",
+    "B602",
 ]
 
 [tool.pyright]
@@ -102,6 +103,9 @@ reportOptionalCall = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownArgumentType = false
+reportInvalidTypeForm = false
+reportUnknownLambdaType = false
+reportUnknownParameterType = "warning"
 reportPrivateUsage = "warning"
 pythonVersion = "3.13"
 pythonPlatform = "Darwin"
@@ -121,9 +125,14 @@ paths = [
 addopts = "--cov=crackerjack"
 asyncio_default_fixture_loop_scope = "function"
 
+[tool.pdm.dev-dependencies]
+dev = [
+    "-e file:///${PROJECT_ROOT}/../crackerjack#egg=crackerjack",
+]
+
 [project]
 name = "acb"
-version = "0.8.15"
+version = "0.8.16"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -232,8 +241,3 @@ requires = [
     "pdm-backend",
 ]
 build-backend = "pdm.backend"
-
-[dependency-groups]
-dev = [
-    "crackerjack>=0.10.7",
-]

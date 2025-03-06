@@ -6,7 +6,7 @@ Logger = import_adapter()
 
 
 @depends.inject
-async def post_startup(config: Config = depends(), logger: Logger = depends()) -> None:  # type: ignore
+async def post_startup(config: Config = depends(), logger: Logger = depends()) -> None:
     if not config.deployed:
         from aioconsole import aprint
         from pyfiglet import Figlet

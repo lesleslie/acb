@@ -27,7 +27,7 @@ class EmailSettings(EmailBaseSettings):
 
 
 class Email(EmailBase):
-    requests: Requests = depends()  # type: ignore
+    requests: Requests = depends()
 
     async def get_response(
         self,
@@ -127,7 +127,7 @@ class Email(EmailBase):
         return records
 
     @depends.inject
-    async def create_dns_records(self, dns: Dns = depends()) -> None:  # type: ignore
+    async def create_dns_records(self, dns: Dns = depends()) -> None:
         await self.create_domain(self.config.email.domain)
         await self.create_domain_credentials(self.config.email.domain)
         records = await self.get_dns_records(self.config.email.domain)

@@ -1,10 +1,13 @@
 import hashlib
 from pathlib import Path
+from warnings import catch_warnings
 
 import arrow
 from aiopath import AsyncPath
 from blake3 import blake3  # type: ignore
-from google_crc32c import value as crc32c
+
+with catch_warnings(action="ignore", category=RuntimeWarning):
+    from google_crc32c import value as crc32c
 
 
 class Hash:

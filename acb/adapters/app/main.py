@@ -37,7 +37,7 @@ class App(AppBase):
     async def main(
         self,
         config: Config = depends(),
-        logger: Logger = depends(),  # type: ignore
+        logger: Logger = depends(),
     ) -> None:
         ...
 

@@ -96,9 +96,7 @@ class Logger(_Logger, LoggerBase):
 
         self.remove()
         self.configure(
-            patcher=lambda record: record["extra"].update(  # type: ignore
-                mod_name=patch_name(record)
-            ),
+            patcher=lambda record: record["extra"].update(mod_name=patch_name(record)),
         )
         self.add(
             self.async_sink,

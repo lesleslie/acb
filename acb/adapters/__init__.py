@@ -31,6 +31,18 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
         return self.__repr__()
 
 
+# Define a protocol (interface) for adapters
+
+
+@t.runtime_checkable
+class AdapterProtocol(t.Protocol):
+    async def init(self) -> None: ...
+
+
+# Type Alias for the adapter classes
+# AdapterClass = t.TypeVar("AdapterClass", bound=AdapterProtocol)
+
+
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
 _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
 
@@ -59,7 +71,9 @@ def get_installed_adapters() -> list[Adapter]:
     return [a for a in adapter_registry.get() if a.installed]
 
 
-async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
+async def _import_adapter(
+    adapter_category: str, config: AdapterProtocol
+) -> type[AdapterProtocol]:
     try:
         adapter = get_adapter(adapter_category)
     except AttributeError:
@@ -74,7 +88,7 @@ async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
         module = util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module)
         sys.modules[adapter.name] = module
-    adapter_class = getattr(module, adapter.class_name)
+    adapter_class: type[AdapterProtocol] = getattr(module, adapter.class_name)
     if not adapter.installed and adapter.category not in _install_lock.get():
         _install_lock.get().append(adapter.category)
         adapter_settings_class_name = f"{adapter.class_name}Settings"
@@ -90,10 +104,13 @@ async def _import_adapter(adapter_category: str, config: t.Any) -> t.Any:
     return adapter_class
 
 
-def import_adapter(adapter_categories: t.Optional[str | list[str]] = None) -> t.Any:
+def import_adapter(
+    adapter_categories: t.Optional[str | list[str]] = None,
+) -> AdapterProtocol | list[AdapterProtocol]:
     from acb.config import Config
 
     config = depends.get(Config)
+
     if isinstance(adapter_categories, str):
         adapter_categories = [adapter_categories]
     if not adapter_categories:

@@ -15,7 +15,7 @@ class FtpdSettings(FtpdBaseSettings):
 
 class Ftpd(FtpdBase):
     @depends.inject
-    async def init(self, logger: Logger = depends()) -> None:  # type: ignore
+    async def init(self, logger: Logger = depends()) -> None:
         try:
             await listen(
                 "",

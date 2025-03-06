@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:3e6073e11c7aa0b4f9c7238ab92bd01f06fb1ccffc466c4e8d6479b4e6a27aeb"
+content_hash = "sha256:7fd99240febe0295469c89174e533df40b6b037aec26e9723b0f399fd6201530"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -29,7 +29,7 @@ files = [
 
 [[package]]
 name = "aiobotocore"
-version = "2.21.0"
+version = "2.21.1"
 summary = ""
 dependencies = [
     "aiohttp",
@@ -41,8 +41,8 @@ dependencies = [
     "wrapt",
 ]
 files = [
-    {file = "aiobotocore-2.21.0-py3-none-any.whl", hash = "sha256:05b4e29690a07913297686d819dc8dac341a5361f14fedf444bdd77ae1e36554"},
-    {file = "aiobotocore-2.21.0.tar.gz", hash = "sha256:03d64a41e313ebce76fd7c3e4c854e560032ac5cf71f4d5072616ca6fb9701b5"},
+    {file = "aiobotocore-2.21.1-py3-none-any.whl", hash = "sha256:bd7c49a6d6f8a3d9444b0a94417c8da13813b5c7eec1c4f0ec2db7e8ce8f23e7"},
+    {file = "aiobotocore-2.21.1.tar.gz", hash = "sha256:010357f43004413e92a9d066bb0db1f241aeb29ffed306e9197061ffc94e6577"},
 ]
 
 [[package]]
@@ -91,11 +91,11 @@ files = [
 
 [[package]]
 name = "aiohappyeyeballs"
-version = "2.4.8"
+version = "2.5.0"
 summary = ""
 files = [
-    {file = "aiohappyeyeballs-2.4.8-py3-none-any.whl", hash = "sha256:6cac4f5dd6e34a9644e69cf9021ef679e4394f54e58a183056d12009e42ea9e3"},
-    {file = "aiohappyeyeballs-2.4.8.tar.gz", hash = "sha256:19728772cb12263077982d2f55453babd8bec6a052a926cd5c0c42796da8bf62"},
+    {file = "aiohappyeyeballs-2.5.0-py3-none-any.whl", hash = "sha256:0850b580748c7071db98bffff6d4c94028d0d3035acc20fd721a0ce7e8cac35d"},
+    {file = "aiohappyeyeballs-2.5.0.tar.gz", hash = "sha256:18fde6204a76deeabc97c48bdd01d5801cfda5d6b9c8bbeb1aaaee9d648ca191"},
 ]
 
 [[package]]
@@ -525,7 +525,7 @@ files = [
 
 [[package]]
 name = "coredis"
-version = "4.19.0"
+version = "4.20.0"
 summary = ""
 dependencies = [
     "async-timeout",
@@ -536,13 +536,13 @@ dependencies = [
     "wrapt",
 ]
 files = [
-    {file = "coredis-4.19.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:6659f1b4bffa3a00acc84e5f3f52ff051198d728eb4b9a5e31d646b52ebbc344"},
-    {file = "coredis-4.19.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:610fe10725660b19f228df55fe688459c53d8946db20ba4fe6aeb77565cc749a"},
-    {file = "coredis-4.19.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:49607c59ea264ddd594f631e125f6a65deb190a760d37075d3d5f6fd9916be73"},
-    {file = "coredis-4.19.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1aee5d0edf78b3bde64408078c7ef4fb0d0a71ad08e03ac9999d30f9763b151e"},
-    {file = "coredis-4.19.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a3e058cdf33315723e27b44992b765cdb5b87293f190b8ae02248550a590f1b2"},
-    {file = "coredis-4.19.0-py3-none-any.whl", hash = "sha256:5fade73bb7d91fe61d7d5e8f74ff0bee1c8e9b323827af9626147a202d3ec424"},
-    {file = "coredis-4.19.0.tar.gz", hash = "sha256:bfd8566b169aa37b4f3ee11c9027f655d450ea3128a604df71702cf9f7daad6b"},
+    {file = "coredis-4.20.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:9681a5aa9294d22dd87d024aeca8bbd064bf6946ad861070a044f1cbede37093"},
+    {file = "coredis-4.20.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:07e24aeb07833de8252e14ee9f125a260d128479bbd02d33050c1da1a2119161"},
+    {file = "coredis-4.20.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:da2985b82fdbcad161bde9340153db55309e63e93d68c2d7ec2174121a35a710"},
+    {file = "coredis-4.20.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:193cc8a45679b78baa9d64323ee3a3188fb85d253e0b4f5edd989fb612117b7c"},
+    {file = "coredis-4.20.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f80b77c96ff0add39d50cc2e2a9820dee5b7f742cddd764406bd2b6693329fad"},
+    {file = "coredis-4.20.0-py3-none-any.whl", hash = "sha256:c5dbb266181f90739272199d3c34aa6f33ce054e51875e303edf6954e197e5b7"},
+    {file = "coredis-4.20.0.tar.gz", hash = "sha256:2544b89d2497ad259eca8c3f195407cc859a6ee9086559dc36ed79f6e8950b98"},
 ]
 
 [[package]]
@@ -576,7 +576,9 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.11.2"
+version = "0.11.3"
+editable = true
+path = "../crackerjack"
 summary = ""
 dependencies = [
     "autotyping",
@@ -591,10 +593,6 @@ dependencies = [
     "pytest-mock",
     "tomli-w",
     "uv",
-]
-files = [
-    {file = "crackerjack-0.11.2-py3-none-any.whl", hash = "sha256:77856447197e9681b40c72eb044d915f43bc7c7bae005f1c82418b2a0654dfc2"},
-    {file = "crackerjack-0.11.2.tar.gz", hash = "sha256:a58c057097553b54fa3fcdeae29a95ece0ca9e7431ebc13d2773d1baf94ab7fe"},
 ]
 
 [[package]]
@@ -730,14 +728,14 @@ files = [
 
 [[package]]
 name = "faker"
-version = "36.1.1"
+version = "36.2.2"
 summary = ""
 dependencies = [
     "tzdata",
 ]
 files = [
-    {file = "Faker-36.1.1-py3-none-any.whl", hash = "sha256:ad1f1be7fd692ec0256517404a9d7f007ab36ac5d4674082fa72404049725eaa"},
-    {file = "faker-36.1.1.tar.gz", hash = "sha256:7cb2bbd4c8f040e4a340ae4019e9a48b6cf1db6a71bda4e5a61d8d13b7bef28d"},
+    {file = "faker-36.2.2-py3-none-any.whl", hash = "sha256:14adc340dc8abed5264142ffafe6f1a0f99cf7a7525bc6863755efd5fbbd0692"},
+    {file = "faker-36.2.2.tar.gz", hash = "sha256:758bc63a26dc878fa0d76aa7639b8b65327927980ed0c3683b23bd8a5182f33f"},
 ]
 
 [[package]]
@@ -966,28 +964,28 @@ files = [
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.69.0"
+version = "1.69.1"
 summary = ""
 dependencies = [
     "protobuf",
 ]
 files = [
-    {file = "googleapis_common_protos-1.69.0-py2.py3-none-any.whl", hash = "sha256:17835fdc4fa8da1d61cfe2d4d5d57becf7c61d4112f8d81c67eaa9d7ce43042d"},
-    {file = "googleapis_common_protos-1.69.0.tar.gz", hash = "sha256:5a46d58af72846f59009b9c4710425b9af2139555c71837081706b213b298187"},
+    {file = "googleapis_common_protos-1.69.1-py2.py3-none-any.whl", hash = "sha256:4077f27a6900d5946ee5a369fab9c8ded4c0ef1c6e880458ea2f70c14f7b70d5"},
+    {file = "googleapis_common_protos-1.69.1.tar.gz", hash = "sha256:e20d2d8dda87da6fe7340afbbdf4f0bcb4c8fae7e6cadf55926c31f946b0b9b1"},
 ]
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.69.0"
+version = "1.69.1"
 extras = ["grpc"]
 summary = ""
 dependencies = [
-    "googleapis-common-protos==1.69.0",
+    "googleapis-common-protos==1.69.1",
     "grpcio",
 ]
 files = [
-    {file = "googleapis_common_protos-1.69.0-py2.py3-none-any.whl", hash = "sha256:17835fdc4fa8da1d61cfe2d4d5d57becf7c61d4112f8d81c67eaa9d7ce43042d"},
-    {file = "googleapis_common_protos-1.69.0.tar.gz", hash = "sha256:5a46d58af72846f59009b9c4710425b9af2139555c71837081706b213b298187"},
+    {file = "googleapis_common_protos-1.69.1-py2.py3-none-any.whl", hash = "sha256:4077f27a6900d5946ee5a369fab9c8ded4c0ef1c6e880458ea2f70c14f7b70d5"},
+    {file = "googleapis_common_protos-1.69.1.tar.gz", hash = "sha256:e20d2d8dda87da6fe7340afbbdf4f0bcb4c8fae7e6cadf55926c31f946b0b9b1"},
 ]
 
 [[package]]
@@ -1286,7 +1284,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "3.7.0"
+version = "3.7.1"
 summary = ""
 dependencies = [
     "executing",
@@ -1298,64 +1296,64 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "logfire-3.7.0-py3-none-any.whl", hash = "sha256:634bdb23f30eb532bb137f10d26b709bc19d1384a9af458d1097e483fcd3d9f2"},
-    {file = "logfire-3.7.0.tar.gz", hash = "sha256:44a7eec73a038bd9c0f81c2c8c750a66414ee1615a714c51d6e7e696f634b24e"},
+    {file = "logfire-3.7.1-py3-none-any.whl", hash = "sha256:647c6b67360570332ff205613507f4b796a2c7bf3c2028b29f4a8acd08022dde"},
+    {file = "logfire-3.7.1.tar.gz", hash = "sha256:9aaa4cf0a175466f87036de39ec87b7e91423f3ea458978842b1db7270a36d4e"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.7.0"
+version = "3.7.1"
 extras = ["httpx"]
 summary = ""
 dependencies = [
-    "logfire==3.7.0",
+    "logfire==3.7.1",
     "opentelemetry-instrumentation-httpx",
 ]
 files = [
-    {file = "logfire-3.7.0-py3-none-any.whl", hash = "sha256:634bdb23f30eb532bb137f10d26b709bc19d1384a9af458d1097e483fcd3d9f2"},
-    {file = "logfire-3.7.0.tar.gz", hash = "sha256:44a7eec73a038bd9c0f81c2c8c750a66414ee1615a714c51d6e7e696f634b24e"},
+    {file = "logfire-3.7.1-py3-none-any.whl", hash = "sha256:647c6b67360570332ff205613507f4b796a2c7bf3c2028b29f4a8acd08022dde"},
+    {file = "logfire-3.7.1.tar.gz", hash = "sha256:9aaa4cf0a175466f87036de39ec87b7e91423f3ea458978842b1db7270a36d4e"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.7.0"
+version = "3.7.1"
 extras = ["redis"]
 summary = ""
 dependencies = [
-    "logfire==3.7.0",
+    "logfire==3.7.1",
     "opentelemetry-instrumentation-redis",
 ]
 files = [
-    {file = "logfire-3.7.0-py3-none-any.whl", hash = "sha256:634bdb23f30eb532bb137f10d26b709bc19d1384a9af458d1097e483fcd3d9f2"},
-    {file = "logfire-3.7.0.tar.gz", hash = "sha256:44a7eec73a038bd9c0f81c2c8c750a66414ee1615a714c51d6e7e696f634b24e"},
+    {file = "logfire-3.7.1-py3-none-any.whl", hash = "sha256:647c6b67360570332ff205613507f4b796a2c7bf3c2028b29f4a8acd08022dde"},
+    {file = "logfire-3.7.1.tar.gz", hash = "sha256:9aaa4cf0a175466f87036de39ec87b7e91423f3ea458978842b1db7270a36d4e"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.7.0"
+version = "3.7.1"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "logfire==3.7.0",
+    "logfire==3.7.1",
     "opentelemetry-instrumentation-sqlalchemy",
 ]
 files = [
-    {file = "logfire-3.7.0-py3-none-any.whl", hash = "sha256:634bdb23f30eb532bb137f10d26b709bc19d1384a9af458d1097e483fcd3d9f2"},
-    {file = "logfire-3.7.0.tar.gz", hash = "sha256:44a7eec73a038bd9c0f81c2c8c750a66414ee1615a714c51d6e7e696f634b24e"},
+    {file = "logfire-3.7.1-py3-none-any.whl", hash = "sha256:647c6b67360570332ff205613507f4b796a2c7bf3c2028b29f4a8acd08022dde"},
+    {file = "logfire-3.7.1.tar.gz", hash = "sha256:9aaa4cf0a175466f87036de39ec87b7e91423f3ea458978842b1db7270a36d4e"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.7.0"
+version = "3.7.1"
 extras = ["system-metrics"]
 summary = ""
 dependencies = [
-    "logfire==3.7.0",
+    "logfire==3.7.1",
     "opentelemetry-instrumentation-system-metrics",
 ]
 files = [
-    {file = "logfire-3.7.0-py3-none-any.whl", hash = "sha256:634bdb23f30eb532bb137f10d26b709bc19d1384a9af458d1097e483fcd3d9f2"},
-    {file = "logfire-3.7.0.tar.gz", hash = "sha256:44a7eec73a038bd9c0f81c2c8c750a66414ee1615a714c51d6e7e696f634b24e"},
+    {file = "logfire-3.7.1-py3-none-any.whl", hash = "sha256:647c6b67360570332ff205613507f4b796a2c7bf3c2028b29f4a8acd08022dde"},
+    {file = "logfire-3.7.1.tar.gz", hash = "sha256:9aaa4cf0a175466f87036de39ec87b7e91423f3ea458978842b1db7270a36d4e"},
 ]
 
 [[package]]
@@ -2566,7 +2564,7 @@ files = [
 
 [[package]]
 name = "virtualenv"
-version = "20.29.2"
+version = "20.29.3"
 summary = ""
 dependencies = [
     "distlib",
@@ -2574,8 +2572,8 @@ dependencies = [
     "platformdirs",
 ]
 files = [
-    {file = "virtualenv-20.29.2-py3-none-any.whl", hash = "sha256:febddfc3d1ea571bdb1dc0f98d7b45d24def7428214d4fb73cc486c9568cce6a"},
-    {file = "virtualenv-20.29.2.tar.gz", hash = "sha256:fdaabebf6d03b5ba83ae0a02cfe96f48a716f4fae556461d180825866f75b728"},
+    {file = "virtualenv-20.29.3-py3-none-any.whl", hash = "sha256:3e3d00f5807e83b234dfb6122bf37cfadf4be216c53a49ac059d02414f819170"},
+    {file = "virtualenv-20.29.3.tar.gz", hash = "sha256:95e39403fcf3940ac45bc717597dba16110b74506131845d9b687d5e73d947ac"},
 ]
 
 [[package]]

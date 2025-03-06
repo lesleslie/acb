@@ -330,10 +330,10 @@ class AppSettings(Settings):
         return app_name
 
 
-class Config(BaseModel, extra="allow"):
+class Config:
     deployed: bool = _deployed
-    debug: t.Optional[Settings] = None
-    app: t.Optional[Settings] = None
+    debug: DebugSettings | None = None
+    app: AppSettings | None = None
 
     def __getattr__(self, item: str) -> t.Any:
         return super().__getattr__(item)  # type: ignore
@@ -344,13 +344,14 @@ class Config(BaseModel, extra="allow"):
 
 
 depends.set(Config)
-depends.get(Config).init()
+config = depends.get(Config).init()
+
 
 Logger = import_adapter()
 
 
 @depends.inject
-def initialize_acb(config: Config = depends(), logger: Logger = depends()) -> None:  # type: ignore
+def initialize_acb(config: Config = depends(), logger: Logger = depends()) -> None:
     logger.info(f"App path: {root_path}")
     logger.info(f"App deployed: {config.deployed}")
 
@@ -358,8 +359,8 @@ def initialize_acb(config: Config = depends(), logger: Logger = depends()) -> No
 initialize_acb()
 
 
-class AdapterBase(t.Protocol):
+class AdapterBase:
     config: Config = depends()
-    logger: Logger = depends()  # type: ignore
+    logger: Logger = depends()
 
     async def init(self) -> None: ...

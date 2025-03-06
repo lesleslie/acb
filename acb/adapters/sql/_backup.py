@@ -26,8 +26,8 @@ Storage = import_adapter()
 
 
 class SqlBackupUtils(BaseModel):
-    storage: Storage = depends()  # type: ignore
-    config: Config = depends()  # type: ignore
+    storage: Storage = depends()
+    config: Config = depends()
     backup_path: t.Optional[Path] = None
 
     @staticmethod
@@ -142,8 +142,8 @@ class SqlBackupDates(BaseModel, arbitrary_types_allowed=True):
 
 
 class SqlBackup(SqlBackupDates, SqlBackupUtils):
-    sql: Sql = depends()  # type: ignore
-    logger: Logger = depends()  # type: ignore
+    sql: Sql = depends()
+    logger: Logger = depends()
     do_not_backup: list[str] = []
     models: list[t.Any] = []
     sure_delete: bool = False

@@ -28,16 +28,14 @@ def get_calling_module() -> Path | None:
 def patch_record(
     mod: Path,
     msg: str,
-    logger: Logger = depends(),  # type: ignore
+    logger: Logger = depends(),
 ) -> None:
     if next(
         a
         for a in adapter_registry.get()
         if a.category == "logger" and a.name == "loguru"
     ):
-        logger.patch(lambda record: record.update(name=mod.name)).debug(  # type: ignore
-            msg
-        )
+        logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
 
 
 def colorized_stderr_print(s: str) -> None:
@@ -73,7 +71,7 @@ if config.deployed or config.debug.production:
 
 
 @depends.inject
-def timeit(func: t.Any, logger: Logger = depends()) -> t.Any:  # type: ignore
+def timeit(func: t.Any, logger: Logger = depends()) -> t.Any:
     def wrapped(*args: t.Any, **kwargs: t.Any) -> t.Any:
         start = perf_counter()
         result = func(*args, **kwargs)

@@ -34,7 +34,7 @@ class StorageBaseSettings(Settings):
 
 class StorageBucket:
     config: Config = depends()
-    logger: Logger = depends()  # type: ignore
+    logger: Logger = depends()
 
     def __init__(
         self,

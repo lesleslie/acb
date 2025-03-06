@@ -20,7 +20,7 @@ class Ftpd(FtpdBase):
         )
 
     @depends.inject
-    async def init(self, logger: Logger = depends()) -> None:  # type: ignore
+    async def init(self, logger: Logger = depends()) -> None:
         try:
             await self.server.start()
             logger.info(f"FTP server started on port {self.config.ftpd.port}")

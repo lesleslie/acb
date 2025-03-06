@@ -21,9 +21,7 @@ def yaml_encode(
     dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
     dumper.add_representer(
         type(None),
-        lambda dumper, value: dumper.represent_scalar(  # type: ignore
-            "tag:yaml.org,2002:null", ""
-        ),
+        lambda dumper, value: dumper.represent_scalar("tag:yaml.org,2002:null", ""),
     )
     return yaml.dump_all(
         [
