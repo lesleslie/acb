@@ -50,20 +50,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
-    "tomli-w",
-    "pyfiglet",
-    "pytest-asyncio",
-    "pdm",
-    "pyyaml",
-    "pytest",
     "msgspec-python313-pre",
-    "pytest-mock",
+    "pdm",
+    "pyfiglet",
+    "tomli-w",
+    "pytest-asyncio",
     "pytest-cov",
-    "google-crc32c",
-    "uv",
-    "pre-commit",
+    "pytest",
     "autotyping",
+    "pre-commit",
+    "uv",
+    "pytest-mock",
+    "google-crc32c",
+    "pyyaml",
+    "pdm-bump",
 ]
 
 [tool.refurb]
@@ -74,15 +74,15 @@ target = [
     "acb",
 ]
 skips = [
+    "B603",
+    "B403",
+    "B602",
+    "B301",
     "B704",
     "B101",
     "B311",
     "B607",
     "B404",
-    "B301",
-    "B603",
-    "B403",
-    "B602",
 ]
 
 [tool.pyright]
@@ -125,14 +125,9 @@ paths = [
 addopts = "--cov=crackerjack"
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.pdm.dev-dependencies]
-dev = [
-    "-e file:///${PROJECT_ROOT}/../crackerjack#egg=crackerjack",
-]
-
 [project]
 name = "acb"
-version = "0.8.16"
+version = "0.8.17"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -155,6 +150,7 @@ dependencies = [
     "typer>=0.15.1",
     "tomli-w>=1.2.0",
     "msgspec>=0.19.0",
+    "aioconsole>=0.8.1",
 ]
 requires-python = ">=3.13"
 readme = "README.md"
@@ -234,6 +230,9 @@ secret = [
 monitoring = [
     "sentry-sdk[loguru]>=2.20.0",
     "logfire[system-metrics]>=3.4.0",
+]
+dev = [
+    "crackerjack>=0.11.3",
 ]
 
 [build-system]

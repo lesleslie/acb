@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:7fd99240febe0295469c89174e533df40b6b037aec26e9723b0f399fd6201530"
+content_hash = "sha256:18a5af91d3bd52cb9b8d5d6a3d252f4e120b53ba545f344b2c2d3a0ac6a0972b"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -66,6 +66,15 @@ dependencies = [
 files = [
     {file = "aiocache-0.12.3-py2.py3-none-any.whl", hash = "sha256:889086fc24710f431937b87ad3720a289f7fc31c4fd8b68e9f918b9bacd8270d"},
     {file = "aiocache-0.12.3.tar.gz", hash = "sha256:f528b27bf4d436b497a1d0d1a8f59a542c153ab1e37c3621713cb376d44c4713"},
+]
+
+[[package]]
+name = "aioconsole"
+version = "0.8.1"
+summary = ""
+files = [
+    {file = "aioconsole-0.8.1-py3-none-any.whl", hash = "sha256:e1023685cde35dde909fbf00631ffb2ed1c67fe0b7058ebb0892afbde5f213e5"},
+    {file = "aioconsole-0.8.1.tar.gz", hash = "sha256:0535ce743ba468fb21a1ba43c9563032c779534d4ecd923a46dbd350ad91d234"},
 ]
 
 [[package]]
@@ -577,8 +586,6 @@ files = [
 [[package]]
 name = "crackerjack"
 version = "0.11.3"
-editable = true
-path = "../crackerjack"
 summary = ""
 dependencies = [
     "autotyping",
@@ -593,6 +600,10 @@ dependencies = [
     "pytest-mock",
     "tomli-w",
     "uv",
+]
+files = [
+    {file = "crackerjack-0.11.3-py3-none-any.whl", hash = "sha256:28724f733009e57d7821c4e406c6cc8b89111093e379437b50a817e1408cf27d"},
+    {file = "crackerjack-0.11.3.tar.gz", hash = "sha256:dfa1278bfa5224748f925027f69e46d31dd2f7af741db154f1dd16a3e6ca7d49"},
 ]
 
 [[package]]
