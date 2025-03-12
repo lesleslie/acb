@@ -50,20 +50,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-asyncio",
+    "pytest-cov",
+    "google-crc32c",
+    "msgspec-python313-pre",
     "pytest",
+    "pyfiglet",
+    "pytest-mock",
+    "autotyping",
+    "pyyaml",
+    "pdm-bump",
     "uv",
     "pre-commit",
-    "pytest-mock",
-    "msgspec-python313-pre",
-    "pytest-cov",
-    "pyyaml",
     "tomli-w",
-    "pdm-bump",
     "pdm",
-    "pyfiglet",
-    "google-crc32c",
-    "autotyping",
+    "pytest-asyncio",
 ]
 
 [tool.refurb]
@@ -74,15 +74,15 @@ target = [
     "acb",
 ]
 skips = [
-    "B311",
     "B403",
-    "B301",
-    "B607",
-    "B603",
-    "B704",
-    "B404",
-    "B602",
     "B101",
+    "B603",
+    "B404",
+    "B311",
+    "B301",
+    "B704",
+    "B607",
+    "B602",
 ]
 
 [tool.pyright]
@@ -106,7 +106,7 @@ reportUnknownArgumentType = false
 reportInvalidTypeForm = false
 reportUnknownLambdaType = false
 reportUnknownParameterType = "warning"
-reportPrivateUsage = "warning"
+reportPrivateUsage = false
 pythonVersion = "3.13"
 pythonPlatform = "Darwin"
 
@@ -116,18 +116,21 @@ quiet-level = 3
 ignore-words-list = "crate,uptodate"
 
 [tool.vulture]
-min_confidence = 84
+min_confidence = 86
 paths = [
     "acb",
 ]
+ignore_names = [
+    "cls",
+]
 
 [tool.pytest.ini_options]
-addopts = "--cov=crackerjack"
+addopts = "--cov=acb"
 asyncio_default_fixture_loop_scope = "function"
 
 [project]
 name = "acb"
-version = "0.9.0"
+version = "0.9.1"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -182,11 +185,11 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.20.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.7.1",
+    "logfire[redis]>=3.8.0",
 ]
 storage = [
-    "gcsfs>=2025.2.0",
-    "s3fs>=2025.2.0",
+    "gcsfs>=2025.3.0",
+    "s3fs>=2025.3.0",
     "adlfs>=2024.12.0",
 ]
 dns = [
@@ -197,19 +200,19 @@ requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.1",
     "sentry-sdk[httpx]>=2.22.0",
-    "logfire[httpx]>=3.7.1",
+    "logfire[httpx]>=3.8.0",
 ]
 smtp = [
     "mailgun>=0.1.1",
 ]
 sql = [
-    "sqlalchemy>=2.0.38",
+    "sqlalchemy>=2.0.39",
     "sqlalchemy-utils>=0.41.2",
-    "sqlmodel>=0.0.23",
+    "sqlmodel>=0.0.24",
     "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.7.1",
+    "logfire[sqlalchemy]>=3.8.0",
     "sentry-sdk[sqlalchemy]>=2.22.0",
     "greenlet>=3.1.1",
 ]
@@ -218,7 +221,7 @@ nosql = [
     "motor>=3.7.0",
 ]
 demo = [
-    "faker>=36.2.2",
+    "faker>=37.0.0",
 ]
 ftpd = [
     "aioftp>=0.24.1",
@@ -229,10 +232,10 @@ secret = [
 ]
 monitoring = [
     "sentry-sdk[loguru]>=2.22.0",
-    "logfire[system-metrics]>=3.7.1",
+    "logfire[system-metrics]>=3.8.0",
 ]
 dev = [
-    "crackerjack>=0.11.4",
+    "crackerjack>=0.14.0",
 ]
 
 [build-system]
