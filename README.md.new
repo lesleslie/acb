@@ -1,4 +1,3 @@
-
 <p align="center">
   <img src="https://drive.google.com/uc?id=1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC">
 </p>
@@ -66,6 +65,50 @@ ACB supports various optional dependencies for different adapters and functional
 | Web Application | Typical web app stack | `pdm add "acb[redis,sql,storage]"` |
 | Complete | All dependencies | `pdm add "acb[all]"` |
 
+## Quick Start
+
+Create a minimal ACB application in just a few steps:
+
+```python
+# main.py
+from acb import register_pkg
+from acb.depends import depends
+from acb.config import Config
+
+# Register your package with ACB
+register_pkg()
+
+# Access configuration
+config = depends.get(Config)
+
+# Import a logger adapter
+Logger = depends.get("logger")
+
+async def main():
+    Logger.info(f"Starting {config.app.name} application")
+    # Your application logic here
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+```
+
+Create a basic configuration file:
+
+```yaml
+# settings/app.yml
+app:
+  name: "MyApp"
+  title: "My ACB Application"
+  version: "0.1.0"
+```
+
+Run your application:
+
+```bash
+python main.py
+```
+
 ## Architecture Overview
 
 ACB follows a component-based architecture with automatic discovery and registration of modules:
@@ -85,6 +128,16 @@ acb/
 ├── depends.py       # Dependency injection framework
 └── ...
 ```
+
+## Use Cases
+
+ACB is ideal for:
+
+- **Web Applications**: Build async web applications with database and caching support
+- **API Services**: Create robust API services with standardized components
+- **Data Processing**: Process data asynchronously with built-in compression and encoding
+- **Microservices**: Develop consistent microservices with shared components
+- **CLI Tools**: Build command-line tools with configuration and dependency management
 
 ## Core Components
 
@@ -192,82 +245,6 @@ def process_data(data, config: Config = depends(), logger = depends("logger")):
     logger.info(f"Processing data with app: {config.app.name}")
     # Process data...
     return result
-```
-
-## Getting Started
-
-### Basic Application Setup
-
-1. **Create a new project with PDM:**
-
-```bash
-mkdir myapp
-cd myapp
-pdm init
-pdm add acb
-```
-
-2. **Create a basic application structure:**
-
-```
-myapp/
-├── myapp/
-│   ├── __init__.py
-│   ├── actions/
-│   │   └── __init__.py
-│   ├── adapters/
-│   │   └── __init__.py
-│   └── main.py
-└── settings/
-    ├── app.yml
-    ├── debug.yml
-    └── adapters.yml
-```
-
-3. **Initialize ACB in your main.py:**
-
-```python
-from acb import register_pkg
-from acb.depends import depends
-from acb.config import Config
-
-# Register your package with ACB
-register_pkg()
-
-# Access configuration
-config = depends.get(Config)
-
-# Import adapters
-Logger = depends.get("logger")
-
-async def main():
-    Logger.info(f"Starting {config.app.name} application")
-    # Your application logic here
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
-```
-
-### Configuration Files
-
-Create your initial configuration files:
-
-#### settings/app.yml
-```yaml
-app:
-  name: "MyApp"
-  title: "My ACB Application"
-  domain: "myapp.example.com"
-  version: "0.1.0"
-```
-
-#### settings/adapters.yml
-```yaml
-# Choose your adapter implementations
-cache: memory
-logger: loguru
-storage: file
 ```
 
 ## Built-in Components
