@@ -63,8 +63,16 @@ def get_adapter(category: str) -> Adapter | None:
     return adapter
 
 
-def get_enabled_adapters() -> list[Adapter]:
+def get_adapters() -> list[Adapter]:
     return [a for a in adapter_registry.get() if a.enabled]
+
+
+def get_installed_adapter(category: str) -> Adapter | None:
+    adapter = next(
+        (a for a in adapter_registry.get() if a.category == category and a.installed),
+        None,
+    )
+    return adapter
 
 
 def get_installed_adapters() -> list[Adapter]:
