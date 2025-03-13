@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:eab1a418b1511a74add62ac98cf6f2e50fe65188cd0b167e2a37c34d55e04f63"
+content_hash = "sha256:a4cbcb6f2d342312de40affd7a3d5bc1f60b693181eb71599fe281a6c1ea28f6"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -585,7 +585,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.14.1"
+version = "0.14.3"
 summary = ""
 dependencies = [
     "autotyping",
@@ -603,8 +603,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.14.1-py3-none-any.whl", hash = "sha256:3df0241545efe7bb13d9c230e45134bb13e7cae10954873a5c44a590804e06e3"},
-    {file = "crackerjack-0.14.1.tar.gz", hash = "sha256:d3713567ce0f74572e1469acc0932cfab138ad5c7dd75189fc511cd5fd5988ba"},
+    {file = "crackerjack-0.14.3-py3-none-any.whl", hash = "sha256:598d7b3448e162f033eb5cdc7edd63eaaba70c09bdef5893ec601fd1796dd088"},
+    {file = "crackerjack-0.14.3.tar.gz", hash = "sha256:d46a795818ed6b54d041e2a7a58af7ce139f4f7a17936d23f70960332c8cfa5b"},
 ]
 
 [[package]]
