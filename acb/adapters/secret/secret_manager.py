@@ -14,6 +14,7 @@ from google.cloud.secretmanager_v1 import (
 from acb.adapters import import_adapter
 from acb.config import app_name, project
 from acb.depends import depends
+
 from ._base import SecretBase, SecretBaseSettings
 
 Logger = import_adapter()

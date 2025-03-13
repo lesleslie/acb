@@ -12,6 +12,7 @@ from logfire import (
 from pydantic import SecretStr
 from acb.adapters import get_installed_adapters, import_adapter
 from acb.depends import depends
+
 from ._base import MonitoringBase, MonitoringBaseSettings
 
 

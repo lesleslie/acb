@@ -5,6 +5,7 @@ from gcsfs.core import GCSFileSystem
 from google.cloud.storage import Client
 from acb.config import Config
 from acb.depends import depends
+
 from ._base import StorageBase, StorageBaseSettings
 
 
@@ -24,7 +25,7 @@ class Storage(StorageBase):
 
     @staticmethod
     @depends.inject
-    def get_client(config: Config = depends()):
+    def get_client(config: Config = depends()) -> Client:
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             return Client(project=config.app.project)

@@ -3,6 +3,7 @@ from time import perf_counter
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
+
 from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()

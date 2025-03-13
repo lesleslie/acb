@@ -7,6 +7,7 @@ from aiopath import AsyncPath
 from sqlmodel import SQLModel
 from acb.adapters import get_adapter, get_installed_adapters, import_adapter, root_path
 from acb.depends import depends
+
 from ._base import ModelsBase, ModelsBaseSettings
 
 imported_models: ContextVar[list[t.Any]] = ContextVar("imported_models", default=[])

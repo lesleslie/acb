@@ -10,6 +10,7 @@ from acb.adapters.dns._base import DnsRecord
 from acb.config import Config, adapter_registry
 from acb.debug import debug
 from acb.depends import depends
+
 from ._base import EmailBase, EmailBaseSettings
 
 Dns = import_adapter()

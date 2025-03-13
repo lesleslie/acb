@@ -1,6 +1,7 @@
 import typing as t
 
 from acb.depends import depends
+
 from ._base import EmailBase, EmailBaseSettings
 
 

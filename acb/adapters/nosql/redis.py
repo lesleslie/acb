@@ -2,6 +2,7 @@
 # from redis_om import Migrator
 
 from pydantic import field_validator
+
 from ._base import NosqlBase, NosqlBaseSettings
 
 

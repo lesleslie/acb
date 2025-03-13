@@ -7,6 +7,7 @@ from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
 from acb.config import Config, debug
 from acb.depends import depends
+
 from ._base import LoggerBase, LoggerBaseSettings
 
 

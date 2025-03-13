@@ -109,8 +109,19 @@ class StorageBucket:
         await self.client._rm_file(stor_path)
 
 
+class StorageProtocol(t.Protocol):
+    file_system: t.Any = AsyncFileSystem
+
+    async def init(self) -> None: ...
+    @cached_property
+    def client(self) -> AsyncFileSystem: ...
+
+
 class StorageBase(AdapterBase):
     file_system: t.Type[AsyncFileSystem]
+    templates: StorageBucket | None = None
+    media: StorageBucket | None = None
+    test: StorageBucket | None = None
 
     @cached_property
     def client(self) -> AsyncFileSystem:
