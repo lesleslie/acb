@@ -7,6 +7,7 @@ from sqlalchemy import log as sqlalchemy_log
 from sqlalchemy import pool, text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
+from sqlalchemy_utils import create_database, database_exists
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from acb.adapters import import_adapter
@@ -31,10 +32,14 @@ class SqlBaseSettings(Settings):
     backup_enabled: bool = False
     backup_bucket: str | None = None
     cloudsql_instance: t.Optional[str] = None
+    cloudsql_proxy: t.Optional[bool] = False
+    cloudsql_proxy_port: t.Optional[int] = None
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
+        if self.cloudsql_proxy:
+            self.port = self.cloudsql_proxy_port if not config.deployed else self.port
         url_kwargs = dict(
             drivername=self._driver,
             username=self.user.get_secret_value(),
@@ -66,6 +71,11 @@ class SqlBase(AdapterBase):
 
     @cached_property
     def engine(self) -> AsyncEngine:
+        self.logger.debug(self.config.sql._async_url)
+        if not database_exists(self.config.sql._url):
+            self.logger.debug(self.config.sql._async_url)
+            create_database(self.config.sql._url)
+        self.exists = True
         return create_async_engine(
             self.config.sql._async_url, **self.config.sql.engine_kwargs
         )

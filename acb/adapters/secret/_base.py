@@ -1,13 +1,14 @@
 import typing as t
 
-from acb.config import Settings
+from aiopath import AsyncPath
+from acb.config import AdapterBase, Settings, app_name
 
 
 class SecretBaseSettings(Settings):
-    requires: t.Optional[list[str]] = ["logger"]
+    secrets_path: AsyncPath
 
 
-class SecretBase(t.Protocol):
+class SecretProtocol(t.Protocol):
     async def list(self, adapter: str) -> t.NoReturn: ...
 
     async def create(self, name: str, value: str) -> t.NoReturn: ...
@@ -17,3 +18,7 @@ class SecretBase(t.Protocol):
     async def get(self, name: str) -> t.NoReturn: ...
 
     async def delete(self, name: str) -> t.NoReturn: ...
+
+
+class SecretBase(AdapterBase):
+    prefix: str = f"{app_name}_"

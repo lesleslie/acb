@@ -39,10 +39,6 @@ class AdapterProtocol(t.Protocol):
     async def init(self) -> None: ...
 
 
-# Type Alias for the adapter classes
-# AdapterClass = t.TypeVar("AdapterClass", bound=AdapterProtocol)
-
-
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
 _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
 

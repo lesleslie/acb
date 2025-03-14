@@ -11,23 +11,18 @@ from google.cloud.secretmanager_v1 import (
     ListSecretsRequest,
     SecretManagerServiceAsyncClient,
 )
-from acb.adapters import import_adapter
-from acb.config import app_name, project
+from acb.config import project
 from acb.depends import depends
 
 from ._base import SecretBase, SecretBaseSettings
-
-Logger = import_adapter()
 
 
 class SecretSettings(SecretBaseSettings): ...
 
 
 class Secret(SecretBase):
-    logger: Logger = depends()
     project: str = project
     parent: str = f"projects/{project}"
-    prefix: str = f"{app_name}_"
 
     def extract_secret_name(self, secret_path: str) -> t.Any:
         return secret_path.split("/")[-1].removeprefix(self.prefix)

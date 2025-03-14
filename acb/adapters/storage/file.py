@@ -16,7 +16,7 @@ class Storage(StorageBase):
 
     @cached_property
     def client(self) -> AsyncFileSystem:
-        return self.file_system(path=self.config.storage.local_path, asynchronous=True)
+        return self.file_system(path=self.config.storage.local_path, asynchronous=False)
 
 
 depends.set(Storage)

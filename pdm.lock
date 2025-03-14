@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:a4cbcb6f2d342312de40affd7a3d5bc1f60b693181eb71599fe281a6c1ea28f6"
+content_hash = "sha256:9feb435ff440f44b34cbddbf4d8c1a0343d47cf3112a9b9fb8bfc418d53622a1"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -1296,7 +1296,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "3.8.0"
+version = "3.8.1"
 summary = ""
 dependencies = [
     "executing",
@@ -1308,64 +1308,64 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "logfire-3.8.0-py3-none-any.whl", hash = "sha256:a2cda4d7bfb3a3a21bf99aa5c94bde6edff405ffa312b4dcbf8b99a8d52bf32e"},
-    {file = "logfire-3.8.0.tar.gz", hash = "sha256:dc64745641d077e9411836c0d17af08f4fcef2737545dc43b67e51b20679e88b"},
+    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
+    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.0"
+version = "3.8.1"
 extras = ["httpx"]
 summary = ""
 dependencies = [
-    "logfire==3.8.0",
+    "logfire==3.8.1",
     "opentelemetry-instrumentation-httpx",
 ]
 files = [
-    {file = "logfire-3.8.0-py3-none-any.whl", hash = "sha256:a2cda4d7bfb3a3a21bf99aa5c94bde6edff405ffa312b4dcbf8b99a8d52bf32e"},
-    {file = "logfire-3.8.0.tar.gz", hash = "sha256:dc64745641d077e9411836c0d17af08f4fcef2737545dc43b67e51b20679e88b"},
+    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
+    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.0"
+version = "3.8.1"
 extras = ["redis"]
 summary = ""
 dependencies = [
-    "logfire==3.8.0",
+    "logfire==3.8.1",
     "opentelemetry-instrumentation-redis",
 ]
 files = [
-    {file = "logfire-3.8.0-py3-none-any.whl", hash = "sha256:a2cda4d7bfb3a3a21bf99aa5c94bde6edff405ffa312b4dcbf8b99a8d52bf32e"},
-    {file = "logfire-3.8.0.tar.gz", hash = "sha256:dc64745641d077e9411836c0d17af08f4fcef2737545dc43b67e51b20679e88b"},
+    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
+    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.0"
+version = "3.8.1"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "logfire==3.8.0",
+    "logfire==3.8.1",
     "opentelemetry-instrumentation-sqlalchemy",
 ]
 files = [
-    {file = "logfire-3.8.0-py3-none-any.whl", hash = "sha256:a2cda4d7bfb3a3a21bf99aa5c94bde6edff405ffa312b4dcbf8b99a8d52bf32e"},
-    {file = "logfire-3.8.0.tar.gz", hash = "sha256:dc64745641d077e9411836c0d17af08f4fcef2737545dc43b67e51b20679e88b"},
+    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
+    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.0"
+version = "3.8.1"
 extras = ["system-metrics"]
 summary = ""
 dependencies = [
-    "logfire==3.8.0",
+    "logfire==3.8.1",
     "opentelemetry-instrumentation-system-metrics",
 ]
 files = [
-    {file = "logfire-3.8.0-py3-none-any.whl", hash = "sha256:a2cda4d7bfb3a3a21bf99aa5c94bde6edff405ffa312b4dcbf8b99a8d52bf32e"},
-    {file = "logfire-3.8.0.tar.gz", hash = "sha256:dc64745641d077e9411836c0d17af08f4fcef2737545dc43b67e51b20679e88b"},
+    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
+    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
 ]
 
 [[package]]

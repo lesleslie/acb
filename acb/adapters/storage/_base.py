@@ -17,19 +17,16 @@ nest_asyncio.apply()
 
 class StorageBaseSettings(Settings):
     prefix: t.Optional[str] = None
-    local_path: t.Optional[AsyncPath] = None
-    user_project: t.Optional[str] = None  # used for billing
+    local_path: t.Optional[AsyncPath] = tmp_path / "storage"
+    user_project: t.Optional[str] = None
     buckets: dict[str, str] = {"test": "test-bucket"}
-    loggers: t.Optional[list[str]] = []
+    cors: t.Optional[dict[str, dict[str, list[str] | int]]] = None
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or config.app.name or ""
-        self.directory = tmp_path / "storage"
-        self.user_project = (
-            self.user_project or config.app.name or ""
-        )  # used for billing
+        self.user_project = self.user_project or config.app.name or ""
 
 
 class StorageBucket:
@@ -83,19 +80,24 @@ class StorageBucket:
         return await self.client._exists(self.get_path(path))
 
     async def create_bucket(self, path: AsyncPath) -> t.Any:
-        return await self.client._mkdir(
-            self.get_path(path),
+        create_args: dict[str, t.Any] = dict(
             create_parents=True,
             enable_versioning=False,
-            # acl="public-read",
         )
+        if self.name == "media":
+            create_args["acl"] = "public-read"
+            if self.config.storage.cors:
+                self.client.set_cors(self.name, self.config.storage.cors)
+        elif self.name == "templates":
+            create_args["enable_versioning"] = True
+        return await self.client._mkdir(self.get_path(path), **create_args)
 
     async def open(self, path: AsyncPath) -> t.BinaryIO:
         try:
             async with self.client.open(self.get_path(path), "rb") as f:
                 return f.read()
         except (NotFound, FileNotFoundError, RuntimeError):
-            raise FileNotFoundError  # for jinja loaders
+            raise FileNotFoundError
         except Exception as e:
             debug(e)
             raise e

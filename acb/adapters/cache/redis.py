@@ -70,9 +70,9 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
         if self.config.cache.cluster:
             self.logger.info("RedisCluster mode enabled")
             del redis_kwargs["health_check_interval"]
-            self.client = RedisCluster(**redis_kwargs)
+            self.client = RedisCluster(**redis_kwargs)  # type: ignore
         else:
-            self.client = Redis(**redis_kwargs)
+            self.client = Redis(**redis_kwargs)  # type: ignore
 
 
 depends.set(Cache)

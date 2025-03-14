@@ -49,20 +49,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
-    "uv",
-    "pytest-asyncio",
-    "pytest",
     "pdm",
-    "autotyping",
-    "pytest-cov",
-    "tomli-w",
-    "msgspec-python313-pre",
     "pytest-mock",
-    "pyfiglet",
-    "google-crc32c",
-    "pre-commit",
+    "pytest",
     "pyyaml",
+    "pyfiglet",
+    "tomli-w",
+    "autotyping",
+    "google-crc32c",
+    "msgspec-python313-pre",
+    "pre-commit",
+    "uv",
+    "pytest-cov",
+    "pytest-asyncio",
+    "pdm-bump",
 ]
 
 [tool.refurb]
@@ -73,15 +73,15 @@ target = [
     "acb",
 ]
 skips = [
+    "B101",
+    "B311",
     "B607",
     "B603",
-    "B704",
-    "B311",
-    "B101",
-    "B301",
+    "B403",
     "B602",
     "B404",
-    "B403",
+    "B301",
+    "B704",
 ]
 
 [tool.pyright]
@@ -129,7 +129,7 @@ asyncio_default_fixture_loop_scope = "function"
 
 [project]
 name = "acb"
-version = "0.10.0"
+version = "0.10.1"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -184,7 +184,7 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.20.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.8.0",
+    "logfire[redis]>=3.8.1",
 ]
 storage = [
     "gcsfs>=2025.3.0",
@@ -199,7 +199,7 @@ requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.1",
     "sentry-sdk[httpx]>=2.22.0",
-    "logfire[httpx]>=3.8.0",
+    "logfire[httpx]>=3.8.1",
 ]
 smtp = [
     "mailgun>=0.1.1",
@@ -211,7 +211,7 @@ sql = [
     "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.8.0",
+    "logfire[sqlalchemy]>=3.8.1",
     "sentry-sdk[sqlalchemy]>=2.22.0",
     "greenlet>=3.1.1",
 ]
@@ -231,7 +231,7 @@ secret = [
 ]
 monitoring = [
     "sentry-sdk[loguru]>=2.22.0",
-    "logfire[system-metrics]>=3.8.0",
+    "logfire[system-metrics]>=3.8.1",
 ]
 dev = [
     "crackerjack>=0.14.3",
