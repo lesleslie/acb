@@ -22,6 +22,7 @@ class StorageBaseSettings(Settings):
     buckets: dict[str, str] = {"test": "test-bucket"}
     cors: t.Optional[dict[str, dict[str, list[str] | int]]] = None
     local_fs: t.Optional[bool] = False
+    memory_fs: t.Optional[bool] = False
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -29,6 +30,7 @@ class StorageBaseSettings(Settings):
         self.prefix = self.prefix or config.app.name or ""
         self.user_project = self.user_project or config.app.name or ""
         self.local_fs = get_adapter("storage").name in ("file", "memory")
+        self.memory_fs = get_adapter("storage").name == "memory"
 
 
 class StorageBucket:
@@ -75,12 +77,25 @@ class StorageBucket:
         return await self.client._sign(self.get_path(path), expires=expires)
 
     async def stat(self, path: AsyncPath) -> t.Any:
-        return await self.client._info(self.get_path(path))
+        _path = self.get_path(path)
+        if self.config.storage.memory_fs:
+            info = self.client.info(_path)
+            stat = dict(
+                name=info.get("name"),
+                size=info.get("size"),
+                type=info.get("type"),
+                mtime=self.client.modified(_path).timestamp(),
+                created=self.client.created(_path).timestamp(),
+            )
+            return stat
+        return await self.client._info(_path)
 
     async def list(self, dir_path: AsyncPath) -> t.Any:
         return await self.client._ls(self.get_path(dir_path))
 
     async def exists(self, path: AsyncPath) -> t.Any:
+        if get_adapter("storage").name == "memory":
+            return self.client.isfile(self.get_path(path))
         return await self.client._exists(self.get_path(path))
 
     async def create_bucket(self, path: AsyncPath) -> t.Any:
@@ -109,7 +124,10 @@ class StorageBucket:
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
         try:
-            await self.client._pipe_file(stor_path, data)
+            if get_adapter("storage").name == "memory":
+                self.client.pipe_file(stor_path, data)
+            else:
+                await self.client._pipe_file(stor_path, data)
         except Exception as e:
             debug(e)
             raise e
