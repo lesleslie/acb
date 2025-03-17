@@ -2,7 +2,9 @@ import typing as t
 from functools import cached_property
 
 from fsspec.asyn import AsyncFileSystem
+from fsspec.implementations.asyn_wrapper import AsyncFileSystemWrapper
 from fsspec.implementations.dirfs import DirFileSystem
+from fsspec.implementations.local import LocalFileSystem
 from acb.depends import depends
 
 from ._base import StorageBase, StorageBaseSettings
@@ -16,7 +18,9 @@ class Storage(StorageBase):
 
     @cached_property
     def client(self) -> AsyncFileSystem:
-        return self.file_system(path=self.config.storage.local_path, asynchronous=False)
+        fs = LocalFileSystem(auto_mkdir=True, asynchronous=False)
+        dirfs = self.file_system(path=str(self.config.storage.local_path), fs=fs)
+        return AsyncFileSystemWrapper(dirfs)
 
 
 depends.set(Storage)

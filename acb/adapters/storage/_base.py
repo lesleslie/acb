@@ -6,7 +6,7 @@ from aiopath import AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
 from acb.actions import hash
-from acb.adapters import tmp_path
+from acb.adapters import get_adapter, tmp_path
 from acb.config import AdapterBase, Config, Settings, import_adapter
 from acb.debug import debug
 from acb.depends import depends
@@ -21,12 +21,14 @@ class StorageBaseSettings(Settings):
     user_project: t.Optional[str] = None
     buckets: dict[str, str] = {"test": "test-bucket"}
     cors: t.Optional[dict[str, dict[str, list[str] | int]]] = None
+    local_fs: t.Optional[bool] = False
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or config.app.name or ""
         self.user_project = self.user_project or config.app.name or ""
+        self.local_fs = get_adapter("storage").name in ("file", "memory")
 
 
 class StorageBucket:
@@ -49,6 +51,8 @@ class StorageBucket:
         return path.name
 
     def get_path(self, path: AsyncPath) -> str:
+        if self.config.storage.local_fs:
+            return str(path)
         return str(self.root / path)
 
     def get_url(self, path: AsyncPath) -> str:
@@ -104,7 +108,11 @@ class StorageBucket:
 
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
-        await self.client._pipe_file(stor_path, data)
+        try:
+            await self.client._pipe_file(stor_path, data)
+        except Exception as e:
+            debug(e)
+            raise e
 
     async def delete(self, path: AsyncPath) -> t.Any:
         stor_path = self.get_path(path)
@@ -114,9 +122,9 @@ class StorageBucket:
 class StorageProtocol(t.Protocol):
     file_system: t.Any = AsyncFileSystem
 
-    async def init(self) -> None: ...
     @cached_property
     def client(self) -> AsyncFileSystem: ...
+    async def init(self) -> None: ...
 
 
 class StorageBase(AdapterBase):
