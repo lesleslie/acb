@@ -47,8 +47,7 @@ app_settings_path: Path = settings_path / "app.yml"
 adapter_settings_path: Path = settings_path / "adapters.yml"
 
 
-class AdapterNotFound(Exception):
-    pass
+class AdapterNotFound(Exception): ...
 
 
 def get_adapter(category: str) -> Adapter | None:
@@ -103,7 +102,7 @@ async def _import_adapter(
         adapter.installed = True
         _install_lock.get().remove(adapter.category)
         if adapter_category != "logger":
-            logger = depends.get(import_adapter("logger"))
+            logger = depends.get("logger")
             logger.info(f"{adapter.class_name} adapter installed")
     return adapter_class
 

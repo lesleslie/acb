@@ -327,7 +327,7 @@ class AppSettings(Settings):
         return app_name
 
 
-class Config(BaseModel, arbitrary_types_allowed=True):
+class Config(BaseModel, arbitrary_types_allowed=True, extra="allow"):
     deployed: bool = _deployed
     debug: DebugSettings | None = None
     app: AppSettings | None = None
