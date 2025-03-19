@@ -5,7 +5,7 @@ from inspect import currentframe
 from aioconsole import aprint
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
-from acb.config import Config, debug
+from acb.config import Config, debug, root_path
 from acb.depends import depends
 
 from ._base import LoggerBase, LoggerBaseSettings
@@ -28,7 +28,6 @@ class LoggerSettings(LoggerBaseSettings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        # self.serialize = True if config.deployed else False
         self.log_level = (
             self.deployed_level.upper()
             if config.deployed or config.debug.production
@@ -112,6 +111,8 @@ class Logger(_Logger, LoggerBase):
             self.warning("warning")
             self.error("error")
             self.critical("critical")
+        self.info(f"App path: {root_path}")
+        self.info(f"App deployed: {config.deployed}")
 
 
 depends.set(Logger)

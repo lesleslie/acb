@@ -1,6 +1,3 @@
-# from redis_om import get_redis_connection
-# from redis_om import Migrator
-
 from pydantic import field_validator
 
 from ._base import NosqlBase, NosqlBaseSettings
@@ -18,6 +15,4 @@ class NosqlSettings(NosqlBaseSettings):
 
 
 class Nosql(NosqlBase):
-    def __init__(self) -> None:
-        ...
-        # Migrator().run()
+    def __init__(self) -> None: ...

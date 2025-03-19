@@ -18,8 +18,6 @@ class App(AppBase):
     async def init(self) -> None:
         self.logger.info("Application starting...")
 
-        # put app startup code here
-
         async def post_startup() -> None:
             if not self.config.deployed:
                 from aioconsole import aprint
@@ -39,10 +37,7 @@ class App(AppBase):
         self,
         config: Config = depends(),
         logger: Logger = depends(),
-    ) -> None:
-        ...
-
-        # put app main code here
+    ) -> None: ...
 
 
 depends.set(App)

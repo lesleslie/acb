@@ -30,8 +30,19 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
     def __str__(self) -> str:
         return self.__repr__()
 
+    def __hash__(self) -> int:
+        return hash((self.name, self.class_name, self.category, self.pkg, self.module))
 
-# Define a protocol (interface) for adapters
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Adapter):
+            return False
+        return (
+            self.name == other.name
+            and self.class_name == other.class_name
+            and self.category == other.category
+            and self.pkg == other.pkg
+            and self.module == other.module
+        )
 
 
 @t.runtime_checkable
@@ -76,14 +87,18 @@ def get_installed_adapters() -> list[Adapter]:
 
 async def _import_adapter(
     adapter_category: str, config: AdapterProtocol
-) -> type[AdapterProtocol]:
+) -> type[AdapterProtocol] | None:
     try:
         adapter = get_adapter(adapter_category)
+        if adapter is None:
+            raise AdapterNotFound(
+                f"{adapter_category} adapter not found – please make sure one is configured in adapters.yml"
+            )
     except AttributeError:
         raise AdapterNotFound(
-            f"{adapter_category} adapter not found - please make sure one is "
-            f" configured in app.yml"
+            f"{adapter_category} adapter not found – please make sure one is configured in adapters.yml"
         )
+
     try:
         module = import_module(adapter.module)
     except ModuleNotFoundError:
@@ -91,25 +106,40 @@ async def _import_adapter(
         module = util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module)
         sys.modules[adapter.name] = module
+
     adapter_class: type[AdapterProtocol] = getattr(module, adapter.class_name)
+
     if not adapter.installed and adapter.category not in _install_lock.get():
         _install_lock.get().append(adapter.category)
-        adapter_settings_class_name = f"{adapter.class_name}Settings"
-        adapter_settings_class = getattr(module, adapter_settings_class_name)
-        adapter_settings = adapter_settings_class()
-        setattr(config, adapter_category, adapter_settings)
-        await depends.get(adapter_class).init()
-        adapter.installed = True
-        _install_lock.get().remove(adapter.category)
-        if adapter_category != "logger":
-            logger = depends.get("logger")
-            logger.info(f"{adapter.class_name} adapter installed")
+        try:
+            adapter_settings_class_name = f"{adapter.class_name}Settings"
+            adapter_settings_class = getattr(module, adapter_settings_class_name)
+            adapter_settings = adapter_settings_class()
+            setattr(config, adapter_category, adapter_settings)
+            await depends.get(adapter_class).init()
+        except Exception as e:
+            raise AdapterNotFound(
+                f"Failed to initialize {adapter.class_name} adapter: {e}"
+            )
+        finally:
+            adapter.installed = True
+            _install_lock.get().remove(adapter.category)
+            if adapter_category != "logger":
+                logger = depends.get("logger")
+                logger.info(f"{adapter.class_name} adapter installed")
+
     return adapter_class
 
 
 def import_adapter(
     adapter_categories: t.Optional[str | list[str]] = None,
-) -> AdapterProtocol | list[AdapterProtocol]:
+) -> (
+    AdapterProtocol
+    | list[AdapterProtocol | Exception | str]
+    | str
+    | Exception
+    | list[str | Exception]
+):
     from acb.config import Config
 
     config = depends.get(Config)
@@ -117,18 +147,30 @@ def import_adapter(
     if isinstance(adapter_categories, str):
         adapter_categories = [adapter_categories]
     if not adapter_categories:
-        adapter_categories = [
-            c.strip()
-            for c in (
-                stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
-            ).split(",")
+        try:
+            adapter_categories = [
+                c.strip()
+                for c in (
+                    stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
+                ).split(",")
+            ]
+        except (IndexError, AttributeError, TypeError):
+            print("value error")
+            raise ValueError(
+                "Could not determine adapter categories from calling context"
+            )
+    try:
+        imports: list[t.Coroutine[t.Any, t.Any, t.Type[AdapterProtocol] | None]] = [
+            _import_adapter(c, config) for c in adapter_categories
         ]
-    classes = asyncio.run(
-        asyncio.gather(  # type: ignore
-            *[_import_adapter(c, config) for c in adapter_categories]
-        )
-    )
-    return classes[0] if len(adapter_categories) < 2 else classes
+        classes = asyncio.run(asyncio.gather(*imports, return_exceptions=True))  # type: ignore
+        if isinstance(classes, str | Exception):
+            classes = [classes]
+        for c in [c for c in classes if isinstance(c, Exception)]:
+            print(f"Caught an exception: {c}")
+        return classes[0] if len(adapter_categories) < 2 else classes
+    except Exception as err:
+        raise AdapterNotFound(err)
 
 
 def path_adapters(path: Path) -> dict[str, list[Path]]:
@@ -169,7 +211,8 @@ def register_adapters() -> list[Adapter]:
     if not adapter_settings_path.exists():
         settings_path.mkdir(exist_ok=True)
         print(adapter_registry.get())
-        categories = {a.category for a in set(adapter_registry.get() + adapters)}
+        categories = set()
+        categories.update(a.category for a in adapter_registry.get() + adapters)
         adapter_settings_path.write_bytes(
             yaml_encode(
                 {cat: None for cat in categories},

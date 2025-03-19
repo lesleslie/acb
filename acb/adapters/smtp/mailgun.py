@@ -37,8 +37,6 @@ class Email(EmailBase):
         data: t.Optional[dict[str, t.Any]] = None,
         params: t.Optional[dict[str, int]] = None,
     ) -> dict[str, t.Any]:
-        # domain = domain or self.config.app.domain or ""
-        # print(domain, type(domain))
         calling_frame = sys._getframe().f_back.f_code.co_name
         caller = "domain" if search(calling_frame, "domain") else "route"
         url = "/".join(
@@ -101,7 +99,6 @@ class Email(EmailBase):
         )
 
     async def update_domain_credentials(self, domain: str) -> dict[str, str]:
-        # this is prob not necessary
         return await self.get_response(
             "put",
             domain=domain,

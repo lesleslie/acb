@@ -49,20 +49,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
-    "pytest-cov",
-    "autotyping",
-    "pdm",
-    "pre-commit",
-    "tomli-w",
-    "uv",
     "pytest-asyncio",
-    "pyfiglet",
-    "pyyaml",
-    "google-crc32c",
-    "msgspec-python313-pre",
+    "pre-commit",
     "pytest-mock",
+    "pyfiglet",
+    "google-crc32c",
     "pytest",
+    "pdm",
+    "tomli-w",
+    "pdm-bump",
+    "autotyping",
+    "pyyaml",
+    "uv",
+    "pytest-cov",
+    "msgspec-python313-pre",
 ]
 
 [tool.refurb]
@@ -73,15 +73,15 @@ target = [
     "acb",
 ]
 skips = [
-    "B602",
-    "B101",
-    "B301",
-    "B404",
+    "B403",
+    "B311",
     "B607",
     "B603",
-    "B311",
-    "B403",
     "B704",
+    "B602",
+    "B101",
+    "B404",
+    "B301",
 ]
 
 [tool.pyright]
@@ -123,13 +123,46 @@ ignore_names = [
     "cls",
 ]
 
+[tool.coverage.run]
+branch = true
+source = [
+    "acb",
+]
+omit = [
+    "*/tests/*",
+    "*/site-packages/*",
+    "*/__pycache__/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "except ImportError",
+    "def __str__",
+    "@abstractmethod",
+]
+ignore_errors = false
+
 [tool.pytest.ini_options]
 addopts = "--cov=acb"
 asyncio_default_fixture_loop_scope = "function"
+python_files = [
+    "test_*.py",
+    "*_test.py",
+]
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"
 
 [project]
 name = "acb"
-version = "0.10.4"
+version = "0.11.0"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -146,7 +179,7 @@ dependencies = [
     "inflection>=0.5.1",
     "aiopath>=0.7.7",
     "pyyaml>=6.0.2",
-    "google-crc32c>=1.6.0",
+    "google-crc32c>=1.7.0",
     "pydantic[email]>=2.10.6",
     "devtools>=0.12.2",
     "typer>=0.15.2",
@@ -184,7 +217,7 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.20.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.8.1",
+    "logfire[redis]>=3.9.0",
 ]
 storage = [
     "gcsfs>=2025.3.0",
@@ -198,8 +231,8 @@ dns = [
 requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.1",
-    "sentry-sdk[httpx]>=2.22.0",
-    "logfire[httpx]>=3.8.1",
+    "sentry-sdk[httpx]>=2.23.1",
+    "logfire[httpx]>=3.9.0",
 ]
 smtp = [
     "mailgun>=0.1.1",
@@ -211,8 +244,8 @@ sql = [
     "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.8.1",
-    "sentry-sdk[sqlalchemy]>=2.22.0",
+    "logfire[sqlalchemy]>=3.9.0",
+    "sentry-sdk[sqlalchemy]>=2.23.1",
     "greenlet>=3.1.1",
 ]
 nosql = [
@@ -227,14 +260,14 @@ ftpd = [
     "asyncssh>=2.20.0",
 ]
 secret = [
-    "google-cloud-secret-manager>=2.23.1",
+    "google-cloud-secret-manager>=2.23.2",
 ]
 monitoring = [
-    "sentry-sdk[loguru]>=2.22.0",
-    "logfire[system-metrics]>=3.8.1",
+    "sentry-sdk[loguru]>=2.23.1",
+    "logfire[system-metrics]>=3.9.0",
 ]
 dev = [
-    "crackerjack>=0.14.3",
+    "crackerjack>=0.14.4",
 ]
 
 [build-system]

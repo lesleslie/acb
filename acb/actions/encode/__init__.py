@@ -15,7 +15,7 @@ from aiopath import AsyncPath
 def yaml_encode(
     obj: t.Any,
     *,
-    enc_hook: t.Optional[t.Callable[[t.Any], t.Any]] = None,
+    enc_hook: t.Callable[[t.Any], t.Any] | None = None,
     sort_keys: bool = False,
 ) -> bytes:
     dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
@@ -64,14 +64,14 @@ class Encode:
     toml: t.Callable[..., t.Any]
     pickle: t.Callable[..., t.Any]
     serializers: dict[str, t.Callable[..., t.Any]]
-    path: t.Optional[AsyncPath] = None
-    action: t.Optional[str] = None
+    path: AsyncPath | None = None
+    action: str | None = None
     sort_keys: bool = True
     use_list: bool = False
     secure: bool = False
-    secret_key: t.Optional[str] = None
-    secure_salt: t.Optional[str] = None
-    serializer: t.Optional[t.Callable[..., t.Any]] = None
+    secret_key: str | None = None
+    secure_salt: str | None = None
+    serializer: t.Callable[..., t.Any] | None = None
 
     def __init__(self) -> None:
         self.serializers = serializers.__dict__
@@ -97,16 +97,16 @@ class Encode:
         code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
         pattern = r"await\s(\w+)\.(\w+)\("
         calling_method = search(pattern, code_context)
-        return calling_method.group(1), self.serializers[calling_method.group(2)]  # type: ignore
+        return calling_method.group(1), self.serializers[calling_method.group(2)]
 
     async def __call__(
         self,
         obj: t.Any,
-        path: t.Optional[AsyncPath] = None,
+        path: AsyncPath | None = None,
         sort_keys: bool = False,
         use_list: bool = False,
         **kwargs: object,
-    ) -> dict[str, str] | bytes:
+    ) -> t.Any:
         self.path = path
         self.sort_keys = sort_keys
         self.use_list = use_list

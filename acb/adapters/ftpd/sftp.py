@@ -31,7 +31,6 @@ class Ftpd(FtpdBase):
             )
             logger.info(f"FTP server started on port {self.config.ftpd.port}")
         except (OSError, Error) as exc:
-            # close server?
             raise SystemExit(f"\nError starting sftp server: {exc}\n")
 
 

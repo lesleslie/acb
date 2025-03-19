@@ -59,7 +59,6 @@ class Requests(RequestsBase):
             client=AsyncRedis(
                 host=self.config.cache.host.get_secret_value(),
                 port=self.config.cache.port,
-                # db=self.config.requests.cache_db,
             ),
             ttl=self.config.requests.cache_ttl,
         )

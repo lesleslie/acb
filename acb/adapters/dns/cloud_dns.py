@@ -55,11 +55,11 @@ class Dns(DnsBase):
     async def wait_for_changes(self, changes: Changes) -> None:
         while changes.status != "done":
             await sleep(3)
-            changes.reload()  # API request
+            changes.reload()
 
     async def apply_changes(self, changes: Changes):
         try:
-            changes.create()  # API request
+            changes.create()
             await self.wait_for_changes(changes)
         except (Conflict, BadRequest) as err:
             change = changes.additions[0]  # type: ignore

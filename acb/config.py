@@ -12,7 +12,7 @@ from string import punctuation
 import nest_asyncio
 from aiopath import AsyncPath
 from inflection import titleize, underscore
-from pydantic import BaseModel, SecretStr, field_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator
 from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
@@ -50,6 +50,7 @@ project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
+_testing: bool = os.getenv("TESTING", "False").lower() == "true"
 _secrets_path: AsyncPath = tmp_path / "secrets"
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
@@ -125,9 +126,21 @@ class FileSecretSource(PydanticBaseSettingsSource):
 
     async def __call__(self) -> dict[str, t.Any]:
         data = {}
+
+        if _testing:
+            model_secrets = self.get_model_secrets()
+            for field_key, field_info in model_secrets.items():
+                field_name = field_key.removeprefix(f"{self.adapter_name}_")
+                if hasattr(field_info, "default") and field_info.default is not None:
+                    data[field_name] = field_info.default
+                else:
+                    data[field_name] = SecretStr(f"test_secret_for_{field_name}")
+            return data
+
         self.secrets_path = await AsyncPath(self.secrets_path).expanduser()
         if not await self.secrets_path.exists():
             await self.secrets_path.mkdir(parents=True, exist_ok=True)
+
         model_secrets = self.get_model_secrets()
         for field_key in model_secrets:
             field_key = field_key.removeprefix(f"{app_name}_")
@@ -144,6 +157,7 @@ class FileSecretSource(PydanticBaseSettingsSource):
                 field_name = field_key.removeprefix(f"{self.adapter_name}_")
                 data[field_name] = field_value
                 _app_secrets.get().add(field_key)
+
         return data
 
     def __repr__(self) -> str:
@@ -158,6 +172,17 @@ class ManagerSecretSource(PydanticBaseSettingsSource):
 
     async def load_secrets(self) -> t.Any:
         data = {}
+
+        if _testing:
+            adapter_secrets = self.get_model_secrets()
+            for field_key, field_info in adapter_secrets.items():
+                field_name = field_key.removeprefix(f"{self.adapter_name}_")
+                if hasattr(field_info, "default") and field_info.default is not None:
+                    data[field_name] = field_info.default
+                else:
+                    data[field_name] = SecretStr(f"test_secret_for_{field_name}")
+            return data
+
         adapter_secrets = self.get_model_secrets()
         missing_secrets = {
             n: v for n, v in adapter_secrets.items() if n not in _app_secrets.get()
@@ -189,7 +214,22 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
         global project, app_name, debug
         if self.adapter_name == "secret":
             return {}
+
         yml_path = AsyncPath(settings_path / f"{self.adapter_name}.yml")
+
+        if _testing:
+            default_settings = {
+                name: info.default
+                for name, info in self.settings_cls.model_fields.items()
+                if (info.annotation is not SecretStr)
+            }
+            if self.adapter_name == "debug":
+                debug = default_settings
+            if self.adapter_name == "app":
+                project = "test_project"
+                app_name = "test_app"
+            return default_settings
+
         if not await yml_path.exists() and not _deployed:
             dump_settings = {
                 name: info.default
@@ -198,7 +238,9 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
                 and ("Optional" not in (str(info.annotation)))
             }
             await dump.yaml(dump_settings, yml_path)
+
         yml_settings = await load.yaml(yml_path)
+
         if self.adapter_name == "debug":
             for adapter in [
                 a
@@ -207,16 +249,19 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             ]:
                 yml_settings[adapter.category] = False
             debug = yml_settings
+
         if not _deployed:
             await dump.yaml(yml_settings, yml_path, sort_keys=True)
+
         if self.adapter_name == "app":
             project = yml_settings["project"]
             app_name = yml_settings["name"]
+
         return yml_settings or {}
 
     async def __call__(self) -> dict[str, t.Any]:
         data = {}
-        if Path.cwd().name != "acb":
+        if _testing or Path.cwd().name != "acb":
             for field_name, field in (await self.load_yml_settings()).items():
                 if field is not None:
                     data[field_name] = field
@@ -243,6 +288,8 @@ class Settings(BaseModel):
             _secrets_path=_secrets_path,
         )
         build_settings = asyncio.run(build_settings)
+        if not isinstance(build_settings, dict):  # type: ignore
+            build_settings = {}
         super().__init__(**build_settings)
 
     def __getattr__(self, item: str) -> t.Any:
@@ -295,6 +342,11 @@ class DebugSettings(Settings):
     logger: bool = False
 
 
+def get_version_default() -> str:
+    """Default factory for version that runs the async get_version function."""
+    return asyncio.run(get_version())
+
+
 class AppSettings(Settings):
     name: str = "myapp"
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
@@ -305,7 +357,8 @@ class AppSettings(Settings):
     project: t.Optional[str] = None
     region: t.Optional[str] = None
     timezone: t.Optional[str] = "US/Pacific"
-    version: t.Optional[str] = asyncio.run(get_version())
+
+    version: t.Optional[str] = Field(default_factory=get_version_default)
 
     def model_post_init(self, __context: t.Any) -> None:  # noqa: F841
         self.title = self.title or titleize(self.name)
@@ -343,17 +396,7 @@ class Config(BaseModel, arbitrary_types_allowed=True, extra="allow"):
 depends.set(Config)
 config = depends.get(Config).init()
 
-
-Logger = import_adapter()
-
-
-@depends.inject
-def initialize_acb(config: Config = depends(), logger: Logger = depends()) -> None:
-    logger.info(f"App path: {root_path}")
-    logger.info(f"App deployed: {config.deployed}")
-
-
-initialize_acb()
+Logger = import_adapter("logger")
 
 
 class AdapterBase:

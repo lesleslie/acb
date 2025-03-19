@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:9feb435ff440f44b34cbddbf4d8c1a0343d47cf3112a9b9fb8bfc418d53622a1"
+content_hash = "sha256:104bd906419b36e78248461d59ec9be0a71170f53bb29cef48cc037304cec294"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -585,7 +585,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.14.3"
+version = "0.14.4"
 summary = ""
 dependencies = [
     "autotyping",
@@ -603,8 +603,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.14.3-py3-none-any.whl", hash = "sha256:598d7b3448e162f033eb5cdc7edd63eaaba70c09bdef5893ec601fd1796dd088"},
-    {file = "crackerjack-0.14.3.tar.gz", hash = "sha256:d46a795818ed6b54d041e2a7a58af7ce139f4f7a17936d23f70960332c8cfa5b"},
+    {file = "crackerjack-0.14.4-py3-none-any.whl", hash = "sha256:b81e8f382be906c346ce6e7903264bb78798cb28380f9d84a31fa2d46929ed97"},
+    {file = "crackerjack-0.14.4.tar.gz", hash = "sha256:233c203c3d9179c52b2e76cd2f0568467efcdd388bcc35fc38ec95cb5409c92c"},
 ]
 
 [[package]]
@@ -923,7 +923,7 @@ files = [
 
 [[package]]
 name = "google-cloud-secret-manager"
-version = "2.23.1"
+version = "2.23.2"
 summary = ""
 dependencies = [
     "google-api-core",
@@ -933,8 +933,8 @@ dependencies = [
     "protobuf",
 ]
 files = [
-    {file = "google_cloud_secret_manager-2.23.1-py2.py3-none-any.whl", hash = "sha256:ed9a58750ec24be46dc17ea9b6cb1e7088490921b810a3c365b3e28be82984a1"},
-    {file = "google_cloud_secret_manager-2.23.1.tar.gz", hash = "sha256:4d779ed5666b5c4a4e24e52f808b2e159b60fc68ed7b1f230ca491918632a114"},
+    {file = "google_cloud_secret_manager-2.23.2-py3-none-any.whl", hash = "sha256:90cba729d36c3aed8f609a8e87b86a91ffef42ecd84926cdc585d28d508e3b82"},
+    {file = "google_cloud_secret_manager-2.23.2.tar.gz", hash = "sha256:876337992aab79d8647db1589371bcb73b498662b586195999f8c9455a597f29"},
 ]
 
 [[package]]
@@ -956,10 +956,16 @@ files = [
 
 [[package]]
 name = "google-crc32c"
-version = "1.6.0"
+version = "1.7.0"
 summary = ""
 files = [
-    {file = "google_crc32c-1.6.0.tar.gz", hash = "sha256:6eceb6ad197656a1ff49ebfbbfa870678c75be4344feb35ac1edf694309413dc"},
+    {file = "google_crc32c-1.7.0-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:76bb19d182b999f9c9d580b1d7ab6e9334ab23dd669bf91f501812103408c85b"},
+    {file = "google_crc32c-1.7.0-cp313-cp313-macosx_12_0_x86_64.whl", hash = "sha256:6a40522958040051c755a173eb98c05ad4d64a6dd898888c3e5ccca2d1cbdcdc"},
+    {file = "google_crc32c-1.7.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f714fe5cdf5007d7064c57cf7471a99e0cbafda24ddfa829117fc3baafa424f7"},
+    {file = "google_crc32c-1.7.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f04e58dbe1bf0c9398e603a9be5aaa09e0ba7eb022a3293195d8749459a01069"},
+    {file = "google_crc32c-1.7.0-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:364067b063664dd8d1fec75a3fe85edf05c46f688365269beccaf42ef5dfe889"},
+    {file = "google_crc32c-1.7.0-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e1b0d6044799f6ac51d1cc2decb997280a83c448b3bef517a54b57a3b71921c0"},
+    {file = "google_crc32c-1.7.0.tar.gz", hash = "sha256:c8c15a04b290c7556f277acc55ad98503a8bc0893ea6860fd5b5d210f3f558ce"},
 ]
 
 [[package]]
@@ -1296,7 +1302,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "3.8.1"
+version = "3.9.0"
 summary = ""
 dependencies = [
     "executing",
@@ -1308,64 +1314,64 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
-    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
+    {file = "logfire-3.9.0-py3-none-any.whl", hash = "sha256:b13612eacac222bd40c6b72c6260b4c03490e9bc702ee1347da572ea69c6237e"},
+    {file = "logfire-3.9.0.tar.gz", hash = "sha256:2f60708bce4840e0e4b559b62741e4323560cdc79739d4a75160d516957ba44a"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.1"
+version = "3.9.0"
 extras = ["httpx"]
 summary = ""
 dependencies = [
-    "logfire==3.8.1",
+    "logfire==3.9.0",
     "opentelemetry-instrumentation-httpx",
 ]
 files = [
-    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
-    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
+    {file = "logfire-3.9.0-py3-none-any.whl", hash = "sha256:b13612eacac222bd40c6b72c6260b4c03490e9bc702ee1347da572ea69c6237e"},
+    {file = "logfire-3.9.0.tar.gz", hash = "sha256:2f60708bce4840e0e4b559b62741e4323560cdc79739d4a75160d516957ba44a"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.1"
+version = "3.9.0"
 extras = ["redis"]
 summary = ""
 dependencies = [
-    "logfire==3.8.1",
+    "logfire==3.9.0",
     "opentelemetry-instrumentation-redis",
 ]
 files = [
-    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
-    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
+    {file = "logfire-3.9.0-py3-none-any.whl", hash = "sha256:b13612eacac222bd40c6b72c6260b4c03490e9bc702ee1347da572ea69c6237e"},
+    {file = "logfire-3.9.0.tar.gz", hash = "sha256:2f60708bce4840e0e4b559b62741e4323560cdc79739d4a75160d516957ba44a"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.1"
+version = "3.9.0"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "logfire==3.8.1",
+    "logfire==3.9.0",
     "opentelemetry-instrumentation-sqlalchemy",
 ]
 files = [
-    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
-    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
+    {file = "logfire-3.9.0-py3-none-any.whl", hash = "sha256:b13612eacac222bd40c6b72c6260b4c03490e9bc702ee1347da572ea69c6237e"},
+    {file = "logfire-3.9.0.tar.gz", hash = "sha256:2f60708bce4840e0e4b559b62741e4323560cdc79739d4a75160d516957ba44a"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.8.1"
+version = "3.9.0"
 extras = ["system-metrics"]
 summary = ""
 dependencies = [
-    "logfire==3.8.1",
+    "logfire==3.9.0",
     "opentelemetry-instrumentation-system-metrics",
 ]
 files = [
-    {file = "logfire-3.8.1-py3-none-any.whl", hash = "sha256:512b638404051dc7a1962ff515f17e54fb3a102b95e2f675f98438fb9a283ccc"},
-    {file = "logfire-3.8.1.tar.gz", hash = "sha256:668fc8afd8622df6192afcef7dcdc4d4301eed34940f9687a6e0b62addfd5416"},
+    {file = "logfire-3.9.0-py3-none-any.whl", hash = "sha256:b13612eacac222bd40c6b72c6260b4c03490e9bc702ee1347da572ea69c6237e"},
+    {file = "logfire-3.9.0.tar.gz", hash = "sha256:2f60708bce4840e0e4b559b62741e4323560cdc79739d4a75160d516957ba44a"},
 ]
 
 [[package]]
@@ -2314,57 +2320,57 @@ files = [
 
 [[package]]
 name = "sentry-sdk"
-version = "2.22.0"
+version = "2.23.1"
 summary = ""
 dependencies = [
     "certifi",
     "urllib3",
 ]
 files = [
-    {file = "sentry_sdk-2.22.0-py2.py3-none-any.whl", hash = "sha256:3d791d631a6c97aad4da7074081a57073126c69487560c6f8bffcf586461de66"},
-    {file = "sentry_sdk-2.22.0.tar.gz", hash = "sha256:b4bf43bb38f547c84b2eadcefbe389b36ef75f3f38253d7a74d6b928c07ae944"},
+    {file = "sentry_sdk-2.23.1-py2.py3-none-any.whl", hash = "sha256:42ef3a6cc1db3d22cb2ab24163d75b23f291ad9892b1a8c44075ce809a32b191"},
+    {file = "sentry_sdk-2.23.1.tar.gz", hash = "sha256:2288320465065f3f056630ce55936426204f96f63f1208edb79e033ed03774db"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.22.0"
+version = "2.23.1"
 extras = ["httpx"]
 summary = ""
 dependencies = [
     "httpx",
-    "sentry-sdk==2.22.0",
+    "sentry-sdk==2.23.1",
 ]
 files = [
-    {file = "sentry_sdk-2.22.0-py2.py3-none-any.whl", hash = "sha256:3d791d631a6c97aad4da7074081a57073126c69487560c6f8bffcf586461de66"},
-    {file = "sentry_sdk-2.22.0.tar.gz", hash = "sha256:b4bf43bb38f547c84b2eadcefbe389b36ef75f3f38253d7a74d6b928c07ae944"},
+    {file = "sentry_sdk-2.23.1-py2.py3-none-any.whl", hash = "sha256:42ef3a6cc1db3d22cb2ab24163d75b23f291ad9892b1a8c44075ce809a32b191"},
+    {file = "sentry_sdk-2.23.1.tar.gz", hash = "sha256:2288320465065f3f056630ce55936426204f96f63f1208edb79e033ed03774db"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.22.0"
+version = "2.23.1"
 extras = ["loguru"]
 summary = ""
 dependencies = [
     "loguru",
-    "sentry-sdk==2.22.0",
+    "sentry-sdk==2.23.1",
 ]
 files = [
-    {file = "sentry_sdk-2.22.0-py2.py3-none-any.whl", hash = "sha256:3d791d631a6c97aad4da7074081a57073126c69487560c6f8bffcf586461de66"},
-    {file = "sentry_sdk-2.22.0.tar.gz", hash = "sha256:b4bf43bb38f547c84b2eadcefbe389b36ef75f3f38253d7a74d6b928c07ae944"},
+    {file = "sentry_sdk-2.23.1-py2.py3-none-any.whl", hash = "sha256:42ef3a6cc1db3d22cb2ab24163d75b23f291ad9892b1a8c44075ce809a32b191"},
+    {file = "sentry_sdk-2.23.1.tar.gz", hash = "sha256:2288320465065f3f056630ce55936426204f96f63f1208edb79e033ed03774db"},
 ]
 
 [[package]]
 name = "sentry-sdk"
-version = "2.22.0"
+version = "2.23.1"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "sentry-sdk==2.22.0",
+    "sentry-sdk==2.23.1",
     "sqlalchemy",
 ]
 files = [
-    {file = "sentry_sdk-2.22.0-py2.py3-none-any.whl", hash = "sha256:3d791d631a6c97aad4da7074081a57073126c69487560c6f8bffcf586461de66"},
-    {file = "sentry_sdk-2.22.0.tar.gz", hash = "sha256:b4bf43bb38f547c84b2eadcefbe389b36ef75f3f38253d7a74d6b928c07ae944"},
+    {file = "sentry_sdk-2.23.1-py2.py3-none-any.whl", hash = "sha256:42ef3a6cc1db3d22cb2ab24163d75b23f291ad9892b1a8c44075ce809a32b191"},
+    {file = "sentry_sdk-2.23.1.tar.gz", hash = "sha256:2288320465065f3f056630ce55936426204f96f63f1208edb79e033ed03774db"},
 ]
 
 [[package]]

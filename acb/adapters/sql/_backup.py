@@ -14,12 +14,6 @@ from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
 
-# from contextlib import suppress
-# from sqlalchemy.exc import IntegrityError
-# from sqlalchemy.exc import InvalidRequestError
-# from sqlalchemy.orm.exc import UnmappedInstanceError
-
-
 Logger = import_adapter()
 Sql = import_adapter()
 Storage = import_adapter()
@@ -62,7 +56,6 @@ class SqlBackupUtils(BaseModel):
     def valid(self, timestamp: int) -> bool:
         if timestamp in self.get_timestamps():
             return True
-        # print('==> Invalid id. Use "history" to list existing downloads')
         return False
 
     def get_path(
@@ -85,14 +78,14 @@ class SqlBackupDates(BaseModel, arbitrary_types_allowed=True):
     def __init__(self, dates: t.Optional[list[int]] = None, **data: t.Any) -> None:
         super().__init__(**data)
         self.dates = sorted(dates, reverse=True) if dates else []
-        self.process()  # feed self.white_list & self.black_list
+        self.process()
 
     def get_last_month_length(self) -> int:
         return monthrange(self.today.year, self.today.shift(months=-1).month)[1]
 
     def get_last_year_length(self) -> int:
-        first_day = date(self.today.year, 1, 1)  # current year
-        last_day = first_day - timedelta(days=1)  # last year
+        first_day = date(self.today.year, 1, 1)
+        last_day = first_day - timedelta(days=1)
         return 366 if isleap(last_day.year) else 365
 
     def filter_dates(
@@ -249,10 +242,6 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         for path in paths:
             self.logger.debug(f"\tRestoring:  {path.name}")
             await self.restore_rows(path)
-            # status, fails = await self.restore_rows(path)
-            # self.logger.info(status)
-            # for f in fails:
-            #     self.logger.error(f"\t\tRestore of {f} failed!")
 
     def delete_backups(self, delete_list: list[str]) -> None:
         delete_me = self.storage.sql.delete(delete_list)
@@ -268,7 +257,6 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         * Keeps the most recent backup from each month of the last year
         * Keeps the most recent backup from each year of the remaining years
         """
-        # get black and white list
         cleaning = SqlBackupDates(self.get_timestamps())
         white_list = cleaning.white_list
         black_list = cleaning.black_list
@@ -304,7 +292,6 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
                 blobs = [b.name for b in self.storage.sql.list()]
                 for b in blobs:
                     self.storage.sql.delete(b)
-                # clear_resized_images()
                 last_backup = None
             if not last_backup:
                 await self.save()

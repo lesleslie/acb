@@ -1,8 +1,10 @@
 import asyncio
 import logging
-import typing as t
+from contextlib import suppress
+from functools import wraps
 from pathlib import Path
 from time import perf_counter
+from typing import Any, Callable, TypeVar, cast
 
 from aioconsole import aprint
 from devtools import pformat
@@ -12,16 +14,28 @@ from acb.adapters import import_adapter
 from acb.config import Config, adapter_registry
 from acb.depends import depends
 
+__all__ = [
+    "get_calling_module",
+    "patch_record",
+    "colorized_stderr_print",
+    "print_debug_info",
+    "timeit",
+    "debug",
+]
+
 Logger = import_adapter()
 
 config = depends.get(Config)
 
 
 def get_calling_module() -> Path | None:
-    mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
-    mod = Path(mod).parent
-    debug_mod = getattr(config.debug, mod.stem, None)
-    return mod if debug_mod else None
+    try:
+        mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
+        mod = Path(mod).parent
+        debug_mod = getattr(config.debug, mod.stem, None)
+        return mod if debug_mod else None
+    except (AttributeError, TypeError):
+        return None
 
 
 @depends.inject
@@ -30,12 +44,13 @@ def patch_record(
     msg: str,
     logger: Logger = depends(),
 ) -> None:
-    if next(
-        a
-        for a in adapter_registry.get()
-        if a.category == "logger" and a.name == "loguru"
-    ):
-        logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
+    with suppress(Exception):
+        has_loguru = any(
+            a.category == "logger" and a.name == "loguru"
+            for a in adapter_registry.get()
+        )
+        if has_loguru:
+            logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
 
 
 def colorized_stderr_print(s: str) -> None:
@@ -44,7 +59,7 @@ def colorized_stderr_print(s: str) -> None:
         asyncio.run(aprint(colored, use_stderr=True))
 
 
-def print_debug_info(msg: str) -> t.Any:
+def print_debug_info(msg: str) -> Any:
     mod = get_calling_module()
     if mod:
         if config.deployed or config.debug.production:
@@ -69,14 +84,17 @@ if config.deployed or config.debug.production:
         **debug_args,
     )
 
+T = TypeVar("T", bound=Callable[..., Any])
+
 
 @depends.inject
-def timeit(func: t.Any, logger: Logger = depends()) -> t.Any:
-    def wrapped(*args: t.Any, **kwargs: t.Any) -> t.Any:
+def timeit(func: T, logger: Logger = depends()) -> T | None:
+    @wraps(func)
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
         start = perf_counter()
         result = func(*args, **kwargs)
         end = perf_counter()
         logger.debug(f"Function '{func.__name__}' executed in {end - start} s")
         return result
 
-    return wrapped
+    return cast(T, wrapped)
