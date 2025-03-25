@@ -74,6 +74,19 @@ class Secret(SecretBase):
         await self.client.add_secret_version(request)
         self.logger.debug(f"Updated secret - {name}")
 
+    async def set(self, name: str, value: str) -> t.NoReturn:
+        if await self.exists(name):
+            await self.update(name, value)
+        else:
+            await self.create(name, value)
+
+    async def exists(self, name: str) -> bool:
+        try:
+            await self.get(name)
+            return True
+        except Exception:
+            return False
+
     async def delete(self, name: str) -> t.NoReturn:
         secret = self.client.secret_path(self.project, name)
         request = DeleteSecretRequest(name=secret)

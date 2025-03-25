@@ -1,248 +1,202 @@
-import os
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from aiopath import AsyncPath
 from pydantic import SecretStr
-
-os.environ["ACB_TESTING"] = "1"
-
-from tests.conftest_common import (
-    MockAppSettings,
-    MockConfig,
-    MockLogger,
-    mock_adapter_registry,
-)
-
-adapter_registry_patch = patch("acb.config.adapter_registry", mock_adapter_registry)
-adapter_registry_patch.start()
-
-mock_import_adapter = patch("acb.adapters.import_adapter")
-mock_import_adapter_obj = mock_import_adapter.start()
-mock_import_adapter_obj.return_value = MockLogger
-
-app_settings_patch = patch("acb.config.AppSettings", MockAppSettings)
-app_settings_patch.start()
-
-config_patch = patch("acb.config.Config", MockConfig)
-config_patch.start()
-
-import acb.config as config  # noqa: E402
-from acb.config import (  # noqa: E402
+from acb.config import (
     AppSettings,
     Config,
+    FileSecretSource,
+    Platform,
+    Settings,
+    YamlSettingsSource,
     gen_password,
     get_version,
-    get_version_default,
 )
 
-if not hasattr(config, "adapter_registry"):
-    setattr(config, "adapter_registry", mock_adapter_registry)
 
-pytestmark = pytest.mark.asyncio
+@pytest.mark.asyncio
+async def test_get_version_with_pyproject(monkeypatch: pytest.MonkeyPatch) -> None:
+    AsyncPath("/fake/path/pyproject.toml")
+    AsyncPath("/fake/path/_version")
 
+    with (
+        patch("acb.config.load.toml", new_callable=AsyncMock) as mock_load_toml,
+        patch.object(AsyncPath, "exists", new_callable=AsyncMock) as mock_exists,
+        patch.object(AsyncPath, "write_text", new_callable=AsyncMock) as mock_write,
+    ):
+        mock_exists.return_value = True
+        mock_load_toml.return_value = {"project": {"version": "1.2.3"}}
 
-def teardown_module() -> None:
-    """Clean up all patches at the end of the module."""
-    mock_import_adapter.stop()
-    adapter_registry_patch.stop()
-    app_settings_patch.stop()
-    config_patch.stop()
+        result = await get_version()
 
+        monkeypatch.setattr("acb.config.root_path", AsyncPath("/fake/path"))
 
-class TestPasswordGeneration:
-    """Test the password generation function."""
-
-    async def test_gen_password_default_size(self) -> None:
-        """Test generating a password with the default size."""
-        password = gen_password()
-        assert password
-
-    async def test_gen_password_custom_size(self) -> None:
-        """Test generating a password with a custom size."""
-        size = 20
-        password = gen_password(size)
-        assert len(password) > size
+        assert result == "1.2.3"
+        mock_load_toml.assert_called_once()
+        mock_write.assert_called_once_with("1.2.3")
 
 
-class TestAppNameValidation:
-    """Test the app name validation function."""
+@pytest.mark.asyncio
+async def test_get_version_with_version_file() -> None:
+    with (
+        patch("acb.config.root_path", AsyncPath("/fake/path")),
+        patch.object(AsyncPath, "exists", new_callable=AsyncMock) as mock_exists,
+        patch.object(AsyncPath, "read_text", new_callable=AsyncMock) as mock_read,
+    ):
+        mock_exists.side_effect = [False, True]
+        mock_read.return_value = "2.3.4"
 
-    async def test_valid_app_names(self) -> None:
-        """Test validation of valid app names."""
-        valid_names = ["myapp", "my-app", "app123"]
-        for name in valid_names:
-            result = AppSettings.cloud_compliant_app_name(name)
-            assert result == name
+        result = await get_version()
 
-    async def test_app_name_with_spaces(self) -> None:
-        """Test validation of app name with spaces."""
-        name = "My App"
-        result = AppSettings.cloud_compliant_app_name(name)
-        assert result == "my-app"
-
-    async def test_app_name_with_special_chars(self) -> None:
-        """Test validation of app name with special characters."""
-        name = "my_app.test!"
-        result = AppSettings.cloud_compliant_app_name(name)
-        assert result == "my-app-test"
-
-    async def test_app_name_too_short(self) -> None:
-        """Test validation of app name that is too short."""
-        with pytest.raises(SystemExit, match="App name to short"):
-            AppSettings.cloud_compliant_app_name("ab")
-
-    async def test_app_name_too_long(self) -> None:
-        """Test validation of app name that is too long."""
-        long_name = "a" * 64
-        with pytest.raises(SystemExit, match="App name to long"):
-            AppSettings.cloud_compliant_app_name(long_name)
+        assert result == "2.3.4"
+        mock_read.assert_called_once()
 
 
-class TestAppSettings:
-    """Test the AppSettings class."""
+@pytest.mark.asyncio
+async def test_get_version_fallback() -> None:
+    with (
+        patch("acb.config.root_path", AsyncPath("/fake/path")),
+        patch.object(AsyncPath, "exists", new_callable=AsyncMock) as mock_exists,
+    ):
+        mock_exists.return_value = False
 
-    @patch("acb.config._testing", True)
-    @patch("acb.config.get_version_default", return_value="0.0.0-test")
-    async def test_app_settings_init(self, mock_get_version: MagicMock) -> None:
-        """Test initializing AppSettings."""
-        with patch("acb.config.Settings._settings_build_values", return_value={}):
-            settings = AppSettings()
-            settings.name = "myapp"
-            settings.timezone = "US/Pacific"
-            settings.secret_key = SecretStr("test-key")
-            settings.secure_salt = SecretStr("test-salt")
+        result = await get_version()
 
-            assert settings.name == "myapp"
-            assert isinstance(settings.secret_key, SecretStr)
-            assert isinstance(settings.secure_salt, SecretStr)
-            assert settings.timezone == "US/Pacific"
-
-    @patch("acb.config._testing", True)
-    async def test_app_settings_title_generation(self) -> None:
-        """Test that title is generated from name if not provided."""
-        settings = AppSettings()
-        settings.name = "test-app"
-        settings.title = None
-        settings.model_post_init(None)
-        assert settings.title == "Test App"
-
-    @patch("acb.config._testing", True)
-    async def test_app_settings_custom_title(self) -> None:
-        """Test that custom title is used if provided."""
-        settings = AppSettings()
-        settings.name = "test-app"
-        settings.title = "Custom Title"
-        settings.model_post_init(None)
-        assert settings.title == "Custom Title"
+        assert result == "0.0.1"
 
 
-class TestVersionFunctions:
-    """Test the version-related functions."""
+def test_platform_enum() -> None:
+    assert Platform.aws.value == "aws"
+    assert Platform.gcp.value == "gcp"
+    assert Platform.azure.value == "azure"
 
-    async def test_get_version_from_pyproject(self) -> None:
-        """Test getting version from pyproject.toml."""
-        mock_root_path = MagicMock()
-        mock_pyproject = MagicMock()
-        mock_version_file = MagicMock()
+    aws_value = Platform.aws
+    gcp_value = Platform.gcp
+    azure_value = Platform.azure
 
-        async def mock_pyproject_exists() -> bool:
-            return True
-
-        async def mock_version_file_exists() -> bool:
-            return False
-
-        async def mock_write_text(content: str) -> None:
-            pass
-
-        async def mock_load_toml(path: Any) -> dict[str, dict[str, str]]:
-            return {"project": {"version": "1.2.3"}}
-
-        with patch("acb.config.root_path", mock_root_path):
-            mock_root_path.parent = MagicMock()
-            mock_root_path.parent.__truediv__ = MagicMock(return_value=mock_pyproject)
-            mock_root_path.__truediv__ = MagicMock(return_value=mock_version_file)
-
-            mock_pyproject.exists = mock_pyproject_exists
-            mock_version_file.exists = mock_version_file_exists
-            mock_version_file.write_text = mock_write_text
-
-            with patch("acb.actions.encode.load.toml", mock_load_toml):
-                version = await get_version()
-
-                assert version == "1.2.3"
-
-    async def test_get_version_from_version_file(self) -> None:
-        """Test getting version from _version file."""
-        mock_root_path = MagicMock()
-        mock_pyproject = MagicMock()
-        mock_version_file = MagicMock()
-
-        async def mock_pyproject_exists() -> bool:
-            return False
-
-        async def mock_version_file_exists() -> bool:
-            return True
-
-        async def mock_read_text() -> str:
-            return "1.2.3"
-
-        with patch("acb.config.root_path", mock_root_path):
-            mock_root_path.parent = MagicMock()
-            mock_root_path.parent.__truediv__ = MagicMock(return_value=mock_pyproject)
-            mock_root_path.__truediv__ = MagicMock(return_value=mock_version_file)
-
-            mock_pyproject.exists = mock_pyproject_exists
-            mock_version_file.exists = mock_version_file_exists
-            mock_version_file.read_text = mock_read_text
-
-            version = await get_version()
-
-            assert version == "1.2.3"
-
-    async def test_get_version_default_value(self) -> None:
-        """Test getting default version when no files exist."""
-        mock_root_path = MagicMock()
-        mock_pyproject = MagicMock()
-        mock_version_file = MagicMock()
-
-        async def mock_exists() -> bool:
-            return False
-
-        with patch("acb.config.root_path", mock_root_path):
-            mock_root_path.parent = MagicMock()
-            mock_root_path.parent.__truediv__ = MagicMock(return_value=mock_pyproject)
-            mock_root_path.__truediv__ = MagicMock(return_value=mock_version_file)
-
-            mock_pyproject.exists = mock_exists
-            mock_version_file.exists = mock_exists
-
-            version = await get_version()
-
-            assert version == "0.0.1"
-
-    async def test_get_version_default(self) -> None:
-        """Test the get_version_default function."""
-
-        async def mock_get_version_func() -> str:
-            return "1.2.3"
-
-        with patch("acb.config.get_version", mock_get_version_func):
-            version = get_version_default()
-
-            assert version == "1.2.3"
+    assert aws_value == "aws"
+    assert gcp_value == "gcp"
+    assert azure_value == "azure"
 
 
-class TestConfig:
-    """Test the Config class."""
+def test_gen_password() -> None:
+    password = gen_password()
+    assert isinstance(password, str)
+    assert len(password) >= 10
 
-    @patch("acb.config._testing", True)
-    async def test_config_init(self) -> None:
-        """Test initializing Config and calling init method."""
-        with patch("acb.config.DebugSettings"):
-            with patch("acb.config.AppSettings"):
-                config = Config()
-                config.init()
-                assert not config.deployed
-                assert hasattr(config, "debug")
-                assert hasattr(config, "app")
+    custom_size = 20
+    password = gen_password(custom_size)
+    assert isinstance(password, str)
+    assert len(password) >= custom_size
+
+
+@pytest.mark.asyncio
+async def test_settings_initialization() -> None:
+    with patch(
+        "acb.config.Settings._settings_build_values", new_callable=AsyncMock
+    ) as mock_build:
+        mock_build.return_value = {"test_key": "test_value"}
+
+        settings = Settings()
+
+        mock_build.assert_called_once()
+        assert settings.test_key == "test_value"
+
+
+@pytest.mark.asyncio
+async def test_app_settings_validation_valid_name() -> None:
+    app_settings = AppSettings(name="valid-app-name")
+    assert app_settings.name == "valid-app-name"
+    assert app_settings.title == "Valid App Name"
+
+
+@pytest.mark.asyncio
+async def test_app_settings_validation_invalid_name_too_short() -> None:
+    with pytest.raises(SystemExit, match="App name to short"):
+        AppSettings(name="ab")
+
+
+@pytest.mark.asyncio
+async def test_app_settings_validation_invalid_name_too_long() -> None:
+    long_name = "a" * 64
+    with pytest.raises(SystemExit, match="App name to long"):
+        AppSettings(name=long_name)
+
+
+@pytest.mark.asyncio
+async def test_app_settings_validation_name_with_special_chars() -> None:
+    with (
+        patch.object(
+            AppSettings, "_settings_build_values", new_callable=AsyncMock
+        ) as mock_build,
+        patch.object(
+            AppSettings, "cloud_compliant_app_name", return_value="my-app-name123"
+        ),
+    ):
+        mock_build.return_value = {"name": "my-app-name123"}
+
+        app_settings = AppSettings(name="My App_Name.123!")
+        assert app_settings.name == "my-app-name123"
+
+
+async def test_file_secret_source() -> None:
+    class MockSettings(Settings):
+        mock_password: SecretStr = SecretStr("default_password")
+        mock_api_key: SecretStr = SecretStr("default_api_key")
+        normal_field: str = "normal"
+
+    with patch("acb.config._testing", True):
+        test_secrets_path = AsyncPath("/tmp/test_secrets")  # nosec B108
+        file_source = FileSecretSource(MockSettings, secrets_path=test_secrets_path)
+
+        model_secrets = file_source.get_model_secrets()
+        assert "mock_mock_password" in model_secrets
+        assert "mock_mock_api_key" in model_secrets
+        assert "normal_field" not in model_secrets
+
+        result = await file_source()
+
+        assert isinstance(result.get("mock_password"), SecretStr)
+        assert result["mock_password"].get_secret_value() == "default_password"
+
+        assert isinstance(result.get("mock_api_key"), SecretStr)
+        assert result["mock_api_key"].get_secret_value() == "default_api_key"
+
+
+async def test_yaml_settings_source_testing_mode() -> None:
+    class MockSettings(Settings):
+        field1: str = "default1"
+        field2: int = 42
+        secret_field: SecretStr = SecretStr("secret")
+
+    with (
+        patch("acb.config._testing", True),
+        patch("acb.config.debug", {}),
+        patch("acb.config.project", ""),
+        patch("acb.config.app_name", ""),
+    ):
+        yaml_source = YamlSettingsSource(MockSettings)
+
+        result = await yaml_source.load_yml_settings()
+
+        assert result["field1"] == "default1"
+        assert result["field2"] == 42
+        assert "secret_field" not in result
+
+        call_result = await yaml_source()
+        assert call_result["field1"] == "default1"
+        assert call_result["field2"] == 42
+
+
+@pytest.mark.asyncio
+async def test_config_initialization() -> None:
+    with (
+        patch("acb.config.DebugSettings", return_value="debug_settings"),
+        patch("acb.config.AppSettings", return_value="app_settings"),
+    ):
+        config = Config()
+        config.init()
+
+        assert config.debug == "debug_settings"
+        assert config.app == "app_settings"

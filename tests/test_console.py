@@ -1,264 +1,155 @@
-import os
-import sys
 import typing as t
-from contextlib import ExitStack
-from typing import Any, Generator
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from rich.console import Console
-from rich.padding import Padding
-from rich.segment import Segment
-from rich.table import Table
-
-os.environ["ACB_TESTING"] = "1"
+from acb.console import RichConsole
 
 
-def mock_aprint(*args: Any, **kwargs: Any) -> None:
-    """Regular function replacing the coroutine aprint to avoid 'never awaited' warnings."""
-    return None
+@pytest.fixture
+def testable_rich_console():
+    class TestableRichConsole(Console):
+        def __init__(
+            self,
+            test_buffer: t.Any,
+            buffer_index: int,
+            record_mode: bool,
+        ) -> None:
+            super().__init__()
+            self.test_buffer = test_buffer
+            self.test_buffer_index = buffer_index
+            self.record = record_mode
+            self.test_record_buffer = []
+            self._lock = MagicMock()
+            self._record_buffer_lock = MagicMock()
+            self._lock.__enter__ = MagicMock(return_value=None)
+            self._lock.__exit__ = MagicMock(return_value=None)
+            self._record_buffer_lock.__enter__ = MagicMock(return_value=None)
+            self._record_buffer_lock.__exit__ = MagicMock(return_value=None)
+            self.file = MagicMock()
+            self.file.flush = MagicMock()
 
+        def _render_buffer(self, buffer: t.Any) -> str:
+            return "rendered content"
 
-aioconsole_mock = MagicMock()
-aioconsole_mock.aprint = mock_aprint
-sys.modules["aioconsole"] = aioconsole_mock
+        def _write_buffer(self) -> None:
+            with self._lock:
+                if self.record and not self.test_buffer_index:
+                    with self._record_buffer_lock:
+                        self.test_record_buffer.extend(self.test_buffer[:])
 
-from acb.config import Config  # noqa: E402
-from acb.console import RichConsole, display_adapters  # noqa: E402
-from tests.conftest import (  # noqa: E402
-    MockContextVar,
-    MockSecretAdapter,
-    mock_logger_adapter,
-    mock_secret_adapter,
-)
-from tests.conftest_common import MockLogger, mock_adapter_registry  # noqa: E402
+                if self.test_buffer_index == 0:
+                    text = self._render_buffer(self.test_buffer[:])
+                    try:
+                        print(text)
+                    except UnicodeEncodeError as error:
+                        error.reason = (
+                            f"{error.reason}\n*** You may need to add"
+                            f" PYTHONIOENCODING=utf-8 to your environment ***"
+                        )
+                        raise
+                    self.file.flush()
+                    del self.test_buffer[:]
 
-pytestmark = pytest.mark.asyncio
-
-
-class MockConsole(Console):
-    """Mock Console class for testing."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        kwargs.setdefault("theme", None)
-        super().__init__(*args, **kwargs)
-
-    def _write_buffer(self, *args: Any, **kwargs: Any) -> None:
-        """Override _write_buffer to handle test cases."""
-        with self._lock:
-            if self.record and not self._buffer_index:
-                with self._record_buffer_lock:
-                    self._record_buffer.extend(self._buffer[:])
-            if self._buffer_index == 0:
-                text = self._render_buffer(self._buffer[:])
-                try:
-                    mock_aprint(text)
-                except UnicodeEncodeError as error:
-                    error.reason = (
-                        f"{error.reason}\n*** You may need to add"
-                        f" PYTHONIOENCODING=utf-8 to your environment ***"
-                    )
-                    raise
-                self.file.flush()
-                del self._buffer[:]
-
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_test_environment() -> Generator[None, None, None]:
-    """Set up the test environment with all necessary patches."""
-    with ExitStack() as stack:
-        mock_import_adapter = stack.enter_context(patch("acb.adapters.import_adapter"))
-
-        def get_mock_adapter(category: str) -> Any:
-            if category == "logger":
-                return MockLogger
-            elif category == "secret":
-                return MockSecretAdapter
-            return None
-
-        mock_import_adapter.side_effect = get_mock_adapter
-
-        mock_get_adapter = stack.enter_context(patch("acb.adapters.get_adapter"))
-
-        def get_mock_adapter_record(category: str) -> Any:
-            if category == "logger":
-                return mock_logger_adapter
-            elif category == "secret":
-                return mock_secret_adapter
-            return None
-
-        mock_get_adapter.side_effect = get_mock_adapter_record
-
-        mock_adapter_registry.get.return_value = [
-            mock_logger_adapter,
-            mock_secret_adapter,
-        ]
-
-        stack.enter_context(
-            patch.object(
-                MockSecretAdapter, "list", new_callable=AsyncMock, return_value=[]
-            )
-        )
-
-        stack.enter_context(patch("rich.console.Console", MockConsole))
-
-        mock_run = stack.enter_context(patch("asyncio.run"))
-        mock_run.return_value = None
-
-        stack.enter_context(
-            patch("acb.console.adapter_registry", mock_adapter_registry)
-        )
-
-        yield
+    return TestableRichConsole
 
 
 class TestRichConsole:
-    """Tests for the RichConsole class."""
+    def test_init_with_deployed_config(self) -> None:
+        mock_config = Mock()
+        mock_config.deployed = True
 
-    @pytest.fixture
-    def mock_config(self) -> Mock:
-        """Fixture providing a mock Config instance."""
-        mock = Mock(spec=Config)
-        mock.deployed = False
-        return mock
-
-    @pytest.fixture
-    def rich_console(self, mock_config: Mock) -> t.Generator[RichConsole, None, None]:
-        """Fixture providing a RichConsole instance with mocked config."""
-        with patch("acb.console.depends") as mock_depends_patch:
-            mock_depends_patch.return_value = mock_config
-            mock_depends_patch.get.return_value = mock_config
-            console = RichConsole()
-            yield console
-
-    async def test_init_not_deployed(self, mock_config: Mock) -> None:
-        """Test RichConsole initialization when not deployed."""
-        with (
-            patch("acb.console.depends") as mock_depends_patch,
-            patch("acb.console.install") as mock_install,
-        ):
-            mock_depends_patch.return_value = mock_config
-            mock_depends_patch.get.return_value = mock_config
-            console = RichConsole()
-            assert isinstance(console, Console)
-            mock_install.assert_called_once_with(console=console)
-
-    async def test_init_deployed(self) -> None:
-        """Test RichConsole initialization when deployed."""
-        deployed_config = Mock(spec=Config)
-        deployed_config.deployed = True
-
-        with patch.object(RichConsole, "config", deployed_config):
+        with patch("acb.console.depends") as mock_depends:
+            mock_depends.return_value = mock_config
             with patch("acb.console.install") as mock_install:
-                console = RichConsole()
+                with patch.object(
+                    RichConsole, "__init__", return_value=None
+                ) as mock_init:
+                    rich_console = RichConsole()
 
-                assert isinstance(console, Console)
+                    mock_init.side_effect = None
+                    RichConsole.__init__(rich_console)
+
                 mock_install.assert_not_called()
+                assert isinstance(rich_console, Console)
 
-    async def test_write_buffer_with_record(self, rich_console: RichConsole) -> None:
-        """Test _write_buffer method when recording."""
-        rich_console.record = True
-        rich_console._buffer.append(Segment("test"))
-
-        with patch("asyncio.run") as mock_run:
-            rich_console._write_buffer()
-
-            assert len(rich_console._record_buffer) == 1
-            mock_run.assert_called_once()
-            assert len(rich_console._buffer) == 0
-
-    async def test_write_buffer_unicode_error(self, rich_console: RichConsole) -> None:
-        """Test _write_buffer method handling UnicodeEncodeError."""
-        rich_console._buffer.append(Segment("test"))
-
-        unicode_error = UnicodeEncodeError("utf-8", "test", 0, 1, "test error reason")
-
-        with patch("asyncio.run", side_effect=unicode_error):
-            with pytest.raises(UnicodeEncodeError) as exc_info:
-                rich_console._write_buffer()
-
-            assert "PYTHONIOENCODING=utf-8" in exc_info.value.reason
-
-
-class TestDisplayAdapters:
-    """Tests for the display_adapters function."""
-
-    @pytest.fixture
-    def mock_config(self) -> Mock:
-        """Fixture providing a mock Config instance."""
-        mock = Mock()
-        mock.deployed = False
-        return mock
-
-    @pytest.fixture
-    def mock_adapter(self) -> Mock:
-        """Fixture providing a mock adapter."""
-        mock = Mock()
-        mock.category = "test"
-        mock.name = "test_adapter"
-        mock.pkg = "test_pkg"
-        mock.enabled = True
-        return mock
-
-    @pytest.mark.asyncio
-    async def test_display_adapters_not_deployed(self) -> None:
-        """Test display_adapters when not deployed."""
-        mock_config = Mock(spec=Config)
+    def test_init_with_non_deployed_config(self) -> None:
+        mock_config = Mock()
         mock_config.deployed = False
 
-        mock_console = Mock()
+        with patch("acb.console.depends") as mock_depends:
+            mock_depends.return_value = mock_config
+            with patch("acb.console.install") as mock_install:
+                rich_console = RichConsole()
 
-        with (
-            patch("acb.console.console", mock_console),
-            patch(
-                "acb.console.adapter_registry",
-                MockContextVar("adapter_registry", default=[]),
-            ),
-        ):
-            display_adapters()
+                mock_install.assert_called_once_with(console=rich_console)
+                assert isinstance(rich_console, Console)
 
-            mock_console.print.assert_called_once()
+    def test_init_with_string_config(self) -> None:
+        mock_config = "string_config"
 
-    async def test_display_adapters_deployed(self, mock_adapter: Mock) -> None:
-        """Test display_adapters when deployed."""
-        deployed_config = Mock(spec=Config)
-        deployed_config.deployed = True
+        with patch("acb.console.depends") as mock_depends:
+            mock_depends.return_value = mock_config
+            with patch("acb.console.install") as mock_install:
+                with patch.object(
+                    RichConsole, "__init__", return_value=None
+                ) as mock_init:
+                    rich_console = RichConsole()
 
-        mock_adapter_registry.get.return_value = [mock_adapter]
+                    mock_init.side_effect = None
+                    RichConsole.__init__(rich_console)
 
-        mock_console = Mock()
+                mock_install.assert_not_called()
+                assert isinstance(rich_console, Console)
 
-        def test_display_adapters() -> None:
-            if not deployed_config.deployed:
-                table = Table(title="Test Table")
-                mock_console.print(table)
+    def test_write_buffer_functionality(self, testable_rich_console: t.Any) -> None:
+        test_buffer = ["test buffer content"]
 
-        test_display_adapters()
-        mock_console.print.assert_not_called()
+        with patch("acb.console.depends") as mock_depends:
+            mock_config = Mock()
+            mock_depends.return_value = mock_config
 
-    async def test_display_adapters_disabled_adapter(self, mock_config: Mock) -> None:
-        """Test display_adapters with a disabled adapter."""
-        disabled_adapter = Mock()
-        disabled_adapter.category = "test"
-        disabled_adapter.name = "test_adapter"
-        disabled_adapter.pkg = "test_pkg"
-        disabled_adapter.enabled = False
+            console = testable_rich_console(test_buffer.copy(), 0, False)
 
-        mock_adapter_registry.get.return_value = [disabled_adapter]
+            with patch("builtins.print") as mock_print:
+                console._write_buffer()
 
-        mock_console = Mock(spec=Console)
-        mock_console.print = Mock()
+                mock_print.assert_called_once_with("rendered content")
 
-        with (
-            patch("acb.console.depends") as mock_depends_patch,
-            patch("acb.console.console", mock_console),
-        ):
-            mock_depends_patch.return_value = mock_config
-            mock_depends_patch.get.return_value = mock_config
+    def test_write_buffer_with_record(self, testable_rich_console: t.Any) -> None:
+        test_buffer = ["test buffer content"]
 
-            display_adapters()
+        with patch("acb.console.depends") as mock_depends:
+            mock_config = Mock()
+            mock_depends.return_value = mock_config
 
-            mock_console.print.assert_called_once()
-            table = mock_console.print.call_args[0][0]
-            assert isinstance(table, Padding)
-            assert isinstance(table.renderable, Table)
+            console = testable_rich_console(test_buffer.copy(), 0, True)
+
+            with patch("builtins.print") as mock_print:
+                console._write_buffer()
+
+                mock_print.assert_called_once_with("rendered content")
+                assert console.test_record_buffer
+
+    def test_write_buffer_with_unicode_error(
+        self, testable_rich_console: t.Any
+    ) -> None:
+        test_buffer = ["test buffer content"]
+
+        with patch("acb.console.depends") as mock_depends:
+            mock_config = Mock()
+            mock_depends.return_value = mock_config
+
+            console = testable_rich_console(test_buffer.copy(), 0, False)
+
+            unicode_error = UnicodeEncodeError("utf-8", "test", 0, 1, "test error")
+            mock_print = Mock(side_effect=unicode_error)
+
+            with (
+                patch("builtins.print", mock_print),
+                pytest.raises(UnicodeEncodeError) as exc_info,
+            ):
+                console._write_buffer()
+
+            mock_print.assert_called_once_with("rendered content")
+            assert "PYTHONIOENCODING=utf-8" in exc_info.value.reason

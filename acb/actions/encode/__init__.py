@@ -11,6 +11,8 @@ import msgspec
 import yaml
 from aiopath import AsyncPath
 
+__all__: list[str] = ["load", "dump", "encode", "decode"]
+
 
 def yaml_encode(
     obj: t.Any,

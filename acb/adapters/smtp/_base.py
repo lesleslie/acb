@@ -6,8 +6,7 @@ from acb.config import AdapterBase, Config, Settings, gen_password
 from acb.depends import depends
 
 
-class EmailBaseSettings(Settings):
-    requires: t.Optional[list[str]] = ["requests"]
+class SmtpBaseSettings(Settings):
     api_key: t.Optional[SecretStr] = None
     mx_servers: t.Optional[list[str]] = []
     password: SecretStr = SecretStr(gen_password())
@@ -33,4 +32,4 @@ class EmailBaseSettings(Settings):
         self.default_from_name = config.app.title
 
 
-class EmailBase(AdapterBase): ...
+class SmtpBase(AdapterBase): ...

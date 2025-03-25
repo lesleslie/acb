@@ -1,3 +1,4 @@
+import os
 from contextvars import ContextVar
 from inspect import currentframe
 
@@ -5,6 +6,9 @@ from aiopath import AsyncPath
 from pydantic import BaseModel
 from acb.actions import Action, register_actions
 from acb.adapters import Adapter, register_adapters
+
+_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
+_testing: bool = os.getenv("TESTING", "False").lower() == "true"
 
 
 class Pkg(BaseModel, arbitrary_types_allowed=True):
@@ -26,8 +30,6 @@ def register_pkg() -> None:
         adapters = register_adapters()
         pkg = Pkg(name=name, path=path, actions=actions, adapters=adapters)
         if pkg.name == "acb":
-            registry.insert(0, pkg)
+            registry.append(pkg)
         else:
-            registry.append(
-                Pkg(name=name, path=path, actions=actions, adapters=adapters)
-            )
+            registry.insert(1, pkg)

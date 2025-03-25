@@ -250,13 +250,6 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
                 self.logger.debug(f"Deleted {name}")
 
     def clean(self) -> bool:
-        """Remove a series of old backup files.
-
-        * Keeps all the backups from the last 7 days
-        * Keeps the most recent backup from each week of the last month
-        * Keeps the most recent backup from each month of the last year
-        * Keeps the most recent backup from each year of the remaining years
-        """
         cleaning = SqlBackupDates(self.get_timestamps())
         white_list = cleaning.white_list
         black_list = cleaning.black_list

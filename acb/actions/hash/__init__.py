@@ -6,6 +6,8 @@ import arrow
 from aiopath import AsyncPath
 from blake3 import blake3  # type: ignore
 
+__all__: list[str] = ["hash"]
+
 with catch_warnings(action="ignore", category=RuntimeWarning):
     from google_crc32c import value as crc32c
 

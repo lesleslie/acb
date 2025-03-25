@@ -2,10 +2,10 @@ import typing as t
 
 from acb.depends import depends
 
-from ._base import EmailBase, EmailBaseSettings
+from ._base import SmtpBase, SmtpBaseSettings
 
 
-class EmailSettings(EmailBaseSettings):
+class SmtpSettings(SmtpBaseSettings):
     def model_post_init(self, __context: t.Any) -> None:  # noqa: F841
         self.mx_servers = [
             "1 aspmx.l.google.com.",
@@ -16,7 +16,7 @@ class EmailSettings(EmailBaseSettings):
         ]
 
 
-class Email(EmailBase): ...
+class Smtp(SmtpBase): ...
 
 
-depends.set(Email)
+depends.set(Smtp)

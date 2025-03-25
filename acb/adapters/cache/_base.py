@@ -31,12 +31,14 @@ class MsgPackSerializer(BaseSerializer):
         super().__init__(*args, **kwargs)
 
     def dumps(self, value: t.Any) -> bytes:  # type: ignore
-        return compress.brotli(msgpack.encode(value))
+        msgpack_data = msgpack.encode(value)
+        return compress.brotli(msgpack_data)
 
     def loads(self, value: bytes | None) -> t.Any:  # type: ignore
         if value is None:
             return None
-        return msgpack.decode(decompress.brotli(value))  # type: ignore
+        msgpack_data = decompress.brotli(value)
+        return msgpack.decode(msgpack_data)  # type: ignore
 
 
 class SecurePickleSerializer(BaseSerializer):
@@ -55,12 +57,14 @@ class SecurePickleSerializer(BaseSerializer):
         )
 
     def dumps(self, value: t.Any) -> bytes:  # type: ignore
-        return compress.brotli(self.serializer.dumps(value))
+        serialized_data = self.serializer.dumps(value)
+        return compress.brotli(serialized_data)
 
     def loads(self, value: bytes | None) -> t.Any:  # type: ignore
         if value is None:
             return None
-        return self.serializer.loads(decompress.brotli(value))
+        serialized_data = decompress.brotli(value)
+        return self.serializer.loads(serialized_data)
 
 
 class CacheProtocol(t.Protocol):

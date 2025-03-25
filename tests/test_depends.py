@@ -1,106 +1,104 @@
-from typing import Any, TypeVar
+import typing as t
+from unittest.mock import Mock, patch
 
-import pytest
-import acb.adapters
-from acb.depends import depends
-from tests.conftest_common import MockLogger
-
-T = TypeVar("T")
-
-acb.adapters.import_adapter = (
-    lambda name: MockLogger  # type: ignore
-    if name == "logger"
-    else (_ for _ in ()).throw(ImportError("Adapter not found."))
-)
-
-acb.adapters.get_adapter = (
-    lambda category: type(  # type: ignore
-        "MockLoggerAdapter",
-        (),
-        {
-            "category": "logger",
-            "module": "acb.tests.mocks.logger",
-            "class_name": "Logger",
-        },
-    )()
-    if category == "logger"
-    else None
-)
+from acb.depends import Depends, DependsProtocol, depends
 
 
-class DummyService:
-    def __init__(self) -> None:
-        self.name = "DummyService"
+class TestDependsProtocol:
+    def test_protocol_checking(self) -> None:
+        assert isinstance(depends, DependsProtocol)
+
+        class NonCompliant:
+            pass
+
+        non_compliant = NonCompliant()
+        assert not isinstance(non_compliant, DependsProtocol)
 
 
-@pytest.fixture(autouse=True)
-def patch_bevy(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Patch the underlying bevy functions so that we can test the depends module in isolation."""
-    dummy_registry: dict[Any, Any] = {}
+class TestDepends:
+    def test_inject_decorator(self) -> None:
+        mock_inject = Mock(return_value=lambda x: x)
 
-    class FakeRepository:
-        def set(self, key: Any, instance: Any) -> Any:
-            dummy_registry[key] = instance
-            return instance
+        def test_func() -> str:
+            return "test"
 
-        def get(self, key: Any) -> Any:
-            if key not in dummy_registry:
-                dummy_registry[key] = key()
-            return dummy_registry[key]
+        with patch("acb.depends.inject_dependency", mock_inject):
+            Depends.inject(test_func)
 
-    def fake_get_repository() -> FakeRepository:
-        return FakeRepository()
+        mock_inject.assert_called_once_with(test_func)
 
-    monkeypatch.setattr("acb.depends.get_repository", fake_get_repository)
-    monkeypatch.setattr("acb.depends.dependency", lambda: "real_dependency_marker")
-    monkeypatch.setattr("acb.depends.inject_dependency", lambda f: f)  # type: ignore
+    def test_set_method(self) -> None:
+        mock_repository = Mock()
+        mock_repository.set.return_value = "set_result"
+
+        class TestClass:
+            pass
+
+        with patch("acb.depends.get_repository", return_value=mock_repository):
+            result = Depends.set(TestClass)
+
+        mock_repository.set.assert_called_once()
+        assert result == "set_result"
+
+    def test_get_method_with_class(self) -> None:
+        mock_repository = Mock()
+        mock_repository.get.return_value = "get_result"
+
+        class TestClass:
+            pass
+
+        with patch("acb.depends.get_repository", return_value=mock_repository):
+            result = Depends.get(TestClass)
+
+        mock_repository.get.assert_called_once_with(TestClass)
+        assert result == "get_result"
+
+    def test_get_method_with_string(self) -> None:
+        mock_repository = Mock()
+        mock_repository.get.return_value = "get_result"
+        mock_import_adapter = Mock(return_value="imported_adapter")
+
+        with (
+            patch("acb.depends.get_repository", return_value=mock_repository),
+            patch("acb.adapters.import_adapter", mock_import_adapter),
+        ):
+            result = Depends.get("adapter_name")
+
+        mock_import_adapter.assert_called_once_with("adapter_name")
+        mock_repository.get.assert_called_once_with("imported_adapter")
+        assert result == "get_result"
+
+    def test_call_method(self) -> None:
+        mock_dependency = Mock(return_value="dependency_result")
+
+        with patch("acb.depends.dependency", mock_dependency):
+            result = depends()
+
+        mock_dependency.assert_called_once()
+        assert result == "dependency_result"
 
 
-def test_set_and_get_dependency() -> None:
-    """Test that a dependency can be set and retrieved using depends.set and depends.get."""
+class TestDependsIntegration:
+    def test_inject_decorator_usage(self) -> None:
+        class TestDependency:
+            def method(self) -> str:
+                return "dependency_method_called"
 
-    class TestService:
-        def __init__(self) -> None:
-            self.name = "TestService"
+        test_dependency = TestDependency()
 
-    instance_set = depends.set(TestService)
-    instance_get = depends.get(TestService)
+        def mock_inject(func: t.Callable[..., t.Any]):
+            def wrapper(*args: t.Sequence[t.Any], **kwargs: t.Any):
+                kwargs["dep"] = test_dependency
+                return func(*args, **kwargs)
 
-    assert isinstance(instance_set, TestService)
-    assert instance_set.name == "TestService"
-    assert instance_set is instance_get
+            return wrapper
 
+        with patch("acb.depends.inject_dependency", mock_inject):
 
-def test_inject_decorator() -> None:
-    """Test that the inject decorator works correctly by not altering the behavior of the function."""
+            @depends.inject
+            def test_function(dep: TestDependency | None = None):
+                return dep.method()
 
-    @depends.inject
-    def add(a: int, b: int) -> int:  # noqa: FURB118
-        return a + b
+            result = test_function()
 
-    result = add(3, 4)
-    assert result == 7
-
-
-def test_depends_call_returns_marker() -> None:
-    """Test that calling the depends instance directly returns the dependency marker."""
-    result = depends()
-    assert result == "real_dependency_marker"
-
-
-def test_get_dependency_by_string_name(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that depends.get can handle string input by patching the import_adapter function."""
-
-    class FakeAdapter:
-        def __init__(self) -> None:
-            self.value = "adapter_instance"
-
-    def fake_import_adapter(name: str) -> type[FakeAdapter]:
-        if name == "fake_adapter":
-            return FakeAdapter
-        raise ImportError("Adapter not found.")
-
-    monkeypatch.setattr(acb.adapters, "import_adapter", fake_import_adapter)
-    instance = depends.get("fake_adapter")
-    assert isinstance(instance, FakeAdapter)
-    assert instance.value == "adapter_instance"
+        assert result == "dependency_method_called"

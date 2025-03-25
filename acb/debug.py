@@ -4,7 +4,7 @@ from contextlib import suppress
 from functools import wraps
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, Callable, Protocol, TypeVar, cast
 
 from aioconsole import aprint
 from devtools import pformat
@@ -53,10 +53,14 @@ def patch_record(
             logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
 
 
-def colorized_stderr_print(s: str) -> None:
+async def _colorized_stderr_print_async(s: str) -> None:
     colored = colorize(s)
+    await aprint(colored, use_stderr=True)
+
+
+def colorized_stderr_print(s: str) -> None:
     with supportTerminalColorsInWindows():
-        asyncio.run(aprint(colored, use_stderr=True))
+        asyncio.run(_colorized_stderr_print_async(s))
 
 
 def print_debug_info(msg: str) -> Any:
@@ -84,11 +88,16 @@ if config.deployed or config.debug.production:
         **debug_args,
     )
 
+
+class TimedFunction(Protocol):
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
+
+
 T = TypeVar("T", bound=Callable[..., Any])
 
 
 @depends.inject
-def timeit(func: T, logger: Logger = depends()) -> T | None:
+def timeit(func: T, logger: Logger = depends()) -> T:
     @wraps(func)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
         start = perf_counter()

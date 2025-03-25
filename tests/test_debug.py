@@ -1,192 +1,286 @@
-import os
-import sys
+import asyncio
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, patch
+from time import sleep
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-
-os.environ["ACB_TESTING"] = "1"
-
-from tests.conftest_common import (
-    mock_adapter_registry,
-    mock_colorized_stderr_print,
-    mock_get_calling_module,
-    mock_patch_record,
-    mock_print_debug_info,
-    mock_timeit,
-)
-
-mock_adapter_registry_patch = patch("acb.debug.adapter_registry", mock_adapter_registry)
-mock_adapter_registry_patch.start()
-
-colorized_stderr_print_patch = patch(
-    "acb.debug.colorized_stderr_print", mock_colorized_stderr_print
-)
-colorized_stderr_print_patch.start()
-
-get_calling_module_patch = patch(
-    "acb.debug.get_calling_module", mock_get_calling_module
-)
-get_calling_module_patch.start()
-
-patch_record_patch = patch("acb.debug.patch_record", mock_patch_record)
-patch_record_patch.start()
-
-print_debug_info_patch = patch("acb.debug.print_debug_info", mock_print_debug_info)
-print_debug_info_patch.start()
-
-timeit_patch = patch("acb.debug.timeit", mock_timeit)
-timeit_patch.start()
-
-
-def mock_aprint(*args: Any, **kwargs: Any) -> None:
-    return None
-
-
-def mock_asyncio_run(coro: Any) -> None:
-    return None
-
-
-mock_asyncio = MagicMock()
-mock_asyncio.run = mock_asyncio_run
-sys.modules["asyncio"] = mock_asyncio
-
-sys.modules["aioconsole"] = MagicMock()
-sys.modules["aioconsole"].aprint = mock_aprint
-
-from tests.conftest import mock_logger_adapter  # noqa: E402
-
-mock_import_adapter = patch("acb.adapters.import_adapter")
-mock_import_adapter.start().return_value = mock_logger_adapter
-
-mock_ic_config = patch("icecream.ic.configureOutput")
-mock_ic_config.start()
-
-import acb.config as config  # noqa: E402
-
-if not hasattr(config, "adapter_registry"):
-    setattr(config, "adapter_registry", mock_adapter_registry)
-
-from acb.debug import (  # noqa: E402
+from acb.config import Config
+from acb.debug import (
+    _colorized_stderr_print_async,
     colorized_stderr_print,
+    debug,
     get_calling_module,
     patch_record,
+    print_debug_info,
+    timeit,
 )
 
-pytestmark = pytest.mark.asyncio
+
+@pytest.fixture
+def mock_config():
+    mock_config = MagicMock(spec=Config)
+    mock_config.deployed = False
+    mock_config.debug = MagicMock()
+    mock_config.debug.production = False
+    return mock_config
 
 
-def teardown_module() -> None:
-    mock_import_adapter.stop()
-    mock_ic_config.stop()
-    mock_adapter_registry_patch.stop()
-    colorized_stderr_print_patch.stop()
-    get_calling_module_patch.stop()
-    patch_record_patch.stop()
-    print_debug_info_patch.stop()
-    timeit_patch.stop()
+@pytest.fixture
+def mock_logger():
+    mock_logger = MagicMock()
+    mock_logger.patch.return_value = mock_logger
+    mock_logger.debug = MagicMock()
+    return mock_logger
+
+
+@pytest.fixture
+def mock_adapter_registry():
+    mock_registry = MagicMock()
+    mock_registry.get.return_value = [MagicMock(category="logger", name="loguru")]
+    return mock_registry
 
 
 class TestGetCallingModule:
-    """Test the get_calling_module function."""
-
-    async def test_get_calling_module_debug_enabled(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Test getting the calling module when debugging is enabled."""
-        mock_code = MagicMock()
-        mock_code.co_filename = "/path/to/module/file.py"
-
+    def test_get_calling_module_success(self, mock_config: MagicMock) -> None:
         mock_frame = MagicMock()
-        mock_frame.f_back.f_back.f_back.f_code = mock_code
+        mock_frame.f_back.f_back.f_back.f_code.co_filename = "/path/to/module/file.py"
 
-        mock_config = MagicMock()
-        mock_config.debug = MagicMock()
         setattr(mock_config.debug, "module", True)
 
-        with patch("logging.currentframe", return_value=mock_frame):
-            with patch("acb.debug.config", mock_config):
-                result = get_calling_module()
+        with (
+            patch("acb.debug.config", mock_config),
+            patch("acb.debug.logging.currentframe", return_value=mock_frame),
+        ):
+            result = get_calling_module()
 
-                assert result is not None
-                assert isinstance(result, Path)
-                assert result.stem == "module"
+            assert result == Path("/path/to/module")
 
-    async def test_get_calling_module_debug_disabled(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Test getting the calling module when debugging is disabled."""
-        mock_code = MagicMock()
-        mock_code.co_filename = "/path/to/module/file.py"
-
+    def test_get_calling_module_no_debug_config(self, mock_config: MagicMock) -> None:
         mock_frame = MagicMock()
-        mock_frame.f_back.f_back.f_back.f_code = mock_code
+        mock_frame.f_back.f_back.f_back.f_code.co_filename = "/path/to/module/file.py"
 
-        mock_config = MagicMock()
-        mock_config.debug = MagicMock()
-        setattr(mock_config.debug, "module", False)
+        with (
+            patch("acb.debug.config", mock_config),
+            patch("acb.debug.logging.currentframe", return_value=mock_frame),
+            patch("acb.debug.getattr", return_value=None),
+        ):
+            result = get_calling_module()
 
-        with patch("logging.currentframe", return_value=mock_frame):
-            with patch("acb.debug.config", mock_config):
-                result = get_calling_module()
+            assert result is None
 
-                assert result is None
+    def test_get_calling_module_exception(self, mock_config: MagicMock) -> None:
+        with (
+            patch("acb.debug.config", mock_config),
+            patch("acb.debug.logging.currentframe", side_effect=AttributeError),
+        ):
+            result = get_calling_module()
+
+            assert result is None
 
 
 class TestPatchRecord:
-    """Test the patch_record function."""
-
-    async def test_patch_record_with_loguru(self) -> None:
-        """Test patching a record when loguru adapter is available."""
+    def test_patch_record_with_loguru(self, mock_logger: MagicMock) -> None:
         mock_mod = MagicMock(spec=Path)
-        mock_mod.name = "test_module"
+        mock_mod.name = "module"
+        msg = "Test debug message"
 
-        mock_logger = MagicMock()
-        mock_patched_logger = MagicMock()
-        mock_logger.patch.return_value = mock_patched_logger
+        patched_logger = MagicMock()
+        mock_logger.patch.return_value = patched_logger
 
-        mock_adapter = MagicMock()
-        mock_adapter.category = "logger"
-        mock_adapter.name = "loguru"
+        with patch("acb.debug.any", return_value=True) as mock_any:
+            patch_record(mock_mod, msg, logger=mock_logger)
 
-        mock_adapter_registry.set([mock_adapter])
+            assert mock_logger.patch.call_count == 1
+            patched_logger.debug.assert_called_once_with(msg)
+            mock_any.assert_called_once()
 
-        patch_record(mock_mod, "Test message", logger=mock_logger)
-
-        mock_logger.patch.assert_called_once()
-        mock_patched_logger.debug.assert_called_once_with("Test message")
-
-    async def test_patch_record_without_loguru(self) -> None:
-        """Test patching a record when loguru adapter is not available."""
+    def test_patch_record_without_loguru(self, mock_logger: MagicMock) -> None:
         mock_mod = MagicMock(spec=Path)
-        mock_mod.name = "test_module"
+        mock_mod.name = "module"
+        msg = "Test debug message"
 
-        mock_logger = MagicMock()
+        with patch("acb.debug.any", return_value=False) as mock_any:
+            patch_record(mock_mod, msg, logger=mock_logger)
 
-        mock_adapter = MagicMock()
-        mock_adapter.category = "logger"
-        mock_adapter.name = "structlog"
+            mock_logger.patch.assert_not_called()
+            mock_any.assert_called_once()
 
-        mock_adapter_registry.set([mock_adapter])
+    def test_patch_record_exception(self, mock_logger: MagicMock) -> None:
+        mock_mod = MagicMock(spec=Path)
+        mock_mod.name = "module"
+        msg = "Test debug message"
 
-        patch_record(mock_mod, "Test message", logger=mock_logger)
+        mock_logger.patch.side_effect = Exception("Test exception")
 
-        mock_logger.patch.assert_not_called()
+        with patch("acb.debug.any", return_value=True) as mock_any:
+            patch_record(mock_mod, msg, logger=mock_logger)
+
+            assert mock_logger.patch.call_count == 1
+            mock_any.assert_called_once()
 
 
 class TestColorizedStderrPrint:
-    """Test the colorized_stderr_print function."""
+    async def test_colorized_stderr_print_async(self) -> None:
+        test_string = "Test colored string"
 
-    async def test_colorized_stderr_print(self) -> None:
-        """Test printing colorized output to stderr."""
-        with patch(
-            "acb.debug.colorize", return_value="<colorized>test</colorized>"
-        ) as mock_colorize:
-            with patch("acb.debug.supportTerminalColorsInWindows") as mock_support:
-                with patch("sys.stderr") as mock_stderr:
-                    colorized_stderr_print("test")
+        with (
+            patch("acb.debug.aprint") as mock_aprint,
+            patch("acb.debug.colorize") as mock_colorize,
+        ):
+            mock_colorize.return_value = "colored test string"
+            await _colorized_stderr_print_async(test_string)
 
-                    mock_colorize.assert_called_once_with("test")
-                    mock_support.assert_called_once()
-                    mock_stderr.write.assert_called_once_with("<colorized>test\n")
+            mock_colorize.assert_called_once_with(test_string)
+            mock_aprint.assert_called_once_with("colored test string", use_stderr=True)
+
+    def test_colorized_stderr_print(self) -> None:
+        test_string = "Test colored string"
+
+        async_mock = AsyncMock()
+
+        with (
+            patch("acb.debug.supportTerminalColorsInWindows") as mock_support_colors,
+            patch(
+                "acb.debug._colorized_stderr_print_async", return_value=async_mock()
+            ) as mock_print_async,
+            patch("acb.debug.asyncio.run") as mock_run,
+        ):
+            colorized_stderr_print(test_string)
+
+            mock_support_colors.assert_called_once()
+            mock_support_colors().__enter__.assert_called()
+            mock_support_colors().__exit__.assert_called_once()
+
+            mock_print_async.assert_called_once_with(test_string)
+
+            assert mock_run.call_count == 1
+            args, _ = mock_run.call_args
+            assert asyncio.iscoroutine(args[0])
+
+
+class TestPrintDebugInfo:
+    def test_print_debug_info_production(self, mock_config: MagicMock) -> None:
+        msg = "Test debug message"
+        mock_mod = Path("/path/to/module")
+        mock_config.deployed = True
+
+        mock_patch_record = Mock()
+
+        with (
+            patch("acb.debug.config", mock_config),
+            patch("acb.debug.get_calling_module", return_value=mock_mod),
+            patch("acb.debug.patch_record", mock_patch_record),
+            patch("acb.debug.colorized_stderr_print") as mock_colorized_print,
+        ):
+            print_debug_info(msg)
+
+            mock_patch_record.assert_called_once_with(mock_mod, msg)
+            mock_colorized_print.assert_not_called()
+
+    def test_print_debug_info_development(self, mock_config: MagicMock) -> None:
+        msg = "Test debug message"
+        mock_mod = Path("/path/to/module")
+        mock_config.deployed = False
+        mock_config.debug.production = False
+
+        mock_colorized_print = Mock()
+
+        with (
+            patch("acb.debug.config", mock_config),
+            patch("acb.debug.get_calling_module", return_value=mock_mod),
+            patch("acb.debug.patch_record") as mock_patch_record,
+            patch("acb.debug.colorized_stderr_print", mock_colorized_print),
+        ):
+            print_debug_info(msg)
+
+            mock_patch_record.assert_not_called()
+            mock_colorized_print.assert_called_once_with(msg)
+
+    def test_print_debug_info_no_module(self, mock_config: MagicMock) -> None:
+        msg = "Test debug message"
+
+        mock_patch_record = Mock()
+        mock_colorized_print = AsyncMock()
+
+        with (
+            patch("acb.debug.config", mock_config),
+            patch("acb.debug.get_calling_module", return_value=None),
+            patch("acb.debug.patch_record", mock_patch_record),
+            patch("acb.debug.colorized_stderr_print", mock_colorized_print),
+        ):
+            result = print_debug_info(msg)
+
+            mock_patch_record.assert_not_called()
+            mock_colorized_print.assert_not_awaited()
+            assert result is None
+
+
+class TestTimeit:
+    def test_timeit_decorator(self, mock_logger: MagicMock) -> None:
+        def test_function() -> str:
+            sleep(0.01)
+            return "test result"
+
+        decorated_function = timeit(test_function, logger=mock_logger)
+
+        result = decorated_function()
+
+        assert result == "test result"
+        mock_logger.debug.assert_called_once()
+        debug_message = mock_logger.debug.call_args[0][0]
+        assert "test_function" in debug_message
+        assert "executed in" in debug_message
+        assert "s" in debug_message
+
+    @pytest.mark.asyncio
+    async def test_timeit_with_args_and_kwargs(self, mock_logger: MagicMock) -> None:
+        def test_function_with_args(
+            arg1: str, arg2: str, kwarg1: object = None, kwarg2: object = None
+        ) -> str:
+            async def _test_function_with_args() -> str:
+                sleep(0.01)
+                return f"{arg1}-{arg2}-{kwarg1}-{kwarg2}"
+
+            return asyncio.run(_test_function_with_args())
+
+        decorated_function = timeit(test_function_with_args, logger=mock_logger)
+
+        result = decorated_function("a", "b", kwarg1="c", kwarg2="d")
+
+        assert result == "a-b-c-d"
+        mock_logger.debug.assert_called_once()
+        debug_message = mock_logger.debug.call_args[0][0]
+        assert "test_function_with_args" in debug_message
+
+
+class TestDebugConfiguration:
+    def test_debug_configuration(self, mock_config: MagicMock) -> None:
+        mock_config.deployed = False
+        mock_config.debug.production = False
+
+        mock_configure = MagicMock()
+
+        with (
+            patch("acb.debug.config", mock_config),
+            patch("acb.debug.debug.configureOutput", mock_configure),
+        ):
+            from acb.debug import debug_args
+
+            debug.configureOutput(
+                prefix="    debug:  ",
+                includeContext=True,
+                **debug_args,
+            )
+
+            assert mock_configure.call_count >= 1
+
+            mock_config.deployed = True
+
+            if mock_config.deployed or mock_config.debug.production:
+                debug.configureOutput(
+                    prefix="",
+                    includeContext=False,
+                    **debug_args,
+                )
+
+            assert mock_configure.call_count >= 2

@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 import typing as t
 from contextvars import ContextVar
@@ -52,7 +53,8 @@ class AdapterProtocol(t.Protocol):
 
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
 _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
-
+_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
+_testing: bool = os.getenv("TESTING", "False").lower() == "true"
 settings_path: Path = Path(root_path / "settings")
 app_settings_path: Path = settings_path / "app.yml"
 adapter_settings_path: Path = settings_path / "adapters.yml"
@@ -155,7 +157,6 @@ def import_adapter(
                 ).split(",")
             ]
         except (IndexError, AttributeError, TypeError):
-            print("value error")
             raise ValueError(
                 "Could not determine adapter categories from calling context"
             )
@@ -208,9 +209,13 @@ def register_adapters() -> list[Adapter]:
     for adapter_name, modules in pkg_adapters.items():
         _modules = extract_adapter_modules(modules, adapter_name)
         adapters.extend(_modules)
-    if not adapter_settings_path.exists():
+    if (
+        not adapter_settings_path.exists()
+        and not _deployed
+        and not _testing
+        and root_path.stem != "acb"
+    ):
         settings_path.mkdir(exist_ok=True)
-        print(adapter_registry.get())
         categories = set()
         categories.update(a.category for a in adapter_registry.get() + adapters)
         adapter_settings_path.write_bytes(
@@ -219,11 +224,16 @@ def register_adapters() -> list[Adapter]:
                 sort_keys=True,
             )
         )
-    _adapters = yaml_decode(adapter_settings_path.read_text())
+    _adapters = (
+        {}
+        if _testing or root_path.stem == "acb"
+        else yaml_decode(adapter_settings_path.read_text())
+    )
     _adapters.update(
         {a.category: None for a in adapters if a.category not in _adapters}
     )
-    adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
+    if not _testing and not root_path.stem == "acb":
+        adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
     enabled_adapters = {a: m for a, m in _adapters.items() if m}
     for a in [a for a in adapters if enabled_adapters.get(a.category) == a.name]:
         a.enabled = True

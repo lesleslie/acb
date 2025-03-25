@@ -11,23 +11,23 @@ from acb.config import Config, adapter_registry
 from acb.debug import debug
 from acb.depends import depends
 
-from ._base import EmailBase, EmailBaseSettings
+from ._base import SmtpBase, SmtpBaseSettings
 
 Dns = import_adapter()
 Requests = import_adapter()
 
 
-class EmailSettings(EmailBaseSettings):
+class SmtpSettings(SmtpBaseSettings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)  # type: ignore
         self.api_url = "https://api.mailgun.net/v3/domains"
         self.mx_servers = ["smtp.mailgun.com"]
-        self.api_key = config.email.api_key
-        self.password = config.email.password
+        self.api_key = config.smtp.api_key
+        self.password = config.smtp.password
 
 
-class Email(EmailBase):
+class Smtp(SmtpBase):
     requests: Requests = depends()
 
     async def get_response(
@@ -40,10 +40,10 @@ class Email(EmailBase):
         calling_frame = sys._getframe().f_back.f_code.co_name
         caller = "domain" if search(calling_frame, "domain") else "route"
         url = "/".join(
-            [self.config.email.api_url, caller, domain or self.config.app.domain or ""]
+            [self.config.smtp.api_url, caller, domain or self.config.app.domain or ""]
         )
         data = dict(
-            auth=("api", self.config.email.api_key.get_secret_value()),
+            auth=("api", self.config.smtp.api_key.get_secret_value()),
             params=params,
             data=data,
         )
@@ -75,7 +75,7 @@ class Email(EmailBase):
             "post",
             data={
                 "name": domain,
-                "smtp_password": self.config.email.password.get_secret_value(),
+                "smtp_password": self.config.smtp.password.get_secret_value(),
                 "web_scheme": "https",
             },
         )
@@ -94,7 +94,7 @@ class Email(EmailBase):
             domain=domain,
             data={
                 "login": f"postmaster@{domain}",
-                "password": self.config.email.password.get_secret_value(),
+                "password": self.config.smtp.password.get_secret_value(),
             },
         )
 
@@ -126,24 +126,24 @@ class Email(EmailBase):
 
     @depends.inject
     async def create_dns_records(self, dns: Dns = depends()) -> None:
-        await self.create_domain(self.config.email.domain)
-        await self.create_domain_credentials(self.config.email.domain)
-        records = await self.get_dns_records(self.config.email.domain)
+        await self.create_domain(self.config.smtp.domain)
+        await self.create_domain_credentials(self.config.smtp.domain)
+        records = await self.get_dns_records(self.config.smtp.domain)
         if self.config.mail.mailgun.gmail.enabled:
-            await self.delete_domain(self.config.email.domain)
-            rrdata = self.config.email.mx_servers
+            await self.delete_domain(self.config.smtp.domain)
+            rrdata = self.config.smtp.mx_servers
             record = DnsRecord.model_validate(
-                dict(name=self.config.email.domain, type="MX", rrdata=rrdata)
+                dict(name=self.config.smtp.domain, type="MX", rrdata=rrdata)
             )
             records.append(record)
         else:
-            await self.delete_domain(self.config.email.domain)
+            await self.delete_domain(self.config.smtp.domain)
         await dns.create_records(records)
 
     async def list_routes(self) -> list[t.Any]:
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
         domain_routes = [
-            r for r in resp["items"] if self.config.email.domain in r["expression"]
+            r for r in resp["items"] if self.config.smtp.domain in r["expression"]
         ]
         self.logger.debug(pformat(resp["items"]))
         self.logger.debug(len(resp["items"]))
@@ -163,7 +163,7 @@ class Email(EmailBase):
         return name.group(1) if name else ""
 
     async def delete_routes(self, delete_all: bool = False) -> None:
-        forwards = self.config.email.forwards.keys()
+        forwards = self.config.smtp.forwards.keys()
         routes = await self.list_routes()
         deletes = []
         deletes.extend(
@@ -187,7 +187,7 @@ class Email(EmailBase):
     async def create_route(
         self, domain_address: str, forwarding_addresses: list[str] | str
     ) -> dict[str, str]:
-        domain_address = f"{domain_address}@{self.config.email.domain}"
+        domain_address = f"{domain_address}@{self.config.smtp.domain}"
         if not isinstance(forwarding_addresses, list):
             forwarding_addresses = [forwarding_addresses]
         actions = ["stop(self)"]
@@ -219,7 +219,7 @@ class Email(EmailBase):
         return resp
 
     async def create_routes(self) -> None:
-        async for name, forward in self.config.email.forwards.items():
+        async for name, forward in self.config.smtp.forwards.items():
             await self.create_route(name, forward)
 
     async def init(self) -> None:
@@ -228,4 +228,4 @@ class Email(EmailBase):
         await self.create_routes()
 
 
-depends.set(Email)
+depends.set(Smtp)

@@ -107,7 +107,8 @@ class SqlBase(AdapterBase):
                     a[0]
                     for a in show_ps
                     if (
-                        a[1] == self.config.sql.user.get_secret_value()
+                        len(a) > 3
+                        and a[1] == self.config.sql.user.get_secret_value()
                         and a[3] == self.config.app.name
                     )
                 ]

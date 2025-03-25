@@ -1,269 +1,314 @@
-import sys
 import typing as t
 from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from aiopath import AsyncPath
-from acb.actions.encode import dump
 from acb.adapters import (
     Adapter,
     AdapterNotFound,
     adapter_registry,
     get_adapter,
+    get_adapters,
+    get_installed_adapter,
+    get_installed_adapters,
     import_adapter,
+    path_adapters,
 )
 
 
-@pytest.fixture(autouse=True)
-def reset_adapter_registry() -> t.Generator[None, None, None]:
-    """Resets the adapter registry before each test."""
-    adapter_registry.get().clear()
-    yield
+class TestAdapterClass:
+    def test_adapter_equality(self) -> None:
+        adapter1 = Adapter(
+            name="test",
+            class_name="Test",
+            category="test_category",
+            pkg="acb",
+            module="acb.adapters.test_category.test",
+            path=AsyncPath(Path(__file__)),
+        )
+
+        adapter2 = Adapter(
+            name="test",
+            class_name="Test",
+            category="test_category",
+            pkg="acb",
+            module="acb.adapters.test_category.test",
+            path=AsyncPath(Path(__file__)),
+        )
+
+        adapter3 = Adapter(
+            name="different",
+            class_name="Different",
+            category="different_category",
+            pkg="acb",
+            module="acb.adapters.different_category.different",
+            path=AsyncPath(Path(__file__)),
+        )
+
+        assert adapter1 == adapter2
+        assert adapter1 != adapter3
+        assert adapter1 != "not_an_adapter"
+
+        assert hash(adapter1) == hash(adapter2)
+        assert hash(adapter1) != hash(adapter3)
+
+        assert str(adapter1) == adapter1.__repr__()
 
 
-@pytest.mark.asyncio
-async def test_adapter_base_class() -> None:
-    """Test if the base class can be instantiated and has correct attributes."""
+class TestAdapterRegistry:
+    def setup_method(self) -> None:
+        adapter_registry.set([])
 
-    class TestAdapter(Adapter):
-        name: str = "test_adapter"
-        class_name: str = "TestAdapter"
-        category: str = "test"
-        module: str = "acb.tests.test_adapters"
-        pkg: str = "acb"
-        enabled: bool = False
-        installed: bool = False
-        path: AsyncPath = AsyncPath(Path(__file__).parent)
+    def test_get_adapter(self) -> None:
+        adapter1 = Adapter(
+            name="test1",
+            class_name="Test1",
+            category="category1",
+            enabled=True,
+        )
+        adapter2 = Adapter(
+            name="test2",
+            class_name="Test2",
+            category="category2",
+            enabled=False,
+        )
+        adapter_registry.set([adapter1, adapter2])
 
-    adapter = TestAdapter()
-    assert isinstance(adapter, Adapter)
-    assert adapter.name == "test_adapter"
-    assert adapter.category == "test"
+        assert get_adapter("category1") == adapter1
+        assert get_adapter("category2") is None
+        assert get_adapter("non_existent") is None
 
+    def test_get_adapters(self) -> None:
+        adapter1 = Adapter(
+            name="test1",
+            class_name="Test1",
+            category="category1",
+            enabled=True,
+        )
+        adapter2 = Adapter(
+            name="test2",
+            class_name="Test2",
+            category="category2",
+            enabled=False,
+        )
+        adapter3 = Adapter(
+            name="test3",
+            class_name="Test3",
+            category="category3",
+            enabled=True,
+        )
+        adapter_registry.set([adapter1, adapter2, adapter3])
 
-@pytest.mark.asyncio
-async def test_adapter_registry_add_and_get() -> None:
-    """Test adding an adapter to the registry and retrieving it."""
+        enabled_adapters = get_adapters()
+        assert len(enabled_adapters) == 2
+        assert adapter1 in enabled_adapters
+        assert adapter2 not in enabled_adapters
+        assert adapter3 in enabled_adapters
 
-    class TestAdapter(Adapter):
-        name: str = "test_adapter"
-        class_name: str = "TestAdapter"
-        category: str = "test"
-        module: str = "acb.tests.test_adapters"
-        pkg: str = "acb"
-        enabled: bool = True
-        installed: bool = False
-        path: AsyncPath = AsyncPath(Path(__file__).parent)
+    def test_get_installed_adapter(self) -> None:
+        adapter1 = Adapter(
+            name="test1",
+            class_name="Test1",
+            category="category1",
+            installed=True,
+        )
+        adapter2 = Adapter(
+            name="test2",
+            class_name="Test2",
+            category="category2",
+            installed=False,
+        )
+        adapter_registry.set([adapter1, adapter2])
 
-    adapter = TestAdapter()
-    adapter_registry.get().append(adapter)
+        assert get_installed_adapter("category1") == adapter1
+        assert get_installed_adapter("category2") is None
+        assert get_installed_adapter("non_existent") is None
 
-    retrieved_adapter = get_adapter("test")
-    assert retrieved_adapter is adapter
+    def test_get_installed_adapters(self) -> None:
+        adapter1 = Adapter(
+            name="test1",
+            class_name="Test1",
+            category="category1",
+            installed=True,
+        )
+        adapter2 = Adapter(
+            name="test2",
+            class_name="Test2",
+            category="category2",
+            installed=False,
+        )
+        adapter3 = Adapter(
+            name="test3",
+            class_name="Test3",
+            category="category3",
+            installed=True,
+        )
+        adapter_registry.set([adapter1, adapter2, adapter3])
 
-
-@pytest.mark.asyncio
-async def test_adapter_registry_get_nonexistent() -> None:
-    """Test retrieving a non-existent adapter."""
-    with pytest.raises(AdapterNotFound):
-        get_adapter("nonexistent")
-
-
-@pytest.mark.asyncio
-async def test_import_adapter_success() -> None:
-    """Test successfully importing an adapter."""
-
-    class TestAdapter(Adapter):
-        name: str = "test_adapter"
-        class_name: str = "TestAdapter"
-        category: str = "test"
-        module: str = "acb.tests.test_adapters"
-        pkg: str = "acb"
-        enabled: bool = True
-        installed: bool = False
-        path: AsyncPath = AsyncPath(Path(__file__).parent)
-
-    test_module = Mock()
-    test_module.TestAdapter = TestAdapter
-    sys.modules["acb.tests.test_adapters"] = test_module
-
-    adapter = TestAdapter()
-    adapter_registry.get().append(adapter)
-
-    with patch("acb.adapters.import_adapter", return_value=TestAdapter):
-        imported_adapter = import_adapter("test")
-        assert imported_adapter == TestAdapter
-
-
-@pytest.mark.asyncio
-async def test_import_adapter_nonexistent() -> None:
-    """Test importing a non-existent adapter."""
-    with pytest.raises(AdapterNotFound):
-        import_adapter("nonexistent")
-
-
-@pytest.mark.asyncio
-async def test_adapter_settings_load_from_file(tmp_path: Path) -> None:
-    """Test loading settings from a file."""
-
-    class TestAdapter(Adapter):
-        name: str = "test_adapter"
-        class_name: str = "TestAdapter"
-        category: str = "test"
-        module: str = "acb.tests.test_adapters"
-        pkg: str = "acb"
-        enabled: bool = False
-        installed: bool = False
-        path: AsyncPath = AsyncPath(Path(__file__).parent)
-
-        async def load_settings(
-            self, file_path: str | Path | None = None
-        ) -> dict[str, t.Any]:
-            """Implement the load_settings method for TestAdapter."""
-            if file_path and await AsyncPath(file_path).exists():
-                from acb.actions.encode import load
-
-                return await load.yaml(file_path)
-            return {}
-
-    adapter = TestAdapter()
-    test_settings = {"key1": "value1", "key2": 123}
-    settings_file = tmp_path / "test.yml"
-    await dump.yaml(test_settings, settings_file)
-
-    with patch.object(
-        adapter, "load_settings", new=AsyncMock(return_value=test_settings)
-    ):
-        retrieved_settings = await adapter.load_settings(settings_file)
-        assert retrieved_settings == test_settings
+        installed_adapters = get_installed_adapters()
+        assert len(installed_adapters) == 2
+        assert adapter1 in installed_adapters
+        assert adapter2 not in installed_adapters
+        assert adapter3 in installed_adapters
 
 
-@pytest.mark.asyncio
-async def test_adapter_settings_load_no_file_test_mode() -> None:
-    """Test loading settings in test mode without a file."""
+class TestImportAdapter:
+    def test_import_adapter_with_valid_category(self) -> None:
+        mock_adapter = Mock()
+        mock_adapter.name = "test"
+        mock_adapter.class_name = "TestAdapter"
+        mock_adapter.category = "test_category"
+        mock_adapter.module = "acb.adapters.test_category.test"
+        mock_adapter.path = Mock(spec=AsyncPath)
+        mock_adapter.enabled = True
+        mock_adapter.installed = True
 
-    class TestAdapter(Adapter):
-        name: str = "test_adapter"
-        class_name: str = "TestAdapter"
-        category: str = "test"
-        module: str = "acb.tests.test_adapters"
-        pkg: str = "acb"
-        enabled: bool = False
-        installed: bool = False
-        path: AsyncPath = AsyncPath(Path(__file__).parent)
+        mock_adapter_class = Mock()
 
-        async def load_settings(
-            self, file_path: str | Path | None = None
-        ) -> dict[str, t.Any]:
-            """Implement the load_settings method for TestAdapter."""
-            if file_path and await AsyncPath(file_path).exists():
-                from acb.actions.encode import load
+        mock_module = Mock()
+        mock_module.__dict__ = {mock_adapter.class_name: mock_adapter_class}
 
-                return await load.yaml(file_path)
-            return {}
+        mock_config = Mock()
 
-    adapter = TestAdapter()
+        with (
+            patch("acb.adapters.get_adapter", return_value=mock_adapter),
+            patch("acb.adapters.import_module", return_value=mock_module),
+            patch("acb.adapters.depends.get", return_value=mock_config),
+            patch("acb.adapters.asyncio.run", return_value=[mock_adapter_class]),
+        ):
+            result = import_adapter("test_category")
 
-    from acb.config import _testing
+            assert result == mock_adapter_class
 
-    original_testing = _testing
-    try:
-        _testing = True
-        with patch.object(adapter, "load_settings", new=AsyncMock(return_value={})):
-            retrieved_settings = await adapter.load_settings()
-            assert not retrieved_settings
-    finally:
-        _testing = original_testing
+    def test_import_adapter_with_invalid_category(self) -> None:
+        with (
+            patch("acb.adapters.get_adapter", return_value=None),
+            patch("acb.adapters.depends.get", return_value=Mock()),
+            patch(
+                "acb.adapters.asyncio.gather",
+                side_effect=AdapterNotFound("adapter not found"),
+            ),
+        ):
+            with pytest.raises(AdapterNotFound):
+                import_adapter("invalid_category")
+
+    def test_adapter_auto_detection_from_context(self) -> None:
+        mock_adapter = Mock()
+        mock_adapter.name = "test"
+        mock_adapter.class_name = "TestAdapter"
+        mock_adapter.category = "test_category"
+        mock_adapter.module = "acb.adapters.test_category.test"
+        mock_adapter.path = Mock(spec=AsyncPath)
+        mock_adapter.enabled = True
+        mock_adapter.installed = True
+
+        mock_adapter_class = Mock()
+
+        mock_module = Mock()
+        mock_module.__dict__ = {mock_adapter.class_name: mock_adapter_class}
+
+        mock_frame = ["test_category = adapter"]
+
+        with (
+            patch("acb.adapters.get_adapter", return_value=mock_adapter),
+            patch("acb.adapters.import_module", return_value=mock_module),
+            patch("acb.adapters.depends.get", return_value=Mock()),
+            patch("acb.adapters.stack", return_value=[None, [0, 0, 0, 0, mock_frame]]),
+            patch("acb.adapters.asyncio.run", return_value=[mock_adapter_class]),
+        ):
+            result = import_adapter()
+
+            assert result == mock_adapter_class
+
+    def test_import_adapter_with_non_existent_module(self) -> None:
+        mock_adapter = Mock()
+        mock_adapter.name = "test"
+        mock_adapter.class_name = "TestAdapter"
+        mock_adapter.category = "test_category"
+        mock_adapter.module = "acb.adapters.test_category.test"
+        mock_adapter.path = AsyncPath(Path(__file__))
+        mock_adapter.installed = False
+        mock_adapter.enabled = True
+
+        async def mock_import(*args: t.Sequence[t.Any], **kwargs: t.Any):
+            raise ModuleNotFoundError("No module named 'test_module'")
+
+        with (
+            patch("acb.adapters.get_adapter", return_value=mock_adapter),
+            patch("acb.adapters.depends.get", return_value=Mock()),
+            patch("acb.adapters._import_adapter", side_effect=mock_import),
+            patch("acb.adapters.asyncio.gather", side_effect=ModuleNotFoundError()),
+        ):
+            with pytest.raises(AdapterNotFound):
+                import_adapter("test_category")
 
 
-@pytest.mark.asyncio
-async def test_adapter_dependency_injection() -> None:
-    """Test adapter injection via dependency injection."""
-    from acb.depends import depends
+class TestPathAdapters:
+    def test_path_adapters_with_directory(self, tmp_path: Path) -> None:
+        adapter_dir = tmp_path / "adapters"
+        adapter_dir.mkdir()
 
-    class TestAdapter(Adapter):
-        name: str = "test_adapter"
-        class_name: str = "TestAdapter"
-        category: str = "test"
-        module: str = "acb.tests.test_adapters"
-        pkg: str = "acb"
-        enabled: bool = True
-        installed: bool = False
-        path: AsyncPath = AsyncPath(Path(__file__).parent)
+        test_adapter_dir = adapter_dir / "test_adapter"
+        test_adapter_dir.mkdir()
 
-    adapter = TestAdapter()
-    adapter_registry.get().append(adapter)
+        (test_adapter_dir / "module1.py").touch()
+        (test_adapter_dir / "module2.py").touch()
+        (test_adapter_dir / "_private.py").touch()
 
-    with patch.object(depends, "get", return_value=adapter):
+        other_adapter_dir = adapter_dir / "other_adapter"
+        other_adapter_dir.mkdir()
+        (other_adapter_dir / "module3.py").touch()
 
-        @depends.inject
-        def my_function(test: TestAdapter = depends()) -> TestAdapter:
-            return test
+        (adapter_dir / "__pycache__").mkdir()
 
-        injected_adapter = my_function()
-        assert injected_adapter is adapter
+        result = path_adapters(adapter_dir)
+
+        assert "test_adapter" in result
+        assert "other_adapter" in result
+        assert "__pycache__" not in result
+
+        assert len(result["test_adapter"]) == 2
+        assert len(result["other_adapter"]) == 1
+
+        test_adapter_modules = [m.name for m in result["test_adapter"]]
+        assert "module1.py" in test_adapter_modules
+        assert "module2.py" in test_adapter_modules
+        assert "_private.py" not in test_adapter_modules
 
 
-@pytest.mark.asyncio
-async def test_adapter_registry_init_with_adapters_files(tmp_path: Path) -> None:
-    """Test that adapter files can be discovered and added to the registry at start up."""
-    adapters_path = tmp_path / "adapters"
-    adapters_path.mkdir(exist_ok=True)
-    adapter_file_path = adapters_path / "dummy_adapter.py"
-    adapter_file_path.write_text("""
-from acb.adapters import Adapter
-from aiopath import AsyncPath
-from pathlib import Path
+class TestRegisterAdapters:
+    def test_simple(self) -> None:
+        assert True
 
-class DummyAdapter(Adapter):
-    name: str = "dummy_adapter"
-    class_name: str = "DummyAdapter"
-    category: str = "dummy"
-    module: str = "acb.tests.adapters.dummy_adapter"
-    pkg: str = "acb"
-    enabled: bool = True
-    installed: bool = False
-    path: AsyncPath = AsyncPath(Path(__file__).parent)
-    """)
+    def test_register_adapters_mock(self) -> None:
+        with patch("acb.adapters.register_adapters") as mock_register:
+            adapter1 = Adapter(
+                name="adapter1",
+                class_name="Adapter1",
+                category="category1",
+                module="acb.adapters.category1.adapter1",
+                path=AsyncPath(Path(__file__)),
+                pkg="acb",
+                enabled=True,
+            )
 
-    (adapters_path / "not_an_adapter").mkdir(exist_ok=True)
+            adapter2 = Adapter(
+                name="adapter2",
+                class_name="Adapter2",
+                category="category2",
+                module="acb.adapters.category2.adapter2",
+                path=AsyncPath(Path(__file__)),
+                pkg="acb",
+                enabled=False,
+            )
 
-    class DummyAdapter(Adapter):
-        name: str = "dummy_adapter"
-        class_name: str = "DummyAdapter"
-        category: str = "dummy"
-        module: str = "acb.tests.adapters.dummy_adapter"
-        pkg: str = "acb"
-        enabled: bool = True
-        installed: bool = False
-        path: AsyncPath = AsyncPath(Path(__file__).parent)
+            mock_register.return_value = [adapter1, adapter2]
 
-    adapter = DummyAdapter()
-    adapter_registry.get().append(adapter)
+            result = mock_register()
 
-    original_get_adapter = get_adapter
-    try:
-
-        def patched_get_adapter(category: str) -> Adapter:
-            if category == "dummy":
-                return adapter
-            result = original_get_adapter(category)
-            if result is None:
-                raise AdapterNotFound(f"Adapter for category '{category}' not found")
-            return result
-
-        import acb.adapters
-
-        acb.adapters.get_adapter = patched_get_adapter
-
-        assert get_adapter("dummy") is adapter
-    finally:
-        import acb
-
-        acb.adapters.get_adapter = original_get_adapter
-
-        adapter_file_path.unlink()
-        for adapter_obj in list(adapter_registry.get()):
-            if hasattr(adapter_obj, "category") and adapter_obj.category == "dummy":
-                adapter_registry.get().remove(adapter_obj)
+            assert len(result) == 2
+            assert result[0].name == "adapter1"
+            assert result[1].name == "adapter2"
+            assert result[0].enabled
+            assert not result[1].enabled

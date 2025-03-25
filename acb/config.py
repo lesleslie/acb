@@ -1,5 +1,4 @@
 import asyncio
-import os
 import typing as t
 from abc import ABC, abstractmethod
 from contextvars import ContextVar
@@ -17,7 +16,7 @@ from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
-from acb import register_pkg
+from acb import _deployed, _testing, register_pkg
 from acb.actions.encode import dump, load
 from acb.adapters import (
     adapter_registry,
@@ -49,8 +48,6 @@ async def get_version() -> str:
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
-_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
-_testing: bool = os.getenv("TESTING", "False").lower() == "true"
 _secrets_path: AsyncPath = tmp_path / "secrets"
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
@@ -62,11 +59,16 @@ class Platform(str, Enum):
 
 
 async def init_app() -> None:
-    for path in (
+    init_paths = [
         tmp_path,
         _secrets_path,
-        AsyncPath(settings_path),
-    ):
+    ]
+    init_paths = (
+        init_paths
+        if _deployed or _testing or root_path.stem == "acb"
+        else (init_paths + [AsyncPath(settings_path)])
+    )
+    for path in init_paths:
         await path.mkdir(exist_ok=True)
 
 
@@ -343,7 +345,6 @@ class DebugSettings(Settings):
 
 
 def get_version_default() -> str:
-    """Default factory for version that runs the async get_version function."""
     return asyncio.run(get_version())
 
 

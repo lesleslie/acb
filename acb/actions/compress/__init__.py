@@ -1,26 +1,29 @@
-import typing as t
 from gzip import GzipFile
 from io import BytesIO
 from pathlib import Path
 
 import brotli
-from pydantic import BaseModel
+
+__all__: list[str] = ["compress", "decompress"]
 
 
-class Compress(BaseModel):
+class Compress:
     @staticmethod
     def gzip(
         content: str | bytes,
-        path: t.Optional[str | Path] = None,
+        path: str | Path | None = None,
         compresslevel: int = 6,
     ) -> bytes:
         gzip_buffer = BytesIO()
-        gz = GzipFile(path, "wb", compresslevel, gzip_buffer)
-        if path:
-            if isinstance(content, bytes):
-                gz.write(content)
-            else:
-                gz.write(content.encode())
+        gz = GzipFile(
+            filename=str(path) if path else None,
+            mode="wb",
+            compresslevel=compresslevel,
+            fileobj=gzip_buffer,
+        )
+
+        data = content.encode() if isinstance(content, str) else content
+        gz.write(data)
         gz.close()
         return gzip_buffer.getvalue()
 
@@ -34,15 +37,17 @@ class Compress(BaseModel):
 compress = Compress()
 
 
-class Decompress(BaseModel):
+class Decompress:
     @staticmethod
     def brotli(data: bytes) -> str:
-        return brotli.decompress(data)
+        return brotli.decompress(data).decode()
 
     @staticmethod
-    def gzip(content: t.Any) -> str:
+    def gzip(content: bytes) -> str:
         gzip_buffer = BytesIO(content)
-        return GzipFile(None, "rb", fileobj=gzip_buffer).read().decode()
+        with GzipFile(fileobj=gzip_buffer, mode="rb") as gz:
+            decompressed = gz.read()
+        return decompressed.decode()
 
 
 decompress = Decompress()

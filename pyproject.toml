@@ -49,20 +49,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-asyncio",
-    "pre-commit",
-    "pytest-mock",
-    "pyfiglet",
-    "google-crc32c",
-    "pytest",
-    "pdm",
-    "tomli-w",
     "pdm-bump",
-    "autotyping",
-    "pyyaml",
-    "uv",
     "pytest-cov",
+    "pyfiglet",
+    "autotyping",
+    "pytest-asyncio",
+    "pyyaml",
+    "tomli-w",
+    "pytest-mock",
+    "google-crc32c",
+    "uv",
+    "pre-commit",
+    "pytest",
     "msgspec-python313-pre",
+    "pdm",
 ]
 
 [tool.refurb]
@@ -73,15 +73,15 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
-    "B311",
-    "B607",
-    "B603",
     "B704",
-    "B602",
+    "B607",
     "B101",
+    "B602",
     "B404",
+    "B311",
     "B301",
+    "B603",
+    "B403",
 ]
 
 [tool.pyright]
@@ -133,6 +133,10 @@ omit = [
     "*/site-packages/*",
     "*/__pycache__/*",
     "*/__init__.py",
+    "*/_version.py",
+    "*/conftest.py",
+    "*/test_*.py",
+    "*/_test.py",
 ]
 
 [tool.coverage.report]
@@ -156,13 +160,21 @@ python_files = [
     "test_*.py",
     "*_test.py",
 ]
-python_classes = "Test*"
-python_functions = "test_*"
 asyncio_mode = "auto"
+testpaths = [
+    "tests",
+    "acb",
+]
+python_classes = [
+    "Test*",
+]
+python_functions = [
+    "test_*",
+]
 
 [project]
 name = "acb"
-version = "0.11.0"
+version = "0.12.0"
 description = "Default template for PDM package"
 dependencies = [
     "itsdangerous>=2.2.0",
@@ -217,7 +229,7 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.20.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.9.0",
+    "logfire[redis]>=3.9.1",
 ]
 storage = [
     "gcsfs>=2025.3.0",
@@ -231,8 +243,9 @@ dns = [
 requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.1",
-    "sentry-sdk[httpx]>=2.23.1",
-    "logfire[httpx]>=3.9.0",
+    "sentry-sdk[httpx]>=2.24.1",
+    "logfire[httpx]>=3.9.1",
+    "niquests>=3.13.1",
 ]
 smtp = [
     "mailgun>=0.1.1",
@@ -244,8 +257,8 @@ sql = [
     "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.9.0",
-    "sentry-sdk[sqlalchemy]>=2.23.1",
+    "logfire[sqlalchemy]>=3.9.1",
+    "sentry-sdk[sqlalchemy]>=2.24.1",
     "greenlet>=3.1.1",
 ]
 nosql = [
@@ -253,7 +266,7 @@ nosql = [
     "motor>=3.7.0",
 ]
 demo = [
-    "faker>=37.0.0",
+    "faker>=37.1.0",
 ]
 ftpd = [
     "aioftp>=0.24.1",
@@ -263,11 +276,11 @@ secret = [
     "google-cloud-secret-manager>=2.23.2",
 ]
 monitoring = [
-    "sentry-sdk[loguru]>=2.23.1",
-    "logfire[system-metrics]>=3.9.0",
+    "sentry-sdk[loguru]>=2.24.1",
+    "logfire[system-metrics]>=3.9.1",
 ]
 dev = [
-    "crackerjack>=0.14.4",
+    "crackerjack>=0.14.6",
 ]
 
 [build-system]
