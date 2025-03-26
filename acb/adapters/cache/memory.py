@@ -11,7 +11,7 @@ class CacheSettings(CacheBaseSettings): ...
 
 
 class Cache(CacheBase, SimpleMemoryCache):  # type: ignore
-    async def init(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
+    async def init(self, *args: t.Any, **kwargs: t.Any) -> None:
         super().__init__(
             serializer=PickleSerializer(),
             namespace=f"{self.config.app.name}:",

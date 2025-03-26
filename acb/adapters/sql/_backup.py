@@ -169,11 +169,11 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
                 data[model.__name__] = results.model_dump_to_json()
         return data
 
-    async def backup(self, class_name: str, data: t.Any, timestamp: int) -> t.NoReturn:
+    async def backup(self, class_name: str, data: t.Any, timestamp: int) -> None:
         path = self.get_path(class_name=class_name, timestamp=timestamp)
         await self.storage.sql.save(data, path)
 
-    async def save(self) -> t.NoReturn:
+    async def save(self) -> None:
         data = await self.get_data()
         timestamp = arrow.utcnow().int_timestamp
 
@@ -278,7 +278,7 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         self.delete_backups(delete_list)
         return True
 
-    async def run(self) -> t.NoReturn:
+    async def run(self) -> None:
         if not self.config.deployed:
             last_backup = self.get_last_backup()
             if self.config.debug.database and self.sure_delete:

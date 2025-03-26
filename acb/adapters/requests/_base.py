@@ -4,7 +4,7 @@ from acb.config import AdapterBase, Settings
 
 
 class RequestsBaseSettings(Settings):
-    cache_ttl: int = 3600
+    cache_ttl: int = 7200
 
 
 class RequestsProtocol(t.Protocol):

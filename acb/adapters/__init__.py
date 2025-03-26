@@ -63,6 +63,9 @@ adapter_settings_path: Path = settings_path / "adapters.yml"
 class AdapterNotFound(Exception): ...
 
 
+class AdapterNotInstalled(Exception): ...
+
+
 def get_adapter(category: str) -> Adapter | None:
     adapter = next(
         (a for a in adapter_registry.get() if a.category == category and a.enabled),
@@ -94,13 +97,12 @@ async def _import_adapter(
         adapter = get_adapter(adapter_category)
         if adapter is None:
             raise AdapterNotFound(
-                f"{adapter_category} adapter not found – please make sure one is configured in adapters.yml"
+                f"{adapter_category} adapter not found – check adapters.yml"
             )
     except AttributeError:
         raise AdapterNotFound(
-            f"{adapter_category} adapter not found – please make sure one is configured in adapters.yml"
+            f"{adapter_category} adapter not found – check adapters.yml"
         )
-
     try:
         module = import_module(adapter.module)
     except ModuleNotFoundError:
@@ -120,15 +122,16 @@ async def _import_adapter(
             setattr(config, adapter_category, adapter_settings)
             await depends.get(adapter_class).init()
         except Exception as e:
-            raise AdapterNotFound(
-                f"Failed to initialize {adapter.class_name} adapter: {e}"
+            raise AdapterNotInstalled(
+                f"Failed to install {adapter.class_name} adapter: {e}"
             )
-        finally:
+        else:
             adapter.installed = True
-            _install_lock.get().remove(adapter.category)
             if adapter_category != "logger":
                 logger = depends.get("logger")
                 logger.info(f"{adapter.class_name} adapter installed")
+        finally:
+            _install_lock.get().remove(adapter.category)
 
     return adapter_class
 
@@ -164,14 +167,13 @@ def import_adapter(
         imports: list[t.Coroutine[t.Any, t.Any, t.Type[AdapterProtocol] | None]] = [
             _import_adapter(c, config) for c in adapter_categories
         ]
-        classes = asyncio.run(asyncio.gather(*imports, return_exceptions=True))  # type: ignore
+        # classes = asyncio.run(asyncio.gather(*imports, return_exceptions=True))  # type: ignore
+        classes = asyncio.run(asyncio.gather(*imports))  # type: ignore
         if isinstance(classes, str | Exception):
             classes = [classes]
-        for c in [c for c in classes if isinstance(c, Exception)]:
-            print(f"Caught an exception: {c}")
         return classes[0] if len(adapter_categories) < 2 else classes
     except Exception as err:
-        raise AdapterNotFound(err)
+        raise AdapterNotInstalled(err)
 
 
 def path_adapters(path: Path) -> dict[str, list[Path]]:

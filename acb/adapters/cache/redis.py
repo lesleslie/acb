@@ -1,17 +1,15 @@
 import typing as t
 
 from aiocache.backends.redis import RedisBackend
+from aiocache.serializers import PickleSerializer
 from coredis.cache import TrackingCache
 from coredis.client import Redis, RedisCluster
 from pydantic import SecretStr
-from acb.adapters import import_adapter
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 
-from ._base import CacheBase, CacheBaseSettings, SecurePickleSerializer
-
-Logger = import_adapter()
+from ._base import CacheBase, CacheBaseSettings
 
 
 class CacheSettings(CacheBaseSettings):
@@ -51,9 +49,9 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
         number = await self.client.exists([key])
         return bool(number)
 
-    async def init(self, *args: t.Any, **kwargs: t.Any) -> t.NoReturn:
+    async def init(self, *args: t.Any, **kwargs: t.Any) -> None:
         super().__init__(
-            serializer=SecurePickleSerializer(),
+            serializer=PickleSerializer(),
             namespace=f"{self.config.app.name}:",
             **kwargs,
         )

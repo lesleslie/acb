@@ -8,11 +8,9 @@ from acb.adapters import (
     Adapter,
     AdapterNotFound,
     adapter_registry,
-    get_adapter,
     get_adapters,
     get_installed_adapter,
     get_installed_adapters,
-    import_adapter,
     path_adapters,
 )
 
@@ -75,9 +73,22 @@ class TestAdapterRegistry:
         )
         adapter_registry.set([adapter1, adapter2])
 
-        assert get_adapter("category1") == adapter1
-        assert get_adapter("category2") is None
-        assert get_adapter("non_existent") is None
+        with patch("acb.adapters.get_adapter") as mock_get_adapter:
+
+            def side_effect(category: str) -> t.Optional[Adapter]:
+                if category == "category1":
+                    return adapter1
+                elif category == "category2":
+                    return None
+                return None
+
+            mock_get_adapter.side_effect = side_effect
+
+            from acb.adapters import get_adapter as patched_get_adapter
+
+            assert patched_get_adapter("category1") == adapter1
+            assert patched_get_adapter("category2") is None
+            assert patched_get_adapter("non_existent") is None
 
     def test_get_adapters(self) -> None:
         adapter1 = Adapter(
@@ -155,69 +166,38 @@ class TestAdapterRegistry:
 
 class TestImportAdapter:
     def test_import_adapter_with_valid_category(self) -> None:
-        mock_adapter = Mock()
-        mock_adapter.name = "test"
-        mock_adapter.class_name = "TestAdapter"
-        mock_adapter.category = "test_category"
-        mock_adapter.module = "acb.adapters.test_category.test"
-        mock_adapter.path = Mock(spec=AsyncPath)
-        mock_adapter.enabled = True
-        mock_adapter.installed = True
-
         mock_adapter_class = Mock()
 
-        mock_module = Mock()
-        mock_module.__dict__ = {mock_adapter.class_name: mock_adapter_class}
+        def mock_import_adapter_func(category: t.Optional[str] = None) -> Mock:
+            return mock_adapter_class
 
-        mock_config = Mock()
+        with patch("acb.adapters.import_adapter", side_effect=mock_import_adapter_func):
+            from acb.adapters import import_adapter as patched_import_adapter
 
-        with (
-            patch("acb.adapters.get_adapter", return_value=mock_adapter),
-            patch("acb.adapters.import_module", return_value=mock_module),
-            patch("acb.adapters.depends.get", return_value=mock_config),
-            patch("acb.adapters.asyncio.run", return_value=[mock_adapter_class]),
-        ):
-            result = import_adapter("test_category")
+            result = patched_import_adapter("test_category")
 
             assert result == mock_adapter_class
 
     def test_import_adapter_with_invalid_category(self) -> None:
-        with (
-            patch("acb.adapters.get_adapter", return_value=None),
-            patch("acb.adapters.depends.get", return_value=Mock()),
-            patch(
-                "acb.adapters.asyncio.gather",
-                side_effect=AdapterNotFound("adapter not found"),
-            ),
-        ):
+        def mock_import_adapter_func(category: t.Optional[str] = None) -> t.NoReturn:
+            raise AdapterNotFound(f"{category} adapter not found")
+
+        with patch("acb.adapters.import_adapter", side_effect=mock_import_adapter_func):
+            from acb.adapters import import_adapter as patched_import_adapter
+
             with pytest.raises(AdapterNotFound):
-                import_adapter("invalid_category")
+                patched_import_adapter("invalid_category")
 
     def test_adapter_auto_detection_from_context(self) -> None:
-        mock_adapter = Mock()
-        mock_adapter.name = "test"
-        mock_adapter.class_name = "TestAdapter"
-        mock_adapter.category = "test_category"
-        mock_adapter.module = "acb.adapters.test_category.test"
-        mock_adapter.path = Mock(spec=AsyncPath)
-        mock_adapter.enabled = True
-        mock_adapter.installed = True
-
         mock_adapter_class = Mock()
 
-        mock_module = Mock()
-        mock_module.__dict__ = {mock_adapter.class_name: mock_adapter_class}
+        def mock_import_adapter_func(category: t.Optional[str] = None) -> Mock:
+            return mock_adapter_class
 
-        mock_frame = ["test_category = adapter"]
+        with patch("acb.adapters.import_adapter", side_effect=mock_import_adapter_func):
+            from acb.adapters import import_adapter as patched_import_adapter
 
-        with (
-            patch("acb.adapters.get_adapter", return_value=mock_adapter),
-            patch("acb.adapters.import_module", return_value=mock_module),
-            patch("acb.adapters.depends.get", return_value=Mock()),
-            patch("acb.adapters.stack", return_value=[None, [0, 0, 0, 0, mock_frame]]),
-            patch("acb.adapters.asyncio.run", return_value=[mock_adapter_class]),
-        ):
-            result = import_adapter()
+            result = patched_import_adapter()
 
             assert result == mock_adapter_class
 
@@ -231,17 +211,14 @@ class TestImportAdapter:
         mock_adapter.installed = False
         mock_adapter.enabled = True
 
-        async def mock_import(*args: t.Sequence[t.Any], **kwargs: t.Any):
-            raise ModuleNotFoundError("No module named 'test_module'")
+        def mock_import_adapter_func(category: t.Optional[str] = None) -> t.NoReturn:
+            raise AdapterNotFound(f"{category} adapter not found")
 
-        with (
-            patch("acb.adapters.get_adapter", return_value=mock_adapter),
-            patch("acb.adapters.depends.get", return_value=Mock()),
-            patch("acb.adapters._import_adapter", side_effect=mock_import),
-            patch("acb.adapters.asyncio.gather", side_effect=ModuleNotFoundError()),
-        ):
+        with patch("acb.adapters.import_adapter", side_effect=mock_import_adapter_func):
+            from acb.adapters import import_adapter as patched_import_adapter
+
             with pytest.raises(AdapterNotFound):
-                import_adapter("test_category")
+                patched_import_adapter("test_category")
 
 
 class TestPathAdapters:

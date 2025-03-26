@@ -19,7 +19,7 @@ class RichConsole(Console):
 
     def __init__(self) -> None:
         super().__init__()
-        if not isinstance(self.config, str) and not self.config.deployed:
+        if not self.config.deployed:
             install(console=self)
 
     def _write_buffer(self) -> None:

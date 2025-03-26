@@ -53,14 +53,10 @@ def patch_record(
             logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
 
 
-async def _colorized_stderr_print_async(s: str) -> None:
-    colored = colorize(s)
-    await aprint(colored, use_stderr=True)
-
-
 def colorized_stderr_print(s: str) -> None:
+    colored = colorize(s)
     with supportTerminalColorsInWindows():
-        asyncio.run(_colorized_stderr_print_async(s))
+        asyncio.run(aprint(colored, use_stderr=True))
 
 
 def print_debug_info(msg: str) -> Any:

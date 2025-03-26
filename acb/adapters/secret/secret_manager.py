@@ -50,7 +50,7 @@ class Secret(SecretBase):
         self.logger.info(f"Fetched secret - {name}")
         return payload
 
-    async def create(self, name: str, value: str) -> t.NoReturn:
+    async def create(self, name: str, value: str) -> None:
         with suppress(AlreadyExists):
             request = CreateSecretRequest(
                 parent=self.parent,
@@ -65,7 +65,7 @@ class Secret(SecretBase):
             await self.client.add_secret_version(request)
             self.logger.debug(f"Created secret - {name}")
 
-    async def update(self, name: str, value: str) -> t.NoReturn:
+    async def update(self, name: str, value: str) -> None:
         secret = self.client.secret_path(self.project, name)
         request = AddSecretVersionRequest(
             parent=secret,
@@ -74,7 +74,7 @@ class Secret(SecretBase):
         await self.client.add_secret_version(request)
         self.logger.debug(f"Updated secret - {name}")
 
-    async def set(self, name: str, value: str) -> t.NoReturn:
+    async def set(self, name: str, value: str) -> None:
         if await self.exists(name):
             await self.update(name, value)
         else:
@@ -87,7 +87,7 @@ class Secret(SecretBase):
         except Exception:
             return False
 
-    async def delete(self, name: str) -> t.NoReturn:
+    async def delete(self, name: str) -> None:
         secret = self.client.secret_path(self.project, name)
         request = DeleteSecretRequest(name=secret)
         await self.client.delete_secret(request=request)

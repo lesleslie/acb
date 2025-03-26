@@ -1,5 +1,3 @@
-import typing as t
-
 from logfire import (
     configure,
     instrument_httpx,
@@ -17,13 +15,13 @@ from ._base import MonitoringBase, MonitoringBaseSettings
 
 
 class MonitoringSettings(MonitoringBaseSettings):
-    logfire_token: t.Optional[SecretStr] = None
+    logfire_token: SecretStr = SecretStr("secret")
 
 
 class Monitoring(MonitoringBase):
     async def init(self) -> None:
         configure(
-            token=self.config.secret.logfire_token.get_secret_value(),
+            token=self.config.monitoring.logfire_token.get_secret_value(),
             service_name=self.config.app.name,
             service_version=self.config.app.version,
         )

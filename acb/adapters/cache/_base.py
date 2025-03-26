@@ -1,16 +1,11 @@
-import hashlib
 import typing as t
 
-import dill
 from aiocache import BaseCache
 from aiocache.serializers import BaseSerializer
-from itsdangerous.serializer import Serializer as SecureSerializer
 from msgspec import msgpack
 from acb.actions.compress import compress, decompress
-from acb.config import AdapterBase, Config, Settings, import_adapter
+from acb.config import AdapterBase, Config, Settings
 from acb.depends import depends
-
-Logger = import_adapter()
 
 
 class CacheBaseSettings(Settings):
@@ -39,32 +34,6 @@ class MsgPackSerializer(BaseSerializer):
             return None
         msgpack_data = decompress.brotli(value)
         return msgpack.decode(msgpack_data)  # type: ignore
-
-
-class SecurePickleSerializer(BaseSerializer):
-    DEFAULT_ENCODING = None
-
-    @depends.inject
-    def __init__(
-        self, config: Config = depends(), *args: t.Any, **kwargs: t.Any
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.serializer = SecureSerializer(
-            secret_key=config.app.secret_key.get_secret_value(),
-            salt=config.app.secure_salt.get_secret_value(),
-            serializer=dill,
-            signer_kwargs=dict(digest_method=hashlib.sha256),
-        )
-
-    def dumps(self, value: t.Any) -> bytes:  # type: ignore
-        serialized_data = self.serializer.dumps(value)
-        return compress.brotli(serialized_data)
-
-    def loads(self, value: bytes | None) -> t.Any:  # type: ignore
-        if value is None:
-            return None
-        serialized_data = decompress.brotli(value)
-        return self.serializer.loads(serialized_data)
 
 
 class CacheProtocol(t.Protocol):

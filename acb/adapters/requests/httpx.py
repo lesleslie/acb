@@ -6,6 +6,7 @@ from httpcore import Request
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
 from redis.asyncio import Redis as AsyncRedis
+from acb.adapters import import_adapter
 from acb.depends import depends
 
 from ._base import RequestsBase, RequestsBaseSettings
@@ -114,6 +115,7 @@ class Requests(RequestsBase):
 
     @depends.inject
     async def init(self) -> None:  # type: ignore
+        import_adapter("cache")
         self.storage = AsyncRedisStorage(
             client=AsyncRedis(
                 host=self.config.cache.host.get_secret_value(),
