@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:6d34f051098a029296f1346a60e31a88a04d2b427b790ebcc6d49285db6d1e1c"
+content_hash = "sha256:712069d7fde55f239b6f45a1dd7d24b7e04c151f7921b46a2828c141c5dabc9d"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -585,7 +585,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.14.8"
+version = "0.14.9"
 summary = ""
 dependencies = [
     "autotyping",
@@ -603,8 +603,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.14.8-py3-none-any.whl", hash = "sha256:c00a382a2a7a8ec318a8ed48eac7326a25d97476fd20a7180342ffd4e7142062"},
-    {file = "crackerjack-0.14.8.tar.gz", hash = "sha256:b6245a4af16ac1e98a01efc7134b684a24492c3a4690c21cf1b7e87e84c412fa"},
+    {file = "crackerjack-0.14.9-py3-none-any.whl", hash = "sha256:61ed47cb654b79049e8bc6d6e113811a2c7e6ef3d645d9b44e0159cba469f5fc"},
+    {file = "crackerjack-0.14.9.tar.gz", hash = "sha256:bce116880e63f5f35e3f0543112569ad6bb03371e23eeea2b26e711134bf8534"},
 ]
 
 [[package]]
@@ -956,17 +956,17 @@ files = [
 
 [[package]]
 name = "google-crc32c"
-version = "1.7.0"
+version = "1.7.1"
 summary = ""
 files = [
-    {file = "google_crc32c-1.7.0-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:76bb19d182b999f9c9d580b1d7ab6e9334ab23dd669bf91f501812103408c85b"},
-    {file = "google_crc32c-1.7.0-cp313-cp313-macosx_12_0_x86_64.whl", hash = "sha256:6a40522958040051c755a173eb98c05ad4d64a6dd898888c3e5ccca2d1cbdcdc"},
-    {file = "google_crc32c-1.7.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f714fe5cdf5007d7064c57cf7471a99e0cbafda24ddfa829117fc3baafa424f7"},
-    {file = "google_crc32c-1.7.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f04e58dbe1bf0c9398e603a9be5aaa09e0ba7eb022a3293195d8749459a01069"},
-    {file = "google_crc32c-1.7.0-cp313-cp313-win_amd64.whl", hash = "sha256:e545b51ddf97f604d30114f7c23eecaf4c06cd6c023ff1ae0b80dcd99af32833"},
-    {file = "google_crc32c-1.7.0-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:364067b063664dd8d1fec75a3fe85edf05c46f688365269beccaf42ef5dfe889"},
-    {file = "google_crc32c-1.7.0-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e1b0d6044799f6ac51d1cc2decb997280a83c448b3bef517a54b57a3b71921c0"},
-    {file = "google_crc32c-1.7.0.tar.gz", hash = "sha256:c8c15a04b290c7556f277acc55ad98503a8bc0893ea6860fd5b5d210f3f558ce"},
+    {file = "google_crc32c-1.7.1-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:df8b38bdaf1629d62d51be8bdd04888f37c451564c2042d36e5812da9eff3c35"},
+    {file = "google_crc32c-1.7.1-cp313-cp313-macosx_12_0_x86_64.whl", hash = "sha256:e42e20a83a29aa2709a0cf271c7f8aefaa23b7ab52e53b322585297bb94d4638"},
+    {file = "google_crc32c-1.7.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:905a385140bf492ac300026717af339790921f411c0dfd9aa5a9e69a08ed32eb"},
+    {file = "google_crc32c-1.7.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6b211ddaf20f7ebeec5c333448582c224a7c90a9d98826fbab82c0ddc11348e6"},
+    {file = "google_crc32c-1.7.1-cp313-cp313-win_amd64.whl", hash = "sha256:0f99eaa09a9a7e642a61e06742856eec8b19fc0037832e03f941fe7cf0c8e4db"},
+    {file = "google_crc32c-1.7.1-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:32d1da0d74ec5634a05f53ef7df18fc646666a25efaaca9fc7dcfd4caf1d98c3"},
+    {file = "google_crc32c-1.7.1-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e10554d4abc5238823112c2ad7e4560f96c7bf3820b202660373d769d9e6e4c9"},
+    {file = "google_crc32c-1.7.1.tar.gz", hash = "sha256:2bff2305f98846f3e825dbeec9ee406f89da7962accdb29356e4eadc251bd472"},
 ]
 
 [[package]]
@@ -1333,7 +1333,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "3.10.0"
+version = "3.11.0"
 summary = ""
 dependencies = [
     "executing",
@@ -1345,64 +1345,64 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "logfire-3.10.0-py3-none-any.whl", hash = "sha256:9c174ecdc03f2a976ef7b423c2c4b222a2f9316f9b6605f77b7d1378225eed91"},
-    {file = "logfire-3.10.0.tar.gz", hash = "sha256:151d058f7e2c9d657b3ed6c2362494226a7b90e973d0cd7abb339999bbb0e078"},
+    {file = "logfire-3.11.0-py3-none-any.whl", hash = "sha256:bd20e697030510cfc834b1805945b1ad62ac057679d01d13579ed2f454f0e979"},
+    {file = "logfire-3.11.0.tar.gz", hash = "sha256:2ce9e58d6a7eb6fb9888fe12464d2284d16479e49ade766846fcb84e1c4a1abe"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.10.0"
+version = "3.11.0"
 extras = ["httpx"]
 summary = ""
 dependencies = [
-    "logfire==3.10.0",
+    "logfire==3.11.0",
     "opentelemetry-instrumentation-httpx",
 ]
 files = [
-    {file = "logfire-3.10.0-py3-none-any.whl", hash = "sha256:9c174ecdc03f2a976ef7b423c2c4b222a2f9316f9b6605f77b7d1378225eed91"},
-    {file = "logfire-3.10.0.tar.gz", hash = "sha256:151d058f7e2c9d657b3ed6c2362494226a7b90e973d0cd7abb339999bbb0e078"},
+    {file = "logfire-3.11.0-py3-none-any.whl", hash = "sha256:bd20e697030510cfc834b1805945b1ad62ac057679d01d13579ed2f454f0e979"},
+    {file = "logfire-3.11.0.tar.gz", hash = "sha256:2ce9e58d6a7eb6fb9888fe12464d2284d16479e49ade766846fcb84e1c4a1abe"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.10.0"
+version = "3.11.0"
 extras = ["redis"]
 summary = ""
 dependencies = [
-    "logfire==3.10.0",
+    "logfire==3.11.0",
     "opentelemetry-instrumentation-redis",
 ]
 files = [
-    {file = "logfire-3.10.0-py3-none-any.whl", hash = "sha256:9c174ecdc03f2a976ef7b423c2c4b222a2f9316f9b6605f77b7d1378225eed91"},
-    {file = "logfire-3.10.0.tar.gz", hash = "sha256:151d058f7e2c9d657b3ed6c2362494226a7b90e973d0cd7abb339999bbb0e078"},
+    {file = "logfire-3.11.0-py3-none-any.whl", hash = "sha256:bd20e697030510cfc834b1805945b1ad62ac057679d01d13579ed2f454f0e979"},
+    {file = "logfire-3.11.0.tar.gz", hash = "sha256:2ce9e58d6a7eb6fb9888fe12464d2284d16479e49ade766846fcb84e1c4a1abe"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.10.0"
+version = "3.11.0"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "logfire==3.10.0",
+    "logfire==3.11.0",
     "opentelemetry-instrumentation-sqlalchemy",
 ]
 files = [
-    {file = "logfire-3.10.0-py3-none-any.whl", hash = "sha256:9c174ecdc03f2a976ef7b423c2c4b222a2f9316f9b6605f77b7d1378225eed91"},
-    {file = "logfire-3.10.0.tar.gz", hash = "sha256:151d058f7e2c9d657b3ed6c2362494226a7b90e973d0cd7abb339999bbb0e078"},
+    {file = "logfire-3.11.0-py3-none-any.whl", hash = "sha256:bd20e697030510cfc834b1805945b1ad62ac057679d01d13579ed2f454f0e979"},
+    {file = "logfire-3.11.0.tar.gz", hash = "sha256:2ce9e58d6a7eb6fb9888fe12464d2284d16479e49ade766846fcb84e1c4a1abe"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.10.0"
+version = "3.11.0"
 extras = ["system-metrics"]
 summary = ""
 dependencies = [
-    "logfire==3.10.0",
+    "logfire==3.11.0",
     "opentelemetry-instrumentation-system-metrics",
 ]
 files = [
-    {file = "logfire-3.10.0-py3-none-any.whl", hash = "sha256:9c174ecdc03f2a976ef7b423c2c4b222a2f9316f9b6605f77b7d1378225eed91"},
-    {file = "logfire-3.10.0.tar.gz", hash = "sha256:151d058f7e2c9d657b3ed6c2362494226a7b90e973d0cd7abb339999bbb0e078"},
+    {file = "logfire-3.11.0-py3-none-any.whl", hash = "sha256:bd20e697030510cfc834b1805945b1ad62ac057679d01d13579ed2f454f0e979"},
+    {file = "logfire-3.11.0.tar.gz", hash = "sha256:2ce9e58d6a7eb6fb9888fe12464d2284d16479e49ade766846fcb84e1c4a1abe"},
 ]
 
 [[package]]
@@ -1511,6 +1511,46 @@ files = [
 name = "msgspec"
 version = "0.19.0"
 summary = ""
+files = [
+    {file = "msgspec-0.19.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:f12d30dd6266557aaaf0aa0f9580a9a8fbeadfa83699c487713e355ec5f0bd86"},
+    {file = "msgspec-0.19.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:82b2c42c1b9ebc89e822e7e13bbe9d17ede0c23c187469fdd9505afd5a481314"},
+    {file = "msgspec-0.19.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:19746b50be214a54239aab822964f2ac81e38b0055cca94808359d779338c10e"},
+    {file = "msgspec-0.19.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:60ef4bdb0ec8e4ad62e5a1f95230c08efb1f64f32e6e8dd2ced685bcc73858b5"},
+    {file = "msgspec-0.19.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ac7f7c377c122b649f7545810c6cd1b47586e3aa3059126ce3516ac7ccc6a6a9"},
+    {file = "msgspec-0.19.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a5bc1472223a643f5ffb5bf46ccdede7f9795078194f14edd69e3aab7020d327"},
+    {file = "msgspec-0.19.0-cp313-cp313-win_amd64.whl", hash = "sha256:317050bc0f7739cb30d257ff09152ca309bf5a369854bbf1e57dffc310c1f20f"},
+    {file = "msgspec-0.19.0.tar.gz", hash = "sha256:604037e7cd475345848116e89c553aa9a233259733ab51986ac924ab1b976f8e"},
+]
+
+[[package]]
+name = "msgspec"
+version = "0.19.0"
+extras = ["toml"]
+summary = ""
+dependencies = [
+    "msgspec==0.19.0",
+    "tomli-w",
+]
+files = [
+    {file = "msgspec-0.19.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:f12d30dd6266557aaaf0aa0f9580a9a8fbeadfa83699c487713e355ec5f0bd86"},
+    {file = "msgspec-0.19.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:82b2c42c1b9ebc89e822e7e13bbe9d17ede0c23c187469fdd9505afd5a481314"},
+    {file = "msgspec-0.19.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:19746b50be214a54239aab822964f2ac81e38b0055cca94808359d779338c10e"},
+    {file = "msgspec-0.19.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:60ef4bdb0ec8e4ad62e5a1f95230c08efb1f64f32e6e8dd2ced685bcc73858b5"},
+    {file = "msgspec-0.19.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ac7f7c377c122b649f7545810c6cd1b47586e3aa3059126ce3516ac7ccc6a6a9"},
+    {file = "msgspec-0.19.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a5bc1472223a643f5ffb5bf46ccdede7f9795078194f14edd69e3aab7020d327"},
+    {file = "msgspec-0.19.0-cp313-cp313-win_amd64.whl", hash = "sha256:317050bc0f7739cb30d257ff09152ca309bf5a369854bbf1e57dffc310c1f20f"},
+    {file = "msgspec-0.19.0.tar.gz", hash = "sha256:604037e7cd475345848116e89c553aa9a233259733ab51986ac924ab1b976f8e"},
+]
+
+[[package]]
+name = "msgspec"
+version = "0.19.0"
+extras = ["yaml"]
+summary = ""
+dependencies = [
+    "msgspec==0.19.0",
+    "pyyaml",
+]
 files = [
     {file = "msgspec-0.19.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:f12d30dd6266557aaaf0aa0f9580a9a8fbeadfa83699c487713e355ec5f0bd86"},
     {file = "msgspec-0.19.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:82b2c42c1b9ebc89e822e7e13bbe9d17ede0c23c187469fdd9505afd5a481314"},
