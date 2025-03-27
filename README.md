@@ -55,16 +55,19 @@ ACB supports various optional dependencies for different adapters and functional
 
 | Feature Group | Components | Installation Command |
 |---------------|------------|----------------------|
-| Redis | Cache, NoSQL | `pdm add "acb[redis]"` |
+| Cache | Memory, Redis | `pdm add "acb[cache]"` |
 | SQL | Database (MySQL, PostgreSQL) | `pdm add "acb[sql]"` |
 | NoSQL | Database (MongoDB, Firestore, Redis) | `pdm add "acb[nosql]"` |
 | Storage | File storage (S3, GCS, Azure, local) | `pdm add "acb[storage]"` |
-| Logging | Loguru, structlog | `pdm add "acb[logging]"` |
-| Compression | gzip, brotli | `pdm add "acb[compression]"` |
-| Serialization | JSON, YAML, TOML, MsgPack | `pdm add "acb[serialization]"` |
-| Multiple Features | Combined dependencies | `pdm add "acb[redis,sql,nosql]"` |
-| Web Application | Typical web app stack | `pdm add "acb[redis,sql,storage]"` |
-| Complete | All dependencies | `pdm add "acb[all]"` |
+| DNS | Domain name management | `pdm add "acb[dns]"` |
+| Requests | HTTP clients (HTTPX, Niquests) | `pdm add "acb[requests]"` |
+| SMTP | Email sending (Gmail, Mailgun) | `pdm add "acb[smtp]"` |
+| FTPD | File transfer protocols (FTP, SFTP) | `pdm add "acb[ftpd]"` |
+| Secret | Secret management | `pdm add "acb[secret]"` |
+| Monitoring | Error tracking and monitoring | `pdm add "acb[monitoring]"` |
+| Multiple Features | Combined dependencies | `pdm add "acb[cache,sql,nosql]"` |
+| Web Application | Typical web app stack | `pdm add "acb[cache,sql,storage]"` |
+| Development | Development tools | `pdm add "acb[dev]"` |
 
 ## Architecture Overview
 
@@ -188,7 +191,7 @@ depends.set(MyService)
 
 # Inject dependencies into functions
 @depends.inject
-def process_data(data, config: Config = depends(), logger = depends("logger")):
+async def process_data(data, config: Config = depends(), logger = depends("logger")):
     logger.info(f"Processing data with app: {config.app.name}")
     # Process data...
     return result
@@ -297,12 +300,12 @@ Create your own reusable actions by adding Python modules to the actions directo
 ```python
 # myapp/actions/validate.py
 from pydantic import BaseModel
+import re
 
 class Validate(BaseModel):
     @staticmethod
     def email(email: str) -> bool:
         """Validate an email address"""
-        import re
         pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return bool(re.match(pattern, email))
 
@@ -362,6 +365,13 @@ class Stripe(PaymentBase):
             description=description
         )
         return response.id
+
+    async def refund(self, transaction_id: str) -> bool:
+        try:
+            await stripe.Refund.create(payment_intent=transaction_id)
+            return True
+        except stripe.error.StripeError:
+            return False
 ```
 
 ## Documentation

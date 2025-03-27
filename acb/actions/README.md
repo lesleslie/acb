@@ -84,37 +84,39 @@ Data serialization and deserialization with multiple formats.
 
 ```python
 from acb.actions.encode import encode, decode
-
-# Sample data
-data = {
-    "name": "ACB Framework",
-    "version": "1.0.0",
-    "features": ["actions", "adapters", "dependency injection"],
-    "active": True,
-    "timestamp": 1632152400
-}
-
-# Encode to various formats
-json_data = await encode.json(data)
-yaml_data = await encode.yaml(data, sort_keys=True)
-msgpack_data = await encode.msgpack(data)
-toml_data = await encode.toml(data)
-pickle_data = await encode.pickle(data)
-
-# Decode from various formats
-json_decoded = await decode.json(json_data)
-yaml_decoded = await decode.yaml(yaml_data)
-msgpack_decoded = await decode.msgpack(msgpack_data, use_list=True)
-toml_decoded = await decode.toml(toml_data)
-pickle_decoded = await decode.pickle(pickle_data)
-
-# You can also save directly to a file using AsyncPath
 from aiopath import AsyncPath
-path = AsyncPath("config.json")
-await encode.json(data, path=path)
 
-# And load from a file
-loaded_data = await decode.json(path)
+async def example_usage():
+    # Sample data
+    data = {
+        "name": "ACB Framework",
+        "version": "1.0.0",
+        "features": ["actions", "adapters", "dependency injection"],
+        "active": True,
+        "timestamp": 1632152400
+    }
+
+    # Encode to various formats
+    json_data = await encode.json(data)
+    yaml_data = await encode.yaml(data, sort_keys=True)
+    msgpack_data = await encode.msgpack(data)
+    toml_data = await encode.toml(data)
+    pickle_data = await encode.pickle(data)
+
+    # Decode from various formats
+    json_decoded = await decode.json(json_data)
+    yaml_decoded = await decode.yaml(yaml_data)
+    msgpack_decoded = await decode.msgpack(msgpack_data, use_list=True)
+    toml_decoded = await decode.toml(toml_data)
+    pickle_decoded = await decode.pickle(pickle_data)
+
+    # You can also save directly to a file using AsyncPath
+    path = AsyncPath("config.json")
+    await encode.json(data, path=path)
+
+    # And load from a file
+    loaded_data = await decode.json(path)
+    return loaded_data
 ```
 
 ### Hash
@@ -133,23 +135,30 @@ Secure hashing functions for data integrity and checksum verification.
 from acb.actions.hash import hash
 from aiopath import AsyncPath
 
-# Hash a string
-text = "Hash this text"
-blake3_hash = await hash.blake3(text)
-print(blake3_hash)  # Returns a hexadecimal string
+async def hash_examples():
+    # Hash a string
+    text = "Hash this text"
+    blake3_hash = await hash.blake3(text)
+    print(blake3_hash)  # Returns a hexadecimal string
 
-# Hash a file
-file_path = AsyncPath("document.pdf")
-file_hash = await hash.blake3(file_path)
-print(file_hash)  # Returns the hash of the file's contents
+    # Hash a file
+    file_path = AsyncPath("document.pdf")
+    file_hash = await hash.blake3(file_path)
+    print(file_hash)  # Returns the hash of the file's contents
 
-# Get CRC32C checksum (useful for Google Cloud Storage)
-crc = await hash.crc32c("Checksum this")
-print(crc)  # Returns an integer
+    # Get CRC32C checksum (useful for Google Cloud Storage)
+    crc = await hash.crc32c("Checksum this")
+    print(crc)  # Returns an integer
 
-# Get MD5 hash (when compatibility is needed)
-md5sum = await hash.md5("Legacy hash")
-print(md5sum)  # Returns a hexadecimal string
+    # Get MD5 hash (when compatibility is needed)
+    md5sum = await hash.md5("Legacy hash")
+    print(md5sum)  # Returns a hexadecimal string
+
+    return {
+        "blake3": blake3_hash,
+        "crc32c": crc,
+        "md5": md5sum
+    }
 ```
 
 ## Creating Custom Actions
@@ -189,19 +198,20 @@ Here's an example of creating a custom validation action:
 # myapp/actions/validate.py
 from pydantic import BaseModel
 import re
+from typing import Pattern
 
 class Validate(BaseModel):
     @staticmethod
     def email(email: str) -> bool:
         """Validate an email address"""
-        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        return bool(re.match(pattern, email))
+        pattern: Pattern[str] = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+        return bool(pattern.match(email))
 
     @staticmethod
     def url(url: str) -> bool:
         """Validate a URL"""
-        pattern = r"^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$"
-        return bool(re.match(pattern, url))
+        pattern: Pattern[str] = re.compile(r"^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$")
+        return bool(pattern.match(url))
 
     @staticmethod
     def phone(phone: str) -> bool:
@@ -209,8 +219,8 @@ class Validate(BaseModel):
         # Remove common separators
         cleaned = re.sub(r"[\s\-\(\)\.]+", "", phone)
         # Check for international or local format
-        pattern = r"^(\+\d{1,3})?(\d{10,15})$"
-        return bool(re.match(pattern, cleaned))
+        pattern: Pattern[str] = re.compile(r"^(\+\d{1,3})?(\d{10,15})$")
+        return bool(pattern.match(cleaned))
 
 # Export an instance
 validate = Validate()

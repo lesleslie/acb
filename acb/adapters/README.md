@@ -156,15 +156,17 @@ storage:
 from acb.depends import depends
 from acb.adapters import import_adapter
 
-# Import an adapter class (automatically selects the one enabled in config)
-Cache = import_adapter("cache")  # Returns Redis or Memory adapter based on config
+async def cache_example():
+    # Import an adapter class (automatically selects the one enabled in config)
+    Cache = import_adapter("cache")  # Returns Redis or Memory adapter based on config
 
-# Get an instance via dependency injection
-cache = depends.get(Cache)
+    # Get an instance via dependency injection
+    cache = depends.get(Cache)
 
-# Use the adapter with a consistent API
-await cache.set("key", "value", ttl=300)
-value = await cache.get("key")
+    # Use the adapter with a consistent API
+    await cache.set("key", "value", ttl=300)
+    value = await cache.get("key")
+    return value
 ```
 
 ### Injecting Adapters Into Functions
@@ -172,6 +174,7 @@ value = await cache.get("key")
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
+from typing import Any
 
 # Define adapter types
 Storage = import_adapter("storage")
@@ -182,10 +185,11 @@ async def process_file(
     filename: str,
     storage=depends(Storage),  # Injected storage adapter
     logger=depends(Logger)     # Injected logger adapter
-):
+) -> dict[str, Any]:
     logger.info(f"Processing file: {filename}")
     content = await storage.get_file(filename)
     # Process the file...
+    result = {"filename": filename, "size": len(content), "processed": True}
     return result
 ```
 
@@ -193,14 +197,15 @@ async def process_file(
 
 ```python
 from acb.depends import depends
+from typing import Any, Optional
 
 # Import multiple adapters simultaneously
 Cache, Storage, SQL = depends.get("cache", "storage", "sql")
 
 # Use them together
-async def backup_data(key):
+async def backup_data(key: str) -> bool:
     # Get data from cache
-    data = await Cache.get(key)
+    data: Optional[dict[str, Any]] = await Cache.get(key)
     if not data:
         # If not in cache, get from database
         data = await SQL.fetch_one("SELECT data FROM items WHERE key = ?", key)
@@ -211,6 +216,8 @@ async def backup_data(key):
     # Backup to storage
     if data:
         await Storage.put_file(f"backups/{key}.json", data)
+        return True
+    return False
 ```
 
 ## Implementing Custom Adapters
@@ -250,6 +257,7 @@ class PaymentBase(AdapterBase):
 from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
 import stripe
+from typing import Any
 
 class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
@@ -261,12 +269,19 @@ class Stripe(PaymentBase):
         stripe.api_key = self.settings.api_key.get_secret_value()
 
     async def charge(self, amount: float, description: str) -> str:
-        response = await stripe.PaymentIntent.create(
+        response: Any = await stripe.PaymentIntent.create(
             amount=int(amount * 100),  # Convert to cents
             currency=self.settings.currency,
             description=description
         )
         return response.id
+
+    async def refund(self, transaction_id: str) -> bool:
+        try:
+            await stripe.Refund.create(payment_intent=transaction_id)
+            return True
+        except stripe.error.StripeError:
+            return False
 ```
 
 4. Update your `settings/adapters.yml` file:
@@ -280,14 +295,19 @@ payment: stripe
 from acb.depends import depends
 from acb.adapters import import_adapter
 
-# Import your adapter
-Payment = import_adapter("payment")
+async def payment_example():
+    # Import your adapter
+    Payment = import_adapter("payment")
 
-# Get an instance
-payment = depends.get(Payment)
+    # Get an instance
+    payment = depends.get(Payment)
 
-# Use it
-transaction_id = await payment.charge(19.99, "Premium subscription")
+    # Use it
+    transaction_id = await payment.charge(19.99, "Premium subscription")
+
+    # Later, if needed, refund the payment
+    success = await payment.refund(transaction_id)
+    return {"transaction_id": transaction_id, "refunded": success}
 ```
 
 ## Adapter Lifecycle
