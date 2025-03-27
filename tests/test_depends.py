@@ -64,7 +64,7 @@ class TestDepends:
         ):
             result = Depends.get("adapter_name")
 
-        mock_import_adapter.assert_called_once_with("adapter_name")
+        mock_import_adapter.assert_called_once_with(["adapter_name"])
         mock_repository.get.assert_called_once_with("imported_adapter")
         assert result == "get_result"
 

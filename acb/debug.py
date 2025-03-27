@@ -11,7 +11,7 @@ from devtools import pformat
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
 from acb.adapters import import_adapter
-from acb.config import Config, adapter_registry
+from acb.config import adapter_registry
 from acb.depends import depends
 
 __all__ = [
@@ -25,7 +25,7 @@ __all__ = [
 
 Logger = import_adapter()
 
-config = depends.get(Config)
+config = depends.get()
 
 
 def get_calling_module() -> Path | None:

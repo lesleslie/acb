@@ -47,7 +47,7 @@ console = RichConsole()
 table_args: dict[str, t.Any] = {
     "show_lines": True,
     "box": box.ROUNDED,
-    "min_width": 88,
+    "min_width": 100,
     "border_style": "bold blue",
 }
 

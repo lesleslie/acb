@@ -8,7 +8,7 @@ from logfire import (
     loguru_handler,
 )
 from pydantic import SecretStr
-from acb.adapters import get_installed_adapters, import_adapter
+from acb.adapters import get_installed_adapters
 from acb.depends import depends
 
 from ._base import MonitoringBase, MonitoringBaseSettings
@@ -35,7 +35,7 @@ class Monitoring(MonitoringBase):
                 case "redis":
                     instrument_redis()
                 case "sqlalchemy":
-                    sql = depends.get(import_adapter("sql"))
+                    sql = depends.get()
                     instrument_sqlalchemy(engine=sql.engine)
                 case _:
                     pass

@@ -169,7 +169,7 @@ class FileSecretSource(PydanticBaseSettingsSource):
 class ManagerSecretSource(PydanticBaseSettingsSource):
     @cached_property
     def manager(self):
-        manager = depends.get(import_adapter("secret"))
+        manager = depends.get("secret")
         return manager
 
     async def load_secrets(self) -> t.Any:
@@ -395,9 +395,9 @@ class Config(BaseModel, arbitrary_types_allowed=True, extra="allow"):
 
 
 depends.set(Config)
-config = depends.get(Config).init()
+config = depends.get().init()
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 
 class AdapterBase:

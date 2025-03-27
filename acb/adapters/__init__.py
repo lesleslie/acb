@@ -128,7 +128,7 @@ async def _import_adapter(
         else:
             adapter.installed = True
             if adapter_category != "logger":
-                logger = depends.get("logger")
+                logger = depends.get()
                 logger.info(f"{adapter.class_name} adapter installed")
         finally:
             _install_lock.get().remove(adapter.category)
@@ -145,9 +145,7 @@ def import_adapter(
     | Exception
     | list[str | Exception]
 ):
-    from acb.config import Config
-
-    config = depends.get(Config)
+    config = depends.get()
 
     if isinstance(adapter_categories, str):
         adapter_categories = [adapter_categories]
