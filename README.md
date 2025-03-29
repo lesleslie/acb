@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="https://drive.google.com/uc?id=1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC">
+<img src="./images/acb-logo.png" alt="FastBlocks Logo">
 </p>
 
 > **ACB Documentation**: [Main](./README.md) | [Core Systems](./acb/README.md) | [Actions](./acb/actions/README.md) | [Adapters](./acb/adapters/README.md)

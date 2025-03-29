@@ -49,20 +49,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-mock",
-    "pyyaml",
-    "google-crc32c",
     "pytest",
-    "pdm-bump",
     "autotyping",
+    "msgspec-python313-pre",
+    "pytest-cov",
+    "pdm-bump",
+    "tomli-w",
+    "pyyaml",
+    "pytest-mock",
+    "google-crc32c",
+    "uv",
     "pre-commit",
     "pyfiglet",
-    "pytest-asyncio",
     "pdm",
-    "pytest-cov",
-    "tomli-w",
-    "msgspec-python313-pre",
-    "uv",
+    "pytest-asyncio",
 ]
 
 [tool.refurb]
@@ -73,15 +73,15 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
     "B607",
-    "B311",
-    "B602",
-    "B301",
-    "B404",
-    "B101",
     "B704",
+    "B301",
+    "B311",
     "B603",
+    "B101",
+    "B403",
+    "B404",
+    "B602",
 ]
 
 [tool.pyright]
@@ -174,7 +174,7 @@ python_functions = [
 
 [project]
 name = "acb"
-version = "0.12.5"
+version = "0.12.6"
 description = "Default template for PDM package"
 dependencies = [
     "arrow>=1.3.0",
@@ -191,7 +191,7 @@ dependencies = [
     "aiopath>=0.7.7",
     "pyyaml>=6.0.2",
     "google-crc32c>=1.7.1",
-    "pydantic[email]>=2.10.6",
+    "pydantic[email]>=2.11.1",
     "devtools>=0.12.2",
     "typer>=0.15.2",
     "tomli-w>=1.2.0",
@@ -250,7 +250,7 @@ smtp = [
     "mailgun>=0.1.1",
 ]
 sql = [
-    "sqlalchemy>=2.0.39",
+    "sqlalchemy>=2.0.40",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
     "babel>=2.17.0",
@@ -279,7 +279,7 @@ monitoring = [
     "logfire[system-metrics]>=3.11.0",
 ]
 dev = [
-    "crackerjack>=0.14.9",
+    "crackerjack>=0.15.0",
 ]
 
 [build-system]
