@@ -33,12 +33,14 @@ class Hash:
         return crc32c(obj.encode())  # type: ignore
 
     @staticmethod
-    async def md5(obj: Path | AsyncPath | str) -> str:
+    async def md5(
+        obj: Path | AsyncPath | str, ascii: bool = False, usedforsecurity: bool = True
+    ) -> str:
         if isinstance(obj, Path | AsyncPath):
             obj = await AsyncPath(obj).read_text()
         return hashlib.md5(
-            obj.encode(),  # type: ignore
-            usedforsecurity=False,
+            obj.encode() if not ascii else obj.encode("ascii"),  # type: ignore
+            usedforsecurity=usedforsecurity,
         ).hexdigest()
 
 
