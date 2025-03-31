@@ -9,7 +9,7 @@ from types import FrameType
 import dill
 import msgspec
 import yaml
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 __all__: list[str] = ["load", "dump", "encode", "decode"]
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from re import search
 
 import arrow
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from pydantic import BaseModel, create_model
 from sqlmodel import SQLModel, select
 from acb.actions.encode import load

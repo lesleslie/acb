@@ -1,10 +1,8 @@
+import typing as t
 from contextvars import ContextVar
 from importlib import import_module, util
-from inspect import currentframe
-from pathlib import Path
-from typing import Protocol, runtime_checkable
 
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from pydantic import BaseModel
 
 
@@ -25,8 +23,8 @@ class Action(BaseModel):
 action_registry: ContextVar[list[Action]] = ContextVar("action_registry", default=[])
 
 
-@runtime_checkable
-class ActionProtocol(Protocol):
+@t.runtime_checkable
+class ActionProtocol(t.Protocol):
     def __getattr__(self, item: str) -> Action: ...
 
 
@@ -40,26 +38,25 @@ class Actions:
 actions = Actions()
 
 
-def create_action(path: Path) -> Action:
+def create_action(path: AsyncPath) -> Action:
     return Action(
         name=path.stem,
         module=".".join(path.parts[-3:]).removesuffix(".py"),
         pkg=path.parent.parent.parent.stem,
-        path=AsyncPath(path),
+        path=path,
     )
 
 
-def register_actions() -> list[Action]:
-    caller_file = currentframe().f_back.f_back.f_code.co_filename
-    actions_path = Path(caller_file).parent / "actions"
+async def register_actions(path: AsyncPath) -> list[Action]:
+    actions_path = path / "actions"
 
-    if not actions_path.exists():
-        actions_path = Path(__file__).parent
+    if not await actions_path.exists():
+        return []
 
-    found_actions: dict[str, Path] = {
+    found_actions: dict[str, AsyncPath] = {
         a.stem: a
-        for a in actions_path.iterdir()
-        if a.is_dir() and not a.name.startswith("_")
+        async for a in actions_path.iterdir()
+        if await a.is_dir() and not a.name.startswith("_")
     }
 
     registry = action_registry.get()
@@ -72,7 +69,7 @@ def register_actions() -> list[Action]:
         if action_index is not None:
             registry.pop(action_index)
 
-        _action = create_action(path=AsyncPath(path))
+        _action = create_action(path=path)
         registry.append(_action)
 
         try:

@@ -1,11 +1,13 @@
 import typing as t
+from contextlib import suppress
 from contextvars import ContextVar
 from importlib import import_module
 from inspect import isclass
 
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from sqlmodel import SQLModel
 from acb.adapters import get_adapter, get_installed_adapters, import_adapter, root_path
+from acb.debug import debug
 from acb.depends import depends
 
 from ._base import ModelsBase, ModelsBaseSettings
@@ -27,20 +29,22 @@ class Models(ModelsBase):
         if "adapters" in path.parts:
             depth = -5
         module_path = ".".join(path.parts[depth:]).removesuffix(".py")
-        module = import_module(module_path)
-        _imported_models = []
-        for name, model in {
-            n: m
-            for n, m in vars(module).items()
-            if isclass(m)
-            and issubclass(m, SQLModel)
-            and hasattr(m, "__table__")
-            and n not in imported_models.get()
-        }.items():
-            setattr(self.sql, name, model)
-            _imported_models.append(name)
-            self.logger.debug(f"{name} model imported")
-        imported_models.get().extend(_imported_models)
+        debug(path, depth, module_path)
+        with suppress(ModuleNotFoundError):
+            module = import_module(module_path)
+            _imported_models = []
+            for name, model in {
+                n: m
+                for n, m in vars(module).items()
+                if isclass(m)
+                and issubclass(m, SQLModel)
+                and hasattr(m, "__table__")
+                and n not in imported_models.get()
+            }.items():
+                setattr(self.sql, name, model)
+                _imported_models.append(name)
+                self.logger.debug(f"{name} model imported")
+            imported_models.get().extend(_imported_models)
 
     async def init(self) -> None:
         SQLModel.metadata.clear()

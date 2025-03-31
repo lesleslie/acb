@@ -3,7 +3,7 @@ from pathlib import Path
 from warnings import catch_warnings
 
 import arrow
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from blake3 import blake3  # type: ignore
 
 __all__: list[str] = ["hash"]

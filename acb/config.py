@@ -1,6 +1,5 @@
 import asyncio
 import typing as t
-from abc import ABC, abstractmethod
 from contextvars import ContextVar
 from enum import Enum
 from functools import cached_property
@@ -9,7 +8,7 @@ from secrets import token_bytes, token_urlsafe
 from string import punctuation
 
 import nest_asyncio
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from inflection import titleize, underscore
 from pydantic import BaseModel, Field, SecretStr, field_validator
 from pydantic._internal._utils import deep_update
@@ -43,6 +42,10 @@ async def get_version() -> str:
     elif await version_file.exists():
         return await version_file.read_text()
     return "0.0.1"
+
+
+def get_version_default() -> str:
+    return asyncio.run(get_version())
 
 
 project: str = ""
@@ -79,8 +82,32 @@ def gen_password(size: int = 10) -> str:
     return token_urlsafe(size)
 
 
-class PydanticBaseSettingsSource(ABC):
+class PydanticBaseSettingsSourceProtocol(t.Protocol):
+    adapter_name: str
+    secrets_path: AsyncPath
+    settings_cls: type["Settings"]
+    model_config: SettingsConfigDict
+
+    def __init__(
+        self,
+        settings_cls: type["Settings"],
+        secrets_path: AsyncPath = ...,
+    ) -> None: ...
+
+    def get_model_secrets(self) -> dict[str, FieldInfo]: ...
+
+    async def __call__(self) -> dict[str, t.Any]: ...
+
+    def __repr__(self) -> str: ...
+
+
+class PydanticBaseSettingsSource:
     adapter_name: str = "app"
+    secrets_path: AsyncPath = _secrets_path
+    settings_cls: type["Settings"]
+    model_config = SettingsConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(
         self,
@@ -101,9 +128,11 @@ class PydanticBaseSettingsSource(ABC):
             if v.annotation is SecretStr
         }
 
-    @abstractmethod
     async def __call__(self) -> dict[str, t.Any]:
         raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(secrets_path={self.secrets_path!r})"
 
 
 class InitSettingsSource(PydanticBaseSettingsSource):
@@ -111,13 +140,10 @@ class InitSettingsSource(PydanticBaseSettingsSource):
         self, settings_cls: type["Settings"], init_kwargs: dict[str, t.Any]
     ) -> None:
         self.init_kwargs = init_kwargs
-        super().__init__(settings_cls)
+        super().__init__(settings_cls=settings_cls)
 
     async def __call__(self) -> dict[str, t.Any]:
         return self.init_kwargs
-
-    def __repr__(self) -> str:
-        return f"InitSettingsSource(init_kwargs={self.init_kwargs!r})"
 
 
 class FileSecretSource(PydanticBaseSettingsSource):
@@ -161,9 +187,6 @@ class FileSecretSource(PydanticBaseSettingsSource):
                 _app_secrets.get().add(field_key)
 
         return data
-
-    def __repr__(self) -> str:
-        return f"FileSecretSource(_secrets_dir={self.secrets_path!r})"
 
 
 class ManagerSecretSource(PydanticBaseSettingsSource):
@@ -256,7 +279,7 @@ class YamlSettingsSource(PydanticBaseSettingsSource):
             await dump.yaml(yml_settings, yml_path, sort_keys=True)
 
         if self.adapter_name == "app":
-            project = yml_settings["project"]
+            project = yml_settings.get("project")
             app_name = yml_settings["name"]
 
         return yml_settings or {}
@@ -276,7 +299,7 @@ class Settings(BaseModel):
         extra="allow",
         arbitrary_types_allowed=True,
         validate_default=True,
-        secrets_dir=_secrets_path,
+        secrets_dir=Path(_secrets_path),
         protected_namespaces=("model_", "settings_"),
     )
 
@@ -303,23 +326,27 @@ class Settings(BaseModel):
         _secrets_path: AsyncPath = _secrets_path,
     ) -> dict[str, t.Any]:
         secrets_path = _secrets_path or self.model_config.get("secrets_dir")
-        init_settings = InitSettingsSource(self.__class__, init_kwargs=init_kwargs)
-        file_secret_settings = FileSecretSource(
-            self.__class__,
-            secrets_path=secrets_path,
+        init_settings: InitSettingsSource = InitSettingsSource(
+            self.__class__, init_kwargs=init_kwargs
         )
-        manager_secret_settings = ManagerSecretSource(
-            self.__class__,
-            secrets_path=secrets_path,
+        file_secret_settings: FileSecretSource = FileSecretSource(
+            self.__class__, secrets_path=secrets_path
         )
-        yaml_settings = YamlSettingsSource(self.__class__)
+        manager_secret_settings: ManagerSecretSource = ManagerSecretSource(
+            self.__class__, secrets_path=secrets_path
+        )
+        yaml_settings: YamlSettingsSource = YamlSettingsSource(self.__class__)
 
         sources = self.settings_customize_sources(
-            self.__class__,
-            init_settings=init_settings,
-            yaml_settings=yaml_settings,
-            file_secret_settings=file_secret_settings,
-            manager_secret_settings=manager_secret_settings,
+            settings_cls=self.__class__,
+            init_settings=t.cast(PydanticBaseSettingsSourceProtocol, init_settings),
+            yaml_settings=t.cast(PydanticBaseSettingsSourceProtocol, yaml_settings),
+            file_secret_settings=t.cast(
+                PydanticBaseSettingsSourceProtocol, file_secret_settings
+            ),
+            manager_secret_settings=t.cast(
+                PydanticBaseSettingsSourceProtocol, manager_secret_settings
+            ),
         )
         return deep_update(*reversed([await source() for source in sources]))
 
@@ -327,13 +354,13 @@ class Settings(BaseModel):
     def settings_customize_sources(
         cls,  # noqa: F841
         settings_cls: t.Type["Settings"],
-        init_settings: PydanticBaseSettingsSource,
-        yaml_settings: PydanticBaseSettingsSource,
-        file_secret_settings: PydanticBaseSettingsSource,
-        manager_secret_settings: PydanticBaseSettingsSource,
-    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        init_settings: PydanticBaseSettingsSourceProtocol,
+        yaml_settings: PydanticBaseSettingsSourceProtocol,
+        file_secret_settings: PydanticBaseSettingsSourceProtocol,
+        manager_secret_settings: PydanticBaseSettingsSourceProtocol,
+    ) -> tuple[PydanticBaseSettingsSourceProtocol, ...]:
         sources = [init_settings, yaml_settings, file_secret_settings]
-        if get_adapter("secret"):
+        if get_adapter("secret") is not None:
             sources.append(manager_secret_settings)
         return tuple(sources)
 
@@ -344,12 +371,8 @@ class DebugSettings(Settings):
     logger: bool = False
 
 
-def get_version_default() -> str:
-    return asyncio.run(get_version())
-
-
 class AppSettings(Settings):
-    name: str = "myapp"
+    name: str = root_path.stem
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
     title: t.Optional[str] = None

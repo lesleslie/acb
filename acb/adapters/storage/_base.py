@@ -2,7 +2,7 @@ import typing as t
 from functools import cached_property
 
 import nest_asyncio
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
 from acb.actions import hash

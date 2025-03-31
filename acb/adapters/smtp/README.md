@@ -158,7 +158,7 @@ await smtp.send_email(
 ### Sending with Attachments
 
 ```python
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 # Send an email with attachments
 await smtp.send_email(

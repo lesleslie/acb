@@ -84,7 +84,7 @@ Data serialization and deserialization with multiple formats.
 
 ```python
 from acb.actions.encode import encode, decode
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 async def example_usage():
     # Sample data
@@ -133,7 +133,7 @@ Secure hashing functions for data integrity and checksum verification.
 
 ```python
 from acb.actions.hash import hash
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 async def hash_examples():
     # Hash a string

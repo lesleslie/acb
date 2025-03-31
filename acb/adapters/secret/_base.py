@@ -1,6 +1,6 @@
 import typing as t
 
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from acb.config import AdapterBase, Settings, app_name
 
 

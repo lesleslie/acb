@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from acb.adapters import Adapter, adapter_registry
 
 
@@ -254,8 +254,8 @@ def patch_adapter_system() -> t.Generator[None, None, None]:
     with (
         patch("pathlib.Path.exists", mock_sync_exists),
         patch("pathlib.Path.read_text", mock_sync_read_text),
-        patch("aiopath.AsyncPath.exists", mock_async_exists),
-        patch("aiopath.AsyncPath.read_text", mock_async_read_text),
+        patch("anyio.Path.exists", mock_async_exists),
+        patch("anyio.Path.read_text", mock_async_read_text),
         patch("acb.adapters.yaml_decode", side_effect=mock_yaml_decode),
         patch("msgspec.yaml.decode", side_effect=mock_yaml_decode),
     ):
@@ -267,6 +267,11 @@ def setup_test_environment(
     monkeypatch: pytest.MonkeyPatch, patch_adapter_system: None
 ) -> t.Generator[None, None, None]:
     monkeypatch.setenv("TESTING", "True")
+
+    import warnings
+
+    warnings.filterwarnings("ignore", message="coroutine '.*' was never awaited")
+
     yield
 
 
@@ -278,9 +283,6 @@ def mock_logger_adapter() -> t.Optional[Adapter]:
 
 @pytest.fixture
 def mock_adapter_registry() -> t.List[Adapter]:
-    from pathlib import Path
-
-    from aiopath import AsyncPath
     from acb.adapters import Adapter
 
     logger_adapter = Adapter(

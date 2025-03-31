@@ -4,10 +4,10 @@ import sys
 import typing as t
 from contextvars import ContextVar
 from importlib import import_module, util
-from inspect import currentframe, stack
+from inspect import stack
 from pathlib import Path
 
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
 from pydantic import BaseModel
@@ -26,7 +26,7 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
     module: str = ""
     enabled: bool = False
     installed: bool = False
-    path: AsyncPath = AsyncPath(Path(__file__) / "adapters")
+    path: AsyncPath = AsyncPath(__file__) / "adapters"
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -55,9 +55,9 @@ adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", def
 _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 _testing: bool = os.getenv("TESTING", "False").lower() == "true"
-settings_path: Path = Path(root_path / "settings")
-app_settings_path: Path = settings_path / "app.yml"
-adapter_settings_path: Path = settings_path / "adapters.yml"
+settings_path: AsyncPath = root_path / "settings"
+app_settings_path: AsyncPath = settings_path / "app.yml"
+adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
 
 
 class AdapterNotFound(Exception): ...
@@ -167,58 +167,58 @@ def import_adapter(
         ]
         # classes = asyncio.run(asyncio.gather(*imports, return_exceptions=True))  # type: ignore
         classes = asyncio.run(asyncio.gather(*imports))  # type: ignore
-        if isinstance(classes, str | Exception):
-            classes = [classes]
         return classes[0] if len(adapter_categories) < 2 else classes
     except Exception as err:
         raise AdapterNotInstalled(err)
 
 
-def path_adapters(path: Path) -> dict[str, list[Path]]:
+async def path_adapters(path: AsyncPath) -> dict[str, list[AsyncPath]]:
     return {
         a.stem: [
-            m for m in a.iterdir() if not m.name.startswith("_") and m.suffix == ".py"
+            m
+            async for m in a.iterdir()
+            if not m.name.startswith("_") and m.suffix == ".py"
         ]
-        for a in path.iterdir()
-        if a.is_dir() and not a.name.startswith("__")
+        async for a in path.iterdir()
+        if await a.is_dir() and not a.name.startswith("__")
     }
 
 
-def create_adapter(path: Path) -> Adapter:
+def create_adapter(path: AsyncPath) -> Adapter:
     return Adapter(
         name=path.stem,
         class_name=camelize(path.parent.stem),
         category=path.parent.stem,
         module=".".join(path.parts[-4:]).removesuffix(".py"),
         pkg=path.parent.parent.parent.stem,
-        path=AsyncPath(path),
+        path=path,
     )
 
 
-def extract_adapter_modules(modules: list[Path], adapter: str) -> list[Adapter]:
+def extract_adapter_modules(modules: list[AsyncPath], adapter: str) -> list[Adapter]:
     adapter_modules = [create_adapter(p) for p in modules]
     return [a for a in adapter_modules if a.category == adapter]
 
 
-def register_adapters() -> list[Adapter]:
-    adapters_path = (
-        Path(currentframe().f_back.f_back.f_code.co_filename).parent / "adapters"
-    )
-    pkg_adapters = path_adapters(adapters_path)
+async def register_adapters(path: AsyncPath) -> list[Adapter]:
+    adapters_path = path / "adapters"
+    if not await adapters_path.exists():
+        return []
+    pkg_adapters = await path_adapters(adapters_path)
     adapters: list[Adapter] = []
     for adapter_name, modules in pkg_adapters.items():
         _modules = extract_adapter_modules(modules, adapter_name)
         adapters.extend(_modules)
     if (
-        not adapter_settings_path.exists()
+        not await adapter_settings_path.exists()
         and not _deployed
         and not _testing
         and root_path.stem != "acb"
     ):
-        settings_path.mkdir(exist_ok=True)
+        await settings_path.mkdir(exist_ok=True)
         categories = set()
         categories.update(a.category for a in adapter_registry.get() + adapters)
-        adapter_settings_path.write_bytes(
+        await adapter_settings_path.write_bytes(
             yaml_encode(
                 {cat: None for cat in categories},
                 sort_keys=True,
@@ -227,13 +227,13 @@ def register_adapters() -> list[Adapter]:
     _adapters = (
         {}
         if _testing or root_path.stem == "acb"
-        else yaml_decode(adapter_settings_path.read_text())
+        else yaml_decode(await adapter_settings_path.read_text())
     )
     _adapters.update(
         {a.category: None for a in adapters if a.category not in _adapters}
     )
     if not _testing and not root_path.stem == "acb":
-        adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
+        await adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
     enabled_adapters = {a: m for a, m in _adapters.items() if m}
     for a in [a for a in adapters if enabled_adapters.get(a.category) == a.name]:
         a.enabled = True
@@ -241,11 +241,7 @@ def register_adapters() -> list[Adapter]:
     for a in adapters:
         module = ".".join(a.module.split(".")[-2:])
         remove = next(
-            (
-                _a
-                for _a in registry
-                if ".".join(_a.module.split(".")[-2:]) == module and _a.pkg == "acb"
-            ),
+            (_a for _a in registry if ".".join(_a.module.split(".")[-2:]) == module),
             None,
         )
         if remove:

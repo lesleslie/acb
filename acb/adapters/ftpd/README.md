@@ -81,7 +81,7 @@ ftpd:
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 # Import the FTPD adapter
 FTPD = import_adapter("ftpd")

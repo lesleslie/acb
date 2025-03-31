@@ -116,7 +116,7 @@ storage:
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 # Import the storage adapter
 Storage = import_adapter("storage")
@@ -147,7 +147,7 @@ await storage.media.delete(AsyncPath("greeting.txt"))
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 Storage = import_adapter("storage")
 storage = depends.get(Storage)
@@ -247,7 +247,7 @@ The Storage adapter makes it easy to migrate files between different storage pro
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 # Get access to source and destination storage
 # (This requires configuring two storage adapters)

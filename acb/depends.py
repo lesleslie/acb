@@ -1,4 +1,5 @@
 import typing as t
+from contextlib import suppress
 from inspect import stack
 
 from bevy import dependency, get_repository
@@ -11,10 +12,10 @@ class DependsProtocol(t.Protocol):
     def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]: ...
 
     @staticmethod
-    def set(class_: t.Any) -> t.Any: ...
+    def set(class_: t.Any, instance: t.Any = None) -> t.Any: ...
 
     @staticmethod
-    def get(class_: t.Any) -> t.Any: ...
+    def get(*args: t.Any) -> t.Any: ...
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any: ...
 
@@ -25,15 +26,22 @@ class Depends:
         return inject_dependency(func)
 
     @staticmethod
-    def set(class_: t.Any) -> t.Any:
-        return get_repository().set(class_, class_())
+    def set(class_: t.Any, instance: t.Any = None) -> t.Any:
+        if instance is None:
+            if callable(class_) and not isinstance(class_, type):
+                return get_repository().set(class_, class_())
+            else:
+                return get_repository().set(class_, class_())
+        else:
+            return get_repository().set(class_, instance)
 
     @staticmethod
-    def get(class_: t.Any = None) -> t.Any:
-        classes = []
-        if not class_ or isinstance(class_, str):
-            _classes = []
-            if not class_:
+    def get(*args: t.Any) -> t.Any:
+        classes: t.List[t.Any] = []
+
+        if not args or args[0] is None:
+            _classes: t.List[str] = []
+            with suppress(AttributeError, IndexError):
                 _classes = [
                     c.strip()
                     for c in (
@@ -41,8 +49,7 @@ class Depends:
                     ).split(",")
                 ]
                 _classes = [c.removeprefix("self.") for c in _classes]
-            elif isinstance(class_, str):
-                _classes = [class_]
+
             from acb.adapters import import_adapter
 
             config = False
@@ -52,15 +59,23 @@ class Depends:
                 del _classes[index]
                 config = True
             if _classes:
-                _classes = import_adapter(_classes)
-                classes = [_classes] if not isinstance(_classes, list) else _classes
+                _classes = import_adapter(_classes)  # type: ignore
+                classes = [_classes]
             if config:
                 from acb.config import Config
 
                 classes.insert(index, Config)  # type: ignore
+
+        elif args and all(isinstance(arg, str) for arg in args):
+            from acb.adapters import import_adapter
+
+            _classes = import_adapter(list(args))  # type: ignore
+            classes = [_classes]
+
         else:
-            classes = [class_]
-        classes = [t.cast(c, get_repository().get(c)) for c in classes]
+            classes = [args[0]]
+
+        classes = [t.cast(t.Any, get_repository().get(c)) for c in classes]
         return classes[0] if len(classes) < 2 else classes
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:

@@ -66,7 +66,7 @@ print(bytes_hash)
 ### File Hashing
 
 ```python
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 # Hash a file using BLAKE3
 file_path = AsyncPath("document.pdf")
@@ -81,7 +81,7 @@ print(file_crc)  # Returns an integer
 ### Checksum Verification
 
 ```python
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 # Calculate file hash
 file_path = AsyncPath("downloaded_file.zip")
@@ -173,7 +173,7 @@ async def hash_examples():
 
 ```python
 from acb.actions.hash import hash
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 async def verify_file_integrity(file_path: str, expected_hash: str) -> bool:
     """Verify file integrity using BLAKE3 hash."""
@@ -198,7 +198,7 @@ async def verify_file_integrity(file_path: str, expected_hash: str) -> bool:
 
 ```python
 from acb.actions.hash import hash
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 import asyncio
 
 async def batch_hash_files(directory: str, algorithm: str = "blake3") -> dict:

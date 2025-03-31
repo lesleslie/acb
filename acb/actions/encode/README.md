@@ -88,7 +88,7 @@ pickle_obj = await decode.pickle(pickle_data)
 Read from and write to files using the AsyncPath parameter:
 
 ```python
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 # Save data to files
 config_path = AsyncPath("config.yaml")
@@ -156,7 +156,7 @@ async def decode.format(
 
 ```python
 from acb.actions.encode import encode, decode
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 import datetime
 
 # Complex data with various types
@@ -216,7 +216,7 @@ async def serialize_example():
 
 ```python
 from acb.actions.encode import load, dump
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 async def update_config(config_path: AsyncPath, updates: dict):
     # Load existing config
