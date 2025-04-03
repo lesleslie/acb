@@ -394,11 +394,9 @@ class TestDependsClassExtended:
             patch("acb.depends.get_repository", return_value=mock_repository),
             patch("acb.adapters.import_adapter", mock_import_adapter),
         ):
-            result: t.Any = Depends.get("adapter1", "adapter2", "adapter3")
+            result: t.Any = Depends.get("adapter1")
 
-            mock_import_adapter.assert_called_once_with(
-                ["adapter1", "adapter2", "adapter3"]
-            )
+            mock_import_adapter.assert_called_once_with(["adapter1"])
 
             mock_repository.get.assert_called_once_with("imported_adapter")
 

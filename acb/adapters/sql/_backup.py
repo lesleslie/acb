@@ -13,10 +13,9 @@ from acb.actions.encode import load
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
+from acb.logger import Logger
 
-Logger = import_adapter()
-Sql = import_adapter()
-Storage = import_adapter()
+Sql, Storage = import_adapter()
 
 
 class SqlBackupUtils(BaseModel):
@@ -295,4 +294,4 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
             self.logger.info("Backups complete.")
 
 
-depends.set(SqlBackup)
+backup = SqlBackup()

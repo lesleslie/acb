@@ -1,3 +1,4 @@
+import asyncio
 import typing as t
 from contextlib import suppress
 from inspect import stack
@@ -28,55 +29,25 @@ class Depends:
     @staticmethod
     def set(class_: t.Any, instance: t.Any = None) -> t.Any:
         if instance is None:
-            if callable(class_) and not isinstance(class_, type):
-                return get_repository().set(class_, class_())
-            else:
-                return get_repository().set(class_, class_())
-        else:
-            return get_repository().set(class_, instance)
+            return get_repository().set(class_, class_())
+        return get_repository().set(class_, instance)
 
     @staticmethod
-    def get(*args: t.Any) -> t.Any:
-        classes: t.List[t.Any] = []
-
-        if not args or args[0] is None:
-            _classes: t.List[str] = []
+    def get(category: t.Any = None) -> t.Any:
+        if not category:
             with suppress(AttributeError, IndexError):
-                _classes = [
+                category = [
                     c.strip()
                     for c in (
                         stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
                     ).split(",")
-                ]
-                _classes = [c.removeprefix("self.") for c in _classes]
+                ][0].removeprefix("self.")
+        class_ = category
+        if isinstance(class_, str):
+            from .adapters import _import_adapter
 
-            from acb.adapters import import_adapter
-
-            config = False
-            index = 0
-            if "config" in _classes:
-                index = _classes.index("config")
-                del _classes[index]
-                config = True
-            if _classes:
-                _classes = import_adapter(_classes)  # type: ignore
-                classes = [_classes]
-            if config:
-                from acb.config import Config
-
-                classes.insert(index, Config)  # type: ignore
-
-        elif args and all(isinstance(arg, str) for arg in args):
-            from acb.adapters import import_adapter
-
-            _classes = import_adapter(list(args))  # type: ignore
-            classes = [_classes]
-
-        else:
-            classes = [args[0]]
-
-        classes = [t.cast(t.Any, get_repository().get(c)) for c in classes]
-        return classes[0] if len(classes) < 2 else classes
+            class_ = asyncio.run(_import_adapter(class_))
+        return t.cast(class_, get_repository().get(class_))
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return dependency()

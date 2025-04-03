@@ -7,17 +7,48 @@ from importlib import import_module, util
 from inspect import stack
 from pathlib import Path
 
+import nest_asyncio
+import rich.repr
 from anyio import Path as AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
 from pydantic import BaseModel
-from acb.actions.encode import yaml_encode
-from acb.depends import depends
+
+from ..actions.encode import yaml_encode
+from ..console import console
+from ..depends import depends
+
+nest_asyncio.apply()
 
 root_path: AsyncPath = AsyncPath(Path.cwd())
 tmp_path: AsyncPath = root_path / "tmp"
+settings_path: AsyncPath = root_path / "settings"
+app_settings_path: AsyncPath = settings_path / "app.yml"
+adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
+secrets_path: AsyncPath = tmp_path / "secrets"
+_install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
+_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
+_testing: bool = os.getenv("TESTING", "False").lower() == "true"
+_adapter_import_locks: ContextVar[dict[str, asyncio.Lock]] = ContextVar(
+    "_adapter_import_locks", default={}
+)
 
 
+class AdapterNotFound(Exception): ...
+
+
+class AdapterNotInstalled(Exception): ...
+
+
+@t.runtime_checkable
+class AdapterProtocol(t.Protocol):
+    config: t.Any = None
+    logger: t.Any = None
+
+    async def init(self) -> None: ...
+
+
+@rich.repr.auto
 class Adapter(BaseModel, arbitrary_types_allowed=True):
     name: str
     class_name: str
@@ -26,7 +57,7 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
     module: str = ""
     enabled: bool = False
     installed: bool = False
-    path: AsyncPath = AsyncPath(__file__) / "adapters"
+    path: AsyncPath = AsyncPath(__file__)
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -46,24 +77,29 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
         )
 
 
-@t.runtime_checkable
-class AdapterProtocol(t.Protocol):
-    async def init(self) -> None: ...
-
-
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
-_install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
-_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
-_testing: bool = os.getenv("TESTING", "False").lower() == "true"
-settings_path: AsyncPath = root_path / "settings"
-app_settings_path: AsyncPath = settings_path / "app.yml"
-adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
 
-
-class AdapterNotFound(Exception): ...
-
-
-class AdapterNotInstalled(Exception): ...
+core_adapters = [
+    Adapter(
+        name="config",
+        module="acb.config",
+        class_name="Config",
+        category="config",
+        enabled=True,
+        installed=True,
+        path=AsyncPath(__file__).parent / "config.py",
+    ),
+    Adapter(
+        name="loguru",
+        module="acb.logger",
+        class_name="Logger",
+        category="logger",
+        enabled=True,
+        installed=True,
+        path=AsyncPath(__file__).parent / "logger.py",
+    ),
+]
+adapter_registry.get().extend([*core_adapters])
 
 
 def get_adapter(category: str) -> Adapter | None:
@@ -90,9 +126,7 @@ def get_installed_adapters() -> list[Adapter]:
     return [a for a in adapter_registry.get() if a.installed]
 
 
-async def _import_adapter(
-    adapter_category: str, config: AdapterProtocol
-) -> type[AdapterProtocol] | None:
+async def _import_adapter(adapter_category: str) -> t.Any:
     try:
         adapter = get_adapter(adapter_category)
         if adapter is None:
@@ -110,45 +144,53 @@ async def _import_adapter(
         module = util.module_from_spec(spec)  # type: ignore
         spec.loader.exec_module(module)
         sys.modules[adapter.name] = module
-
-    adapter_class: type[AdapterProtocol] = getattr(module, adapter.class_name)
-
-    if not adapter.installed and adapter.category not in _install_lock.get():
-        _install_lock.get().append(adapter.category)
+    adapter_class: t.Any = getattr(module, adapter.class_name)
+    if adapter.installed:
+        return adapter_class
+    async with _adapter_import_locks.get()[adapter_category]:
+        if adapter.installed:
+            return adapter_class
         try:
+            adapter.installed = True
             adapter_settings_class_name = f"{adapter.class_name}Settings"
             adapter_settings_class = getattr(module, adapter_settings_class_name)
             adapter_settings = adapter_settings_class()
+            from ..config import Config
+            from ..logger import Logger
+
+            config = depends.get(Config)
             setattr(config, adapter_category, adapter_settings)
-            await depends.get(adapter_class).init()
+            instance = depends.get(adapter_class)
+            await instance.init()
+            logger = depends.get(Logger)
+            logger.info(f"Adapter initialized: {adapter.class_name}")
         except Exception as e:
+            adapter.installed = False
             raise AdapterNotInstalled(
                 f"Failed to install {adapter.class_name} adapter: {e}"
             )
-        else:
-            adapter.installed = True
-            if adapter_category != "logger":
-                logger = depends.get()
-                logger.info(f"{adapter.class_name} adapter installed")
-        finally:
-            _install_lock.get().remove(adapter.category)
-
     return adapter_class
 
 
-def import_adapter(
-    adapter_categories: t.Optional[str | list[str]] = None,
-) -> (
-    AdapterProtocol
-    | list[AdapterProtocol | Exception | str]
-    | str
-    | Exception
-    | list[str | Exception]
-):
-    config = depends.get()
+async def gather_imports(
+    adapter_categories: list[str],
+) -> t.Any:
+    imports = [_import_adapter(category) for category in adapter_categories]
+    _imports = await asyncio.gather(*imports, return_exceptions=True)
+    results = []
+    for result in _imports:
+        if isinstance(result, Exception):
+            raise result
+        results.append(result)
+    return results
 
+
+def import_adapter(
+    adapter_categories: str | list[str] | None = None,
+) -> t.Any:
     if isinstance(adapter_categories, str):
         adapter_categories = [adapter_categories]
+    caller = stack()[1][0].f_globals["__name__"]
     if not adapter_categories:
         try:
             adapter_categories = [
@@ -161,15 +203,23 @@ def import_adapter(
             raise ValueError(
                 "Could not determine adapter categories from calling context"
             )
+    console.print(
+        f"[bold white]Importing adapters: [bold green]"
+        f"{', '.join(adapter_categories)}[/] for"
+        f" [bold red]{caller}[/][/]"
+    )
     try:
-        imports: list[t.Coroutine[t.Any, t.Any, t.Type[AdapterProtocol] | None]] = [
-            _import_adapter(c, config) for c in adapter_categories
-        ]
-        # classes = asyncio.run(asyncio.gather(*imports, return_exceptions=True))  # type: ignore
-        classes = asyncio.run(asyncio.gather(*imports))  # type: ignore
-        return classes[0] if len(adapter_categories) < 2 else classes
-    except Exception as err:
-        raise AdapterNotInstalled(err)
+        imported_adapters = asyncio.run(gather_imports(adapter_categories))
+    except Exception as e:
+        raise AdapterNotInstalled(f"Failed to install adapters: {e}")
+    console.print(
+        f"[bold magenta]Adapters imported: [bold white]{imported_adapters}[/][/]"
+    )
+    return (
+        imported_adapters[0]
+        if len(imported_adapters) == 1
+        else tuple(imported_adapters)
+    )
 
 
 async def path_adapters(path: AsyncPath) -> dict[str, list[AsyncPath]]:
@@ -184,14 +234,25 @@ async def path_adapters(path: AsyncPath) -> dict[str, list[AsyncPath]]:
     }
 
 
-def create_adapter(path: AsyncPath) -> Adapter:
+def create_adapter(
+    path: AsyncPath,
+    name: str | None = None,
+    module: str | None = None,
+    class_name: str | None = None,
+    category: str | None = None,
+    pkg: str | None = None,
+    enabled: bool = False,
+    installed: bool = False,
+) -> Adapter:
     return Adapter(
-        name=path.stem,
-        class_name=camelize(path.parent.stem),
-        category=path.parent.stem,
-        module=".".join(path.parts[-4:]).removesuffix(".py"),
-        pkg=path.parent.parent.parent.stem,
         path=path,
+        name=name or path.stem,
+        class_name=class_name or camelize(path.parent.stem),
+        category=category or path.parent.stem,
+        module=module or ".".join(path.parts[-4:]).removesuffix(".py"),
+        pkg=pkg or path.parent.parent.parent.stem,
+        enabled=enabled,
+        installed=installed,
     )
 
 
@@ -232,7 +293,7 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
     _adapters.update(
         {a.category: None for a in adapters if a.category not in _adapters}
     )
-    if not _testing and not root_path.stem == "acb":
+    if not _testing and not root_path.stem == "acb" and not _deployed:
         await adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
     enabled_adapters = {a: m for a, m in _adapters.items() if m}
     for a in [a for a in adapters if enabled_adapters.get(a.category) == a.name]:
@@ -249,4 +310,5 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
         if module in [".".join(_a.module.split(".")[-2:]) for _a in registry]:
             continue
         registry.append(a)
+        _adapter_import_locks.get()[a.category] = asyncio.Lock()
     return adapters

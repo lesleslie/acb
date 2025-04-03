@@ -1,8 +1,6 @@
-from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-
-Logger = import_adapter()
+from acb.logger import Logger
 
 
 @depends.inject

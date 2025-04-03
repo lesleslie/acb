@@ -5,16 +5,15 @@ from re import search
 
 from httpx import Response as HttpxResponse
 from acb.actions.encode import load
-from acb.adapters import import_adapter
+from acb.adapters import adapter_registry, import_adapter
 from acb.adapters.dns._base import DnsRecord
-from acb.config import Config, adapter_registry
+from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 
 from ._base import SmtpBase, SmtpBaseSettings
 
-Dns = import_adapter()
-Requests = import_adapter()
+Dns, Requests = import_adapter()
 
 
 class SmtpSettings(SmtpBaseSettings):

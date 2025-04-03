@@ -66,16 +66,21 @@ class SqlBaseSettings(Settings):
         )
 
 
-class SqlBase(AdapterBase):
-    exists: bool = False
+class SqlProtocol(t.Protocol):
+    def engine(self) -> AsyncEngine: ...
+    def session(self) -> AsyncSession: ...
+    def get_session(self) -> t.AsyncGenerator[AsyncSession, None]: ...
 
+    async def init(self) -> None: ...
+
+
+class SqlBase(AdapterBase):
     @cached_property
     def engine(self) -> AsyncEngine:
         self.logger.debug(self.config.sql._async_url)
         if not database_exists(self.config.sql._url):
             self.logger.debug(self.config.sql._async_url)
             create_database(self.config.sql._url)
-        self.exists = True
         return create_async_engine(
             self.config.sql._async_url, **self.config.sql.engine_kwargs
         )

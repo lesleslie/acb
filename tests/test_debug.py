@@ -1,17 +1,16 @@
 import asyncio
 import typing as t
 from pathlib import Path
-from time import sleep
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
+from devtools import pformat
 from acb.debug import (
     colorized_stderr_print,
     debug,
     get_calling_module,
     patch_record,
     print_debug_info,
-    timeit,
 )
 
 
@@ -213,56 +212,6 @@ class TestPrintDebugInfo:
             assert result is None
 
 
-class TestTimeit:
-    def test_timeit_decorator(self, mock_logger: MagicMock) -> None:
-        def test_function() -> str:
-            sleep(0.01)
-            return "test result"
-
-        mock_logger.debug.reset_mock()
-
-        decorated_function = timeit(test_function, logger=mock_logger)
-
-        result = decorated_function()
-
-        assert result == "test result"
-
-        assert mock_logger.debug.call_count >= 1
-
-        debug_messages = [call[0][0] for call in mock_logger.debug.call_args_list]
-        assert any("test_function" in msg for msg in debug_messages)
-        assert any("executed in" in msg for msg in debug_messages)
-        assert any("s" in msg for msg in debug_messages)
-
-    @pytest.mark.asyncio
-    async def test_timeit_with_args_and_kwargs(self, mock_logger: MagicMock) -> None:
-        pytest.skip("This test requires more complex mocking of timeit")
-
-        def test_function_with_args(
-            arg1: str, arg2: str, kwarg1: object = None, kwarg2: object = None
-        ) -> str:
-            async def _test_function_with_args() -> str:
-                sleep(0.01)
-                return f"{arg1}-{arg2}-{kwarg1}-{kwarg2}"
-
-            return asyncio.run(_test_function_with_args())
-
-        mock_logger.debug.reset_mock()
-
-        decorated_function = timeit(test_function_with_args, logger=mock_logger)
-
-        result = decorated_function("a", "b", kwarg1="c", kwarg2="d")
-
-        assert result == "a-b-c-d"
-
-        assert mock_logger.debug.call_count >= 1
-
-        debug_messages: list[str] = [
-            call[0][0] for call in mock_logger.debug.call_args_list
-        ]
-        assert any("test_function_with_args" in msg for msg in debug_messages)
-
-
 class TestDebugConfiguration:
     def test_debug_configuration(self, mock_config: MagicMock) -> None:
         mock_config.deployed = False
@@ -274,7 +223,10 @@ class TestDebugConfiguration:
             patch("acb.debug.config", mock_config),
             patch("acb.debug.debug.configureOutput", mock_configure),
         ):
-            from acb.debug import debug_args
+            debug_args = dict(
+                outputFunction=print_debug_info,
+                argToStringFunction=lambda o: pformat(o, highlight=False),
+            )
 
             debug.configureOutput(
                 prefix="    debug:  ",
@@ -294,64 +246,6 @@ class TestDebugConfiguration:
                 )
 
             assert mock_configure.call_count >= 2
-
-
-class TestTimeitExtended:
-    def test_timeit_with_custom_name(self, mock_logger: MagicMock) -> None:
-        pytest.skip("This test requires more complex mocking of timeit")
-
-        def test_function() -> str:
-            return "test result"
-
-        mock_logger.debug.reset_mock()
-
-        decorated_function = timeit(test_function, logger=mock_logger)
-
-        result = decorated_function()
-
-        assert result == "test result"
-        assert mock_logger.debug.call_count >= 1
-
-        debug_messages = [call[0][0] for call in mock_logger.debug.call_args_list]
-        assert any("test_function" in msg for msg in debug_messages)
-
-    @pytest.mark.asyncio
-    async def test_timeit_with_async_function(self, mock_logger: MagicMock) -> None:
-        async def async_test_function() -> str:
-            await asyncio.sleep(0.01)
-            return "async result"
-
-        mock_logger.debug.reset_mock()
-
-        decorated_function = timeit(async_test_function, logger=mock_logger)
-
-        result = await decorated_function()
-
-        assert result == "async result"
-        assert mock_logger.debug.call_count >= 1
-
-        debug_messages = [call[0][0] for call in mock_logger.debug.call_args_list]
-        assert any("async_test_function" in msg for msg in debug_messages)
-        assert any("executed in" in msg for msg in debug_messages)
-
-    def test_timeit_with_exception(self, mock_logger: MagicMock) -> None:
-        pytest.skip("This test requires more complex mocking of timeit")
-
-        def failing_function() -> t.NoReturn:
-            raise ValueError("Test exception")
-
-        mock_logger.debug.reset_mock()
-
-        decorated_function = timeit(failing_function, logger=mock_logger)
-
-        with pytest.raises(ValueError, match="Test exception"):
-            decorated_function()
-
-        assert mock_logger.debug.call_count >= 1
-
-        debug_messages = [call[0][0] for call in mock_logger.debug.call_args_list]
-        assert any("failing_function" in msg for msg in debug_messages)
-        assert any("executed in" in msg for msg in debug_messages)
 
 
 class TestDebugFunction:

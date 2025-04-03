@@ -14,5 +14,4 @@ class NosqlSettings(NosqlBaseSettings):
         return 0
 
 
-class Nosql(NosqlBase):
-    def __init__(self) -> None: ...
+class Nosql(NosqlBase): ...

@@ -1,11 +1,9 @@
 from asyncssh import Error, SFTPServer, listen
 from pydantic import SecretStr
-from acb.adapters import import_adapter
 from acb.depends import depends
+from acb.logger import Logger
 
 from ._base import FtpdBase, FtpdBaseSettings
-
-Logger = import_adapter()
 
 
 class FtpdSettings(FtpdBaseSettings):

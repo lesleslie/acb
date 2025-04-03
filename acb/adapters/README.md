@@ -235,7 +235,7 @@ myapp/adapters/payment/
 
 2. Define the base interface in `_base.py`:
 ```python
-from acb.config import AdapterBase, Settings
+from acb.config import  Settings
 from pydantic import SecretStr
 
 class PaymentBaseSettings(Settings):

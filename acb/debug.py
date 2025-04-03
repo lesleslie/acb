@@ -1,105 +1,106 @@
 import asyncio
 import logging
+import os
+import typing as t
 from contextlib import suppress
-from functools import wraps
 from pathlib import Path
-from time import perf_counter
-from typing import Any, Callable, Protocol, TypeVar, cast
 
 from aioconsole import aprint
 from devtools import pformat
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
-from acb.adapters import import_adapter
-from acb.config import adapter_registry
-from acb.depends import depends
+
+from .config import Config
+from .depends import depends
+from .logger import Logger
 
 __all__ = [
     "get_calling_module",
     "patch_record",
     "colorized_stderr_print",
     "print_debug_info",
-    "timeit",
     "debug",
 ]
 
-Logger = import_adapter()
-
-config = depends.get()
+_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 
 
-def get_calling_module() -> Path | None:
-    try:
+@depends.inject
+def get_calling_module(config: Config = depends()) -> Path | None:
+    with suppress(AttributeError, TypeError):
         mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
         mod = Path(mod).parent
-        debug_mod = getattr(config.debug, mod.stem, None)
-        return mod if debug_mod else None
-    except (AttributeError, TypeError):
+
+        # Check if config.debug exists before accessing its attributes
+        if config.debug is not None:
+            debug_mod = getattr(config.debug, mod.stem, None)
+            return mod if debug_mod else None
         return None
 
 
 @depends.inject
 def patch_record(
-    mod: Path,
+    mod: Path | None,
     msg: str,
     logger: Logger = depends(),
 ) -> None:
     with suppress(Exception):
-        has_loguru = any(
-            a.category == "logger" and a.name == "loguru"
-            for a in adapter_registry.get()
-        )
-        if has_loguru:
+        if mod is not None:
             logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
+        else:
+            logger.debug(msg)
 
 
 def colorized_stderr_print(s: str) -> None:
     colored = colorize(s)
     with supportTerminalColorsInWindows():
-        asyncio.run(aprint(colored, use_stderr=True))
+        try:
+            asyncio.run(aprint(colored, use_stderr=True))
+        except Exception:
+            # Fallback to regular print if asyncio.run or aprint fails
+            import sys
+
+            print(colored, file=sys.stderr)
 
 
-def print_debug_info(msg: str) -> Any:
+def print_debug_info(msg: str) -> t.Any:
     mod = get_calling_module()
     if mod:
-        if config.deployed or config.debug.production:
+        if _deployed:
             patch_record(mod, msg)
         else:
             colorized_stderr_print(msg)
+    return None
 
 
-debug_args = dict(
-    outputFunction=print_debug_info,
-    argToStringFunction=lambda o: pformat(o, highlight=False),
-)
-debug.configureOutput(
-    prefix="    debug:  ",
-    includeContext=True,
-    **debug_args,
-)
-if config.deployed or config.debug.production:
-    debug.configureOutput(
-        prefix="",
-        includeContext=False,
-        **debug_args,
-    )
-
-
-class TimedFunction(Protocol):
-    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
-
-
-T = TypeVar("T", bound=Callable[..., Any])
+async def pprint(obj: t.Any) -> None:
+    await aprint(pformat(obj), use_stderr=True)
 
 
 @depends.inject
-def timeit(func: T, logger: Logger = depends()) -> T:
-    @wraps(func)
-    def wrapped(*args: Any, **kwargs: Any) -> Any:
-        start = perf_counter()
-        result = func(*args, **kwargs)
-        end = perf_counter()
-        logger.debug(f"Function '{func.__name__}' executed in {end - start} s")
-        return result
+def init_debug(config: Config = depends()) -> None:
+    debug_args = dict(
+        outputFunction=print_debug_info,
+        argToStringFunction=lambda o: pformat(o, highlight=False),
+    )
+    debug.configureOutput(
+        prefix="    debug:  ",
+        includeContext=True,
+        **debug_args,
+    )
 
-    return cast(T, wrapped)
+    # Check if config.debug exists before accessing its attributes
+    is_production = config.deployed
+    if config.debug is not None and hasattr(config.debug, "production"):
+        is_production = is_production or config.debug.production
+
+    if is_production:
+        debug.configureOutput(
+            prefix="",
+            includeContext=False,
+            **debug_args,
+        )
+
+
+# Initialize debug configuration
+init_debug()

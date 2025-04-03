@@ -1,7 +1,5 @@
-from acb.config import AdapterBase, import_adapter
+from acb.config import AdapterBase
 from acb.config import AppSettings as AppConfigSettings
-
-Logger = import_adapter()
 
 
 class AppBaseSettings(AppConfigSettings): ...

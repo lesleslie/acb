@@ -6,12 +6,14 @@ from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
 from acb.actions import hash
-from acb.adapters import get_adapter, tmp_path
-from acb.config import AdapterBase, Config, Settings, import_adapter
+from acb.adapters import (
+    get_adapter,
+    tmp_path,
+)
+from acb.config import AdapterBase, Config, Settings
 from acb.debug import debug
 from acb.depends import depends
 
-Logger = import_adapter()
 nest_asyncio.apply()
 
 
@@ -19,7 +21,11 @@ class StorageBaseSettings(Settings):
     prefix: t.Optional[str] = None
     local_path: t.Optional[AsyncPath] = tmp_path / "storage"
     user_project: t.Optional[str] = None
-    buckets: dict[str, str] = {"test": "test-bucket"}
+    buckets: dict[str, str] = {
+        "test": "test-bucket",
+        "media": "media-bucket",
+        "templates": "templates-bucket",
+    }
     cors: t.Optional[dict[str, dict[str, list[str] | int]]] = None
     local_fs: t.Optional[bool] = False
     memory_fs: t.Optional[bool] = False
@@ -33,9 +39,37 @@ class StorageBaseSettings(Settings):
         self.memory_fs = get_adapter("storage").name == "memory"
 
 
+class StorageBucketProtocol(t.Protocol):
+    root: AsyncPath
+    prefix: t.Optional[str]
+    name: str
+    bucket: str
+    client: t.Any
+
+    def get_name(self, path: AsyncPath) -> str: ...
+    def get_path(self, path: AsyncPath) -> str: ...
+    def get_url(self, path: AsyncPath) -> str: ...
+    async def get_date_created(self, path: AsyncPath) -> t.Any: ...
+    async def get_date_updated(self, path: AsyncPath) -> t.Any: ...
+    async def get_size(self, path: AsyncPath) -> int: ...
+    @staticmethod
+    async def get_checksum(path: AsyncPath) -> int: ...
+    async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> t.Any: ...
+    async def stat(self, path: AsyncPath) -> t.Any: ...
+    async def list(self, dir_path: AsyncPath) -> t.Any: ...
+    async def exists(self, path: AsyncPath) -> t.Any: ...
+    async def create_bucket(self, path: AsyncPath) -> t.Any: ...
+    async def open(self, path: AsyncPath) -> t.BinaryIO: ...
+    async def write(self, path: AsyncPath, data: t.Any) -> t.Any: ...
+    async def delete(self, path: AsyncPath) -> t.Any: ...
+
+
 class StorageBucket:
+    root: AsyncPath
+    client: t.Any
+    bucket: str
+    prefix: t.Optional[str] = None
     config: Config = depends()
-    logger: Logger = depends()
 
     def __init__(
         self,
@@ -138,21 +172,24 @@ class StorageBucket:
 
 
 class StorageProtocol(t.Protocol):
-    file_system: t.Any = AsyncFileSystem
+    file_system: t.Any
+    templates: StorageBucket | None
+    media: StorageBucket | None
+    test: StorageBucket | None
 
     @cached_property
-    def client(self) -> AsyncFileSystem: ...
+    def client(self) -> t.Any: ...
     async def init(self) -> None: ...
 
 
 class StorageBase(AdapterBase):
-    file_system: t.Type[AsyncFileSystem]
+    file_system: t.Any = AsyncFileSystem
     templates: StorageBucket | None = None
     media: StorageBucket | None = None
     test: StorageBucket | None = None
 
     @cached_property
-    def client(self) -> AsyncFileSystem:
+    def client(self) -> t.Any:
         return self.file_system(asynchronous=True)
 
     async def init(self) -> None:
@@ -161,10 +198,25 @@ class StorageBase(AdapterBase):
             self.logger.debug(f"{bucket.title()} storage bucket initialized")
 
 
+class StorageMediaProtocol(t.Protocol):
+    _storage: StorageBucket
+    _name: str
+
+    def name(self) -> str: ...
+    def path(self) -> str: ...
+    async def size(self) -> t.Any: ...
+    async def checksum(self) -> t.Any: ...
+    async def open(self) -> t.Any: ...
+    async def write(self, file: t.BinaryIO) -> t.Any: ...
+
+
 class StorageFile:
+    _storage: StorageBucket
+    _name: str
+
     def __init__(self, *, name: str, storage: StorageBucket) -> None:
-        self._storage: StorageBucket = storage
-        self._name: str = name
+        self._storage = storage
+        self._name = name
 
     @property
     def name(self) -> str:

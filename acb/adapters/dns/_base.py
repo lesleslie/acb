@@ -14,7 +14,7 @@ class DnsRecord(BaseModel):
 class DnsBaseSettings(Settings): ...
 
 
-class DnsBase(AdapterBase):
+class DnsProtocol(t.Protocol):
     client: t.Optional[t.Any] = None
     zone: t.Optional[t.Any] = None
 
@@ -23,3 +23,6 @@ class DnsBase(AdapterBase):
     def list_records(self) -> list[DnsRecord]: ...
 
     async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None: ...
+
+
+class DnsBase(AdapterBase, DnsProtocol): ...

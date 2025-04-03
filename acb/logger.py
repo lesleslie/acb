@@ -2,16 +2,21 @@ import logging
 import typing as t
 from inspect import currentframe
 
+import nest_asyncio
 from aioconsole import aprint
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
-from acb.config import Config, debug, root_path
-from acb.depends import depends
 
-from ._base import LoggerBase, LoggerBaseSettings
+from .config import Config, Settings, debug
+from .depends import depends
+
+nest_asyncio.apply()
 
 
-class LoggerSettings(LoggerBaseSettings):
+class LoggerSettings(Settings):
+    verbose: bool = False
+    deployed_level: str = "WARNING"
+    log_level: t.Optional[str] = "INFO"
     serialize: t.Optional[bool] = False
     format: t.Optional[dict[str, str]] = dict(
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
@@ -25,17 +30,8 @@ class LoggerSettings(LoggerBaseSettings):
     level_colors: t.Optional[dict[str, str]] = {}
     settings: t.Optional[dict[str, t.Any]] = {}
 
-    @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, **values: t.Any) -> None:
         super().__init__(**values)
-        self.log_level = (
-            self.deployed_level.upper()
-            if config.deployed or config.debug.production
-            else self.log_level
-        )
-        self.level_per_module = {
-            m: "DEBUG" if v else self.log_level for m, v in debug.items()
-        }
         self.settings = dict(
             format="".join(self.format.values()),
             enqueue=True,
@@ -47,7 +43,28 @@ class LoggerSettings(LoggerBaseSettings):
         )
 
 
+depends.get(Config).logger = LoggerSettings()
+
+
+@t.runtime_checkable
+class LoggerProtocol(t.Protocol):
+    def debug(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
+
+    def info(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
+
+    def warning(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
+
+    def error(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
+
+    def init(self) -> None: ...
+
+
+class LoggerBase(LoggerProtocol):
+    config: Config = depends()
+
+
 class Logger(_Logger, LoggerBase):
+    @depends.inject
     def __init__(self) -> None:
         super().__init__(
             core=_Core(),
@@ -66,8 +83,7 @@ class Logger(_Logger, LoggerBase):
     async def async_sink(message: str) -> None:
         await aprint(message, end="")
 
-    @depends.inject
-    async def init(self, config: Config = depends()) -> None:
+    def init(self) -> None:
         def patch_name(record: dict[str, t.Any]) -> str:  # type: ignore
             mod_parts = record["name"].split(".")
             mod_name = ".".join(mod_parts[:-1])
@@ -80,9 +96,9 @@ class Logger(_Logger, LoggerBase):
                 name = record["name"].split(".")[-2]
             except IndexError:
                 name = record["name"]
-            level_ = config.logger.log_level
-            if name in config.logger.level_per_module:
-                level_ = config.logger.level_per_module[name]
+            level_ = self.config.logger.log_level
+            if name in self.config.logger.level_per_module:
+                level_ = self.config.logger.level_per_module[name]
             try:
                 levelno_ = self.level(level_).no
             except ValueError:
@@ -98,29 +114,38 @@ class Logger(_Logger, LoggerBase):
         self.configure(
             patcher=lambda record: record["extra"].update(mod_name=patch_name(record)),
         )
+        self.config.logger.log_level = (
+            self.config.logger.deployed_level.upper()
+            if self.config.deployed or self.config.debug.production
+            else self.config.logger.log_level
+        )
+        self.config.logger.level_per_module = {
+            m: "DEBUG" if v else self.config.logger.log_level for m, v in debug.items()
+        }
         self.add(
             self.async_sink,
             filter=filter_by_module,  # type: ignore
-            **config.logger.settings,
+            **self.config.logger.settings,
         )
-        for level, color in config.logger.level_colors.items():
+        for level, color in self.config.logger.level_colors.items():
             self.level(level.upper(), color=f"[{color}]")
-        if config.debug.logger:
+        if self.config.debug.logger:
             self.debug("debug")
             self.info("info")
             self.warning("warning")
             self.error("error")
             self.critical("critical")
-        self.info(f"App path: {root_path}")
-        self.info(f"App deployed: {config.deployed}")
+        self.info(f"App path: {self.config.root_path}")
+        self.info(f"App deployed: {self.config.deployed}")
 
 
 depends.set(Logger)
+depends.get(Logger).init()
 
 
 class InterceptHandler(logging.Handler):
-    def emit(self, record: logging.LogRecord) -> None:
-        logger = depends.get(Logger)
+    @depends.inject
+    def emit(self, record: logging.LogRecord, logger: Logger = depends()) -> None:
         try:
             level = logger.level(record.levelname).name
         except ValueError:
