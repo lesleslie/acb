@@ -49,13 +49,15 @@ Install ACB using [pdm](https://pdm.fming.dev):
 pdm add acb
 ```
 
+> **Note**: ACB requires Python 3.13 or later.
+
 ### Optional Dependencies
 
 ACB supports various optional dependencies for different adapters and functionality:
 
 | Feature Group | Components | Installation Command |
 |---------------|------------|----------------------|
-| Cache | Memory, Redis | `pdm add "acb[cache]"` |
+| Cache/Redis | Memory, Redis | `pdm add "acb[cache]"` or `pdm add "acb[redis]"` |
 | SQL | Database (MySQL, PostgreSQL) | `pdm add "acb[sql]"` |
 | NoSQL | Database (MongoDB, Firestore, Redis) | `pdm add "acb[nosql]"` |
 | Storage | File storage (S3, GCS, Azure, local) | `pdm add "acb[storage]"` |
@@ -64,10 +66,13 @@ ACB supports various optional dependencies for different adapters and functional
 | SMTP | Email sending (Gmail, Mailgun) | `pdm add "acb[smtp]"` |
 | FTPD | File transfer protocols (FTP, SFTP) | `pdm add "acb[ftpd]"` |
 | Secret | Secret management | `pdm add "acb[secret]"` |
-| Monitoring | Error tracking and monitoring | `pdm add "acb[monitoring]"` |
+| Monitoring | Error tracking (Sentry), Logging (Logfire) | `pdm add "acb[monitoring]"` |
+| Cloud Providers | AWS, GCP, Azure | `pdm add "acb[aws]"`, `pdm add "acb[gcp]"`, `pdm add "acb[azure]"` |
+| Logging | Loguru, structlog | `pdm add "acb[logging]"` |
 | Multiple Features | Combined dependencies | `pdm add "acb[cache,sql,nosql]"` |
 | Web Application | Typical web app stack | `pdm add "acb[cache,sql,storage]"` |
 | Development | Development tools | `pdm add "acb[dev]"` |
+| All Features | All optional dependencies | `pdm add "acb[all]"` |
 
 ## Architecture Overview
 
@@ -166,6 +171,7 @@ ACB's configuration system is built on Pydantic and supports multiple configurat
 
 ```python
 from acb.config import Settings
+import typing as t
 from pydantic import SecretStr
 
 class MyServiceSettings(Settings):
@@ -185,13 +191,14 @@ ACB features a simple yet powerful dependency injection system that makes compon
 ```python
 from acb.depends import depends
 from acb.config import Config
+import typing as t
 
 # Register your custom component
 depends.set(MyService)
 
 # Inject dependencies into functions
 @depends.inject
-async def process_data(data, config: Config = depends(), logger = depends("logger")):
+async def process_data(data: dict[str, t.Any], config: Config = depends(), logger = depends("logger")):
     logger.info(f"Processing data with app: {config.app.name}")
     # Process data...
     return result
@@ -243,7 +250,7 @@ config = depends.get(Config)
 # Import adapters
 Logger = depends.get("logger")
 
-async def main():
+async def main() -> None:
     Logger.info(f"Starting {config.app.name} application")
     # Your application logic here
 
@@ -301,6 +308,7 @@ Create your own reusable actions by adding Python modules to the actions directo
 # myapp/actions/validate.py
 from pydantic import BaseModel
 import re
+import typing as t
 
 class Validate(BaseModel):
     @staticmethod
@@ -328,12 +336,13 @@ myapp/adapters/payment/
 2. Define the base interface in `_base.py`:
 ```python
 from acb.config import AdapterBase, Settings
+from typing import Protocol
 
 class PaymentBaseSettings(Settings):
     currency: str = "USD"
     default_timeout: int = 30
 
-class PaymentBase(AdapterBase):
+class PaymentBase(AdapterBase, Protocol):
     async def charge(self, amount: float, description: str) -> str:
         """Charge a payment and return a transaction ID"""
         raise NotImplementedError()
@@ -348,20 +357,22 @@ class PaymentBase(AdapterBase):
 from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
 import stripe
+import typing as t
 
 class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
 
 class Stripe(PaymentBase):
-    settings: StripeSettings = None
+    settings: StripeSettings | None = None
 
     async def init(self) -> None:
-        stripe.api_key = self.settings.api_key.get_secret_value()
+        if self.settings:
+            stripe.api_key = self.settings.api_key.get_secret_value()
 
     async def charge(self, amount: float, description: str) -> str:
-        response = await stripe.PaymentIntent.create(
+        response: t.Any = await stripe.PaymentIntent.create(
             amount=int(amount * 100),  # Convert to cents
-            currency=self.settings.currency,
+            currency=self.settings.currency if self.settings else "USD",
             description=description
         )
         return response.id
@@ -395,6 +406,10 @@ Special thanks to the following open-source projects for powering ACB:
 - [bevy](https://github.com/bevy-org/bevy)
 - [Loguru](https://loguru.readthedocs.io/)
 - [Typer](https://typer.tiangolo.com/)
+- [AnyIO](https://anyio.readthedocs.io/)
+- [msgspec](https://jcristharif.com/msgspec/)
+- [Logfire](https://docs.logfire.dev/)
+- [Sentry](https://docs.sentry.io/)
 
 ## License
 
@@ -414,12 +429,20 @@ Contributions to ACB are welcome! We follow a workflow inspired by the Crackerja
    Fork the repository and clone it locally.
 
 2. **Set Up Your Development Environment**
-   Use [PDM](https://pdm.fming.dev/) for dependency and virtual environment management. Add ACB as a development dependency:
+   Use [PDM](https://pdm.fming.dev/) for dependency and virtual environment management. ACB requires Python 3.13 or later. Add ACB as a development dependency:
    ```
    pdm add -G dev acb
    ```
 
-3. **Run Pre-commit Hooks & Tests**
+3. **Code Style and Type Checking**
+   ACB uses modern Python typing features and follows strict type checking. We use:
+   - Type annotations with the latest Python 3.13 syntax
+   - Protocols instead of ABC for interface definitions
+   - Union types with the `|` operator instead of `Union[]`
+   - Type checking with pyright in strict mode
+   - Ruff for linting and formatting
+
+4. **Run Pre-commit Hooks & Tests**
    Before submitting a pull request, ensure your changes pass all quality checks and tests. We recommend running the following command (which is inspired by Crackerjack's automated workflow):
    ```
    python -m crackerjack -x -t -p <version> -c
@@ -430,10 +453,17 @@ Contributions to ACB are welcome! We follow a workflow inspired by the Crackerja
    ```
    This command cleans your code, runs linting, tests, bumps the version (micro, minor, or major), and commits changes.
 
-4. **Submit a Pull Request**
+5. **Testing**
+   All tests are written using pytest and should include coverage reporting:
+   ```
+   pytest --cov=acb
+   ```
+   Test configuration is in pyproject.toml, not in separate .coveragerc or pytest.ini files.
+
+6. **Submit a Pull Request**
    If everything passes, submit a pull request describing your changes. Include details about your contribution and reference any related issues.
 
-5. **Feedback and Review**
+7. **Feedback and Review**
    Our maintainers will review your changes. Please be responsive to feedback and be prepared to update your pull request as needed.
 
 For more detailed development guidelines and the Crackerjack philosophy that influences our workflow, please refer to our internal development documentation.

@@ -107,18 +107,23 @@ Developers decorate their functions or classes with `@depends.inject` to have co
 from acb.depends import depends
 from acb.config import Config
 from acb.adapters import import_adapter
+import typing as t
 
 # Import multiple adapters
 Cache = import_adapter("cache")
 Storage = import_adapter("storage")
 
 @depends.inject
-def process_file(file_id, cache=depends(Cache), storage=depends(Storage), config=depends(Config)):
+async def process_file(file_id: str,
+                 cache=depends(Cache),
+                 storage=depends(Storage),
+                 config=depends(Config)) -> bytes | None:
     # Use multiple injected dependencies together
-    cached_data = await cache.get(f"file:{file_id}")
+    cached_data: bytes | None = await cache.get(f"file:{file_id}")
     if not cached_data:
-        file_data = await storage.get_file(file_id)
-        await cache.set(f"file:{file_id}", file_data, ttl=config.cache.ttl)
+        file_data: bytes | None = await storage.get_file(file_id)
+        if file_data:
+            await cache.set(f"file:{file_id}", file_data, ttl=config.cache.ttl)
         return file_data
     return cached_data
 ```
@@ -149,9 +154,10 @@ The debug module in ACB (`acb/debug.py`) is designed to provide insightful diagn
 
 ```python
 from acb.debug import timeit
+import typing as t
 
 @timeit
-async def expensive_operation(data):
+async def expensive_operation(data: dict[str, t.Any]) -> dict[str, t.Any]:
     # Your code here
     result = await process_data(data)
     return result

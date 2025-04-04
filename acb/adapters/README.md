@@ -174,7 +174,7 @@ async def cache_example():
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-from typing import Any
+import typing as t
 
 # Define adapter types
 Storage = import_adapter("storage")
@@ -185,11 +185,13 @@ async def process_file(
     filename: str,
     storage=depends(Storage),  # Injected storage adapter
     logger=depends(Logger)     # Injected logger adapter
-) -> dict[str, Any]:
+) -> dict[str, t.Any]:
     logger.info(f"Processing file: {filename}")
-    content = await storage.get_file(filename)
+    content: bytes | None = await storage.get_file(filename)
+    if not content:
+        return {"filename": filename, "error": "File not found", "processed": False}
     # Process the file...
-    result = {"filename": filename, "size": len(content), "processed": True}
+    result: dict[str, t.Any] = {"filename": filename, "size": len(content), "processed": True}
     return result
 ```
 
@@ -197,7 +199,7 @@ async def process_file(
 
 ```python
 from acb.depends import depends
-from typing import Any, Optional
+import typing as t
 
 # Import multiple adapters simultaneously
 Cache, Storage, SQL = depends.get("cache", "storage", "sql")
@@ -205,7 +207,7 @@ Cache, Storage, SQL = depends.get("cache", "storage", "sql")
 # Use them together
 async def backup_data(key: str) -> bool:
     # Get data from cache
-    data: Optional[dict[str, Any]] = await Cache.get(key)
+    data: dict[str, t.Any] | None = await Cache.get(key)
     if not data:
         # If not in cache, get from database
         data = await SQL.fetch_one("SELECT data FROM items WHERE key = ?", key)
@@ -235,14 +237,15 @@ myapp/adapters/payment/
 
 2. Define the base interface in `_base.py`:
 ```python
-from acb.config import  Settings
+from acb.config import AdapterBase, Settings
 from pydantic import SecretStr
+from typing import Protocol
 
 class PaymentBaseSettings(Settings):
     currency: str = "USD"
     default_timeout: int = 30
 
-class PaymentBase(AdapterBase):
+class PaymentBase(AdapterBase, Protocol):
     async def charge(self, amount: float, description: str) -> str:
         """Charge a payment and return a transaction ID"""
         raise NotImplementedError()
@@ -257,21 +260,22 @@ class PaymentBase(AdapterBase):
 from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
 import stripe
-from typing import Any
+import typing as t
 
 class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
 
 class Stripe(PaymentBase):
-    settings: StripeSettings = None
+    settings: StripeSettings | None = None
 
     async def init(self) -> None:
-        stripe.api_key = self.settings.api_key.get_secret_value()
+        if self.settings:
+            stripe.api_key = self.settings.api_key.get_secret_value()
 
     async def charge(self, amount: float, description: str) -> str:
-        response: Any = await stripe.PaymentIntent.create(
+        response: t.Any = await stripe.PaymentIntent.create(
             amount=int(amount * 100),  # Convert to cents
-            currency=self.settings.currency,
+            currency=self.settings.currency if self.settings else "USD",
             description=description
         )
         return response.id
@@ -294,8 +298,9 @@ payment: stripe
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
+import typing as t
 
-async def payment_example():
+async def payment_example() -> dict[str, t.Any]:
     # Import your adapter
     Payment = import_adapter("payment")
 
@@ -303,10 +308,10 @@ async def payment_example():
     payment = depends.get(Payment)
 
     # Use it
-    transaction_id = await payment.charge(19.99, "Premium subscription")
+    transaction_id: str = await payment.charge(19.99, "Premium subscription")
 
     # Later, if needed, refund the payment
-    success = await payment.refund(transaction_id)
+    success: bool = await payment.refund(transaction_id)
     return {"transaction_id": transaction_id, "refunded": success}
 ```
 
