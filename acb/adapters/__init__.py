@@ -9,6 +9,7 @@ from pathlib import Path
 
 import nest_asyncio
 import rich.repr
+from aioconsole import aprint  # noqa  # type: ignore
 from anyio import Path as AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
@@ -19,6 +20,8 @@ from ..console import console
 from ..depends import depends
 
 nest_asyncio.apply()
+
+debug = False
 
 root_path: AsyncPath = AsyncPath(Path.cwd())
 tmp_path: AsyncPath = root_path / "tmp"
@@ -203,18 +206,20 @@ def import_adapter(
             raise ValueError(
                 "Could not determine adapter categories from calling context"
             )
-    console.print(
-        f"[bold white]Importing adapters: [bold green]"
-        f"{', '.join(adapter_categories)}[/] for"
-        f" [bold red]{caller}[/][/]"
-    )
+    if debug:
+        console.print(
+            f"[bold white]Importing adapters: [bold green]"
+            f"{', '.join(adapter_categories)}[/] for"
+            f" [bold red]{caller}[/][/]"
+        )
     try:
         imported_adapters = asyncio.run(gather_imports(adapter_categories))
     except Exception as e:
         raise AdapterNotInstalled(f"Failed to install adapters: {e}")
-    console.print(
-        f"[bold magenta]Adapters imported: [bold white]{imported_adapters}[/][/]"
-    )
+    if debug:
+        console.print(
+            f"[bold magenta]Adapters imported: [bold white]{imported_adapters}[/][/]"
+        )
     return (
         imported_adapters[0]
         if len(imported_adapters) == 1

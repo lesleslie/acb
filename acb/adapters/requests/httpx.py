@@ -115,7 +115,6 @@ class Requests(RequestsBase):
 
     async def init(self) -> None:  # type: ignore
         import_adapter("cache")
-        print(self.config)
         self.storage = AsyncRedisStorage(
             client=AsyncRedis(
                 host=self.config.cache.host.get_secret_value(),

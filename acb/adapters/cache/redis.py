@@ -17,7 +17,7 @@ class CacheSettings(CacheBaseSettings):
     local_host: str = "127.0.0.1"
     port: t.Optional[int] = 6379
     cluster: t.Optional[bool] = False
-    connect_timeout: t.Optional[float] = None
+    connect_timeout: t.Optional[float] = 3
     max_connections: t.Optional[int] = None
     health_check_interval: t.Optional[int] = 0
 

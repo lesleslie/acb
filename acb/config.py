@@ -17,21 +17,25 @@ from pydantic._internal._utils import deep_update
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
 from pydantic_settings.sources import SettingsError
-from acb.actions.encode import dump, load
-from acb.adapters import (
+
+from . import register_pkg
+from .actions.encode import dump, load
+from .adapters import (
     _deployed,
     _testing,
     adapter_registry,
     get_adapter,
+    import_adapter,
     root_path,
     secrets_path,
     settings_path,
     tmp_path,
 )
-
 from .depends import depends
 
 nest_asyncio.apply()
+
+register_pkg()
 
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
@@ -467,17 +471,12 @@ class Config(BaseModel, arbitrary_types_allowed=True, extra="allow"):
 depends.set(Config)
 depends.get(Config).init()
 
+Logger = import_adapter()
+
 
 @rich.repr.auto
 class AdapterBase:
     config: Config = depends()
-    logger: t.Any = None
-    debug: bool = False
-
-    def __init__(self) -> None:
-        from .logger import Logger
-
-        self.logger = depends.get(Logger)
-        self.debug = getattr(self.config.debug, self.__class__.__name__.lower(), False)
+    logger: Logger = depends()
 
     async def init(self) -> None: ...
