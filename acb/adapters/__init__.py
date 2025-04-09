@@ -25,8 +25,11 @@ debug = False
 
 root_path: AsyncPath = AsyncPath(Path.cwd())
 tmp_path: AsyncPath = root_path / "tmp"
+adapters_path: AsyncPath = root_path / "adapters"
+actions_path: AsyncPath = root_path / "actions"
 settings_path: AsyncPath = root_path / "settings"
 app_settings_path: AsyncPath = settings_path / "app.yml"
+debug_settings_path: AsyncPath = settings_path / "debug.yml"
 adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
 secrets_path: AsyncPath = tmp_path / "secrets"
 _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
@@ -35,6 +38,7 @@ _testing: bool = os.getenv("TESTING", "False").lower() == "true"
 _adapter_import_locks: ContextVar[dict[str, asyncio.Lock]] = ContextVar(
     "_adapter_import_locks", default={}
 )
+default_adapters = dict(app="default", storage="file", cache="memory")
 
 
 class AdapterNotFound(Exception): ...
@@ -286,7 +290,7 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
         categories.update(a.category for a in adapter_registry.get() + adapters)
         await adapter_settings_path.write_bytes(
             yaml_encode(
-                {cat: None for cat in categories},
+                {cat: None for cat in categories} | default_adapters,
                 sort_keys=True,
             )
         )

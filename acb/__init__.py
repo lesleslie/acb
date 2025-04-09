@@ -13,10 +13,18 @@ from rich.padding import Padding
 from rich.table import Table
 
 from .actions import Action, action_registry, register_actions
-from .adapters import Adapter, _deployed, get_adapters, register_adapters
+from .adapters import (
+    Adapter,
+    _deployed,
+    get_adapters,
+    register_adapters,
+)
 from .console import console
 
 nest_asyncio.apply()
+
+__all__ = ["register_pkg", "display_components", "pkg_registry"]
+
 
 debug = False
 

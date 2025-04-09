@@ -49,20 +49,20 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-cov",
-    "pyfiglet",
     "pytest-asyncio",
+    "google-crc32c",
+    "tomli-w",
+    "uv",
     "pdm",
     "msgspec-python313-pre",
     "pytest-mock",
-    "pdm-bump",
-    "google-crc32c",
     "pytest",
+    "pdm-bump",
     "pre-commit",
-    "tomli-w",
-    "pyyaml",
-    "uv",
     "autotyping",
+    "pytest-cov",
+    "pyyaml",
+    "pyfiglet",
 ]
 
 [tool.refurb]
@@ -73,15 +73,15 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B403",
     "B101",
-    "B704",
     "B301",
     "B311",
-    "B602",
-    "B607",
+    "B704",
+    "B403",
     "B404",
+    "B607",
+    "B602",
+    "B603",
 ]
 
 [tool.pyright]
@@ -174,7 +174,7 @@ python_functions = [
 
 [project]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 description = "Default template for PDM package"
 dependencies = [
     "arrow>=1.3.0",
@@ -190,7 +190,7 @@ dependencies = [
     "inflection>=0.5.1",
     "pyyaml>=6.0.2",
     "google-crc32c>=1.7.1",
-    "pydantic[email]>=2.11.2",
+    "pydantic[email]>=2.11.3",
     "devtools>=0.12.2",
     "typer>=0.15.2",
     "tomli-w>=1.2.0",
@@ -241,7 +241,7 @@ dns = [
 ]
 requests = [
     "httpx[http2]>=0.28.1",
-    "hishel>=0.1.1",
+    "hishel>=0.1.2",
     "sentry-sdk[httpx]>=2.25.1",
     "logfire[httpx]>=3.12.0",
     "niquests>=3.14.0",
@@ -268,7 +268,7 @@ demo = [
     "faker>=37.1.0",
 ]
 ftpd = [
-    "aioftp>=0.24.1",
+    "aioftp>=0.25.0",
     "asyncssh>=2.20.0",
 ]
 secret = [
@@ -279,7 +279,7 @@ monitoring = [
     "logfire[system-metrics]>=3.12.0",
 ]
 dev = [
-    "crackerjack>=0.15.3",
+    "crackerjack>=0.15.5",
     "pytest-anyio>=0.0.0",
 ]
 

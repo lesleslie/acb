@@ -23,7 +23,9 @@ from .actions.encode import dump, load
 from .adapters import (
     _deployed,
     _testing,
+    actions_path,
     adapter_registry,
+    adapters_path,
     get_adapter,
     import_adapter,
     root_path,
@@ -37,19 +39,16 @@ nest_asyncio.apply()
 
 register_pkg()
 
+
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
 
 async def get_version() -> str:
     pyproject_toml = root_path.parent / "pyproject.toml"
-    version_file = root_path / "_version"
     if await pyproject_toml.exists():
         _version = (await load.toml(pyproject_toml)).get("project").get("version")
-        await version_file.write_text(_version)
         return _version
-    elif await version_file.exists():
-        return await version_file.read_text()
-    return "0.0.1"
+    return "0.1.0"
 
 
 def get_version_default() -> str:
@@ -65,23 +64,6 @@ class Platform(str, Enum):
     aws = "aws"
     gcp = "gcp"
     azure = "azure"
-
-
-async def init_app() -> None:
-    init_paths = [
-        tmp_path,
-        secrets_path,
-    ]
-    init_paths = (
-        init_paths
-        if _deployed or _testing or root_path.stem == "acb"
-        else (init_paths + [AsyncPath(settings_path)])
-    )
-    for path in init_paths:
-        await path.mkdir(exist_ok=True)
-
-
-asyncio.run(init_app())
 
 
 def gen_password(size: int = 10) -> str:
@@ -457,6 +439,8 @@ class Config(BaseModel, arbitrary_types_allowed=True, extra="allow"):
     secrets_path: AsyncPath = secrets_path
     settings_path: AsyncPath = settings_path
     tmp_path: AsyncPath = tmp_path
+    adapters_path: AsyncPath = adapters_path
+    actions_path: AsyncPath = actions_path
     debug: DebugSettings | None = None
     app: AppSettings | None = None
 

@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:a3a402bb53fcdae6b21bb9808e2c5c258924906fa1e1983e57cba0ebfdd19932"
+content_hash = "sha256:fb8953fa717847740a97ff2ed9f991874d32514308830a28ab94dd7bd794897b"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -79,11 +79,11 @@ files = [
 
 [[package]]
 name = "aioftp"
-version = "0.24.1"
+version = "0.25.0"
 summary = ""
 files = [
-    {file = "aioftp-0.24.1-py3-none-any.whl", hash = "sha256:50e3102c48a4fc9057bc6044616ce94bddf837968f945c60669f6292a34290e1"},
-    {file = "aioftp-0.24.1.tar.gz", hash = "sha256:74ac7c6ee4855e4db8ffa2c2fb1597789a697817c47ba21a54eb9039f43568af"},
+    {file = "aioftp-0.25.0-py3-none-any.whl", hash = "sha256:7757f2e2d6119d3659c6c3e246e353126905335f6ec7c9a96bb604385e503200"},
+    {file = "aioftp-0.25.0.tar.gz", hash = "sha256:4856af3f145d424ec28e22620a6c4aeebaf0db541730903934a167a00f86fa0a"},
 ]
 
 [[package]]
@@ -549,7 +549,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.15.3"
+version = "0.15.5"
 summary = ""
 dependencies = [
     "autotyping",
@@ -567,8 +567,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.15.3-py3-none-any.whl", hash = "sha256:9a9b36075e1566d9100088f3a9269ca309f35691b6ea9ea4dabad8096aa01687"},
-    {file = "crackerjack-0.15.3.tar.gz", hash = "sha256:23d9f69883f329b3a0217e71e3bc2e02e3acb7692e85c6e7b3ca9627c22c7e7a"},
+    {file = "crackerjack-0.15.5-py3-none-any.whl", hash = "sha256:e4e1358f2a391f9488e6415c96ab7576116be122fd0cfe61e1a8472290506837"},
+    {file = "crackerjack-0.15.5.tar.gz", hash = "sha256:b3a3e7e03d813e382e586b61bdbc14cdf995854ffab717d9ea78412df61f7161"},
 ]
 
 [[package]]
@@ -1065,14 +1065,14 @@ files = [
 
 [[package]]
 name = "hishel"
-version = "0.1.1"
+version = "0.1.2"
 summary = ""
 dependencies = [
     "httpx",
 ]
 files = [
-    {file = "hishel-0.1.1-py3-none-any.whl", hash = "sha256:5b51acc340303faeef2f5cfc1658acb1db1fdc3e3ad76406265a485f9707c5d6"},
-    {file = "hishel-0.1.1.tar.gz", hash = "sha256:1f6421b78cc23fc43c610f651b7848c9b8eee2d29551d64a2ab0d45b319b6559"},
+    {file = "hishel-0.1.2-py3-none-any.whl", hash = "sha256:802b4e446017f4867efdb26d3417670991ad1b4826d24331110871fe8957b5d0"},
+    {file = "hishel-0.1.2.tar.gz", hash = "sha256:6643450bfb1cfa2ecd6002769f6f5069d0d048c9c1f1e29a98a48302d5875092"},
 ]
 
 [[package]]
@@ -1988,7 +1988,7 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.11.2"
+version = "2.11.3"
 summary = ""
 dependencies = [
     "annotated-types",
@@ -1997,8 +1997,8 @@ dependencies = [
     "typing-inspection",
 ]
 files = [
-    {file = "pydantic-2.11.2-py3-none-any.whl", hash = "sha256:7f17d25846bcdf89b670a86cdfe7b29a9f1c9ca23dee154221c9aa81845cfca7"},
-    {file = "pydantic-2.11.2.tar.gz", hash = "sha256:2138628e050bd7a1e70b91d4bf4a91167f4ad76fdb83209b107c8d84b854917e"},
+    {file = "pydantic-2.11.3-py3-none-any.whl", hash = "sha256:a082753436a07f9ba1289c6ffa01cd93db3548776088aa917cc43b63f68fa60f"},
+    {file = "pydantic-2.11.3.tar.gz", hash = "sha256:7471657138c16adad9322fe3070c0116dd6c3ad8d649300e3cbdfe91f4db4ec3"},
 ]
 
 [[package]]
@@ -2044,16 +2044,16 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.11.2"
+version = "2.11.3"
 extras = ["email"]
 summary = ""
 dependencies = [
     "email-validator",
-    "pydantic==2.11.2",
+    "pydantic==2.11.3",
 ]
 files = [
-    {file = "pydantic-2.11.2-py3-none-any.whl", hash = "sha256:7f17d25846bcdf89b670a86cdfe7b29a9f1c9ca23dee154221c9aa81845cfca7"},
-    {file = "pydantic-2.11.2.tar.gz", hash = "sha256:2138628e050bd7a1e70b91d4bf4a91167f4ad76fdb83209b107c8d84b854917e"},
+    {file = "pydantic-2.11.3-py3-none-any.whl", hash = "sha256:a082753436a07f9ba1289c6ffa01cd93db3548776088aa917cc43b63f68fa60f"},
+    {file = "pydantic-2.11.3.tar.gz", hash = "sha256:7471657138c16adad9322fe3070c0116dd6c3ad8d649300e3cbdfe91f4db4ec3"},
 ]
 
 [[package]]
