@@ -290,7 +290,8 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
         categories.update(a.category for a in adapter_registry.get() + adapters)
         await adapter_settings_path.write_bytes(
             yaml_encode(
-                {cat: None for cat in categories} | default_adapters,
+                {cat: None for cat in categories if cat not in ("logger", "config")}
+                | default_adapters,
                 sort_keys=True,
             )
         )

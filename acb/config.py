@@ -39,31 +39,29 @@ nest_asyncio.apply()
 
 register_pkg()
 
-
-_app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
-
-
-async def get_version() -> str:
-    pyproject_toml = root_path.parent / "pyproject.toml"
-    if await pyproject_toml.exists():
-        _version = (await load.toml(pyproject_toml)).get("project").get("version")
-        return _version
-    return "0.1.0"
-
-
-def get_version_default() -> str:
-    return asyncio.run(get_version())
-
-
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
+
+_app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
 
 class Platform(str, Enum):
     aws = "aws"
     gcp = "gcp"
     azure = "azure"
+
+
+async def get_version() -> str:
+    pyproject_toml = root_path.parent / "pyproject.toml"
+    if await pyproject_toml.exists():
+        version = (await load.toml(pyproject_toml)).get("project").get("version")
+        return version
+    return "0.1.0"
+
+
+def get_version_default() -> str:
+    return asyncio.run(get_version())
 
 
 def gen_password(size: int = 10) -> str:
@@ -272,7 +270,7 @@ class YamlSettingsSource(PydanticSettingsSource):
             for adapter in [
                 a
                 for a in adapter_registry.get()
-                if a.category not in yml_settings.keys()
+                if a.category not in (yml_settings.keys() or ("config", "logger"))
             ]:
                 yml_settings[adapter.category] = False
             debug = yml_settings
