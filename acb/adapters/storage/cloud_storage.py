@@ -10,7 +10,7 @@ from ._base import StorageBase, StorageBaseSettings
 
 
 class StorageSettings(StorageBaseSettings):
-    cors: t.Optional[dict[str, dict[str, list[str] | int]]] = dict(  # noqa: FURB123
+    cors: t.Optional[dict[str, dict[str, list[str] | int]]] = dict(  # noqa
         upload={
             "origin": ["*"],
             "method": ["*"],

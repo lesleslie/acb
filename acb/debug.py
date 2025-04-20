@@ -31,7 +31,6 @@ def get_calling_module(config: Config = depends()) -> Path | None:
         mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
         mod = Path(mod).parent
 
-        # Check if config.debug exists before accessing its attributes
         if config.debug is not None:
             debug_mod = getattr(config.debug, mod.stem, None)
             return mod if debug_mod else None
@@ -57,7 +56,6 @@ def colorized_stderr_print(s: str) -> None:
         try:
             asyncio.run(aprint(colored, use_stderr=True))
         except Exception:
-            # Fallback to regular print if asyncio.run or aprint fails
             import sys
 
             print(colored, file=sys.stderr)
@@ -89,7 +87,6 @@ def init_debug(config: Config = depends()) -> None:
         **debug_args,
     )
 
-    # Check if config.debug exists before accessing its attributes
     is_production = config.deployed
     if config.debug is not None and hasattr(config.debug, "production"):
         is_production = is_production or config.debug.production
@@ -102,5 +99,4 @@ def init_debug(config: Config = depends()) -> None:
         )
 
 
-# Initialize debug configuration
 init_debug()

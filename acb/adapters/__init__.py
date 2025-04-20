@@ -16,12 +16,9 @@ from msgspec.yaml import decode as yaml_decode
 from pydantic import BaseModel
 
 from ..actions.encode import yaml_encode
-from ..console import console
 from ..depends import depends
 
 nest_asyncio.apply()
-
-debug = False
 
 root_path: AsyncPath = AsyncPath(Path.cwd())
 tmp_path: AsyncPath = root_path / "tmp"
@@ -197,7 +194,6 @@ def import_adapter(
 ) -> t.Any:
     if isinstance(adapter_categories, str):
         adapter_categories = [adapter_categories]
-    caller = stack()[1][0].f_globals["__name__"]
     if not adapter_categories:
         try:
             adapter_categories = [
@@ -210,20 +206,10 @@ def import_adapter(
             raise ValueError(
                 "Could not determine adapter categories from calling context"
             )
-    if debug:
-        console.print(
-            f"[bold white]Importing adapters: [bold green]"
-            f"{', '.join(adapter_categories)}[/] for"
-            f" [bold red]{caller}[/][/]"
-        )
     try:
         imported_adapters = asyncio.run(gather_imports(adapter_categories))
     except Exception as e:
         raise AdapterNotInstalled(f"Failed to install adapters: {e}")
-    if debug:
-        console.print(
-            f"[bold magenta]Adapters imported: [bold white]{imported_adapters}[/][/]"
-        )
     return (
         imported_adapters[0]
         if len(imported_adapters) == 1

@@ -11,6 +11,8 @@ from acb.depends import depends
 
 from ._base import RequestsBase, RequestsBaseSettings
 
+Cache = import_adapter()
+
 
 class RequestsSettings(RequestsBaseSettings):
     base_url: str = ""
@@ -114,7 +116,7 @@ class Requests(RequestsBase):
         pass
 
     async def init(self) -> None:  # type: ignore
-        import_adapter("cache")
+        self.logger.debug(self.config.cache)
         self.storage = AsyncRedisStorage(
             client=AsyncRedis(
                 host=self.config.cache.host.get_secret_value(),

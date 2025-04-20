@@ -1,5 +1,4 @@
 import asyncio
-import os
 import typing as t
 from contextvars import ContextVar
 from enum import Enum
@@ -12,20 +11,17 @@ import nest_asyncio
 import rich.repr
 from anyio import Path as AsyncPath
 from inflection import titleize, underscore
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from pydantic._internal._utils import deep_update
+from pydantic.dataclasses import dataclass
 from pydantic.fields import FieldInfo
-from pydantic_settings import SettingsConfigDict
-from pydantic_settings.sources import SettingsError
+from pydantic_settings import SettingsConfigDict, SettingsError
 
-from . import register_pkg
 from .actions.encode import dump, load
 from .adapters import (
     _deployed,
     _testing,
-    actions_path,
     adapter_registry,
-    adapters_path,
     get_adapter,
     import_adapter,
     root_path,
@@ -35,9 +31,8 @@ from .adapters import (
 )
 from .depends import depends
 
-nest_asyncio.apply()
-
-register_pkg()
+if not _testing:
+    nest_asyncio.apply()
 
 project: str = ""
 app_name: str = ""
@@ -55,7 +50,8 @@ class Platform(str, Enum):
 async def get_version() -> str:
     pyproject_toml = root_path.parent / "pyproject.toml"
     if await pyproject_toml.exists():
-        version = (await load.toml(pyproject_toml)).get("project").get("version")
+        data = await load.toml(pyproject_toml)
+        version = data.get("project", {}).get("version", "0.1.0")
         return version
     return "0.1.0"
 
@@ -131,19 +127,6 @@ class InitSettingsSource(PydanticSettingsSource):
 
     async def __call__(self) -> dict[str, t.Any]:
         return self.init_kwargs
-
-
-class EnvSettingsSource(PydanticSettingsSource):
-    async def __call__(self) -> dict[str, t.Any]:
-        env_vars = {}
-        for key, val in os.environ.items():
-            if key.startswith(f"{self.adapter_name.upper()}_"):
-                field_key = key.lower().removeprefix(f"{self.adapter_name}_")
-                if field_key.endswith("__list"):
-                    env_vars[field_key.removesuffix("__list")] = val.split(",")
-                else:
-                    env_vars[field_key] = val
-        return env_vars
 
 
 class FileSecretSource(PydanticSettingsSource):
@@ -417,6 +400,15 @@ class AppSettings(Settings):
         return app_name
 
 
+class AdapterMeta(type):
+    _instances = {}
+
+    def __call__(cls, *args: t.Any, **kwargs: t.Any):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 @t.runtime_checkable
 class ConfigProtocol(t.Protocol):
     deployed: bool
@@ -427,27 +419,35 @@ class ConfigProtocol(t.Protocol):
     debug: DebugSettings | None
     app: AppSettings | None
 
-    async def init(self) -> None: ...
+    def init(self) -> None: ...
 
 
 @rich.repr.auto
-class Config(BaseModel, arbitrary_types_allowed=True, extra="allow"):
+@dataclass(config=ConfigDict(arbitrary_types_allowed=True, extra="allow"))
+class Config(metaclass=AdapterMeta):
     deployed: bool = _deployed
     root_path: AsyncPath = root_path
     secrets_path: AsyncPath = secrets_path
     settings_path: AsyncPath = settings_path
     tmp_path: AsyncPath = tmp_path
-    adapters_path: AsyncPath = adapters_path
-    actions_path: AsyncPath = actions_path
     debug: DebugSettings | None = None
     app: AppSettings | None = None
-
-    def __getattr__(self, item: str) -> t.Any:
-        return super().__getattr__(item)  # type: ignore
 
     def init(self) -> None:
         self.debug = DebugSettings()
         self.app = AppSettings()
+
+    def __getattr__(self, item: str) -> t.Any:
+        if item in self.__dict__:
+            return self.__dict__[item]
+        if "." in item:
+            parts = item.split(".")
+            current_level = self
+            for part in parts:
+                if hasattr(current_level, part):
+                    current_level = getattr(current_level, part)
+            return current_level
+        raise AttributeError(f"'Config' object has no attribute '{item}'")
 
 
 depends.set(Config)
@@ -457,7 +457,7 @@ Logger = import_adapter()
 
 
 @rich.repr.auto
-class AdapterBase:
+class AdapterBase(metaclass=AdapterMeta):
     config: Config = depends()
     logger: Logger = depends()
 

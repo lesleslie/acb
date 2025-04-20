@@ -26,9 +26,6 @@ nest_asyncio.apply()
 __all__ = ["register_pkg", "display_components", "pkg_registry"]
 
 
-debug = False
-
-
 @rich.repr.auto
 class Pkg(BaseModel, arbitrary_types_allowed=True):
     name: str
@@ -45,13 +42,13 @@ def register_pkg() -> None:
     name = path.stem
     registry = pkg_registry.get()
     if name not in [p.name for p in registry]:
-        if debug:
-            console.print(f"Registering: {path.stem}", style="green")
         actions = asyncio.run(register_actions(path))
         adapters = asyncio.run(register_adapters(path))
         pkg = Pkg(name=name, path=path, actions=actions, adapters=adapters)
         registry.append(pkg)
 
+
+register_pkg()
 
 table_args: dict[str, t.Any] = {
     "show_lines": True,
