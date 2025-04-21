@@ -10,13 +10,14 @@ from ._base import CacheBase, CacheBaseSettings
 class CacheSettings(CacheBaseSettings): ...
 
 
-class Cache(CacheBase, SimpleMemoryCache):  # type: ignore
+class Cache(CacheBase):
     async def init(self, *args: t.Any, **kwargs: t.Any) -> None:
-        super().__init__(
+        self._cache = SimpleMemoryCache(
             serializer=PickleSerializer(),
             namespace=f"{self.config.app.name}:",
             **kwargs,
         )
+        self._cache.timeout = 0.0
 
 
 depends.set(Cache)

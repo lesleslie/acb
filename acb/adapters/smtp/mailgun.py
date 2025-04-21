@@ -124,7 +124,7 @@ class Smtp(SmtpBase):
         return records
 
     @depends.inject
-    async def create_dns_records(self, dns: Dns = depends()) -> None:
+    async def create_dns_records(self, dns: "Dns" = depends()) -> None:
         await self.create_domain(self.config.smtp.domain)
         await self.create_domain_credentials(self.config.smtp.domain)
         records = await self.get_dns_records(self.config.smtp.domain)

@@ -26,7 +26,8 @@ class MonitoringSettings(MonitoringBaseSettings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        self.sample_rate = self.sample_rate if config.deployed else 1.0
+        if "sample_rate" not in values:
+            self.sample_rate = self.sample_rate if config.deployed else 1.0
 
 
 class Monitoring(MonitoringBase):

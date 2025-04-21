@@ -34,7 +34,7 @@ class Hash:
 
     @staticmethod
     async def md5(
-        obj: Path | AsyncPath | str, ascii: bool = False, usedforsecurity: bool = True
+        obj: Path | AsyncPath | str, ascii: bool = False, usedforsecurity: bool = False
     ) -> str:
         if isinstance(obj, Path | AsyncPath):
             obj = await AsyncPath(obj).read_text()

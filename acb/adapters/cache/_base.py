@@ -4,8 +4,9 @@ from aiocache import BaseCache
 from aiocache.serializers import BaseSerializer
 from msgspec import msgpack
 from acb.actions.compress import compress, decompress
-from acb.config import AdapterBase, Config, Settings
+from acb.config import Config, Settings
 from acb.depends import depends
+from acb.logger import Logger
 
 
 class CacheBaseSettings(Settings):
@@ -46,4 +47,6 @@ class CacheProtocol(t.Protocol):
     async def scan(self, pattern: str) -> t.AsyncIterator[str]: ...  # noqa
 
 
-class CacheBase(BaseCache, AdapterBase): ...
+class CacheBase(BaseCache):
+    config: Config = depends()
+    logger: Logger = depends()
