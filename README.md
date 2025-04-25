@@ -14,6 +14,24 @@
 
 ACB is a modular Python framework for building asynchronous applications with pluggable components. It provides a collection of self-contained **actions** and flexible **adapters** that integrate with various systems, along with a dynamic configuration and dependency injection system.
 
+In simpler terms, ACB helps you build Python applications by providing ready-made components that you can easily plug together, configure, and extend.
+
+ACB can be used as a standalone framework or as a foundation for higher-level frameworks. For example, [FastBlocks](https://github.com/lesleslie/fastblocks) builds on ACB to create a web application framework specifically designed for server-side rendered HTMX applications.
+
+## Key Concepts
+
+If you're new to ACB, here are the key concepts to understand:
+
+1. **Actions**: Self-contained utility functions that perform specific tasks like compression, encoding, or hashing. Think of these as your toolbox of helper functions.
+
+2. **Adapters**: Standardized interfaces to external systems like databases, caching, or storage. Adapters let you switch between different implementations (e.g., Redis vs. in-memory cache) without changing your code.
+
+3. **Dependency Injection**: A pattern that automatically provides components to your functions when needed. This eliminates the need to manually create and pass objects around.
+
+4. **Configuration System**: A way to configure your application using YAML files instead of hardcoding values in your code.
+
+5. **Package Registration**: ACB automatically discovers and registers components in your application, reducing boilerplate code.
+
 ## Key Features
 
 - **Modular Architecture**: Mix and match components to build your application
@@ -25,6 +43,7 @@ ACB is a modular Python framework for building asynchronous applications with pl
 
 ## Table of Contents
 
+- [Key Concepts](#key-concepts)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Architecture Overview](#architecture-overview)
@@ -33,6 +52,7 @@ ACB is a modular Python framework for building asynchronous applications with pl
   - [Adapters](#adapters)
   - [Configuration System](#configuration-system)
   - [Dependency Injection](#dependency-injection)
+- [Common Patterns](#common-patterns)
 - [Use Cases](#use-cases)
 - [Built-in Components](#built-in-components)
 - [Advanced Usage](#advanced-usage)
@@ -103,6 +123,17 @@ ACB is structured around these fundamental building blocks:
 
 Actions are modular, self-contained utility functions that perform specific tasks. They are automatically discovered and registered, making them immediately available throughout your application.
 
+#### What Are Actions?
+
+Think of actions as a toolbox of utility functions that you can use anywhere in your application. Unlike adapters (which provide interfaces to external systems), actions are simple functions that perform specific tasks like compression, encoding, or hashing.
+
+Key characteristics of actions:
+
+- **Self-contained**: Each action is independent and doesn't rely on external services
+- **Automatically available**: No need to register or initialize them
+- **Categorized**: Organized by function (compress, encode, hash, etc.)
+- **Consistent API**: Similar operations have similar interfaces
+
 #### Available Actions
 
 | Action Category | Description | Implementations |
@@ -117,10 +148,53 @@ Actions are modular, self-contained utility functions that perform specific task
 from acb.actions.compress import compress, decompress
 
 # Compress some text data using brotli
+# The level parameter controls the compression level (higher = more compression but slower)
 compressed = compress.brotli("Hello, ACB!", level=3)
+print(f"Compressed size: {len(compressed)} bytes")
 
 # Decompress back to the original text
 original = decompress.brotli(compressed)
+print(f"Original text: {original}")
+```
+
+**Example: Using the encode/decode actions**
+
+```python
+from acb.actions.encode import encode, decode
+
+# Create a Python dictionary
+data = {
+    "name": "ACB Framework",
+    "version": "1.0.0",
+    "features": ["actions", "adapters", "dependency injection"]
+}
+
+# Encode as JSON
+json_data = encode.json(data)
+print(f"JSON: {json_data}")
+
+# Encode as YAML
+yaml_data = encode.yaml(data)
+print(f"YAML:\n{yaml_data}")
+
+# Decode back from JSON
+original = decode.json(json_data)
+print(f"Decoded: {original}")
+```
+
+**Example: Using the hash action**
+
+```python
+from acb.actions.hash import hash
+
+# Generate a secure hash using blake3 (very fast and secure)
+file_content = b"This is the content of my file"
+file_hash = hash.blake3(file_content)
+print(f"File hash: {file_hash}")
+
+# Generate a CRC32C checksum (good for data integrity checks)
+checksum = hash.crc32c(file_content)
+print(f"Checksum: {checksum}")
 ```
 
 For more detailed documentation on actions, see the [Actions README](./acb/actions/README.md).
@@ -128,6 +202,19 @@ For more detailed documentation on actions, see the [Actions README](./acb/actio
 ### Adapters
 
 Adapters provide standardized interfaces to external systems and services. Each adapter category includes a base class that defines the interface and multiple implementations.
+
+Projects built on ACB, like FastBlocks, can extend this adapter system with domain-specific adapters while maintaining compatibility with ACB's core infrastructure.
+
+#### Understanding the Adapter Pattern in ACB
+
+The adapter pattern in ACB works like this:
+
+1. **Define a standard interface** for a specific type of service (e.g., caching)
+2. **Create multiple implementations** of that interface (e.g., memory cache, Redis cache)
+3. **Configure which implementation to use** in your settings
+4. **Use the interface in your code** without worrying about the specific implementation
+
+This means you can switch from a memory cache to Redis by changing a single line in your configuration file, without modifying any of your application code.
 
 #### Key Adapter Categories
 
@@ -147,16 +234,47 @@ Adapters provide standardized interfaces to external systems and services. Each 
 from acb.depends import depends
 from acb.adapters import import_adapter
 
-# Import the cache adapter (automatically uses the one enabled in config)
+# Step 1: Import the adapter class (not an instance)
+# This gets the adapter implementation specified in your settings/adapters.yml
+# (e.g., if you have "cache: redis" in your settings, this will import the Redis adapter)
 Cache = import_adapter("cache")
 
-# Get the cache instance via dependency injection
+# Step 2: Get an instance of the adapter via dependency injection
 cache = depends.get(Cache)
 
-# Use the cache with a consistent API regardless of implementation
-await cache.set("my_key", "my_value", ttl=60)
-value = await cache.get("my_key")
+# Step 3: Use the adapter with a consistent API
+# These methods work the same way regardless of whether you're using
+# the memory cache or Redis implementation
+async def cache_example():
+    # Store a value in the cache with a 60-second TTL
+    await cache.set("user:123", {"name": "John", "role": "admin"}, ttl=60)
+
+    # Retrieve the value from cache
+    user = await cache.get("user:123")
+    if user:
+        print(f"Found user: {user['name']}")
+    else:
+        print("User not found in cache")
+
+    # Delete a value from cache
+    await cache.delete("user:123")
 ```
+
+**Switching Implementations**
+
+To switch from memory cache to Redis, just update your `settings/adapters.yml` file:
+
+```yaml
+# Use in-memory cache (good for development)
+cache: memory
+
+# OR
+
+# Use Redis cache (good for production)
+cache: redis
+```
+
+Your application code remains exactly the same!
 
 For more detailed documentation on adapters, see the [Adapters README](./acb/adapters/README.md).
 
@@ -187,6 +305,40 @@ class MyServiceSettings(Settings):
 
 ACB features a simple yet powerful dependency injection system that makes component wiring automatic and testable.
 
+#### How Dependency Injection Works in ACB
+
+```
+┌─────────────────────┐      ┌─────────────────────┐
+│                     │      │                     │
+│  Your Application   │      │   ACB Components    │
+│                     │      │                     │
+└──────────┬──────────┘      └──────────┬──────────┘
+           │                            │
+           │                            │
+           ▼                            ▼
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│             Dependency Registry                 │
+│                                                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────┐  │
+│  │   Config    │  │   Cache     │  │ Logger  │  │
+│  └─────────────┘  └─────────────┘  └─────────┘  │
+│                                                 │
+└─────────────────────────────────────────────────┘
+                        │
+                        │
+                        ▼
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│             @depends.inject                     │
+│                                                 │
+│  Automatically injects dependencies into your   │
+│  functions based on type annotations or         │
+│  explicit depends() calls                       │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
 **Example: Using dependency injection**
 
 ```python
@@ -195,47 +347,88 @@ from acb.config import Config
 import typing as t
 
 # Register your custom component
-depends.set(MyService)
+depends.set(MyService)  # Now MyService is available in the dependency registry
 
 # Inject dependencies into functions
-@depends.inject
-async def process_data(data: dict[str, t.Any], config: Config = depends(), logger = depends("logger")):
+@depends.inject  # This decorator automatically injects the dependencies
+async def process_data(data: dict[str, t.Any],
+                      config: Config = depends(),  # Injected based on type
+                      logger = depends("logger")): # Injected by name
+    # Now you can use config and logger without manually creating them
     logger.info(f"Processing data with app: {config.app.name}")
     # Process data...
     return result
 ```
 
+#### Benefits of Dependency Injection
+
+1. **Reduced Boilerplate**: No need to manually create and pass objects
+2. **Testability**: Easy to mock dependencies for testing
+3. **Flexibility**: Change implementations without changing your code
+4. **Decoupling**: Components don't need to know how to create their dependencies
+
 ## Getting Started
 
 ### Basic Application Setup
 
+Let's walk through creating a simple ACB application step by step:
+
 1. **Create a new project with PDM:**
 
 ```bash
+# Create a directory for your project
 mkdir myapp
 cd myapp
+
+# Initialize a new Python project with PDM
 pdm init
+
+# Add ACB as a dependency
 pdm add acb
 ```
 
 2. **Create a basic application structure:**
 
+ACB works best with a specific directory structure. Here's what you should create:
+
 ```
-myapp/
-├── myapp/
-│   ├── __init__.py
-│   ├── actions/
-│   │   └── __init__.py
-│   ├── adapters/
-│   │   └── __init__.py
-│   └── main.py
-└── settings/
-    ├── app.yml
-    ├── debug.yml
-    └── adapters.yml
+myapp/                  # Root project directory
+├── myapp/              # Your application package
+│   ├── __init__.py     # Makes myapp a Python package
+│   ├── actions/        # Directory for your custom actions
+│   │   └── __init__.py # Makes actions a subpackage
+│   ├── adapters/       # Directory for your custom adapters
+│   │   └── __init__.py # Makes adapters a subpackage
+│   └── main.py         # Your application entry point
+└── settings/           # Configuration directory
+    ├── app.yml         # Application settings
+    ├── debug.yml       # Debug settings
+    └── adapters.yml    # Adapter configuration
 ```
 
-3. **Initialize ACB in your main.py:**
+3. **Create basic configuration files:**
+
+Let's create a simple `settings/app.yml` file:
+
+```yaml
+# settings/app.yml
+app:
+  name: "MyApp"        # Your application name
+  title: "My ACB App"  # Display title
+  version: "0.1.0"     # Version number
+```
+
+And a simple `settings/adapters.yml` file:
+
+```yaml
+# settings/adapters.yml
+# Choose which adapter implementations to use
+cache: memory          # Use in-memory cache
+logger: loguru         # Use Loguru for logging
+storage: file          # Use file system storage
+```
+
+4. **Initialize ACB in your main.py:**
 
 ```python
 from acb import register_pkg
@@ -243,21 +436,44 @@ from acb.depends import depends
 from acb.config import Config
 
 # Register your package with ACB
+# This tells ACB to discover components in your package
 register_pkg()
 
-# Access configuration
+# Access configuration through dependency injection
+# This automatically loads settings from your YAML files
 config = depends.get(Config)
 
-# Import adapters
-Logger = depends.get("logger")
+# Get a logger instance
+# This uses the implementation specified in adapters.yml
+logger = depends.get("logger")
 
 async def main() -> None:
-    Logger.info(f"Starting {config.app.name} application")
+    # Use the logger to output information
+    logger.info(f"Starting {config.app.name} application")
+
     # Your application logic here
+    logger.info("Application is running!")
 
 if __name__ == "__main__":
+    # Run the async main function
     import asyncio
     asyncio.run(main())
+```
+
+5. **Run your application:**
+
+```bash
+# Make sure you're in the project root directory
+cd myapp
+
+# Run your application
+python -m myapp.main
+```
+
+You should see output like:
+```
+Starting MyApp application
+Application is running!
 ```
 
 ### Configuration Files
@@ -281,6 +497,105 @@ logger: loguru
 storage: file
 ```
 
+## Common Patterns
+
+Here are some common patterns and examples that will help you get started with ACB:
+
+### 1. Using Dependency Injection
+
+Dependency injection is a core concept in ACB. Here's how to use it effectively:
+
+```python
+from acb.depends import depends
+from acb.config import Config
+from acb.adapters import import_adapter
+
+# Import adapter classes
+Cache = import_adapter("cache")  # This gets the configured cache adapter
+Storage = import_adapter("storage")  # This gets the configured storage adapter
+
+# Method 1: Using depends.get() directly
+def direct_injection_example():
+    # Get instances when you need them
+    config = depends.get(Config)
+    cache = depends.get(Cache)
+
+    # Use the components
+    print(f"App name: {config.app.name}")
+
+# Method 2: Using the @depends.inject decorator (recommended)
+@depends.inject
+async def process_file(filename: str,
+                     cache=depends(Cache),  # Injected automatically
+                     storage=depends(Storage),  # Injected automatically
+                     config=depends(Config)):  # Injected automatically
+    # All dependencies are automatically provided
+    print(f"Processing {filename} for app {config.app.name}")
+
+    # Check if file is cached
+    content = await cache.get(f"file:{filename}")
+    if not content:
+        # If not in cache, get from storage
+        content = await storage.get_file(filename)
+        if content:
+            # Store in cache for next time
+            await cache.set(f"file:{filename}", content, ttl=3600)
+    return content
+```
+
+### 2. Working with Configuration
+
+ACB's configuration system makes it easy to manage settings:
+
+```python
+from acb.depends import depends
+from acb.config import Config
+
+# Get the configuration
+config = depends.get(Config)
+
+# Access standard app settings
+app_name = config.app.name
+app_version = config.app.version
+
+# Access adapter-specific settings
+cache_ttl = config.cache.default_ttl
+storage_bucket = config.storage.buckets.media
+
+# Access debug settings
+debug_mode = config.debug.enabled
+```
+
+### 3. Using Actions
+
+Actions are utility functions that perform specific tasks:
+
+```python
+# Using compression actions
+from acb.actions.compress import compress, decompress
+
+# Compress data with brotli
+compressed_data = compress.brotli("Hello, ACB!", level=4)
+
+# Decompress it back
+original_data = decompress.brotli(compressed_data)
+
+# Using encoding actions
+from acb.actions.encode import encode, decode
+
+# Encode data as JSON
+json_data = encode.json({"message": "Hello, ACB!"})
+
+# Decode it back
+original_dict = decode.json(json_data)
+
+# Using hash actions
+from acb.actions.hash import hash
+
+# Generate a secure hash
+file_hash = hash.blake3(b"file content")
+```
+
 ## Built-in Components
 
 ### Debug Module
@@ -291,6 +606,17 @@ ACB provides comprehensive debugging tools to help troubleshoot your application
 - **Pretty-printed output**: Human-readable debug information
 - **Performance timers**: Measure and optimize execution time
 
+```python
+# Using the timeit decorator to measure performance
+from acb.debug import timeit
+
+@timeit
+async def slow_operation():
+    # This function's execution time will be logged
+    await asyncio.sleep(1)
+    return "Done"
+```
+
 ### Logging
 
 The framework includes a robust logging system with structured logging and multiple output formats:
@@ -298,6 +624,157 @@ The framework includes a robust logging system with structured logging and multi
 - **Asynchronous logging**: Non-blocking log operations
 - **Structured data**: JSON-formatted logs for better analysis
 - **Multiple adapters**: Choose between different logging implementations
+
+```python
+# Get a logger instance
+logger = depends.get("logger")
+
+# Different log levels
+logger.debug("Detailed information for debugging")
+logger.info("General information about program execution")
+logger.warning("Warning about potential issues")
+logger.error("Error that doesn't stop the program")
+logger.critical("Critical error that might stop the program")
+
+# Structured logging with context
+logger.info("User logged in", user_id=123, ip_address="192.168.1.1")
+```
+
+## Use Cases
+
+Here are some common use cases for ACB and how to implement them:
+
+### 1. Building a Data Processing Pipeline
+
+ACB is great for building data processing pipelines that need to handle different data sources and storage options:
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+from acb.actions.encode import encode, decode
+from acb.actions.compress import compress, decompress
+import typing as t
+
+# Import adapters
+Storage = import_adapter("storage")
+Cache = import_adapter("cache")
+SQL = import_adapter("sql")
+
+@depends.inject
+async def process_data_pipeline(data_id: str,
+                              storage=depends(Storage),
+                              cache=depends(Cache),
+                              sql=depends(SQL)):
+    # Step 1: Check if processed data is in cache
+    processed_data = await cache.get(f"processed:{data_id}")
+    if processed_data:
+        return decode.json(decompress.brotli(processed_data))
+
+    # Step 2: If not in cache, check if raw data is in storage
+    raw_data = await storage.get_file(f"data/{data_id}.json")
+    if not raw_data:
+        # Step 3: If not in storage, fetch from database
+        raw_data = await sql.fetch_one(
+            "SELECT data FROM raw_data WHERE id = ?", data_id
+        )
+        if raw_data:
+            # Save to storage for future use
+            await storage.put_file(f"data/{data_id}.json", raw_data["data"])
+
+    if not raw_data:
+        return None
+
+    # Step 4: Process the data
+    data_dict = decode.json(raw_data)
+    processed_result = transform_data(data_dict)  # Your processing function
+
+    # Step 5: Cache the processed result
+    compressed_result = compress.brotli(encode.json(processed_result))
+    await cache.set(f"processed:{data_id}", compressed_result, ttl=3600)
+
+    return processed_result
+```
+
+### 2. Building a Configuration Management System
+
+ACB's configuration system makes it easy to build a configuration management system:
+
+```python
+from acb.depends import depends
+from acb.config import Config, Settings
+from pydantic import SecretStr
+
+# Define custom settings models
+class DatabaseSettings(Settings):
+    host: str = "localhost"
+    port: int = 5432
+    username: str = "postgres"
+    password: SecretStr = SecretStr("")
+    database: str = "myapp"
+
+class ApiSettings(Settings):
+    base_url: str = "https://api.example.com"
+    version: str = "v1"
+    timeout: int = 30
+    api_key: SecretStr = SecretStr("")
+
+# Access configuration
+@depends.inject
+async def initialize_services(config=depends(Config)):
+    # Access standard app settings
+    app_name = config.app.name
+    app_version = config.app.version
+
+    # Access custom settings
+    db_config = config.database
+    api_config = config.api
+
+    print(f"Initializing {app_name} v{app_version}")
+    print(f"Connecting to database {db_config.database} at {db_config.host}:{db_config.port}")
+    print(f"Using API at {api_config.base_url}/{api_config.version}")
+```
+
+### 3. Building a Caching Layer
+
+ACB's cache adapter makes it easy to implement caching:
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+from acb.actions.encode import encode, decode
+import typing as t
+import time
+import asyncio
+
+Cache = import_adapter("cache")
+
+@depends.inject
+async def get_user_data(user_id: int, cache=depends(Cache)):
+    # Try to get from cache first
+    cache_key = f"user:{user_id}"
+    cached_data = await cache.get(cache_key)
+
+    if cached_data:
+        print("Cache hit!")
+        return decode.json(cached_data)
+
+    print("Cache miss, fetching from database...")
+    # Simulate database query
+    await asyncio.sleep(1)  # Slow database query
+
+    # In a real app, you would fetch from a database
+    user_data = {
+        "id": user_id,
+        "name": f"User {user_id}",
+        "email": f"user{user_id}@example.com",
+        "created_at": time.time()
+    }
+
+    # Cache the result for future requests
+    await cache.set(cache_key, encode.json(user_data), ttl=300)  # Cache for 5 minutes
+
+    return user_data
+```
 
 ## Advanced Usage
 
@@ -420,7 +897,7 @@ This project is licensed under the terms of the BSD 3-Clause license.
 
 Here are some notable projects built with ACB:
 
-- [**FastBlocks**](https://github.com/example/fastblocks): A rapid development framework that leverages ACB's asynchronous components to build scalable web applications.
+- [**FastBlocks**](https://github.com/lesleslie/fastblocks): A web application framework that directly extends Starlette while leveraging ACB's component architecture to create a powerful platform for server-side rendered HTMX applications. FastBlocks combines Starlette's ASGI capabilities with ACB's infrastructure, adding web-specific adapters for templates, routing, authentication, and admin interfaces.
 
 ## Contributing
 

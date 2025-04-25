@@ -4,6 +4,26 @@ Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/nos
 
 The NoSQL adapter provides a standardized interface for document and key-value database operations in ACB applications, supporting MongoDB, Firestore, and Redis implementations.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Available Implementations](#available-implementations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Basic Usage](#basic-usage)
+  - [MongoDB Implementation](#mongodb-implementation)
+  - [Firestore Implementation](#firestore-implementation)
+  - [Redis Implementation](#redis-implementation)
+- [Advanced Usage](#advanced-usage)
+  - [Transactions](#transactions)
+  - [Aggregation Pipelines](#aggregation-pipelines)
+  - [Querying with Models](#querying-with-models)
+- [Troubleshooting](#troubleshooting)
+- [Implementation Details](#implementation-details)
+- [Performance Considerations](#performance-considerations)
+- [Related Adapters](#related-adapters)
+- [Additional Resources](#additional-resources)
+
 ## Overview
 
 The ACB NoSQL adapter offers:
@@ -331,11 +351,144 @@ class NoSQLBase:
     async def start_transaction(self, **kwargs): ...
 ```
 
+## Performance Considerations
+
+When working with the NoSQL adapter, keep these performance factors in mind:
+
+1. **Implementation Performance**:
+
+| Implementation | Read Performance | Write Performance | Query Flexibility | Best For |
+|----------------|------------------|-------------------|-------------------|----------|
+| **MongoDB** | Fast | Fast | Very High | Complex documents, flexible schemas, aggregations |
+| **Firestore** | Fast | Medium | High | Real-time applications, mobile/web apps |
+| **Redis** | Very Fast | Very Fast | Limited | Caching, simple data structures, high throughput |
+
+2. **Indexing Strategy**:
+   - Create indexes for frequently queried fields
+   - Avoid over-indexing as it slows down writes
+   - Use compound indexes for multi-field queries
+   - Consider index size and memory impact
+
+```python
+# MongoDB indexing example
+await nosql.users.create_index([('email', 1)], unique=True)
+await nosql.products.create_index([('category', 1), ('price', -1)])
+```
+
+3. **Query Optimization**:
+   - Use specific queries instead of retrieving entire documents
+   - Limit result sets for pagination
+   - Use projections to return only needed fields
+   - Structure documents to match access patterns
+
+```python
+# Optimized query with projection and limit
+results = await nosql.products.find(
+    {"category": "electronics", "price": {"$lt": 500}},
+    projection={"name": 1, "price": 1, "_id": 1},
+    limit=20
+)
+```
+
+4. **Batch Operations**:
+   - Use bulk operations for multiple documents
+   - Consider chunking very large operations
+
+```python
+# Efficient batch insert
+await nosql.logs.insert_many([
+    {"level": "info", "message": "User login", "timestamp": datetime.now()},
+    {"level": "error", "message": "Database connection failed", "timestamp": datetime.now()},
+    {"level": "info", "message": "Task completed", "timestamp": datetime.now()}
+])
+```
+
+5. **Connection Management**:
+   - Use connection pooling (configured automatically)
+   - Monitor connection usage in high-traffic applications
+   - Consider read replicas for read-heavy workloads
+
+## Related Adapters
+
+The NoSQL adapter works well with these other ACB adapters:
+
+- [**Cache Adapter**](../cache/README.md): Use Redis for both caching and NoSQL operations
+- [**SQL Adapter**](../sql/README.md): Combine SQL and NoSQL for hybrid data access patterns
+- [**Models Adapter**](../models/README.md): Define Pydantic models for document validation
+- [**Storage Adapter**](../storage/README.md): Store file metadata in NoSQL while storing files in object storage
+
+Integration example:
+
+```python
+# Using NoSQL and Cache adapters together
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+NoSQL = import_adapter("nosql")
+Cache = import_adapter("cache")
+
+nosql = depends.get(NoSQL)
+cache = depends.get(Cache)
+
+async def get_product(product_id: str):
+    # Try to get from cache first
+    cache_key = f"product:{product_id}"
+    product = await cache.get(cache_key)
+
+    if not product:
+        # Cache miss - get from database
+        product = await nosql.products.find_one({"_id": product_id})
+
+        if product:
+            # Store in cache for future requests
+            await cache.set(cache_key, product, ttl=300)  # Cache for 5 minutes
+
+    return product
+
+# Hybrid SQL/NoSQL example
+from acb.depends import depends
+from acb.adapters import import_adapter
+from sqlmodel import select
+
+SQL = import_adapter("sql")
+NoSQL = import_adapter("nosql")
+
+sql = depends.get(SQL)
+nosql = depends.get(NoSQL)
+
+async def get_user_with_activity(user_id: int):
+    # Get user profile from SQL database
+    async with sql.get_session() as session:
+        statement = select(User).where(User.id == user_id)
+        result = await session.execute(statement)
+        user = result.scalar_one_or_none()
+
+    if not user:
+        return None
+
+    # Get user activity from NoSQL database
+    activity = await nosql.user_activity.find(
+        {"user_id": str(user_id)},
+        sort=[("timestamp", -1)],
+        limit=10
+    ).to_list()
+
+    # Combine the data
+    return {
+        "profile": user.dict(),
+        "recent_activity": activity
+    }
+```
+
 ## Additional Resources
 
 - [MongoDB Documentation](https://docs.mongodb.com/manual/)
+- [MongoDB Performance Best Practices](https://www.mongodb.com/docs/manual/core/query-optimization/)
 - [Firestore Documentation](https://firebase.google.com/docs/firestore)
+- [Firestore Best Practices](https://firebase.google.com/docs/firestore/best-practices)
 - [Redis Documentation](https://redis.io/documentation)
+- [Redis Performance Optimization](https://redis.io/topics/optimization)
 - [ACB Models Adapter](../models/README.md)
 - [ACB SQL Adapter](../sql/README.md)
+- [ACB Cache Adapter](../cache/README.md)
 - [ACB Adapters Overview](../README.md)

@@ -23,6 +23,18 @@ ACB's adapter system is designed around these principles:
 3. **Configuration-driven**: Adapters are enabled through configuration rather than code changes
 4. **Automatic Registration**: Adapters are discovered and registered when your application starts
 5. **Dependency Injection**: Adapters are accessed through the dependency injection system
+6. **Extensibility**: Projects built on ACB can add their own domain-specific adapters
+
+### Extension by Other Projects
+
+Frameworks built on ACB can extend the adapter system with their own domain-specific adapters. For example, [FastBlocks](https://github.com/lesleslie/fastblocks) extends ACB with web-specific adapters like:
+
+- **Templates**: Asynchronous template rendering for web applications
+- **Routes**: Route discovery and registration for web endpoints
+- **Auth**: Authentication mechanisms for web applications
+- **Admin**: Administrative interfaces for database models
+
+These extensions maintain compatibility with ACB's core infrastructure while adding domain-specific functionality.
 
 ## Available Adapters
 

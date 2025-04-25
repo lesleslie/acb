@@ -4,6 +4,24 @@ Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/sec
 
 The Secret adapter provides a standardized interface for secure secret management in ACB applications, supporting local and cloud-based secret storage.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Available Implementations](#available-implementations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Basic Usage](#basic-usage)
+- [Advanced Usage](#advanced-usage)
+  - [Working with Adapter-Specific Secrets](#working-with-adapter-specific-secrets)
+  - [Secret Versioning](#secret-versioning)
+  - [Batch Operations](#batch-operations)
+  - [Integration with ACB Configuration](#integration-with-acb-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Implementation Details](#implementation-details)
+- [Performance Considerations](#performance-considerations)
+- [Related Adapters](#related-adapters)
+- [Additional Resources](#additional-resources)
+
 ## Overview
 
 The ACB Secret adapter offers:
@@ -216,10 +234,115 @@ class SecretBase:
     async def list_versions(self, name: str) -> list[dict]: ...
 ```
 
+## Performance Considerations
+
+When working with the Secret adapter, keep these performance factors in mind:
+
+1. **Caching Strategy**:
+   - The Secret adapter implements caching to reduce API calls to the secret provider
+   - Default cache TTL is configurable in settings (default: 300 seconds)
+   - Adjust cache TTL based on your security requirements and access patterns
+
+```yaml
+# Configure secret caching in settings/app.yml
+secret:
+  cache_ttl: 300  # Cache secrets for 5 minutes
+```
+
+2. **Implementation Performance**:
+
+| Implementation | Read Latency | Write Latency | Versioning Support | Best For |
+|----------------|--------------|---------------|-------------------|----------|
+| **Infisical** | Low | Low | Yes | Team development, self-hosted |
+| **Secret Manager (GCP)** | Medium | Medium | Yes | GCP deployments, high security |
+| **Secret Manager (AWS)** | Medium | Medium | Yes | AWS deployments, high security |
+| **Secret Manager (Azure)** | Medium | Medium | Yes | Azure deployments, high security |
+
+3. **Batch Operations**:
+   - Group related secrets to minimize API calls
+   - Use naming conventions to organize secrets by adapter or function
+
+4. **Secret Size Considerations**:
+   - Keep secrets small for better performance
+   - For large secrets (e.g., certificates), consider storing references instead
+   - Use the Storage adapter for larger sensitive files
+
+5. **Access Patterns**:
+   - Load secrets at startup when possible
+   - Cache frequently used secrets in memory
+   - Implement retry logic for cloud provider rate limits
+
+```python
+# Efficient secret loading at startup
+class MyService:
+    def __init__(self, secret=depends(Secret)):
+        # Load secrets once at initialization
+        self.api_credentials = await secret.get("api_credentials")
+        self.encryption_key = await secret.get("encryption_key")
+
+        # Now use these values throughout the service lifetime
+```
+
+## Related Adapters
+
+The Secret adapter works well with these other ACB adapters:
+
+- [**Config Adapter**](../../config/README.md): Use secrets in configuration via SecretStr
+- [**SQL Adapter**](../sql/README.md): Store database credentials securely
+- [**Storage Adapter**](../storage/README.md): Store cloud storage credentials
+- [**Requests Adapter**](../requests/README.md): Secure API keys for external services
+
+Integration example:
+
+```python
+# Using Secret and SQL adapters together
+from acb.depends import depends
+from acb.adapters import import_adapter
+from sqlalchemy.ext.asyncio import create_async_engine
+
+Secret = import_adapter("secret")
+secret = depends.get(Secret)
+
+async def get_database_connection():
+    # Get database credentials from secret manager
+    db_user = await secret.get("sql.username")
+    db_password = await secret.get("sql.password")
+    db_host = await secret.get("sql.host")
+    db_name = await secret.get("sql.database")
+
+    # Create connection string
+    conn_str = f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}/{db_name}"
+
+    # Create engine with credentials
+    engine = create_async_engine(conn_str)
+    return engine
+
+# Using Secret and Requests adapters together
+Requests = import_adapter("requests")
+requests = depends.get(Requests)
+
+async def call_external_api():
+    # Get API key from secret manager
+    api_key = await secret.get("external_api.key")
+
+    # Use API key in request
+    headers = {"Authorization": f"Bearer {api_key}"}
+    response = await requests.get(
+        "https://api.example.com/data",
+        headers=headers
+    )
+
+    return response.json()
+```
+
 ## Additional Resources
 
 - [Infisical Documentation](https://infisical.com/docs/documentation/getting-started/introduction)
 - [Google Secret Manager Documentation](https://cloud.google.com/secret-manager/docs)
 - [AWS Secrets Manager Documentation](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
 - [Azure Key Vault Documentation](https://docs.microsoft.com/en-us/azure/key-vault/)
+- [OWASP Secrets Management Guide](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
 - [ACB Configuration Documentation](../../README.md#configuration-system)
+- [ACB SQL Adapter](../sql/README.md)
+- [ACB Storage Adapter](../storage/README.md)
+- [ACB Requests Adapter](../requests/README.md)

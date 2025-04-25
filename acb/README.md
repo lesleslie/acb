@@ -213,7 +213,7 @@ For more details on logging configuration and customization, see the [Logging Do
 
 ACB is used in several projects including:
 
-- [**FastBlocks**](https://github.com/example/fastblocks): A rapid development framework that leverages ACB's asynchronous components to build scalable web applications.
+- [**FastBlocks**](https://github.com/lesleslie/fastblocks): A web application framework built on Starlette that leverages ACB's component architecture to create a powerful platform for server-side rendered HTMX applications. FastBlocks extends ACB with web-specific adapters for templates, routing, authentication, and admin interfaces.
 
 ---
 
