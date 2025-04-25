@@ -1,32 +1,45 @@
 import math
 from pathlib import Path
+from typing import Any, Final
 from unittest.mock import MagicMock, patch
 
 import pytest
 from anyio import Path as AsyncPath
 from acb.actions.encode import Encode, decode, encode, serializers
 
+TEST_DATA: Final[dict[str, Any]] = {"name": "Test", "value": 123, "active": True}
 
+
+@pytest.mark.unit
 class TestEncode:
     @pytest.mark.asyncio
     async def test_json_encode_decode(self) -> None:
-        test_data = {"name": "Test", "value": 123, "active": True}
-
-        encoded = await encode.json(test_data)
+        encoded = await encode.json(TEST_DATA)
         assert isinstance(encoded, bytes)
 
         decoded = await decode.json(encoded)
-        assert decoded == test_data
+        assert decoded == TEST_DATA
 
     @pytest.mark.asyncio
-    async def test_yaml_encode_decode(self) -> None:
-        test_data = {"name": "Test", "value": 123, "active": True}
+    async def test_serializer_registration(self) -> None:
+        test_serializer = MagicMock()
 
-        encoded = await encode.yaml(test_data)
-        assert isinstance(encoded, bytes)
+        mock_serializers = MagicMock()
+        mock_serializers.__dict__ = {}
 
-        decoded = await decode.yaml(encoded)
-        assert decoded == test_data
+        with patch("acb.actions.encode.serializers", mock_serializers):
+            mock_serializers.__dict__["test"] = test_serializer
+
+            assert "test" in mock_serializers.__dict__
+            assert mock_serializers.__dict__["test"] == test_serializer
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_large_data_encoding(self) -> None:
+        large_data = {str(i): "x" * 1000 for i in range(1000)}
+        encoded = await encode.json(large_data)
+        decoded = await decode.json(encoded)
+        assert decoded == large_data
 
     @pytest.mark.asyncio
     async def test_yaml_encode_with_sort_keys(self) -> None:

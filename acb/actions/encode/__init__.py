@@ -88,8 +88,13 @@ class Encode:
                 obj = await obj.read_text()
             return self.serializer.decode(obj, **kwargs)  # type: ignore
         elif self.action in ("dump", "encode"):
+            if self.serializer is msgspec.json and self.sort_keys:  # type: ignore
+                if isinstance(obj, dict):
+                    obj = {k: obj[k] for k in sorted(obj.keys())}
+
             if self.serializer is msgspec.yaml:  # type: ignore
                 kwargs["sort_keys"] = self.sort_keys
+
             data: bytes = self.serializer.encode(obj, **kwargs)  # type: ignore
             if isinstance(self.path, AsyncPath):
                 return await self.path.write_bytes(data)
@@ -113,7 +118,8 @@ class Encode:
         self.sort_keys = sort_keys
         self.use_list = use_list
         self.action, self.serializer = self.get_vars(sys._getframe(1))
-        return await self.process(obj, **kwargs)  # type: ignore
+        result = await self.process(obj, **kwargs)  # type: ignore
+        return result
 
 
 dump = load = encode = decode = Encode()

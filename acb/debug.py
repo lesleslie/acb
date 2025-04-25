@@ -51,14 +51,19 @@ def patch_record(
 
 
 def colorized_stderr_print(s: str) -> None:
-    colored = colorize(s)
-    with supportTerminalColorsInWindows():
-        try:
-            asyncio.run(aprint(colored, use_stderr=True))
-        except Exception:
-            import sys
+    try:
+        colored = colorize(s)
+        with supportTerminalColorsInWindows():
+            try:
+                asyncio.run(aprint(colored, use_stderr=True))
+            except Exception:
+                import sys
 
-            print(colored, file=sys.stderr)
+                print(colored, file=sys.stderr)
+    except ImportError:
+        import sys
+
+        print(s, file=sys.stderr)
 
 
 def print_debug_info(msg: str) -> t.Any:

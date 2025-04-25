@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from anyio import Path as AsyncPath
 from blake3 import blake3
-from acb.actions.hash import hash
+from acb.actions.hash import Blake3Hasher, hash
 
 
 class TestHash:
@@ -169,3 +169,73 @@ class TestHash:
 
         with pytest.raises(UnicodeEncodeError):
             await hash.md5(test_string, ascii=True)
+
+    def test_create_blake3(self) -> None:
+        hasher = hash.create_blake3()
+
+        assert isinstance(hasher, Blake3Hasher)
+
+    def test_blake3_hasher_with_string(self) -> None:
+        test_string = "test string for streaming"
+        expected_hash = blake3(test_string.encode()).hexdigest()
+
+        hasher = hash.create_blake3()
+        hasher.update(test_string)
+        result = hasher.hexdigest()
+
+        assert result == expected_hash
+        assert isinstance(result, str)
+        assert re.match(r"^[0-9a-f]{64}$", result)
+
+    def test_blake3_hasher_with_bytes(self) -> None:
+        test_bytes = b"test bytes for streaming"
+        expected_hash = blake3(test_bytes).hexdigest()
+
+        hasher = hash.create_blake3()
+        hasher.update(test_bytes)
+        result = hasher.hexdigest()
+
+        assert result == expected_hash
+        assert isinstance(result, str)
+        assert re.match(r"^[0-9a-f]{64}$", result)
+
+    def test_blake3_hasher_with_multiple_updates(self) -> None:
+        chunk1 = "chunk1"
+        chunk2 = "chunk2"
+        chunk3 = "chunk3"
+        combined = chunk1 + chunk2 + chunk3
+        expected_hash = blake3(combined.encode()).hexdigest()
+
+        hasher = hash.create_blake3()
+        hasher.update(chunk1)
+        hasher.update(chunk2)
+        hasher.update(chunk3)
+        result = hasher.hexdigest()
+
+        assert result == expected_hash
+
+    def test_blake3_hasher_finalize(self) -> None:
+        test_data = "test finalize method"
+        expected_digest = blake3(test_data.encode()).digest()
+
+        hasher = hash.create_blake3()
+        hasher.update(test_data)
+        result = hasher.finalize()
+
+        assert result == expected_digest
+        assert result.hex() == expected_digest.hex()
+
+    @pytest.mark.asyncio
+    async def test_streaming_vs_direct_hash(self) -> None:
+        chunk_size = 1024
+        large_data = b"x" * (chunk_size * 10)
+
+        full_hash = await hash.blake3(large_data)
+
+        hasher = hash.create_blake3()
+        for i in range(0, len(large_data), chunk_size):
+            chunk = large_data[i : i + chunk_size]
+            hasher.update(chunk)
+        chunk_hash = hasher.hexdigest()
+
+        assert chunk_hash == full_hash

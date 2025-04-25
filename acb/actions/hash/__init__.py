@@ -1,5 +1,6 @@
 import hashlib
 from pathlib import Path
+from typing import Any
 from warnings import catch_warnings
 
 import arrow
@@ -12,7 +13,28 @@ with catch_warnings(action="ignore", category=RuntimeWarning):
     from google_crc32c import value as crc32c
 
 
+class Blake3Hasher:
+    def __init__(self) -> None:
+        self._hasher = blake3()
+
+    def update(self, data: bytes | str) -> "Blake3Hasher":
+        if isinstance(data, str):
+            data = data.encode()
+        self._hasher.update(data)
+        return self
+
+    def finalize(self) -> Any:
+        return self._hasher.digest()
+
+    def hexdigest(self) -> str:
+        return self._hasher.hexdigest()
+
+
 class Hash:
+    @staticmethod
+    def create_blake3() -> Blake3Hasher:
+        return Blake3Hasher()
+
     @staticmethod
     async def blake3(obj: Path | AsyncPath | list[str] | bytes | str) -> str:
         if not obj:

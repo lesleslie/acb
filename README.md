@@ -1,6 +1,6 @@
 
 <p align="center">
-<img src="./images/acb-logo.png" alt="FastBlocks Logo">
+<img src="./images/acb-logo.png" alt="ACB Logo">
 </p>
 
 > **ACB Documentation**: [Main](./README.md) | [Core Systems](./acb/README.md) | [Actions](./acb/actions/README.md) | [Adapters](./acb/adapters/README.md)
@@ -8,6 +8,7 @@
 # <u>A</u>synchronous <u>C</u>omponent <u>B</u>ase (ACB)
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
+[![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
 
 ## What is ACB?
 

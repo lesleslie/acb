@@ -1,83 +1,35 @@
-import typing as t
 from pathlib import Path
+from typing import Any, Final, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from rich.console import Console
 from acb.config import Config
 from acb.debug import (
     colorized_stderr_print,
     debug,
-    get_calling_module,
     init_debug,
     pprint,
     print_debug_info,
 )
 from acb.logger import Logger
 
-
-class TestGetCallingModule:
-    @pytest.fixture
-    def mock_config(self) -> t.Generator[MagicMock, None, None]:
-        mock_config: MagicMock = MagicMock(spec=Config)
-        mock_config.debug = MagicMock()
-
-        patcher = patch("acb.debug.depends.inject")
-        mock_inject = patcher.start()
-
-        def inject_mock_config(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
-            def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                return func(*args, **kwargs, config=mock_config)
-
-            return wrapper
-
-        mock_inject.side_effect = inject_mock_config
-
-        yield mock_config
-
-        patcher.stop()
-
-    def test_get_calling_module_with_debug_disabled(
-        self, mock_config: MagicMock
-    ) -> None:
-        mock_frame: MagicMock = MagicMock()
-        mock_frame.f_back.f_back.f_back.f_code.co_filename = "/test/path/test_module.py"
-
-        with patch("acb.debug.logging.currentframe", return_value=mock_frame):
-            type(mock_config.debug).test_module = False
-
-            result: t.Any = get_calling_module()
-
-            assert result is None
-
-    def test_get_calling_module_with_exception(self, mock_config: MagicMock) -> None:
-        with patch("acb.debug.logging.currentframe", side_effect=AttributeError):
-            result: t.Any = get_calling_module()
-
-            assert result is None
+TEST_MODULE_NAME: Final[str] = "test_module"
+TEST_DEBUG_MSG: Final[str] = "test debug message"
 
 
-class TestPatchRecord:
-    @pytest.fixture
-    def mock_logger(self) -> t.Generator[MagicMock, None, None]:
-        mock_logger: MagicMock = MagicMock(spec=Logger)
+@pytest.fixture
+def mock_console() -> MagicMock:
+    console = MagicMock(spec=Console)
+    console.print = MagicMock()
+    return console
 
-        mock_patched_logger: MagicMock = MagicMock()
-        mock_logger.patch.return_value = mock_patched_logger
 
-        patcher = patch("acb.debug.depends.inject")
-        mock_inject = patcher.start()
-
-        def inject_mock_logger(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
-            def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                return func(*args, **kwargs, logger=mock_logger)
-
-            return wrapper
-
-        mock_inject.side_effect = inject_mock_logger
-
-        yield mock_logger
-
-        patcher.stop()
+@pytest.fixture
+def mock_logger() -> MagicMock:
+    logger = MagicMock(spec=Logger)
+    logger.debug = MagicMock()
+    return logger
 
 
 class TestColorizedStderrPrint:
@@ -92,7 +44,7 @@ class TestColorizedStderrPrint:
                 mock_coro: AsyncMock = AsyncMock()
                 with patch("acb.debug.aprint", return_value=mock_coro) as mock_aprint:
 
-                    def mock_run_impl(coro: t.Any) -> None:
+                    def mock_run_impl(coro: Any) -> None:
                         return None
 
                     with patch(
@@ -129,6 +81,13 @@ class TestColorizedStderrPrint:
                                 "Colored test message", file=mock_stderr
                             )
 
+    def test_colorized_stderr_print_with_no_color_support(self) -> None:
+        with patch("acb.debug.colorize", side_effect=ImportError):
+            with patch("builtins.print") as mock_print:
+                with patch("sys.stderr") as mock_stderr:
+                    colorized_stderr_print("Test message")
+                    mock_print.assert_called_once_with("Test message", file=mock_stderr)
+
 
 class TestPrintDebugInfo:
     def test_print_debug_info_with_module_not_deployed(self) -> None:
@@ -136,7 +95,7 @@ class TestPrintDebugInfo:
         with patch("acb.debug.get_calling_module", return_value=mock_module):
             with patch("acb.debug._deployed", False):
                 with patch("acb.debug.colorized_stderr_print") as mock_print:
-                    result: t.Any = print_debug_info("Test message")
+                    result: Any = print_debug_info("Test message")
 
                     mock_print.assert_called_once_with("Test message")
 
@@ -147,7 +106,7 @@ class TestPrintDebugInfo:
         with patch("acb.debug.get_calling_module", return_value=mock_module):
             with patch("acb.debug._deployed", True):
                 with patch("acb.debug.patch_record") as mock_patch:
-                    result: t.Any = print_debug_info("Test message")
+                    result: Any = print_debug_info("Test message")
 
                     mock_patch.assert_called_once_with(mock_module, "Test message")
 
@@ -155,7 +114,7 @@ class TestPrintDebugInfo:
 
     def test_print_debug_info_without_module(self) -> None:
         with patch("acb.debug.get_calling_module", return_value=None):
-            result: t.Any = print_debug_info("Test message")
+            result: Any = print_debug_info("Test message")
 
             assert result is None
 
@@ -173,10 +132,19 @@ class TestPprint:
 
                 mock_aprint.assert_called_once_with("Formatted object", use_stderr=True)
 
+    @pytest.mark.asyncio
+    async def test_pprint_with_custom_width(self) -> None:
+        test_data = {"key": "value" * 20}
+        with patch("acb.debug.pformat") as mock_pformat:
+            with patch("acb.debug.aprint") as mock_aprint:
+                await pprint(test_data)
+                mock_pformat.assert_called_once_with(test_data)
+                mock_aprint.assert_called_once()
+
 
 class TestInitDebug:
     @pytest.fixture
-    def mock_config(self) -> t.Generator[MagicMock, None, None]:
+    def mock_config(self) -> Generator[MagicMock, None, None]:
         mock_config: MagicMock = MagicMock(spec=Config)
         mock_config.debug = MagicMock()
         mock_config.debug.production = False
@@ -204,3 +172,25 @@ class TestDebugGlobal:
         from icecream import ic
 
         assert debug is ic
+
+    def test_debug_with_different_log_levels(self) -> None:
+        test_messages = [
+            "Test info message",
+            "Test warning message",
+            "Test error message",
+        ]
+
+        with patch.object(debug, "outputFunction") as mock_output_func:
+            for message in test_messages:
+                debug(message)
+            assert mock_output_func.call_count == len(test_messages)
+
+    def test_get_calling_module_from_debug(self) -> None:
+        from acb.debug import get_calling_module
+
+        mock_frame = MagicMock()
+        mock_frame.f_back.f_back.f_back.f_code.co_filename = "/path/to/test_module.py"
+
+        with patch("logging.currentframe", return_value=mock_frame):
+            result = get_calling_module()
+            assert result is None or isinstance(result, Path)

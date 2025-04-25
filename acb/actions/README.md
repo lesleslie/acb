@@ -137,7 +137,7 @@ from acb.actions.hash import hash
 from anyio import Path as AsyncPath
 import typing as t
 
-async def hash_examples() -> dict[str, t.Union[str, int]]:
+async def hash_examples() -> dict[str, str | int]:
     # Hash a string
     text = "Hash this text"
     blake3_hash: str = await hash.blake3(text)

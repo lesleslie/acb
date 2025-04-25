@@ -237,7 +237,7 @@ myapp/adapters/payment/
 
 2. Define the base interface in `_base.py`:
 ```python
-from acb.config import AdapterBase, Settings
+from acb.config import Settings
 from pydantic import SecretStr
 from typing import Protocol
 
@@ -245,14 +245,14 @@ class PaymentBaseSettings(Settings):
     currency: str = "USD"
     default_timeout: int = 30
 
-class PaymentBase(AdapterBase, Protocol):
+class PaymentBase(Protocol):
     async def charge(self, amount: float, description: str) -> str:
         """Charge a payment and return a transaction ID"""
-        raise NotImplementedError()
+        ...
 
     async def refund(self, transaction_id: str) -> bool:
         """Refund a previous transaction"""
-        raise NotImplementedError()
+        ...
 ```
 
 3. Implement specific providers like `stripe.py`:
@@ -265,7 +265,7 @@ import typing as t
 class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
 
-class Stripe(PaymentBase):
+class Stripe:
     settings: StripeSettings | None = None
 
     async def init(self) -> None:
@@ -300,7 +300,7 @@ from acb.depends import depends
 from acb.adapters import import_adapter
 import typing as t
 
-async def payment_example() -> dict[str, t.Any]:
+async def payment_example() -> dict[str, str | bool]:
     # Import your adapter
     Payment = import_adapter("payment")
 

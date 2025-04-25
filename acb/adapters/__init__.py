@@ -83,6 +83,13 @@ class Adapter(BaseModel, arbitrary_types_allowed=True):
 
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
 
+AVAILABLE_ADAPTERS = {
+    "storage": ["file", "s3"],
+    "cache": ["memory", "redis"],
+    "models": ["sqlalchemy"],
+    "monitoring": ["sentry"],
+}
+
 core_adapters = [
     Adapter(
         name="config",

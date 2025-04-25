@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:dbf3b0a157beff2bc7d8b5452bfad8e70b640ab66986577e4ecdaa1fe85392cd"
+content_hash = "sha256:4e9080ef6e000366bc5ab4d7fcfdbde46d8d1c643d55a83e3bb4f1562ae78b70"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -97,7 +97,7 @@ files = [
 
 [[package]]
 name = "aiohttp"
-version = "3.11.17"
+version = "3.11.18"
 summary = ""
 dependencies = [
     "aiohappyeyeballs",
@@ -109,23 +109,23 @@ dependencies = [
     "yarl",
 ]
 files = [
-    {file = "aiohttp-3.11.17-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:57de66477af1176b3d25058594000eb32d21f82039909ef1bf865fe666c8c0ea"},
-    {file = "aiohttp-3.11.17-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:d0d119d1e6d5bf930b285285aec70d66b7a7efa4914231441c7f606e86ca17e2"},
-    {file = "aiohttp-3.11.17-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:d0966f0c14be863cb51e0aa56366c45a2331f46a64347b49a0e9c687c72d43c1"},
-    {file = "aiohttp-3.11.17-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f24d2b1f2516953b001736f82be7cf5d3234fc90e82a2d9a33ad8cdffb28f4c5"},
-    {file = "aiohttp-3.11.17-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:3197cd39307747127f7a3489b6aca4286c7613e8509e65f46702831136257d12"},
-    {file = "aiohttp-3.11.17-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:3e4d134b96448c955e3e29e4026ee499441182bfd92f293accfa1cf1525a061b"},
-    {file = "aiohttp-3.11.17-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:20c68e4411440209fd64abfb27ff5e09e5a59a0fab4dbd07808e762e6fada670"},
-    {file = "aiohttp-3.11.17-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1131f61afa4a4800fd5770ab13b1587bf4d07a0a561ee6f30f58c2300675ec3b"},
-    {file = "aiohttp-3.11.17-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:d3d4a383935ed1e39109e43535230b7e61781348fc2cf52c1006ae663dcbbc73"},
-    {file = "aiohttp-3.11.17-cp313-cp313-musllinux_1_2_armv7l.whl", hash = "sha256:ada2a986cdec0caa51ee787b838441eeece50cd1ea075053fef51e0c995114b4"},
-    {file = "aiohttp-3.11.17-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:a118aae8008e209f100396bbd2d1d798aaa43651202c65cd2664680dd27aa061"},
-    {file = "aiohttp-3.11.17-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:2bf50db2e855226363aecb78353593987bf9a0b593434814b4a1f09586a116a4"},
-    {file = "aiohttp-3.11.17-cp313-cp313-musllinux_1_2_s390x.whl", hash = "sha256:4f1c1db9470c9aa1ab45cee80b4b7db51fa4cfc01abc5e648d991266e676ac90"},
-    {file = "aiohttp-3.11.17-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:c4a92e2a228829c67f3c633a2329a8b85ed6cfe3b25047f48b4d51e92a655a87"},
-    {file = "aiohttp-3.11.17-cp313-cp313-win32.whl", hash = "sha256:8962df1a29794f3204863ea6d93001a3d77cb1c4ee87f8c7683fe3fb6ec27373"},
-    {file = "aiohttp-3.11.17-cp313-cp313-win_amd64.whl", hash = "sha256:71a1fd6421056980280fe490f211fe0f0c385271b42fb1440c4abcd891b2133a"},
-    {file = "aiohttp-3.11.17.tar.gz", hash = "sha256:2bf3ff374c3abd7a5c6c8de3ad7ed91e0e89a8b53353314c93766c3add5a208a"},
+    {file = "aiohttp-3.11.18-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:474215ec618974054cf5dc465497ae9708543cbfc312c65212325d4212525811"},
+    {file = "aiohttp-3.11.18-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:6ced70adf03920d4e67c373fd692123e34d3ac81dfa1c27e45904a628567d804"},
+    {file = "aiohttp-3.11.18-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:2d9f6c0152f8d71361905aaf9ed979259537981f47ad099c8b3d81e0319814bd"},
+    {file = "aiohttp-3.11.18-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a35197013ed929c0aed5c9096de1fc5a9d336914d73ab3f9df14741668c0616c"},
+    {file = "aiohttp-3.11.18-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:540b8a1f3a424f1af63e0af2d2853a759242a1769f9f1ab053996a392bd70118"},
+    {file = "aiohttp-3.11.18-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:f9e6710ebebfce2ba21cee6d91e7452d1125100f41b906fb5af3da8c78b764c1"},
+    {file = "aiohttp-3.11.18-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f8af2ef3b4b652ff109f98087242e2ab974b2b2b496304063585e3d78de0b000"},
+    {file = "aiohttp-3.11.18-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:28c3f975e5ae3dbcbe95b7e3dcd30e51da561a0a0f2cfbcdea30fc1308d72137"},
+    {file = "aiohttp-3.11.18-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:c28875e316c7b4c3e745172d882d8a5c835b11018e33432d281211af35794a93"},
+    {file = "aiohttp-3.11.18-cp313-cp313-musllinux_1_2_armv7l.whl", hash = "sha256:13cd38515568ae230e1ef6919e2e33da5d0f46862943fcda74e7e915096815f3"},
+    {file = "aiohttp-3.11.18-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:0e2a92101efb9f4c2942252c69c63ddb26d20f46f540c239ccfa5af865197bb8"},
+    {file = "aiohttp-3.11.18-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:e6d3e32b8753c8d45ac550b11a1090dd66d110d4ef805ffe60fa61495360b3b2"},
+    {file = "aiohttp-3.11.18-cp313-cp313-musllinux_1_2_s390x.whl", hash = "sha256:ea4cf2488156e0f281f93cc2fd365025efcba3e2d217cbe3df2840f8c73db261"},
+    {file = "aiohttp-3.11.18-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:9d4df95ad522c53f2b9ebc07f12ccd2cb15550941e11a5bbc5ddca2ca56316d7"},
+    {file = "aiohttp-3.11.18-cp313-cp313-win32.whl", hash = "sha256:cdd1bbaf1e61f0d94aced116d6e95fe25942f7a5f42382195fd9501089db5d78"},
+    {file = "aiohttp-3.11.18-cp313-cp313-win_amd64.whl", hash = "sha256:bdd619c27e44382cf642223f11cfd4d795161362a5a1fc1fa3940397bc89db01"},
+    {file = "aiohttp-3.11.18.tar.gz", hash = "sha256:ae856e1138612b7e412db63b7708735cff4d38d0399f6a5435d3dac2669f558a"},
 ]
 
 [[package]]
