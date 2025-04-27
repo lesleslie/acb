@@ -1,4 +1,3 @@
-# Created by .ignore support plugin (hsz.mobi)
 /.idea
 /.pdm-python
 /.pdm.toml
@@ -11,7 +10,4 @@
 /tmp/
 /__pycache__/
 /*.pyc
-/.acb.yaml
-
-.qodo
 /.zencoder/

@@ -49,19 +49,19 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "tomli-w",
-    "pdm",
-    "pyfiglet",
     "pytest-cov",
-    "pytest",
-    "pyyaml",
-    "google-crc32c",
-    "pre-commit",
     "pytest-asyncio",
-    "pytest-mock",
-    "uv",
-    "autotyping",
+    "pytest",
     "pdm-bump",
+    "google-crc32c",
+    "pytest-mock",
+    "pre-commit",
+    "pdm",
+    "tomli-w",
+    "pyyaml",
+    "uv",
+    "pyfiglet",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -72,15 +72,15 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
+    "B607",
+    "B311",
+    "B603",
+    "B101",
+    "B301",
+    "B404",
     "B602",
     "B704",
-    "B311",
-    "B404",
-    "B301",
-    "B607",
-    "B101",
-    "B603",
+    "B403",
 ]
 
 [tool.pyright]
@@ -173,7 +173,7 @@ python_functions = [
 
 [project]
 name = "acb"
-version = "0.15.6"
+version = "0.15.7"
 description = "Default template for PDM package"
 dependencies = [
     "arrow>=1.3.0",
