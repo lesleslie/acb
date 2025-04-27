@@ -3,6 +3,7 @@ import os
 import signal
 import sys
 from contextlib import suppress
+from pathlib import Path
 from typing import AsyncGenerator, Final, NoReturn, TypeAlias
 
 import pytest
@@ -22,6 +23,16 @@ def pytest_configure(config: Config) -> None:
         ("integration", "Mark test as an integration test"),
         ("async_test", "Mark test as an async test"),
         ("slow", "Mark test as a slow running test"),
+        ("cache", "Mark test as a cache adapter test"),
+        ("storage", "Mark test as a storage adapter test"),
+        ("sql", "Mark test as a SQL adapter test"),
+        ("nosql", "Mark test as a NoSQL adapter test"),
+        ("secret", "Mark test as a secret adapter test"),
+        ("benchmark", "Mark test as a benchmark test"),
+        ("property", "Mark test as a property-based test"),
+        ("concurrency", "Mark test as a concurrency test"),
+        ("fault_tolerance", "Mark test as a fault tolerance test"),
+        ("security", "Mark test as a security test"),
     ]
     for marker, help_text in markers:
         config.addinivalue_line("markers", f"{marker}: {help_text}")
@@ -41,6 +52,12 @@ async def cleanup_async_tasks() -> AsyncGenerator[None, None]:
 def pytest_sessionfinish(session: Session, exitstatus: int | pytest.ExitCode) -> None:
     sys.stdout.flush()
     sys.stderr.flush()
+
+    if (
+        "crackerjack" in sys.modules
+        or os.environ.get("RUNNING_UNDER_CRACKERJACK") == "1"
+    ):
+        return
 
     def kill_process() -> NoReturn:
         os.kill(os.getpid(), signal.SIGTERM)
@@ -65,3 +82,18 @@ def pytest_collection_modifyitems(config: Config, items: list[pytest.Item]) -> N
         for item in items:
             if "slow" in item.keywords:
                 item.add_marker(skip_slow)
+
+
+@pytest.fixture
+def temp_dir(tmp_path: Path) -> Path:
+    return tmp_path
+
+
+@pytest.fixture
+def mock_config():
+    from unittest.mock import MagicMock
+
+    from acb.config import Config
+
+    mock_config = MagicMock(spec=Config)
+    return mock_config

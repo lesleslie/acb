@@ -28,6 +28,11 @@ class CacheSettings(CacheBaseSettings):
 
 
 class Cache(CacheBase, RedisBackend):  # type: ignore
+    def __init__(self, redis_url: t.Optional[str] = None, **kwargs: t.Any) -> None:
+        self.redis_url = redis_url
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k != "redis_url"}
+        super().__init__(**filtered_kwargs)
+
     async def _close(self, *args: t.Any, _conn: t.Any = None, **kwargs: t.Any) -> None:
         pass
 
@@ -50,11 +55,11 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
         return bool(number)
 
     async def init(self, *args: t.Any, **kwargs: t.Any) -> None:
-        super().__init__(
-            serializer=PickleSerializer(),
-            namespace=f"{self.config.app.name}:",
-            **kwargs,
-        )
+        if not hasattr(self, "_namespace"):
+            self._namespace = f"{self.config.app.name}:"
+
+        if not hasattr(self, "_serializer"):
+            self._serializer = PickleSerializer()
         redis_kwargs = dict(
             host=self.config.cache.host.get_secret_value(),
             port=self.config.cache.port,

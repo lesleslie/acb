@@ -9,6 +9,7 @@ from google.cloud.secretmanager_v1 import (
     CreateSecretRequest,
     DeleteSecretRequest,
     ListSecretsRequest,
+    ListSecretVersionsRequest,
     SecretManagerServiceAsyncClient,
 )
 from acb.config import project
@@ -24,13 +25,12 @@ class Secret(SecretBase):
     project: str = project
     parent: str = f"projects/{project}"
 
-    def extract_secret_name(self, secret_path: str) -> t.Any:
+    def extract_secret_name(self, secret_path: str) -> str:
         return secret_path.split("/")[-1].removeprefix(self.prefix)
 
-    async def list(self, adapter: str) -> t.Any:
-        request = ListSecretsRequest(
-            parent=self.parent, filter=f"{self.prefix}{adapter}_"
-        )
+    async def list(self, adapter: t.Optional[str] = None) -> t.List[str]:
+        filter_str = f"{self.prefix}{adapter}_" if adapter else self.prefix
+        request = ListSecretsRequest(parent=self.parent, filter=filter_str)
         try:
             client_secrets = await self.client.list_secrets(request=request)
         except PermissionDenied:
@@ -42,11 +42,12 @@ class Secret(SecretBase):
         ]
         return client_secrets
 
-    async def get(self, name: str) -> t.Any:
-        path = f"projects/{self.project}/secrets/{name}/versions/latest"
+    async def get(self, name: str, version: t.Optional[str] = None) -> t.Optional[str]:
+        version_str = version or "latest"
+        path = f"projects/{self.project}/secrets/{name}/versions/{version_str}"
         request = AccessSecretVersionRequest(name=path)
-        version = await self.client.access_secret_version(request=request)
-        payload = version.payload.data.decode()
+        response = await self.client.access_secret_version(request=request)
+        payload = response.payload.data.decode()
         self.logger.info(f"Fetched secret - {name}")
         return payload
 
@@ -92,6 +93,12 @@ class Secret(SecretBase):
         request = DeleteSecretRequest(name=secret)
         await self.client.delete_secret(request=request)
         self.logger.debug(f"Deleted secret - {secret}")
+
+    async def list_versions(self, name: str) -> t.List[str]:
+        secret = self.client.secret_path(self.project, name)
+        request = ListSecretVersionsRequest(parent=secret)
+        versions = await self.client.list_secret_versions(request=request)
+        return [version.name.split("/")[-1] async for version in versions]
 
     @cached_property
     def client(self) -> SecretManagerServiceAsyncClient:

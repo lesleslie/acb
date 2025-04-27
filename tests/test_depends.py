@@ -1,351 +1,126 @@
-import typing as t
-from unittest.mock import MagicMock, patch
+"""Simple tests for the depends module."""
+
+from typing import Optional
 
 import pytest
-from acb.config import Config
 from acb.depends import depends
 
-T = t.TypeVar("T")
+
+class TestService:
+    def __init__(self, name: str = "test") -> None:
+        self.name = name
 
 
+@pytest.mark.unit
 class TestDepends:
-    @pytest.fixture
-    def mock_config(self) -> t.Generator[MagicMock, None, None]:
-        mock_config: MagicMock = MagicMock(spec=Config)
-        yield mock_config
+    @pytest.mark.asyncio
+    async def test_set_get(self) -> None:
+        service = TestService(name="test_service")
+        depends.set(TestService, service)
 
-    def test_depends_inject_with_no_config(self, mock_config: MagicMock) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
+        result = depends.get(TestService)
 
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
+        assert result is service
+        assert result.name == "test_service"
 
-                return wrapper
+    @pytest.mark.asyncio
+    async def test_set_factory(self) -> None:
+        def factory() -> TestService:
+            return TestService(name="factory_service")
 
-            mock_inject.side_effect = mock_inject_impl
+        depends.set(TestService, factory())
 
-            @depends.inject
-            def my_function(arg1: str, arg2: int) -> tuple[str, int]:
-                return arg1, arg2
+        result = depends.get(TestService)
 
-            result: tuple[str, int] = my_function("test", 123)
+        assert isinstance(result, TestService)
+        assert result.name == "factory_service"
 
-            assert result == ("test", 123)
+    @pytest.mark.asyncio
+    async def test_set_async(self) -> None:
+        service = TestService(name="async_service")
 
-    def test_depends_inject_with_no_args(self, mock_config: MagicMock) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
+        depends.set(TestService, service)
 
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
+        result = depends.get(TestService)
 
-                return wrapper
+        assert isinstance(result, TestService)
+        assert result.name == "async_service"
 
-            mock_inject.side_effect = mock_inject_impl
+    @pytest.mark.asyncio
+    async def test_inject_sync(self) -> None:
+        service = TestService(name="inject_service")
+        depends.set(TestService, service)
 
-            @depends.inject
-            def my_function() -> None:
-                return None
+        @depends.inject
+        def test_function(service: TestService = depends()) -> str:
+            return service.name
 
-            result: None = my_function()
+        result = test_function()
 
-            assert result is None
+        assert result == "inject_service"
 
-    def test_depends_inject_with_no_args_or_config(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
+    @pytest.mark.asyncio
+    async def test_inject_async(self) -> None:
+        service = TestService(name="inject_async_service")
+        depends.set(TestService, service)
 
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
+        @depends.inject
+        async def test_async_function(service: TestService = depends()) -> str:
+            return service.name
 
-                return wrapper
+        result = await test_async_function()
 
-            mock_inject.side_effect = mock_inject_impl
+        assert result == "inject_async_service"
 
-            @depends.inject
-            def my_function() -> None:
-                return None
+    @pytest.mark.asyncio
+    async def test_inject_with_args(self) -> None:
+        service = TestService(name="inject_args_service")
+        depends.set(TestService, service)
 
-            result: None = my_function()
+        @depends.inject
+        def test_function(
+            arg1: str, arg2: str, service: TestService = depends()
+        ) -> str:
+            return f"{arg1}_{arg2}_{service.name}"
 
-            assert result is None
+        result = test_function("hello", "world")
 
-    def test_depends_inject_with_multiple_dependencies_and_no_config(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
+        assert result == "hello_world_inject_args_service"
 
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
+    @pytest.mark.asyncio
+    async def test_inject_with_kwargs(self) -> None:
+        service = TestService(name="inject_kwargs_service")
+        depends.set(TestService, service)
 
-                return wrapper
+        @depends.inject
+        def test_function(
+            arg1: str, arg2: Optional[str] = None, service: TestService = depends()
+        ) -> str:
+            return f"{arg1}_{arg2}_{service.name}"
 
-            mock_inject.side_effect = mock_inject_impl
+        result = test_function("hello", arg2="world")
 
-            @depends.inject
-            def my_function(arg1: str, arg2: int) -> tuple[str, int]:
-                return arg1, arg2
+        assert result == "hello_world_inject_kwargs_service"
 
-            result: tuple[str, int] = my_function("test", 123)
+    @pytest.mark.asyncio
+    async def test_inject_with_multiple_dependencies(self) -> None:
+        service1 = TestService(name="service1")
 
-            assert result == ("test", 123)
+        class AnotherService:
+            def __init__(self, name: str = "default") -> None:
+                self.name = name
 
-    def test_depends_inject_with_multiple_dependencies_and_no_args(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
+        service2 = AnotherService(name="service2")
 
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
+        depends.set(TestService, service1)
+        depends.set(AnotherService, service2)
 
-                return wrapper
+        @depends.inject
+        def test_function(
+            service1: TestService = depends(), service2: AnotherService = depends()
+        ) -> str:
+            return f"{service1.name}_{service2.name}"
 
-            mock_inject.side_effect = mock_inject_impl
+        result = test_function()
 
-            @depends.inject
-            def my_function() -> None:
-                return None
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_args_or_config(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None:
-                return None
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None:
-                return None
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_kwargs(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None:
-                return None
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args_or_kwargs(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None:
-                return None
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args_or_kwargs_or_return(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None:
-                return
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args_or_kwargs_or_return_or_type_hints(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None:
-                return
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args_or_kwargs_or_return_or_type_hints_or_docstring(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None:
-                return
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args_or_kwargs_or_return_or_type_hints_or_docstring_or_body(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            @depends.inject
-            def my_function() -> None: ...
-
-            result: None = my_function()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args_or_kwargs_or_return_or_type_hints_or_docstring_or_body_or_decorator(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            def my_function() -> None: ...
-
-            result: None = depends.inject(my_function)()
-
-            assert result is None
-
-    def test_depends_inject_with_multiple_dependencies_and_no_config_or_args_or_kwargs_or_return_or_type_hints_or_docstring_or_body_or_decorator_or_call(
-        self, mock_config: MagicMock
-    ) -> None:
-        with patch("acb.depends.inject_dependency") as mock_inject:
-
-            def mock_inject_impl(
-                func: t.Callable[..., t.Any],
-            ) -> t.Callable[..., t.Any]:
-                def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-                    return func(*args, **kwargs)
-
-                return wrapper
-
-            mock_inject.side_effect = mock_inject_impl
-
-            def my_function() -> None: ...
-
-            result: t.Callable[..., None] = depends.inject(my_function)
-
-            assert callable(result)
+        assert result == "service1_service2"

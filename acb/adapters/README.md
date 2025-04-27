@@ -351,5 +351,6 @@ async def payment_example() -> dict[str, str | bool]:
 - [Main ACB Documentation](../README.md)
 - [Core Systems Documentation](../README.md)
 - [Actions Documentation](../actions/README.md)
+- [Testing Documentation](../../tests/README.md)
 - [Configuration Guide](../config.md)
 - [Dependency Injection Guide](../depends.md)

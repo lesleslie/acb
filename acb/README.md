@@ -222,6 +222,7 @@ ACB is used in several projects including:
 - [Main ACB Documentation](../README.md): Overview of the entire ACB framework
 - [Actions Documentation](./actions/README.md): Details about built-in actions and creating custom ones
 - [Adapters Documentation](./adapters/README.md): Information about adapter interfaces and implementations
+- [Testing Documentation](../tests/README.md): Comprehensive guide to testing ACB components
 - [Configuration Documentation](./configuration.md): Detailed guide to the configuration system
 - [Dependency Injection Documentation](./dependency-injection.md): In-depth explanation of the dependency injection system
 - [Debug Documentation](./debug.md): Guide to using the debugging tools effectively
