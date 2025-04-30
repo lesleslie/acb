@@ -4,7 +4,7 @@ import signal
 import sys
 from contextlib import suppress
 from pathlib import Path
-from typing import AsyncGenerator, Final, NoReturn, TypeAlias
+from typing import Any, AsyncGenerator, Final, NoReturn, TypeAlias
 
 import pytest
 from _pytest.config import Config
@@ -15,6 +15,12 @@ TaskSet: TypeAlias = set[asyncio.Task[object]]
 MarkerTuple: TypeAlias = tuple[str, str]
 
 pytest_plugins: Final[list[str]] = ["pytest_asyncio"]
+
+
+@pytest.fixture(scope="module")
+def anyio_backend() -> Any:
+    """Override anyio_backend fixture to only use asyncio backend."""
+    return "asyncio"
 
 
 def pytest_configure(config: Config) -> None:
