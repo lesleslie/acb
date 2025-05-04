@@ -1,9 +1,7 @@
-"""Mock implementations of NoSQL adapters for testing."""
-
 import typing as t
 from unittest.mock import AsyncMock, MagicMock
 
-from acb.adapters.nosql._base import NosqlBase
+from acb.adapters.nosql._base import NosqlBase, NosqlCollection
 
 
 class MockCollection:
@@ -161,18 +159,95 @@ class MockCursor:
 
 class MockNoSQL(NosqlBase):
     def __init__(self) -> None:
-        self._collections: dict[str, MockCollection] = {}
+        super().__init__()
+        self._mock_collections: dict[str, MockCollection] = {}
         self._initialized = True
         self.config = MagicMock()
         self.config.app.name = "test"
 
-    def __getattr__(self, name: str) -> MockCollection:
-        if name not in self._collections:
-            self._collections[name] = MockCollection(name, self)
-        return self._collections[name]
+    def __getattr__(self, name: str) -> NosqlCollection:
+        if name not in self._mock_collections:
+            collection = MockCollection(name, self)
+            self._mock_collections[name] = collection
+            self._collections[name] = t.cast(NosqlCollection, collection)
+        return t.cast(NosqlCollection, self._mock_collections[name])
 
     async def init(self) -> None:
         self._initialized = True
 
     async def start_transaction(self, **kwargs: t.Any) -> AsyncMock:
         return AsyncMock()
+
+    async def find(
+        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+    ) -> t.List[t.Dict[str, t.Any]]:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        cursor = await coll.find(filter, **kwargs)
+        return await cursor.to_list()
+
+    async def find_one(
+        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+    ) -> t.Optional[t.Dict[str, t.Any]]:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        return await coll.find_one(filter, **kwargs)
+
+    async def insert_one(
+        self, collection: str, document: t.Dict[str, t.Any], **kwargs: t.Any
+    ) -> t.Any:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        return await coll.insert_one(document, **kwargs)
+
+    async def insert_many(
+        self, collection: str, documents: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
+    ) -> t.List[t.Any]:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        result = await coll.insert_many(documents, **kwargs)
+        return result.inserted_ids
+
+    async def update_one(
+        self,
+        collection: str,
+        filter: t.Dict[str, t.Any],
+        update: t.Dict[str, t.Any],
+        **kwargs: t.Any,
+    ) -> t.Any:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        return await coll.update_one(filter, update, **kwargs)
+
+    async def update_many(
+        self,
+        collection: str,
+        filter: t.Dict[str, t.Any],
+        update: t.Dict[str, t.Any],
+        **kwargs: t.Any,
+    ) -> t.Any:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        return await coll.update_many(filter, update, **kwargs)
+
+    async def delete_one(
+        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+    ) -> t.Any:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        return await coll.delete_one(filter, **kwargs)
+
+    async def delete_many(
+        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+    ) -> t.Any:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        return await coll.delete_many(filter, **kwargs)
+
+    async def count(
+        self,
+        collection: str,
+        filter: t.Optional[t.Dict[str, t.Any]] = None,
+        **kwargs: t.Any,
+    ) -> int:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        return await coll.count(filter, **kwargs)
+
+    async def aggregate(
+        self, collection: str, pipeline: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
+    ) -> t.List[t.Dict[str, t.Any]]:
+        coll = self._mock_collections.get(collection, MockCollection(collection, self))
+        cursor = await coll.aggregate(pipeline, **kwargs)
+        return await cursor.to_list()

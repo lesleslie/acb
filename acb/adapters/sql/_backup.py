@@ -68,7 +68,10 @@ class SqlBackupUtils(BaseModel):
         return self.backup_path
 
 
-class SqlBackupDates(BaseModel, arbitrary_types_allowed=True):
+class SqlBackupDates(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
     today: arrow.Arrow = arrow.utcnow()
     white_list: list[int] = []
     black_list: list[int] = []
@@ -98,11 +101,13 @@ class SqlBackupDates(BaseModel, arbitrary_types_allowed=True):
         }
         for dt in dates:
             comp_date = datetime.fromtimestamp(int(dt))
-            comparison = method_mapping.get(period)(comp_date)
-            ref_date = datetime.fromtimestamp(reference)
-            if comparison != method_mapping.get(period)(ref_date):
-                reference = dt
-                yield dt
+            method = method_mapping.get(period)
+            if method is not None:
+                comparison = method(comp_date)
+                ref_date = datetime.fromtimestamp(reference)
+                if comparison != method(ref_date):
+                    reference = dt
+                    yield dt
 
     def process(self) -> None:
         last_w = self.today.shift(days=-7).int_timestamp

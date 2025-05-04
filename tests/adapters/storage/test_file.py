@@ -1,69 +1,72 @@
 """Simplified tests for the File Storage adapter."""
 
-import shutil
-import tempfile
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Optional
+from unittest.mock import MagicMock
 
 import pytest
 from tests.test_interfaces import StorageTestInterface
 
 
-class FileStorage:
+class MockFileStorage:
     def __init__(self, root_dir: Optional[str] = None) -> None:
         self.root_dir: str = root_dir if root_dir is not None else "."
         self._initialized: bool = False
+        self._files: dict[str, bytes] = {}
+        self._directories: set[str] = set()
 
-    async def init(self) -> "FileStorage":
+    async def init(self) -> "MockFileStorage":
         self._initialized = True
         return self
 
     async def put_file(self, path: str, content: bytes) -> bool:
-        full_path = Path(self.root_dir) / path
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        full_path.write_bytes(content)
+        parent_dir = "/".join(path.split("/")[:-1])
+        if parent_dir:
+            await self.create_directory(parent_dir)
+
+        self._files[path] = content
         return True
 
     async def get_file(self, path: str) -> Optional[bytes]:
-        full_path = Path(self.root_dir) / path
-        if not full_path.exists():
-            return None
-        return full_path.read_bytes()
+        return self._files.get(path)
 
     async def delete_file(self, path: str) -> bool:
-        full_path = Path(self.root_dir) / path
-        if not full_path.exists():
-            return False
-        full_path.unlink()
-        return True
+        if path in self._files:
+            del self._files[path]
+            return True
+        return False
 
     async def file_exists(self, path: str) -> bool:
-        full_path = Path(self.root_dir) / path
-        return full_path.exists() and full_path.is_file()
+        return path in self._files
 
     async def create_directory(self, path: str) -> bool:
-        full_path = Path(self.root_dir) / path
-        full_path.mkdir(parents=True, exist_ok=True)
+        self._directories.add(path)
+
+        parts = path.split("/")
+        for i in range(1, len(parts)):
+            parent = "/".join(parts[:i])
+            if parent:
+                self._directories.add(parent)
+
         return True
 
     async def directory_exists(self, path: str) -> bool:
-        full_path = Path(self.root_dir) / path
-        return full_path.exists() and full_path.is_dir()
+        return path in self._directories
 
 
 @pytest.fixture
-def temp_dir() -> Generator[Path, None, None]:
-    temp_dir = tempfile.mkdtemp()
-    yield Path(temp_dir)
-    try:
-        shutil.rmtree(temp_dir)
-    except Exception as e:
-        print(f"Error cleaning up temp_dir: {e}")
+def mock_path() -> MagicMock:
+    mock_path = MagicMock(spec=Path)
+    mock_path.__truediv__.return_value = mock_path
+    mock_path.exists.return_value = True
+    mock_path.is_file.return_value = True
+    mock_path.is_dir.return_value = True
+    return mock_path
 
 
 @pytest.fixture
-async def storage(temp_dir: Path) -> FileStorage:
-    storage = FileStorage(root_dir=str(temp_dir))
+async def storage() -> MockFileStorage:
+    storage = MockFileStorage(root_dir="/mock/storage")
     await storage.init()
     return storage
 

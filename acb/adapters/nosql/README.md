@@ -1,4 +1,4 @@
-Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/nosql/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [NoSQL](./README.md)
+**ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [NoSQL](./README.md)
 
 # NoSQL Adapter
 
@@ -39,9 +39,9 @@ The ACB NoSQL adapter offers:
 
 | Implementation | Description | Best For |
 |----------------|-------------|----------|
-| **MongoDB** | Document-oriented database | Complex document storage, queries, aggregations |
+| **MongoDB** | Document-oriented database using Beanie | Complex document storage, queries, aggregations |
 | **Firestore** | Google Cloud Firestore | Google Cloud deployments, real-time applications |
-| **Redis** | In-memory data structure store | Caching, pub/sub, simple data structures |
+| **Redis** | In-memory data structure store using Redis-OM | Caching, pub/sub, simple data structures |
 
 ## Installation
 
@@ -81,19 +81,27 @@ The NoSQL adapter settings can be customized in your `settings/app.yml` file:
 
 ```yaml
 nosql:
-  # MongoDB specific settings
-  connection_string: "mongodb://localhost:27017"
+  # Common settings
+  host: "127.0.0.1"
   database: "myapp"
+  collection_prefix: ""
+
+  # MongoDB specific settings
+  port: 27017
+  connection_string: "mongodb://localhost:27017/myapp"
+  connection_options: {}
 
   # Firestore specific settings
   project_id: "my-gcp-project"
-  collection_prefix: "myapp"
+  credentials_path: "/path/to/credentials.json"
+  emulator_host: null
 
-  # Redis specific settings (for NoSQL usage, not caching)
-  host: "localhost"
+  # Redis specific settings
   port: 6379
   db: 0
   password: null
+  decode_responses: true
+  encoding: "utf-8"
 ```
 
 ## Basic Usage
@@ -151,22 +159,25 @@ product = {
     "category": "electronics",
     "in_stock": True
 }
-product_id = await nosql.products.add(product)
+product_id = await nosql.products.insert_one(product)
 
 # Get a document by ID
-product = await nosql.products.get(product_id)
+product = await nosql.products.find_one({"_id": product_id})
 print(f"Product: {product['name']}, Price: ${product['price']}")
 
 # Query documents
-electronics = await nosql.products.where("category", "==", "electronics").where("in_stock", "==", True).get()
+electronics = await nosql.products.find({"category": "electronics", "in_stock": True})
 for item in electronics:
     print(f"Item: {item['name']}, Price: ${item['price']}")
 
 # Update a document
-await nosql.products.update(product_id, {"price": 649.99, "on_sale": True})
+await nosql.products.update_one(
+    {"_id": product_id},
+    {"$set": {"price": 649.99, "on_sale": True}}
+)
 
 # Delete a document
-await nosql.products.delete(product_id)
+await nosql.products.delete_one({"_id": product_id})
 ```
 
 ### Redis Implementation
@@ -174,42 +185,31 @@ await nosql.products.delete(product_id)
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-import json
 
 # Import the NoSQL adapter
 NoSQL = import_adapter("nosql")
 nosql = depends.get(NoSQL)
 
-# Store a simple key-value
-await nosql.set("greeting", "Hello, World!")
-value = await nosql.get("greeting")
-print(value)  # "Hello, World!"
-
-# Store a hash (for document-like data)
-await nosql.hmset("user:1001", {
+# Insert a document
+user = {
     "name": "Jane Smith",
     "email": "jane@example.com",
     "score": 95
-})
-
-# Get hash fields
-email = await nosql.hget("user:1001", "email")
-print(email)  # "jane@example.com"
-
-# Get all hash fields
-user = await nosql.hgetall("user:1001")
-print(user)  # {"name": "Jane Smith", "email": "jane@example.com", "score": "95"}
-
-# Store a complex object (using JSON serialization)
-settings = {
-    "theme": "dark",
-    "notifications": True,
-    "favorites": [1, 5, 9]
 }
-await nosql.set("settings:1001", json.dumps(settings))
+user_id = await nosql.users.insert_one(user)
 
-# Delete a key
-await nosql.delete("greeting")
+# Find a document
+user = await nosql.users.find_one({"_id": user_id})
+print(f"User: {user['name']}, Email: {user['email']}")
+
+# Update a document
+await nosql.users.update_one(
+    {"_id": user_id},
+    {"$set": {"score": 98}}
+)
+
+# Delete a document
+await nosql.users.delete_one({"_id": user_id})
 ```
 
 ## Advanced Usage
@@ -223,21 +223,19 @@ from acb.adapters import import_adapter
 NoSQL = import_adapter("nosql")
 nosql = depends.get(NoSQL)
 
-# Using transactions (MongoDB example)
-async with await nosql.start_transaction() as session:
+# Using transactions
+async with nosql.transaction():
     try:
         # Withdraw from one account
         await nosql.accounts.update_one(
             {"_id": "account1"},
-            {"$inc": {"balance": -100}},
-            session=session
+            {"$set": {"balance": 900}}
         )
 
         # Deposit to another account
         await nosql.accounts.update_one(
             {"_id": "account2"},
-            {"$inc": {"balance": 100}},
-            session=session
+            {"$set": {"balance": 1100}}
         )
 
         # Transaction commits automatically if no exceptions occur
@@ -332,23 +330,25 @@ print(f"Product: {product.name}, Price: ${product.price}")
 The NoSQL adapter dynamically creates collection/table properties based on usage:
 
 ```python
-class NoSQLBase:
+class NosqlBase(AdapterBase):
     # Collections are accessed as properties:
     # nosql.users -> users collection
     # nosql.products -> products collection
 
     # Core methods include:
-    async def find(self, filter, **kwargs): ...
-    async def find_one(self, filter, **kwargs): ...
-    async def insert_one(self, document, **kwargs): ...
-    async def insert_many(self, documents, **kwargs): ...
-    async def update_one(self, filter, update, **kwargs): ...
-    async def update_many(self, filter, update, **kwargs): ...
-    async def delete_one(self, filter, **kwargs): ...
-    async def delete_many(self, filter, **kwargs): ...
-    async def count(self, filter=None, **kwargs): ...
-    async def aggregate(self, pipeline, **kwargs): ...
-    async def start_transaction(self, **kwargs): ...
+    async def find(self, collection: str, filter: dict, **kwargs) -> List[dict]: ...
+    async def find_one(self, collection: str, filter: dict, **kwargs) -> Optional[dict]: ...
+    async def insert_one(self, collection: str, document: dict, **kwargs) -> Any: ...
+    async def insert_many(self, collection: str, documents: List[dict], **kwargs) -> List[Any]: ...
+    async def update_one(self, collection: str, filter: dict, update: dict, **kwargs) -> Any: ...
+    async def update_many(self, collection: str, filter: dict, update: dict, **kwargs) -> Any: ...
+    async def delete_one(self, collection: str, filter: dict, **kwargs) -> Any: ...
+    async def delete_many(self, collection: str, filter: dict, **kwargs) -> Any: ...
+    async def count(self, collection: str, filter: Optional[dict] = None, **kwargs) -> int: ...
+    async def aggregate(self, collection: str, pipeline: List[dict], **kwargs) -> List[dict]: ...
+
+    @asynccontextmanager
+    async def transaction(self) -> AsyncGenerator[None, None]: ...
 ```
 
 ## Performance Considerations
@@ -483,11 +483,10 @@ async def get_user_with_activity(user_id: int):
 ## Additional Resources
 
 - [MongoDB Documentation](https://docs.mongodb.com/manual/)
-- [MongoDB Performance Best Practices](https://www.mongodb.com/docs/manual/core/query-optimization/)
-- [Firestore Documentation](https://firebase.google.com/docs/firestore)
-- [Firestore Best Practices](https://firebase.google.com/docs/firestore/best-practices)
+- [Beanie Documentation](https://beanie-odm.dev/)
+- [Google Cloud Firestore Documentation](https://cloud.google.com/firestore/docs)
 - [Redis Documentation](https://redis.io/documentation)
-- [Redis Performance Optimization](https://redis.io/topics/optimization)
+- [Redis-OM Documentation](https://redis.io/docs/latest/integrate/redisom-for-python/)
 - [ACB Models Adapter](../models/README.md)
 - [ACB SQL Adapter](../sql/README.md)
 - [ACB Cache Adapter](../cache/README.md)

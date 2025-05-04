@@ -1,4 +1,4 @@
-Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/smtp/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [SMTP](./README.md)
+**ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [SMTP](./README.md)
 
 # SMTP Adapter
 
@@ -19,8 +19,8 @@ The ACB SMTP adapter offers:
 
 | Implementation | Description | Best For |
 |----------------|-------------|----------|
-| **Gmail** | Send emails through Gmail SMTP | Small to medium applications |
-| **Mailgun** | Send emails through Mailgun API | High-volume email delivery |
+| **Gmail** | Send emails through Gmail API with OAuth2 | Google Workspace users, personal Gmail accounts |
+| **Mailgun** | Send emails through Mailgun API | High-volume email delivery, transactional emails |
 
 ## Installation
 
@@ -62,25 +62,11 @@ smtp:
   # Required adapters (will ensure these are loaded first)
   requires: ["requests"]
 
-  # API key for services like Mailgun
-  api_key: "your-api-key"
-
-  # Domain configuration
+  # Common settings
   domain: "mail.example.com"  # Defaults to mail.{your app domain}
-
-  # SMTP server configuration
-  port: 587
-  tls: true
-  ssl: false
-
-  # Default sender configuration
   default_from: "info@example.com"  # Defaults to info@{your app domain}
   default_from_name: "My Application"  # Defaults to your app title
-
-  # Test receiver for development
   test_receiver: "test@example.com"
-
-  # Template configuration
   template_folder: "./templates/email"
 
   # Email forwarding configuration
@@ -88,6 +74,25 @@ smtp:
     admin: "admin@example.com"
     info: "info@example.com"
     support: "support@example.com"
+
+  # Mailgun specific settings
+  api_key: "your-mailgun-api-key"
+  api_url: "https://api.mailgun.net/v3/domains"
+
+  # Gmail specific settings
+  client_id: "your-google-client-id"
+  client_secret: "your-google-client-secret"
+  refresh_token: "your-google-refresh-token"
+  scopes: [
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.settings.basic",
+    "https://www.googleapis.com/auth/gmail.settings.sharing"
+  ]
+
+  # SMTP server configuration (for direct SMTP connections)
+  port: 587
+  tls: true
+  ssl: false
 ```
 
 ## Basic Usage
@@ -128,6 +133,25 @@ await smtp.send_email(
 ```
 
 ## Advanced Usage
+
+### Gmail Setup
+
+To use the Gmail adapter, you need to set up OAuth2 credentials:
+
+1. Create a Google Cloud project at [console.cloud.google.com](https://console.cloud.google.com/)
+2. Enable the Gmail API for your project
+3. Create OAuth2 credentials (client ID and client secret)
+4. Generate a refresh token using the OAuth2 flow
+5. Configure your ACB application with these credentials
+
+```yaml
+smtp:
+  client_id: "your-google-client-id"
+  client_secret: "your-google-client-secret"
+  refresh_token: "your-google-refresh-token"
+```
+
+The Gmail adapter uses these credentials to authenticate with the Gmail API and send emails on behalf of the authenticated user. It also supports email forwarding configuration through Gmail's forwarding settings.
 
 ### Sending to Multiple Recipients
 
@@ -290,7 +314,8 @@ class EmailBase:
 
 ## Additional Resources
 
-- [Gmail SMTP Documentation](https://support.google.com/a/answer/176600)
+- [Gmail API Documentation](https://developers.google.com/gmail/api/guides)
+- [Gmail OAuth2 Setup Guide](https://developers.google.com/gmail/api/auth/about-auth)
 - [Mailgun API Documentation](https://documentation.mailgun.com/)
 - [Email Templates Best Practices](https://www.litmus.com/blog/email-coding-best-practices/)
 - [ACB Templates Documentation](../../README.md#templates)

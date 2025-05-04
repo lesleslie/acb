@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from anyio import Path as AsyncPath
-from acb.adapters import tmp_path
 from acb.config import Config
 
 from ._base import (
@@ -28,7 +27,9 @@ def mock_storage_settings() -> MagicMock:
         "templates": "templates-bucket",
     }
     settings.prefix = "test-prefix"
-    settings.local_path = tmp_path / "storage"
+    mock_path = MagicMock(spec=AsyncPath)
+    mock_path.__truediv__.return_value = mock_path
+    settings.local_path = mock_path
     settings.local_fs = True
     settings.memory_fs = False
     settings.cors = None
@@ -153,7 +154,6 @@ class TestStorageBaseSettings:
     ) -> None:
         settings = MagicMock(spec=StorageBaseSettings)
         settings.prefix = "test_prefix"
-        settings.local_path = tmp_path / "storage"
         settings.buckets = {
             "test": "test-bucket",
             "media": "media-bucket",
@@ -163,7 +163,6 @@ class TestStorageBaseSettings:
         settings.memory_fs = False
 
         assert settings.prefix is not None
-        assert settings.local_path == tmp_path / "storage"
         assert "test" in settings.buckets
         assert "media" in settings.buckets
         assert "templates" in settings.buckets

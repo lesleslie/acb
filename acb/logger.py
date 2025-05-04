@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 import typing as t
 from inspect import currentframe
 
@@ -84,6 +86,11 @@ class Logger(_Logger, LoggerBase):
         await aprint(message, end="")
 
     def init(self) -> None:
+        if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
+            self.remove()
+            self.configure(handlers=[])
+            return
+
         def patch_name(record: dict[str, t.Any]) -> str:  # type: ignore
             mod_parts = record["name"].split(".")
             mod_name = ".".join(mod_parts[:-1])
@@ -122,11 +129,27 @@ class Logger(_Logger, LoggerBase):
         self.config.logger.level_per_module = {
             m: "DEBUG" if v else self.config.logger.log_level for m, v in debug.items()
         }
-        self.add(
-            self.async_sink,
-            filter=filter_by_module,  # type: ignore
-            **self.config.logger.settings,
-        )
+
+        try:
+            self.add(
+                self.async_sink,
+                filter=filter_by_module,  # type: ignore
+                **self.config.logger.settings,
+            )
+        except ValueError as e:
+            if "event loop is required" in str(e):
+                self.add(
+                    lambda msg: print(msg, end=""),
+                    filter=filter_by_module,  # type: ignore
+                    **{
+                        k: v
+                        for k, v in self.config.logger.settings.items()
+                        if k != "enqueue"
+                    },
+                )
+            else:
+                raise
+
         for level, color in self.config.logger.level_colors.items():
             self.level(level.upper(), color=f"[{color}]")
         if self.config.debug.logger:

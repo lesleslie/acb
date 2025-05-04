@@ -25,7 +25,10 @@ nest_asyncio.apply()
 
 
 @rich.repr.auto
-class Pkg(BaseModel, arbitrary_types_allowed=True):
+class Pkg(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
     name: str
     path: AsyncPath
     actions: list[Action] = []
@@ -36,7 +39,11 @@ pkg_registry: ContextVar[list[Pkg]] = ContextVar("pkg_registry", default=[])
 
 
 def register_pkg() -> None:
-    path = AsyncPath(currentframe().f_back.f_code.co_filename).parent
+    frame = currentframe()
+    if frame is not None and frame.f_back is not None:
+        path = AsyncPath(frame.f_back.f_code.co_filename).parent
+    else:
+        raise RuntimeError("Could not determine caller frame")
     name = path.stem
     registry = pkg_registry.get()
     if name not in [p.name for p in registry]:

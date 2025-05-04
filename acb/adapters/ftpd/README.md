@@ -1,25 +1,28 @@
-Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/ftpd/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [FTPD](./README.md)
+**ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [FTPD](./README.md)
 
 # FTPD Adapter
 
-The FTPD adapter provides a standardized interface for file transfer protocol operations in ACB applications, supporting both FTP and SFTP implementations.
+The FTPD adapter provides a standardized interface for file transfer protocol operations in ACB applications, supporting both FTP (using aioftp) and SFTP (using asyncssh) implementations.
 
 ## Overview
 
 The ACB FTPD adapter offers a consistent way to handle file transfers:
 
+- FTP server functionality using aioftp
+- SFTP server functionality using asyncssh
 - File uploads and downloads
 - Directory creation and navigation
 - File management (renaming, deleting)
 - Support for both standard FTP and secure SFTP
 - Asynchronous operations
+- Streaming file read/write capabilities
 
 ## Available Implementations
 
 | Implementation | Description | Best For |
 |----------------|-------------|----------|
-| **FTP** | Standard File Transfer Protocol | Basic file transfers |
-| **SFTP** | SSH File Transfer Protocol | Secure file transfers |
+| **FTP** | Standard File Transfer Protocol using aioftp | Basic file transfers, compatibility with legacy systems |
+| **SFTP** | SSH File Transfer Protocol using asyncssh | Secure file transfers, modern applications |
 
 ## Installation
 
@@ -54,34 +57,37 @@ The FTPD adapter settings can be customized in your `settings/app.yml` file:
 
 ```yaml
 ftpd:
-  # Server port
-  port: 8021
-
-  # Maximum concurrent connections
-  max_connections: 42
-
-  # Host
+  # Common settings
   host: "127.0.0.1"
-
-  # Credentials
+  port: 8021  # FTP default: 8021, SFTP default: 8022
+  max_connections: 42
   username: "ftpuser"
-  password: "secure-password"
+  password: "ftppass"
+  anonymous: false
+  root_dir: "/tmp/ftp"
 
-  # Root directory
-  root_dir: "/var/ftp"
+  # FTP specific settings
+  passive_ports_min: 50000
+  passive_ports_max: 50100
+  timeout: 30
+  use_tls: false
+  cert_file: null
+  key_file: null
 
-  # SSL/TLS settings (for secure connections)
-  use_tls: true
-  cert_file: "/path/to/cert.pem"
-  key_file: "/path/to/key.pem"
+  # SFTP specific settings
+  server_host_keys: ["/path/to/ssh_host_key"]
+  authorized_client_keys: "/path/to/authorized_keys"
+  known_hosts: null
+  client_keys: []
 ```
 
 ## Basic Usage
 
+### Starting and Stopping the Server
+
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-from anyio import Path as AsyncPath
 
 # Import the FTPD adapter
 FTPD = import_adapter("ftpd")
@@ -89,83 +95,122 @@ FTPD = import_adapter("ftpd")
 # Get the FTPD instance via dependency injection
 ftpd = depends.get(FTPD)
 
-# Upload a file
-local_file = AsyncPath("local_document.pdf")
-remote_path = "documents/document.pdf"
-await ftpd.upload(local_file, remote_path)
+# Start the server
+await ftpd.start()
 
-# Download a file
-downloaded_file = AsyncPath("downloaded_document.pdf")
-await ftpd.download(remote_path, downloaded_file)
-
-# List directory contents
-files = await ftpd.list_dir("documents")
-for file in files:
-    print(f"File: {file.name}, Size: {file.size}")
-
-# Delete a file
-await ftpd.delete(remote_path)
-```
-
-## Advanced Usage
-
-### Directory Operations
-
-```python
-from acb.depends import depends
-from acb.adapters import import_adapter
-
-FTPD = import_adapter("ftpd")
-ftpd = depends.get(FTPD)
-
-# Create a directory
-await ftpd.mkdir("reports/2023")
-
-# Check if a directory exists
-exists = await ftpd.exists("reports/2023")
-
-# List subdirectories
-directories = await ftpd.list_dirs("reports")
-
-# Remove a directory (and contents)
-await ftpd.rmdir("reports/2022", recursive=True)
+# Stop the server
+await ftpd.stop()
 ```
 
 ### File Operations
 
 ```python
-# Get file information
-file_info = await ftpd.stat("documents/report.pdf")
-print(f"Size: {file_info.size}")
-print(f"Modified: {file_info.mtime}")
-print(f"Permissions: {file_info.permissions}")
+from pathlib import Path
 
-# Move/rename a file
-await ftpd.rename("old_path.txt", "new_path.txt")
+# Upload a file
+await ftpd.upload(Path("/local/path/file.txt"), "/remote/path/file.txt")
+
+# Download a file
+await ftpd.download("/remote/path/file.txt", Path("/local/path/file.txt"))
+
+# Read a file as text
+content = await ftpd.read_text("/remote/path/file.txt")
+print(content)
+
+# Write text to a file
+await ftpd.write_text("/remote/path/newfile.txt", "Hello, world!")
+
+# Read a file as bytes
+binary_data = await ftpd.read_bytes("/remote/path/image.jpg")
+
+# Write bytes to a file
+await ftpd.write_bytes("/remote/path/newimage.jpg", binary_data)
 
 # Check if a file exists
-exists = await ftpd.exists("documents/report.pdf")
+if await ftpd.exists("/remote/path/file.txt"):
+    print("File exists!")
 
-# Get file contents as string
-content = await ftpd.read_text("config.json")
+# Get file information
+file_info = await ftpd.stat("/remote/path/file.txt")
+print(f"Name: {file_info.name}, Size: {file_info.size} bytes")
 
-# Get file contents as bytes
-binary_content = await ftpd.read_bytes("image.png")
+# Delete a file
+await ftpd.delete("/remote/path/file.txt")
+
+# Rename a file
+await ftpd.rename("/remote/path/oldname.txt", "/remote/path/newname.txt")
 ```
 
-### Batch Operations
+### Directory Operations
 
 ```python
-# Batch upload multiple files
-files = [
-    ("local1.txt", "remote/path1.txt"),
-    ("local2.txt", "remote/path2.txt"),
-    ("local3.txt", "remote/path3.txt")
-]
+# Create a directory
+await ftpd.mkdir("/remote/path/newdir")
 
+# List directory contents
+files = await ftpd.list_dir("/remote/path")
+for file in files:
+    file_type = "Directory" if file.is_dir else "File"
+    print(f"{file_type}: {file.name}, Size: {file.size} bytes")
+
+# Remove a directory (non-recursive)
+await ftpd.rmdir("/remote/path/emptydir")
+
+# Remove a directory and all its contents (recursive)
+await ftpd.rmdir("/remote/path/nonemptydir", recursive=True)
+```
+
+## Advanced Usage
+
+### Using the Connect Context Manager
+
+```python
+# Use the connect context manager for efficient connection handling
 async with ftpd.connect() as client:
-    for local_path, remote_path in files:
-        await client.upload(local_path, remote_path)
+    # All operations within this block use the same connection
+    await client.mkdir("/remote/path/newdir")
+    await client.write_text("/remote/path/newdir/file.txt", "Hello, world!")
+    content = await client.read_text("/remote/path/newdir/file.txt")
+    print(content)
+```
+
+### Custom Authentication
+
+```python
+# In your settings/app.yml file:
+ftpd:
+  username: "custom_user"
+  password: "custom_pass"
+  anonymous: true  # Allow anonymous access (read-only)
+  root_dir: "/path/to/ftp/root"
+```
+
+### Recursive Directory Operations
+
+```python
+# Copy a directory structure recursively
+async def copy_directory(ftpd, source_dir, target_dir):
+    # Create the target directory
+    await ftpd.mkdir(target_dir)
+
+    # List all files in the source directory
+    files = await ftpd.list_dir(source_dir)
+
+    # Process each file/directory
+    for file in files:
+        source_path = f"{source_dir}/{file.name}"
+        target_path = f"{target_dir}/{file.name}"
+
+        if file.is_dir:
+            # Recursively copy subdirectories
+            await copy_directory(ftpd, source_path, target_path)
+        else:
+            # Copy files
+            content = await ftpd.read_bytes(source_path)
+            await ftpd.write_bytes(target_path, content)
+
+# Usage
+await copy_directory(ftpd, "/remote/source", "/remote/target")
 ```
 
 ## Troubleshooting
@@ -193,11 +238,13 @@ async with ftpd.connect() as client:
 The FTPD adapter implements these core methods:
 
 ```python
-class FtpdBase:
-    async def connect(self) -> Any: ...
-    async def upload(self, local_path: AsyncPath, remote_path: str) -> None: ...
-    async def download(self, remote_path: str, local_path: AsyncPath) -> None: ...
-    async def list_dir(self, path: str) -> list[FileInfo]: ...
+class FtpdBase(AdapterBase):
+    # Core methods include:
+    async def start(self) -> None: ...
+    async def stop(self) -> None: ...
+    async def upload(self, local_path: Path, remote_path: str) -> None: ...
+    async def download(self, remote_path: str, local_path: Path) -> None: ...
+    async def list_dir(self, path: str) -> List[FileInfo]: ...
     async def mkdir(self, path: str) -> None: ...
     async def rmdir(self, path: str, recursive: bool = False) -> None: ...
     async def delete(self, path: str) -> None: ...
@@ -206,10 +253,17 @@ class FtpdBase:
     async def stat(self, path: str) -> FileInfo: ...
     async def read_text(self, path: str) -> str: ...
     async def read_bytes(self, path: str) -> bytes: ...
+    async def write_text(self, path: str, content: str) -> None: ...
+    async def write_bytes(self, path: str, content: bytes) -> None: ...
+    async def connect(self) -> AsyncContextManager[FtpdBase]: ...
 ```
 
 ## Additional Resources
 
+- [aioftp Documentation](https://aioftp.readthedocs.io/)
+- [asyncssh Documentation](https://asyncssh.readthedocs.io/)
 - [FTP Protocol Documentation](https://tools.ietf.org/html/rfc959)
 - [SFTP Protocol Documentation](https://tools.ietf.org/html/draft-ietf-secsh-filexfer-13)
+- [ACB Storage Adapter](../storage/README.md)
+- [ACB Auth Adapter](../auth/README.md)
 - [ACB Adapters Overview](../README.md)

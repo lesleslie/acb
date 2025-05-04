@@ -50,9 +50,9 @@ class Hash:
 
     @staticmethod
     async def crc32c(obj: Path | AsyncPath | str | bytes) -> int:
-        if isinstance(obj, Path | AsyncPath):
-            obj = await AsyncPath(obj).read_text()
-            return crc32c(obj.encode())
+        if isinstance(obj, (Path, AsyncPath)):
+            content = await AsyncPath(obj).read_text()
+            return crc32c(content.encode())
         elif isinstance(obj, str):
             return crc32c(obj.encode())
         return crc32c(obj)
@@ -63,10 +63,10 @@ class Hash:
         ascii: bool = False,
         usedforsecurity: bool = False,
     ) -> str:
-        if isinstance(obj, Path | AsyncPath):
-            obj = await AsyncPath(obj).read_text()
+        if isinstance(obj, (Path, AsyncPath)):
+            content = await AsyncPath(obj).read_text()
             return hashlib.md5(
-                obj.encode() if not ascii else obj.encode("ascii"),
+                content.encode() if not ascii else content.encode("ascii"),
                 usedforsecurity=usedforsecurity,
             ).hexdigest()
         elif isinstance(obj, str):

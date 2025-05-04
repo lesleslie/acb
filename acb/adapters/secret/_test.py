@@ -1,6 +1,5 @@
 import typing as t
 from contextlib import suppress
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,6 +13,7 @@ from google.cloud.secretmanager_v1 import (
     ListSecretsRequest,
     SecretManagerServiceAsyncClient,
 )
+from infisical_sdk import InfisicalSDKClient
 from acb.config import Config, app_name
 
 
@@ -131,10 +131,12 @@ class MockSecret(MockSecretBase):
 
 
 class TestSecretBaseSettings:
-    def test_init(self, tmp_path: Path) -> None:
-        secure_path = AsyncPath(tmp_path / "secrets")
-        settings = MockSecretBaseSettings(secrets_path=secure_path)
-        assert settings.secrets_path == secure_path
+    def test_init(self) -> None:
+        mock_path = MagicMock(spec=AsyncPath)
+        mock_path.__truediv__.return_value = mock_path
+
+        settings = MockSecretBaseSettings(secrets_path=mock_path)
+        assert settings.secrets_path == mock_path
 
 
 class TestSecretBase:
@@ -334,3 +336,183 @@ class TestSecretManager:
     @pytest.mark.asyncio
     async def test_init(self, secret_manager: MockSecret) -> None:
         await secret_manager.init()
+
+
+class TestInfisical:
+    @pytest.fixture
+    def mock_config(self) -> MagicMock:
+        mock_config = MagicMock(spec=Config)
+        mock_app = MagicMock()
+        mock_app.name = "test_app"
+        mock_config.app = mock_app
+        mock_secret = MagicMock()
+        mock_secret.host = "https://app.infisical.com"
+        mock_secret.token = "test-token"
+        mock_secret.project_id = "test-project-id"
+        mock_secret.environment = "dev"
+        mock_secret.secret_path = "/"
+        mock_secret.cache_ttl = 60
+        mock_config.secret = mock_secret
+        return mock_config
+
+    @pytest.fixture
+    def mock_client(self) -> MagicMock:
+        mock_client = MagicMock(spec=InfisicalSDKClient)
+        mock_secrets = MagicMock()
+        mock_client.secrets = mock_secrets
+        return mock_client
+
+    @pytest.fixture
+    def infisical(self, mock_config: MagicMock, mock_client: MagicMock) -> MagicMock:
+        from acb.adapters.secret.infisical import Secret
+
+        secret = Secret()
+        secret.config = mock_config
+        secret.logger = MagicMock()
+        secret.prefix = "test_app_"
+        secret._client = mock_client
+        return secret
+
+    def test_extract_secret_name(self, infisical: MagicMock) -> None:
+        app_prefix = "test_app_"
+        secret_name = "app_settings"  # nosec B105
+
+        secret_path = f"{app_prefix}{secret_name}"
+
+        result = infisical.extract_secret_name(secret_path)
+
+        assert result == secret_name
+
+    @pytest.mark.asyncio
+    async def test_list(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+        mock_response = MagicMock()
+        mock_secret1 = MagicMock()
+        mock_secret1.secretKey = "test_app_sql_username"
+        mock_secret2 = MagicMock()
+        mock_secret2.secretKey = "test_app_sql_password"
+        mock_response.secrets = [mock_secret1, mock_secret2]
+
+        mock_client.secrets.list_secrets.return_value = mock_response
+
+        result = await infisical.list("sql")
+
+        assert result == ["sql_username", "sql_password"]
+
+        mock_client.secrets.list_secrets.assert_called_once_with(
+            project_id="test-project-id", environment_slug="dev", secret_path="/"
+        )
+
+    @pytest.mark.asyncio
+    async def test_get(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+        mock_response = MagicMock()
+        mock_response.secretValue = "test-value"
+        mock_client.secrets.get_secret_by_name.return_value = mock_response
+
+        result = await infisical.get("api_key")
+
+        assert result == "test-value"
+
+        mock_client.secrets.get_secret_by_name.assert_called_once_with(
+            secret_name="test_app_api_key",
+            project_id="test-project-id",
+            environment_slug="dev",
+            secret_path="/",
+            version=None,
+        )
+
+    @pytest.mark.asyncio
+    async def test_create(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+        await infisical.create("api_key", "test-value")
+
+        mock_client.secrets.create_secret_by_name.assert_called_once_with(
+            secret_name="test_app_api_key",
+            project_id="test-project-id",
+            environment_slug="dev",
+            secret_path="/",
+            secret_value="test-value",
+        )
+
+    @pytest.mark.asyncio
+    async def test_update(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+        await infisical.update("api_key", "updated-value")
+
+        mock_client.secrets.update_secret_by_name.assert_called_once_with(
+            current_secret_name="test_app_api_key",
+            project_id="test-project-id",
+            environment_slug="dev",
+            secret_path="/",
+            secret_value="updated-value",
+        )
+
+    @pytest.mark.asyncio
+    async def test_set_existing(self, infisical: MagicMock) -> None:
+        with (
+            patch.object(
+                infisical, "exists", AsyncMock(return_value=True)
+            ) as mock_exists,
+            patch.object(infisical, "update", AsyncMock()) as mock_update,
+        ):
+            await infisical.set("api_key", "test-value")
+
+            mock_exists.assert_called_once_with("api_key")
+            mock_update.assert_called_once_with("api_key", "test-value")
+
+    @pytest.mark.asyncio
+    async def test_set_new(self, infisical: MagicMock) -> None:
+        with (
+            patch.object(
+                infisical, "exists", AsyncMock(return_value=False)
+            ) as mock_exists,
+            patch.object(infisical, "create", AsyncMock()) as mock_create,
+        ):
+            await infisical.set("api_key", "test-value")
+
+            mock_exists.assert_called_once_with("api_key")
+            mock_create.assert_called_once_with("api_key", "test-value")
+
+    @pytest.mark.asyncio
+    async def test_exists_true(self, infisical: MagicMock) -> None:
+        with patch.object(
+            infisical, "get", AsyncMock(return_value="test-value")
+        ) as mock_get:
+            result = await infisical.exists("api_key")
+
+            assert result is True
+            mock_get.assert_called_once_with("api_key")
+
+    @pytest.mark.asyncio
+    async def test_exists_false(self, infisical: MagicMock) -> None:
+        with patch.object(
+            infisical, "get", AsyncMock(side_effect=Exception("Secret not found"))
+        ) as mock_get:
+            result = await infisical.exists("api_key")
+
+            assert result is False
+            mock_get.assert_called_once_with("api_key")
+
+    @pytest.mark.asyncio
+    async def test_delete(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+        await infisical.delete("api_key")
+
+        mock_client.secrets.delete_secret_by_name.assert_called_once_with(
+            secret_name="test_app_api_key",
+            project_id="test-project-id",
+            environment_slug="dev",
+            secret_path="/",
+        )
+
+    @pytest.mark.asyncio
+    async def test_list_versions(self, infisical: MagicMock) -> None:
+        with patch.object(infisical, "logger") as mock_logger:
+            result = await infisical.list_versions("api_key")
+
+            assert result == []
+            mock_logger.warning.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_init(self, infisical: MagicMock) -> None:
+        with patch.object(infisical, "list", AsyncMock()) as mock_list:
+            await infisical.init()
+
+            mock_list.assert_called_once()
+            infisical.logger.info.assert_called_once()

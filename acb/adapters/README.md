@@ -51,12 +51,13 @@ ACB includes the following adapter categories:
 
 ### DNS Adapters
 - [**DNS**](./dns/README.md): Domain name management
-  - **Cloud DNS**: Interface to cloud provider DNS services
+  - **Cloud DNS**: Google Cloud DNS implementation
+  - **Cloudflare**: Cloudflare DNS implementation
 
 ### File Transfer Adapters
-- [**FTPD**](./ftpd/README.md): File transfer protocol implementations
-  - **FTP**: Standard File Transfer Protocol client
-  - **SFTP**: Secure File Transfer Protocol client
+- [**FTPD**](./ftpd/README.md): File transfer protocol server implementations
+  - **FTP**: Standard File Transfer Protocol server using aioftp
+  - **SFTP**: Secure File Transfer Protocol server using asyncssh
 
 ### Logging Adapters
 - [**Logger**](./logger/README.md): Application logging
@@ -74,9 +75,9 @@ ACB includes the following adapter categories:
 
 ### NoSQL Database Adapters
 - [**NoSQL**](./nosql/README.md): Non-relational databases
-  - **Firestore**: Google Cloud Firestore database
-  - **MongoDB**: MongoDB document database
-  - **Redis**: Redis database for structured data
+  - **Firestore**: Google Cloud Firestore database using Google Cloud Firestore API
+  - **MongoDB**: MongoDB document database using Beanie ODM
+  - **Redis**: Redis database for structured data using Redis-OM
 
 ### HTTP Client Adapters
 - [**Requests**](./requests/README.md): HTTP clients for API consumption
@@ -90,7 +91,7 @@ ACB includes the following adapter categories:
 
 ### Email Adapters
 - [**SMTP**](./smtp/README.md): Email sending
-  - **Gmail**: Send emails through Gmail
+  - **Gmail**: Send emails through Gmail API with OAuth2
   - **Mailgun**: Send emails through Mailgun API
 
 ### SQL Database Adapters
@@ -124,13 +125,13 @@ The following adapter-specific dependency groups are available:
 |---------------|------------|----------------------|
 | redis | Cache, NoSQL | `pdm add "acb[redis]"` |
 | sql | MySQL, PostgreSQL | `pdm add "acb[sql]"` |
-| nosql | MongoDB, Firestore | `pdm add "acb[nosql]"` |
+| nosql | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `pdm add "acb[nosql]"` |
 | storage | S3, GCS, Azure, Local | `pdm add "acb[storage]"` |
 | logging | Loguru, structlog | `pdm add "acb[logging]"` |
 | aws | S3, other AWS services | `pdm add "acb[aws]"` |
 | gcp | Cloud Storage, other GCP services | `pdm add "acb[gcp]"` |
 | azure | Azure Blob Storage, other Azure services | `pdm add "acb[azure]"` |
-| secret | Secret management | `pdm add "acb[secret]"` |
+| secret | Infisical, Secret Manager | `pdm add "acb[secret]"` |
 | monitoring | Error tracking and monitoring | `pdm add "acb[monitoring]"` |
 
 ## Configuration

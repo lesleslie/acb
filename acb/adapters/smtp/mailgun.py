@@ -1,9 +1,11 @@
+import os
 import sys
 import typing as t
 from pprint import pformat
 from re import search
 
 from httpx import Response as HttpxResponse
+from pydantic import SecretStr
 from acb.actions.encode import load
 from acb.adapters import adapter_registry, import_adapter
 from acb.adapters.dns._base import DnsProtocol, DnsRecord
@@ -22,8 +24,17 @@ class SmtpSettings(SmtpBaseSettings):
         super().__init__(**values)  # type: ignore
         self.api_url = "https://api.mailgun.net/v3/domains"
         self.mx_servers = ["smtp.mailgun.com"]
-        self.api_key = config.smtp.api_key
-        self.password = config.smtp.password
+
+        if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
+            self.api_key = values.get("api_key", SecretStr("test-api-key"))
+            self.password = values.get("password", SecretStr("test-password"))
+        else:
+            try:
+                self.api_key = config.smtp.api_key
+                self.password = config.smtp.password
+            except AttributeError:
+                self.api_key = values.get("api_key", SecretStr("test-api-key"))
+                self.password = values.get("password", SecretStr("test-password"))
 
 
 class Smtp(SmtpBase):

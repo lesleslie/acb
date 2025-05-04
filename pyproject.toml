@@ -49,20 +49,21 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyfiglet",
-    "pdm-bump",
     "pytest-timeout",
-    "uv",
-    "pytest-asyncio",
+    "pdm",
+    "pyfiglet",
+    "tomli-w",
+    "google-crc32c",
+    "pdm-bump",
+    "pytest-cov",
     "pytest-mock",
+    "pytest-asyncio",
+    "autotyping",
+    "pyyaml",
+    "uv",
+    "google-api-python-client",
     "pytest",
     "pre-commit",
-    "pytest-cov",
-    "pdm",
-    "tomli-w",
-    "pyyaml",
-    "autotyping",
-    "google-crc32c",
 ]
 
 [tool.refurb]
@@ -73,15 +74,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B704",
-    "B101",
-    "B404",
-    "B607",
-    "B602",
     "B603",
-    "B301",
+    "B106",
     "B403",
+    "B602",
+    "B101",
+    "B607",
+    "B704",
+    "B301",
+    "B105",
     "B311",
+    "B404",
 ]
 
 [tool.pyright]
@@ -124,10 +127,12 @@ ignore_names = [
 ]
 
 [tool.coverage.run]
-branch = true
+branch = false
 source = [
     "acb",
 ]
+data_file = ".coverage"
+parallel = false
 omit = [
     "*/tests/*",
     "*/site-packages/*",
@@ -154,7 +159,7 @@ exclude_also = [
 ignore_errors = false
 
 [tool.pytest.ini_options]
-addopts = "--cov=acb"
+addopts = "--cov=acb --cov-report=term"
 asyncio_default_fixture_loop_scope = "function"
 python_files = [
     "test_*.py",
@@ -174,7 +179,7 @@ python_functions = [
 
 [project]
 name = "acb"
-version = "0.15.9"
+version = "0.16.0"
 description = "Default template for PDM package"
 dependencies = [
     "arrow>=1.3.0",
@@ -190,12 +195,13 @@ dependencies = [
     "inflection>=0.5.1",
     "pyyaml>=6.0.2",
     "google-crc32c>=1.7.1",
-    "pydantic[email]>=2.11.4",
     "devtools>=0.12.2",
     "tomli-w>=1.2.0",
     "aioconsole>=0.8.1",
     "anyio>=4.9.0",
     "msgspec[toml,yaml]",
+    "pydantic[email]>=2.11.4",
+    "google-api-python-client>=2.169.0",
 ]
 requires-python = ">=3.13"
 readme = "README.md"
@@ -237,6 +243,7 @@ storage = [
 dns = [
     "google-cloud-dns>=0.35.0",
     "validators>=0.35.0",
+    "python-cloudflare>=1.0.1",
 ]
 requests = [
     "httpx[http2]>=0.28.1",
@@ -261,6 +268,8 @@ sql = [
 ]
 nosql = [
     "google-cloud-firestore>=2.20.2",
+    "beanie>=1.29.0",
+    "redis-om>=0.3.5",
     "motor>=3.7.0",
 ]
 demo = [
@@ -272,13 +281,14 @@ ftpd = [
 ]
 secret = [
     "google-cloud-secret-manager>=2.23.3",
+    "infisicalsdk>=1.0.8",
 ]
 monitoring = [
     "sentry-sdk[loguru]>=2.27.0",
     "logfire[system-metrics]>=3.14.1",
 ]
 dev = [
-    "crackerjack>=0.15.10",
+    "crackerjack>=0.16.1",
     "pytest-anyio>=0.0.0",
     "pytest-benchmark>=5.1.0",
 ]

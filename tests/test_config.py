@@ -1,7 +1,7 @@
 """Simple tests for the config module."""
 
-import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from acb.config import Settings
@@ -10,22 +10,22 @@ from acb.config import Settings
 @pytest.mark.unit
 class TestConfig:
     @pytest.fixture
-    def temp_dir(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            yield Path(temp_dir)
+    def temp_dir(self) -> MagicMock:
+        mock_path: MagicMock = MagicMock(spec=Path)
+        mock_path.__truediv__.return_value = mock_path
+        return mock_path
 
     @pytest.fixture
-    def config_files(self, temp_dir: Path):
+    def config_files(self, temp_dir: MagicMock) -> dict[str, MagicMock]:
         app_yml = temp_dir / "app.yml"
-        app_yml.write_text("")
-
         adapters_yml = temp_dir / "adapters.yml"
-        adapters_yml.write_text("")
-
         debug_yml = temp_dir / "debug.yml"
-        debug_yml.write_text("")
 
-        yield {
+        for file_path in (app_yml, adapters_yml, debug_yml):
+            file_path.exists.return_value = True
+            file_path.read_text.return_value = ""
+
+        return {
             "app": app_yml,
             "adapters": adapters_yml,
             "debug": debug_yml,

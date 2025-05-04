@@ -19,6 +19,7 @@ The ACB DNS adapter offers a consistent way to manage DNS records:
 | Implementation | Description | Best For |
 |----------------|-------------|----------|
 | **Cloud DNS** | Google Cloud DNS implementation | GCP-based applications |
+| **Cloudflare** | Cloudflare DNS implementation | Global performance, advanced features |
 
 ## Installation
 
@@ -40,6 +41,9 @@ Configure the DNS adapter in your `settings/adapters.yml` file:
 # Use Cloud DNS implementation
 dns: cloud_dns
 
+# Or use Cloudflare implementation
+dns: cloudflare
+
 # Or disable DNS management
 dns: null
 ```
@@ -50,14 +54,20 @@ The DNS adapter settings can be customized in your `settings/app.yml` file:
 
 ```yaml
 dns:
-  # Zone name (usually your domain)
-  zone_name: "example.com"
+  # Common settings
+  zone_name: "example.com"  # Zone name (usually your domain)
+  ttl: 300  # DNS TTL (time-to-live) in seconds
 
-  # DNS TTL (time-to-live) in seconds
-  ttl: 300
+  # Cloud DNS specific settings
+  project_id: "my-gcp-project"  # Google Cloud project ID
 
-  # Project ID (for cloud providers)
-  project_id: "my-gcp-project"
+  # Cloudflare specific settings
+  api_email: "user@example.com"  # Cloudflare account email
+  api_key: "your-api-key"  # Cloudflare API key
+  # OR
+  api_token: "your-api-token"  # Cloudflare API token (preferred)
+  account_id: "your-account-id"  # Required for zone creation
+  proxied: false  # Whether to proxy records through Cloudflare
 ```
 
 ## Basic Usage
@@ -158,6 +168,32 @@ await dns.create_records(email_records)
 dns.create_zone()
 ```
 
+### Cloudflare-Specific Features
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+from acb.adapters.dns import DnsRecord
+
+# Import the DNS adapter (configured to use Cloudflare)
+DNS = import_adapter("dns")
+dns = depends.get(DNS)
+
+# Create a proxied record (traffic routed through Cloudflare)
+# This is configured in settings/app.yml with proxied: true
+record = DnsRecord(
+    name="www",
+    type="A",
+    ttl=300,
+    rrdata="203.0.113.1"
+)
+await dns.create_records(record)
+
+# Create a zone in Cloudflare
+# Requires account_id to be set in settings
+dns.create_zone()
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -192,5 +228,7 @@ class DnsBase:
 ## Additional Resources
 
 - [Google Cloud DNS Documentation](https://cloud.google.com/dns/docs)
+- [Cloudflare DNS Documentation](https://developers.cloudflare.com/dns/)
+- [Cloudflare API Documentation](https://developers.cloudflare.com/api/)
 - [DNS Best Practices](https://www.cloudflare.com/learning/dns/dns-best-practices/)
 - [ACB Adapters Overview](../README.md)

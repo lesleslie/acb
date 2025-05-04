@@ -11,7 +11,9 @@ class DnsRecord(BaseModel):
     rrdata: t.Optional[str | list[t.Any]] = None
 
 
-class DnsBaseSettings(Settings): ...
+class DnsBaseSettings(Settings):
+    zone_name: t.Optional[str] = None
+    ttl: int = 300
 
 
 class DnsProtocol(t.Protocol):

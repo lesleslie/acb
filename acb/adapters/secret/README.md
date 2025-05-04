@@ -80,8 +80,14 @@ secret:
   requires: ["logger"]
 
   # Infisical settings
-  infisical_token: "your-token"
-  infisical_url: "https://infisical.example.com"
+  host: "https://app.infisical.com"  # Infisical host URL
+  token: "your-infisical-token"  # API token for authentication
+  client_id: "your-client-id"  # Optional: For Universal Auth
+  client_secret: "your-client-secret"  # Optional: For Universal Auth
+  project_id: "your-project-id"  # Infisical project ID
+  environment: "dev"  # Environment (dev, staging, prod, etc.)
+  secret_path: "/"  # Path to secrets in Infisical
+  cache_ttl: 60  # Cache TTL in seconds
 
   # Secret Manager settings
   project_id: "my-gcp-project"
@@ -124,6 +130,46 @@ await secret.delete("old_api_key")
 ```
 
 ## Advanced Usage
+
+### Infisical-Specific Features
+
+The Infisical adapter provides integration with the Infisical secret management platform:
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+# Import the Secret adapter (configured to use Infisical)
+Secret = import_adapter("secret")
+secret = depends.get(Secret)
+
+# Infisical organizes secrets by project, environment, and path
+# These are configured in your settings/app.yml file
+
+# Get a secret from the configured project, environment, and path
+api_key = await secret.get("api_key")
+
+# Create a secret in the configured project, environment, and path
+await secret.create("new_secret", "secret-value")
+
+# List secrets with a specific prefix (e.g., all SQL-related secrets)
+sql_secrets = await secret.list("sql")
+```
+
+The Infisical adapter supports both token-based authentication and Universal Auth:
+
+```yaml
+# Token-based authentication
+secret:
+  token: "your-infisical-token"
+  project_id: "your-project-id"
+
+# OR Universal Auth
+secret:
+  client_id: "your-client-id"
+  client_secret: "your-client-secret"
+  project_id: "your-project-id"
+```
 
 ### Working with Adapter-Specific Secrets
 

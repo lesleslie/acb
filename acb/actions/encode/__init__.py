@@ -94,7 +94,7 @@ class Encode:
                 kwargs["sort_keys"] = self.sort_keys
 
             data: bytes = self.serializer.encode(obj, **kwargs)  # type: ignore
-            if isinstance(self.path, AsyncPath):
+            if self.path is not None:
                 return await self.path.write_bytes(data)
             return data
         return None
