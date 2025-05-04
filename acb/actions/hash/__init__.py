@@ -49,21 +49,32 @@ class Hash:
         return blake3(obj).hexdigest()
 
     @staticmethod
-    async def crc32c(obj: Path | AsyncPath | str) -> int:
+    async def crc32c(obj: Path | AsyncPath | str | bytes) -> int:
         if isinstance(obj, Path | AsyncPath):
             obj = await AsyncPath(obj).read_text()
-        return crc32c(obj.encode())  # type: ignore
+            return crc32c(obj.encode())
+        elif isinstance(obj, str):
+            return crc32c(obj.encode())
+        return crc32c(obj)
 
     @staticmethod
     async def md5(
-        obj: Path | AsyncPath | str, ascii: bool = False, usedforsecurity: bool = False
+        obj: Path | AsyncPath | str | bytes,
+        ascii: bool = False,
+        usedforsecurity: bool = False,
     ) -> str:
         if isinstance(obj, Path | AsyncPath):
             obj = await AsyncPath(obj).read_text()
-        return hashlib.md5(
-            obj.encode() if not ascii else obj.encode("ascii"),  # type: ignore
-            usedforsecurity=usedforsecurity,
-        ).hexdigest()
+            return hashlib.md5(
+                obj.encode() if not ascii else obj.encode("ascii"),
+                usedforsecurity=usedforsecurity,
+            ).hexdigest()
+        elif isinstance(obj, str):
+            return hashlib.md5(
+                obj.encode() if not ascii else obj.encode("ascii"),
+                usedforsecurity=usedforsecurity,
+            ).hexdigest()
+        return hashlib.md5(obj, usedforsecurity=usedforsecurity).hexdigest()
 
 
 hash: Hash = Hash()

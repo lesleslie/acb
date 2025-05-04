@@ -6,7 +6,7 @@ from re import search
 from httpx import Response as HttpxResponse
 from acb.actions.encode import load
 from acb.adapters import adapter_registry, import_adapter
-from acb.adapters.dns._base import DnsRecord
+from acb.adapters.dns._base import DnsProtocol, DnsRecord
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
@@ -124,7 +124,7 @@ class Smtp(SmtpBase):
         return records
 
     @depends.inject
-    async def create_dns_records(self, dns: "Dns" = depends()) -> None:
+    async def create_dns_records(self, dns: DnsProtocol = depends()) -> None:
         await self.create_domain(self.config.smtp.domain)
         await self.create_domain_credentials(self.config.smtp.domain)
         records = await self.get_dns_records(self.config.smtp.domain)

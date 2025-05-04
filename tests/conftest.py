@@ -19,7 +19,6 @@ pytest_plugins: Final[list[str]] = ["pytest_asyncio"]
 
 @pytest.fixture(scope="module")
 def anyio_backend() -> Any:
-    """Override anyio_backend fixture to only use asyncio backend."""
     return "asyncio"
 
 

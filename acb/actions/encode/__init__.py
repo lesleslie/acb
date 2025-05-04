@@ -80,10 +80,8 @@ class Encode:
         for s in self.serializers:
             setattr(self, s, self.__call__)
 
-    async def process(self, obj: t.Any, **kwargs: object) -> t.Any:
+    async def process(self, obj: t.Any, **kwargs: t.Any) -> t.Any:
         if self.action in ("load", "decode"):
-            if self.serializer is msgspec.msgpack:  # type: ignore
-                kwargs["use_list"] = self.use_list
             if isinstance(obj, AsyncPath):
                 obj = await obj.read_text()
             return self.serializer.decode(obj, **kwargs)  # type: ignore
@@ -99,24 +97,36 @@ class Encode:
             if isinstance(self.path, AsyncPath):
                 return await self.path.write_bytes(data)
             return data
+        return None
 
     def get_vars(self, frame: FrameType) -> tuple[str, t.Any]:
         code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
         pattern = r"await\s(\w+)\.(\w+)\("
         calling_method = search(pattern, code_context)
-        return calling_method.group(1), self.serializers[calling_method.group(2)]
+        if calling_method:
+            return calling_method.group(1), self.serializers[calling_method.group(2)]
+
+        caller_name = frame.f_code.co_name
+        if "encode" in caller_name or "dump" in caller_name:
+            action = "encode"
+        else:
+            action = "decode"
+
+        for local_var in frame.f_locals.values():
+            if isinstance(local_var, str) and local_var in self.serializers:
+                return action, self.serializers[local_var]
+
+        return action, self.serializers["json"]
 
     async def __call__(
         self,
         obj: t.Any,
         path: AsyncPath | None = None,
         sort_keys: bool = False,
-        use_list: bool = False,
-        **kwargs: object,
+        **kwargs: t.Any,
     ) -> t.Any:
         self.path = path
         self.sort_keys = sort_keys
-        self.use_list = use_list
         self.action, self.serializer = self.get_vars(sys._getframe(1))
         result = await self.process(obj, **kwargs)  # type: ignore
         return result
