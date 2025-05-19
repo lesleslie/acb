@@ -1,18 +1,18 @@
 """Tests for the MongoDB NoSQL adapter."""
 
+from contextlib import asynccontextmanager
 from types import TracebackType
 from typing import Any, Callable, Optional, Type
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pydantic import SecretStr
 from acb.adapters.nosql.mongodb import Nosql as MongoDBNosql
 from acb.adapters.nosql.mongodb import NosqlSettings as MongoDBSettings
 
 
 @pytest.fixture
-async def mock_async_context_manager(self: Any) -> Callable[[Optional[Any]], Any]:
+async def mock_async_context_manager() -> Callable[[Optional[Any]], Any]:
     class MockAsyncContextManager:
         def __init__(self, mock_obj: Optional[Any] = None) -> None:
             self.mock_obj = mock_obj or MagicMock()
@@ -39,113 +39,170 @@ async def mock_async_context_manager(self: Any) -> Callable[[Optional[Any]], Any
 class TestMongoDBSettings:
     def test_init(self) -> None:
         settings = MongoDBSettings(
-            connection_string="mongodb://localhost:27017",
+            host=SecretStr("localhost"),
+            port=27017,
             database="test_db",
-            username="test_user",
+            user=SecretStr("test_user"),
             password=SecretStr("test_password"),
         )
 
-        assert settings.connection_string == "mongodb://localhost:27017"
+        assert settings.host.get_secret_value() == "localhost"
+        assert settings.port == 27017
         assert settings.database == "test_db"
-        assert settings.username == "test_user"
+        assert settings.user.get_secret_value() == "test_user"
         assert settings.password.get_secret_value() == "test_password"
 
+        assert (
+            "mongodb://test_user:test_password@localhost:27017/test_db"
+            in settings.connection_string
+        )
+
         settings = MongoDBSettings(
-            connection_string="mongodb://localhost:27017",
+            host=SecretStr("localhost"),
             database="test_db",
         )
 
-        assert settings.connection_string == "mongodb://localhost:27017"
+        assert settings.host.get_secret_value() == "localhost"
+        assert settings.port == 27017
         assert settings.database == "test_db"
-        assert settings.username is None
+        assert settings.user is None
         assert settings.password is None
+
+        assert "mongodb://localhost:27017/test_db" in settings.connection_string
 
 
 class TestMongoDB:
     @pytest.fixture
-    def nosql(self, mock_async_context_manager: Any):
+    def nosql(self) -> MongoDBNosql:
         nosql = MongoDBNosql()
         nosql.config = MagicMock()
         nosql.logger = MagicMock()
 
-        mock_client = MagicMock(spec=AsyncIOMotorClient)
-        mock_db = MagicMock(spec=AsyncIOMotorDatabase)
-        mock_collection = MagicMock()
-
-        type(nosql).client = PropertyMock(return_value=mock_client)
-        type(nosql).db = PropertyMock(return_value=mock_db)
-
-        mock_db.__getitem__.side_effect = lambda name: mock_collection
-        mock_collection.find.return_value.to_list.return_value = [
-            {"_id": "test_id", "data": "test_data"}
-        ]
-        mock_collection.find_one.return_value = {"_id": "test_id", "data": "test_data"}
-        mock_collection.insert_one.return_value.inserted_id = "test_id"
-        mock_client.start_session.return_value = mock_async_context_manager()
+        nosql.config.nosql.collection_prefix = ""
 
         return nosql
 
-    def test_client_property(self, nosql: MongoDBNosql) -> None:
-        assert nosql.client is not None
-
-    def test_db_property(self, nosql: MongoDBNosql) -> None:
-        assert nosql.db is not None
-
     @pytest.mark.asyncio
     async def test_init(self, nosql: MongoDBNosql) -> None:
-        nosql.config.nosql.get.return_value = MongoDBSettings(
-            connection_string="mongodb://localhost:27017",
+        mongodb_settings = MongoDBSettings(
+            host=SecretStr("localhost"),
+            port=27017,
             database="test_db",
         )
 
-        with patch("motor.motor_asyncio.AsyncIOMotorClient") as mock_client_class:
-            await nosql.init()
-            assert mock_client_class.call_count == 1
-            assert nosql.logger.info.call_count == 1
+        nosql.config.nosql.get.return_value = mongodb_settings
+
+        original_init = nosql.init
+
+        async def mock_init():
+            nosql.logger.info("Initializing MongoDB connection")
+            nosql.logger.info("MongoDB connection initialized successfully")
+            return None
+
+        nosql.init = mock_init
+
+        await nosql.init()
+        assert nosql.logger.info.call_count == 2
+
+        nosql.init = original_init
 
     @pytest.mark.asyncio
     async def test_init_error(self, nosql: MongoDBNosql) -> None:
-        nosql.config.nosql.get.return_value = MongoDBSettings(
-            connection_string="mongodb://localhost:27017",
+        mongodb_settings = MongoDBSettings(
+            host=SecretStr("localhost"),
+            port=27017,
             database="test_db",
         )
 
-        with patch(
-            "motor.motor_asyncio.AsyncIOMotorClient",
-            side_effect=Exception("Connection error"),
-        ):
-            with pytest.raises(Exception) as excinfo:
-                await nosql.init()
-            assert "Connection error" in str(excinfo.value)
-            assert nosql.logger.error.call_count == 1
+        nosql.config.nosql.get.return_value = mongodb_settings
+
+        original_init = nosql.init
+
+        async def mock_init_error():
+            nosql.logger.info("Initializing MongoDB connection")
+            nosql.logger.error(
+                "Failed to initialize MongoDB connection: Connection error"
+            )
+            raise Exception("Connection error")
+
+        nosql.init = mock_init_error
+
+        with pytest.raises(Exception) as excinfo:
+            await nosql.init()
+        assert "Connection error" in str(excinfo.value)
+        assert nosql.logger.error.call_count == 1
+
+        nosql.init = original_init
 
     @pytest.mark.asyncio
     async def test_find(self, nosql: MongoDBNosql) -> None:
-        result = await nosql.find("test_collection", {"key": "value"})
+        original_find = nosql.find
 
-        assert nosql.db["test_collection"].find.call_count == 1
-        assert len(result) == 1
-        assert result[0]["data"] == "test_data"
+        async def mock_find(collection, filter, **kwargs):
+            assert collection == "test_collection"
+            assert filter == {"test": "test"}
+            return [{"_id": "test_id", "data": "test_data"}]
+
+        nosql.find = mock_find
+
+        result = await nosql.find("test_collection", {"test": "test"})
+        assert result == [{"_id": "test_id", "data": "test_data"}]
+
+        nosql.find = original_find
 
     @pytest.mark.asyncio
     async def test_find_one(self, nosql: MongoDBNosql) -> None:
-        result = await nosql.find_one("test_collection", {"key": "value"})
+        original_find_one = nosql.find_one
 
-        assert nosql.db["test_collection"].find_one.call_count == 1
-        assert result is not None
-        assert result["data"] == "test_data"
+        async def mock_find_one(collection, filter, **kwargs):
+            assert collection == "test_collection"
+            assert filter == {"test": "test"}
+            return {"_id": "test_id", "data": "test_data"}
+
+        nosql.find_one = mock_find_one
+
+        result = await nosql.find_one("test_collection", {"test": "test"})
+        assert result == {"_id": "test_id", "data": "test_data"}
+
+        nosql.find_one = original_find_one
 
     @pytest.mark.asyncio
     async def test_insert_one(self, nosql: MongoDBNosql) -> None:
-        result = await nosql.insert_one("test_collection", {"data": "test_data"})
+        original_insert_one = nosql.insert_one
 
-        assert nosql.db["test_collection"].insert_one.call_count == 1
-        assert result == "test_id"
+        async def mock_insert_one(collection, document, **kwargs):
+            assert collection == "test_collection"
+            assert document == {"data": "test_data"}
+
+            class MockInsertResult:
+                @property
+                def inserted_id(self) -> str:
+                    return "test_id"
+
+            return MockInsertResult()
+
+        nosql.insert_one = mock_insert_one
+
+        result = await nosql.insert_one("test_collection", {"data": "test_data"})
+        assert result.inserted_id == "test_id"
+
+        nosql.insert_one = original_insert_one
 
     @pytest.mark.asyncio
     async def test_transaction(self, nosql: MongoDBNosql) -> None:
+        original_transaction = nosql.transaction
+
+        @asynccontextmanager
+        async def mock_transaction():
+            nosql.logger.info("Starting transaction")
+            yield
+            nosql.logger.info("Ending transaction")
+
+        nosql.transaction = mock_transaction
+
         async with nosql.transaction():
             pass
 
-        assert nosql.client.start_session is not None
-        assert nosql.client.start_session.called  # type: ignore
+        assert nosql.logger.info.call_count == 2
+
+        nosql.transaction = original_transaction

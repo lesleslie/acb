@@ -1,53 +1,127 @@
-from gzip import GzipFile
+import os
+from gzip import BadGzipFile, GzipFile
 from io import BytesIO
 from pathlib import Path
+from typing import Union
 
 import brotli
 
 __all__: list[str] = ["compress", "decompress"]
 
+ContentType = Union[str, bytes, Path]
+
 
 class Compress:
     @staticmethod
     def gzip(
-        content: str | bytes,
-        path: str | Path | None = None,
+        content: ContentType,
+        output_path: Union[str, Path, None] = None,
         compresslevel: int = 6,
-    ) -> bytes:
+    ) -> bytes | None:
+        if isinstance(content, Path):
+            if not content.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = content.read_bytes()
+        elif isinstance(content, str) and (
+            os.path.sep in content or content.startswith(".")
+        ):
+            path = Path(content)
+            if not path.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = path.read_bytes()
+        elif isinstance(content, str):
+            data = content.encode()
+        else:
+            data = content
+
         gzip_buffer = BytesIO()
         gz = GzipFile(
-            filename=str(path) if path else None,
             mode="wb",
             compresslevel=compresslevel,
             fileobj=gzip_buffer,
         )
-
-        data = content.encode() if isinstance(content, str) else content
         gz.write(data)
         gz.close()
-        return gzip_buffer.getvalue()
+        result = gzip_buffer.getvalue()
+
+        if output_path is not None:
+            Path(output_path).write_bytes(result)
+            return None
+        return result
 
     @staticmethod
-    def brotli(data: bytes | str, level: int = 3) -> bytes:
-        if isinstance(data, str):
-            data = data.encode()
+    def brotli(
+        content: ContentType,
+        level: int = 3,
+    ) -> bytes:
+        if isinstance(content, Path):
+            if not content.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = content.read_bytes()
+        elif isinstance(content, str) and (
+            os.path.sep in content or content.startswith(".")
+        ):
+            path = Path(content)
+            if not path.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = path.read_bytes()
+        elif isinstance(content, str):
+            data = content.encode()
+        else:
+            data = content
+
         return brotli.compress(data, quality=level)
 
 
-compress = Compress()
+compress: Compress = Compress()
 
 
 class Decompress:
     @staticmethod
-    def brotli(data: bytes) -> str:
-        return brotli.decompress(data).decode()
+    def gzip(content: ContentType) -> str:
+        if isinstance(content, Path):
+            if not content.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = content.read_bytes()
+        elif isinstance(content, str) and (
+            os.path.sep in content or content.startswith(".")
+        ):
+            path = Path(content)
+            if not path.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = path.read_bytes()
+        elif isinstance(content, str):
+            data = content.encode()
+        else:
+            data = content
+
+        gzip_buffer = BytesIO(data)
+        try:
+            with GzipFile(fileobj=gzip_buffer, mode="rb") as gz:
+                decompressed = gz.read()
+            return decompressed.decode()
+        except BadGzipFile as e:
+            raise BadGzipFile(f"Not a gzipped file: {e}")
 
     @staticmethod
-    def gzip(content: bytes) -> str:
-        gzip_buffer = BytesIO(content)
-        with GzipFile(fileobj=gzip_buffer, mode="rb") as gz:
-            decompressed = gz.read()
-        return decompressed.decode()
+    def brotli(content: ContentType) -> str:
+        if isinstance(content, Path):
+            if not content.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = content.read_bytes()
+        elif isinstance(content, str) and (
+            os.path.sep in content or content.startswith(".")
+        ):
+            path = Path(content)
+            if not path.exists():
+                raise FileNotFoundError(f"File not found: {content}")
+            data = path.read_bytes()
+        elif isinstance(content, str):
+            data = content.encode()
+        else:
+            data = content
+
+        return brotli.decompress(data).decode()
 
 
-decompress = Decompress()
+decompress: Decompress = Decompress()

@@ -50,9 +50,10 @@ def test_gzip_decompress_with_path_output(tmp_path: Path, tmp_gzip_file: Path) -
     assert output_path.read_text() == TEST_BYTES.decode()
 
 
-def test_gzip_decompress_nonexistent_file() -> None:
+def test_gzip_decompress_nonexistent_file(tmp_path: Path) -> None:
+    nonexistent_file = tmp_path / "nonexistent_file.gz"
     with pytest.raises(FileNotFoundError):
-        decompress.gzip(b"not a real file")
+        decompress.gzip(nonexistent_file)
 
 
 def test_gzip_decompress_pathlib_path(tmp_gzip_file: Path) -> None:
@@ -72,7 +73,7 @@ def test_gzip_decompress_async_path(tmp_gzip_file: Path) -> None:
 
 def test_gzip_decompress_with_mock(tmp_gzip_file: Path) -> None:
     with patch(
-        "acb.actions.compress.gzip.decompress", return_value=TEST_BYTES.decode()
+        "acb.actions.compress.Decompress.gzip", return_value=TEST_BYTES.decode()
     ):
         result: str = decompress.gzip(tmp_gzip_file.read_bytes())
         assert result == TEST_BYTES.decode()

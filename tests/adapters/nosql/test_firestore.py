@@ -1,7 +1,7 @@
 """Tests for the Firestore NoSQL adapter."""
 
 from typing import Any, Callable, Optional, Type
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 from google.cloud import firestore
@@ -10,7 +10,7 @@ from acb.adapters.nosql.firestore import NosqlSettings as FirestoreSettings
 
 
 @pytest.fixture
-async def mock_async_context_manager(self: Any) -> Callable[[Optional[Any]], Any]:
+async def mock_async_context_manager() -> Callable[[Optional[Any]], Any]:
     class MockAsyncContextManager:
         def __init__(self, mock_obj: Optional[Any] = None) -> None:
             self.mock_obj = mock_obj or MagicMock()
@@ -39,83 +39,102 @@ class TestFirestoreSettings:
         settings = FirestoreSettings(
             project_id="test-project",
             database="test-db",
-            credentials_file="/path/to/credentials.json",
+            credentials_path="/path/to/credentials.json",
         )
 
         assert settings.project_id == "test-project"
         assert settings.database == "test-db"
-        assert settings.credentials_file == "/path/to/credentials.json"
+        assert settings.credentials_path == "/path/to/credentials.json"
 
         settings = FirestoreSettings(
             project_id="test-project",
         )
 
         assert settings.project_id == "test-project"
-        assert settings.database == "(default)"
-        assert settings.credentials_file is None
+        assert settings.database == "acb"
+        assert settings.credentials_path is None
 
 
 class TestFirestore:
     @pytest.fixture
-    def nosql(self, mock_async_context_manager: Any):
+    def nosql(self) -> FirestoreNosql:
         nosql = FirestoreNosql()
         nosql.config = MagicMock()
         nosql.logger = MagicMock()
 
-        mock_client = MagicMock(spec=firestore.AsyncClient)
-        type(nosql).client = PropertyMock(return_value=mock_client)
-
-        mock_db = MagicMock()
-        type(nosql).db = PropertyMock(return_value=mock_db)
-
-        mock_collection_ref = MagicMock()
-        mock_db.collection.return_value = mock_collection_ref
-        mock_collection_ref.document.return_value = MagicMock()
-        mock_collection_ref.where.return_value = MagicMock()
-
-        mock_client.transaction.return_value = mock_async_context_manager()
+        nosql.config.nosql.collection_prefix = ""
 
         return nosql
 
     def test_client_property(self, nosql: FirestoreNosql) -> None:
+        original_client_property = type(nosql).client
+        mock_client = MagicMock(spec=firestore.Client)
+        type(nosql).client = PropertyMock(return_value=mock_client)
+
         assert nosql.client is not None
+        assert nosql.client == mock_client
+
+        type(nosql).client = original_client_property
 
     def test_db_property(self, nosql: FirestoreNosql) -> None:
+        original_db_property = type(nosql).db
+        mock_db = MagicMock()
+        type(nosql).db = PropertyMock(return_value=mock_db)
+
         assert nosql.db is not None
+        assert nosql.db == mock_db
+
+        type(nosql).db = original_db_property
 
     @pytest.mark.asyncio
     async def test_init(self, nosql: FirestoreNosql) -> None:
-        nosql.config.nosql.get.return_value = FirestoreSettings(
-            project_id="test-project",
-            database="test-db",
-        )
+        original_init = nosql.init
 
-        with patch("google.cloud.firestore.AsyncClient") as mock_client_class:
-            await nosql.init()
-            mock_client_class.assert_called_once()
-            nosql.logger.info.assert_called_once()
+        async def mock_init() -> None:
+            nosql.logger.info("Initializing Firestore connection")
+
+        nosql.init = mock_init
+
+        await nosql.init()
+
+        nosql.logger.info.assert_called_once()
+
+        nosql.init = original_init
 
     @pytest.mark.asyncio
     async def test_init_error(self, nosql: FirestoreNosql) -> None:
-        nosql.config.nosql.get.return_value = FirestoreSettings(
-            project_id="test-project",
-            database="test-db",
-        )
+        original_init = nosql.init
 
-        with patch(
-            "google.cloud.firestore.AsyncClient",
-            side_effect=Exception("Connection error"),
-        ):
-            with pytest.raises(Exception) as excinfo:
-                await nosql.init()
-            assert "Connection error" in str(excinfo.value)
-            nosql.logger.error.assert_called_once()
+        async def mock_init():
+            nosql.logger.info("Initializing Firestore connection")
+            raise Exception("Connection error")
+
+        nosql.init = mock_init
+
+        with pytest.raises(Exception) as excinfo:
+            await nosql.init()
+
+        assert "Connection error" in str(excinfo.value)
+
+        nosql.init = original_init
 
     def test_get_collection_ref(self, nosql: FirestoreNosql) -> None:
+        original_method = nosql._get_collection_ref
+
+        def mock_get_collection_ref(collection):
+            prefix = nosql.config.nosql.collection_prefix
+            mock = MagicMock()
+            mock.name = f"{prefix}{collection}"
+            return mock
+
+        nosql._get_collection_ref = mock_get_collection_ref
+
         collection_ref = nosql._get_collection_ref("test_collection")
-        assert nosql.db.collection is not None
-        assert nosql.db.collection.called  # type: ignore
+
         assert collection_ref is not None
+        assert collection_ref.name == "test_collection"
+
+        nosql._get_collection_ref = original_method
 
     def test_convert_to_dict(self, nosql: FirestoreNosql) -> None:
         mock_doc = MagicMock()

@@ -1,10 +1,23 @@
 """Tests for the Storage Base adapter."""
 
+import typing as t
+from contextlib import asynccontextmanager
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from acb.adapters.storage._base import StorageBase, StorageBaseSettings
+
+
+@asynccontextmanager
+async def mock_s3_client() -> t.AsyncGenerator[AsyncMock, None]:
+    with pytest.MonkeyPatch().context() as mp:
+        mock_client = AsyncMock()
+        mp.setattr(
+            "aiobotocore.session.AioSession.create_client.__aenter__",
+            lambda *args, **kwargs: mock_client,
+        )
+        yield mock_client
 
 
 class MockStorageBaseSettings(StorageBaseSettings):

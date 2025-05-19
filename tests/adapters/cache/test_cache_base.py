@@ -10,6 +10,22 @@ from acb.config import Config
 from acb.logger import Logger
 
 
+async def assert_cache_operations(cache: t.Any, key: str, value: t.Any) -> None:
+    await cache.set(key, value)
+    if hasattr(cache, "_get") and isinstance(cache._get, AsyncMock):
+        cache._get.return_value = value
+
+    result = await cache.get(key)
+    assert result == value
+
+    await cache.delete(key)
+    if hasattr(cache, "_get") and isinstance(cache._get, AsyncMock):
+        cache._get.return_value = None
+
+    result = await cache.get(key)
+    assert result is None
+
+
 class MockCacheBaseSettings(CacheBaseSettings):
     pass
 
@@ -22,6 +38,44 @@ class MockCache(CacheBase):
         self.config = cast(Config, MagicMock())
         self.logger = cast(Logger, MagicMock())
         self.some_str_attr = ""
+        self._get = AsyncMock()
+        self._set = AsyncMock()
+        self._delete = AsyncMock()
+        self._exists = AsyncMock()
+        self._clear = AsyncMock()
+        self._keys = AsyncMock()
+        self._multi_get = AsyncMock()
+        self._multi_set = AsyncMock()
+        self._multi_delete = AsyncMock()
+
+    async def get(self, key: str) -> t.Any:
+        return await self._get(key)
+
+    async def set(self, key: str, value: t.Any, ttl: t.Optional[int] = None) -> None:
+        await self._set(key, value, ttl)
+
+    async def delete(self, key: str) -> None:
+        await self._delete(key)
+
+    async def exists(self, key: str) -> bool:
+        return await self._exists(key)
+
+    async def clear(self) -> None:
+        await self._clear()
+
+    async def keys(self) -> list[str]:
+        return await self._keys()
+
+    async def multi_get(self, keys: list[str]) -> list[t.Any]:
+        return await self._multi_get(keys)
+
+    async def multi_set(
+        self, items: dict[str, t.Any], ttl: t.Optional[int] = None
+    ) -> None:
+        await self._multi_set(items, ttl)
+
+    async def multi_delete(self, keys: list[str]) -> None:
+        await self._multi_delete(keys)
 
 
 class TestCacheBaseSettings:
@@ -90,3 +144,7 @@ class TestCacheBase:
     async def test_str_assignment(self, cache: MockCache) -> None:
         val: str = "test_str"
         cache.some_str_attr = val
+
+    @pytest.mark.asyncio
+    async def test_cache_operations(self, cache: MockCache) -> None:
+        await assert_cache_operations(cache, "test_key", "test_value")

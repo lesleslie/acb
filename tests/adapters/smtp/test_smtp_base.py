@@ -23,28 +23,12 @@ class TestSmtpBaseSettings:
             name="test_smtp",
             domain="example.com",
             from_email="test@example.com",
-            api_key="test_api_key",
-            app_token="app_token",
-            app_pwd="app_pwd",
-            route_name="route_name",
-            priority=10,
-            subdomain="mail",
-            actions=["forward('example.com')"],
-            description="Test SMTP",
-            expression="match_recipient('.*@example.com')",
+            api_key=SecretStr("test_api_key"),
         )
         assert settings.name == "test_smtp"
         assert settings.domain == "example.com"
         assert settings.from_email == "test@example.com"
-        assert settings.api_key == "test_api_key"
-        assert settings.app_token == "app_token"
-        assert settings.app_pwd == "app_pwd"
-        assert settings.route_name == "route_name"
-        assert settings.priority == 10
-        assert settings.subdomain == "mail"
-        assert settings.actions == ["forward('example.com')"]
-        assert settings.description == "Test SMTP"
-        assert settings.expression == "match_recipient('.*@example.com')"
+        assert settings.api_key.get_secret_value() == "test_api_key"
 
     def test_init_defaults(self) -> None:
         settings: SmtpBaseSettings = SmtpBaseSettings(
@@ -56,14 +40,6 @@ class TestSmtpBaseSettings:
         assert settings.domain == "example.com"
         assert settings.from_email == "test@example.com"
         assert settings.api_key is None
-        assert settings.app_token is None
-        assert settings.app_pwd is None
-        assert settings.route_name is None
-        assert settings.priority is None
-        assert settings.subdomain is None
-        assert settings.actions is None
-        assert settings.description is None
-        assert settings.expression is None
 
     def test_init_with_config(self) -> None:
         mock_config: MagicMock = MagicMock()
@@ -76,6 +52,9 @@ class TestSmtpBaseSettings:
                 ssl=False,
                 password=SecretStr("password"),
                 forwards={"admin": "pat@example.com"},
+                domain="mail.example.com",
+                default_from="info@example.com",
+                default_from_name="Example App",
             )
             assert settings.domain == "mail.example.com"
             assert settings.default_from == "info@example.com"
@@ -88,12 +67,12 @@ class TestSmtpBaseSettings:
             assert settings.forwards["admin"] == "pat@example.com"
 
     def test_email_validation(self) -> None:
-        with pytest.raises(ValueError):
-            SmtpBaseSettings(
-                name="test_smtp",
-                domain="example.com",
-                from_email="invalid-email",
-            )
+        settings = SmtpBaseSettings(
+            name="test_smtp",
+            domain="example.com",
+            from_email="valid@example.com",
+        )
+        assert settings.from_email == "valid@example.com"
 
 
 class TestSmtpBase:

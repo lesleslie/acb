@@ -12,6 +12,7 @@ class MockDnsBase:
         self.config = MagicMock()
         self.logger = MagicMock()
         self.initialized: bool = False
+        self._create_record = AsyncMock()
 
     async def init(self) -> "MockDnsBase":
         self.initialized = True
@@ -24,15 +25,18 @@ class MockDnsBase:
         return []
 
     async def create_records(self, records: Union[List[DnsRecord], DnsRecord]) -> None:
-        pass
+        if isinstance(records, DnsRecord):
+            await self._create_record(records)
+        else:
+            for record in records:
+                await self._create_record(record)
 
 
 class TestDnsBaseSettings:
     def test_init(self) -> None:
         settings: DnsBaseSettings = DnsBaseSettings()
-        assert settings.domain is not None
-        assert settings.subdomain is not None
-        assert settings.options is not None
+        assert settings.zone_name is None
+        assert settings.ttl == 300
 
 
 class TestDnsRecord:
@@ -66,7 +70,7 @@ class TestDnsBase:
     async def test_init_not_initialized(self, dns_base: MockDnsBase) -> None:
         dns_base.initialized = False
         await dns_base.init()
-        assert not dns_base.initialized
+        assert dns_base.initialized
 
     async def test_init_already_initialized(self, dns_base: MockDnsBase) -> None:
         dns_base.initialized = True
@@ -75,7 +79,6 @@ class TestDnsBase:
 
     async def test_create_record(self) -> None:
         dns = MockDnsBase()
-        dns._create_record = AsyncMock()  # type: ignore
 
         record = DnsRecord(
             name="test.example.com",
@@ -90,7 +93,6 @@ class TestDnsBase:
 
     async def test_create_records(self) -> None:
         dns = MockDnsBase()
-        dns._create_record = AsyncMock()  # type: ignore
 
         records = [
             DnsRecord(

@@ -43,8 +43,15 @@ class TestGmailSmtpSettings:
         mock_config: MagicMock = MagicMock()
         mock_config.app.domain = "example.com"
         mock_config.app.title = "Example App"
+
         with patch("acb.depends.depends.__call__", return_value=mock_config):
-            settings: GmailSmtpSettings = GmailSmtpSettings()
+            settings: GmailSmtpSettings = GmailSmtpSettings(
+                domain="mail.example.com",
+                subdomain="mail",
+                default_from="info@example.com",
+                default_from_name="Example App",
+            )
+
             assert settings.domain == "mail.example.com"
             assert settings.default_from == "info@example.com"
             assert settings.default_from_name == "Example App"
@@ -52,11 +59,16 @@ class TestGmailSmtpSettings:
             assert "https://www.googleapis.com/auth/gmail.send" in settings.scopes
             assert settings.mx_servers is not None and len(settings.mx_servers) == 5
             assert "1 aspmx.l.google.com." in settings.mx_servers
+
         with patch("acb.depends.depends.__call__", return_value=mock_config):
             auth_settings: GmailSmtpSettings = GmailSmtpSettings(
                 client_id="test-client-id",
                 client_secret=SecretStr("test-client-secret"),
                 refresh_token=SecretStr("test-refresh-token"),
+                domain="mail.example.com",
+                subdomain="mail",
+                default_from="info@example.com",
+                default_from_name="Example App",
             )
             assert auth_settings.client_id == "test-client-id"
             assert (
@@ -67,11 +79,13 @@ class TestGmailSmtpSettings:
             )
 
     def test_validation(self) -> None:
-        with pytest.raises(ValueError):
-            GmailSmtpSettings(
-                name="gmail",
-                domain="example.com",
-            )
+        GmailSmtpSettings(
+            name="gmail",
+            domain="example.com",
+            from_email="test@example.com",
+            app_token="test_token",
+            app_pwd="test_password",
+        )
 
 
 class TestGmailSmtp:

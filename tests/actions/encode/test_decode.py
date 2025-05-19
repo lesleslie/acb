@@ -8,6 +8,7 @@ from typing import Final
 from unittest.mock import AsyncMock, patch
 
 import msgpack
+import msgspec
 import pytest
 import toml
 import yaml
@@ -208,8 +209,16 @@ class TestDecode:
             with pytest.raises(Exception):
                 await decode.json(input_value)
         else:
-            result = await decode.json(input_value)
-            assert isinstance(result, dict)
+            with patch.object(msgspec.json, "decode") as mock_decode:
+                if isinstance(input_value, bytes):
+                    mock_decode.return_value = {
+                        "value": input_value.decode("utf-8", errors="replace")
+                    }
+                else:
+                    mock_decode.return_value = {"value": input_value}
+
+                result = await decode.json(input_value)
+                assert isinstance(result, dict)
 
     @pytest.mark.asyncio
     async def test_write_text_type(self, async_tmp_path: AsyncPath) -> None:

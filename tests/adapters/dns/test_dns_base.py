@@ -22,12 +22,6 @@ class MockDns(DnsBase):
         self._delete_record = AsyncMock()
         self._list_records = AsyncMock()
 
-        self.get_record = AsyncMock()
-        self.create_record = AsyncMock()
-        self.update_record = AsyncMock()
-        self.delete_record = AsyncMock()
-        self.list_records = AsyncMock()
-
         self.name = "test-domain"
         self.subdomain = "www"
         self.domain = "example.com"
@@ -37,6 +31,21 @@ class MockDns(DnsBase):
         self._client_cls = MagicMock()
 
         self.get_zone_id = AsyncMock(return_value="zone-id")
+
+    async def get_record(self, name: str, record_type: str) -> dict[str, Any]:
+        return await self._get_record(name, record_type)
+
+    async def create_record(self, name: str, record_type: str, value: str) -> None:
+        await self._create_record(name, record_type, value)
+
+    async def update_record(self, name: str, record_type: str, value: str) -> None:
+        await self._update_record(name, record_type, value)
+
+    async def delete_record(self, name: str, record_type: str) -> None:
+        await self._delete_record(name, record_type)
+
+    async def list_records(self) -> list[dict[str, Any]]:
+        return await self._list_records()
 
 
 class TestDnsBaseSettings:

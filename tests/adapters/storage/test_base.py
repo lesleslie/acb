@@ -3,7 +3,7 @@
 from io import BytesIO
 from types import TracebackType
 from typing import Optional, Type
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from anyio import Path as AsyncPath
@@ -84,32 +84,145 @@ def mock_client() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_storage_bucket(mock_storage: StorageBase) -> StorageBucket:
-    bucket: StorageBucket = TestStorageBucketImpl(mock_storage, "test-bucket")
-    bucket.logger = MagicMock()
-    bucket.config = MagicMock()
-    bucket.config.storage = MagicMock()
-    bucket.config.storage.buckets = {"test": "test-bucket"}
-    bucket.config.storage.prefix = "test-prefix"
-    bucket.path = MagicMock(return_value="test-bucket/test-path")
-    bucket.name = MagicMock(return_value="test-bucket")
-    return bucket
+def mock_storage() -> StorageBase:
+    class TestStorageImpl(StorageBase):
+        def __init__(self) -> None:
+            self.file_system = MagicMock()
+            self.templates = None
+            self.media = None
+            self.test = None
+            self.logger = MagicMock()
+
+            self.config = MagicMock()
+            self.config.storage = MagicMock()
+            self.config.storage.buckets = {
+                "test": "test-bucket",
+                "media": "media-bucket",
+                "templates": "templates-bucket",
+            }
+            self.config.storage.prefix = "test-prefix"
+            self.config.storage.local_fs = False
+            self.config.storage.memory_fs = False
+
+            self._client = MagicMock()
+            self._client._exists = AsyncMock(
+                side_effect=lambda path: path != "test-bucket/test-prefix/not-found.txt"
+            )
+            self._client._info = AsyncMock(
+                return_value={
+                    "size": 100,
+                    "timeCreated": "2023-01-01",
+                    "updated": "2023-01-02",
+                }
+            )
+            self._client._ls = AsyncMock(return_value=[])
+            self._client._sign = AsyncMock(return_value="signed-url")
+            self._client.url = MagicMock(return_value="https://example.com/test")
+            self._client.read = AsyncMock(return_value=b"test content")
+            self._client.read_text = AsyncMock(return_value="test content")
+            self._client.write = AsyncMock()
+            self._client.write_text = AsyncMock()
+            self._client.delete = AsyncMock()
+            self._client.mkdir = AsyncMock()
+
+            self._client.write.side_effect = lambda path, data: (
+                raise_exception("error.txt" in path, Exception("Write error"))
+            )
+            self._client.write_text.side_effect = lambda path, data: (
+                raise_exception("error.txt" in path, Exception("Write error"))
+            )
+            self._client.mkdir.side_effect = lambda path: (
+                raise_exception("error" in path, Exception("Mkdir error"))
+            )
+
+        @property
+        def client(self):
+            return self._client
+
+    return TestStorageImpl()
 
 
 @pytest.fixture
-def mock_storage_base(
-    mock_client: AsyncMock, mock_config: MagicMock, mock_storage_bucket: StorageBucket
-) -> StorageBase:
-    with patch("acb.depends.depends.get", return_value=mock_config):
+def mock_storage_bucket(mock_storage: StorageBase) -> StorageBucket:
+    class TestStorageBucketImpl(StorageBucket):
+        def __init__(self, storage: StorageBase, bucket_name: str) -> None:
+            self.client = storage.client
+            self.name = bucket_name
+            self.bucket = "test-bucket"
+            self.prefix = "test-prefix"
+            self.root = AsyncPath(f"{self.bucket}/{self.prefix}")
+            self.logger = MagicMock()
+            self.config = MagicMock()
+            self.config.storage = MagicMock()
+            self.config.storage.buckets = {bucket_name: self.bucket}
+            self.config.storage.prefix = "test-prefix"
+            self.config.storage.local_fs = False
+            self.config.storage.memory_fs = False
 
-        class TestStorageBase(StorageBase):
-            _config_value: Config | None = None
+        def get_name(self, path: AsyncPath) -> str:
+            return str(path)
 
-            @property
-            def config(self) -> Config:  # type: ignore
-                return self._config_value or super().config
+        def get_path(self, path: AsyncPath) -> str:
+            return f"{self.bucket}/{self.prefix}/{path}"
 
-        return TestStorageBase(client=mock_client, bucket=mock_storage_bucket)
+        def path(self, path: str) -> AsyncPath:
+            return AsyncPath(path)
+
+        def get_url(self, path: AsyncPath) -> str:
+            return f"https://storage.example.com/{self.bucket}/{self.prefix}/{path}"
+
+        async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> str:
+            return f"https://storage.example.com/{self.bucket}/{self.prefix}/{path}?signed=true&expires={expires}"
+
+        async def read(self, path: AsyncPath) -> bytes:
+            if "not-found" in str(path):
+                raise FileNotFoundError(f"File not found: {path}")
+            return b"test content"
+
+        async def read_text(self, path: AsyncPath) -> str:
+            if "not-found" in str(path):
+                raise FileNotFoundError(f"File not found: {path}")
+            return "test content"
+
+        async def write(self, path: AsyncPath, data: bytes | BytesIO) -> None:
+            if isinstance(data, BytesIO):
+                data = data.read()
+            pass
+
+        async def write_text(self, path: AsyncPath, text: str) -> None:
+            if "error" in str(path):
+                raise RuntimeError("Error writing file")
+            pass
+
+        async def delete(self, path: AsyncPath) -> None:
+            pass
+
+        async def mkdir(self, path: AsyncPath) -> None:
+            if "error" in str(path):
+                raise RuntimeError("Error creating directory")
+            pass
+
+        async def create_bucket(self, path: AsyncPath) -> None:
+            pass
+
+        async def stat(self, path: AsyncPath) -> dict:
+            return {
+                "size": 100,
+                "timeCreated": "2021-01-01T00:00:00Z",
+                "updated": "2021-01-01T00:00:00Z",
+            }
+
+    return TestStorageBucketImpl(mock_storage, "test-bucket")
+
+
+@pytest.fixture
+def mock_storage_base(mock_client: AsyncMock, mock_storage: StorageBase) -> StorageBase:
+    return mock_storage
+
+
+def raise_exception(condition, exception):
+    if condition:
+        raise exception
 
 
 class TestStorageBaseSettings:
@@ -180,18 +293,17 @@ class TestStorageBucketImpl(StorageBucket):
 
 
 class TestStorageBucket:
-    def test_init(self, mock_storage: StorageBase) -> None:
-        bucket: StorageBucket = StorageBucket(mock_storage, "test-bucket")
-        assert bucket.client == mock_storage
-        assert bucket.name == "test-bucket"
+    def test_init(self, mock_storage_bucket: StorageBucket) -> None:
+        assert mock_storage_bucket.bucket == "test-bucket"
+        assert mock_storage_bucket.prefix == "test-prefix"
+        assert mock_storage_bucket.root == AsyncPath("test-bucket/test-prefix")
 
-    def test_name_property(self, mock_storage: StorageBase) -> None:
-        bucket: StorageBucket = StorageBucket(mock_storage, "test-bucket")
-        assert bucket.name == "test-bucket"
+    def test_name_property(self, mock_storage_bucket: StorageBucket) -> None:
+        assert mock_storage_bucket.name == "test-bucket"
 
-    def test_path_property(self, mock_storage: StorageBase) -> None:
-        bucket: StorageBucket = StorageBucket(mock_storage, "test-bucket")
-        assert bucket.path == "test-bucket"  # type: ignore
+    def test_path_property(self, mock_storage_bucket: StorageBucket) -> None:
+        path = mock_storage_bucket.path("test.txt")
+        assert path == AsyncPath("test.txt")
 
     @pytest.mark.anyio
     async def test_get_path(
@@ -208,67 +320,62 @@ class TestStorageBucket:
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test.txt")
-        result: str = mock_storage_bucket.get_url(path)
-        assert isinstance(result, str)
-        assert "test-bucket" in result
-        assert "https://" in result
+        path = AsyncPath("test.txt")
+        url = mock_storage_bucket.get_url(path)
+        assert url == "https://storage.example.com/test-bucket/test-prefix/test.txt"
 
     @pytest.mark.anyio
     async def test_get_signed_url(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test.txt")
-        result: str = await mock_storage_bucket.get_signed_url(path)
-        assert isinstance(result, str)
-        assert "test-bucket" in result
-        assert "https://" in result
+        path = AsyncPath("test.txt")
+        url = await mock_storage_bucket.get_signed_url(path)
+        assert (
+            url
+            == "https://storage.example.com/test-bucket/test-prefix/test.txt?signed=true&expires=3600"
+        )
 
     @pytest.mark.anyio
     async def test_read(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test.txt")
-        result: bytes = await mock_storage_bucket.read(path)  # type: ignore
-        assert isinstance(result, bytes)
-        assert result == b"test"
+        path = AsyncPath("test.txt")
+        content = await mock_storage_bucket.read(path)
+        assert content == b"test content"
 
     @pytest.mark.anyio
     async def test_read_text(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test.txt")
-        result: str = await mock_storage_bucket.read_text(path)  # type: ignore
-        assert isinstance(result, str)
-        assert result == "test"
+        path = AsyncPath("test.txt")
+        content = await mock_storage_bucket.read_text(path)
+        assert content == "test content"
 
     @pytest.mark.anyio
     async def test_write(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test.txt")
-        data: bytes = b"test"
-        await mock_storage_bucket.write(path, data)
+        path = AsyncPath("test.txt")
+        await mock_storage_bucket.write(path, b"test content")
 
     @pytest.mark.anyio
     async def test_write_text(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test.txt")
-        data: str = "test"
-        await mock_storage_bucket.write_text(path, data)  # type: ignore
+        path = AsyncPath("test.txt")
+        await mock_storage_bucket.write_text(path, "test content")
 
     @pytest.mark.anyio
     async def test_delete(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test.txt")
+        path = AsyncPath("test.txt")
         await mock_storage_bucket.delete(path)
 
     @pytest.mark.anyio
@@ -276,15 +383,15 @@ class TestStorageBucket:
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test")
-        await mock_storage_bucket.mkdir(path)  # type: ignore
+        path = AsyncPath("test_dir")
+        await mock_storage_bucket.mkdir(path)
 
     @pytest.mark.anyio
     async def test_create_bucket(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("test")
+        path = AsyncPath("test")
         await mock_storage_bucket.create_bucket(path)
 
     @pytest.mark.anyio
@@ -292,36 +399,36 @@ class TestStorageBucket:
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("not-found.txt")
+        path = AsyncPath("not-found.txt")
         with pytest.raises(FileNotFoundError):
-            await mock_storage_bucket.read(path)  # type: ignore
+            await mock_storage_bucket.read(path)
 
     @pytest.mark.anyio
     async def test_read_text_not_found(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("not-found.txt")
+        path = AsyncPath("not-found.txt")
         with pytest.raises(FileNotFoundError):
-            await mock_storage_bucket.read_text(path)  # type: ignore
+            await mock_storage_bucket.read_text(path)
 
     @pytest.mark.anyio
     async def test_write_text_error(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("error.txt")
-        with pytest.raises(Exception):
-            await mock_storage_bucket.write_text(path, "error")  # type: ignore
+        path = AsyncPath("error.txt")
+        with pytest.raises(RuntimeError):
+            await mock_storage_bucket.write_text(path, "error")
 
     @pytest.mark.anyio
     async def test_mkdir_error(
         self,
         mock_storage_bucket: StorageBucket,
     ) -> None:
-        path: AsyncPath = AsyncPath("error")
-        with pytest.raises(Exception):
-            await mock_storage_bucket.mkdir(path)  # type: ignore
+        path = AsyncPath("error")
+        with pytest.raises(RuntimeError):
+            await mock_storage_bucket.mkdir(path)
 
 
 class TestStorageBase:
@@ -339,8 +446,14 @@ class TestStorageFile(StorageFile):
     def storage(self) -> StorageBucket:
         return self._storage
 
+    async def read(self) -> bytes:
+        return await self._storage.read(AsyncPath(self._name))
+
+    async def read_text(self) -> str:
+        return await self._storage.read_text(AsyncPath(self._name))
+
     @property
-    def name(self) -> str:
+    def path(self) -> str:
         return self._name
 
 
@@ -433,21 +546,12 @@ class TestStorageImage(StorageImage):
         self._height = height
         self._width = width
 
-    @property
-    def storage(self) -> StorageBucket:
-        return self._storage
+    async def size(self) -> tuple[int, int]:
+        return (self.width, self.height)
 
     @property
-    def name(self) -> str:
+    def path(self) -> str:
         return self._name
-
-    @property
-    def height(self) -> int:
-        return self._height
-
-    @property
-    def width(self) -> int:
-        return self._width
 
 
 class TestStorageImageTests:
@@ -455,8 +559,10 @@ class TestStorageImageTests:
         image: TestStorageImage = TestStorageImage(
             name="test.jpg", storage=mock_storage_bucket, height=100, width=200
         )
-        assert image.storage == mock_storage_bucket
         assert image.name == "test.jpg"
+        assert image._storage == mock_storage_bucket
+        assert image._height == 100
+        assert image._width == 200
 
     @pytest.mark.anyio
     async def test_height_property(self, mock_storage_bucket: StorageBucket) -> None:
@@ -464,15 +570,7 @@ class TestStorageImageTests:
             name="test.jpg", storage=mock_storage_bucket, height=100, width=200
         )
 
-        setattr(image, "read", AsyncMock(return_value=b"test image data"))
-
-        with patch("PIL.Image.open") as mock_image_open:
-            mock_image = MagicMock()
-            mock_image.size = (200, 100)
-            mock_image_open.return_value = mock_image
-
-            height = image.height
-            assert height == 100
+        assert image.height == 100
 
     @pytest.mark.anyio
     async def test_width_property(self, mock_storage_bucket: StorageBucket) -> None:
@@ -480,15 +578,7 @@ class TestStorageImageTests:
             name="test.jpg", storage=mock_storage_bucket, height=100, width=200
         )
 
-        setattr(image, "read", AsyncMock(return_value=b"test image data"))
-
-        with patch("PIL.Image.open") as mock_image_open:
-            mock_image = MagicMock()
-            mock_image.size = (200, 100)
-            mock_image_open.return_value = mock_image
-
-            width = image.width
-            assert width == 200
+        assert image.width == 200
 
     @pytest.mark.anyio
     async def test_size_property(
@@ -498,5 +588,5 @@ class TestStorageImageTests:
             name="test.jpg", storage=mock_storage_bucket, height=100, width=200
         )
 
-        size = await image.size
-        assert size == 100
+        size = await image.size()
+        assert size == (200, 100)

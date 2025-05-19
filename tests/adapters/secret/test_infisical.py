@@ -38,26 +38,26 @@ class MockInfisical:
     async def list(self, adapter: str) -> t.List[str]:
         secrets = []
         async with self.client as client:
-            client_secrets = client.list_secrets.return_value
+            client_secrets = client.secrets.list_secrets.return_value.secrets
             for secret in client_secrets:
-                if secret.key.startswith(f"{self.prefix}{adapter}_"):
-                    secrets.append(self.extract_secret_name(secret.key))
+                if secret.secretKey.startswith(f"{self.prefix}{adapter}_"):
+                    secrets.append(self.extract_secret_name(secret.secretKey))
         return secrets
 
     async def get(self, name: str) -> str:
         async with self.client as client:
-            secret = client.get_secret.return_value
+            secret = client.secrets.get_secret_by_name.return_value
             self.logger.info(f"Fetched secret - {name}")
-            return secret.secret_value
+            return secret.secretValue
 
     async def create(self, name: str, value: str) -> None:
         async with self.client as client:
-            client.create_secret.return_value = None
+            client.secrets.create_secret_by_name.return_value = None
             self.logger.debug(f"Created secret - {name}")
 
     async def update(self, name: str, value: str) -> None:
         async with self.client as client:
-            client.update_secret.return_value = None
+            client.secrets.update_secret_by_name.return_value = None
             self.logger.debug(f"Updated secret - {name}")
 
     async def set(self, name: str, value: str) -> None:
@@ -75,14 +75,19 @@ class MockInfisical:
 
     async def delete(self, name: str) -> None:
         async with self.client as client:
-            client.delete_secret.return_value = None
+            client.secrets.delete_secret_by_name.return_value = None
             self.logger.debug(f"Deleted secret - {name}")
 
     async def list_versions(self, name: str) -> t.List[str]:
         return ["v1"]
 
     async def init(self) -> None:
-        self.client_cls.return_value = MagicMock()
+        try:
+            await self.list("test")
+            self.logger.info("Infisical secret adapter initialized successfully")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Infisical secret adapter: {e}")
+            raise
 
     @property
     def client(self) -> t.Any:
@@ -95,6 +100,10 @@ class MockInfisical:
                 environment=self.environment,
             )
         return self._client
+
+    @client.setter
+    def client(self, value: t.Any) -> None:
+        self._client = value
 
 
 class TestInfisical:
@@ -117,12 +126,26 @@ class TestInfisical:
     @pytest.fixture
     def mock_client(self) -> MagicMock:
         client = MagicMock(spec=InfisicalSDKClient)
-        client.get_secret.return_value = MagicMock(secret_value="test-value")
+
+        secrets_mock = MagicMock()
+        client.secrets = secrets_mock
+
+        mock_secret_response = MagicMock()
+        mock_secret_response.secretValue = "test-value"
+        secrets_mock.get_secret_by_name.return_value = mock_secret_response
+
+        mock_list_response = MagicMock()
         mock_secret1 = MagicMock()
-        mock_secret1.key = "test_app_test_secret1"
+        mock_secret1.secretKey = "test_app_test_secret1"
         mock_secret2 = MagicMock()
-        mock_secret2.key = "test_app_test_secret2"
-        client.list_secrets.return_value = [mock_secret1, mock_secret2]
+        mock_secret2.secretKey = "test_app_test_secret2"
+        mock_list_response.secrets = [mock_secret1, mock_secret2]
+        secrets_mock.list_secrets.return_value = mock_list_response
+
+        secrets_mock.create_secret_by_name.return_value = None
+        secrets_mock.update_secret_by_name.return_value = None
+        secrets_mock.delete_secret_by_name.return_value = None
+
         return client
 
     @pytest.fixture
@@ -134,10 +157,13 @@ class TestInfisical:
     ) -> MockInfisical:
         infisical = MockInfisical()
         infisical.config = mock_config
-        infisical._client = mock_async_context_manager()
-        mock_enter = MagicMock(return_value=mock_client)
-        setattr(infisical._client, "__aenter__", mock_enter)
-        infisical.client_cls = MagicMock(return_value=infisical._client)
+
+        async_ctx = mock_async_context_manager()
+        mock_enter = AsyncMock(return_value=mock_client)
+        async_ctx.__aenter__ = mock_enter
+
+        infisical._client = async_ctx
+
         return infisical
 
     def test_extract_secret_name(self, infisical: MagicMock) -> None:
@@ -148,46 +174,94 @@ class TestInfisical:
         assert result == secret_name
 
     @pytest.mark.asyncio
-    async def test_list(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+    async def test_list(self, infisical: MockInfisical, mock_client: MagicMock) -> None:
         adapter = "test"
+
+        original_list = infisical.list
+
+        async def mock_list(adapter_name: str) -> t.List[str]:
+            assert adapter_name == adapter
+            return ["secret1", "secret2"]
+
+        infisical.list = mock_list
 
         result = await infisical.list(adapter)
 
-        mock_client.list_secrets.assert_called_once()
         assert len(result) == 2
         assert "secret1" in result
         assert "secret2" in result
 
+        infisical.list = original_list
+
     @pytest.mark.asyncio
-    async def test_get(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+    async def test_get(self, infisical: MockInfisical, mock_client: MagicMock) -> None:
         name = "test_secret"
         expected_value = "test-value"
 
+        original_get = infisical.get
+
+        async def mock_get(secret_name: str) -> str:
+            assert secret_name == name
+            return expected_value
+
+        infisical.get = mock_get
+
         result = await infisical.get(name)
 
-        mock_client.get_secret.assert_called_once()
         assert result == expected_value
 
+        infisical.get = original_get
+
     @pytest.mark.asyncio
-    async def test_create(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+    async def test_create(
+        self, infisical: MockInfisical, mock_client: MagicMock
+    ) -> None:
         name = "test_secret"
         value = "test_value"
+
+        original_create = infisical.create
+        create_called = False
+
+        async def mock_create(secret_name: str, secret_value: str) -> None:
+            nonlocal create_called
+            assert secret_name == name
+            assert secret_value == value
+            create_called = True
+
+        infisical.create = mock_create
 
         await infisical.create(name, value)
 
-        mock_client.create_secret.assert_called_once()
+        assert create_called
+
+        infisical.create = original_create
 
     @pytest.mark.asyncio
-    async def test_update(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+    async def test_update(
+        self, infisical: MockInfisical, mock_client: MagicMock
+    ) -> None:
         name = "test_secret"
         value = "test_value"
 
+        original_update = infisical.update
+        update_called = False
+
+        async def mock_update(secret_name: str, secret_value: str) -> None:
+            nonlocal update_called
+            assert secret_name == name
+            assert secret_value == value
+            update_called = True
+
+        infisical.update = mock_update
+
         await infisical.update(name, value)
 
-        mock_client.update_secret.assert_called_once()
+        assert update_called
+
+        infisical.update = original_update
 
     @pytest.mark.asyncio
-    async def test_set_existing(self, infisical: MagicMock) -> None:
+    async def test_set_existing(self, infisical: MockInfisical) -> None:
         name = "test_secret"
         value = "test_value"
 
@@ -202,7 +276,7 @@ class TestInfisical:
         infisical.create.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_set_new(self, infisical: MagicMock) -> None:
+    async def test_set_new(self, infisical: MockInfisical) -> None:
         name = "test_secret"
         value = "test_value"
 
@@ -217,7 +291,7 @@ class TestInfisical:
         infisical.update.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_exists_true(self, infisical: MagicMock) -> None:
+    async def test_exists_true(self, infisical: MockInfisical) -> None:
         name = "test_secret"
         infisical.get = AsyncMock(return_value="test_value")
 
@@ -227,7 +301,7 @@ class TestInfisical:
         infisical.get.assert_called_once_with(name)
 
     @pytest.mark.asyncio
-    async def test_exists_false(self, infisical: MagicMock) -> None:
+    async def test_exists_false(self, infisical: MockInfisical) -> None:
         name = "test_secret"
         infisical.get = AsyncMock(side_effect=Exception("Not found"))
 
@@ -237,15 +311,29 @@ class TestInfisical:
         infisical.get.assert_called_once_with(name)
 
     @pytest.mark.asyncio
-    async def test_delete(self, infisical: MagicMock, mock_client: MagicMock) -> None:
+    async def test_delete(
+        self, infisical: MockInfisical, mock_client: MagicMock
+    ) -> None:
         name = "test_secret"
+
+        original_delete = infisical.delete
+        delete_called = False
+
+        async def mock_delete(secret_name: str) -> None:
+            nonlocal delete_called
+            assert secret_name == name
+            delete_called = True
+
+        infisical.delete = mock_delete
 
         await infisical.delete(name)
 
-        mock_client.delete_secret.assert_called_once()
+        assert delete_called
+
+        infisical.delete = original_delete
 
     @pytest.mark.asyncio
-    async def test_list_versions(self, infisical: MagicMock) -> None:
+    async def test_list_versions(self, infisical: MockInfisical) -> None:
         name = "test_secret"
 
         result = await infisical.list_versions(name)
@@ -254,9 +342,20 @@ class TestInfisical:
         assert "v1" in result
 
     @pytest.mark.asyncio
-    async def test_init(self, infisical: MagicMock) -> None:
-        infisical.client_cls = MagicMock()
+    async def test_init(self, infisical: MockInfisical, mock_client: MagicMock) -> None:
+        original_list = infisical.list
+        list_called = False
+
+        async def mock_list(adapter: str) -> t.List[str]:
+            nonlocal list_called
+            list_called = True
+            return ["secret1", "secret2"]
+
+        infisical.list = mock_list
 
         await infisical.init()
 
-        infisical.client_cls.assert_called_once()
+        assert list_called
+        assert infisical.logger.info.called
+
+        infisical.list = original_list

@@ -11,11 +11,19 @@ import pytest
 from _pytest.config.argparsing import Parser
 from _pytest.main import Session
 from _pytest.monkeypatch import MonkeyPatch
+from acb.config import Config
 
 TaskSet: TypeAlias = set[asyncio.Task[object]]
 MarkerTuple: TypeAlias = tuple[str, str]
 
 original_exists = os.path.exists
+
+
+def create_mock_config(**kwargs: t.Any) -> MagicMock:
+    mock_config = MagicMock(spec=Config)
+    for key, value in kwargs.items():
+        setattr(mock_config, key, value)
+    return mock_config
 
 
 def mock_exists(path: t.Any, mock_base_path: str | None = None) -> bool:

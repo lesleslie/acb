@@ -53,6 +53,11 @@ class SmtpSettings(SmtpBaseSettings):
                 "refresh_token", SecretStr("test-refresh-token")
             )
 
+    def __getattr__(self, item: str) -> t.Any:
+        if item == "__pydantic_fields_set__" and hasattr(self, "__pydantic_fields__"):
+            return getattr(self, "__pydantic_fields__")
+        return super().__getattr__(item)
+
 
 class Smtp(SmtpBase):
     requests: Requests = depends()

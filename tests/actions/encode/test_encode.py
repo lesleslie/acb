@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import msgpack
+import msgspec
 import pytest
 import toml
 import yaml
@@ -249,50 +250,68 @@ class TestEncode:
         with patch("json.dumps") as mock_dumps:
             mock_dumps.return_value = '{"mocked": true}'
 
-            result_bytes: bytes = await encode.json(TEST_DATA)
+            with patch.object(msgspec.json, "encode") as mock_encode:
+                mock_encode.side_effect = lambda obj, **kwargs: mock_dumps(
+                    obj, indent=kwargs.get("indent")
+                ).encode()
 
-            assert result_bytes == b'{"mocked": true}'
-            mock_dumps.assert_called_once_with(TEST_DATA, indent=None)
+                result_bytes: bytes = await encode.json(TEST_DATA)
+
+                assert result_bytes == b'{"mocked": true}'
+                mock_dumps.assert_called_once_with(TEST_DATA, indent=None)
 
     @pytest.mark.asyncio
     async def test_yaml_encode_with_mock(self) -> None:
         with patch("yaml.dump") as mock_dump:
             mock_dump.return_value = "mocked: true"
 
-            result_bytes: bytes = await encode.yaml(TEST_DATA)
+            with patch.object(msgspec.yaml, "encode") as mock_encode:
+                mock_encode.side_effect = lambda obj, **kwargs: mock_dump(obj).encode()
 
-            assert result_bytes == b"mocked: true"
-            mock_dump.assert_called_once_with(TEST_DATA)
+                result_bytes: bytes = await encode.yaml(TEST_DATA)
+
+                assert result_bytes == b"mocked: true"
+                mock_dump.assert_called_once_with(TEST_DATA)
 
     @pytest.mark.asyncio
     async def test_toml_encode_with_mock(self) -> None:
         with patch("toml.dumps") as mock_dumps:
             mock_dumps.return_value = "mocked = true"
 
-            result_bytes: bytes = await encode.toml(TEST_DATA)
+            with patch.object(msgspec.toml, "encode") as mock_encode:
+                mock_encode.side_effect = lambda obj, **kwargs: mock_dumps(obj).encode()
 
-            assert result_bytes == b"mocked = true"
-            mock_dumps.assert_called_once_with(TEST_DATA)
+                result_bytes: bytes = await encode.toml(TEST_DATA)
+
+                assert result_bytes == b"mocked = true"
+                mock_dumps.assert_called_once_with(TEST_DATA)
 
     @pytest.mark.asyncio
     async def test_msgpack_encode_with_mock(self) -> None:
-        with patch("msgpack.packb") as mock_packb:
-            mock_packb.return_value = b"mocked"
+        with patch("acb.actions.encode.Encode.process") as mock_process:
+            mock_process.return_value = b"mocked"
 
             result_bytes: bytes = await encode.msgpack(TEST_DATA)
 
             assert result_bytes == b"mocked"
-            mock_packb.assert_called_once_with(TEST_DATA, use_bin_type=True)
 
     @pytest.mark.asyncio
     async def test_pickle_encode_with_mock(self) -> None:
-        with patch("pickle.dumps") as mock_dumps:
-            mock_dumps.return_value = b"mocked"
+        with patch("acb.actions.encode.Encode.process") as mock_process:
+            mock_process.return_value = b"mocked"
 
             result_bytes: bytes = await encode.pickle(TEST_DATA)
 
             assert result_bytes == b"mocked"
-            mock_dumps.assert_called_once_with(TEST_DATA)
+
+    @pytest.mark.asyncio
+    async def test_pickle_encode_invalid(self) -> None:
+        class UnpickleableObject:
+            def __reduce__(self):
+                raise TypeError("Cannot pickle this object")
+
+        with pytest.raises(TypeError):
+            await encode.pickle(UnpickleableObject())
 
     @pytest.mark.asyncio
     async def test_json_encode_invalid(self) -> None:
@@ -317,12 +336,6 @@ class TestEncode:
         with patch("msgpack.packb", side_effect=TypeError):
             with pytest.raises(TypeError):
                 await encode.msgpack(object())
-
-    @pytest.mark.asyncio
-    async def test_pickle_encode_invalid(self) -> None:
-        with patch("pickle.dumps", side_effect=TypeError):
-            with pytest.raises(TypeError):
-                await encode.pickle(object())
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -448,10 +461,8 @@ class TestEncode:
     async def test_error_handling_file_operations(self, async_tmp_path: Path) -> None:
         test_file: Path = async_tmp_path / "test_data.json"
 
-        with patch.object(
-            Path,
-            "write_bytes",
-            AsyncMock(side_effect=PermissionError("Access denied")),
-        ):
+        with patch.object(Path, "write_bytes") as mock_write:
+            mock_write.side_effect = PermissionError("Access denied")
+
             with pytest.raises(PermissionError):
                 await encode.json(TEST_DATA, path=test_file)

@@ -54,23 +54,23 @@ class TestMailgunSmtpSettings:
         mock_config.smtp = MagicMock()
         mock_config.smtp.api_key = SecretStr("test-api-key")
         mock_config.smtp.password = SecretStr("test-password")
+
+        test_values = {
+            "name": "mailgun",
+            "domain": "mail.example.com",
+            "from_email": "info@example.com",
+            "api_key": SecretStr("test-api-key"),
+        }
+
         with patch("acb.depends.depends.__call__", return_value=mock_config):
-            with patch.object(MailgunSmtpSettings, "__init__", return_value=None):
-                settings: MailgunSmtpSettings = MailgunSmtpSettings()
-                settings.domain = "mail.example.com"
-                settings.default_from = "info@example.com"
-                settings.default_from_name = "Example App"
-                settings.api_url = "https://api.mailgun.net/v3/domains"
-                settings.mx_servers = ["smtp.mailgun.com"]
-                settings.api_key = SecretStr("test-api-key")
-                settings.password = SecretStr("test-password")
-                assert settings.domain == "mail.example.com"
-                assert settings.default_from == "info@example.com"
-                assert settings.default_from_name == "Example App"
-                assert settings.api_url == "https://api.mailgun.net/v3/domains"
-                assert settings.mx_servers == ["smtp.mailgun.com"]
-                assert settings.api_key.get_secret_value() == "test-api-key"
-                assert settings.password.get_secret_value() == "test-password"
+            settings = MailgunSmtpSettings(**test_values)
+
+            assert settings.domain == "mail.example.com"
+            assert settings.from_email == "info@example.com"
+            assert settings.api_url == "https://api.mailgun.net/v3/domains"
+            assert settings.mx_servers == ["smtp.mailgun.com"]
+            assert settings.api_key.get_secret_value() == "test-api-key"
+            assert settings.password.get_secret_value() == "test-password"
 
 
 class TestMailgunSmtp:

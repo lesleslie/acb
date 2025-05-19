@@ -1,10 +1,14 @@
 """Tests for the Secret Base adapter."""
 
-from unittest.mock import AsyncMock, MagicMock
+from typing import List, Optional
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from anyio import Path as AsyncPath
 from google.cloud.secretmanager_v1.types import (
     AccessSecretVersionRequest,
+    AddSecretVersionRequest,
+    CreateSecretRequest,
     DeleteSecretRequest,
     ListSecretsRequest,
 )
@@ -21,6 +25,16 @@ class MockSecret(SecretBase):
         super().__init__()
         self.config = MagicMock()
         self.logger = MagicMock()
+        self._client = None
+        self.project = "test-project"
+
+    @property
+    def client(self):
+        return self._client
+
+    @client.setter
+    def client(self, value) -> None:
+        self._client = value
 
     def extract_secret_name(self, secret_path: str) -> str:
         if "/" in secret_path:
@@ -34,17 +48,76 @@ class MockSecret(SecretBase):
             return full_name[len(app_prefix) :]
         return full_name
 
+    async def get(self, name: str, version: Optional[str] = None) -> Optional[str]:
+        version_str = version or "latest"
+        path = f"projects/{self.project}/secrets/{name}/versions/{version_str}"
+        request = AccessSecretVersionRequest(name=path)
+        response = await self.client.access_secret_version(request=request)
+        payload = response.payload.data.decode()
+        self.logger.info(f"Fetched secret - {name}")
+        return payload
+
+    async def create(self, name: str, value: str) -> None:
+        request = CreateSecretRequest(
+            parent=f"projects/{self.project}",
+            secret_id=name,
+            secret={"replication": {"automatic": {}}},
+        )
+        version = await self.client.create_secret(request)
+        request = AddSecretVersionRequest(
+            parent=version.name,
+            payload={"data": value.encode()},
+        )
+        await self.client.add_secret_version(request)
+        self.logger.debug(f"Created secret - {name}")
+
+    async def update(self, name: str, value: str) -> None:
+        secret = self.client.secret_path(self.project, name)
+        request = AddSecretVersionRequest(
+            parent=secret,
+            payload={"data": value.encode()},
+        )
+        await self.client.add_secret_version(request)
+        self.logger.debug(f"Updated secret - {name}")
+
+    async def delete(self, name: str) -> None:
+        secret = self.client.secret_path(self.project, name)
+        request = DeleteSecretRequest(name=secret)
+        await self.client.delete_secret(request=request)
+        self.logger.debug(f"Deleted secret - {secret}")
+
+    async def list(self, adapter: Optional[str] = None) -> List[str]:
+        filter_str = (
+            f"{self.config.app.name}_{adapter}_" if adapter else self.config.app.name
+        )
+        request = ListSecretsRequest(
+            parent=f"projects/{self.project}", filter=filter_str
+        )
+        client_secrets = await self.client.list_secrets(request=request)
+        result = []
+        async for secret in client_secrets:
+            name = secret.name.split("/")[-1]
+            if name.startswith(f"{self.config.app.name}_"):
+                name = name[len(f"{self.config.app.name}_") :]
+            result.append(name)
+        return result
+
+    async def list_versions(self, name: str) -> List[str]:
+        return []
+
 
 class TestSecretBaseSettings:
     def test_init(self) -> None:
-        mock_path = MagicMock()
-        mock_path.__truediv__.return_value = mock_path
-        mock_path.exists = AsyncMock(return_value=False)
-        mock_path.mkdir = AsyncMock()
+        with patch("anyio.Path", autospec=True) as mock_path_class:
+            mock_path = mock_path_class.return_value
+            mock_path.__truediv__.return_value = mock_path
+            mock_path.exists = AsyncMock(return_value=False)
+            mock_path.mkdir = AsyncMock()
 
-        settings = MockSecretBaseSettings(secrets_path=mock_path)
-        assert settings.secrets_path == mock_path
-        mock_path.mkdir.assert_not_called()
+            settings = MockSecretBaseSettings(
+                secrets_path=AsyncPath("/tmp/mock_secrets")
+            )
+            assert isinstance(settings.secrets_path, AsyncPath)
 
 
 class TestSecretManager:
@@ -54,6 +127,11 @@ class TestSecretManager:
         mock_client.secret_path.return_value = (
             "projects/test-project/secrets/test_app_secret"
         )
+        mock_client.access_secret_version = AsyncMock()
+        mock_client.create_secret = AsyncMock()
+        mock_client.add_secret_version = AsyncMock()
+        mock_client.delete_secret = AsyncMock()
+        mock_client.list_secrets = AsyncMock()
         return mock_client
 
     @pytest.fixture

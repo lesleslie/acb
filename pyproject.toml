@@ -49,21 +49,21 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "google-crc32c",
-    "pyfiglet",
-    "pyyaml",
-    "google-api-python-client",
-    "pytest",
-    "uv",
-    "pre-commit",
     "autotyping",
-    "tomli-w",
     "pdm",
-    "pytest-asyncio",
-    "pytest-timeout",
-    "pytest-mock",
+    "pyyaml",
     "pdm-bump",
+    "pytest",
+    "pytest-asyncio",
+    "uv",
+    "pytest-timeout",
     "pytest-cov",
+    "pyfiglet",
+    "pytest-mock",
+    "pre-commit",
+    "tomli-w",
+    "google-api-python-client",
+    "google-crc32c",
 ]
 
 [tool.refurb]
@@ -74,17 +74,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B404",
-    "B704",
-    "B101",
-    "B602",
-    "B301",
     "B607",
-    "B403",
-    "B603",
-    "B311",
     "B106",
+    "B301",
+    "B603",
+    "B602",
+    "B404",
+    "B403",
+    "B311",
+    "B101",
     "B105",
+    "B704",
 ]
 
 [tool.pyright]
@@ -115,7 +115,7 @@ pythonPlatform = "Darwin"
 [tool.codespell]
 skip = "*/data/*"
 quiet-level = 3
-ignore-words-list = "crate,uptodate"
+ignore-words-list = "crate,uptodate,nd"
 
 [tool.vulture]
 min_confidence = 86
@@ -233,7 +233,7 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.22.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.15.0",
+    "logfire[redis]>=3.16.0",
 ]
 storage = [
     "gcsfs>=2025.3.2",
@@ -248,32 +248,32 @@ dns = [
 requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.2",
-    "sentry-sdk[httpx]>=2.27.0",
-    "logfire[httpx]>=3.15.0",
-    "niquests>=3.14.0",
+    "sentry-sdk[httpx]>=2.28.0",
+    "logfire[httpx]>=3.16.0",
+    "niquests>=3.14.1",
 ]
 smtp = [
     "mailgun>=1.0.0",
 ]
 sql = [
-    "sqlalchemy>=2.0.40",
+    "sqlalchemy>=2.0.41",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
     "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.15.0",
-    "sentry-sdk[sqlalchemy]>=2.27.0",
-    "greenlet>=3.2.1",
+    "logfire[sqlalchemy]>=3.16.0",
+    "sentry-sdk[sqlalchemy]>=2.28.0",
+    "greenlet>=3.2.2",
 ]
 nosql = [
     "google-cloud-firestore>=2.20.2",
     "beanie>=1.29.0",
     "redis-om>=0.3.5",
-    "motor>=3.7.0",
+    "motor>=3.7.1",
 ]
 demo = [
-    "faker>=37.1.0",
+    "faker>=37.3.0",
 ]
 ftpd = [
     "aioftp>=0.25.1",
@@ -284,11 +284,11 @@ secret = [
     "infisicalsdk>=1.0.8",
 ]
 monitoring = [
-    "sentry-sdk[loguru]>=2.27.0",
-    "logfire[system-metrics]>=3.15.0",
+    "sentry-sdk[loguru]>=2.28.0",
+    "logfire[system-metrics]>=3.16.0",
 ]
 dev = [
-    "crackerjack>=0.18.2",
+    "crackerjack>=0.18.4",
     "pytest-anyio>=0.0.0",
     "pytest-benchmark>=5.1.0",
     "pytest>=8.3.5",

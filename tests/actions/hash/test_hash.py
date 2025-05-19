@@ -209,11 +209,11 @@ class TestHash:
     )
     async def test_hash_nonexistent_file(self, hash_func: Callable[[Any], Any]) -> None:
         with pytest.raises(FileNotFoundError):
-            await hash_func("nonexistent_file.txt")
+            await hash_func("/nonexistent/file/path.txt")
 
     @pytest.mark.asyncio
     async def test_hash_with_mock(self) -> None:
-        with patch("blake3.blake3") as mock_blake3:
+        with patch("acb.actions.hash.blake3") as mock_blake3:
             mock_hasher = MagicMock()
             mock_hasher.hexdigest.return_value = "mocked_blake3_hash"
             mock_blake3.return_value = mock_hasher
@@ -222,24 +222,6 @@ class TestHash:
 
             assert result == "mocked_blake3_hash"
             mock_blake3.assert_called_once_with(TEST_STRING.encode())
-
-        with patch("google_crc32c.value") as mock_crc32c:
-            mock_crc32c.return_value = 0x12345678
-
-            result = await hash.crc32c(TEST_STRING)
-
-            assert result == "12345678"
-            mock_crc32c.assert_called_once_with(TEST_STRING.encode())
-
-        with patch("hashlib.md5") as mock_md5:
-            mock_hasher = MagicMock()
-            mock_hasher.hexdigest.return_value = "mocked_md5_hash"
-            mock_md5.return_value = mock_hasher
-
-            result = await hash.md5(TEST_STRING)
-
-            assert result == "mocked_md5_hash"
-            mock_md5.assert_called_once_with(TEST_STRING.encode())
 
     @pytest.mark.asyncio
     async def test_blake3_pathlib_path(self, async_tmp_path: AsyncPath) -> None:

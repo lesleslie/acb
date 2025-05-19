@@ -1,9 +1,10 @@
 import hashlib
+import json
+import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 from warnings import catch_warnings
 
-import arrow
 from anyio import Path as AsyncPath
 from blake3 import blake3  # type: ignore
 
@@ -36,36 +37,76 @@ class Hash:
         return Blake3Hasher()
 
     @staticmethod
-    async def blake3(obj: Path | AsyncPath | list[str] | bytes | str) -> str:
-        if not obj:
-            timestamp = arrow.utcnow().float_timestamp
-            obj = str(timestamp)
-        elif isinstance(obj, (Path, AsyncPath)):
-            obj = await AsyncPath(obj).read_bytes()
+    async def blake3(
+        obj: Path | AsyncPath | List[str] | bytes | str | Dict[str, Any],
+    ) -> str:
+        if obj is None:
+            raise TypeError("Cannot hash None")
+
+        if isinstance(obj, (Path, AsyncPath)):
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            obj = await path.read_bytes()
+        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            obj = await path.read_bytes()
+        elif isinstance(obj, dict):
+            obj = json.dumps(obj, sort_keys=True).encode()
         elif isinstance(obj, list):
-            obj = "".join([str(a) for a in obj])
-        if not isinstance(obj, bytes):
-            obj = obj.encode()  # type: ignore
+            obj = "".join([str(a) for a in obj]).encode()
+        elif isinstance(obj, str):
+            obj = obj.encode()
+
         return blake3(obj).hexdigest()
 
     @staticmethod
-    async def crc32c(obj: Path | AsyncPath | str | bytes) -> int:
+    async def crc32c(obj: Path | AsyncPath | str | bytes | Dict[str, Any]) -> str:
+        if obj is None:
+            raise TypeError("Cannot hash None")
+
         if isinstance(obj, (Path, AsyncPath)):
-            content = await AsyncPath(obj).read_text()
-            return crc32c(content.encode())
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            obj = await path.read_bytes()
+        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            obj = await path.read_bytes()
+        elif isinstance(obj, dict):
+            obj = json.dumps(obj, sort_keys=True).encode()
         elif isinstance(obj, str):
-            return crc32c(obj.encode())
-        return crc32c(obj)
+            obj = obj.encode()
+
+        return f"{crc32c(obj):08x}"
 
     @staticmethod
     async def md5(
-        obj: Path | AsyncPath | str | bytes,
+        obj: Path | AsyncPath | str | bytes | Dict[str, Any],
         usedforsecurity: bool = False,
     ) -> str:
+        if obj is None:
+            raise TypeError("Cannot hash None")
+
         if isinstance(obj, (Path, AsyncPath)):
-            obj = await AsyncPath(obj).read_bytes()
-        if not isinstance(obj, bytes):
-            obj = obj.encode()  # type: ignore
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            obj = await path.read_bytes()
+        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            obj = await path.read_bytes()
+        elif isinstance(obj, dict):
+            obj = json.dumps(obj, sort_keys=True).encode()
+        elif isinstance(obj, str):
+            obj = obj.encode()
+
         return hashlib.md5(obj, usedforsecurity=usedforsecurity).hexdigest()
 
 

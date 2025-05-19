@@ -35,8 +35,14 @@ class StorageBaseSettings(Settings):
         super().__init__(**values)
         self.prefix = self.prefix or config.app.name or ""
         self.user_project = self.user_project or config.app.name or ""
-        self.local_fs = get_adapter("storage").name in ("file", "memory")
-        self.memory_fs = get_adapter("storage").name == "memory"
+
+        storage_adapter = get_adapter("storage")
+        if storage_adapter is not None:
+            self.local_fs = storage_adapter.name in ("file", "memory")
+            self.memory_fs = storage_adapter.name == "memory"
+        else:
+            self.local_fs = False
+            self.memory_fs = False
 
 
 class StorageBucketProtocol(t.Protocol):

@@ -14,7 +14,8 @@ class TestCompressionActions:
         compression_levels: Sequence[int] = [1, 6, 9]
 
         for level in compression_levels:
-            compressed: bytes = compress.gzip(test_data, compresslevel=level)
+            compressed = compress.gzip(test_data, compresslevel=level)
+            assert compressed is not None
             decompressed_raw = decompress.gzip(compressed)
             decompressed: str = (
                 decompressed_raw.decode()
@@ -25,7 +26,8 @@ class TestCompressionActions:
 
     def test_compression_with_large_data(self) -> None:
         large_data: str = "x" * (1024 * 1024)
-        compressed: bytes = compress.gzip(large_data)
+        compressed = compress.gzip(large_data)
+        assert compressed is not None
         decompressed_raw = decompress.gzip(compressed)
         decompressed: str = (
             decompressed_raw.decode()
@@ -95,11 +97,11 @@ class TestHashActions:
 
         for data in test_cases:
             if isinstance(data, str):
-                result: str = await hash.blake3(data)  # type: ignore
+                result: str = await hash.blake3(data)
                 assert isinstance(result, str)
                 assert len(result) == 64
             elif isinstance(data, bytes):
-                result: str = await hash.blake3(data)  # type: ignore
+                result: str = await hash.blake3(data)
                 assert isinstance(result, str)
                 assert len(result) == 64
 

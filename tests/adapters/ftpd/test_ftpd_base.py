@@ -2,12 +2,11 @@
 
 import typing as t
 from contextlib import asynccontextmanager
-from types import TracebackType
-from typing import Optional, Type
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from acb.adapters.ftpd._base import FtpdBase, FtpdBaseSettings
+from acb.adapters.ftpd._base import FileInfo, FtpdBase, FtpdBaseSettings
 
 
 class MockFtpdBaseSettings(FtpdBaseSettings):
@@ -29,35 +28,77 @@ class MockFtpd(FtpdBase):
         self._remove_directory = AsyncMock()
         self._rename = AsyncMock()
 
-        self.disconnect = AsyncMock()
-        self.list_files = AsyncMock()
-        self.upload_file = AsyncMock()
-        self.download_file = AsyncMock()
-        self.delete_file = AsyncMock()
-        self.create_directory = AsyncMock()
-        self.remove_directory = AsyncMock()
-        self.rename = AsyncMock()
+    async def disconnect(self) -> None:
+        await self._disconnect()
 
-        self.connect = self._mock_connect
+    async def list_files(self, path: str) -> list[str]:
+        return await self._list_files(path)
+
+    async def upload_file(self, local_path: str, remote_path: str) -> None:
+        await self._upload_file(local_path, remote_path)
+
+    async def download_file(self, remote_path: str, local_path: str) -> None:
+        await self._download_file(remote_path, local_path)
+
+    async def delete_file(self, path: str) -> None:
+        await self._delete_file(path)
+
+    async def create_directory(self, path: str) -> None:
+        await self._create_directory(path)
+
+    async def remove_directory(self, path: str) -> None:
+        await self._remove_directory(path)
+
+    async def rename(self, old_path: str, new_path: str) -> None:
+        await self._rename(old_path, new_path)
+
+    async def start(self) -> None:
+        pass
+
+    async def stop(self) -> None:
+        pass
+
+    async def upload(self, local_path: Path, remote_path: str) -> None:
+        pass
+
+    async def download(self, remote_path: str, local_path: Path) -> None:
+        pass
+
+    async def list_dir(self, path: str) -> t.List[FileInfo]:
+        return []
+
+    async def mkdir(self, path: str) -> None:
+        pass
+
+    async def rmdir(self, path: str, recursive: bool = False) -> None:
+        pass
+
+    async def delete(self, path: str) -> None:
+        pass
+
+    async def exists(self, path: str) -> bool:
+        return False
+
+    async def stat(self, path: str) -> FileInfo:
+        return FileInfo("test")
+
+    async def read_text(self, path: str) -> str:
+        return ""
+
+    async def read_bytes(self, path: str) -> bytes:
+        return b""
+
+    async def write_text(self, path: str, content: str) -> None:
+        pass
+
+    async def write_bytes(self, path: str, content: bytes) -> None:
+        pass
 
     @asynccontextmanager
-    async def _mock_connect(self) -> t.AsyncGenerator["FtpdBase", None]:
+    async def connect(self) -> t.AsyncGenerator["FtpdBase", None]:
         await self._connect()
         yield self
         await self._disconnect()
-
-    async def __aenter__(self):
-        await self._connect()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ):
-        await self.disconnect()
-        return None
 
 
 class TestFtpdBaseSettings:
@@ -80,6 +121,15 @@ class TestFtpdBase:
     @pytest.fixture
     def ftpd(self) -> MockFtpd:
         ftpd = MockFtpd()
+        ftpd._connect.reset_mock()
+        ftpd._disconnect.reset_mock()
+        ftpd._list_files.reset_mock()
+        ftpd._upload_file.reset_mock()
+        ftpd._download_file.reset_mock()
+        ftpd._delete_file.reset_mock()
+        ftpd._create_directory.reset_mock()
+        ftpd._remove_directory.reset_mock()
+        ftpd._rename.reset_mock()
         return ftpd
 
     @pytest.mark.asyncio
@@ -160,7 +210,7 @@ class TestFtpdBase:
 
     @pytest.mark.asyncio
     async def test_context_manager(self, ftpd: MockFtpd) -> None:
-        async with ftpd._mock_connect() as client:
+        async with ftpd.connect() as client:
             assert client is ftpd
 
         ftpd._connect.assert_called_once()
