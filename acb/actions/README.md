@@ -1,6 +1,6 @@
 > **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Actions](./README.md) | [Adapters](../adapters/README.md)
 
-# ACB Actions
+# ACB: Actions
 
 Actions are modular, self-contained utility functions that perform specific tasks in the ACB framework. They are automatically discovered and registered, making them immediately available throughout your application.
 

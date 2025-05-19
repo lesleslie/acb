@@ -271,8 +271,11 @@ class Nosql(NosqlBase):
         transaction = self.client.transaction()
         try:
             self._transaction = transaction
-            with transaction:
-                yield
+            transaction.__enter__()
+            try:
+                yield None
+            finally:
+                transaction.__exit__(None, None, None)
         except Exception as e:
             self.logger.error(f"Transaction failed: {e}")
             raise

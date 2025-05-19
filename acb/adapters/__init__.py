@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+import tempfile
 import typing as t
 from contextvars import ContextVar
 from importlib import import_module, util
@@ -20,6 +21,8 @@ from ..depends import depends
 
 nest_asyncio.apply()
 
+_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
+_testing: bool = os.getenv("TESTING", "False").lower() == "true"
 root_path: AsyncPath = AsyncPath(Path.cwd())
 tmp_path: AsyncPath = root_path / "tmp"
 adapters_path: AsyncPath = root_path / "adapters"
@@ -28,10 +31,12 @@ settings_path: AsyncPath = root_path / "settings"
 app_settings_path: AsyncPath = settings_path / "app.yml"
 debug_settings_path: AsyncPath = settings_path / "debug.yml"
 adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
-secrets_path: AsyncPath = tmp_path / "secrets"
+secrets_path: AsyncPath = (
+    AsyncPath(Path(tempfile.mkdtemp(prefix="mock_secrets_")))
+    if _testing or "pytest" in sys.modules
+    else tmp_path / "secrets"
+)
 _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
-_deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
-_testing: bool = os.getenv("TESTING", "False").lower() == "true"
 _adapter_import_locks: ContextVar[dict[str, asyncio.Lock]] = ContextVar(
     "_adapter_import_locks", default={}
 )

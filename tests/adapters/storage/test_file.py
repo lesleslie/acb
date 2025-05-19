@@ -20,10 +20,9 @@ class MockFileStorage:
         return self
 
     async def put_file(self, path: str, content: bytes) -> bool:
-        parent_dir = "/".join(path.split("/")[:-1])
+        parent_dir: str = "/".join(path.split("/")[:-1])
         if parent_dir:
             await self.create_directory(parent_dir)
-
         self._files[path] = content
         return True
 
@@ -41,13 +40,11 @@ class MockFileStorage:
 
     async def create_directory(self, path: str) -> bool:
         self._directories.add(path)
-
-        parts = path.split("/")
+        parts: list[str] = path.split("/")
         for i in range(1, len(parts)):
-            parent = "/".join(parts[:i])
+            parent: str = "/".join(parts[:i])
             if parent:
                 self._directories.add(parent)
-
         return True
 
     async def directory_exists(self, path: str) -> bool:
@@ -56,7 +53,7 @@ class MockFileStorage:
 
 @pytest.fixture
 def mock_path() -> MagicMock:
-    mock_path = MagicMock(spec=Path)
+    mock_path: MagicMock = MagicMock(spec=Path)
     mock_path.__truediv__.return_value = mock_path
     mock_path.exists.return_value = True
     mock_path.is_file.return_value = True
@@ -65,8 +62,8 @@ def mock_path() -> MagicMock:
 
 
 @pytest.fixture
-async def storage() -> MockFileStorage:
-    storage = MockFileStorage(root_dir="/mock/storage")
+async def storage(tmp_path: Path) -> MockFileStorage:
+    storage: MockFileStorage = MockFileStorage(root_dir=str(tmp_path / "mock_storage"))
     await storage.init()
     return storage
 

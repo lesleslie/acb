@@ -1,15 +1,19 @@
 """Mock implementations of storage adapters for testing."""
 
 import os
+import tempfile
 import typing as t
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from acb.adapters.storage._base import StorageBase
 
 
 class MockFileStorage(StorageBase):
-    def __init__(self, root_dir: str = "/tmp/mock_storage") -> None:  # nosec B108
-        self._root_dir = root_dir
+    def __init__(self, root_dir: str | Path | None = None) -> None:  # nosec B108
+        if root_dir is None:
+            root_dir = Path(tempfile.mkdtemp(prefix="mock_storage_"))
+        self._root_dir = str(root_dir)
         self._files: dict[str, bytes] = {}
         self._directories: set[str] = set()
         self._initialized = True

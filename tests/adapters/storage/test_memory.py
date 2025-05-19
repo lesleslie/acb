@@ -6,7 +6,7 @@ from tests.test_interfaces import MockStorage, StorageTestInterface
 
 @pytest.fixture
 async def storage() -> MockStorage:
-    storage = MockStorage()
+    storage: MockStorage = MockStorage()
     await storage.init()
     return storage
 

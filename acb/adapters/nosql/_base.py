@@ -248,4 +248,4 @@ class NosqlBase(AdapterBase):
 
     @asynccontextmanager
     async def transaction(self) -> t.AsyncGenerator[None, None]:
-        yield
+        yield None

@@ -1,4 +1,6 @@
-# ACB Adapters
+> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Actions](../actions/README.md) | [Adapters](./README.md)
+
+# ACB: Adapters
 
 Adapters provide standardized interfaces to external systems and services in the ACB framework. Each adapter category includes a base class that defines the interface and multiple implementations that can be configured and swapped without changing your application code.
 
@@ -40,9 +42,31 @@ These extensions maintain compatibility with ACB's core infrastructure while add
 
 ACB includes the following adapter categories:
 
-### Application Adapters
-- [**App**](./app/README.md): Application bootstrapping and lifecycle management
-  - **Main**: Default application adapter
+### Adapters
+
+ACB includes the following adapter categories:
+
+### Caching Adapters
+- [**Cache**](./cache/README.md): Fast data caching
+  - **Memory**: In-memory cache for development and small applications
+  - **Redis**: Distributed cache using Redis
+
+### NoSQL Database Adapters
+- [**NoSQL**](./nosql/README.md): Non-relational databases
+  - **Firestore**: Google Cloud Firestore database using Google Cloud Firestore API
+  - **MongoDB**: MongoDB document database using Beanie ODM
+
+### SQL Database Adapters
+- [**SQL**](./sql/README.md): Relational databases
+  - **MySQL**: MySQL/MariaDB database adapter
+
+### Storage Adapters
+- [**Storage**](./storage/README.md): File and object storage
+  - **Azure**: Azure Blob storage
+  - **Cloud Storage**: Google Cloud Storage
+  - **File**: Local file system storage
+  - **Memory**: In-memory storage for testing
+  - **S3**: Amazon S3 or S3-compatible storage
 
 ### Caching Adapters
 - [**Cache**](./cache/README.md): Fast data caching
@@ -59,7 +83,8 @@ ACB includes the following adapter categories:
   - **FTP**: Standard File Transfer Protocol server using aioftp
   - **SFTP**: Secure File Transfer Protocol server using asyncssh
 
-### Logging Adapters
+### Logging
+- **Loguru**: ACB uses Loguru as its core logging module for structured logging and error tracking. Refer to the Logging section for configuration details.
 - [**Logger**](./logger/README.md): Application logging
   - **Loguru**: Structured logging with Loguru (default)
   - **Structlog**: Alternative structured logging with structlog
@@ -113,7 +138,7 @@ Install ACB with specific adapter dependencies:
 
 ```bash
 # Install with specific adapter dependencies
-pdm add "acb[redis,sql,storage]"
+pdm add "acb[cache,sql,storage]"
 
 # Install with all adapter dependencies
 pdm add "acb[all]"
@@ -121,18 +146,14 @@ pdm add "acb[all]"
 
 The following adapter-specific dependency groups are available:
 
-| Feature Group | Components | Installation Command |
-|---------------|------------|----------------------|
-| redis | Cache, NoSQL | `pdm add "acb[redis]"` |
-| sql | MySQL, PostgreSQL | `pdm add "acb[sql]"` |
-| nosql | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `pdm add "acb[nosql]"` |
-| storage | S3, GCS, Azure, Local | `pdm add "acb[storage]"` |
-| logging | Loguru, structlog | `pdm add "acb[logging]"` |
-| aws | S3, other AWS services | `pdm add "acb[aws]"` |
-| gcp | Cloud Storage, other GCP services | `pdm add "acb[gcp]"` |
-| azure | Azure Blob Storage, other Azure services | `pdm add "acb[azure]"` |
-| secret | Infisical, Secret Manager | `pdm add "acb[secret]"` |
-| monitoring | Error tracking and monitoring | `pdm add "acb[monitoring]"` |
+| Feature Group | Components                                    | Installation Command        |
+|---------------|-----------------------------------------------|-----------------------------|
+| cache         | Redis, memory                                 | `pdm add "acb[cache]"`      |
+| sql           | MySQL, PostgreSQL                             | `pdm add "acb[sql]"`        |
+| nosql         | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `pdm add "acb[nosql]"`      |
+| storage       | S3, GCS, Azure, Local                         | `pdm add "acb[storage]"`    |
+| secret        | Infisical, Secret Manager                     | `pdm add "acb[secret]"`     |
+| monitoring    | Error tracking and monitoring                 | `pdm add "acb[monitoring]"` |
 
 ## Configuration
 
@@ -145,7 +166,7 @@ logger: loguru     # Use Loguru for logging
 sql: pgsql         # Use PostgreSQL for SQL database
 storage: s3        # Use S3 for storage
 # Other adapters use their default implementation or are disabled when set to null
-secret: null       # Secret adapter is disabled
+secret:            # Secret adapter is disabled
 ```
 
 Each adapter can be further configured in `settings/app.yml`:
@@ -167,14 +188,10 @@ storage:
 
 ```python
 from acb.depends import depends
-from acb.adapters import import_adapter
 
 async def cache_example():
-    # Import an adapter class (automatically selects the one enabled in config)
-    Cache = import_adapter("cache")  # Returns Redis or Memory adapter based on config
-
     # Get an instance via dependency injection
-    cache = depends.get(Cache)
+    cache = depends.get()
 
     # Use the adapter with a consistent API
     await cache.set("key", "value", ttl=300)
@@ -190,14 +207,13 @@ from acb.adapters import import_adapter
 import typing as t
 
 # Define adapter types
-Storage = import_adapter("storage")
-Logger = import_adapter("logger")
+Storage, Logger = import_adapter()
 
 @depends.inject
 async def process_file(
     filename: str,
-    storage=depends(Storage),  # Injected storage adapter
-    logger=depends(Logger)     # Injected logger adapter
+    storage: Storage =depends(),  # Injected storage adapter
+    logger: Logger =depends()     # Injected logger adapter
 ) -> dict[str, t.Any]:
     logger.info(f"Processing file: {filename}")
     content: bytes | None = await storage.get_file(filename)
@@ -211,14 +227,17 @@ async def process_file(
 ### Using Multiple Adapters
 
 ```python
-from acb.depends import depends
 import typing as t
 
+from acb.adapters import import_adapter
+from acb.depends import depends
+
+
 # Import multiple adapters simultaneously
-Cache, Storage, SQL = depends.get("cache", "storage", "sql")
+Cache, Storage, SQL = import_adapter()
 
 # Use them together
-async def backup_data(key: str) -> bool:
+async def backup_data(key: str, cache: Cache = depends(), sql: SQL = depends(), storage: Storage = depends()) -> bool:
     # Get data from cache
     data: dict[str, t.Any] | None = await Cache.get(key)
     if not data:
@@ -251,7 +270,6 @@ myapp/adapters/payment/
 2. Define the base interface in `_base.py`:
 ```python
 from acb.config import Settings
-from pydantic import SecretStr
 from typing import Protocol
 
 class PaymentBaseSettings(Settings):
@@ -311,15 +329,12 @@ payment: stripe
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
-import typing as t
 
-async def payment_example() -> dict[str, str | bool]:
-    # Import your adapter
-    Payment = import_adapter("payment")
+# Import your adapter
+Payment = import_adapter()
 
-    # Get an instance
-    payment = depends.get(Payment)
-
+@depends.inject
+async def payment_example(payment: Payment = depends()) -> dict[str, str | bool]:
     # Use it
     transaction_id: str = await payment.charge(19.99, "Premium subscription")
 
@@ -352,6 +367,3 @@ async def payment_example() -> dict[str, str | bool]:
 - [Main ACB Documentation](../README.md)
 - [Core Systems Documentation](../README.md)
 - [Actions Documentation](../actions/README.md)
-- [Testing Documentation](../../tests/README.md)
-- [Configuration Guide](../config.md)
-- [Dependency Injection Guide](../depends.md)

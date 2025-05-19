@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:217fcd6539b1103a995330cfc1829b9cb7a98fd560dddc945fe5fe0ba7dd8cfa"
+content_hash = "sha256:101d7e684245649b0b6bd7efe4254a105df4099cd68d95fe72af0b796f3ecb37"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -554,7 +554,7 @@ files = [
 
 [[package]]
 name = "coredis"
-version = "4.21.0"
+version = "4.22.0"
 summary = ""
 dependencies = [
     "async-timeout",
@@ -565,13 +565,13 @@ dependencies = [
     "wrapt",
 ]
 files = [
-    {file = "coredis-4.21.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:199b8806a51dc6508c44e9966b56ba64111d15d5a88c277d19fc3da3123fb7e0"},
-    {file = "coredis-4.21.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:d0496968a016f0c2f8a437d842e60f6293e929d97efa6f1528145eecb03a436c"},
-    {file = "coredis-4.21.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:894cd87bde2843d54261b6c7d1f7265927930d6efd40efe5e47000cf583a814a"},
-    {file = "coredis-4.21.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d249e3a413d1c5eaf9c32e90452a1f7a8e3ef316f3377ab46f64e3d1ced966b7"},
-    {file = "coredis-4.21.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e3d982fa80c4cfaf6e0a50921ba9b385fb190dece60c6abd776fad09bade3278"},
-    {file = "coredis-4.21.0-py3-none-any.whl", hash = "sha256:02e75b32eedaf2dccb39eb985b1f65b516b849df9964acbccb6ee9dafb7d23ef"},
-    {file = "coredis-4.21.0.tar.gz", hash = "sha256:371ef1ee97fa0ce28ed3ff14cf1e0b0952b8c79354e6e6efb8cd4636ad4f62d8"},
+    {file = "coredis-4.22.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:de758e031e7c64ded298b5315255008b4c9af743ce597d5fa6467c2e45ab9f07"},
+    {file = "coredis-4.22.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:a3a6da6c296d5b2bedd708be1839c5c2878cb1ef3ec8712db351023296bfc37f"},
+    {file = "coredis-4.22.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:20999876b6f52f67a91ee442902fd78a3633e823dd7eee418c311446162e2675"},
+    {file = "coredis-4.22.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ba0e09f07c614c5ebf2f4798f27296de33397d84042ef701d83df10cb54a2597"},
+    {file = "coredis-4.22.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2dca4b06f19d2d2e124c353316abd2491831ab711fcbdf95780b21668e3976ef"},
+    {file = "coredis-4.22.0-py3-none-any.whl", hash = "sha256:79ec9271bc339b8d0d8bda13baed8c275a3154a5e10ad1546a6ddc1c450484ed"},
+    {file = "coredis-4.22.0.tar.gz", hash = "sha256:e73b59b0369a9f4f992ef90d0ce97abd5be5f3b7705e673d5a2ac90a08805790"},
 ]
 
 [[package]]
@@ -605,7 +605,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.16.1"
+version = "0.18.2"
 summary = ""
 dependencies = [
     "autotyping",
@@ -624,8 +624,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.16.1-py3-none-any.whl", hash = "sha256:330130eeb53a1fcce764db3672a57f1df4255a56a99c5d624215e4c93bfe33ba"},
-    {file = "crackerjack-0.16.1.tar.gz", hash = "sha256:b7ed47a15247516601bc7ee68323354a5d17d3fb1bcdbe50e38bbf0d3ca9889e"},
+    {file = "crackerjack-0.18.2-py3-none-any.whl", hash = "sha256:c279860f9b256217c318ea1514a5860357df4349b0d24af31ff64e0eb855603e"},
+    {file = "crackerjack-0.18.2.tar.gz", hash = "sha256:9b9a346a3f91ae50a5755a331848803a6416b7d6231e723988ae48fe30389718"},
 ]
 
 [[package]]
@@ -1488,7 +1488,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "3.14.1"
+version = "3.15.0"
 summary = ""
 dependencies = [
     "executing",
@@ -1500,64 +1500,64 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "logfire-3.14.1-py3-none-any.whl", hash = "sha256:a1290f6dbcfbf593d84d2b9d824c706c7f7bbdacfaceee417e7bf9fe9db6be02"},
-    {file = "logfire-3.14.1.tar.gz", hash = "sha256:c3d53807cfcb6490c18c5a5471033e27c780197162dc0d6564feb62f28ac4454"},
+    {file = "logfire-3.15.0-py3-none-any.whl", hash = "sha256:d469ad0e0fea62724aa70c9a09bf3f2e8c064bdbc0dea34dcd5fb15caaa81296"},
+    {file = "logfire-3.15.0.tar.gz", hash = "sha256:4c9dd24a7f1a476c4869c9dd6f5863417db8fb2359d81ca32824789f239ed356"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.14.1"
+version = "3.15.0"
 extras = ["httpx"]
 summary = ""
 dependencies = [
-    "logfire==3.14.1",
+    "logfire==3.15.0",
     "opentelemetry-instrumentation-httpx",
 ]
 files = [
-    {file = "logfire-3.14.1-py3-none-any.whl", hash = "sha256:a1290f6dbcfbf593d84d2b9d824c706c7f7bbdacfaceee417e7bf9fe9db6be02"},
-    {file = "logfire-3.14.1.tar.gz", hash = "sha256:c3d53807cfcb6490c18c5a5471033e27c780197162dc0d6564feb62f28ac4454"},
+    {file = "logfire-3.15.0-py3-none-any.whl", hash = "sha256:d469ad0e0fea62724aa70c9a09bf3f2e8c064bdbc0dea34dcd5fb15caaa81296"},
+    {file = "logfire-3.15.0.tar.gz", hash = "sha256:4c9dd24a7f1a476c4869c9dd6f5863417db8fb2359d81ca32824789f239ed356"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.14.1"
+version = "3.15.0"
 extras = ["redis"]
 summary = ""
 dependencies = [
-    "logfire==3.14.1",
+    "logfire==3.15.0",
     "opentelemetry-instrumentation-redis",
 ]
 files = [
-    {file = "logfire-3.14.1-py3-none-any.whl", hash = "sha256:a1290f6dbcfbf593d84d2b9d824c706c7f7bbdacfaceee417e7bf9fe9db6be02"},
-    {file = "logfire-3.14.1.tar.gz", hash = "sha256:c3d53807cfcb6490c18c5a5471033e27c780197162dc0d6564feb62f28ac4454"},
+    {file = "logfire-3.15.0-py3-none-any.whl", hash = "sha256:d469ad0e0fea62724aa70c9a09bf3f2e8c064bdbc0dea34dcd5fb15caaa81296"},
+    {file = "logfire-3.15.0.tar.gz", hash = "sha256:4c9dd24a7f1a476c4869c9dd6f5863417db8fb2359d81ca32824789f239ed356"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.14.1"
+version = "3.15.0"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "logfire==3.14.1",
+    "logfire==3.15.0",
     "opentelemetry-instrumentation-sqlalchemy",
 ]
 files = [
-    {file = "logfire-3.14.1-py3-none-any.whl", hash = "sha256:a1290f6dbcfbf593d84d2b9d824c706c7f7bbdacfaceee417e7bf9fe9db6be02"},
-    {file = "logfire-3.14.1.tar.gz", hash = "sha256:c3d53807cfcb6490c18c5a5471033e27c780197162dc0d6564feb62f28ac4454"},
+    {file = "logfire-3.15.0-py3-none-any.whl", hash = "sha256:d469ad0e0fea62724aa70c9a09bf3f2e8c064bdbc0dea34dcd5fb15caaa81296"},
+    {file = "logfire-3.15.0.tar.gz", hash = "sha256:4c9dd24a7f1a476c4869c9dd6f5863417db8fb2359d81ca32824789f239ed356"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.14.1"
+version = "3.15.0"
 extras = ["system-metrics"]
 summary = ""
 dependencies = [
-    "logfire==3.14.1",
+    "logfire==3.15.0",
     "opentelemetry-instrumentation-system-metrics",
 ]
 files = [
-    {file = "logfire-3.14.1-py3-none-any.whl", hash = "sha256:a1290f6dbcfbf593d84d2b9d824c706c7f7bbdacfaceee417e7bf9fe9db6be02"},
-    {file = "logfire-3.14.1.tar.gz", hash = "sha256:c3d53807cfcb6490c18c5a5471033e27c780197162dc0d6564feb62f28ac4454"},
+    {file = "logfire-3.15.0-py3-none-any.whl", hash = "sha256:d469ad0e0fea62724aa70c9a09bf3f2e8c064bdbc0dea34dcd5fb15caaa81296"},
+    {file = "logfire-3.15.0.tar.gz", hash = "sha256:4c9dd24a7f1a476c4869c9dd6f5863417db8fb2359d81ca32824789f239ed356"},
 ]
 
 [[package]]
@@ -2485,14 +2485,14 @@ files = [
 
 [[package]]
 name = "pytest-timeout"
-version = "2.3.1"
+version = "2.4.0"
 summary = ""
 dependencies = [
     "pytest",
 ]
 files = [
-    {file = "pytest-timeout-2.3.1.tar.gz", hash = "sha256:12397729125c6ecbdaca01035b9e5239d4db97352320af155b3f5de1ba5165d9"},
-    {file = "pytest_timeout-2.3.1-py3-none-any.whl", hash = "sha256:68188cb703edfc6a18fad98dc25a3c61e9f24d644b0b70f33af545219fc7813e"},
+    {file = "pytest_timeout-2.4.0-py3-none-any.whl", hash = "sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2"},
+    {file = "pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a"},
 ]
 
 [[package]]
@@ -3053,27 +3053,27 @@ files = [
 
 [[package]]
 name = "uv"
-version = "0.7.2"
+version = "0.7.3"
 summary = ""
 files = [
-    {file = "uv-0.7.2-py3-none-linux_armv6l.whl", hash = "sha256:e1e4394b54bc387f227ca1b2aa0348d35f6455b6168ca1826c1dc5f4fc3e8d20"},
-    {file = "uv-0.7.2-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:c0edb194c35f1f12c75bec4fe2d7d4d09f0c2cec3a16102217a772620ce1d6e6"},
-    {file = "uv-0.7.2-py3-none-macosx_11_0_arm64.whl", hash = "sha256:be2e8d033936ba8ed9ccf85eb2d15c7a8db3bb3e9c4960bdf7c3c98034a6dbda"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:a314a94b42bc6014f18c877f723292306b76c10b455c2b385728e1470e661ced"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:e4d1652fe3608fa564dbeaeb2465208f691ac04b57f655ebef62e9ec6d37103d"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:48c115a3c13c3b29748e325093ee04fd48eaf91145bedc68727f78e6a1c34ab8"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:c388172209ca5a47706666d570a45fef3dd39db9258682e10b2f62ca521f0e91"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:63c97cc5e8029a8dc0e1fc39f15f746be931345bc0aeae85feceaa1828f0de87"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:1fa315366ee36ad1f734734f3153e2f334342900061fc0ed18b06f3b9bb2dfe2"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7236ec776c559fbc3ae4389b7cd506a2428ad9dd0402ac3d9446200ea3dc45f6"},
-    {file = "uv-0.7.2-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:78ec372b2f5c7ff8a034e16dd04bc579a62561a5eac4b6dfc96af60298a97d31"},
-    {file = "uv-0.7.2-py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:28fd5d689ae4f8f16533f091a6dd63e1ddf3b7c782003ac8a18584ddb8823cbe"},
-    {file = "uv-0.7.2-py3-none-musllinux_1_1_i686.whl", hash = "sha256:9aaacb143622cd437a446a4b316a546c02403b438cd7fd7556d62f47a9fd0a99"},
-    {file = "uv-0.7.2-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:81b86fff996c302be6aa1c1ac6eb72b97a7277c319e52c0def50d40b1ffaa617"},
-    {file = "uv-0.7.2-py3-none-win32.whl", hash = "sha256:19a64c38657c4fbe7c945055755500116fdaac8e121381a5245ea66823f8c500"},
-    {file = "uv-0.7.2-py3-none-win_amd64.whl", hash = "sha256:dc1ee6114c824f5880c584a96b2947a35817fdd3a0b752d1adbd926ae6872d1c"},
-    {file = "uv-0.7.2-py3-none-win_arm64.whl", hash = "sha256:0445e56d3f9651ad84d5a7f16efabba83bf305b73594f1c1bc0659aeab952040"},
-    {file = "uv-0.7.2.tar.gz", hash = "sha256:45e619bb076916b79df8c5ecc28d1be04d1ccd0b63b080c44ae973b8deb33b25"},
+    {file = "uv-0.7.3-py3-none-linux_armv6l.whl", hash = "sha256:f37c8a6b172776fb5305afe0699907aff44a778669de7a8fbe5a9c09c1a88a97"},
+    {file = "uv-0.7.3-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:3e6e1fd5755d4ef4c6e1ce55bd2c6d9dec278a8bef5752703d702ce03704fe29"},
+    {file = "uv-0.7.3-py3-none-macosx_11_0_arm64.whl", hash = "sha256:db8a5d5995b160158405379deadf0ffccf849a5e7ce048900b73517daf109e2c"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:d246243f348796730e8ea9736ddd48702d4448d98af5e61693063ed616e30378"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:acef117a0c52299e60c6f7a3e60849050cd233704c561f688fac1100d113da2e"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:90990e4c289feee24164c8e463fc0ebc9a336960119cd256acca7c1439f0f536"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:4809e5f7f5b2d6423d6573fda5655389c955ca649499fe9750b61af95daf9b7d"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:acff7fba5ff40dcb5a42de496db92a3965edac7a3d687d9b013ba6e0336995df"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:fbb2d322d453e498e1431c51421cee597962ecd3f93fcef853b258e9c7e7636c"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b1414a026c153ae0731daed0812b17bf77d34eafedaeb3a5c72e08181aea116b"},
+    {file = "uv-0.7.3-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:c976fce3d1068a1d007f50127cc7873d67643c1a60439564970f092d9be41877"},
+    {file = "uv-0.7.3-py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:cc27207c35c959d2e0e873e86a80a2470a77b7a34a4512a831e8d4f7c87f4404"},
+    {file = "uv-0.7.3-py3-none-musllinux_1_1_i686.whl", hash = "sha256:5eb4872888a9fb10b62cc00be8e84822d63d3e622a5f340248e53ecf321dba96"},
+    {file = "uv-0.7.3-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:0646e463365e7277f22200ce2d43b7a44e5a3192320500b4983b4fe34d69a5fb"},
+    {file = "uv-0.7.3-py3-none-win32.whl", hash = "sha256:44e2f3fcbd1ab519bdb68986449b2e3103d2261be95f985cadcf7ec7c510b595"},
+    {file = "uv-0.7.3-py3-none-win_amd64.whl", hash = "sha256:0a446d4e5b10ce8a793156a276727bb7affa96a85e80dc5ad34e0c2de7e71cc8"},
+    {file = "uv-0.7.3-py3-none-win_arm64.whl", hash = "sha256:cb2547fd1466698e9b4f11de5eef7055b8cbcc3c693d79f6d747e3f8e6be2ab7"},
+    {file = "uv-0.7.3.tar.gz", hash = "sha256:863ceb63aefc7c2db9918313a1cb3c8bf3fc3d59b656b617db9e4abad90373f3"},
 ]
 
 [[package]]

@@ -3,6 +3,7 @@ import linecache
 import sys
 import typing as t
 from dataclasses import dataclass
+from pathlib import Path
 from re import search
 from types import FrameType
 
@@ -66,7 +67,7 @@ class Encode:
     toml: t.Callable[..., t.Any]
     pickle: t.Callable[..., t.Any]
     serializers: dict[str, t.Callable[..., t.Any]]
-    path: AsyncPath | None = None
+    path: AsyncPath | Path | None = None
     action: str | None = None
     sort_keys: bool = True
     use_list: bool = False
@@ -82,8 +83,12 @@ class Encode:
 
     async def process(self, obj: t.Any, **kwargs: t.Any) -> t.Any:
         if self.action in ("load", "decode"):
+            if obj is None or (isinstance(obj, (str, bytes)) and not obj):
+                raise ValueError("Cannot decode from empty or None input")
             if isinstance(obj, AsyncPath):
                 obj = await obj.read_text()
+            elif isinstance(obj, Path):
+                obj = obj.read_text()
             return self.serializer.decode(obj, **kwargs)  # type: ignore
         elif self.action in ("dump", "encode"):
             if self.serializer is msgspec.json and self.sort_keys:  # type: ignore
@@ -95,7 +100,9 @@ class Encode:
 
             data: bytes = self.serializer.encode(obj, **kwargs)  # type: ignore
             if self.path is not None:
-                return await self.path.write_bytes(data)
+                if isinstance(self.path, AsyncPath):
+                    return await self.path.write_bytes(data)
+                return self.path.write_bytes(data)
             return data
         return None
 
@@ -121,7 +128,7 @@ class Encode:
     async def __call__(
         self,
         obj: t.Any,
-        path: AsyncPath | None = None,
+        path: AsyncPath | Path | None = None,
         sort_keys: bool = False,
         **kwargs: t.Any,
     ) -> t.Any:

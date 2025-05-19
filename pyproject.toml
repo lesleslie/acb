@@ -49,21 +49,21 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-timeout",
-    "pdm",
-    "pyfiglet",
-    "tomli-w",
     "google-crc32c",
-    "pdm-bump",
-    "pytest-cov",
-    "pytest-mock",
-    "pytest-asyncio",
-    "autotyping",
+    "pyfiglet",
     "pyyaml",
-    "uv",
     "google-api-python-client",
     "pytest",
+    "uv",
     "pre-commit",
+    "autotyping",
+    "tomli-w",
+    "pdm",
+    "pytest-asyncio",
+    "pytest-timeout",
+    "pytest-mock",
+    "pdm-bump",
+    "pytest-cov",
 ]
 
 [tool.refurb]
@@ -74,17 +74,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B106",
-    "B403",
-    "B602",
-    "B101",
-    "B607",
-    "B704",
-    "B301",
-    "B105",
-    "B311",
     "B404",
+    "B704",
+    "B101",
+    "B602",
+    "B301",
+    "B607",
+    "B403",
+    "B603",
+    "B311",
+    "B106",
+    "B105",
 ]
 
 [tool.pyright]
@@ -231,9 +231,9 @@ Repository = "https://github.com/lesleslie/acb"
 
 [project.optional-dependencies]
 cache = [
-    "coredis>=4.21.0",
+    "coredis>=4.22.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.14.1",
+    "logfire[redis]>=3.15.0",
 ]
 storage = [
     "gcsfs>=2025.3.2",
@@ -249,7 +249,7 @@ requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.2",
     "sentry-sdk[httpx]>=2.27.0",
-    "logfire[httpx]>=3.14.1",
+    "logfire[httpx]>=3.15.0",
     "niquests>=3.14.0",
 ]
 smtp = [
@@ -262,7 +262,7 @@ sql = [
     "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.14.1",
+    "logfire[sqlalchemy]>=3.15.0",
     "sentry-sdk[sqlalchemy]>=2.27.0",
     "greenlet>=3.2.1",
 ]
@@ -285,12 +285,17 @@ secret = [
 ]
 monitoring = [
     "sentry-sdk[loguru]>=2.27.0",
-    "logfire[system-metrics]>=3.14.1",
+    "logfire[system-metrics]>=3.15.0",
 ]
 dev = [
-    "crackerjack>=0.16.1",
+    "crackerjack>=0.18.2",
     "pytest-anyio>=0.0.0",
     "pytest-benchmark>=5.1.0",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=6.1.1",
+    "pytest-timeout>=2.4.0",
 ]
 
 [build-system]

@@ -40,7 +40,7 @@ class Hash:
         if not obj:
             timestamp = arrow.utcnow().float_timestamp
             obj = str(timestamp)
-        elif isinstance(obj, Path | AsyncPath):
+        elif isinstance(obj, (Path, AsyncPath)):
             obj = await AsyncPath(obj).read_bytes()
         elif isinstance(obj, list):
             obj = "".join([str(a) for a in obj])
@@ -60,20 +60,12 @@ class Hash:
     @staticmethod
     async def md5(
         obj: Path | AsyncPath | str | bytes,
-        ascii: bool = False,
         usedforsecurity: bool = False,
     ) -> str:
         if isinstance(obj, (Path, AsyncPath)):
-            content = await AsyncPath(obj).read_text()
-            return hashlib.md5(
-                content.encode() if not ascii else content.encode("ascii"),
-                usedforsecurity=usedforsecurity,
-            ).hexdigest()
-        elif isinstance(obj, str):
-            return hashlib.md5(
-                obj.encode() if not ascii else obj.encode("ascii"),
-                usedforsecurity=usedforsecurity,
-            ).hexdigest()
+            obj = await AsyncPath(obj).read_bytes()
+        if not isinstance(obj, bytes):
+            obj = obj.encode()  # type: ignore
         return hashlib.md5(obj, usedforsecurity=usedforsecurity).hexdigest()
 
 

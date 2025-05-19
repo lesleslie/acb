@@ -106,7 +106,7 @@ Developers decorate their functions or classes with `@depends.inject` to have co
 ```python
 from acb.depends import depends
 from acb.config import Config
-from acb.adapters import import_adapter
+
 import typing as t
 
 # Import multiple adapters
@@ -134,37 +134,145 @@ For more information on dependency injection, please see the [Dependency Injecti
 
 ## 3. Debugging Tools
 
-The debug module in ACB (`acb/debug.py`) is designed to provide insightful diagnostics for asynchronous components.
+The debug module in ACB (`acb/debug.py`) is designed to provide insightful diagnostics for asynchronous components. It offers a comprehensive set of tools to help you troubleshoot your applications effectively.
 
 ### Key Features
 
 - **Custom Debug Output**
-  ACB leverages third-party libraries such as `icecream` and `devtools` to provide formatted and, when needed, colorized debug output.
+  ACB leverages third-party libraries such as `icecream` and `devtools` to provide formatted and, when needed, colorized debug output. This makes complex data structures easier to read and understand during debugging.
 
 - **Dynamic Debugging**
-  Utility functions like `get_calling_module` and `patch_record` help trace the origin of log messages, enabling context-specific debugging.
+  Utility functions like `get_calling_module` and `patch_record` help trace the origin of log messages, enabling context-specific debugging. This is particularly useful in large applications where identifying the source of issues can be challenging.
 
 - **Timing Utility**
-  The `timeit` decorator measures function execution duration and logs the time taken, which assists in performance monitoring.
+  The `timeit` decorator measures function execution duration and logs the time taken, which assists in performance monitoring and optimization. This is invaluable for identifying bottlenecks in your application.
 
 - **Environment-aware Behavior**
-  Debug output can be adjusted based on whether the application is in development mode or deployed in production.
+  Debug output can be adjusted based on whether the application is in development mode or deployed in production. This ensures that you get detailed information during development while avoiding performance impacts in production.
 
-### Example: Using the Timing Utility
+- **Integration with Logging System**
+  The debug module integrates seamlessly with ACB's logging system, allowing debug information to be captured in your application logs when appropriate.
+
+### Debug Configuration
+
+ACB's debug behavior can be configured through your application settings in `settings/debug.yml`:
+
+```yaml
+debug:
+  enabled: true           # Enable/disable debugging globally
+  production: false       # Production mode changes debug behavior
+  log_level: "DEBUG"      # Set the debug log level
+  # Module-specific debug settings
+  cache: true             # Enable debugging for cache module
+  storage: false          # Disable debugging for storage module
+```
+
+The configuration system allows you to enable or disable debugging for specific modules, which helps reduce noise and focus on the components you're currently working with.
+
+### Debug Utilities
+
+#### Basic Debugging with `debug`
+
+The `debug` function (powered by icecream) provides enhanced debugging output:
+
+```python
+from acb.debug import debug
+
+# Basic usage - prints the expression and its value
+user_id = 123
+debug(user_id)  # Output: debug: user_id = 123
+
+# Debug multiple values
+name = "John"
+age = 30
+debug(name, age)  # Output: debug: name = 'John', age = 30
+
+# Debug complex objects
+user_data = {"id": 123, "name": "John", "roles": ["admin", "editor"]}
+debug(user_data)  # Outputs a nicely formatted representation of the dictionary
+```
+
+#### Performance Timing with `timeit`
+
+The `timeit` decorator helps you measure function execution time:
 
 ```python
 from acb.debug import timeit
+import asyncio
 import typing as t
 
 @timeit
 async def expensive_operation(data: dict[str, t.Any]) -> dict[str, t.Any]:
     # Your code here
-    result = await process_data(data)
-    return result
+    await asyncio.sleep(0.5)  # Simulate processing
+    return {"result": "processed", "input_size": len(data)}
 
-# Output will include execution time:
-# expensive_operation took 1.23s
+# When called, the execution time will be logged:
+# expensive_operation took 0.501s
 ```
+
+#### Pretty Printing with `pprint`
+
+For complex objects, the asynchronous pretty printing function provides better readability:
+
+```python
+from acb.debug import pprint
+import asyncio
+
+async def main():
+    complex_data = {
+        "users": [
+            {"id": 1, "name": "Alice", "roles": ["admin", "user"]},
+            {"id": 2, "name": "Bob", "roles": ["user"]}
+        ],
+        "settings": {
+            "theme": "dark",
+            "notifications": True,
+            "preferences": {
+                "language": "en",
+                "timezone": "UTC"
+            }
+        }
+    }
+
+    # Pretty print the complex data structure
+    await pprint(complex_data)
+
+asyncio.run(main())
+```
+
+#### Advanced Debugging Techniques
+
+For more complex debugging scenarios:
+
+```python
+from acb.debug import get_calling_module, patch_record
+from acb.depends import depends
+from acb.logger import Logger
+
+# Get the module that called the current function
+module = get_calling_module()
+
+# Patch log records with module information
+logger = depends.get(Logger)
+patch_record(module, "Debug message with module context")
+
+# Initialize debug configuration
+from acb.debug import init_debug
+init_debug()  # Configures debug output based on environment
+```
+
+### Troubleshooting Tips
+
+1. **Enable Module-Specific Debugging**: If you're having issues with a specific component, enable debugging just for that module in your debug settings.
+
+2. **Check Environment Variables**: The `DEPLOYED` environment variable affects debug behavior. Set it to "False" during development for more verbose output.
+
+3. **Use Colorized Output**: In development environments, colorized output makes it easier to spot important information. This is enabled by default in non-production environments.
+
+4. **Combine with Logging**: For persistent debugging information, use the logging system alongside the debug utilities.
+
+5. **Performance Considerations**: In production environments, be selective about what you debug to avoid performance impacts.
 
 For detailed examples and further instructions, refer to the [Debug Documentation](./debug.md).
 
@@ -222,8 +330,3 @@ ACB is used in several projects including:
 - [Main ACB Documentation](../README.md): Overview of the entire ACB framework
 - [Actions Documentation](./actions/README.md): Details about built-in actions and creating custom ones
 - [Adapters Documentation](./adapters/README.md): Information about adapter interfaces and implementations
-- [Testing Documentation](../tests/README.md): Comprehensive guide to testing ACB components
-- [Configuration Documentation](./configuration.md): Detailed guide to the configuration system
-- [Dependency Injection Documentation](./dependency-injection.md): In-depth explanation of the dependency injection system
-- [Debug Documentation](./debug.md): Guide to using the debugging tools effectively
-- [Logging Documentation](./logging.md): Comprehensive information about logging configuration and customization

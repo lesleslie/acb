@@ -1,5 +1,5 @@
 import typing as t
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from functools import cached_property
 
 import redis.asyncio as redis
@@ -269,10 +269,12 @@ class Nosql(NosqlBase):
         pipeline = self.client.pipeline()
         try:
             self._transaction = pipeline
-            yield
+            yield None
             await pipeline.execute()
         except Exception as e:
             self.logger.error(f"Transaction failed: {e}")
+            with suppress(Exception):
+                await pipeline.discard()
             raise
         finally:
             self._transaction = None

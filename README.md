@@ -55,6 +55,7 @@ If you're new to ACB, here are the key concepts to understand:
 - [Common Patterns](#common-patterns)
 - [Use Cases](#use-cases)
 - [Built-in Components](#built-in-components)
+- [Debugging](#debugging)
 - [Advanced Usage](#advanced-usage)
 - [Documentation](#documentation)
 - [Acknowledgements](#acknowledgements)
@@ -77,8 +78,8 @@ pdm add acb
 ACB supports various optional dependencies for different adapters and functionality:
 
 | Feature Group | Components | Installation Command |
-|---------------|------------|----------------------|
-| Cache/Redis | Memory, Redis | `pdm add "acb[cache]"` or `pdm add "acb[redis]"` |
+|---------|------------|----------------------|
+| Cache | Memory, Redis | `pdm add "acb[cache]"` or `pdm add "acb[redis]"` |
 | SQL | Database (MySQL, PostgreSQL) | `pdm add "acb[sql]"` |
 | NoSQL | Database (MongoDB, Firestore, Redis) | `pdm add "acb[nosql]"` |
 | Storage | File storage (S3, GCS, Azure, local) | `pdm add "acb[storage]"` |
@@ -88,8 +89,6 @@ ACB supports various optional dependencies for different adapters and functional
 | FTPD | File transfer protocols (FTP, SFTP) | `pdm add "acb[ftpd]"` |
 | Secret | Secret management | `pdm add "acb[secret]"` |
 | Monitoring | Error tracking (Sentry), Logging (Logfire) | `pdm add "acb[monitoring]"` |
-| Cloud Providers | AWS, GCP, Azure | `pdm add "acb[aws]"`, `pdm add "acb[gcp]"`, `pdm add "acb[azure]"` |
-| Logging | Loguru, structlog | `pdm add "acb[logging]"` |
 | Multiple Features | Combined dependencies | `pdm add "acb[cache,sql,nosql]"` |
 | Web Application | Typical web app stack | `pdm add "acb[cache,sql,storage]"` |
 | Development | Development tools | `pdm add "acb[dev]"` |
@@ -105,7 +104,6 @@ acb/
 ├── adapters/        # Integration modules for external systems
 │   ├── cache/       # Memory and Redis caching
 │   ├── dns/         # DNS management
-│   ├── logger/      # Logging adapters (Loguru, structlog)
 │   ├── sql/         # Database adapters (MySQL, PostgreSQL)
 │   ├── nosql/       # NoSQL adapters (MongoDB, Firestore, Redis)
 │   ├── storage/     # Storage adapters (S3, GCS, Azure, local)
@@ -342,9 +340,22 @@ ACB features a simple yet powerful dependency injection system that makes compon
 **Example: Using dependency injection**
 
 ```python
+import typing as t
+
 from acb.depends import depends
 from acb.config import Config
-import typing as t
+from acb.logger import Logger
+from ._base import MyServiceBase
+
+
+
+class MyService(MyServiceBase):
+    async def process_data(self, data: dict[str, t.Any]) -> dict[str, t.Any]:
+        # Process data...
+        return result
+
+    async def init(self):
+        await super().init()
 
 # Register your custom component
 depends.set(MyService)  # Now MyService is available in the dependency registry
@@ -353,7 +364,8 @@ depends.set(MyService)  # Now MyService is available in the dependency registry
 @depends.inject  # This decorator automatically injects the dependencies
 async def process_data(data: dict[str, t.Any],
                       config: Config = depends(),  # Injected based on type
-                      logger = depends("logger")): # Injected by name
+                      logger: Logger = depends() # Injected by name
+                      ):
     # Now you can use config and logger without manually creating them
     logger.info(f"Processing data with app: {config.app.name}")
     # Process data...
@@ -428,54 +440,6 @@ logger: loguru         # Use Loguru for logging
 storage: file          # Use file system storage
 ```
 
-4. **Initialize ACB in your main.py:**
-
-```python
-from acb import register_pkg
-from acb.depends import depends
-from acb.config import Config
-
-# Register your package with ACB
-# This tells ACB to discover components in your package
-register_pkg()
-
-# Access configuration through dependency injection
-# This automatically loads settings from your YAML files
-config = depends.get(Config)
-
-# Get a logger instance
-# This uses the implementation specified in adapters.yml
-logger = depends.get("logger")
-
-async def main() -> None:
-    # Use the logger to output information
-    logger.info(f"Starting {config.app.name} application")
-
-    # Your application logic here
-    logger.info("Application is running!")
-
-if __name__ == "__main__":
-    # Run the async main function
-    import asyncio
-    asyncio.run(main())
-```
-
-5. **Run your application:**
-
-```bash
-# Make sure you're in the project root directory
-cd myapp
-
-# Run your application
-python -m myapp.main
-```
-
-You should see output like:
-```
-Starting MyApp application
-Application is running!
-```
-
 ### Configuration Files
 
 Create your initial configuration files:
@@ -493,7 +457,6 @@ app:
 ```yaml
 # Choose your adapter implementations
 cache: memory
-logger: loguru
 storage: file
 ```
 
@@ -511,14 +474,13 @@ from acb.config import Config
 from acb.adapters import import_adapter
 
 # Import adapter classes
-Cache = import_adapter("cache")  # This gets the configured cache adapter
-Storage = import_adapter("storage")  # This gets the configured storage adapter
+Cache, Storage = import_adapter()  # This gets the configured cache and storage adapters
 
 # Method 1: Using depends.get() directly
 def direct_injection_example():
     # Get instances when you need them
-    config = depends.get(Config)
-    cache = depends.get(Cache)
+    config = depends.get()
+    cache = depends.get()
 
     # Use the components
     print(f"App name: {config.app.name}")
@@ -526,9 +488,10 @@ def direct_injection_example():
 # Method 2: Using the @depends.inject decorator (recommended)
 @depends.inject
 async def process_file(filename: str,
-                     cache=depends(Cache),  # Injected automatically
-                     storage=depends(Storage),  # Injected automatically
-                     config=depends(Config)):  # Injected automatically
+                     cache: Cache =depends(),       # Injected automatically
+                     storage: Storage = depends(),  # Injected automatically
+                     config: Config = depends()     # Injected automatically
+                       ):
     # All dependencies are automatically provided
     print(f"Processing {filename} for app {config.app.name}")
 
@@ -775,6 +738,93 @@ async def get_user_data(user_id: int, cache=depends(Cache)):
 
     return user_data
 ```
+
+## Debugging
+
+ACB provides a comprehensive debugging system that helps you troubleshoot your applications effectively. While a brief overview is provided in the [Built-in Components](#built-in-components) section, this section offers a more detailed look at ACB's debugging capabilities.
+
+### Debug Module Features
+
+The debug module in ACB (`acb/debug.py`) offers several powerful features:
+
+- **Enhanced Debug Output**: Using the `debug` function (powered by icecream) for better visibility
+- **Pretty Printing**: Format complex objects for better readability
+- **Performance Timing**: Measure execution time of functions with the `timeit` decorator
+- **Environment-Aware Behavior**: Different debugging behavior in development vs. production
+- **Colorized Output**: Improved readability with color-coded debug information
+
+### Using the Debug Module
+
+Here are some examples of how to use ACB's debugging features:
+
+```python
+from acb.debug import debug, timeit, pprint
+import asyncio
+
+# Basic debugging - prints the expression and its value
+user_id = 123
+debug(user_id)  # Output: debug: user_id = 123
+
+# Debug complex objects with pretty formatting
+user_data = {"id": 123, "name": "John", "roles": ["admin", "editor"], "settings": {"theme": "dark", "notifications": True}}
+debug(user_data)  # Outputs a nicely formatted representation of the dictionary
+
+# Measure function execution time
+@timeit
+async def fetch_data():
+    await asyncio.sleep(0.5)  # Simulate network request
+    return {"status": "success"}
+
+# The execution time will be automatically logged when the function is called
+result = await fetch_data()  # Output: fetch_data took 0.501s
+
+# Asynchronous pretty printing for complex objects
+await pprint(result)  # Prints the result with nice formatting to stderr
+```
+
+### Debug Configuration
+
+ACB's debug behavior can be configured through your application settings:
+
+```yaml
+# settings/debug.yml
+debug:
+  enabled: true           # Enable/disable debugging globally
+  production: false       # Production mode changes debug behavior
+  log_level: "DEBUG"      # Set the debug log level
+  # Module-specific debug settings
+  cache: true             # Enable debugging for cache module
+  storage: false          # Disable debugging for storage module
+```
+
+### Environment-Aware Debugging
+
+ACB's debugging system automatically adjusts its behavior based on the environment:
+
+- **Development Mode**: Verbose output with context information and colorization
+- **Production Mode**: Minimal output focused on essential information
+- **Deployed Environment**: Debug output is routed to the logging system instead of stderr
+
+This ensures that you get detailed information during development while avoiding performance impacts in production.
+
+### Advanced Debugging Techniques
+
+For more complex debugging scenarios, ACB provides additional utilities:
+
+```python
+from acb.debug import get_calling_module, patch_record
+from acb.depends import depends
+from acb.logger import Logger
+
+# Get the module that called the current function
+module = get_calling_module()
+
+# Patch log records with module information
+logger = depends.get(Logger)
+patch_record(module, "Debug message with module context")
+```
+
+For more detailed information about debugging in ACB, see the [Core Systems documentation](./acb/README.md#3-debugging-tools).
 
 ## Advanced Usage
 

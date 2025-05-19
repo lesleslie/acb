@@ -1,4 +1,5 @@
 import asyncio
+import os
 import typing as t
 from functools import cached_property
 
@@ -16,7 +17,7 @@ class SecretSettings(SecretBaseSettings):
     token: t.Optional[str] = None
     project_id: t.Optional[str] = None
     environment: str = "dev"
-    secret_path: str = "/"
+    secret_path: str = os.getenv("ACB_TEST_SECRET_PATH", "/")
     cache_ttl: t.Optional[int] = 60
 
 

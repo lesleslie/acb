@@ -127,13 +127,23 @@ class Nosql(NosqlBase):
         try:
             async with session.start_transaction():
                 self._transaction = session
-                yield
+                yield None
         except Exception as e:
             self.logger.error(f"Transaction failed: {e}")
+            try:
+                if getattr(session, "has_ended", False) is False and getattr(
+                    session, "in_transaction", False
+                ):
+                    await session.abort_transaction()
+            except Exception as abort_error:
+                self.logger.error(f"Failed to abort transaction: {abort_error}")
             raise
         finally:
             self._transaction = None
-            await session.end_session()
+            try:
+                await session.end_session()
+            except Exception as close_error:
+                self.logger.error(f"Failed to close session: {close_error}")
 
 
 depends.set(Nosql)

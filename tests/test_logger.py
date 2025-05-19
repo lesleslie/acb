@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,12 +13,14 @@ from acb.logger import (
 
 
 class Config:
-    def __init__(self) -> None:
+    def __init__(self, root_path: str | None = None) -> None:
         self.deployed: bool = False
         self.debug: MagicMock = MagicMock()
         self.debug.production: bool = False
         self.debug.logger: bool = False
-        self.root_path: AsyncPath = AsyncPath("/test/path")
+        self.root_path: AsyncPath = AsyncPath(
+            root_path or tempfile.mkdtemp(prefix="test_logger_root_")
+        )
         self.logger: t.Any = None
 
 

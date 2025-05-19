@@ -414,6 +414,7 @@ class SecretAdapterProtocol(Protocol):
     async def set_secret(self, key: str, value: str) -> bool: ...
     async def delete_secret(self, key: str) -> bool: ...
     async def secret_exists(self, key: str) -> bool: ...
+    async def list_versions(self, key: str) -> List[str]: ...
 
 
 class SecretTestInterface:
@@ -449,6 +450,53 @@ class SecretTestInterface:
 
         value = await secret.get_secret("test_secret")
         assert value is None
+
+    @pytest.mark.asyncio
+    async def test_secret_exists(self, secret: SecretAdapterProtocol) -> None:
+        exists = await secret.secret_exists("nonexistent_secret")
+        assert not exists
+
+        await secret.set_secret("test_secret", "test_value")
+        exists = await secret.secret_exists("test_secret")
+        assert exists
+
+        await secret.delete_secret("test_secret")
+        exists = await secret.secret_exists("test_secret")
+        assert not exists
+
+    @pytest.mark.asyncio
+    async def test_get_nonexistent_secret(self, secret: SecretAdapterProtocol) -> None:
+        result = await secret.get_secret("nonexistent_secret")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_set_secret_logic(self, secret: SecretAdapterProtocol) -> None:
+        await secret.set_secret("new_secret", "value")
+        assert await secret.get_secret("new_secret") == "value"
+
+        await secret.set_secret("new_secret", "updated_value")
+        assert await secret.get_secret("new_secret") == "updated_value"
+
+    @pytest.mark.asyncio
+    async def test_list_versions(self, secret: SecretAdapterProtocol) -> None:
+        versions = await secret.list_versions("nonexistent_secret")
+        assert isinstance(versions, list)
+        assert not versions
+
+        await secret.set_secret("versioned_secret", "initial_value")
+        versions = await secret.list_versions("versioned_secret")
+        assert isinstance(versions, list)
+        assert versions
+
+        await secret.set_secret("versioned_secret", "updated_value")
+        updated_versions = await secret.list_versions("versioned_secret")
+        assert isinstance(updated_versions, list)
+        assert len(updated_versions) > len(versions)
+
+        await secret.delete_secret("versioned_secret")
+        deleted_versions = await secret.list_versions("versioned_secret")
+        assert isinstance(deleted_versions, list)
+        assert not deleted_versions
 
 
 class DNSAdapterProtocol(Protocol):
@@ -800,6 +848,7 @@ class MockSecret(SecretAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
         self._secrets: Dict[str, str] = {}
+        self._versions: Dict[str, List[str]] = {}
 
     async def init(self) -> "MockSecret":
         self._initialized = True
@@ -810,16 +859,28 @@ class MockSecret(SecretAdapterProtocol):
 
     async def set_secret(self, key: str, value: str) -> bool:
         self._secrets[key] = value
+
+        if key not in self._versions:
+            self._versions[key] = []
+        self._versions[key].append(value)
+
         return True
 
     async def delete_secret(self, key: str) -> bool:
         if key in self._secrets:
             del self._secrets[key]
+            if key in self._versions:
+                del self._versions[key]
             return True
         return False
 
     async def secret_exists(self, key: str) -> bool:
         return key in self._secrets
+
+    async def list_versions(self, key: str) -> List[str]:
+        if key not in self._versions:
+            return []
+        return [f"version-{i + 1}" for i in range(len(self._versions[key]))]
 
 
 class MockDNS(DNSAdapterProtocol):

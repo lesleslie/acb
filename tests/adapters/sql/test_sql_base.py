@@ -1,3 +1,5 @@
+"""Tests for the SQL Base adapter."""
+
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,13 +10,9 @@ from acb.adapters.sql._base import SqlBase
 
 class MockSqlBase(SqlBase):
     def __init__(self) -> None:
+        super().__init__()
         self.config = MagicMock()
         self.logger = MagicMock()
-        self._engine = None
-        self._session = None
-
-    async def init(self) -> None:
-        pass
 
 
 class TestSqlBase:
