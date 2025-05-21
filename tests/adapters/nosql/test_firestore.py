@@ -1,7 +1,7 @@
 """Tests for the Firestore NoSQL adapter."""
 
 from typing import Any, Callable, Optional, Type
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from google.cloud import firestore
@@ -67,24 +67,20 @@ class TestFirestore:
         return nosql
 
     def test_client_property(self, nosql: FirestoreNosql) -> None:
-        original_client_property = type(nosql).client
         mock_client = MagicMock(spec=firestore.Client)
-        type(nosql).client = PropertyMock(return_value=mock_client)
-
-        assert nosql.client is not None
-        assert nosql.client == mock_client
-
-        type(nosql).client = original_client_property
+        with patch.object(
+            type(nosql), "client", new_callable=PropertyMock
+        ) as mock_prop:
+            mock_prop.return_value = mock_client
+            assert nosql.client is not None
+            assert nosql.client == mock_client
 
     def test_db_property(self, nosql: FirestoreNosql) -> None:
-        original_db_property = type(nosql).db
         mock_db = MagicMock()
-        type(nosql).db = PropertyMock(return_value=mock_db)
-
-        assert nosql.db is not None
-        assert nosql.db == mock_db
-
-        type(nosql).db = original_db_property
+        with patch.object(type(nosql), "db", new_callable=PropertyMock) as mock_prop:
+            mock_prop.return_value = mock_db
+            assert nosql.db is not None
+            assert nosql.db == mock_db
 
     @pytest.mark.asyncio
     async def test_init(self, nosql: FirestoreNosql) -> None:
@@ -121,7 +117,7 @@ class TestFirestore:
     def test_get_collection_ref(self, nosql: FirestoreNosql) -> None:
         original_method = nosql._get_collection_ref
 
-        def mock_get_collection_ref(collection):
+        def mock_get_collection_ref(collection: str):
             prefix = nosql.config.nosql.collection_prefix
             mock = MagicMock()
             mock.name = f"{prefix}{collection}"

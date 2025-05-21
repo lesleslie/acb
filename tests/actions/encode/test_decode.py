@@ -153,6 +153,10 @@ class TestDecode:
         with tempfile.TemporaryDirectory() as tmp_dir:
             mock_path: AsyncPath = AsyncPath(tmp_dir) / "test_config.json"
             mock_json: str = '{"name": "Test", "value": 123, "active": true}'
+
+            await mock_path.parent.mkdir(exist_ok=True)
+            await mock_path.write_text(mock_json)
+
             with (
                 patch.object(AsyncPath, "read_text", AsyncMock(return_value=mock_json)),
                 patch.object(AsyncPath, "exists", AsyncMock(return_value=True)),

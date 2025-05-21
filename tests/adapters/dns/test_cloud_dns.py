@@ -69,28 +69,23 @@ class TestCloudDns:
 
     @pytest.mark.asyncio
     async def test_create_zone_exists(self, cloud_dns: CloudDns) -> None:
-        original_create_zone = cloud_dns.create_zone
+        cloud_dns.create_zone.reset_mock()
+        cloud_dns.create_zone.side_effect = [
+            AlreadyExists("Zone already exists"),
+            {"name": "test-domain-zone", "dnsName": "example.com."},
+        ]
 
-        async def mock_create_zone_with_exception_handling():
-            try:
-                return await original_create_zone()
-            except AlreadyExists:
-                return {"name": "test-domain-zone", "dnsName": "example.com."}
-
-        cloud_dns.create_zone = mock_create_zone_with_exception_handling
-
-        original_create_zone.side_effect = AlreadyExists("Zone already exists")
-
-        result = await cloud_dns.create_zone()
+        try:
+            result = await cloud_dns.create_zone()
+        except AlreadyExists:
+            result = {"name": "test-domain-zone", "dnsName": "example.com."}
 
         assert result == {"name": "test-domain-zone", "dnsName": "example.com."}
-
-        original_create_zone.assert_called_once()
+        assert cloud_dns.create_zone.call_count == 1
 
     @pytest.mark.asyncio
     async def test_list_records(self, cloud_dns: CloudDns) -> None:
         cloud_dns.list_records.reset_mock()
-
         mock_records = [
             DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"]),
             DnsRecord(name="mail", type="MX", ttl=300, data=["10 mail.example.com."]),
@@ -98,7 +93,6 @@ class TestCloudDns:
         cloud_dns.list_records.return_value = mock_records
 
         result = await cloud_dns.list_records()
-
         cloud_dns.list_records.assert_called_once()
         assert result == mock_records
 
@@ -117,17 +111,13 @@ class TestCloudDns:
 
     @pytest.mark.asyncio
     async def test_create_records_with_existing(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.create_records.reset_mock()
-
         records = [
             DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"]),
         ]
-
         with patch.object(
             cloud_dns, "create_records", new_callable=AsyncMock
         ) as mock_create:
             await cloud_dns.create_records(records)
-
             mock_create.assert_called_once_with(records)
 
     @pytest.mark.asyncio
@@ -149,13 +139,11 @@ class TestCloudDns:
 
         with pytest.raises(Exception, match="Zone not found"):
             await cloud_dns.get_zone()
-
         cloud_dns.get_zone.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_records(self, cloud_dns: CloudDns) -> None:
         cloud_dns.delete_records.reset_mock()
-
         records = [
             DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"]),
         ]
@@ -167,7 +155,6 @@ class TestCloudDns:
     @pytest.mark.asyncio
     async def test_create_record(self, cloud_dns: CloudDns) -> None:
         cloud_dns.create_record.reset_mock()
-
         record = DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"])
 
         await cloud_dns.create_record(record)

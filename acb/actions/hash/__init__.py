@@ -41,8 +41,7 @@ class Hash:
         obj: Path | AsyncPath | List[str] | bytes | str | Dict[str, Any],
     ) -> str:
         if obj is None:
-            raise TypeError("Cannot hash None")
-
+            raise TypeError("Cannot hash None value")
         if isinstance(obj, (Path, AsyncPath)):
             path = AsyncPath(obj)
             if not await path.exists():
@@ -64,9 +63,6 @@ class Hash:
 
     @staticmethod
     async def crc32c(obj: Path | AsyncPath | str | bytes | Dict[str, Any]) -> str:
-        if obj is None:
-            raise TypeError("Cannot hash None")
-
         if isinstance(obj, (Path, AsyncPath)):
             path = AsyncPath(obj)
             if not await path.exists():
@@ -89,9 +85,6 @@ class Hash:
         obj: Path | AsyncPath | str | bytes | Dict[str, Any],
         usedforsecurity: bool = False,
     ) -> str:
-        if obj is None:
-            raise TypeError("Cannot hash None")
-
         if isinstance(obj, (Path, AsyncPath)):
             path = AsyncPath(obj)
             if not await path.exists():

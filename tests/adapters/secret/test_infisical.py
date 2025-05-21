@@ -175,12 +175,12 @@ class TestInfisical:
 
     @pytest.mark.asyncio
     async def test_list(self, infisical: MockInfisical, mock_client: MagicMock) -> None:
-        adapter = "test"
+        adapter = "test_adapter"
 
         original_list = infisical.list
 
-        async def mock_list(adapter_name: str) -> t.List[str]:
-            assert adapter_name == adapter
+        async def mock_list(adapter: str) -> t.List[str]:
+            assert adapter == adapter
             return ["secret1", "secret2"]
 
         infisical.list = mock_list
@@ -200,8 +200,8 @@ class TestInfisical:
 
         original_get = infisical.get
 
-        async def mock_get(secret_name: str) -> str:
-            assert secret_name == name
+        async def mock_get(name: str) -> str:
+            assert name == name
             return expected_value
 
         infisical.get = mock_get
@@ -222,10 +222,10 @@ class TestInfisical:
         original_create = infisical.create
         create_called = False
 
-        async def mock_create(secret_name: str, secret_value: str) -> None:
+        async def mock_create(name: str, value: str) -> None:
             nonlocal create_called
-            assert secret_name == name
-            assert secret_value == value
+            assert name == name
+            assert value == value
             create_called = True
 
         infisical.create = mock_create
@@ -246,10 +246,10 @@ class TestInfisical:
         original_update = infisical.update
         update_called = False
 
-        async def mock_update(secret_name: str, secret_value: str) -> None:
+        async def mock_update(name: str, value: str) -> None:
             nonlocal update_called
-            assert secret_name == name
-            assert secret_value == value
+            assert name == name
+            assert value == value
             update_called = True
 
         infisical.update = mock_update
@@ -297,7 +297,7 @@ class TestInfisical:
 
         result = await infisical.exists(name)
 
-        assert result is True
+        assert result
         infisical.get.assert_called_once_with(name)
 
     @pytest.mark.asyncio
@@ -307,7 +307,7 @@ class TestInfisical:
 
         result = await infisical.exists(name)
 
-        assert result is False
+        assert not result
         infisical.get.assert_called_once_with(name)
 
     @pytest.mark.asyncio
@@ -319,9 +319,9 @@ class TestInfisical:
         original_delete = infisical.delete
         delete_called = False
 
-        async def mock_delete(secret_name: str) -> None:
+        async def mock_delete(name: str) -> None:
             nonlocal delete_called
-            assert secret_name == name
+            assert name == name
             delete_called = True
 
         infisical.delete = mock_delete

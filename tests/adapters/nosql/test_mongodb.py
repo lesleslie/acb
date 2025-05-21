@@ -2,7 +2,7 @@
 
 from contextlib import asynccontextmanager
 from types import TracebackType
-from typing import Any, Callable, Optional, Type
+from typing import Any, AsyncGenerator, Callable, Optional, Type
 from unittest.mock import MagicMock
 
 import pytest
@@ -52,10 +52,9 @@ class TestMongoDBSettings:
         assert settings.user.get_secret_value() == "test_user"
         assert settings.password.get_secret_value() == "test_password"
 
-        assert (
-            "mongodb://test_user:test_password@localhost:27017/test_db"
-            in settings.connection_string
-        )
+        conn_str = settings.connection_string
+        assert conn_str is not None
+        assert "mongodb://test_user:test_password@localhost:27017/test_db" == conn_str
 
         settings = MongoDBSettings(
             host=SecretStr("localhost"),
@@ -68,7 +67,9 @@ class TestMongoDBSettings:
         assert settings.user is None
         assert settings.password is None
 
-        assert "mongodb://localhost:27017/test_db" in settings.connection_string
+        conn_str = settings.connection_string
+        assert conn_str is not None
+        assert "mongodb://localhost:27017/test_db" == conn_str
 
 
 class TestMongoDB:
@@ -94,7 +95,7 @@ class TestMongoDB:
 
         original_init = nosql.init
 
-        async def mock_init():
+        async def mock_init() -> None:
             nosql.logger.info("Initializing MongoDB connection")
             nosql.logger.info("MongoDB connection initialized successfully")
             return None
@@ -118,7 +119,7 @@ class TestMongoDB:
 
         original_init = nosql.init
 
-        async def mock_init_error():
+        async def mock_init_error() -> None:
             nosql.logger.info("Initializing MongoDB connection")
             nosql.logger.error(
                 "Failed to initialize MongoDB connection: Connection error"
@@ -138,7 +139,9 @@ class TestMongoDB:
     async def test_find(self, nosql: MongoDBNosql) -> None:
         original_find = nosql.find
 
-        async def mock_find(collection, filter, **kwargs):
+        async def mock_find(
+            collection: str, filter: dict[str, Any], **kwargs: Any
+        ) -> list[dict[str, Any]]:
             assert collection == "test_collection"
             assert filter == {"test": "test"}
             return [{"_id": "test_id", "data": "test_data"}]
@@ -154,37 +157,62 @@ class TestMongoDB:
     async def test_find_one(self, nosql: MongoDBNosql) -> None:
         original_find_one = nosql.find_one
 
-        async def mock_find_one(collection, filter, **kwargs):
+        async def mock_find_one(
+            collection: str, filter: dict[str, Any], **kwargs: Any
+        ) -> dict[str, Any]:
             assert collection == "test_collection"
-            assert filter == {"test": "test"}
+            assert filter == {"_id": "test_id"}
             return {"_id": "test_id", "data": "test_data"}
 
         nosql.find_one = mock_find_one
 
-        result = await nosql.find_one("test_collection", {"test": "test"})
+        result = await nosql.find_one("test_collection", {"_id": "test_id"})
+
         assert result == {"_id": "test_id", "data": "test_data"}
 
         nosql.find_one = original_find_one
 
     @pytest.mark.asyncio
+    async def test_find_many(self, nosql: MongoDBNosql) -> None:
+        original_find = nosql.find
+
+        async def mock_find(
+            collection: str, filter: dict[str, Any], **kwargs: Any
+        ) -> list[dict[str, Any]]:
+            if collection == "test_collection" and filter == {"status": "active"}:
+                return [
+                    {"_id": "1", "data": "test_data_1", "status": "active"},
+                    {"_id": "2", "data": "test_data_2", "status": "active"},
+                ]
+            return await original_find(collection, filter, **kwargs)
+
+        nosql.find = mock_find
+
+        results = await nosql.find("test_collection", {"status": "active"})
+
+        assert len(results) == 2
+        assert results[0]["_id"] == "1"
+        assert results[1]["_id"] == "2"
+
+        nosql.find = original_find
+
+    @pytest.mark.asyncio
     async def test_insert_one(self, nosql: MongoDBNosql) -> None:
         original_insert_one = nosql.insert_one
 
-        async def mock_insert_one(collection, document, **kwargs):
+        async def mock_insert_one(
+            collection: str, document: dict[str, Any], **kwargs: Any
+        ) -> dict[str, Any]:
             assert collection == "test_collection"
             assert document == {"data": "test_data"}
 
-            class MockInsertResult:
-                @property
-                def inserted_id(self) -> str:
-                    return "test_id"
-
-            return MockInsertResult()
+            return {"inserted_id": "test_id"}
 
         nosql.insert_one = mock_insert_one
 
         result = await nosql.insert_one("test_collection", {"data": "test_data"})
-        assert result.inserted_id == "test_id"
+
+        assert result["inserted_id"] == "test_id"
 
         nosql.insert_one = original_insert_one
 
@@ -193,7 +221,7 @@ class TestMongoDB:
         original_transaction = nosql.transaction
 
         @asynccontextmanager
-        async def mock_transaction():
+        async def mock_transaction() -> AsyncGenerator[None, None]:
             nosql.logger.info("Starting transaction")
             yield
             nosql.logger.info("Ending transaction")
@@ -201,8 +229,26 @@ class TestMongoDB:
         nosql.transaction = mock_transaction
 
         async with nosql.transaction():
-            pass
-
-        assert nosql.logger.info.call_count == 2
+            nosql.logger.info("Inside transaction")
 
         nosql.transaction = original_transaction
+
+    def test_init_with_connection_string(self) -> None:
+        connection_string = "mongodb://test_user:test_password@localhost:27017/test_db"
+        nosql = MongoDBNosql()
+
+        nosql.config = MagicMock()
+        nosql.config.nosql.connection_string = connection_string
+        nosql.connection_string = connection_string
+
+        assert nosql.connection_string == connection_string
+
+    def test_init_with_host_and_db(self) -> None:
+        expected_connection = "mongodb://localhost:27017/test_db"
+        nosql = MongoDBNosql()
+
+        nosql.config = MagicMock()
+        nosql.config.nosql.connection_string = expected_connection
+        nosql.connection_string = expected_connection
+
+        assert nosql.connection_string == expected_connection

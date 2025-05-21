@@ -48,33 +48,57 @@ class MockCache(CacheBase):
         self._multi_set = AsyncMock()
         self._multi_delete = AsyncMock()
 
-    async def get(self, key: str) -> t.Any:
+    async def get(
+        self,
+        key: str,
+        default=None,
+        loads_fn=None,
+        namespace=None,
+        _conn=None,
+        encoding=None,
+    ) -> t.Any:
         return await self._get(key)
 
-    async def set(self, key: str, value: t.Any, ttl: t.Optional[int] = None) -> None:
+    async def set(
+        self,
+        key: str,
+        value: t.Any,
+        ttl: t.Optional[int] = None,
+        dumps_fn=None,
+        namespace=None,
+        _cas_token=None,
+        _conn=None,
+    ) -> None:
         await self._set(key, value, ttl)
 
-    async def delete(self, key: str) -> None:
+    async def delete(self, key: str, namespace=None, _conn=None) -> None:
         await self._delete(key)
 
-    async def exists(self, key: str) -> bool:
+    async def exists(self, key: str, namespace=None, _conn=None) -> bool:
         return await self._exists(key)
 
-    async def clear(self) -> None:
+    async def clear(self, namespace=None, _conn=None) -> None:
         await self._clear()
 
     async def keys(self) -> list[str]:
         return await self._keys()
 
-    async def multi_get(self, keys: list[str]) -> list[t.Any]:
+    async def multi_get(
+        self, keys: list[str], loads_fn=None, namespace=None, _conn=None, encoding=None
+    ) -> list[t.Any]:
         return await self._multi_get(keys)
 
     async def multi_set(
-        self, items: dict[str, t.Any], ttl: t.Optional[int] = None
+        self,
+        pairs: dict[str, t.Any],
+        ttl: t.Optional[int] = None,
+        dumps_fn=None,
+        namespace=None,
+        _conn=None,
     ) -> None:
-        await self._multi_set(items, ttl)
+        await self._multi_set(pairs, ttl)
 
-    async def multi_delete(self, keys: list[str]) -> None:
+    async def multi_delete(self, keys: list[str], namespace=None, _conn=None) -> None:
         await self._multi_delete(keys)
 
 

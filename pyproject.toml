@@ -49,21 +49,21 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "autotyping",
-    "pdm",
-    "pyyaml",
-    "pdm-bump",
-    "pytest",
-    "pytest-asyncio",
-    "uv",
-    "pytest-timeout",
-    "pytest-cov",
-    "pyfiglet",
     "pytest-mock",
-    "pre-commit",
+    "pyyaml",
+    "pdm",
+    "pyfiglet",
+    "uv",
+    "pdm-bump",
+    "pytest-timeout",
     "tomli-w",
-    "google-api-python-client",
+    "pre-commit",
+    "pytest-asyncio",
     "google-crc32c",
+    "google-api-python-client",
+    "pytest-cov",
+    "pytest",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -74,17 +74,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B607",
     "B106",
+    "B101",
     "B301",
+    "B607",
+    "B403",
+    "B704",
+    "B404",
     "B603",
     "B602",
-    "B404",
-    "B403",
     "B311",
-    "B101",
     "B105",
-    "B704",
 ]
 
 [tool.pyright]

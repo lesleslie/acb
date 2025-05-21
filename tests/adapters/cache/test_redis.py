@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from tests.adapters.cache.test_cache_base import assert_cache_operations
 
 
 @asynccontextmanager
@@ -113,23 +114,29 @@ async def redis_cache() -> RedisCache:
     return cache
 
 
-@pytest.mark.unit
-class TestRedisCache:
-    async def test_multi_get(self, redis_cache: RedisCache) -> None:
-        redis_cache._data["acb:key1"] = "value1"
-        redis_cache._data["acb:key2"] = "value2"
+@pytest.mark.asyncio
+async def test_redis_cache_operations(redis_cache: RedisCache) -> None:
+    await assert_cache_operations(redis_cache, "test_key", "test_value")
 
-        result: t.List[t.Any] = await redis_cache.multi_get(["key1", "key2", "key3"])
 
-        assert result[0] == "value1"
-        assert result[1] == "value2"
-        assert result[2] is None
+@pytest.mark.asyncio
+async def test_multi_get(redis_cache: RedisCache) -> None:
+    redis_cache._data["acb:key1"] = "value1"
+    redis_cache._data["acb:key2"] = "value2"
 
-    async def test_multi_set(self, redis_cache: RedisCache) -> None:
-        result: bool = await redis_cache.multi_set(
-            {"key1": "value1", "key2": "value2"}, ttl=60
-        )
+    result: t.List[t.Any] = await redis_cache.multi_get(["key1", "key2", "key3"])
 
-        assert result is True
-        assert redis_cache._data["acb:key1"] == "value1"
-        assert redis_cache._data["acb:key2"] == "value2"
+    assert result[0] == "value1"
+    assert result[1] == "value2"
+    assert result[2] is None
+
+
+@pytest.mark.asyncio
+async def test_multi_set(redis_cache: RedisCache) -> None:
+    result: bool = await redis_cache.multi_set(
+        {"key1": "value1", "key2": "value2"}, ttl=60
+    )
+
+    assert result
+    assert redis_cache._data["acb:key1"] == "value1"
+    assert redis_cache._data["acb:key2"] == "value2"

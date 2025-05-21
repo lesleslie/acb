@@ -1,6 +1,6 @@
 """Tests for the Secret Base adapter."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -33,7 +33,7 @@ class MockSecret(SecretBase):
         return self._client
 
     @client.setter
-    def client(self, value) -> None:
+    def client(self, value: Any) -> None:
         self._client = value
 
     def extract_secret_name(self, secret_path: str) -> str:
@@ -44,9 +44,8 @@ class MockSecret(SecretBase):
             full_name = secret_path
 
         app_prefix = f"{self.config.app.name}_"
-        if full_name.startswith(app_prefix):
-            return full_name[len(app_prefix) :]
-        return full_name
+        name = full_name.removeprefix(app_prefix)
+        return name
 
     async def get(self, name: str, version: Optional[str] = None) -> Optional[str]:
         version_str = version or "latest"
@@ -97,8 +96,7 @@ class MockSecret(SecretBase):
         result = []
         async for secret in client_secrets:
             name = secret.name.split("/")[-1]
-            if name.startswith(f"{self.config.app.name}_"):
-                name = name[len(f"{self.config.app.name}_") :]
+            name = name.removeprefix(f"{self.config.app.name}_")
             result.append(name)
         return result
 
@@ -107,16 +105,15 @@ class MockSecret(SecretBase):
 
 
 class TestSecretBaseSettings:
-    def test_init(self) -> None:
+    def test_init(self, tmp_path: Any) -> None:
         with patch("anyio.Path", autospec=True) as mock_path_class:
             mock_path = mock_path_class.return_value
             mock_path.__truediv__.return_value = mock_path
             mock_path.exists = AsyncMock(return_value=False)
             mock_path.mkdir = AsyncMock()
 
-            settings = MockSecretBaseSettings(
-                secrets_path=AsyncPath("/tmp/mock_secrets")
-            )
+            secrets_dir = tmp_path / "mock_secrets"
+            settings = MockSecretBaseSettings(secrets_path=AsyncPath(str(secrets_dir)))
             assert isinstance(settings.secrets_path, AsyncPath)
 
 

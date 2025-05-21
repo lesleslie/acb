@@ -57,6 +57,9 @@ class Dns(DnsBase):
                 self.config.dns.zone_name = self.config.app.domain
                 await self._get_zone_id()
 
+    async def get_zone_id(self) -> None:
+        return await self._get_zone_id()
+
     async def _get_zone_id(self) -> None:
         try:
             zones = self.client.zones.list(name=self.config.dns.zone_name)

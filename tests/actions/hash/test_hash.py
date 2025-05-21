@@ -196,7 +196,7 @@ class TestHash:
         self, hash_func: Callable[[Any], Any], exception_type: "Type[Exception]"
     ) -> None:
         with pytest.raises(exception_type):
-            await hash_func(None)
+            await hash_func(None)  # type: ignore
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
