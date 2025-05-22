@@ -1,5 +1,6 @@
 """Tests for the Google Cloud DNS adapter."""
 
+import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -26,7 +27,9 @@ def mock_client() -> MockClient:
 
 
 @pytest.fixture
-def cloud_dns(mock_client: MockClient) -> CloudDns:
+def cloud_dns(
+    mock_client: MockClient,
+) -> t.Any:
     dns = CloudDns()
     dns.name = "test-domain"  # type: ignore
     dns.subdomain = "www"  # type: ignore
@@ -39,124 +42,132 @@ def cloud_dns(mock_client: MockClient) -> CloudDns:
 
     dns.get_zone = AsyncMock(
         return_value={"name": "example-com", "dnsName": "example.com."}
-    )
+    )  # type: ignore
     dns.create_zone = AsyncMock(
         return_value={"name": "test-domain-zone", "dnsName": "example.com."}
-    )
+    )  # type: ignore
     dns._create_zone = AsyncMock(
         return_value={"name": "test-domain-zone", "dnsName": "example.com."}
-    )
-    dns.list_records = AsyncMock(return_value=[])
-    dns._list_records = AsyncMock(return_value=[])
-    dns.create_records = AsyncMock()
-    dns._create_records = AsyncMock()
-    dns.delete_records = AsyncMock()
-    dns._delete_records = AsyncMock()
-    dns.create_record = AsyncMock()
-    dns._create_record = AsyncMock()
+    )  # type: ignore
+    dns.list_records = AsyncMock(return_value=[])  # type: ignore
+    dns._list_records = AsyncMock(return_value=[])  # type: ignore
+    dns.create_records = AsyncMock()  # type: ignore
+    dns._create_records = AsyncMock()  # type: ignore
+    dns.delete_records = AsyncMock()  # type: ignore
+    dns._delete_records = AsyncMock()  # type: ignore
+    dns.create_record = AsyncMock()  # type: ignore
+    dns._create_record = AsyncMock()  # type: ignore
 
     return dns
 
 
 class TestCloudDns:
     @pytest.mark.asyncio
-    async def test_create_zone(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.create_zone.reset_mock()
+    async def test_create_zone(self, cloud_dns: t.Any) -> None:
+        create_zone_mock: AsyncMock = cloud_dns.create_zone  # type: ignore
+        create_zone_mock.reset_mock()
 
-        await cloud_dns.create_zone()
+        await create_zone_mock()
 
-        cloud_dns.create_zone.assert_called_once()
+        create_zone_mock.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_create_zone_exists(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.create_zone.reset_mock()
-        cloud_dns.create_zone.side_effect = [
+    async def test_create_zone_exists(self, cloud_dns: t.Any) -> None:
+        create_zone_mock: AsyncMock = cloud_dns.create_zone  # type: ignore
+        create_zone_mock.reset_mock()
+        create_zone_mock.side_effect = [
             AlreadyExists("Zone already exists"),
             {"name": "test-domain-zone", "dnsName": "example.com."},
         ]
 
         try:
-            result = await cloud_dns.create_zone()
+            result = await create_zone_mock()
         except AlreadyExists:
             result = {"name": "test-domain-zone", "dnsName": "example.com."}
 
         assert result == {"name": "test-domain-zone", "dnsName": "example.com."}
-        assert cloud_dns.create_zone.call_count == 1
+        assert create_zone_mock.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_list_records(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.list_records.reset_mock()
+    async def test_list_records(self, cloud_dns: t.Any) -> None:
+        list_records_mock: AsyncMock = cloud_dns.list_records  # type: ignore
+        list_records_mock.reset_mock()
         mock_records = [
-            DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"]),
-            DnsRecord(name="mail", type="MX", ttl=300, data=["10 mail.example.com."]),
+            DnsRecord(name="www", type="A", ttl=300, rrdata=["192.168.1.1"]),
+            DnsRecord(name="mail", type="MX", ttl=300, rrdata=["10 mail.example.com."]),
         ]
-        cloud_dns.list_records.return_value = mock_records
+        list_records_mock.return_value = mock_records
 
-        result = await cloud_dns.list_records()
-        cloud_dns.list_records.assert_called_once()
+        result = await list_records_mock()
+        list_records_mock.assert_called_once()
         assert result == mock_records
 
     @pytest.mark.asyncio
-    async def test_create_records(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.create_records.reset_mock()
+    async def test_create_records(self, cloud_dns: t.Any) -> None:
+        create_records_mock: AsyncMock = cloud_dns.create_records  # type: ignore
+        create_records_mock.reset_mock()
 
         records = [
-            DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"]),
-            DnsRecord(name="mail", type="MX", ttl=300, data=["10 mail.example.com."]),
+            DnsRecord(name="www", type="A", ttl=300, rrdata=["192.168.1.1"]),
+            DnsRecord(name="mail", type="MX", ttl=300, rrdata=["10 mail.example.com."]),
         ]
 
-        await cloud_dns.create_records(records)
+        await create_records_mock(records)
 
-        cloud_dns.create_records.assert_called_once_with(records)
+        create_records_mock.assert_called_once_with(records)
 
     @pytest.mark.asyncio
-    async def test_create_records_with_existing(self, cloud_dns: CloudDns) -> None:
+    async def test_create_records_with_existing(self, cloud_dns: t.Any) -> None:
         records = [
-            DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"]),
+            DnsRecord(name="www", type="A", ttl=300, rrdata=["192.168.1.1"]),
         ]
         with patch.object(
             cloud_dns, "create_records", new_callable=AsyncMock
         ) as mock_create:
-            await cloud_dns.create_records(records)
+            await mock_create(records)
             mock_create.assert_called_once_with(records)
 
     @pytest.mark.asyncio
-    async def test_get_zone(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.get_zone.reset_mock()
+    async def test_get_zone(self, cloud_dns: t.Any) -> None:
+        get_zone_mock: AsyncMock = cloud_dns.get_zone  # type: ignore
+        get_zone_mock.reset_mock()
 
         expected_zone = {"name": "example-com", "dnsName": "example.com."}
-        cloud_dns.get_zone.return_value = expected_zone
+        get_zone_mock.return_value = expected_zone
 
-        result = await cloud_dns.get_zone()
+        result = await get_zone_mock()
 
-        cloud_dns.get_zone.assert_called_once()
+        get_zone_mock.assert_called_once()
         assert result == expected_zone
 
     @pytest.mark.asyncio
-    async def test_get_zone_not_found(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.get_zone.reset_mock()
-        cloud_dns.get_zone.side_effect = Exception("Zone not found")
+    async def test_get_zone_not_found(self, cloud_dns: t.Any) -> None:
+        get_zone_mock: AsyncMock = cloud_dns.get_zone  # type: ignore
+        get_zone_mock.reset_mock()
+        get_zone_mock.side_effect = Exception("Zone not found")
 
         with pytest.raises(Exception, match="Zone not found"):
-            await cloud_dns.get_zone()
-        cloud_dns.get_zone.assert_called_once()
+            await get_zone_mock()
+        get_zone_mock.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_delete_records(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.delete_records.reset_mock()
+    async def test_delete_records(self, cloud_dns: t.Any) -> None:
+        delete_records_mock: AsyncMock = cloud_dns.delete_records  # type: ignore
+        delete_records_mock.reset_mock()
         records = [
-            DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"]),
+            DnsRecord(name="www", type="A", ttl=300, rrdata=["192.168.1.1"]),
         ]
 
-        await cloud_dns.delete_records(records)
+        await delete_records_mock(records)
 
-        cloud_dns.delete_records.assert_called_once_with(records)
+        delete_records_mock.assert_called_once_with(records)
 
     @pytest.mark.asyncio
-    async def test_create_record(self, cloud_dns: CloudDns) -> None:
-        cloud_dns.create_record.reset_mock()
-        record = DnsRecord(name="www", type="A", ttl=300, data=["192.168.1.1"])
+    async def test_create_record(self, cloud_dns: t.Any) -> None:
+        create_record_mock: AsyncMock = cloud_dns.create_record  # type: ignore
+        create_record_mock.reset_mock()
+        record = DnsRecord(name="www", type="A", ttl=300, rrdata=["192.168.1.1"])
 
-        await cloud_dns.create_record(record)
+        await create_record_mock(record)
 
-        cloud_dns.create_record.assert_called_once_with(record)
+        create_record_mock.assert_called_once_with(record)

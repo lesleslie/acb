@@ -1,7 +1,7 @@
 """Tests for the Redis NoSQL adapter."""
 
 from types import TracebackType
-from typing import Any, Optional, Type
+from typing import Any, List, Optional, Type
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
@@ -17,7 +17,7 @@ async def mock_async_context_manager(mock_obj: Optional[Any] = None):
         def __init__(self, mock_obj: Optional[Any] = None) -> None:
             self.mock_obj = mock_obj or MagicMock()
 
-            async def async_execute():
+            async def async_execute() -> List[Any]:
                 return []
 
             self.execute = async_execute
@@ -92,7 +92,7 @@ class TestRedis:
 
         pipeline_mock = MagicMock()
 
-        async def async_execute():
+        async def async_execute() -> List[Any]:
             return []
 
         pipeline_mock.execute = async_execute

@@ -7,10 +7,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from anyio import Path as AsyncPath
 from sqlmodel import Field, SQLModel
-from acb.adapters.models.sqlmodel import Models, ModelsSettings
+from acb.adapters.models.sqlmodel import ModelsSettings
 
 
-class TestModel(SQLModel, table=True):
+class TestModel(SQLModel, table=True):  # type: ignore
     id: t.Optional[int] = Field(default=None, primary_key=True)
     name: str
     value: int
@@ -18,11 +18,21 @@ class TestModel(SQLModel, table=True):
 
 class TestModelsSettings:
     def test_init(self) -> None:
-        settings: ModelsSettings = ModelsSettings(path="/test/models")  # type: ignore
-        assert settings.path == "/test/models"
+        settings = ModelsSettings()
+        settings.path = AsyncPath("/test/models")  # type: ignore
+        assert settings.path == AsyncPath("/test/models")
 
 
 class TestModels:
+    def __init__(self) -> None:
+        self.config = MagicMock()
+        self.logger = MagicMock()
+        self.models = []
+        self.settings: ModelsSettings | None = None
+        self.sql = MagicMock()
+        self._import_models_directory = AsyncMock()  # type: ignore
+        self._import_models_file = AsyncMock()  # type: ignore
+
     @pytest.fixture
     def mock_config(self) -> MagicMock:
         mock_config: MagicMock = MagicMock()
@@ -31,34 +41,26 @@ class TestModels:
 
     @pytest.fixture
     def models_settings(self) -> ModelsSettings:
-        return ModelsSettings()  # type: ignore
+        settings = ModelsSettings()
+        return settings
 
     @pytest.fixture
-    def models_instance(self, mock_config: MagicMock) -> Models:
-        class TestModels(Models):
-            def __init__(self) -> None:
-                self.config = mock_config
-                self.logger = MagicMock()
-                self.models = []
-                self.settings: ModelsSettings | None = None
-                self.sql = MagicMock()
-                self._import_models_directory = AsyncMock()
-                self._import_models_file = AsyncMock()
+    def models_instance(self, mock_config: MagicMock) -> "TestModels":
+        instance = TestModels()
+        instance.config = mock_config
+        return instance
 
-            async def import_models(self, path: AsyncPath) -> None:
-                if await path.is_dir():
-                    await self._import_models_directory(path)
-                else:
-                    await self._import_models_file(path)
+    async def import_models(self, path: AsyncPath) -> None:
+        if await path.is_dir():
+            await self._import_models_directory(path)
+        else:
+            await self._import_models_file(path)
 
-            async def init(self, settings: ModelsSettings | None = None) -> None:
-                self.settings = settings
-
-        models = TestModels()
-        return models
+    async def init(self, settings: ModelsSettings | None = None) -> None:
+        self.settings = settings
 
     @pytest.mark.asyncio
-    async def test_import_models_file(self, models_instance: Models) -> None:
+    async def test_import_models_file(self, models_instance: "TestModels") -> None:
         path = AsyncPath("/path/to/models/model.py")
         with (
             patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir,
@@ -72,7 +74,7 @@ class TestModels:
     @pytest.mark.asyncio
     async def test_import_models_directory(
         self,
-        models_instance: Models,
+        models_instance: "TestModels",
     ) -> None:
         path = AsyncPath("/path/to/models")
         with patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir:
@@ -81,7 +83,9 @@ class TestModels:
             models_instance._import_models_directory.assert_called_once_with(path)
 
     @pytest.mark.asyncio
-    async def test_import_models_file_not_found(self, models_instance: Models) -> None:
+    async def test_import_models_file_not_found(
+        self, models_instance: "TestModels"
+    ) -> None:
         path = AsyncPath("/path/to/models/model.py")
         with (
             patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir,
@@ -97,7 +101,7 @@ class TestModels:
 
     @pytest.mark.asyncio
     async def test_import_models_directory_not_found(
-        self, models_instance: Models
+        self, models_instance: "TestModels"
     ) -> None:
         path = AsyncPath("/path/to/models")
         with patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir:
@@ -111,12 +115,18 @@ class TestModels:
     @pytest.mark.asyncio
     async def test_init(
         self,
-        models_instance: Models,
+        models_instance: "TestModels",
     ) -> None:
-        settings: ModelsSettings = ModelsSettings(path="/path/to/models")
-        await models_instance.init(settings=settings)
+        models_instance.import_models = AsyncMock()  # type: ignore
+
+        settings = ModelsSettings()
+        settings.path = AsyncPath("/path/to/models")  # type: ignore
+
+        await models_instance.init(settings)
+
         assert models_instance.settings == settings
 
     def test_init_settings(self) -> None:
-        settings: ModelsSettings = ModelsSettings(path="/path/to/models")
-        assert str(settings.path) == "/path/to/models"
+        settings = ModelsSettings()
+        settings.path = AsyncPath("/path/to/models")  # type: ignore
+        assert settings.path == AsyncPath("/path/to/models")

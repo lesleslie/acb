@@ -1,5 +1,6 @@
 """Tests for the Cloudflare DNS adapter."""
 
+import typing as t
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -21,7 +22,9 @@ def mock_client() -> MockClient:
 
 
 @pytest.fixture
-def cloudflare_dns(mock_client: MockClient) -> CloudflareDns:
+def cloudflare_dns(
+    mock_client: MockClient,
+) -> t.Any:
     dns = CloudflareDns()
     dns.name = "test-domain"  # type: ignore
     dns.subdomain = "www"  # type: ignore
@@ -33,19 +36,19 @@ def cloudflare_dns(mock_client: MockClient) -> CloudflareDns:
 
     dns.client = mock_client
 
-    dns.get_zone_id = AsyncMock(return_value="zone-id")
-    dns._get_zone_id = AsyncMock()
-    dns.create_zone = MagicMock()
-    dns.list_records = MagicMock(return_value=[])
-    dns.create_records = MagicMock()
-    dns.delete_records = MagicMock()
-    dns.create_record = MagicMock()
+    dns.get_zone_id = AsyncMock(return_value="zone-id")  # type: ignore
+    dns._get_zone_id = AsyncMock()  # type: ignore
+    dns.create_zone = MagicMock()  # type: ignore
+    dns.list_records = MagicMock(return_value=[])  # type: ignore
+    dns.create_records = MagicMock()  # type: ignore
+    dns.delete_records = MagicMock()  # type: ignore
+    dns.create_record = MagicMock()  # type: ignore
 
     return dns
 
 
 class TestCloudflareDns:
-    async def test_init(self, cloudflare_dns: CloudflareDns) -> None:
+    async def test_init(self, cloudflare_dns: t.Any) -> None:
         assert cloudflare_dns.name == "test-domain"  # type: ignore
         assert cloudflare_dns.subdomain == "www"  # type: ignore
         assert cloudflare_dns.domain == "example.com"  # type: ignore
@@ -54,22 +57,23 @@ class TestCloudflareDns:
         assert cloudflare_dns.zone_id is None
 
     @pytest.mark.asyncio
-    async def test_get_zone_id(self, cloudflare_dns: CloudflareDns) -> None:
-        cloudflare_dns.get_zone_id.reset_mock()
+    async def test_get_zone_id(self, cloudflare_dns: t.Any) -> None:
+        get_zone_id_mock: AsyncMock = cloudflare_dns.get_zone_id  # type: ignore
+        get_zone_id_mock.reset_mock()
+        get_zone_id_mock.return_value = "test-zone-id"
 
-        cloudflare_dns.get_zone_id.return_value = "zone-id"
+        result = await get_zone_id_mock()
 
-        zone_id = await cloudflare_dns.get_zone_id()
-
-        cloudflare_dns.get_zone_id.assert_called_once()
-        assert zone_id == "zone-id"
+        assert result == "test-zone-id"
+        get_zone_id_mock.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_zone_id_not_found(self, cloudflare_dns: CloudflareDns) -> None:
-        cloudflare_dns.get_zone_id.reset_mock()
-        cloudflare_dns.get_zone_id.side_effect = ValueError("Zone not found")
+    async def test_get_zone_id_not_found(self, cloudflare_dns: t.Any) -> None:
+        get_zone_id_mock: AsyncMock = cloudflare_dns.get_zone_id  # type: ignore
+        get_zone_id_mock.reset_mock()
+        get_zone_id_mock.side_effect = ValueError("Zone not found")
 
         with pytest.raises(ValueError, match="Zone not found"):
-            await cloudflare_dns.get_zone_id()
+            await get_zone_id_mock()
 
-        cloudflare_dns.get_zone_id.assert_called_once()
+        get_zone_id_mock.assert_called_once()

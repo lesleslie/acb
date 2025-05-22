@@ -1,17 +1,18 @@
 import hashlib
 import json
 import os
+import typing as t
 from pathlib import Path
-from typing import Any, Dict, List
 from warnings import catch_warnings
 
 from anyio import Path as AsyncPath
 from blake3 import blake3  # type: ignore
+from google_crc32c import value as crc32c_value
 
 __all__: list[str] = ["hash"]
 
 with catch_warnings(action="ignore", category=RuntimeWarning):
-    from google_crc32c import value as crc32c
+    from google_crc32c import value as crc32c_value
 
 
 class Blake3Hasher:
@@ -24,7 +25,7 @@ class Blake3Hasher:
         self._hasher.update(data)
         return self
 
-    def finalize(self) -> Any:
+    def finalize(self) -> t.Any:
         return self._hasher.digest()
 
     def hexdigest(self) -> str:
@@ -38,7 +39,9 @@ class Hash:
 
     @staticmethod
     async def blake3(
-        obj: Path | AsyncPath | List[str] | bytes | str | Dict[str, Any],
+        obj: t.Optional[
+            Path | AsyncPath | t.List[str] | bytes | str | t.Dict[str, t.Any]
+        ] = None,
     ) -> str:
         if obj is None:
             raise TypeError("Cannot hash None value")
@@ -62,7 +65,7 @@ class Hash:
         return blake3(obj).hexdigest()
 
     @staticmethod
-    async def crc32c(obj: Path | AsyncPath | str | bytes | Dict[str, Any]) -> str:
+    async def crc32c(obj: Path | AsyncPath | str | bytes | dict[str, t.Any]) -> str:
         if isinstance(obj, (Path, AsyncPath)):
             path = AsyncPath(obj)
             if not await path.exists():
@@ -78,11 +81,11 @@ class Hash:
         elif isinstance(obj, str):
             obj = obj.encode()
 
-        return f"{crc32c(obj):08x}"
+        return f"{crc32c_value(obj):08x}"
 
     @staticmethod
     async def md5(
-        obj: Path | AsyncPath | str | bytes | Dict[str, Any],
+        obj: Path | AsyncPath | str | bytes | dict[str, t.Any],
         usedforsecurity: bool = False,
     ) -> str:
         if isinstance(obj, (Path, AsyncPath)):

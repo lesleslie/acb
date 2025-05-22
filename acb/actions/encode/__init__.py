@@ -13,7 +13,7 @@ import toml
 import yaml
 from anyio import Path as AsyncPath
 
-__all__: list[str] = ["load", "dump", "encode", "decode"]
+__all__: t.List[str] = ["load", "dump", "encode", "decode"]
 
 
 def yaml_encode(
@@ -61,16 +61,33 @@ class Serializers:
 serializers = Serializers()
 
 
+@t.runtime_checkable
+class SerializerMethod(t.Protocol):
+    async def __call__(
+        self,
+        obj: t.Any,
+        path: t.Optional[AsyncPath | Path] = None,
+        sort_keys: bool = False,
+        **kwargs: t.Any,
+    ) -> t.Any: ...
+
+
 class Encode:
-    serializers: dict[str, t.Any]
-    path: AsyncPath | Path | None = None
-    action: str | None = None
+    serializers: t.Dict[str, t.Any]
+    path: t.Optional[AsyncPath | Path] = None
+    action: t.Optional[str] = None
     sort_keys: bool = True
     use_list: bool = False
     secure: bool = False
-    secret_key: str | None = None
-    secure_salt: str | None = None
-    serializer: t.Callable[..., t.Any] | None = None
+    secret_key: t.Optional[str] = None
+    secure_salt: t.Optional[str] = None
+    serializer: t.Optional[t.Callable[..., t.Any]] = None
+
+    json: SerializerMethod
+    yaml: SerializerMethod
+    msgpack: SerializerMethod
+    pickle: SerializerMethod
+    toml: SerializerMethod
 
     def __init__(self) -> None:
         self.serializers = serializers.__dict__
@@ -84,7 +101,7 @@ class Encode:
             obj: t.Any,
             path: AsyncPath | Path | None = None,
             sort_keys: bool = False,
-            **kwargs: t.Any,
+            **kwargs: t.Dict[str, t.Any],
         ) -> t.Any:
             self.path = path
             self.sort_keys = sort_keys
@@ -119,7 +136,7 @@ class Encode:
 
         return method
 
-    async def _decode(self, obj: t.Any, **kwargs: t.Any) -> t.Any:
+    async def _decode(self, obj: t.Any, **kwargs: t.Dict[str, t.Any]) -> t.Any:
         if obj is None:
             raise ValueError("Cannot decode from None input")
         if isinstance(obj, (str, bytes)) and not obj:
@@ -153,12 +170,14 @@ class Encode:
 
         try:
             return self.serializer(obj, **kwargs)
+        except msgspec.DecodeError as e:
+            raise msgspec.DecodeError(f"Failed to decode: {e}")  # type: ignore
+        except toml.decoder.TomlDecodeError as e:
+            raise toml.decoder.TomlDecodeError(f"Failed to decode: {e}")  # type: ignore
         except Exception as e:
-            if isinstance(e, (msgspec.DecodeError, toml.decoder.TomlDecodeError)):
-                raise type(e)(f"Failed to decode: {e}")
-            raise
+            raise RuntimeError(f"Error during decoding: {e}") from e
 
-    async def _encode(self, obj: t.Any, **kwargs: t.Any) -> bytes:
+    async def _encode(self, obj: t.Any, **kwargs: t.Dict[str, t.Any]) -> bytes:
         if isinstance(obj, (AsyncPath, Path)):
             if self.action == "decode":
                 return await self._decode(obj, **kwargs)
@@ -173,7 +192,7 @@ class Encode:
 
         return data
 
-    def _preprocess_data(self, obj: t.Any, kwargs: dict) -> t.Any:
+    def _preprocess_data(self, obj: t.Any, kwargs: t.Dict[str, t.Any]) -> t.Any:
         if (
             self.serializer is msgspec.json.encode
             and self.sort_keys
@@ -193,7 +212,7 @@ class Encode:
 
         return obj
 
-    def _serialize(self, obj: t.Any, kwargs: dict) -> bytes:
+    def _serialize(self, obj: t.Any, kwargs: t.Dict[str, t.Any]) -> bytes:
         if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
             indent = kwargs.pop("indent")
             return json.dumps(obj, indent=indent).encode()
@@ -218,7 +237,7 @@ class Encode:
         except PermissionError:
             raise PermissionError(f"Permission denied when writing to {self.path}")
 
-    async def process(self, obj: t.Any, **kwargs: t.Any) -> t.Any:
+    async def process(self, obj: t.Any, **kwargs: t.Dict[str, t.Any]) -> t.Any:
         if self.action in ("load", "decode"):
             return await self._decode(obj, **kwargs)
         if self.action in ("dump", "encode"):
@@ -228,9 +247,9 @@ class Encode:
     async def __call__(
         self,
         obj: t.Any,
-        path: AsyncPath | Path | None = None,
+        path: t.Optional[AsyncPath | Path] = None,
         sort_keys: bool = False,
-        **kwargs: t.Any,
+        **kwargs: t.Dict[str, t.Any],
     ) -> t.Any:
         self.path = path
         self.sort_keys = sort_keys
