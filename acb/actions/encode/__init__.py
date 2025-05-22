@@ -6,7 +6,6 @@ import typing as t
 from dataclasses import dataclass
 from pathlib import Path
 from re import search
-from types import FrameType
 
 import dill
 import msgspec
@@ -163,9 +162,18 @@ class Encode:
         if isinstance(obj, (AsyncPath, Path)):
             if self.action == "decode":
                 return await self._decode(obj, **kwargs)
-            else:
-                raise TypeError(f"Cannot encode a Path object directly: {obj}")
+            raise TypeError(f"Cannot encode a Path object directly: {obj}")
 
+        obj = self._preprocess_data(obj, kwargs)
+
+        data = self._serialize(obj, kwargs)
+
+        if self.path is not None:
+            await self._write_to_path(data)
+
+        return data
+
+    def _preprocess_data(self, obj: t.Any, kwargs: dict) -> t.Any:
         if (
             self.serializer is msgspec.json.encode
             and self.sort_keys
@@ -176,10 +184,6 @@ class Encode:
         if self.serializer is msgspec.yaml.encode:
             kwargs["sort_keys"] = self.sort_keys
 
-        if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
-            indent = kwargs.pop("indent")
-            return json.dumps(obj, indent=indent).encode()
-
         if self.serializer is msgspec.toml.encode and isinstance(obj, dict):
             for key, value in obj.items():
                 if isinstance(value, list) and any(
@@ -187,35 +191,32 @@ class Encode:
                 ):
                     obj[key] = str(value)
 
+        return obj
+
+    def _serialize(self, obj: t.Any, kwargs: dict) -> bytes:
+        if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
+            indent = kwargs.pop("indent")
+            return json.dumps(obj, indent=indent).encode()
+
         try:
-            data: bytes = self.serializer(obj, **kwargs)
+            return self.serializer(obj, **kwargs)
         except TypeError as e:
             if (
                 "Extra keyword arguments provided" in str(e)
                 and self.serializer is msgspec.json.encode
             ):
                 filtered_kwargs = {k: v for k, v in kwargs.items() if k != "indent"}
-                data = self.serializer(obj, **filtered_kwargs)
-            else:
-                raise
+                return self.serializer(obj, **filtered_kwargs)
+            raise
 
-        if self.path is not None:
+    async def _write_to_path(self, data: bytes) -> None:
+        try:
             if isinstance(self.path, AsyncPath):
-                try:
-                    await self.path.write_bytes(data)
-                except PermissionError:
-                    raise PermissionError(
-                        f"Permission denied when writing to {self.path}"
-                    )
+                await self.path.write_bytes(data)
             elif isinstance(self.path, Path):
-                try:
-                    self.path.write_bytes(data)
-                except PermissionError:
-                    raise PermissionError(
-                        f"Permission denied when writing to {self.path}"
-                    )
-
-        return data
+                self.path.write_bytes(data)
+        except PermissionError:
+            raise PermissionError(f"Permission denied when writing to {self.path}")
 
     async def process(self, obj: t.Any, **kwargs: t.Any) -> t.Any:
         if self.action in ("load", "decode"):

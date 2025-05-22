@@ -1,7 +1,5 @@
 """Tests for the storage base components."""
 
-import typing as t
-from functools import cached_property
 from io import BytesIO
 from types import TracebackType
 from typing import Any, Optional, Type
@@ -118,81 +116,79 @@ def mock_storage() -> StorageBase:
 def mock_storage_bucket(
     mock_storage: StorageBase, mock_config: MagicMock
 ) -> StorageBucket:
-    class MockStorageBucket(StorageBucket):
-        def __init__(
-            self,
-            storage: StorageBase,
-            bucket_name: str,
-            client: t.Any = None,
-            bucket: str = None,
-        ) -> None:
+    class BaseMockBucket(StorageBucket):
+        def __init__(self, storage, name: str) -> None:
             self._client = storage
-            self.name = bucket_name
+            self.name = name
             self.bucket = "test-bucket"
             self.prefix = "test-prefix"
             self.root = AsyncPath(f"{self.bucket}/{self.prefix}")
             self.config = mock_config
-            self._path = MagicMock(side_effect=AsyncPath)
-            self._get_path = MagicMock(side_effect=lambda p: f"{self.bucket}/{p}")
-            self._get_url = MagicMock(
-                side_effect=lambda p: f"https://example.com/{self.bucket}/{p}"
-            )
-            self._get_signed_url = AsyncMock(
-                side_effect=lambda p,
-                expires=3600: f"https://example.com/{self.bucket}/{p}?signed=true&expires={expires}"
-            )
-            self._read = AsyncMock(return_value=b"test content")
-            self._read_text = AsyncMock(return_value="test content")
-            self._write_text = AsyncMock()
-            self._mkdir = AsyncMock()
-            self._delete = AsyncMock()
-            self._create_bucket = AsyncMock()
-            self._stat = AsyncMock(
-                return_value={
-                    "size": 100,
-                    "timeCreated": "2021-01-01T00:00:00Z",
-                    "updated": "2021-01-01T00:00:00Z",
-                }
-            )
+            self._client = MagicMock()
 
-        def path(self, path_str: str) -> AsyncPath:
-            return self._path(path_str)
+    mock_bucket = BaseMockBucket(mock_storage, "test-bucket")
 
-        def get_path(self, path: AsyncPath) -> str:
-            return self._get_path(path)
+    mock_bucket._path = MagicMock(side_effect=AsyncPath)
+    mock_bucket._get_path = MagicMock(side_effect=lambda p: f"{mock_bucket.bucket}/{p}")
+    mock_bucket._get_url = MagicMock(
+        side_effect=lambda p: f"https://example.com/{mock_bucket.bucket}/{p}"
+    )
 
-        def get_url(self, path: AsyncPath) -> str:
-            return self._get_url(path)
+    mock_bucket._get_signed_url = AsyncMock(
+        side_effect=lambda p,
+        expires=3600: f"https://example.com/{mock_bucket.bucket}/{p}?signed=true&expires={expires}"
+    )
+    mock_bucket._read = AsyncMock(return_value=b"test content")
+    mock_bucket._read_text = AsyncMock(return_value="test content")
+    mock_bucket._stat = AsyncMock(
+        return_value={
+            "size": 100,
+            "timeCreated": "2021-01-01T00:00:00Z",
+            "updated": "2021-01-01T00:00:00Z",
+        }
+    )
 
-        async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> str:
-            return await self._get_signed_url(path, expires=expires)
+    for method in ("write_text", "mkdir", "delete", "create_bucket"):
+        setattr(mock_bucket, f"_{method}", AsyncMock())
 
-        async def read(self, path: AsyncPath) -> bytes:
-            return await self._read(path)
+    mock_bucket.path = mock_bucket._path
+    mock_bucket.get_path = mock_bucket._get_path
+    mock_bucket.get_url = mock_bucket._get_url
 
-        async def read_text(self, path: AsyncPath) -> str:
-            return await self._read_text(path)
+    async def get_signed_url(path, expires: int = 3600):
+        return await mock_bucket._get_signed_url(path, expires=expires)
 
-        async def write_text(self, path: AsyncPath, data: str) -> None:
-            await self._write_text(path, data)
+    async def read(path):
+        return await mock_bucket._read(path)
 
-        async def mkdir(self, path: AsyncPath) -> None:
-            await self._mkdir(path)
+    async def read_text(path):
+        return await mock_bucket._read_text(path)
 
-        async def delete(self, path: AsyncPath) -> None:
-            await self._delete(path)
+    async def write_text(path, data) -> None:
+        await mock_bucket._write_text(path, data)
 
-        async def create_bucket(self, path: AsyncPath) -> None:
-            await self._create_bucket(path)
+    async def mkdir(path) -> None:
+        await mock_bucket._mkdir(path)
 
-        async def stat(self, path: AsyncPath) -> dict:
-            return await self._stat(path)
+    async def delete(path) -> None:
+        await mock_bucket._delete(path)
 
-        @cached_property
-        def client(self) -> Any:
-            return MagicMock()
+    async def create_bucket(path) -> None:
+        await mock_bucket._create_bucket(path)
 
-    return MockStorageBucket(mock_storage, "test-bucket")
+    async def stat(path):
+        return await mock_bucket._stat(path)
+
+    mock_bucket.get_signed_url = get_signed_url
+    mock_bucket.read = read
+    mock_bucket.read_text = read_text
+    mock_bucket.write_text = write_text
+    mock_bucket.mkdir = mkdir
+    mock_bucket.delete = delete
+    mock_bucket.create_bucket = create_bucket
+    mock_bucket.stat = stat
+
+    return mock_bucket
 
 
 @pytest.fixture
@@ -503,12 +499,8 @@ class TestStorageImage(StorageImage):
         self._height = height
         self._width = width
 
-    @property
-    def size(self) -> tuple[int, int]:
-        return (self._height, self._width)
-
     async def size(self) -> tuple[int, int]:
-        return (self._height, self._width)
+        return self._height, self._width
 
     @property
     def path(self) -> str:

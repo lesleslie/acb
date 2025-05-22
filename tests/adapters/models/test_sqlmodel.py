@@ -1,6 +1,7 @@
 """Tests for the SQLModel adapter."""
 
 import typing as t
+from contextlib import suppress
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -90,10 +91,8 @@ class TestModels:
             mock_is_file.return_value = True
             models_instance._import_models_file.side_effect = FileNotFoundError
             models_instance.logger = MagicMock()
-            try:
+            with suppress(FileNotFoundError):
                 await models_instance.import_models(path)
-            except FileNotFoundError:
-                pass
             models_instance._import_models_file.assert_called_once_with(path)
 
     @pytest.mark.asyncio
@@ -105,10 +104,8 @@ class TestModels:
             mock_is_dir.return_value = True
             models_instance._import_models_directory.side_effect = FileNotFoundError
             models_instance.logger = MagicMock()
-            try:
+            with suppress(FileNotFoundError):
                 await models_instance.import_models(path)
-            except FileNotFoundError:
-                pass
             models_instance._import_models_directory.assert_called_once_with(path)
 
     @pytest.mark.asyncio

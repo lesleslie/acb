@@ -3,7 +3,7 @@
 import typing as t
 from contextlib import asynccontextmanager
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from acb.adapters.ftpd._base import FileInfo, FtpdBase, FtpdBaseSettings
