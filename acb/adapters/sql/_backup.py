@@ -211,7 +211,7 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         timestamps = self.get_timestamps()
         if not timestamps:
             return False
-        timestamp = sorted(timestamps, reverse=True)[0]
+        timestamp = max(timestamps)
         adate = arrow.Arrow.fromtimestamp(timestamp)
         self.logger.info(f"Last backup: {adate.format('MM-DD-YYYY HH:mm:ss ZZ')}")
         return timestamp
