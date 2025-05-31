@@ -1,15 +1,16 @@
-"""Simplified tests for the Memory Storage adapter."""
+"""Tests for the Memory Storage adapter."""
 
 import pytest
 from tests.test_interfaces import MockStorage, StorageTestInterface
 
 
 @pytest.fixture
-async def storage() -> MockStorage:
-    storage: MockStorage = MockStorage()
-    await storage.init()
-    return storage
+async def storage():
+    mock_storage = MockStorage()
+    await mock_storage.init()
+    return mock_storage
 
 
+@pytest.mark.unit
 class TestMemoryStorage(StorageTestInterface):
     pass

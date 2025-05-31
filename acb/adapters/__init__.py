@@ -14,7 +14,7 @@ from aioconsole import aprint  # noqa  # type: ignore
 from anyio import Path as AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ..actions.encode import yaml_encode
 from ..depends import depends
@@ -59,8 +59,7 @@ class AdapterProtocol(t.Protocol):
 
 @rich.repr.auto
 class Adapter(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str
     class_name: str

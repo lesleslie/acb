@@ -6,7 +6,7 @@ from inspect import currentframe
 import nest_asyncio
 import rich.repr
 from anyio import Path as AsyncPath
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from rich import box
 from rich.console import RenderableType
 from rich.padding import Padding
@@ -26,8 +26,7 @@ nest_asyncio.apply()
 
 @rich.repr.auto
 class Pkg(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str
     path: AsyncPath

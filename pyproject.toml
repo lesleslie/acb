@@ -54,20 +54,21 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "pre-commit",
-    "pytest-asyncio",
-    "pytest-cov",
-    "google-crc32c",
-    "pytest",
-    "google-api-python-client",
-    "pyyaml",
+    "uv",
+    "pytest-timeout",
+    "pytest-mock",
     "pdm-bump",
     "tomli-w",
-    "pytest-timeout",
+    "pytest",
+    "pytest-cov",
     "autotyping",
-    "pyfiglet",
-    "pytest-mock",
-    "uv",
+    "pyyaml",
     "pdm",
+    "google-crc32c",
+    "pytest-xdist",
+    "pyfiglet",
+    "pytest-asyncio",
+    "google-api-python-client",
 ]
 
 [tool.refurb]
@@ -78,17 +79,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B301",
-    "B404",
-    "B105",
-    "B603",
-    "B704",
-    "B311",
-    "B106",
-    "B403",
-    "B602",
     "B607",
+    "B105",
     "B101",
+    "B404",
+    "B311",
+    "B301",
+    "B603",
+    "B106",
+    "B602",
+    "B704",
+    "B403",
 ]
 
 [tool.pyright]
@@ -163,7 +164,7 @@ exclude_also = [
 ignore_errors = false
 
 [tool.pytest.ini_options]
-addopts = "--cov=acb --cov-report=term"
+addopts = "--cov=acb --cov-report=term --timeout=120 --timeout-method=thread -n auto"
 asyncio_default_fixture_loop_scope = "function"
 python_files = [
     "test_*.py",
@@ -183,7 +184,7 @@ python_functions = [
 
 [project]
 name = "acb"
-version = "0.16.2"
+version = "0.16.3"
 description = "Default template for PDM package"
 dependencies = [
     "arrow>=1.3.0",
@@ -238,15 +239,15 @@ Repository = "https://github.com/lesleslie/acb"
 cache = [
     "coredis>=4.22.0",
     "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.16.0",
+    "logfire[redis]>=3.16.1",
 ]
 storage = [
-    "gcsfs>=2025.5.0.post1",
-    "s3fs>=2025.5.0",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
     "adlfs>=2024.12.0",
 ]
 dns = [
-    "google-cloud-dns>=0.35.0",
+    "google-cloud-dns>=0.35.1",
     "validators>=0.35.0",
     "python-cloudflare>=1.0.1",
 ]
@@ -254,11 +255,11 @@ requests = [
     "httpx[http2]>=0.28.1",
     "hishel>=0.1.2",
     "sentry-sdk[httpx]>=2.29.1",
-    "logfire[httpx]>=3.16.0",
+    "logfire[httpx]>=3.16.1",
     "niquests>=3.14.1",
 ]
 smtp = [
-    "mailgun>=1.0.0",
+    "mailgun>=1.0.1",
 ]
 sql = [
     "sqlalchemy>=2.0.41",
@@ -267,7 +268,7 @@ sql = [
     "babel>=2.17.0",
     "pymysql>=1.1.1",
     "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.16.0",
+    "logfire[sqlalchemy]>=3.16.1",
     "sentry-sdk[sqlalchemy]>=2.29.1",
     "greenlet>=3.2.2",
 ]
@@ -290,15 +291,15 @@ secret = [
 ]
 monitoring = [
     "sentry-sdk[loguru]>=2.29.1",
-    "logfire[system-metrics]>=3.16.0",
+    "logfire[system-metrics]>=3.16.1",
 ]
 dev = [
-    "crackerjack>=0.18.7",
+    "crackerjack>=0.18.9",
     "pytest-anyio>=0.0.0",
     "pytest-benchmark>=5.1.0",
     "pytest>=8.3.5",
-    "pytest-asyncio>=0.26.0",
-    "pytest-mock>=3.14.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-mock>=3.14.1",
     "pytest-cov>=6.1.1",
     "pytest-timeout>=2.4.0",
 ]

@@ -1,23 +1,24 @@
+"""Actions module for acb."""
+
 import typing as t
 from contextvars import ContextVar
 from importlib import import_module, util
 
 from anyio import Path as AsyncPath
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ActionNotFound(Exception): ...
 
 
 class Action(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
     pkg: str = "acb"
     module: str = ""
     methods: list[str] = []
     path: AsyncPath = AsyncPath(__file__) / "actions"
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 action_registry: ContextVar[list[Action]] = ContextVar("action_registry", default=[])

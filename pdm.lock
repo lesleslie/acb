@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:e46d84e47fbc4a4290c4be5462afeb4694f866e3b0ffaf9a367a9db02ecf60ba"
+content_hash = "sha256:42709c24b096877bbcc7eda2cd4505b5bcf9de7376e73a099acbde1827ebccd3"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -605,7 +605,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.18.7"
+version = "0.18.9"
 summary = ""
 dependencies = [
     "autotyping",
@@ -618,14 +618,15 @@ dependencies = [
     "pytest-cov",
     "pytest-mock",
     "pytest-timeout",
+    "pytest-xdist",
     "rich",
     "tomli-w",
     "typer",
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.18.7-py3-none-any.whl", hash = "sha256:30c43277b37e429443c0cecf4cd17f8d8596bedc82f9d3ae470045666e89cf77"},
-    {file = "crackerjack-0.18.7.tar.gz", hash = "sha256:7f9e2d6840c37e87827caf2a8dbb14ddcfd5bc4bc70c73910bec404919dae012"},
+    {file = "crackerjack-0.18.9-py3-none-any.whl", hash = "sha256:4905d75c0bf3142c415741647154e7cbd53076f1a8eaa6321f17da89e4f53a8a"},
+    {file = "crackerjack-0.18.9.tar.gz", hash = "sha256:9c823cba7dd4b082f3bdf13570d7612ee4bc059fbcd8969a55a6e12d3edc3964"},
 ]
 
 [[package]]
@@ -760,6 +761,15 @@ files = [
 ]
 
 [[package]]
+name = "execnet"
+version = "2.1.1"
+summary = ""
+files = [
+    {file = "execnet-2.1.1-py3-none-any.whl", hash = "sha256:26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc"},
+    {file = "execnet-2.1.1.tar.gz", hash = "sha256:5189b52c6121c24feae288166ab41b32549c7e2348652736540b9e6e7d4e72e3"},
+]
+
+[[package]]
 name = "executing"
 version = "2.2.0"
 summary = ""
@@ -846,16 +856,16 @@ files = [
 
 [[package]]
 name = "fsspec"
-version = "2025.5.0"
+version = "2025.5.1"
 summary = ""
 files = [
-    {file = "fsspec-2025.5.0-py3-none-any.whl", hash = "sha256:0ca253eca6b5333d8a2b8bd98c7326fe821f1f0fdbd34e1b445bddde8e804c95"},
-    {file = "fsspec-2025.5.0.tar.gz", hash = "sha256:e4f4623bb6221f7407fd695cc535d1f857a077eb247580f4ada34f5dc25fd5c8"},
+    {file = "fsspec-2025.5.1-py3-none-any.whl", hash = "sha256:24d3a2e663d5fc735ab256263c4075f374a174c3410c0b25e5bd1970bceaa462"},
+    {file = "fsspec-2025.5.1.tar.gz", hash = "sha256:2e55e47a540b91843b755e83ded97c6e897fa0942b11490113f09e9c443c2475"},
 ]
 
 [[package]]
 name = "gcsfs"
-version = "2025.5.0.post1"
+version = "2025.5.1"
 summary = ""
 dependencies = [
     "aiohttp",
@@ -867,8 +877,8 @@ dependencies = [
     "requests",
 ]
 files = [
-    {file = "gcsfs-2025.5.0.post1-py2.py3-none-any.whl", hash = "sha256:88199197209152c2972c705c783822e35dd8b813086f5101fa30441cd8ca7a35"},
-    {file = "gcsfs-2025.5.0.post1.tar.gz", hash = "sha256:a5346a7185f306e8cc1dcb6c0447e9cc1ac050d22e4da89a4c176dfdf4c1dd42"},
+    {file = "gcsfs-2025.5.1-py2.py3-none-any.whl", hash = "sha256:48712471ff71ac83d3e2152ba4dc232874698466e344d5e700feba06b0a0de7b"},
+    {file = "gcsfs-2025.5.1.tar.gz", hash = "sha256:ba945530cf4857cd9d599ccb3ae729c65c39088880b11c4df1fecac30df5f3e3"},
 ]
 
 [[package]]
@@ -973,14 +983,14 @@ files = [
 
 [[package]]
 name = "google-cloud-dns"
-version = "0.35.0"
+version = "0.35.1"
 summary = ""
 dependencies = [
     "google-cloud-core",
 ]
 files = [
-    {file = "google-cloud-dns-0.35.0.tar.gz", hash = "sha256:0ac44da9eb0fa0b1229513cd888074abd0211992c4042300afd1c16d41474553"},
-    {file = "google_cloud_dns-0.35.0-py2.py3-none-any.whl", hash = "sha256:305e046bd12a0661da050b45682bea0d4089bf39d4f3ea44a8b818961e1c150c"},
+    {file = "google_cloud_dns-0.35.1-py3-none-any.whl", hash = "sha256:3355e65b56a611a6bfd06344f91046b92e990b4b1d88dd1c8e750d053d9c5ee4"},
+    {file = "google_cloud_dns-0.35.1.tar.gz", hash = "sha256:954f44615d7ab6ffcd06324e2f9e760f96b07df1fcddb024b9a109d0b330a91f"},
 ]
 
 [[package]]
@@ -1488,7 +1498,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "3.16.0"
+version = "3.16.1"
 summary = ""
 dependencies = [
     "executing",
@@ -1500,64 +1510,64 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "logfire-3.16.0-py3-none-any.whl", hash = "sha256:ac49c1a63c492e6ed205a3d49ee9ded318ca6e5af49c942465cade51c759605b"},
-    {file = "logfire-3.16.0.tar.gz", hash = "sha256:f09061cffd09b4787e2b785e2603da0868c1ac9c7cb124fdc04de82298feef15"},
+    {file = "logfire-3.16.1-py3-none-any.whl", hash = "sha256:0622089e776294f54de31ede0c6cb23d4891f8f7e4bd4dbd89ee5fed8eb8c27f"},
+    {file = "logfire-3.16.1.tar.gz", hash = "sha256:de91504243737cf161d4704a9980fbe3640f1e20c6df5f1948cb1cc559356a28"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.16.0"
+version = "3.16.1"
 extras = ["httpx"]
 summary = ""
 dependencies = [
-    "logfire==3.16.0",
+    "logfire==3.16.1",
     "opentelemetry-instrumentation-httpx",
 ]
 files = [
-    {file = "logfire-3.16.0-py3-none-any.whl", hash = "sha256:ac49c1a63c492e6ed205a3d49ee9ded318ca6e5af49c942465cade51c759605b"},
-    {file = "logfire-3.16.0.tar.gz", hash = "sha256:f09061cffd09b4787e2b785e2603da0868c1ac9c7cb124fdc04de82298feef15"},
+    {file = "logfire-3.16.1-py3-none-any.whl", hash = "sha256:0622089e776294f54de31ede0c6cb23d4891f8f7e4bd4dbd89ee5fed8eb8c27f"},
+    {file = "logfire-3.16.1.tar.gz", hash = "sha256:de91504243737cf161d4704a9980fbe3640f1e20c6df5f1948cb1cc559356a28"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.16.0"
+version = "3.16.1"
 extras = ["redis"]
 summary = ""
 dependencies = [
-    "logfire==3.16.0",
+    "logfire==3.16.1",
     "opentelemetry-instrumentation-redis",
 ]
 files = [
-    {file = "logfire-3.16.0-py3-none-any.whl", hash = "sha256:ac49c1a63c492e6ed205a3d49ee9ded318ca6e5af49c942465cade51c759605b"},
-    {file = "logfire-3.16.0.tar.gz", hash = "sha256:f09061cffd09b4787e2b785e2603da0868c1ac9c7cb124fdc04de82298feef15"},
+    {file = "logfire-3.16.1-py3-none-any.whl", hash = "sha256:0622089e776294f54de31ede0c6cb23d4891f8f7e4bd4dbd89ee5fed8eb8c27f"},
+    {file = "logfire-3.16.1.tar.gz", hash = "sha256:de91504243737cf161d4704a9980fbe3640f1e20c6df5f1948cb1cc559356a28"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.16.0"
+version = "3.16.1"
 extras = ["sqlalchemy"]
 summary = ""
 dependencies = [
-    "logfire==3.16.0",
+    "logfire==3.16.1",
     "opentelemetry-instrumentation-sqlalchemy",
 ]
 files = [
-    {file = "logfire-3.16.0-py3-none-any.whl", hash = "sha256:ac49c1a63c492e6ed205a3d49ee9ded318ca6e5af49c942465cade51c759605b"},
-    {file = "logfire-3.16.0.tar.gz", hash = "sha256:f09061cffd09b4787e2b785e2603da0868c1ac9c7cb124fdc04de82298feef15"},
+    {file = "logfire-3.16.1-py3-none-any.whl", hash = "sha256:0622089e776294f54de31ede0c6cb23d4891f8f7e4bd4dbd89ee5fed8eb8c27f"},
+    {file = "logfire-3.16.1.tar.gz", hash = "sha256:de91504243737cf161d4704a9980fbe3640f1e20c6df5f1948cb1cc559356a28"},
 ]
 
 [[package]]
 name = "logfire"
-version = "3.16.0"
+version = "3.16.1"
 extras = ["system-metrics"]
 summary = ""
 dependencies = [
-    "logfire==3.16.0",
+    "logfire==3.16.1",
     "opentelemetry-instrumentation-system-metrics",
 ]
 files = [
-    {file = "logfire-3.16.0-py3-none-any.whl", hash = "sha256:ac49c1a63c492e6ed205a3d49ee9ded318ca6e5af49c942465cade51c759605b"},
-    {file = "logfire-3.16.0.tar.gz", hash = "sha256:f09061cffd09b4787e2b785e2603da0868c1ac9c7cb124fdc04de82298feef15"},
+    {file = "logfire-3.16.1-py3-none-any.whl", hash = "sha256:0622089e776294f54de31ede0c6cb23d4891f8f7e4bd4dbd89ee5fed8eb8c27f"},
+    {file = "logfire-3.16.1.tar.gz", hash = "sha256:de91504243737cf161d4704a9980fbe3640f1e20c6df5f1948cb1cc559356a28"},
 ]
 
 [[package]]
@@ -1575,14 +1585,14 @@ files = [
 
 [[package]]
 name = "mailgun"
-version = "1.0.0"
+version = "1.0.1"
 summary = ""
 dependencies = [
     "requests",
 ]
 files = [
-    {file = "mailgun-1.0.0-py3-none-any.whl", hash = "sha256:411b158881454859e40b2d230838df8884dcd3a19efe6bdcf42001a4a5ad131d"},
-    {file = "mailgun-1.0.0.tar.gz", hash = "sha256:e08bfbb0d55c5320bc7ea718ba5b0e39cee30b5766fbf7423f266b351a47bd3b"},
+    {file = "mailgun-1.0.1-py3-none-any.whl", hash = "sha256:637b914e1737e2ce87b3e0b4c1328ecc04ae7ee1ba5fdad2f94a105435ec6f55"},
+    {file = "mailgun-1.0.1.tar.gz", hash = "sha256:600de04b672cfc14e154498731b1cc89f2499ad7ec856f0cad465f9ce817e860"},
 ]
 
 [[package]]
@@ -1998,7 +2008,7 @@ files = [
 
 [[package]]
 name = "pdm"
-version = "2.24.1"
+version = "2.24.2"
 summary = ""
 dependencies = [
     "blinker",
@@ -2026,8 +2036,8 @@ dependencies = [
     "virtualenv",
 ]
 files = [
-    {file = "pdm-2.24.1-py3-none-any.whl", hash = "sha256:4e496d6396de0633e011c33f971db08fc8f3b5b4c794163e4d867cf411960f16"},
-    {file = "pdm-2.24.1.tar.gz", hash = "sha256:fc8adf011caa4ee2b0f25dabf890152aa4153cc21599ea67fe0c14e533dcd6d9"},
+    {file = "pdm-2.24.2-py3-none-any.whl", hash = "sha256:8d6b3733abf331267d7c99aac4a243f4cfdc70232ba44820842c22a2a129a072"},
+    {file = "pdm-2.24.2.tar.gz", hash = "sha256:ce0d5e9005fe26238b8ba5cf0e37ac00acab2fb90f904bf0219a5e8445849dfb"},
 ]
 
 [[package]]
@@ -2435,14 +2445,14 @@ files = [
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.26.0"
+version = "1.0.0"
 summary = ""
 dependencies = [
     "pytest",
 ]
 files = [
-    {file = "pytest_asyncio-0.26.0-py3-none-any.whl", hash = "sha256:7b51ed894f4fbea1340262bdae5135797ebbe21d8638978e35d31c6d19f72fb0"},
-    {file = "pytest_asyncio-0.26.0.tar.gz", hash = "sha256:c4df2a697648241ff39e7f0e4a73050b03f123f760673956cf0d72a4990e312f"},
+    {file = "pytest_asyncio-1.0.0-py3-none-any.whl", hash = "sha256:4f024da9f1ef945e680dc68610b52550e36590a67fd31bb3b4943979a1f90ef3"},
+    {file = "pytest_asyncio-1.0.0.tar.gz", hash = "sha256:d15463d13f4456e1ead2594520216b225a16f781e144f8fdf6c5bb4667c48b3f"},
 ]
 
 [[package]]
@@ -2473,14 +2483,14 @@ files = [
 
 [[package]]
 name = "pytest-mock"
-version = "3.14.0"
+version = "3.14.1"
 summary = ""
 dependencies = [
     "pytest",
 ]
 files = [
-    {file = "pytest-mock-3.14.0.tar.gz", hash = "sha256:2719255a1efeceadbc056d6bf3df3d1c5015530fb40cf347c0f9afac88410bd0"},
-    {file = "pytest_mock-3.14.0-py3-none-any.whl", hash = "sha256:0b72c38033392a5f4621342fe11e9219ac11ec9d375f8e2a0c164539e0d70f6f"},
+    {file = "pytest_mock-3.14.1-py3-none-any.whl", hash = "sha256:178aefcd11307d874b4cd3100344e7e2d888d9791a6a1d9bfe90fbc1b74fd1d0"},
+    {file = "pytest_mock-3.14.1.tar.gz", hash = "sha256:159e9edac4c451ce77a5cdb9fc5d1100708d2dd4ba3c3df572f14097351af80e"},
 ]
 
 [[package]]
@@ -2493,6 +2503,19 @@ dependencies = [
 files = [
     {file = "pytest_timeout-2.4.0-py3-none-any.whl", hash = "sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2"},
     {file = "pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a"},
+]
+
+[[package]]
+name = "pytest-xdist"
+version = "3.7.0"
+summary = ""
+dependencies = [
+    "execnet",
+    "pytest",
+]
+files = [
+    {file = "pytest_xdist-3.7.0-py3-none-any.whl", hash = "sha256:7d3fbd255998265052435eb9daa4e99b62e6fb9cfb6efd1f858d4d8c0c7f0ca0"},
+    {file = "pytest_xdist-3.7.0.tar.gz", hash = "sha256:f9248c99a7c15b7d2f90715df93610353a485827bc06eefb6566d23f6400f126"},
 ]
 
 [[package]]
@@ -2696,7 +2719,7 @@ files = [
 
 [[package]]
 name = "s3fs"
-version = "2025.5.0"
+version = "2025.5.1"
 summary = ""
 dependencies = [
     "aiobotocore",
@@ -2704,8 +2727,8 @@ dependencies = [
     "fsspec",
 ]
 files = [
-    {file = "s3fs-2025.5.0-py3-none-any.whl", hash = "sha256:4eb942ebadfb7423f695475519849862d7d88f6f139cd7d9a211e5eb6fd5fc93"},
-    {file = "s3fs-2025.5.0.tar.gz", hash = "sha256:8ddbdc83c98ed55c7397a295596a7106de6f7a126c45798a95ad4d280edb3611"},
+    {file = "s3fs-2025.5.1-py3-none-any.whl", hash = "sha256:7475e7c40a3a112f17144907ffae50782ab6c03487fe0b45a9c3942bb7a5c606"},
+    {file = "s3fs-2025.5.1.tar.gz", hash = "sha256:84beffa231b8ed94f8d667e93387b38351e1c4447aedea5c2c19dd88b7fcb658"},
 ]
 
 [[package]]
@@ -2904,7 +2927,7 @@ files = [
 
 [[package]]
 name = "typer"
-version = "0.15.4"
+version = "0.16.0"
 summary = ""
 dependencies = [
     "click",
@@ -2913,8 +2936,8 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "typer-0.15.4-py3-none-any.whl", hash = "sha256:eb0651654dcdea706780c466cf06d8f174405a659ffff8f163cfbfee98c0e173"},
-    {file = "typer-0.15.4.tar.gz", hash = "sha256:89507b104f9b6a0730354f27c39fae5b63ccd0c95b1ce1f1a6ba0cfd329997c3"},
+    {file = "typer-0.16.0-py3-none-any.whl", hash = "sha256:1f79bed11d4d02d4310e3c1b7ba594183bcedb0ac73b27a9e5f28f6fb5b98855"},
+    {file = "typer-0.16.0.tar.gz", hash = "sha256:af377ffaee1dbe37ae9440cb4e8f11686ea5ce4e9bae01b84ae7c63b87f1dd3b"},
 ]
 
 [[package]]
@@ -3053,27 +3076,27 @@ files = [
 
 [[package]]
 name = "uv"
-version = "0.7.7"
+version = "0.7.9"
 summary = ""
 files = [
-    {file = "uv-0.7.7-py3-none-linux_armv6l.whl", hash = "sha256:ce79f1968bb55cb0a1eccd0db2738221d9f1ef1bc49656c28a21790e12e2031e"},
-    {file = "uv-0.7.7-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:9f4216f74b38f99a15e7b1c44ba9095b3af2e75ec2513173b8ec24afe64418a7"},
-    {file = "uv-0.7.7-py3-none-macosx_11_0_arm64.whl", hash = "sha256:31112b05e913eea2a3053b83ae9a77155aac46d91d3e06a069da13c0120ed38a"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:3d313f629014ed0532c144dd0d15e77eca20bd3816821059b49b3f74dc9cb68a"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:53f3e970e94d3b21cae128e2b7200444f1e3f020767608d71c2a6edb3e4ba8f2"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:574b1e1c093dffc449542c841ed7fe9441d4154c922ae86dfc025cec0d2b6f24"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:1da8bea1251bcee4f93754873ba57cf4e36a21f6a92586adb0e573a14ecd2a0d"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:1102e79165ae9c3aa474a6e72c18634d6dacf012f16b3404fe539fd46628f915"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:41a2b8484376f02578995a7440b3897de07043e56ad2b730dae021cd40b8808d"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:aa56eeee7624ed13aad91395df1abe556f165ebc3a467b2afb5a5757ee7c094f"},
-    {file = "uv-0.7.7-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:c8d486e3e82b2b52ab44d493953cc83a54d412b5c1ce64d078f2bea7c7a00f2c"},
-    {file = "uv-0.7.7-py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:40441f5da2355fe487fdd763fce6cdf82824189d3b8386fc91ce6cbf956c6cda"},
-    {file = "uv-0.7.7-py3-none-musllinux_1_1_i686.whl", hash = "sha256:752af3316028c30cb6f06c53cabcbf2851a9a2882729db73e05b61cb153d859c"},
-    {file = "uv-0.7.7-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:fa5180f3c0ad7f3b02b4b23b79594bf50dbf7fad7387adb685065c2cb79fb04f"},
-    {file = "uv-0.7.7-py3-none-win32.whl", hash = "sha256:eec86f6edf3f79e446d13ae688d3d62e6096c27bef956ceeb68942db8fbccb12"},
-    {file = "uv-0.7.7-py3-none-win_amd64.whl", hash = "sha256:674b85efec84ef468dd834760db34301a823f87e115e26c77634390bf1ab98c7"},
-    {file = "uv-0.7.7-py3-none-win_arm64.whl", hash = "sha256:495b0227f0051234db2f8582e3368ac2e43f6d7437dc7c9df03b2df55dd4c5cd"},
-    {file = "uv-0.7.7.tar.gz", hash = "sha256:e93b2a33d103d4c5a3e8119ca8e62412e72f6816fee74bd671c2060447f98d93"},
+    {file = "uv-0.7.9-py3-none-linux_armv6l.whl", hash = "sha256:0f8c53d411f95cec2fa19471c23b41ec456fc0d5f2efca96480d94e0c34026c2"},
+    {file = "uv-0.7.9-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:85c1a63669e49b825923fc876b7467cc3c20d4aa010f522c0ac8b0f30ce2b18e"},
+    {file = "uv-0.7.9-py3-none-macosx_11_0_arm64.whl", hash = "sha256:aa10c61668f94515acf93f31dbb8de41b1f2e7a9c41db828f2448cef786498ff"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:9de67ca9ea97db71e5697c1320508e25679fb68d4ee2cea27bbeac499a6bad56"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:13ce63524f88228152edf8a9c1c07cecc07d69a2853b32ecc02ac73538aaa5c1"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3453b7bb65eaea87c9129e27bff701007a8bd1a563249982a1ede7ec4357ced6"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:d7b1e36a8b39600d0f0333bf50c966e83beeaaee1a38380ccb0f16ab45f351c3"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:ab412ed3d415f07192805788669c8a89755086cdd6fe9f021e1ba21781728031"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:cbeb229ee86f69913f5f9236ff1b8ccbae212f559d7f029f8432fa8d9abcc7e0"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f1d654a14d632ecb078969ae7252d89dd98c89205df567a1eff18b5f078a6d00"},
+    {file = "uv-0.7.9-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:f5f47e93a5f948f431ca55d765af6e818c925500807539b976bfda7f94369aa9"},
+    {file = "uv-0.7.9-py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:267fe25ad3adf024e13617be9fc99bedebf96bf726c6140e48d856e844f21af4"},
+    {file = "uv-0.7.9-py3-none-musllinux_1_1_i686.whl", hash = "sha256:473d3c6ee07588cff8319079d9225fb393ed177d8d57186fce0d7c1aebff79c0"},
+    {file = "uv-0.7.9-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:19792c88058894c10f0370a5e5492bb4a7e6302c439fed9882e73ba2e4b231ef"},
+    {file = "uv-0.7.9-py3-none-win32.whl", hash = "sha256:298e9b3c65742edcb3097c2cf3f62ec847df174a7c62c85fe139dddaa1b9ab65"},
+    {file = "uv-0.7.9-py3-none-win_amd64.whl", hash = "sha256:82d76ea988ff1347158c6de46a571b1db7d344219e452bd7b3339c21ec37cfd8"},
+    {file = "uv-0.7.9-py3-none-win_arm64.whl", hash = "sha256:4d419bcc3138fd787ce77305f1a09e2a984766e0804c6e5a2b54adfa55d2439a"},
+    {file = "uv-0.7.9.tar.gz", hash = "sha256:baac54e49f3b0d05ee83f534fdcb27b91d2923c585bf349a1532ca25d62c216f"},
 ]
 
 [[package]]

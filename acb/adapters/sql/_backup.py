@@ -7,7 +7,7 @@ from re import search
 
 import arrow
 from anyio import Path as AsyncPath
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, ConfigDict, create_model
 from sqlmodel import SQLModel, select
 from acb.actions.encode import load
 from acb.adapters import import_adapter
@@ -69,8 +69,7 @@ class SqlBackupUtils(BaseModel):
 
 
 class SqlBackupDates(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     today: arrow.Arrow = arrow.utcnow()
     white_list: list[int] = []
