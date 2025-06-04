@@ -17,7 +17,7 @@ Cache = import_adapter()
 class RequestsSettings(RequestsBaseSettings):
     base_url: str = ""
     timeout: int = 10
-    auth: t.Optional[tuple[str, SecretStr]] = None
+    auth: tuple[str, SecretStr] | None = None
 
 
 class Requests(RequestsBase):
@@ -32,9 +32,9 @@ class Requests(RequestsBase):
         self,
         url: str,
         timeout: int = 5,
-        params: t.Optional[dict[str, t.Any]] = None,
-        headers: t.Optional[dict[str, str]] = None,
-        cookies: t.Optional[dict[str, str]] = None,
+        params: dict[str, t.Any] | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: dict[str, str] | None = None,
     ) -> HttpxResponse:
         async with AsyncCacheClient(
             storage=self.storage, controller=self.controller
@@ -46,9 +46,9 @@ class Requests(RequestsBase):
     async def post(
         self,
         url: str,
-        data: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
         timeout: int = 5,
-        json: t.Optional[dict[str, t.Any]] = None,
+        json: dict[str, t.Any] | None = None,
     ) -> HttpxResponse:
         async with AsyncCacheClient(
             storage=self.storage, controller=self.controller
@@ -58,9 +58,9 @@ class Requests(RequestsBase):
     async def put(
         self,
         url: str,
-        data: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
         timeout: int = 5,
-        json: t.Optional[dict[str, t.Any]] = None,
+        json: dict[str, t.Any] | None = None,
     ) -> HttpxResponse:
         async with AsyncCacheClient(
             storage=self.storage, controller=self.controller
@@ -77,8 +77,8 @@ class Requests(RequestsBase):
         self,
         url: str,
         timeout: int = 5,
-        data: t.Optional[dict[str, t.Any]] = None,
-        json: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
+        json: dict[str, t.Any] | None = None,
     ) -> HttpxResponse:
         async with AsyncCacheClient(
             storage=self.storage, controller=self.controller
@@ -102,8 +102,8 @@ class Requests(RequestsBase):
         method: str,
         url: str,
         timeout: int = 5,
-        data: t.Optional[dict[str, t.Any]] = None,
-        json: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
+        json: dict[str, t.Any] | None = None,
     ) -> HttpxResponse:
         async with AsyncCacheClient(
             storage=self.storage, controller=self.controller

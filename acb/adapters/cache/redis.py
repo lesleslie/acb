@@ -15,11 +15,11 @@ from ._base import CacheBase, CacheBaseSettings
 class CacheSettings(CacheBaseSettings):
     host: SecretStr = SecretStr("127.0.0.1")
     local_host: str = "127.0.0.1"
-    port: t.Optional[int] = 6379
-    cluster: t.Optional[bool] = False
-    connect_timeout: t.Optional[float] = 3
-    max_connections: t.Optional[int] = None
-    health_check_interval: t.Optional[int] = 0
+    port: int | None = 6379
+    cluster: bool | None = False
+    connect_timeout: float | None = 3
+    max_connections: int | None = None
+    health_check_interval: int | None = 0
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -28,7 +28,7 @@ class CacheSettings(CacheBaseSettings):
 
 
 class Cache(CacheBase, RedisBackend):  # type: ignore
-    def __init__(self, redis_url: t.Optional[str] = None, **kwargs: t.Any) -> None:
+    def __init__(self, redis_url: str | None = None, **kwargs: t.Any) -> None:
         self.redis_url = redis_url
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "redis_url"}
         super().__init__(**filtered_kwargs)
@@ -37,7 +37,7 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
         pass
 
     async def _clear(
-        self, namespace: t.Optional[str] = None, _conn: t.Any = None
+        self, namespace: str | None = None, _conn: t.Any = None
     ) -> t.Literal[True]:
         if not namespace:
             pattern = f"{self.config.app.name}:*"

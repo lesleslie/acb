@@ -52,9 +52,9 @@ class MockCache(CacheBase):
         self,
         key: str,
         default: t.Any = None,
-        loads_fn: t.Optional[t.Callable[..., t.Any]] = None,
-        namespace: t.Optional[str] = None,
-        _conn: t.Optional[t.Any] = None,
+        loads_fn: t.Callable[..., t.Any] | None = None,
+        namespace: str | None = None,
+        _conn: t.Any | None = None,
     ) -> t.Any:
         return await self._get(key, encoding=None)
 
@@ -63,31 +63,31 @@ class MockCache(CacheBase):
         key: str,
         value: t.Any,
         ttl: t.Any = None,
-        dumps_fn: t.Optional[t.Callable[..., t.Any]] = None,
-        namespace: t.Optional[str] = None,
-        _cas_token: t.Optional[t.Any] = None,
-        _conn: t.Optional[t.Any] = None,
+        dumps_fn: t.Callable[..., t.Any] | None = None,
+        namespace: str | None = None,
+        _cas_token: t.Any | None = None,
+        _conn: t.Any | None = None,
     ) -> None:
         await self._set(key, value, ttl)
 
     async def delete(
         self,
         key: str,
-        namespace: t.Optional[str] = None,
-        _conn: t.Optional[t.Any] = None,
+        namespace: str | None = None,
+        _conn: t.Any | None = None,
     ) -> None:
         await self._delete(key)
 
     async def exists(
         self,
         key: str,
-        namespace: t.Optional[str] = None,
-        _conn: t.Optional[t.Any] = None,
+        namespace: str | None = None,
+        _conn: t.Any | None = None,
     ) -> bool:
         return await self._exists(key)
 
     async def clear(
-        self, namespace: t.Optional[str] = None, _conn: t.Optional[t.Any] = None
+        self, namespace: str | None = None, _conn: t.Any | None = None
     ) -> None:
         await self._clear(namespace)
 
@@ -97,10 +97,10 @@ class MockCache(CacheBase):
     async def multi_get(
         self,
         keys: list[str],
-        loads_fn: t.Optional[t.Callable[..., t.Any]] = None,
-        namespace: t.Optional[str] = None,
-        _conn: t.Optional[t.Any] = None,
-        encoding: t.Optional[str] = None,
+        loads_fn: t.Callable[..., t.Any] | None = None,
+        namespace: str | None = None,
+        _conn: t.Any | None = None,
+        encoding: str | None = None,
     ) -> list[t.Any]:
         return await self._multi_get(keys, encoding=encoding)
 
@@ -108,9 +108,9 @@ class MockCache(CacheBase):
         self,
         pairs: dict[str, t.Any],
         ttl: t.Any = None,
-        dumps_fn: t.Optional[t.Callable[..., t.Any]] = None,
-        namespace: t.Optional[str] = None,
-        _conn: t.Optional[t.Any] = None,
+        dumps_fn: t.Callable[..., t.Any] | None = None,
+        namespace: str | None = None,
+        _conn: t.Any | None = None,
     ) -> t.Literal[True]:
         await self._multi_set(pairs, ttl)
         return True
@@ -118,15 +118,15 @@ class MockCache(CacheBase):
     async def multi_delete(
         self,
         keys: list[str],
-        namespace: t.Optional[str] = None,
-        _conn: t.Optional[t.Any] = None,
+        namespace: str | None = None,
+        _conn: t.Any | None = None,
     ) -> None:
         await self._multi_delete(keys)
 
 
 class TestCacheBaseSettings:
     def test_init(self) -> None:
-        val: t.Optional[int] = 300
+        val: int | None = 300
         settings: MockCacheBaseSettings = MockCacheBaseSettings(ttl=val)  # type: ignore
         assert settings.ttl == val
 
@@ -180,9 +180,9 @@ class TestCacheBase:
 
     @pytest.mark.asyncio
     async def test_keys(self, cache: MockCache) -> None:
-        keys: t.List[str] = ["key1", "key2"]
+        keys: list[str] = ["key1", "key2"]
         cache._keys = AsyncMock(return_value=keys)  # type: ignore
-        result: t.List[str] = await cache.keys()  # type: ignore
+        result: list[str] = await cache.keys()  # type: ignore
         assert result == keys
         cache._keys.assert_called_once()  # type: ignore
 

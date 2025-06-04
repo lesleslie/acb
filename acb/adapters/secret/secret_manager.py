@@ -1,3 +1,4 @@
+import builtins
 import typing as t
 from contextlib import suppress
 from functools import cached_property
@@ -28,7 +29,7 @@ class Secret(SecretBase):
     def extract_secret_name(self, secret_path: str) -> str:
         return secret_path.split("/")[-1].removeprefix(self.prefix)
 
-    async def list(self, adapter: t.Optional[str] = None) -> t.List[str]:
+    async def list(self, adapter: str | None = None) -> list[str]:
         filter_str = f"{self.prefix}{adapter}_" if adapter else self.prefix
         request = ListSecretsRequest(parent=self.parent, filter=filter_str)
         try:
@@ -42,7 +43,7 @@ class Secret(SecretBase):
         ]
         return client_secrets
 
-    async def get(self, name: str, version: t.Optional[str] = None) -> t.Optional[str]:
+    async def get(self, name: str, version: str | None = None) -> str | None:
         version_str = version or "latest"
         path = f"projects/{self.project}/secrets/{name}/versions/{version_str}"
         request = AccessSecretVersionRequest(name=path)
@@ -94,7 +95,7 @@ class Secret(SecretBase):
         await self.client.delete_secret(request=request)
         self.logger.debug(f"Deleted secret - {secret}")
 
-    async def list_versions(self, name: str) -> t.List[str]:
+    async def list_versions(self, name: str) -> builtins.list[str]:
         secret = self.client.secret_path(self.project, name)
         request = ListSecretVersionsRequest(parent=secret)
         versions = await self.client.list_secret_versions(request=request)

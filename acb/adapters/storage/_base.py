@@ -18,17 +18,17 @@ nest_asyncio.apply()
 
 
 class StorageBaseSettings(Settings):
-    prefix: t.Optional[str] = None
-    local_path: t.Optional[AsyncPath] = tmp_path / "storage"
-    user_project: t.Optional[str] = None
+    prefix: str | None = None
+    local_path: AsyncPath | None = tmp_path / "storage"
+    user_project: str | None = None
     buckets: dict[str, str] = {
         "test": "test-bucket",
         "media": "media-bucket",
         "templates": "templates-bucket",
     }
-    cors: t.Optional[dict[str, dict[str, list[str] | int]]] = None
-    local_fs: t.Optional[bool] = False
-    memory_fs: t.Optional[bool] = False
+    cors: dict[str, dict[str, list[str] | int]] | None = None
+    local_fs: bool | None = False
+    memory_fs: bool | None = False
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -47,7 +47,7 @@ class StorageBaseSettings(Settings):
 
 class StorageBucketProtocol(t.Protocol):
     root: AsyncPath
-    prefix: t.Optional[str]
+    prefix: str | None
     name: str
     bucket: str
     client: t.Any
@@ -74,14 +74,14 @@ class StorageBucket:
     root: AsyncPath
     client: t.Any
     bucket: str
-    prefix: t.Optional[str] = None
+    prefix: str | None = None
     config: Config = depends()
 
     def __init__(
         self,
         client: t.Any,
         bucket: str,
-        prefix: t.Optional[str] = None,
+        prefix: str | None = None,
     ) -> None:
         self.client = client
         self.name = bucket

@@ -23,10 +23,10 @@ from ._base import FileInfo, FtpdBase, FtpdBaseSettings
 
 class FtpdSettings(FtpdBaseSettings):
     port: int = 8022
-    server_host_keys: t.List[str] = Field(default_factory=list)
-    authorized_client_keys: t.Optional[str] = None
-    known_hosts: t.Optional[str] = None
-    client_keys: t.List[str] = Field(default_factory=list)
+    server_host_keys: list[str] = Field(default_factory=list)
+    authorized_client_keys: str | None = None
+    known_hosts: str | None = None
+    client_keys: list[str] = Field(default_factory=list)
 
 
 class SFTPHandler(SFTPServer):
@@ -36,11 +36,11 @@ class SFTPHandler(SFTPServer):
 
 
 class Ftpd(FtpdBase):
-    _server: t.Optional[asyncssh.SSHServer] = None
-    _client: t.Optional[SSHClientConnection] = None
-    _sftp_client: t.Optional[SFTPClient] = None
-    _server_task: t.Optional[asyncio.Task[t.Any]] = None
-    _server_acceptor: t.Optional[asyncssh.SSHAcceptor] = None
+    _server: asyncssh.SSHServer | None = None
+    _client: SSHClientConnection | None = None
+    _sftp_client: SFTPClient | None = None
+    _server_task: asyncio.Task[t.Any] | None = None
+    _server_acceptor: asyncssh.SSHAcceptor | None = None
 
     @cached_property
     def server_factory(self) -> t.Callable[..., t.Any]:
@@ -125,7 +125,7 @@ class Ftpd(FtpdBase):
         return self._sftp_client
 
     @asynccontextmanager
-    async def connect(self) -> t.AsyncGenerator["Ftpd", None]:
+    async def connect(self) -> t.AsyncGenerator["Ftpd"]:
         client = await self._ensure_client()
         try:
             yield self
@@ -145,7 +145,7 @@ class Ftpd(FtpdBase):
         client = await self._ensure_client()
         await client.get(remote_path, str(local_path))
 
-    async def list_dir(self, path: str) -> t.List[FileInfo]:
+    async def list_dir(self, path: str) -> list[FileInfo]:
         client = await self._ensure_client()
         result = []
         for file_attr in await client.listdir(path):

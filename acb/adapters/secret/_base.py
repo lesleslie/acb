@@ -1,4 +1,4 @@
-import typing as t
+import builtins
 from abc import abstractmethod
 
 from anyio import Path as AsyncPath
@@ -13,7 +13,7 @@ class SecretBase(AdapterBase):
     prefix: str = f"{app_name}_"
 
     @abstractmethod
-    async def list(self, adapter: t.Optional[str] = None) -> t.List[str]:
+    async def list(self, adapter: str | None = None) -> list[str]:
         pass
 
     @abstractmethod
@@ -25,7 +25,7 @@ class SecretBase(AdapterBase):
         pass
 
     @abstractmethod
-    async def get(self, name: str, version: t.Optional[str] = None) -> t.Optional[str]:
+    async def get(self, name: str, version: str | None = None) -> str | None:
         pass
 
     @abstractmethod
@@ -33,5 +33,5 @@ class SecretBase(AdapterBase):
         pass
 
     @abstractmethod
-    async def list_versions(self, name: str) -> t.List[str]:
+    async def list_versions(self, name: str) -> builtins.list[str]:
         pass

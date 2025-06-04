@@ -1,8 +1,9 @@
 """Tests for hashing functionality."""
 
 import hashlib
+from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Final
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import MagicMock, patch
 from warnings import catch_warnings
 
@@ -12,7 +13,7 @@ from anyio import Path as AsyncPath
 from acb.actions.hash import hash
 
 if TYPE_CHECKING:
-    from typing import Type
+    pass
 
 with catch_warnings(action="ignore", category=RuntimeWarning):
     from google_crc32c import value as crc32c
@@ -193,7 +194,7 @@ class TestHash:
         ],
     )
     async def test_hash_invalid_input(
-        self, hash_func: Callable[[Any], Any], exception_type: "Type[Exception]"
+        self, hash_func: Callable[[Any], Any], exception_type: "type[Exception]"
     ) -> None:
         with pytest.raises(exception_type):
             await hash_func(None)  # type: ignore

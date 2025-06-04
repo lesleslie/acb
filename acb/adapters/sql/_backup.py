@@ -21,7 +21,7 @@ Sql, Storage = import_adapter()
 class SqlBackupUtils(BaseModel):
     storage: Storage = depends()
     config: Config = depends()
-    backup_path: t.Optional[Path] = None
+    backup_path: Path | None = None
 
     @staticmethod
     def get_timestamp(name: str) -> str | None:
@@ -76,7 +76,7 @@ class SqlBackupDates(BaseModel):
     black_list: list[int] = []
     dates: list[int] = []
 
-    def __init__(self, dates: t.Optional[list[int]] = None, **data: t.Any) -> None:
+    def __init__(self, dates: list[int] | None = None, **data: t.Any) -> None:
         super().__init__(**data)
         self.dates = sorted(dates, reverse=True) if dates else []
         self.process()

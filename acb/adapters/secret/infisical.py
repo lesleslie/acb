@@ -1,6 +1,6 @@
 import asyncio
+import builtins
 import os
-import typing as t
 from functools import cached_property
 
 from infisical_sdk import InfisicalSDKClient
@@ -12,13 +12,13 @@ from ._base import SecretBase, SecretBaseSettings
 
 class SecretSettings(SecretBaseSettings):
     host: str = "https://app.infisical.com"
-    client_id: t.Optional[str] = None
-    client_secret: t.Optional[str] = None
-    token: t.Optional[str] = None
-    project_id: t.Optional[str] = None
+    client_id: str | None = None
+    client_secret: str | None = None
+    token: str | None = None
+    project_id: str | None = None
     environment: str = "dev"
     secret_path: str = os.getenv("ACB_TEST_SECRET_PATH", "/")
-    cache_ttl: t.Optional[int] = 60
+    cache_ttl: int | None = 60
 
 
 class Secret(SecretBase):
@@ -54,7 +54,7 @@ class Secret(SecretBase):
     def extract_secret_name(self, secret_path: str) -> str:
         return secret_path.split("/")[-1].removeprefix(self.prefix)
 
-    async def list(self, adapter: t.Optional[str] = None) -> t.List[str]:
+    async def list(self, adapter: str | None = None) -> list[str]:
         try:
             filter_prefix = f"{self.prefix}{adapter}_" if adapter else self.prefix
 
@@ -80,7 +80,7 @@ class Secret(SecretBase):
             self.logger.error(f"Failed to list secrets: {e}")
             raise
 
-    async def get(self, name: str, version: t.Optional[str] = None) -> t.Optional[str]:
+    async def get(self, name: str, version: str | None = None) -> str | None:
         try:
             project_id = self.config.secret.project_id
             if not project_id:
@@ -181,7 +181,7 @@ class Secret(SecretBase):
             self.logger.error(f"Failed to delete secret {name}: {e}")
             raise
 
-    async def list_versions(self, name: str) -> t.List[str]:
+    async def list_versions(self, name: str) -> builtins.list[str]:
         self.logger.warning(
             "Listing secret versions is not currently supported by the Infisical adapter"
         )

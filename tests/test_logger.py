@@ -94,7 +94,7 @@ class TestLoggerProtocol:
 
 class TestLogger:
     @pytest.fixture
-    def mock_config(self) -> t.Generator[MagicMock, None, None]:
+    def mock_config(self) -> t.Generator[MagicMock]:
         with patch("acb.logger.depends.get") as mock_get:
             mock_config: MagicMock = MagicMock(spec=Config)
             mock_config.logger = LoggerSettings()

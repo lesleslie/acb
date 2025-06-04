@@ -2,9 +2,10 @@ import asyncio
 import os
 import tempfile
 import typing as t
+from collections.abc import Generator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Generator, Optional, TypeAlias, cast
+from typing import Any, cast
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -13,8 +14,8 @@ from _pytest.main import Session
 from _pytest.monkeypatch import MonkeyPatch
 from acb.config import Config
 
-TaskSet: TypeAlias = set[asyncio.Task[object]]
-MarkerTuple: TypeAlias = tuple[str, str]
+type TaskSet = set[asyncio.Task[object]]
+type MarkerTuple = tuple[str, str]
 
 original_exists = os.path.exists
 
@@ -229,7 +230,7 @@ def cleanup_async_tasks() -> Generator[None, Any, Any]:
                         timeout=2.0,
                     )
                     loop.run_until_complete(future)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     print(
                         "Warning: Timed out waiting for tasks to complete during cleanup"
                     )
@@ -255,7 +256,7 @@ def pytest_sessionfinish(session: Session, exitstatus: int | pytest.ExitCode) ->
                     timeout=3.0,
                 )
                 loop.run_until_complete(future)
-        except (asyncio.TimeoutError, RuntimeError):
+        except (TimeoutError, RuntimeError):
             print("Warning: Some tasks did not complete during cleanup")
 
     with suppress(RuntimeError):
@@ -286,7 +287,7 @@ def mock_tmp_path(tmp_path: Path) -> Path:
     mock_path.__str__ = MagicMock(return_value=str(test_dir))
     mock_path.__repr__ = MagicMock(return_value=f"Path('{test_dir}')")
 
-    def path_join(other: Optional[str]) -> MagicMock:
+    def path_join(other: str | None) -> MagicMock:
         if other is None:
             return mock_path
         new_path = MagicMock(spec=Path)
@@ -542,7 +543,7 @@ class MockDns:
         self.zones: dict[str, dict[str, Any]] = {}
 
     async def get_records(
-        self, domain: Optional[str], record_type: Optional[str] = None
+        self, domain: str | None, record_type: str | None = None
     ) -> list[dict[str, Any]]:
         if domain is None:
             return []
@@ -551,9 +552,9 @@ class MockDns:
 
     async def create_record(
         self,
-        domain: Optional[str],
-        record_type: Optional[str],
-        value: Optional[str] = None,
+        domain: str | None,
+        record_type: str | None,
+        value: str | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         if domain is None or record_type is None or value is None:
@@ -572,9 +573,7 @@ class MockDns:
         self.records[key].append(record)
         return record
 
-    async def delete_record(
-        self, domain: Optional[str], record_id: Optional[str]
-    ) -> bool:
+    async def delete_record(self, domain: str | None, record_id: str | None) -> bool:
         if domain is None or record_id is None:
             return False
         for key, records in self.records.items():
@@ -585,7 +584,7 @@ class MockDns:
                         return True
         return False
 
-    async def create_zone(self, domain: Optional[str], **kwargs: Any) -> dict[str, Any]:
+    async def create_zone(self, domain: str | None, **kwargs: Any) -> dict[str, Any]:
         if domain is None:
             return {}
         if domain in self.zones:
@@ -596,7 +595,7 @@ class MockDns:
         self.zones[domain] = zone
         return zone
 
-    async def get_zone_id(self, domain: Optional[str]) -> str:
+    async def get_zone_id(self, domain: str | None) -> str:
         if domain is None:
             return ""
         if domain in self.zones:
@@ -604,15 +603,15 @@ class MockDns:
         return ""
 
     async def list_records(
-        self, domain: Optional[str], record_type: Optional[str] = None
+        self, domain: str | None, record_type: str | None = None
     ) -> list[dict[str, Any]]:
         return await self.get_records(domain, record_type)
 
     async def find_existing_record(
         self,
-        domain: Optional[str],
-        record_type: Optional[str],
-        value: Optional[str] = None,
+        domain: str | None,
+        record_type: str | None,
+        value: str | None = None,
     ) -> dict[str, Any]:
         if domain is None or record_type is None:
             return {}
@@ -625,9 +624,7 @@ class MockDns:
 
 
 class MockRequests:
-    async def get(
-        self, url: Optional[str], headers: dict[str, str] | None = None
-    ) -> Any:
+    async def get(self, url: str | None, headers: dict[str, str] | None = None) -> Any:
         if url is None:
             return None
         mock_response = MagicMock()
@@ -637,7 +634,7 @@ class MockRequests:
 
     async def post(
         self,
-        url: Optional[str],
+        url: str | None,
         data: Any = None,
         json: Any = None,
         headers: dict[str, str] | None = None,
@@ -651,15 +648,15 @@ class MockRequests:
 
 
 class MockStorage:
-    async def upload(self, source: Path, destination: Optional[str]) -> None:
+    async def upload(self, source: Path, destination: str | None) -> None:
         if destination is None:
             return
 
-    async def download(self, source: Optional[str], destination: Path) -> None:
+    async def download(self, source: str | None, destination: Path) -> None:
         if source is None:
             return
 
-    async def list_files(self, path: Optional[str]) -> list[str]:
+    async def list_files(self, path: str | None) -> list[str]:
         if path is None:
             return []
         return []

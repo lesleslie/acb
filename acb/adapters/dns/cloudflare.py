@@ -14,19 +14,19 @@ from ._base import DnsBase, DnsBaseSettings, DnsRecord
 
 
 class DnsSettings(DnsBaseSettings):
-    api_email: t.Optional[str] = None
-    api_key: t.Optional[SecretStr] = None
-    api_token: t.Optional[SecretStr] = None
-    account_id: t.Optional[str] = None
-    zone_name: t.Optional[str] = None
+    api_email: str | None = None
+    api_key: SecretStr | None = None
+    api_token: SecretStr | None = None
+    account_id: str | None = None
+    zone_name: str | None = None
     proxied: bool = False
     ttl: int = 300
 
 
 class Dns(DnsBase):
-    current_records: t.List[DnsRecord] = []
-    new_records: t.List[DnsRecord] = []
-    zone_id: t.Optional[str] = None
+    current_records: list[DnsRecord] = []
+    new_records: list[DnsRecord] = []
+    zone_id: str | None = None
 
     async def init(self) -> None:
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
@@ -98,7 +98,7 @@ class Dns(DnsBase):
             self.logger.error(f"Error creating zone: {e}")
             raise
 
-    def list_records(self) -> t.List[DnsRecord]:
+    def list_records(self) -> list[DnsRecord]:
         if not self.zone_id:
             self.logger.error("Zone ID not found. Initialize the adapter first.")
             raise ValueError("Zone ID not found")
@@ -159,9 +159,7 @@ class Dns(DnsBase):
             self.logger.error(f"Error creating record: {e}")
             raise
 
-    def _find_existing_record(
-        self, record: DnsRecord
-    ) -> t.Optional[t.Dict[str, t.Any]]:
+    def _find_existing_record(self, record: DnsRecord) -> dict[str, t.Any] | None:
         if not self.zone_id:
             return None
 
@@ -183,7 +181,7 @@ class Dns(DnsBase):
             self.logger.error(f"Error finding existing record: {e}")
             return None
 
-    async def create_records(self, records: t.List[DnsRecord] | DnsRecord) -> None:
+    async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         records = [records] if isinstance(records, DnsRecord) else records
 
         for record in records:

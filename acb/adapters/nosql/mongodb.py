@@ -12,7 +12,7 @@ from ._base import NosqlBase, NosqlBaseSettings
 
 class NosqlSettings(NosqlBaseSettings):
     port: int | None = 27017
-    connection_options: t.Dict[str, t.Any] = {}
+    connection_options: dict[str, t.Any] = {}
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -57,33 +57,33 @@ class Nosql(NosqlBase):
             raise
 
     async def find(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         cursor = self.db[collection].find(filter, **kwargs)
         return await cursor.to_list(length=None)
 
     async def find_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.Optional[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> dict[str, t.Any] | None:
         return await self.db[collection].find_one(filter, **kwargs)
 
     async def insert_one(
-        self, collection: str, document: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         result = await self.db[collection].insert_one(document, **kwargs)
         return result.inserted_id
 
     async def insert_many(
-        self, collection: str, documents: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Any]:
+        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[t.Any]:
         result = await self.db[collection].insert_many(documents, **kwargs)
         return result.inserted_ids
 
     async def update_one(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         return await self.db[collection].update_one(filter, update, **kwargs)
@@ -91,38 +91,38 @@ class Nosql(NosqlBase):
     async def update_many(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         return await self.db[collection].update_many(filter, update, **kwargs)
 
     async def delete_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         return await self.db[collection].delete_one(filter, **kwargs)
 
     async def delete_many(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         return await self.db[collection].delete_many(filter, **kwargs)
 
     async def count(
         self,
         collection: str,
-        filter: t.Optional[t.Dict[str, t.Any]] = None,
+        filter: dict[str, t.Any] | None = None,
         **kwargs: t.Any,
     ) -> int:
         return await self.db[collection].count_documents(filter or {}, **kwargs)
 
     async def aggregate(
-        self, collection: str, pipeline: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         cursor = self.db[collection].aggregate(pipeline, **kwargs)
         return await cursor.to_list(length=None)
 
     @asynccontextmanager
-    async def transaction(self) -> t.AsyncGenerator[None, None]:
+    async def transaction(self) -> t.AsyncGenerator[None]:
         session = await self.client.start_session()
         try:
             async with session.start_transaction():

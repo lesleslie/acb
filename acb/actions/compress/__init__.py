@@ -2,20 +2,19 @@ import os
 from gzip import BadGzipFile, GzipFile
 from io import BytesIO
 from pathlib import Path
-from typing import Union
 
 import brotli
 
 __all__: list[str] = ["compress", "decompress"]
 
-ContentType = Union[str, bytes, Path]
+ContentType = str | bytes | Path
 
 
 class Compress:
     @staticmethod
     def gzip(
         content: ContentType,
-        output_path: Union[str, Path, None] = None,
+        output_path: str | Path | None = None,
         compresslevel: int = 6,
     ) -> bytes | None:
         if isinstance(content, Path):

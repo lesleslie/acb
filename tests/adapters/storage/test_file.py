@@ -1,7 +1,6 @@
 """Simplified tests for the File Storage adapter."""
 
 from pathlib import Path
-from typing import Optional
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,7 +8,7 @@ from tests.test_interfaces import StorageTestInterface
 
 
 class MockFileStorage:
-    def __init__(self, root_dir: Optional[str] = None) -> None:
+    def __init__(self, root_dir: str | None = None) -> None:
         self.root_dir: str = root_dir if root_dir is not None else "."
         self._initialized: bool = False
         self._files: dict[str, bytes] = {}
@@ -26,7 +25,7 @@ class MockFileStorage:
         self._files[path] = content
         return True
 
-    async def get_file(self, path: str) -> Optional[bytes]:
+    async def get_file(self, path: str) -> bytes | None:
         return self._files.get(path)
 
     async def delete_file(self, path: str) -> bool:

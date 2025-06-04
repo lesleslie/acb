@@ -1,8 +1,9 @@
 """Tests for the Gmail SMTP adapter."""
 
 import typing as t
-from contextlib import asynccontextmanager
-from typing import Any, AsyncContextManager, AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -12,11 +13,13 @@ from acb.adapters.smtp.gmail import SmtpSettings as GmailSmtpSettings
 
 
 @pytest.fixture
-def mock_async_context_manager() -> Callable[..., AsyncContextManager[MagicMock]]:
+def mock_async_context_manager() -> Callable[
+    ..., AbstractAsyncContextManager[MagicMock]
+]:
     @asynccontextmanager
     async def _async_context_manager(
         *args: Any, **kwargs: Any
-    ) -> AsyncGenerator[MagicMock, None]:
+    ) -> AsyncGenerator[MagicMock]:
         yield MagicMock()
 
     return _async_context_manager
@@ -91,7 +94,10 @@ class TestGmailSmtpSettings:
 class TestGmailSmtp:
     @pytest.fixture
     def smtp(
-        self, mock_async_context_manager: Callable[..., AsyncContextManager[MagicMock]]
+        self,
+        mock_async_context_manager: Callable[
+            ..., AbstractAsyncContextManager[MagicMock]
+        ],
     ) -> GmailSmtp:
         class TestableGmailSmtp(GmailSmtp):
             def __init__(self) -> None:

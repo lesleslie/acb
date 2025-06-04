@@ -30,12 +30,12 @@ class MockFtpClientProtocol(t.Protocol):
     async def quit(self) -> None: ...
     async def upload(self, local_path: str, remote_path: str) -> None: ...
     async def download(self, remote_path: str, local_path: str) -> None: ...
-    def list(self, path: str) -> t.AsyncIterator[t.Tuple[None, t.Dict[str, t.Any]]]: ...
+    def list(self, path: str) -> t.AsyncIterator[tuple[None, dict[str, t.Any]]]: ...
     async def make_directory(self, path: str) -> None: ...
     async def remove_directory(self, path: str) -> None: ...
     async def remove_file(self, path: str) -> None: ...
     async def rename(self, old_path: str, new_path: str) -> None: ...
-    async def stat(self, path: str) -> t.Dict[str, t.Any]: ...
+    async def stat(self, path: str) -> dict[str, t.Any]: ...
 
 
 class MockFtpClient(MockFtpClientProtocol):
@@ -67,10 +67,8 @@ class MockFtpClient(MockFtpClientProtocol):
     async def download(self, remote_path: str, local_path: str) -> None:
         return await self._download(remote_path, local_path)
 
-    def list(self, path: str) -> t.AsyncIterator[t.Tuple[None, t.Dict[str, t.Any]]]:
-        async def _list_generator() -> t.AsyncIterator[
-            t.Tuple[None, t.Dict[str, t.Any]]
-        ]:
+    def list(self, path: str) -> t.AsyncIterator[tuple[None, dict[str, t.Any]]]:
+        async def _list_generator() -> t.AsyncIterator[tuple[None, dict[str, t.Any]]]:
             file_infos = await self._list(path)
             for info in file_infos:
                 yield info
@@ -89,7 +87,7 @@ class MockFtpClient(MockFtpClientProtocol):
     async def rename(self, old_path: str, new_path: str) -> None:
         return await self._rename(old_path, new_path)
 
-    async def stat(self, path: str) -> t.Dict[str, t.Any]:
+    async def stat(self, path: str) -> dict[str, t.Any]:
         return await self._stat(path)
 
 
@@ -174,7 +172,7 @@ def mock_client() -> MockFtpClient:
 @pytest.fixture
 async def ftpd_adapter(
     mock_client: MockFtpClient, mock_server: MockServer
-) -> t.AsyncGenerator[Ftpd, None]:
+) -> t.AsyncGenerator[Ftpd]:
     with (
         patch("aioftp.Client", return_value=mock_client),
         patch("aioftp.Server", return_value=mock_server),
@@ -332,7 +330,7 @@ async def test_rmdir_recursive(ftpd_adapter: Ftpd, mock_client: MockFtpClient) -
     try:
         call_tracker = {"list_dir": [], "delete": [], "rmdir": []}
 
-        async def mock_list_dir(path: str) -> t.List[FileInfo]:
+        async def mock_list_dir(path: str) -> list[FileInfo]:
             call_tracker["list_dir"].append(path)
             if path == "/test/dir":
                 return [

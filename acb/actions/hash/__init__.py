@@ -39,13 +39,17 @@ class Hash:
 
     @staticmethod
     async def blake3(
-        obj: t.Optional[
-            Path | AsyncPath | t.List[str] | bytes | str | t.Dict[str, t.Any]
-        ] = None,
+        obj: Path
+        | AsyncPath
+        | list[str]
+        | bytes
+        | str
+        | dict[str, t.Any]
+        | None = None,
     ) -> str:
         if obj is None:
             raise TypeError("Cannot hash None value")
-        if isinstance(obj, (Path, AsyncPath)):
+        if isinstance(obj, Path | AsyncPath):
             path = AsyncPath(obj)
             if not await path.exists():
                 raise FileNotFoundError(f"File not found: {obj}")
@@ -66,7 +70,7 @@ class Hash:
 
     @staticmethod
     async def crc32c(obj: Path | AsyncPath | str | bytes | dict[str, t.Any]) -> str:
-        if isinstance(obj, (Path, AsyncPath)):
+        if isinstance(obj, Path | AsyncPath):
             path = AsyncPath(obj)
             if not await path.exists():
                 raise FileNotFoundError(f"File not found: {obj}")
@@ -88,7 +92,7 @@ class Hash:
         obj: Path | AsyncPath | str | bytes | dict[str, t.Any],
         usedforsecurity: bool = False,
     ) -> str:
-        if isinstance(obj, (Path, AsyncPath)):
+        if isinstance(obj, Path | AsyncPath):
             path = AsyncPath(obj)
             if not await path.exists():
                 raise FileNotFoundError(f"File not found: {obj}")

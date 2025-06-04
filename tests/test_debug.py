@@ -1,5 +1,6 @@
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Final, Generator
+from typing import Any, Final
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -144,7 +145,7 @@ class TestPprint:
 
 class TestInitDebug:
     @pytest.fixture
-    def mock_config(self) -> Generator[MagicMock, None, None]:
+    def mock_config(self) -> Generator[MagicMock]:
         mock_config: MagicMock = MagicMock(spec=Config)
         mock_config.debug = MagicMock()
         mock_config.debug.production = False

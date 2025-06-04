@@ -38,9 +38,9 @@ class NosqlSettings(NosqlBaseSettings):
 
 
 class Nosql(NosqlBase):
-    _models: dict[str, t.Type[HashModel]] = {}
-    _client: t.Optional[Redis] = None  # type: ignore
-    _transaction: t.Optional[t.Any] = None
+    _models: dict[str, type[HashModel]] = {}
+    _client: Redis | None = None  # type: ignore
+    _transaction: t.Any | None = None
 
     @cached_property
     def client(self) -> Redis:  # type: ignore
@@ -71,15 +71,15 @@ class Nosql(NosqlBase):
             self.logger.error(f"Failed to initialize Redis connection: {e}")
             raise
 
-    def _get_key(self, collection: str, id: t.Optional[str] = None) -> str:
+    def _get_key(self, collection: str, id: str | None = None) -> str:
         prefix = self.config.nosql.collection_prefix
         if id:
             return f"{prefix}{collection}:{id}"
         return f"{prefix}{collection}"
 
     async def find(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         results = []
         pattern = self._get_key(collection, "*")
         keys = await self.client.keys(pattern)
@@ -96,9 +96,7 @@ class Nosql(NosqlBase):
 
         return results
 
-    def _matches_filter(
-        self, data: t.Dict[str, t.Any], filter: t.Dict[str, t.Any]
-    ) -> bool:
+    def _matches_filter(self, data: dict[str, t.Any], filter: dict[str, t.Any]) -> bool:
         if not filter:
             return True
 
@@ -108,8 +106,8 @@ class Nosql(NosqlBase):
         return True
 
     async def find_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.Optional[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> dict[str, t.Any] | None:
         if "_id" in filter:
             key = self._get_key(collection, filter["_id"])
             data = await self.client.hgetall(key)
@@ -122,7 +120,7 @@ class Nosql(NosqlBase):
         return results[0] if results else None
 
     async def insert_one(
-        self, collection: str, document: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         doc_id = document.get(
             "_id", str(await self.client.incr(f"{collection}:id_counter"))
@@ -140,8 +138,8 @@ class Nosql(NosqlBase):
         return doc_id
 
     async def insert_many(
-        self, collection: str, documents: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Any]:
+        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[t.Any]:
         ids = []
         for doc in documents:
             doc_id = await self.insert_one(collection, doc, **kwargs)
@@ -151,8 +149,8 @@ class Nosql(NosqlBase):
     async def update_one(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         doc = await self.find_one(collection, filter)
@@ -175,8 +173,8 @@ class Nosql(NosqlBase):
     async def update_many(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         docs = await self.find(collection, filter)
@@ -199,7 +197,7 @@ class Nosql(NosqlBase):
         return {"modified_count": modified_count}
 
     async def delete_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         doc = await self.find_one(collection, filter)
         if not doc:
@@ -215,7 +213,7 @@ class Nosql(NosqlBase):
         return {"deleted_count": 1}
 
     async def delete_many(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         docs = await self.find(collection, filter)
         deleted_count = 0
@@ -235,7 +233,7 @@ class Nosql(NosqlBase):
     async def count(
         self,
         collection: str,
-        filter: t.Optional[t.Dict[str, t.Any]] = None,
+        filter: dict[str, t.Any] | None = None,
         **kwargs: t.Any,
     ) -> int:
         if not filter:
@@ -245,8 +243,8 @@ class Nosql(NosqlBase):
         return len(docs)
 
     async def aggregate(
-        self, collection: str, pipeline: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         docs = await self.find(collection, {})
 
         for stage in pipeline:
@@ -265,7 +263,7 @@ class Nosql(NosqlBase):
         return docs
 
     @asynccontextmanager
-    async def transaction(self) -> t.AsyncGenerator[None, None]:
+    async def transaction(self) -> t.AsyncGenerator[None]:
         pipeline = self.client.pipeline()
         try:
             self._transaction = pipeline

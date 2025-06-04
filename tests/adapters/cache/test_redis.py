@@ -9,7 +9,7 @@ from tests.adapters.cache.test_cache_base import assert_cache_operations
 
 
 @asynccontextmanager
-async def mock_redis_client() -> t.AsyncGenerator[AsyncMock, None]:
+async def mock_redis_client() -> t.AsyncGenerator[AsyncMock]:
     with patch("redis.asyncio.Redis") as mock_redis:
         mock_client = AsyncMock()
         mock_redis.from_url.return_value = mock_client
@@ -17,10 +17,10 @@ async def mock_redis_client() -> t.AsyncGenerator[AsyncMock, None]:
 
 
 class RedisCache:
-    def __init__(self, redis_url: t.Optional[str] = None) -> None:
-        self.redis_url: t.Optional[str] = redis_url
+    def __init__(self, redis_url: str | None = None) -> None:
+        self.redis_url: str | None = redis_url
         self._namespace: str = "acb:"
-        self._data: t.Dict[str, t.Any] = {}
+        self._data: dict[str, t.Any] = {}
         self._initialized: bool = False
 
         self.client: AsyncMock = AsyncMock()
@@ -34,9 +34,7 @@ class RedisCache:
     async def _mock_get(self, key: str) -> t.Any:
         return self._data.get(key)
 
-    async def _mock_set(
-        self, key: str, value: t.Any, ex: t.Optional[int] = None
-    ) -> bool:
+    async def _mock_set(self, key: str, value: t.Any, ex: int | None = None) -> bool:
         self._data[key] = value
         return True
 
@@ -46,10 +44,10 @@ class RedisCache:
             return 1
         return 0
 
-    async def _mock_exists(self, keys: t.List[str]) -> bool:
+    async def _mock_exists(self, keys: list[str]) -> bool:
         return any(key in self._data for key in keys)
 
-    async def _mock_keys(self, pattern: str) -> t.List[str]:
+    async def _mock_keys(self, pattern: str) -> list[str]:
         if pattern.endswith("*"):
             prefix = pattern[:-1]
             return [k for k in self._data.keys() if k.startswith(prefix)]
@@ -64,7 +62,7 @@ class RedisCache:
         value: t.Any = await self.client.get(full_key)
         return value if value is not None else default
 
-    async def set(self, key: str, value: t.Any, ttl: t.Optional[int] = None) -> bool:
+    async def set(self, key: str, value: t.Any, ttl: int | None = None) -> bool:
         full_key: str = f"{self._namespace}{key}"
         return await self.client.set(full_key, value, ex=ttl)
 
@@ -77,12 +75,12 @@ class RedisCache:
         number: bool = await self.client.exists([full_key])
         return number
 
-    async def clear(self, namespace: t.Optional[str] = None) -> bool:
+    async def clear(self, namespace: str | None = None) -> bool:
         if not namespace:
             pattern: str = f"{self._namespace}*"
         else:
             pattern = f"{self._namespace}{namespace}:*"
-        keys: t.List[str] = await self.client.keys(pattern)
+        keys: list[str] = await self.client.keys(pattern)
         if keys:
             for key in keys:
                 if key in self._data:
@@ -90,8 +88,8 @@ class RedisCache:
             await self.client.unlink((keys,))
         return True
 
-    async def multi_get(self, keys: t.List[str]) -> t.List[t.Any]:
-        result: t.List[t.Any] = []
+    async def multi_get(self, keys: list[str]) -> list[t.Any]:
+        result: list[t.Any] = []
         for key in keys:
             full_key: str = f"{self._namespace}{key}"
             value: t.Any = await self.client.get(full_key)
@@ -99,7 +97,7 @@ class RedisCache:
         return result
 
     async def multi_set(
-        self, mapping: t.Dict[str, t.Any], ttl: t.Optional[int] = None
+        self, mapping: dict[str, t.Any], ttl: int | None = None
     ) -> bool:
         for key, value in mapping.items():
             full_key: str = f"{self._namespace}{key}"
@@ -124,7 +122,7 @@ async def test_multi_get(redis_cache: RedisCache) -> None:
     redis_cache._data["acb:key1"] = "value1"
     redis_cache._data["acb:key2"] = "value2"
 
-    result: t.List[t.Any] = await redis_cache.multi_get(["key1", "key2", "key3"])
+    result: list[t.Any] = await redis_cache.multi_get(["key1", "key2", "key3"])
 
     assert result[0] == "value1"
     assert result[1] == "value2"

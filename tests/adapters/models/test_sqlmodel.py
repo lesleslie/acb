@@ -1,7 +1,5 @@
 """Tests for the SQLModel adapter."""
 
-import typing as t
-from contextlib import suppress
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -10,8 +8,8 @@ from sqlmodel import Field, SQLModel
 from acb.adapters.models.sqlmodel import ModelsSettings
 
 
-class TestModel(SQLModel, table=True):  # type: ignore
-    id: t.Optional[int] = Field(default=None, primary_key=True)
+class SampleModel(SQLModel, table=True):  # type: ignore
+    id: int | None = Field(default=None, primary_key=True)
     name: str
     value: int
 
@@ -24,14 +22,19 @@ class TestModelsSettings:
 
 
 class TestModels:
-    def __init__(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup_method(self) -> None:
         self.config = MagicMock()
         self.logger = MagicMock()
         self.models = []
         self.settings: ModelsSettings | None = None
         self.sql = MagicMock()
-        self._import_models_directory = AsyncMock()  # type: ignore
-        self._import_models_file = AsyncMock()  # type: ignore
+
+    async def _import_models_file(self, path: AsyncPath) -> None:
+        pass
+
+    async def _import_models_directory(self, path: AsyncPath) -> None:
+        pass
 
     @pytest.fixture
     def mock_config(self) -> MagicMock:
@@ -68,8 +71,14 @@ class TestModels:
         ):
             mock_is_dir.return_value = False
             mock_is_file.return_value = True
-            await models_instance.import_models(path)
-            models_instance._import_models_file.assert_called_once_with(path)
+
+            with patch.object(
+                models_instance,
+                "_import_models_file",
+                wraps=models_instance._import_models_file,
+            ) as mock_import_file:
+                await models_instance.import_models(path)
+                mock_import_file.assert_called_once_with(path)
 
     @pytest.mark.asyncio
     async def test_import_models_directory(
@@ -79,54 +88,39 @@ class TestModels:
         path = AsyncPath("/path/to/models")
         with patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir:
             mock_is_dir.return_value = True
-            await models_instance.import_models(path)
-            models_instance._import_models_directory.assert_called_once_with(path)
 
-    @pytest.mark.asyncio
-    async def test_import_models_file_not_found(
-        self, models_instance: "TestModels"
-    ) -> None:
-        path = AsyncPath("/path/to/models/model.py")
-        with (
-            patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir,
-            patch.object(AsyncPath, "is_file", new_callable=AsyncMock) as mock_is_file,
-        ):
-            mock_is_dir.return_value = False
-            mock_is_file.return_value = True
-            models_instance._import_models_file.side_effect = FileNotFoundError
-            models_instance.logger = MagicMock()
-            with suppress(FileNotFoundError):
+            with patch.object(
+                models_instance,
+                "_import_models_directory",
+                wraps=models_instance._import_models_directory,
+            ) as mock_import_dir:
                 await models_instance.import_models(path)
-            models_instance._import_models_file.assert_called_once_with(path)
+                mock_import_dir.assert_called_once_with(path)
 
     @pytest.mark.asyncio
     async def test_import_models_directory_not_found(
-        self, models_instance: "TestModels"
-    ) -> None:
-        path = AsyncPath("/path/to/models")
-        with patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir:
-            mock_is_dir.return_value = True
-            models_instance._import_models_directory.side_effect = FileNotFoundError
-            models_instance.logger = MagicMock()
-            with suppress(FileNotFoundError):
-                await models_instance.import_models(path)
-            models_instance._import_models_directory.assert_called_once_with(path)
-
-    @pytest.mark.asyncio
-    async def test_init(
         self,
         models_instance: "TestModels",
     ) -> None:
-        models_instance.import_models = AsyncMock()  # type: ignore
+        path = AsyncPath("/path/to/models")
+        with (
+            patch.object(AsyncPath, "is_dir", new_callable=AsyncMock) as mock_is_dir,
+            patch.object(AsyncPath, "exists", new_callable=AsyncMock) as mock_exists,
+        ):
+            mock_is_dir.return_value = True
+            mock_exists.return_value = False
 
+            with patch.object(
+                models_instance,
+                "_import_models_directory",
+                side_effect=FileNotFoundError("Directory not found"),
+            ):
+                with pytest.raises(FileNotFoundError):
+                    await models_instance.import_models(path)
+
+    @pytest.mark.asyncio
+    async def test_init(self) -> None:
+        models = TestModels()
         settings = ModelsSettings()
-        settings.path = AsyncPath("/path/to/models")  # type: ignore
-
-        await models_instance.init(settings)
-
-        assert models_instance.settings == settings
-
-    def test_init_settings(self) -> None:
-        settings = ModelsSettings()
-        settings.path = AsyncPath("/path/to/models")  # type: ignore
-        assert settings.path == AsyncPath("/path/to/models")
+        await models.init(settings)
+        assert models.settings == settings

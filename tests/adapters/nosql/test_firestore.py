@@ -1,6 +1,7 @@
 """Tests for the Firestore NoSQL adapter."""
 
-from typing import Any, Callable, Optional, Type
+from collections.abc import Callable
+from typing import Any
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -10,9 +11,9 @@ from acb.adapters.nosql.firestore import NosqlSettings as FirestoreSettings
 
 
 @pytest.fixture
-async def mock_async_context_manager() -> Callable[[Optional[Any]], Any]:
+async def mock_async_context_manager() -> Callable[[Any | None], Any]:
     class MockAsyncContextManager:
-        def __init__(self, mock_obj: Optional[Any] = None) -> None:
+        def __init__(self, mock_obj: Any | None = None) -> None:
             self.mock_obj = mock_obj or MagicMock()
 
         async def __aenter__(self) -> Any:
@@ -20,14 +21,14 @@ async def mock_async_context_manager() -> Callable[[Optional[Any]], Any]:
 
         async def __aexit__(
             self,
-            exc_type: Optional[Type[BaseException]],
-            exc_val: Optional[BaseException],
-            exc_tb: Optional[Any],
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: Any | None,
         ) -> None:
             pass
 
     def _mock_async_context_manager(
-        mock_obj: Optional[Any] = None,
+        mock_obj: Any | None = None,
     ) -> MockAsyncContextManager:
         return MockAsyncContextManager(mock_obj)
 

@@ -18,7 +18,7 @@ class StorageSettings(StorageBaseSettings): ...
 class Storage(StorageBase):
     file_system: t.Any = DirFileSystem
 
-    def __init__(self, root_dir: t.Optional[str] = None, **kwargs: t.Any) -> None:
+    def __init__(self, root_dir: str | None = None, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.root_dir = root_dir
 
@@ -68,7 +68,7 @@ class Storage(StorageBase):
             self.logger.error(f"Error putting file {path}: {e}")
             return False
 
-    async def get_file(self, path: str) -> t.Optional[bytes]:
+    async def get_file(self, path: str) -> bytes | None:
         try:
             if self.root_dir:
                 full_path = Path(self.root_dir) / path

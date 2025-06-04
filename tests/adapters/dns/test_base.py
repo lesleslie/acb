@@ -1,6 +1,5 @@
 """Tests for the DNS base components."""
 
-from typing import List, Union
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -21,10 +20,10 @@ class MockDnsBase:
     async def create_zone(self) -> None:
         pass
 
-    async def list_records(self) -> List[DnsRecord]:
+    async def list_records(self) -> list[DnsRecord]:
         return []
 
-    async def create_records(self, records: Union[List[DnsRecord], DnsRecord]) -> None:
+    async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         if isinstance(records, DnsRecord):
             await self._create_record(records)
         else:

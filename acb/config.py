@@ -93,7 +93,7 @@ class PydanticSettingsSource:
     def __init__(
         self,
         settings_cls: type["Settings"],
-        secrets_path: t.Optional[AsyncPath] = None,
+        secrets_path: AsyncPath | None = None,
     ) -> None:
         from acb.adapters import secrets_path as sp
 
@@ -286,7 +286,7 @@ class SettingsProtocol(t.Protocol):
         **values: t.Any,
     ) -> None: ...
 
-    _settings_build_values: t.Callable[..., t.Awaitable[t.Dict[str, t.Any]]]
+    _settings_build_values: t.Callable[..., t.Awaitable[dict[str, t.Any]]]
 
     settings_customize_sources: t.Callable[..., tuple[PydanticSettingsProtocol, ...]]
 
@@ -349,7 +349,7 @@ class Settings(BaseModel):
     @classmethod
     def settings_customize_sources(
         cls,  # noqa: F841
-        settings_cls: t.Type["Settings"],
+        settings_cls: type["Settings"],
         init_settings: PydanticSettingsProtocol,
         yaml_settings: PydanticSettingsProtocol,
         file_secret_settings: PydanticSettingsProtocol,
@@ -372,12 +372,12 @@ class AppSettings(Settings):
     secret_key: SecretStr = SecretStr(token_urlsafe(32))
     secure_salt: SecretStr = SecretStr(str(token_bytes(32)))
     title: str | None = None
-    domain: t.Optional[str] = None
-    platform: t.Optional[Platform] = None
-    project: t.Optional[str] = None
-    region: t.Optional[str] = None
-    timezone: t.Optional[str] = "US/Pacific"
-    version: t.Optional[str] = Field(default_factory=get_version_default)
+    domain: str | None = None
+    platform: Platform | None = None
+    project: str | None = None
+    region: str | None = None
+    timezone: str | None = "US/Pacific"
+    version: str | None = Field(default_factory=get_version_default)
 
     def __init__(self, **values: t.Any) -> None:  # noqa: F841
         super().__init__(**values)

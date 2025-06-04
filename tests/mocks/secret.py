@@ -1,7 +1,7 @@
 """Mock implementations of Secret adapters for testing."""
 
+import builtins
 import typing as t
-from typing import List
 from unittest.mock import MagicMock
 
 from acb.adapters.secret._base import SecretBase
@@ -14,7 +14,7 @@ class MockSecret(SecretBase):
         self.config = MagicMock()
         self.config.app.name = "test"
 
-    async def list(self, adapter: t.Optional[str] = None) -> List[str]:
+    async def list(self, adapter: str | None = None) -> list[str]:
         if adapter:
             return [name for name in self._secrets if name.startswith(f"{adapter}.")]
         return list(self._secrets.keys())
@@ -38,7 +38,7 @@ class MockSecret(SecretBase):
         version_num = len(secret["versions"]) + 1
         secret["versions"].append({"version": f"v{version_num}", "value": value})
 
-    async def get(self, name: str, version: t.Optional[str] = None) -> t.Optional[str]:
+    async def get(self, name: str, version: str | None = None) -> str | None:
         if name not in self._secrets:
             return None
 
@@ -56,7 +56,7 @@ class MockSecret(SecretBase):
         if name in self._secrets:
             del self._secrets[name]
 
-    async def list_versions(self, name: str) -> List[str]:
+    async def list_versions(self, name: str) -> builtins.list[str]:
         if name not in self._secrets:
             return []
 

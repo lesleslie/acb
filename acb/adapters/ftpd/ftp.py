@@ -21,8 +21,8 @@ class FtpdSettings(FtpdBaseSettings):
 
 
 class Ftpd(FtpdBase):
-    _client: t.Optional[Client] = None
-    _path_io: t.Optional[PathIO] = None
+    _client: Client | None = None
+    _path_io: PathIO | None = None
 
     @cached_property
     def server(self) -> Server:
@@ -49,7 +49,7 @@ class Ftpd(FtpdBase):
             )
             users.append(anonymous_user)
 
-        server_kwargs: t.Dict[str, t.Any] = {
+        server_kwargs: dict[str, t.Any] = {
             "users": users,
             "path_io_factory": AsyncPathIO,
             "maximum_connections": self.config.ftpd.max_connections,
@@ -108,7 +108,7 @@ class Ftpd(FtpdBase):
         return self._path_io  # type: ignore
 
     @asynccontextmanager
-    async def connect(self) -> t.AsyncGenerator["Ftpd", None]:
+    async def connect(self) -> t.AsyncGenerator["Ftpd"]:
         client = await self._ensure_client()
         try:
             yield self
@@ -124,7 +124,7 @@ class Ftpd(FtpdBase):
         client = await self._ensure_client()
         await client.download(remote_path, str(local_path))
 
-    async def list_dir(self, path: str) -> t.List[FileInfo]:
+    async def list_dir(self, path: str) -> list[FileInfo]:
         client = await self._ensure_client()
         result = []
         async for file_info in client.list(path):

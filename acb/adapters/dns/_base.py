@@ -5,20 +5,20 @@ from acb.config import AdapterBase, Settings
 
 
 class DnsRecord(BaseModel):
-    name: t.Optional[str] = None
+    name: str | None = None
     type: str = "TXT"
     ttl: int = 300
-    rrdata: t.Optional[str | list[t.Any]] = None
+    rrdata: str | list[t.Any] | None = None
 
 
 class DnsBaseSettings(Settings):
-    zone_name: t.Optional[str] = None
+    zone_name: str | None = None
     ttl: int = 300
 
 
 class DnsProtocol(t.Protocol):
-    client: t.Optional[t.Any] = None
-    zone: t.Optional[t.Any] = None
+    client: t.Any | None = None
+    zone: t.Any | None = None
 
     def create_zone(self) -> None: ...
 

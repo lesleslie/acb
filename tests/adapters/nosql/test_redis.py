@@ -1,15 +1,11 @@
 """Tests for the Redis NoSQL adapter."""
 
 import typing as t
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 from typing import (
     Any,
-    AsyncContextManager,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
 )
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
@@ -38,16 +34,16 @@ class MockRedisClient:
     async def exists(self, key: Any) -> int:
         return await self._exists(key)
 
-    async def keys(self, pattern: str) -> List[str]:
+    async def keys(self, pattern: str) -> list[str]:
         return await self._keys(pattern)
 
-    async def hgetall(self, key: str) -> Dict[str, str]:
+    async def hgetall(self, key: str) -> dict[str, str]:
         return await self._hgetall(key)
 
-    async def hset(self, key: str, mapping: Dict[str, Any]) -> int:
+    async def hset(self, key: str, mapping: dict[str, Any]) -> int:
         return await self._hset(key, mapping)
 
-    async def hmget(self, key: str, fields: List[str]) -> List[Any]:
+    async def hmget(self, key: str, fields: list[str]) -> list[Any]:
         return await self._hmget(key, fields)
 
     async def hdel(self, key: str, *fields: str) -> int:
@@ -62,14 +58,14 @@ class MockRedisClient:
     async def srem(self, key: str, *members: Any) -> int:
         return await self._srem(key, *members)
 
-    async def smembers(self, key: str) -> List[Any]:
+    async def smembers(self, key: str) -> list[Any]:
         return await self._smembers(key)
 
     async def incr(self, key: str) -> int:
         return await self._incr(key)
 
     async def scan(
-        self, cursor: int = 0, match: Optional[str] = None, count: Optional[int] = None
+        self, cursor: int = 0, match: str | None = None, count: int | None = None
     ) -> tuple[int, list[str]]:
         return await self._scan(cursor, match, count)
 
@@ -82,10 +78,10 @@ class MockRedisClient:
 
 @pytest.fixture
 async def mock_async_context_manager(
-    mock_obj: Optional[Any] = None,
-) -> Callable[[Optional[Any]], AsyncContextManager[Any]]:
+    mock_obj: Any | None = None,
+) -> Callable[[Any | None], AbstractAsyncContextManager[Any]]:
     class MockAsyncContextManager:
-        def __init__(self, mock_obj: Optional[Any] = None) -> None:
+        def __init__(self, mock_obj: Any | None = None) -> None:
             self.mock_obj = mock_obj or MagicMock()
 
         async def __aenter__(self) -> Any:
@@ -93,14 +89,14 @@ async def mock_async_context_manager(
 
         async def __aexit__(
             self,
-            exc_type: Optional[Type[BaseException]],
-            exc_val: Optional[BaseException],
-            exc_tb: Optional[TracebackType],
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: TracebackType | None,
         ) -> None:
             pass
 
     def _mock_async_context_manager(
-        mock_obj: Optional[Any] = None,
+        mock_obj: Any | None = None,
     ) -> MockAsyncContextManager:
         return MockAsyncContextManager(mock_obj)
 
@@ -108,7 +104,7 @@ async def mock_async_context_manager(
 
 
 @pytest.fixture
-def mock_redis_connection_pool() -> Dict[str, Any]:
+def mock_redis_connection_pool() -> dict[str, Any]:
     return {
         "host": "localhost",
         "port": 6379,
@@ -283,7 +279,7 @@ class TestRedis:
     @pytest.mark.asyncio
     async def test_matches_filter(self, nosql: RedisNosql) -> None:
         doc = {"name": "test", "value": 123}
-        filter_dict: Dict[str, Any] = {"name": "test"}
+        filter_dict: dict[str, Any] = {"name": "test"}
 
         original_matches_filter = nosql._matches_filter
 
@@ -343,7 +339,7 @@ class TestRedis:
         mock_keys = AsyncMock(return_value=keys)
         nosql.client.keys = mock_keys
 
-        async def mock_hgetall_side_effect(key: str) -> t.Dict[str, t.Any]:
+        async def mock_hgetall_side_effect(key: str) -> dict[str, t.Any]:
             if key == keys[0]:
                 return test_data[0]
             return test_data[1]

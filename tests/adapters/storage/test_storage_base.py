@@ -10,7 +10,7 @@ from acb.adapters.storage._base import StorageBase, StorageBaseSettings
 
 
 @asynccontextmanager
-async def mock_s3_client() -> t.AsyncGenerator[AsyncMock, None]:
+async def mock_s3_client() -> t.AsyncGenerator[AsyncMock]:
     with pytest.MonkeyPatch().context() as mp:
         mock_client = AsyncMock()
         mp.setattr(

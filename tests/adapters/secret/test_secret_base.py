@@ -1,6 +1,7 @@
 """Tests for the Secret Base adapter."""
 
-from typing import Any, List, Optional
+import builtins
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -47,7 +48,7 @@ class MockSecret(SecretBase):
         name = full_name.removeprefix(app_prefix)
         return name
 
-    async def get(self, name: str, version: Optional[str] = None) -> Optional[str]:
+    async def get(self, name: str, version: str | None = None) -> str | None:
         version_str = version or "latest"
         path = f"projects/{self.project}/secrets/{name}/versions/{version_str}"
         request = AccessSecretVersionRequest(name=path)
@@ -85,7 +86,7 @@ class MockSecret(SecretBase):
         await self.client.delete_secret(request=request)
         self.logger.debug(f"Deleted secret - {secret}")
 
-    async def list(self, adapter: Optional[str] = None) -> List[str]:
+    async def list(self, adapter: str | None = None) -> list[str]:
         filter_str = (
             f"{self.config.app.name}_{adapter}_" if adapter else self.config.app.name
         )
@@ -100,7 +101,7 @@ class MockSecret(SecretBase):
             result.append(name)
         return result
 
-    async def list_versions(self, name: str) -> List[str]:
+    async def list_versions(self, name: str) -> builtins.list[str]:
         return []
 
 

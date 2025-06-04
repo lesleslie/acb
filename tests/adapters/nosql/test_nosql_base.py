@@ -17,7 +17,7 @@ class MockNosqlBase(NosqlBase):
         self._client = None
         self._db = None
         self._transaction = None
-        self._data: t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]] = {}
+        self._data: dict[str, dict[str, dict[str, t.Any]]] = {}
 
 
 class TestNosqlBaseSettings:

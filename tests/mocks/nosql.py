@@ -11,7 +11,7 @@ class MockCollection:
         self.data: list[dict[str, t.Any]] = []
 
     async def find(
-        self, filter: t.Optional[dict[str, t.Any]] = None, **kwargs: t.Any
+        self, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
     ) -> "MockCursor":
         filter = filter or {}
 
@@ -36,8 +36,8 @@ class MockCollection:
         return MockCursor(result)
 
     async def find_one(
-        self, filter: t.Optional[dict[str, t.Any]] = None, **kwargs: t.Any
-    ) -> t.Optional[dict[str, t.Any]]:
+        self, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+    ) -> dict[str, t.Any] | None:
         filter = filter or {}
         cursor = await self.find(filter, **kwargs)
         results = await cursor.to_list(1)
@@ -131,7 +131,7 @@ class MockCollection:
         return result
 
     async def count(
-        self, filter: t.Optional[dict[str, t.Any]] = None, **kwargs: t.Any
+        self, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
     ) -> int:
         filter = filter or {}
         cursor = await self.find(filter)
@@ -151,7 +151,7 @@ class MockCursor:
     def __init__(self, data: list[dict[str, t.Any]]) -> None:
         self.data = data
 
-    async def to_list(self, length: t.Optional[int] = None) -> list[dict[str, t.Any]]:
+    async def to_list(self, length: int | None = None) -> list[dict[str, t.Any]]:
         if length is None:
             return self.data
         return self.data[:length]
@@ -179,27 +179,27 @@ class MockNoSQL(NosqlBase):
         return AsyncMock()
 
     async def find(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         cursor = await coll.find(filter, **kwargs)
         return await cursor.to_list()
 
     async def find_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.Optional[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> dict[str, t.Any] | None:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         return await coll.find_one(filter, **kwargs)
 
     async def insert_one(
-        self, collection: str, document: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         return await coll.insert_one(document, **kwargs)
 
     async def insert_many(
-        self, collection: str, documents: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Any]:
+        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[t.Any]:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         result = await coll.insert_many(documents, **kwargs)
         return result.inserted_ids
@@ -207,8 +207,8 @@ class MockNoSQL(NosqlBase):
     async def update_one(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
@@ -217,21 +217,21 @@ class MockNoSQL(NosqlBase):
     async def update_many(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         return await coll.update_many(filter, update, **kwargs)
 
     async def delete_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         return await coll.delete_one(filter, **kwargs)
 
     async def delete_many(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         return await coll.delete_many(filter, **kwargs)
@@ -239,15 +239,15 @@ class MockNoSQL(NosqlBase):
     async def count(
         self,
         collection: str,
-        filter: t.Optional[t.Dict[str, t.Any]] = None,
+        filter: dict[str, t.Any] | None = None,
         **kwargs: t.Any,
     ) -> int:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         return await coll.count(filter, **kwargs)
 
     async def aggregate(
-        self, collection: str, pipeline: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         coll = self._mock_collections.get(collection, MockCollection(collection, self))
         cursor = await coll.aggregate(pipeline, **kwargs)
         return await cursor.to_list()

@@ -12,8 +12,8 @@ from acb.logger import Logger
 class CacheBaseSettings(Settings):
     default_ttl: int = 86400
     query_ttl: int = 600
-    response_ttl: t.Optional[int] = 3600
-    template_ttl: t.Optional[int] = 86400
+    response_ttl: int | None = 3600
+    template_ttl: int | None = 86400
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -38,10 +38,8 @@ class MsgPackSerializer(BaseSerializer):
 
 
 class CacheProtocol(t.Protocol):
-    async def set(
-        self, key: str, value: bytes, ttl: t.Optional[int] = None
-    ) -> None: ...
-    async def get(self, key: str) -> t.Optional[bytes]: ...
+    async def set(self, key: str, value: bytes, ttl: int | None = None) -> None: ...
+    async def get(self, key: str) -> bytes | None: ...
     async def exists(self, key: str) -> bool: ...
     async def clear(self, namespace: str) -> None: ...
     async def scan(self, pattern: str) -> t.AsyncIterator[str]: ...  # noqa

@@ -9,7 +9,7 @@ from acb.console import console
 
 class TestGetConsole:
     @pytest.fixture
-    def mock_config(self) -> t.Generator[MagicMock, None, None]:
+    def mock_config(self) -> t.Generator[MagicMock]:
         mock_config: MagicMock = MagicMock(spec=Config)
         mock_config.debug = MagicMock()
 
@@ -22,7 +22,7 @@ class TestGetConsole:
 
 class TestGetConsoleManager:
     @pytest.fixture
-    def mock_config(self) -> t.Generator[MagicMock, None, None]:
+    def mock_config(self) -> t.Generator[MagicMock]:
         mock_config: MagicMock = MagicMock(spec=Config)
         mock_config.debug = MagicMock()
 
@@ -35,7 +35,7 @@ class TestGetConsoleManager:
 
 class TestInitConsole:
     @pytest.fixture
-    def mock_config(self) -> t.Generator[MagicMock, None, None]:
+    def mock_config(self) -> t.Generator[MagicMock]:
         mock_config: MagicMock = MagicMock(spec=Config)
         mock_config.debug = MagicMock()
 

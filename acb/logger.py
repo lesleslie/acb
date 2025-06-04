@@ -18,9 +18,9 @@ nest_asyncio.apply()
 class LoggerSettings(Settings):
     verbose: bool = False
     deployed_level: str = "WARNING"
-    log_level: t.Optional[str] = "INFO"
-    serialize: t.Optional[bool] = False
-    format: t.Optional[dict[str, str]] = dict(
+    log_level: str | None = "INFO"
+    serialize: bool | None = False
+    format: dict[str, str] | None = dict(
         time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
         level=" <level>{level:>8}</level>",
         sep=" <b><w>in</w></b> ",
@@ -28,9 +28,9 @@ class LoggerSettings(Settings):
         line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
         message="  <level>{message}</level>",
     )
-    level_per_module: t.Optional[dict[str, str | None]] = {}
-    level_colors: t.Optional[dict[str, str]] = {}
-    settings: t.Optional[dict[str, t.Any]] = {}
+    level_per_module: dict[str, str | None] | None = {}
+    level_colors: dict[str, str] | None = {}
+    settings: dict[str, t.Any] | None = {}
 
     def __init__(self, **values: t.Any) -> None:
         super().__init__(**values)

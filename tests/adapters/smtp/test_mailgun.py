@@ -1,8 +1,9 @@
 """Tests for the Mailgun SMTP adapter."""
 
 import typing as t
-from contextlib import asynccontextmanager
-from typing import Any, AsyncContextManager, AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,11 +15,13 @@ from acb.adapters.smtp.mailgun import SmtpSettings as MailgunSmtpSettings
 
 
 @pytest.fixture
-def mock_async_context_manager() -> Callable[..., AsyncContextManager[MagicMock]]:
+def mock_async_context_manager() -> Callable[
+    ..., AbstractAsyncContextManager[MagicMock]
+]:
     @asynccontextmanager
     async def _async_context_manager(
         *args: Any, **kwargs: Any
-    ) -> AsyncGenerator[MagicMock, None]:
+    ) -> AsyncGenerator[MagicMock]:
         yield MagicMock()
 
     return _async_context_manager
@@ -76,7 +79,10 @@ class TestMailgunSmtpSettings:
 class TestMailgunSmtp:
     @pytest.fixture
     def smtp(
-        self, mock_async_context_manager: Callable[..., AsyncContextManager[MagicMock]]
+        self,
+        mock_async_context_manager: Callable[
+            ..., AbstractAsyncContextManager[MagicMock]
+        ],
     ) -> MailgunSmtp:
         class TestableMailgunSmtp(MailgunSmtp):
             def __init__(self) -> None:
@@ -106,9 +112,9 @@ class TestMailgunSmtp:
         async def mock_get_response_wrapper(
             req_type: str,
             domain: str | None = None,
-            data: t.Dict[str, t.Any] | None = None,
-            params: t.Dict[str, int] | None = None,
-        ) -> t.Dict[str, t.Any]:
+            data: dict[str, t.Any] | None = None,
+            params: dict[str, int] | None = None,
+        ) -> dict[str, t.Any]:
             if req_type == "get":
                 mock_response = MagicMock(spec=HttpxResponse)
                 mock_response.json.return_value = {"message": "success"}
@@ -135,9 +141,9 @@ class TestMailgunSmtp:
         async def mock_get_response_wrapper(
             req_type: str,
             domain: str | None = None,
-            data: t.Dict[str, t.Any] | None = None,
-            params: t.Dict[str, int] | None = None,
-        ) -> t.Dict[str, t.Any]:
+            data: dict[str, t.Any] | None = None,
+            params: dict[str, int] | None = None,
+        ) -> dict[str, t.Any]:
             if req_type == "put":
                 mock_response = MagicMock(spec=HttpxResponse)
                 mock_response.json.return_value = {"message": "success"}

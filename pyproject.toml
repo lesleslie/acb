@@ -1,107 +1,246 @@
+[build-system]
+build-backend = "pdm.backend"
+requires = [
+  "pdm-backend",
+]
+
+[project]
+name = "acb"
+version = "0.16.4"
+description = "ACB: Asynchronous Component Base"
+readme = "README.md"
+license.text = "BSD-3-CLAUSE"
+authors = [
+  { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
+]
+requires-python = ">=3.13"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: AsyncIO",
+  "Framework :: Pydantic",
+  "Framework :: Pydantic :: 2",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dependencies = [
+  "aioconsole>=0.8.1",
+  "anyio>=4.9",
+  "arrow>=1.3",
+  "bevy>=2.0.2",
+  "blake3>=1.0.5",
+  "brotli>=1.1",
+  "devtools>=0.12.2",
+  "dill>=0.4",
+  "google-api-python-client>=2.171",
+  "google-crc32c>=1.7.1",
+  "icecream>=2.1.4",
+  "inflection>=0.5.1",
+  "loguru>=0.7.3",
+  "msgspec[toml,yaml]",
+  "nest-asyncio>=1.6",
+  "pydantic[email]>=2.11.5",
+  "pydantic-settings>=2.9.1",
+  "pyfiglet>=1.0.3",
+  "pyyaml>=6.0.2",
+  "toml>=0.10.2",
+  "tomli-w>=1.2",
+]
+
+optional-dependencies.cache = [
+  "aiocache[redis]>=0.12.3",
+  "coredis>=4.22",
+  "logfire[redis]>=3.17",
+]
+optional-dependencies.demo = [
+  "faker>=37.3",
+]
+optional-dependencies.dev = [
+  "crackerjack>=0.19.6",
+  "pytest>=8.4",
+  "pytest-anyio>=0",
+  "pytest-asyncio>=1",
+  "pytest-benchmark>=5.1",
+  "pytest-cov>=6.1.1",
+  "pytest-mock>=3.14.1",
+  "pytest-timeout>=2.4",
+]
+optional-dependencies.dns = [
+  "google-cloud-dns>=0.35.1",
+  "python-cloudflare>=1.0.1",
+  "validators>=0.35",
+]
+optional-dependencies.ftpd = [
+  "aioftp>=0.25.1",
+  "asyncssh>=2.21",
+]
+optional-dependencies.monitoring = [
+  "logfire[system-metrics]>=3.17",
+  "sentry-sdk[loguru]>=2.29.1",
+]
+optional-dependencies.nosql = [
+  "beanie>=1.29",
+  "google-cloud-firestore>=2.21",
+  "motor>=3.7.1",
+  "redis-om>=0.3.5",
+]
+optional-dependencies.requests = [
+  "hishel>=0.1.2",
+  "httpx[http2]>=0.28.1",
+  "logfire[httpx]>=3.17",
+  "niquests>=3.14.1",
+  "sentry-sdk[httpx]>=2.29.1",
+]
+optional-dependencies.secret = [
+  "google-cloud-secret-manager>=2.23.3",
+  "infisicalsdk>=1.0.8",
+]
+optional-dependencies.smtp = [
+  "mailgun>=1.0.1",
+]
+optional-dependencies.sql = [
+  "aiomysql>=0.2",
+  "babel>=2.17",
+  "greenlet>=3.2.2",
+  "logfire[sqlalchemy]>=3.17",
+  "pymysql>=1.1.1",
+  "sentry-sdk[sqlalchemy]>=2.29.1",
+  "sqlalchemy>=2.0.41",
+  "sqlalchemy-utils>=0.41.2",
+  "sqlmodel>=0.0.24",
+]
+optional-dependencies.storage = [
+  "adlfs>=2024.12",
+  "gcsfs>=2025.5.1",
+  "s3fs>=2025.5.1",
+]
+urls.Documentation = "https://github.com/lesleslie/acb"
+urls.Homepage = "https://github.com/lesleslie/acb"
+urls.Repository = "https://github.com/lesleslie/acb"
+
 [tool.ruff]
-line-length = 88
 target-version = "py313"
+line-length = 88
 fix = true
+unsafe-fixes = true
 show-fixes = true
 output-format = "full"
-unsafe-fixes = true
 
-[tool.ruff.format]
-docstring-code-format = true
+format.docstring-code-format = true
+lint.extend-select = [
+  "C901",
+  "D",
+  "F",
+  "I",
+  "UP",
+]
+lint.ignore = [
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  "F821",
+]
+lint.fixable = [
+  "ALL",
+]
+lint.unfixable = [  ]
+lint.isort.no-lines-before = [
+  "first-party",
+]
+lint.mccabe.max-complexity = 13
+lint.pydocstyle.convention = "google"
 
-[tool.ruff.lint]
-ignore = [
-    "F821",
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
-]
-extend-select = [
-    "I",
-    "C901",
-    "D",
-]
-fixable = [
-    "ALL",
-]
-unfixable = []
+[tool.codespell]
+skip = "*/data/*"
+quiet-level = 3
+ignore-words-list = "crate,uptodate,nd"
 
-[tool.ruff.lint.isort]
-no-lines-before = [
-    "first-party",
+[tool.pyproject-fmt]
+column_width = 120
+indent = 2
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+python_files = [
+  "test_*.py",
+  "*_test.py",
 ]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 13
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.black]
-target-version = [
-    "py313",
+testpaths = [
+  "tests",
+  "acb",
 ]
-
-[tool.creosote]
-paths = [
-    "acb",
+python_classes = [
+  "Test*",
 ]
-deps-file = "pyproject.toml"
-exclude-deps = [
-    "pre-commit",
-    "uv",
-    "pytest-timeout",
-    "pytest-mock",
-    "pdm-bump",
-    "tomli-w",
-    "pytest",
-    "pytest-cov",
-    "autotyping",
-    "pyyaml",
-    "pdm",
-    "google-crc32c",
-    "pytest-xdist",
-    "pyfiglet",
-    "pytest-asyncio",
-    "google-api-python-client",
+python_functions = [
+  "test_*",
+]
+markers = [
+  "unit: marks test as a unit test",
+  "benchmark: mark test as a benchmark (disables parallel execution)",
+  "integration: marks test as an integration test",
+]
+timeout = 60
+timeout_method = "thread"
+addopts = "--cov=acb --cov-report=term --cov-fail-under=42"
+
+[tool.pytest.benchmark]
+disable_gc = true
+warmup = false
+warmup_iterations = 0
+
+[tool.coverage.run]
+branch = false
+source = [
+  "acb",
+]
+data_file = ".coverage"
+parallel = false
+omit = [
+  "*/tests/*",
+  "*/site-packages/*",
+  "*/__pycache__/*",
+  "*/__init__.py",
+  "*/_version.py",
+  "*/conftest.py",
+  "*/test_*.py",
+  "*/_test.py",
 ]
 
-[tool.refurb]
-enable_all = true
-
-[tool.bandit]
-target = [
-    "acb",
+[tool.coverage.report]
+exclude_also = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "pass",
+  "raise ImportError",
+  "except ImportError",
+  "def __str__",
+  "@abstractmethod",
 ]
-skips = [
-    "B607",
-    "B105",
-    "B101",
-    "B404",
-    "B311",
-    "B301",
-    "B603",
-    "B106",
-    "B602",
-    "B704",
-    "B403",
-]
+ignore_errors = false
 
 [tool.pyright]
 verboseOutput = true
 include = [
-    "acb",
+  "acb",
 ]
 exclude = [
-    "scratch",
+  "scratch",
 ]
 extraPaths = [
-    ".venv/lib/python3.13/site-packages/",
+  ".venv/lib/python3.13/site-packages/",
 ]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
@@ -115,197 +254,59 @@ reportUnknownLambdaType = false
 reportUnknownParameterType = "warning"
 reportPrivateUsage = false
 pythonVersion = "3.13"
-pythonPlatform = "Darwin"
 
-[tool.codespell]
-skip = "*/data/*"
-quiet-level = 3
-ignore-words-list = "crate,uptodate,nd"
+[tool.creosote]
+paths = [
+  "acb",
+]
+deps-file = "pyproject.toml"
+exclude-deps = [
+  "pytest",
+  "pyyaml",
+  "google-api-python-client",
+  "pytest-asyncio",
+  "uv",
+  "tomli-w",
+  "pytest-xdist",
+  "pyfiglet",
+  "pdm",
+  "pytest-cov",
+  "autotyping",
+  "pytest-timeout",
+  "pre-commit",
+  "pytest-mock",
+  "google-crc32c",
+  "pytest-benchmark",
+  "pdm-bump",
+]
+
+[tool.refurb]
+enable_all = true
+quiet = true
+
+[tool.bandit]
+target = [
+  "acb",
+]
+skips = [
+  "B602",
+  "B603",
+  "B704",
+  "B101",
+  "B106",
+  "B404",
+  "B403",
+  "B105",
+  "B311",
+  "B301",
+  "B607",
+]
 
 [tool.vulture]
 min_confidence = 86
 paths = [
-    "acb",
+  "acb",
 ]
 ignore_names = [
-    "cls",
+  "cls",
 ]
-
-[tool.coverage.run]
-branch = false
-source = [
-    "acb",
-]
-data_file = ".coverage"
-parallel = false
-omit = [
-    "*/tests/*",
-    "*/site-packages/*",
-    "*/__pycache__/*",
-    "*/__init__.py",
-    "*/_version.py",
-    "*/conftest.py",
-    "*/test_*.py",
-    "*/_test.py",
-]
-
-[tool.coverage.report]
-exclude_also = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "pass",
-    "raise ImportError",
-    "except ImportError",
-    "def __str__",
-    "@abstractmethod",
-]
-ignore_errors = false
-
-[tool.pytest.ini_options]
-addopts = "--cov=acb --cov-report=term --timeout=120 --timeout-method=thread -n auto"
-asyncio_default_fixture_loop_scope = "function"
-python_files = [
-    "test_*.py",
-    "*_test.py",
-]
-asyncio_mode = "auto"
-testpaths = [
-    "tests",
-    "acb",
-]
-python_classes = [
-    "Test*",
-]
-python_functions = [
-    "test_*",
-]
-
-[project]
-name = "acb"
-version = "0.16.3"
-description = "Default template for PDM package"
-dependencies = [
-    "arrow>=1.3.0",
-    "dill>=0.4.0",
-    "blake3>=1.0.5",
-    "loguru>=0.7.3",
-    "nest-asyncio>=1.6.0",
-    "pydantic-settings>=2.9.1",
-    "bevy>=2.0.2",
-    "icecream>=2.1.4",
-    "brotli>=1.1.0",
-    "pyfiglet>=1.0.2",
-    "inflection>=0.5.1",
-    "pyyaml>=6.0.2",
-    "google-crc32c>=1.7.1",
-    "devtools>=0.12.2",
-    "tomli-w>=1.2.0",
-    "aioconsole>=0.8.1",
-    "anyio>=4.9.0",
-    "msgspec[toml,yaml]",
-    "pydantic[email]>=2.11.5",
-    "google-api-python-client>=2.170.0",
-    "toml>=0.10.2",
-]
-requires-python = ">=3.13"
-readme = "README.md"
-authors = [
-    { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
-]
-classifiers = [
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3.13",
-    "Framework :: Pydantic",
-    "Framework :: Pydantic :: 2",
-    "Framework :: AsyncIO",
-    "Typing :: Typed",
-    "License :: OSI Approved :: BSD License",
-    "Development Status :: 3 - Alpha",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-]
-
-[project.license]
-text = "BSD-3-CLAUSE"
-
-[project.urls]
-Homepage = "https://github.com/lesleslie/acb"
-Documentation = "https://github.com/lesleslie/acb"
-Repository = "https://github.com/lesleslie/acb"
-
-[project.optional-dependencies]
-cache = [
-    "coredis>=4.22.0",
-    "aiocache[redis]>=0.12.3",
-    "logfire[redis]>=3.16.1",
-]
-storage = [
-    "gcsfs>=2025.5.1",
-    "s3fs>=2025.5.1",
-    "adlfs>=2024.12.0",
-]
-dns = [
-    "google-cloud-dns>=0.35.1",
-    "validators>=0.35.0",
-    "python-cloudflare>=1.0.1",
-]
-requests = [
-    "httpx[http2]>=0.28.1",
-    "hishel>=0.1.2",
-    "sentry-sdk[httpx]>=2.29.1",
-    "logfire[httpx]>=3.16.1",
-    "niquests>=3.14.1",
-]
-smtp = [
-    "mailgun>=1.0.1",
-]
-sql = [
-    "sqlalchemy>=2.0.41",
-    "sqlalchemy-utils>=0.41.2",
-    "sqlmodel>=0.0.24",
-    "babel>=2.17.0",
-    "pymysql>=1.1.1",
-    "aiomysql>=0.2.0",
-    "logfire[sqlalchemy]>=3.16.1",
-    "sentry-sdk[sqlalchemy]>=2.29.1",
-    "greenlet>=3.2.2",
-]
-nosql = [
-    "google-cloud-firestore>=2.20.2",
-    "beanie>=1.29.0",
-    "redis-om>=0.3.5",
-    "motor>=3.7.1",
-]
-demo = [
-    "faker>=37.3.0",
-]
-ftpd = [
-    "aioftp>=0.25.1",
-    "asyncssh>=2.21.0",
-]
-secret = [
-    "google-cloud-secret-manager>=2.23.3",
-    "infisicalsdk>=1.0.8",
-]
-monitoring = [
-    "sentry-sdk[loguru]>=2.29.1",
-    "logfire[system-metrics]>=3.16.1",
-]
-dev = [
-    "crackerjack>=0.18.9",
-    "pytest-anyio>=0.0.0",
-    "pytest-benchmark>=5.1.0",
-    "pytest>=8.3.5",
-    "pytest-asyncio>=1.0.0",
-    "pytest-mock>=3.14.1",
-    "pytest-cov>=6.1.1",
-    "pytest-timeout>=2.4.0",
-]
-
-[build-system]
-requires = [
-    "pdm-backend",
-]
-build-backend = "pdm.backend"

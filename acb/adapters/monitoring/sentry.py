@@ -12,9 +12,9 @@ from ._base import MonitoringBase, MonitoringBaseSettings
 
 class MonitoringSettings(MonitoringBaseSettings):
     sentry_dsn: SecretStr = SecretStr("https://")
-    sample_rate: t.Optional[float] = 1.0
-    debug: t.Optional[bool] = False
-    profiles_sample_rate: t.Optional[float] = 0
+    sample_rate: float | None = 1.0
+    debug: bool | None = False
+    profiles_sample_rate: float | None = 0
 
     @field_validator("sample_rate", "profiles_sample_rate")
     @classmethod

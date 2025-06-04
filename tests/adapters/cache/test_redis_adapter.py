@@ -1,6 +1,7 @@
 """Tests for the Redis Cache adapter."""
 
-from typing import Any, AsyncGenerator, List, Optional, cast
+from collections.abc import AsyncGenerator
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -19,14 +20,14 @@ class MockRedisClient:
         self._unlink = AsyncMock()
         self._close = AsyncMock()
 
-    async def keys(self, pattern: str) -> List[str]:
+    async def keys(self, pattern: str) -> list[str]:
         return await self._keys(pattern)
 
-    async def get(self, key: str) -> Optional[bytes]:
+    async def get(self, key: str) -> bytes | None:
         return await self._get(key)
 
     async def set(
-        self, key: str, value: bytes, ex: Optional[int] = None, nx: bool = False
+        self, key: str, value: bytes, ex: int | None = None, nx: bool = False
     ) -> bool:
         return await self._set(key, value, ex=ex, nx=nx)
 
@@ -77,7 +78,7 @@ class TestCacheSettings:
 
 
 @pytest.fixture
-async def redis_cache() -> AsyncGenerator[Cache, None]:
+async def redis_cache() -> AsyncGenerator[Cache]:
     with (
         patch("acb.adapters.cache.redis.Redis") as mock_redis_cls,
         patch("acb.adapters.cache.redis.PickleSerializer") as mock_serializer_cls,
@@ -124,7 +125,7 @@ async def redis_cache() -> AsyncGenerator[Cache, None]:
 
 
 @pytest.fixture
-async def redis_cluster_cache() -> AsyncGenerator[Cache, None]:
+async def redis_cluster_cache() -> AsyncGenerator[Cache]:
     with (
         patch("acb.adapters.cache.redis.RedisCluster") as mock_redis_cls,
         patch("acb.adapters.cache.redis.PickleSerializer") as mock_serializer_cls,

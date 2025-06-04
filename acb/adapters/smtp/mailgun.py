@@ -43,9 +43,9 @@ class Smtp(SmtpBase):
     async def get_response(
         self,
         req_type: str,
-        domain: t.Optional[str] = None,
-        data: t.Optional[dict[str, t.Any]] = None,
-        params: t.Optional[dict[str, int]] = None,
+        domain: str | None = None,
+        data: dict[str, t.Any] | None = None,
+        params: dict[str, int] | None = None,
     ) -> dict[str, t.Any]:
         calling_frame = sys._getframe().f_back.f_code.co_name
         caller = "domain" if search(calling_frame, "domain") else "route"

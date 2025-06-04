@@ -1,8 +1,9 @@
 """Tests for the MongoDB NoSQL adapter."""
 
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from types import TracebackType
-from typing import Any, AsyncGenerator, Callable, Optional, Type
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,9 +13,9 @@ from acb.adapters.nosql.mongodb import NosqlSettings as MongoDBSettings
 
 
 @pytest.fixture
-async def mock_async_context_manager() -> Callable[[Optional[Any]], Any]:
+async def mock_async_context_manager() -> Callable[[Any | None], Any]:
     class MockAsyncContextManager:
-        def __init__(self, mock_obj: Optional[Any] = None) -> None:
+        def __init__(self, mock_obj: Any | None = None) -> None:
             self.mock_obj = mock_obj or MagicMock()
 
         async def __aenter__(self) -> Any:
@@ -22,14 +23,14 @@ async def mock_async_context_manager() -> Callable[[Optional[Any]], Any]:
 
         async def __aexit__(
             self,
-            exc_type: Optional[Type[BaseException]],
-            exc_val: Optional[BaseException],
-            exc_tb: Optional[TracebackType],
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: TracebackType | None,
         ) -> None:
             pass
 
     def _mock_async_context_manager(
-        mock_obj: Optional[Any] = None,
+        mock_obj: Any | None = None,
     ) -> MockAsyncContextManager:
         return MockAsyncContextManager(mock_obj)
 
@@ -221,7 +222,7 @@ class TestMongoDB:
         original_transaction = nosql.transaction
 
         @asynccontextmanager
-        async def mock_transaction() -> AsyncGenerator[None, None]:
+        async def mock_transaction() -> AsyncGenerator[None]:
             nosql.logger.info("Starting transaction")
             yield
             nosql.logger.info("Ending transaction")

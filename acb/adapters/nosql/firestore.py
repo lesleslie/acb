@@ -11,9 +11,9 @@ from ._base import NosqlBase, NosqlBaseSettings
 
 
 class NosqlSettings(NosqlBaseSettings):
-    project_id: t.Optional[str] = None
-    credentials_path: t.Optional[str] = None
-    emulator_host: t.Optional[str] = None
+    project_id: str | None = None
+    credentials_path: str | None = None
+    emulator_host: str | None = None
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -56,7 +56,7 @@ class Nosql(NosqlBase):
         prefix = self.config.nosql.collection_prefix
         return self.client.collection(f"{prefix}{collection}")
 
-    def _convert_to_dict(self, doc: firestore.DocumentSnapshot) -> t.Dict[str, t.Any]:
+    def _convert_to_dict(self, doc: firestore.DocumentSnapshot) -> dict[str, t.Any]:
         if not doc.exists:
             return {}
 
@@ -66,15 +66,15 @@ class Nosql(NosqlBase):
         data["_id"] = doc.id
         return data
 
-    def _prepare_document(self, document: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def _prepare_document(self, document: dict[str, t.Any]) -> dict[str, t.Any]:
         if "_id" in document:
             document = document.copy()
             del document["_id"]
         return document
 
     async def find(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         collection_ref = self._get_collection_ref(collection)
         query = collection_ref
 
@@ -106,8 +106,8 @@ class Nosql(NosqlBase):
         return results
 
     async def find_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
-    ) -> t.Optional[t.Dict[str, t.Any]]:
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+    ) -> dict[str, t.Any] | None:
         if "_id" in filter:
             doc_ref = self._get_collection_ref(collection).document(filter["_id"])
             doc = doc_ref.get()
@@ -119,7 +119,7 @@ class Nosql(NosqlBase):
         return results[0] if results else None
 
     async def insert_one(
-        self, collection: str, document: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         collection_ref = self._get_collection_ref(collection)
 
@@ -134,8 +134,8 @@ class Nosql(NosqlBase):
         return doc_id
 
     async def insert_many(
-        self, collection: str, documents: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Any]:
+        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[t.Any]:
         ids = []
         batch = self.client.batch()
         collection_ref = self._get_collection_ref(collection)
@@ -158,8 +158,8 @@ class Nosql(NosqlBase):
     async def update_one(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         doc = await self.find_one(collection, filter)
@@ -179,8 +179,8 @@ class Nosql(NosqlBase):
     async def update_many(
         self,
         collection: str,
-        filter: t.Dict[str, t.Any],
-        update: t.Dict[str, t.Any],
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
         **kwargs: t.Any,
     ) -> t.Any:
         docs = await self.find(collection, filter)
@@ -203,7 +203,7 @@ class Nosql(NosqlBase):
         return {"modified_count": len(docs)}
 
     async def delete_one(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         doc = await self.find_one(collection, filter)
         if not doc:
@@ -217,7 +217,7 @@ class Nosql(NosqlBase):
         return {"deleted_count": 1}
 
     async def delete_many(
-        self, collection: str, filter: t.Dict[str, t.Any], **kwargs: t.Any
+        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         docs = await self.find(collection, filter)
         if not docs:
@@ -237,15 +237,15 @@ class Nosql(NosqlBase):
     async def count(
         self,
         collection: str,
-        filter: t.Optional[t.Dict[str, t.Any]] = None,
+        filter: dict[str, t.Any] | None = None,
         **kwargs: t.Any,
     ) -> int:
         docs = await self.find(collection, filter or {})
         return len(docs)
 
     async def aggregate(
-        self, collection: str, pipeline: t.List[t.Dict[str, t.Any]], **kwargs: t.Any
-    ) -> t.List[t.Dict[str, t.Any]]:
+        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+    ) -> list[dict[str, t.Any]]:
         docs = await self.find(collection, {})
 
         for stage in pipeline:
@@ -267,7 +267,7 @@ class Nosql(NosqlBase):
         return docs
 
     @asynccontextmanager
-    async def transaction(self) -> t.AsyncGenerator[None, None]:
+    async def transaction(self) -> t.AsyncGenerator[None]:
         transaction = self.client.transaction()
         try:
             self._transaction = transaction

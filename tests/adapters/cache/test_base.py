@@ -21,7 +21,7 @@ class TestMsgPackSerializer:
 
     def test_dumps(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
-        test_data: t.Dict[str, t.Any] = {
+        test_data: dict[str, t.Any] = {
             "key": "value",
             "number": 42,
             "list": [1, 2, 3],
@@ -55,7 +55,7 @@ class TestMsgPackSerializer:
 
     def test_integration(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
-        test_data: t.Dict[str, t.Any] = {
+        test_data: dict[str, t.Any] = {
             "key": "value",
             "number": 42,
             "list": [1, 2, 3],
@@ -167,12 +167,12 @@ class TestMemoryCache:
         cache._set.assert_called_once()
         call_args = cache._set.call_args
         assert call_args[0][0] == "test_key"
-        assert isinstance(call_args[0][1], (bytes, str))
+        assert isinstance(call_args[0][1], bytes | str)
         assert "test_value" in str(call_args[0][1])
         assert call_args[1]["ttl"] == 60
 
         result: t.Any = await cache.get("test_key")
         cache._get.assert_called_once()
         assert cache._get.call_args[0][0] == "test_key"
-        assert isinstance(result, (bytes, str))
+        assert isinstance(result, bytes | str)
         assert "test_value" in str(result)

@@ -55,7 +55,7 @@ class MockFtpd(FtpdBase):
     async def download(self, remote_path: str, local_path: Path) -> None:
         pass
 
-    async def list_dir(self, path: str) -> t.List[FileInfo]:
+    async def list_dir(self, path: str) -> list[FileInfo]:
         return []
 
     async def mkdir(self, path: str) -> None:
@@ -86,7 +86,7 @@ class MockFtpd(FtpdBase):
         pass
 
     @asynccontextmanager
-    async def connect(self) -> t.AsyncGenerator["FtpdBase", None]:
+    async def connect(self) -> t.AsyncGenerator["FtpdBase"]:
         yield self
 
 

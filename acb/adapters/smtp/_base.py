@@ -7,18 +7,18 @@ from acb.depends import depends
 
 
 class SmtpBaseSettings(Settings):
-    api_key: t.Optional[SecretStr] = None
-    mx_servers: t.Optional[list[str]] = []
+    api_key: SecretStr | None = None
+    mx_servers: list[str] | None = []
     password: SecretStr = SecretStr(gen_password())
-    domain: t.Optional[str] = None
+    domain: str | None = None
     port: int = 587
-    api_url: t.Optional[str] = ""
-    default_from: t.Optional[EmailStr] = None
-    default_from_name: t.Optional[str] = None
-    test_receiver: t.Optional[EmailStr] = None
+    api_url: str | None = ""
+    default_from: EmailStr | None = None
+    default_from_name: str | None = None
+    test_receiver: EmailStr | None = None
     tls: bool = True
     ssl: bool = False
-    template_folder: t.Optional[AsyncPath] = None
+    template_folder: AsyncPath | None = None
     forwards: dict[str, EmailStr] = dict(
         admin="pat@example.com",
         info="terry@example.com",

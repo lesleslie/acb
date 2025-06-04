@@ -13,7 +13,7 @@ import toml
 import yaml
 from anyio import Path as AsyncPath
 
-__all__: t.List[str] = ["load", "dump", "encode", "decode"]
+__all__: list[str] = ["load", "dump", "encode", "decode"]
 
 
 def yaml_encode(
@@ -66,22 +66,22 @@ class SerializerMethod(t.Protocol):
     async def __call__(
         self,
         obj: t.Any,
-        path: t.Optional[AsyncPath | Path] = None,
+        path: AsyncPath | Path | None = None,
         sort_keys: bool = False,
         **kwargs: t.Any,
     ) -> t.Any: ...
 
 
 class Encode:
-    serializers: t.Dict[str, t.Any]
-    path: t.Optional[AsyncPath | Path] = None
-    action: t.Optional[str] = None
+    serializers: dict[str, t.Any]
+    path: AsyncPath | Path | None = None
+    action: str | None = None
     sort_keys: bool = True
     use_list: bool = False
     secure: bool = False
-    secret_key: t.Optional[str] = None
-    secure_salt: t.Optional[str] = None
-    serializer: t.Optional[t.Callable[..., t.Any]] = None
+    secret_key: str | None = None
+    secure_salt: str | None = None
+    serializer: t.Callable[..., t.Any] | None = None
 
     json: SerializerMethod
     yaml: SerializerMethod
@@ -101,7 +101,7 @@ class Encode:
             obj: t.Any,
             path: AsyncPath | Path | None = None,
             sort_keys: bool = False,
-            **kwargs: t.Dict[str, t.Any],
+            **kwargs: dict[str, t.Any],
         ) -> t.Any:
             self.path = path
             self.sort_keys = sort_keys
@@ -136,10 +136,10 @@ class Encode:
 
         return method
 
-    async def _decode(self, obj: t.Any, **kwargs: t.Dict[str, t.Any]) -> t.Any:
+    async def _decode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
         if obj is None:
             raise ValueError("Cannot decode from None input")
-        if isinstance(obj, (str, bytes)) and not obj:
+        if isinstance(obj, str | bytes) and not obj:
             raise ValueError("Cannot decode from empty input")
 
         if isinstance(obj, AsyncPath):
@@ -177,8 +177,8 @@ class Encode:
         except Exception as e:
             raise RuntimeError(f"Error during decoding: {e}") from e
 
-    async def _encode(self, obj: t.Any, **kwargs: t.Dict[str, t.Any]) -> bytes:
-        if isinstance(obj, (AsyncPath, Path)):
+    async def _encode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> bytes:
+        if isinstance(obj, AsyncPath | Path):
             if self.action == "decode":
                 return await self._decode(obj, **kwargs)
             raise TypeError(f"Cannot encode a Path object directly: {obj}")
@@ -192,7 +192,7 @@ class Encode:
 
         return data
 
-    def _preprocess_data(self, obj: t.Any, kwargs: t.Dict[str, t.Any]) -> t.Any:
+    def _preprocess_data(self, obj: t.Any, kwargs: dict[str, t.Any]) -> t.Any:
         if (
             self.serializer is msgspec.json.encode
             and self.sort_keys
@@ -212,7 +212,7 @@ class Encode:
 
         return obj
 
-    def _serialize(self, obj: t.Any, kwargs: t.Dict[str, t.Any]) -> bytes:
+    def _serialize(self, obj: t.Any, kwargs: dict[str, t.Any]) -> bytes:
         if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
             indent = kwargs.pop("indent")
             return json.dumps(obj, indent=indent).encode()
@@ -237,7 +237,7 @@ class Encode:
         except PermissionError:
             raise PermissionError(f"Permission denied when writing to {self.path}")
 
-    async def process(self, obj: t.Any, **kwargs: t.Dict[str, t.Any]) -> t.Any:
+    async def process(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
         if self.action in ("load", "decode"):
             return await self._decode(obj, **kwargs)
         if self.action in ("dump", "encode"):
@@ -247,9 +247,9 @@ class Encode:
     async def __call__(
         self,
         obj: t.Any,
-        path: t.Optional[AsyncPath | Path] = None,
+        path: AsyncPath | Path | None = None,
         sort_keys: bool = False,
-        **kwargs: t.Dict[str, t.Any],
+        **kwargs: dict[str, t.Any],
     ) -> t.Any:
         self.path = path
         self.sort_keys = sort_keys

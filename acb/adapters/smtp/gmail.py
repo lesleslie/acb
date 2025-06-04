@@ -23,9 +23,9 @@ Dns, Requests = import_adapter()
 
 
 class SmtpSettings(SmtpBaseSettings):
-    client_id: t.Optional[str] = None
-    client_secret: t.Optional[SecretStr] = None
-    refresh_token: t.Optional[SecretStr] = None
+    client_id: str | None = None
+    client_secret: SecretStr | None = None
+    refresh_token: SecretStr | None = None
     token_uri: str = "https://oauth2.googleapis.com/token"
     scopes: list[str] = [
         "https://www.googleapis.com/auth/gmail.send",
@@ -77,9 +77,9 @@ class Smtp(SmtpBase):
     async def get_response(
         self,
         req_type: str,
-        domain: t.Optional[str] = None,
-        data: t.Optional[dict[str, t.Any]] = None,
-        params: t.Optional[dict[str, int]] = None,
+        domain: str | None = None,
+        data: dict[str, t.Any] | None = None,
+        params: dict[str, int] | None = None,
     ) -> dict[str, t.Any]:
         self.logger.debug(f"Gmail adapter: {req_type} request for {domain}")
 

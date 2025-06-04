@@ -19,21 +19,21 @@ from acb.depends import depends
 class SqlBaseSettings(Settings):
     _driver: str
     _async_driver: str
-    port: t.Optional[int] = 3306
-    pool_pre_ping: t.Optional[bool] = False
-    poolclass: t.Optional[t.Any] = None
+    port: int | None = 3306
+    pool_pre_ping: bool | None = False
+    poolclass: t.Any | None = None
     host: SecretStr = SecretStr("127.0.0.1")
     local_host: str = "127.0.0.1"
     user: SecretStr = SecretStr("root")
     password: SecretStr = SecretStr(gen_password())
-    _url: t.Optional[URL] = None
-    _async_url: t.Optional[URL] = None
+    _url: URL | None = None
+    _async_url: URL | None = None
     engine_kwargs: dict[str, t.Any] = {}
     backup_enabled: bool = False
     backup_bucket: str | None = None
-    cloudsql_instance: t.Optional[str] = None
-    cloudsql_proxy: t.Optional[bool] = False
-    cloudsql_proxy_port: t.Optional[int] = None
+    cloudsql_instance: str | None = None
+    cloudsql_proxy: bool | None = False
+    cloudsql_proxy_port: int | None = None
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
@@ -69,7 +69,7 @@ class SqlBaseSettings(Settings):
 class SqlProtocol(t.Protocol):
     def engine(self) -> AsyncEngine: ...
     def session(self) -> AsyncSession: ...
-    def get_session(self) -> t.AsyncGenerator[AsyncSession, None]: ...
+    def get_session(self) -> t.AsyncGenerator[AsyncSession]: ...
 
     async def init(self) -> None: ...
 
@@ -90,12 +90,12 @@ class SqlBase(AdapterBase):
         return AsyncSession(self.engine, expire_on_commit=False)
 
     @asynccontextmanager
-    async def get_session(self) -> t.AsyncGenerator[AsyncSession, None]:
+    async def get_session(self) -> t.AsyncGenerator[AsyncSession]:
         async with self.session as sess:
             yield sess
 
     @asynccontextmanager
-    async def get_conn(self) -> t.AsyncGenerator[AsyncConnection, None]:
+    async def get_conn(self) -> t.AsyncGenerator[AsyncConnection]:
         async with self.engine.begin() as conn:
             yield conn
 

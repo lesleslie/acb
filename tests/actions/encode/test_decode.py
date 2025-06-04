@@ -15,8 +15,8 @@ import yaml
 from anyio import Path as AsyncPath
 from acb.actions.encode import decode, encode
 
-TEST_DATA: Final[t.Dict[str, t.Any]] = {"name": "Test", "value": 123, "active": True}
-NESTED_TEST_DATA: Final[t.Dict[str, t.Any]] = {
+TEST_DATA: Final[dict[str, t.Any]] = {"name": "Test", "value": 123, "active": True}
+NESTED_TEST_DATA: Final[dict[str, t.Any]] = {
     "name": "Test",
     "value": 123,
     "active": True,
@@ -176,7 +176,7 @@ class TestDecode:
         ],
     )
     async def test_decode_error_handling(
-        self, invalid_input: t.Union[str, bytes], format_name: str
+        self, invalid_input: str | bytes, format_name: str
     ) -> None:
         with pytest.raises(Exception):
             await getattr(decode, format_name)(invalid_input)

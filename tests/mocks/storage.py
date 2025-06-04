@@ -2,7 +2,6 @@
 
 import os
 import tempfile
-import typing as t
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -28,7 +27,7 @@ class MockFileStorage(StorageBase):
         self._files[path] = content
         return True
 
-    async def get_file(self, path: str) -> t.Optional[bytes]:
+    async def get_file(self, path: str) -> bytes | None:
         return self._files.get(path)
 
     async def delete_file(self, path: str) -> bool:
@@ -40,7 +39,7 @@ class MockFileStorage(StorageBase):
     async def file_exists(self, path: str) -> bool:
         return path in self._files
 
-    async def list_files(self, prefix: t.Optional[str] = None) -> list[str]:
+    async def list_files(self, prefix: str | None = None) -> list[str]:
         if prefix is None:
             return list(self._files.keys())
 
@@ -49,7 +48,7 @@ class MockFileStorage(StorageBase):
     async def get_file_url(self, path: str) -> str:
         return f"file://{self._root_dir}/{path}"
 
-    async def get_file_size(self, path: str) -> t.Optional[int]:
+    async def get_file_size(self, path: str) -> int | None:
         if path in self._files:
             return len(self._files[path])
         return None
@@ -100,7 +99,7 @@ class MockFileStorage(StorageBase):
 
         return True
 
-    async def list_directories(self, prefix: t.Optional[str] = None) -> list[str]:
+    async def list_directories(self, prefix: str | None = None) -> list[str]:
         if prefix is None:
             return sorted(list(self._directories))
 
@@ -129,7 +128,7 @@ class MockMemoryStorage(StorageBase):
         self._files[path] = content
         return True
 
-    async def get_file(self, path: str) -> t.Optional[bytes]:
+    async def get_file(self, path: str) -> bytes | None:
         return self._files.get(path)
 
     async def delete_file(self, path: str) -> bool:
@@ -141,7 +140,7 @@ class MockMemoryStorage(StorageBase):
     async def file_exists(self, path: str) -> bool:
         return path in self._files
 
-    async def list_files(self, prefix: t.Optional[str] = None) -> list[str]:
+    async def list_files(self, prefix: str | None = None) -> list[str]:
         if prefix is None:
             return list(self._files.keys())
 
@@ -150,7 +149,7 @@ class MockMemoryStorage(StorageBase):
     async def get_file_url(self, path: str) -> str:
         return f"memory://storage/{path}"
 
-    async def get_file_size(self, path: str) -> t.Optional[int]:
+    async def get_file_size(self, path: str) -> int | None:
         if path in self._files:
             return len(self._files[path])
         return None
@@ -201,7 +200,7 @@ class MockMemoryStorage(StorageBase):
 
         return True
 
-    async def list_directories(self, prefix: t.Optional[str] = None) -> list[str]:
+    async def list_directories(self, prefix: str | None = None) -> list[str]:
         if prefix is None:
             return sorted(list(self._directories))
 

@@ -1,15 +1,10 @@
 """Standardized test interfaces for ACB adapters."""
 
+import typing as t
 from types import TracebackType
 from typing import (
     Any,
-    Dict,
-    List,
-    Optional,
     Protocol,
-    Set,
-    Type,
-    Union,
 )
 
 import pytest
@@ -18,7 +13,7 @@ import pytest
 class StorageAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
     async def put_file(self, path: str, content: bytes) -> bool: ...
-    async def get_file(self, path: str) -> Optional[bytes]: ...
+    async def get_file(self, path: str) -> bytes | None: ...
     async def delete_file(self, path: str) -> bool: ...
     async def file_exists(self, path: str) -> bool: ...
     async def create_directory(self, path: str) -> bool: ...
@@ -101,10 +96,10 @@ class StorageTestInterface:
 class CacheAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
     async def get(self, key: str, default: Any = None) -> Any: ...
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool: ...
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> bool: ...
     async def delete(self, key: str) -> Any: ...
     async def exists(self, key: str) -> bool: ...
-    async def clear(self, namespace: Optional[str] = None) -> bool: ...
+    async def clear(self, namespace: str | None = None) -> bool: ...
 
 
 class CacheTestInterface:
@@ -164,8 +159,8 @@ class CacheTestInterface:
 
 class MockStorage(StorageAdapterProtocol):
     def __init__(self) -> None:
-        self._files: Dict[str, bytes] = {}
-        self._directories: Set[str] = set()
+        self._files: dict[str, bytes] = {}
+        self._directories: set[str] = set()
         self._initialized: bool = False
 
     async def init(self) -> "MockStorage":
@@ -182,7 +177,7 @@ class MockStorage(StorageAdapterProtocol):
 
         return True
 
-    async def get_file(self, path: str) -> Optional[bytes]:
+    async def get_file(self, path: str) -> bytes | None:
         return self._files.get(path)
 
     async def delete_file(self, path: str) -> bool:
@@ -207,12 +202,12 @@ class SQLAdapterProtocol(Protocol):
     async def execute(self, query: str, *args: Any, **kwargs: Any) -> bool: ...
     async def fetch_one(
         self, query: str, *args: Any, **kwargs: Any
-    ) -> Optional[Dict[str, Any]]: ...
+    ) -> dict[str, Any] | None: ...
     async def fetch_all(
         self, query: str, *args: Any, **kwargs: Any
-    ) -> List[Dict[str, Any]]: ...
+    ) -> list[dict[str, Any]]: ...
     async def fetch_val(self, query: str, *args: Any, **kwargs: Any) -> Any: ...
-    def transaction(self) -> Any: ...
+    def transaction(self) -> t.AsyncContextManager[t.Any]: ...
 
 
 class SQLTestInterface:
@@ -254,16 +249,16 @@ class SQLTestInterface:
 
 class NoSQLAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
-    async def get(self, collection: str, id: str) -> Optional[Dict[str, Any]]: ...
-    async def set(self, collection: str, id: str, data: Dict[str, Any]) -> bool: ...
+    async def get(self, collection: str, id: str) -> dict[str, Any] | None: ...
+    async def set(self, collection: str, id: str, data: dict[str, Any]) -> bool: ...
     async def delete(self, collection: str, id: str) -> bool: ...
     async def exists(self, collection: str, id: str) -> bool: ...
     async def find(
-        self, collection: str, query: Dict[str, Any]
-    ) -> List[Dict[str, Any]]: ...
+        self, collection: str, query: dict[str, Any]
+    ) -> list[dict[str, Any]]: ...
     async def query(
-        self, collection: str, query: Dict[str, Any]
-    ) -> List[Dict[str, Any]]: ...
+        self, collection: str, query: dict[str, Any]
+    ) -> list[dict[str, Any]]: ...
 
 
 class NoSQLTestInterface:
@@ -372,13 +367,13 @@ class RequestsTestInterface:
 class SMTPAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
     async def send_email(
-        self, to: Union[str, List[str]], subject: str, body: Any, **kwargs: Any
+        self, to: str | list[str], subject: str, body: Any, **kwargs: Any
     ) -> bool: ...
     async def send_template(
         self,
-        to: Union[str, List[str]],
+        to: str | list[str],
         template_name: str,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
         **kwargs: Any,
     ) -> bool: ...
 
@@ -410,11 +405,11 @@ class SMTPTestInterface:
 
 class SecretAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
-    async def get_secret(self, key: str) -> Optional[str]: ...
+    async def get_secret(self, key: str) -> str | None: ...
     async def set_secret(self, key: str, value: str) -> bool: ...
     async def delete_secret(self, key: str) -> bool: ...
     async def secret_exists(self, key: str) -> bool: ...
-    async def list_versions(self, key: str) -> List[str]: ...
+    async def list_versions(self, key: str) -> list[str]: ...
 
 
 class SecretTestInterface:
@@ -501,7 +496,7 @@ class SecretTestInterface:
 
 class DNSAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
-    async def get_record(self, domain: str, record_type: str) -> Optional[str]: ...
+    async def get_record(self, domain: str, record_type: str) -> str | None: ...
     async def set_record(self, domain: str, record_type: str, value: str) -> bool: ...
     async def delete_record(self, domain: str, record_type: str) -> bool: ...
 
@@ -582,10 +577,10 @@ class FTPDTestInterface:
 
 class MonitoringAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
-    async def log_event(self, event_name: str, data: Dict[str, Any]) -> bool: ...
-    async def log_error(self, error_name: str, data: Dict[str, Any]) -> bool: ...
+    async def log_event(self, event_name: str, data: dict[str, Any]) -> bool: ...
+    async def log_error(self, error_name: str, data: dict[str, Any]) -> bool: ...
     async def log_metric(
-        self, metric_name: str, value: float, tags: Optional[Dict[str, str]] = None
+        self, metric_name: str, value: float, tags: dict[str, str] | None = None
     ) -> bool: ...
 
 
@@ -613,11 +608,11 @@ class MonitoringTestInterface:
 
 class ModelsAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
-    async def create(self, data: Dict[str, Any]) -> str: ...
-    async def get(self, id: str) -> Optional[Dict[str, Any]]: ...
-    async def update(self, id: str, data: Dict[str, Any]) -> bool: ...
+    async def create(self, data: dict[str, Any]) -> str: ...
+    async def get(self, id: str) -> dict[str, Any] | None: ...
+    async def update(self, id: str, data: dict[str, Any]) -> bool: ...
     async def delete(self, id: str) -> bool: ...
-    async def find(self, query: Dict[str, Any]) -> List[Dict[str, Any]]: ...
+    async def find(self, query: dict[str, Any]) -> list[dict[str, Any]]: ...
 
 
 class ModelsTestInterface:
@@ -677,7 +672,7 @@ class ModelsTestInterface:
 class MockSQL(SQLAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
 
     async def init(self) -> "MockSQL":
         self._initialized = True
@@ -688,14 +683,14 @@ class MockSQL(SQLAdapterProtocol):
 
     async def fetch_one(
         self, query: str, *args: Any, **kwargs: Any
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         if "SELECT 1" in query:
             return {"value": 1}
         return None
 
     async def fetch_all(
         self, query: str, *args: Any, **kwargs: Any
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         if "UNION" in query:
             return [{"value": 1}, {"value": 2}]
         return []
@@ -705,16 +700,16 @@ class MockSQL(SQLAdapterProtocol):
             return 1
         return None
 
-    def transaction(self) -> Any:
+    def transaction(self) -> t.AsyncContextManager[t.Any]:
         class Transaction:
             async def __aenter__(self) -> "Transaction":
                 return self
 
             async def __aexit__(
                 self,
-                exc_type: Optional[Type[BaseException]],
-                exc_val: Optional[BaseException],
-                exc_tb: Optional[TracebackType],
+                exc_type: type[BaseException] | None,
+                exc_val: BaseException | None,
+                exc_tb: TracebackType | None,
             ) -> bool:
                 return False
 
@@ -724,17 +719,17 @@ class MockSQL(SQLAdapterProtocol):
 class MockNoSQL(NoSQLAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
-        self._data: Dict[str, Dict[str, Any]] = {}
+        self._data: dict[str, dict[str, Any]] = {}
 
     async def init(self) -> "MockNoSQL":
         self._initialized = True
         return self
 
-    async def get(self, collection: str, id: str) -> Optional[Dict[str, Any]]:
+    async def get(self, collection: str, id: str) -> dict[str, Any] | None:
         key = f"{collection}:{id}"
         return self._data.get(key)
 
-    async def set(self, collection: str, id: str, data: Dict[str, Any]) -> bool:
+    async def set(self, collection: str, id: str, data: dict[str, Any]) -> bool:
         key = f"{collection}:{id}"
         self._data[key] = data
         return True
@@ -751,9 +746,9 @@ class MockNoSQL(NoSQLAdapterProtocol):
         return key in self._data
 
     async def query(
-        self, collection: str, query: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-        results: List[Dict[str, Any]] = []
+        self, collection: str, query: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
         for key, value in self._data.items():
             if key.startswith(f"{collection}:"):
                 match = True
@@ -766,8 +761,8 @@ class MockNoSQL(NoSQLAdapterProtocol):
         return results
 
     async def find(
-        self, collection: str, query: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+        self, collection: str, query: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         return await self.query(collection, query)
 
 
@@ -793,11 +788,11 @@ class MockRequests(RequestsAdapterProtocol):
 
 
 class MockResponse:
-    def __init__(self, status_code: int, json_data: Dict[str, Any]) -> None:
+    def __init__(self, status_code: int, json_data: dict[str, Any]) -> None:
         self.status_code: int = status_code
-        self._json_data: Dict[str, Any] = json_data
+        self._json_data: dict[str, Any] = json_data
 
-    async def json(self) -> Dict[str, Any]:
+    async def json(self) -> dict[str, Any]:
         return self._json_data
 
     async def text(self) -> str:
@@ -808,9 +803,9 @@ class MockResponse:
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> bool:
         return False
 
@@ -818,23 +813,23 @@ class MockResponse:
 class MockSMTP(SMTPAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
-        self._emails: List[Dict[str, Any]] = []
+        self._emails: list[dict[str, Any]] = []
 
     async def init(self) -> "MockSMTP":
         self._initialized = True
         return self
 
     async def send_email(
-        self, to: Union[str, List[str]], subject: str, body: Any, **kwargs: Any
+        self, to: str | list[str], subject: str, body: Any, **kwargs: Any
     ) -> bool:
         self._emails.append({"to": to, "subject": subject, "body": body} | kwargs)
         return True
 
     async def send_template(
         self,
-        to: Union[str, List[str]],
+        to: str | list[str],
         template_name: str,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
         **kwargs: Any,
     ) -> bool:
         self._emails.append(
@@ -847,14 +842,14 @@ class MockSMTP(SMTPAdapterProtocol):
 class MockSecret(SecretAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
-        self._secrets: Dict[str, str] = {}
-        self._versions: Dict[str, List[str]] = {}
+        self._secrets: dict[str, str] = {}
+        self._versions: dict[str, list[str]] = {}
 
     async def init(self) -> "MockSecret":
         self._initialized = True
         return self
 
-    async def get_secret(self, key: str) -> Optional[str]:
+    async def get_secret(self, key: str) -> str | None:
         return self._secrets.get(key)
 
     async def set_secret(self, key: str, value: str) -> bool:
@@ -877,7 +872,7 @@ class MockSecret(SecretAdapterProtocol):
     async def secret_exists(self, key: str) -> bool:
         return key in self._secrets
 
-    async def list_versions(self, key: str) -> List[str]:
+    async def list_versions(self, key: str) -> list[str]:
         if key not in self._versions:
             return []
         return [f"version-{i + 1}" for i in range(len(self._versions[key]))]
@@ -886,13 +881,13 @@ class MockSecret(SecretAdapterProtocol):
 class MockDNS(DNSAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
-        self._records: Dict[str, str] = {}
+        self._records: dict[str, str] = {}
 
     async def init(self) -> "MockDNS":
         self._initialized = True
         return self
 
-    async def get_record(self, domain: str, record_type: str) -> Optional[str]:
+    async def get_record(self, domain: str, record_type: str) -> str | None:
         key = f"{domain}:{record_type}"
         return self._records.get(key)
 
@@ -913,7 +908,7 @@ class MockFTPD(FTPDAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
         self._running: bool = False
-        self._users: Dict[str, Dict[str, str]] = {}
+        self._users: dict[str, dict[str, str]] = {}
 
     async def init(self) -> "MockFTPD":
         self._initialized = True
@@ -941,28 +936,28 @@ class MockFTPD(FTPDAdapterProtocol):
 class MockMonitoring(MonitoringAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
-        self._events: List[Dict[str, Any]] = []
-        self._errors: List[Dict[str, Any]] = []
-        self._metrics: List[Dict[str, Any]] = []
+        self._events: list[dict[str, Any]] = []
+        self._errors: list[dict[str, Any]] = []
+        self._metrics: list[dict[str, Any]] = []
 
     async def init(self) -> "MockMonitoring":
         self._initialized = True
         return self
 
     async def log_event(
-        self, event_name: str, data: Optional[Dict[str, Any]] = None
+        self, event_name: str, data: dict[str, Any] | None = None
     ) -> bool:
         self._events.append({"name": event_name, "data": data or {}})
         return True
 
     async def log_error(
-        self, error_name: str, data: Optional[Dict[str, Any]] = None
+        self, error_name: str, data: dict[str, Any] | None = None
     ) -> bool:
         self._errors.append({"name": error_name, "data": data or {}})
         return True
 
     async def log_metric(
-        self, metric_name: str, value: float, tags: Optional[Dict[str, str]] = None
+        self, metric_name: str, value: float, tags: dict[str, str] | None = None
     ) -> bool:
         self._metrics.append({"name": metric_name, "value": value, "tags": tags or {}})
         return True
@@ -971,14 +966,14 @@ class MockMonitoring(MonitoringAdapterProtocol):
 class MockModels(ModelsAdapterProtocol):
     def __init__(self) -> None:
         self._initialized: bool = False
-        self._models: Dict[str, Dict[str, Any]] = {}
+        self._models: dict[str, dict[str, Any]] = {}
         self._next_id: int = 1
 
     async def init(self) -> "MockModels":
         self._initialized = True
         return self
 
-    async def create(self, data: Dict[str, Any]) -> str:
+    async def create(self, data: dict[str, Any]) -> str:
         model_name = "TestModel"
         if model_name not in self._models:
             self._models[model_name] = {}
@@ -991,7 +986,7 @@ class MockModels(ModelsAdapterProtocol):
 
         return instance_id
 
-    async def get(self, id: str) -> Optional[Dict[str, Any]]:
+    async def get(self, id: str) -> dict[str, Any] | None:
         model_name = "TestModel"
         if model_name not in self._models:
             return None
@@ -1006,7 +1001,7 @@ class MockModels(ModelsAdapterProtocol):
                 result[key] = value
         return result
 
-    async def update(self, id: str, data: Dict[str, Any]) -> bool:
+    async def update(self, id: str, data: dict[str, Any]) -> bool:
         model_name = "TestModel"
         if model_name not in self._models or id not in self._models[model_name]:
             return False
@@ -1026,12 +1021,12 @@ class MockModels(ModelsAdapterProtocol):
         del self._models[model_name][id]
         return True
 
-    async def find(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def find(self, query: dict[str, Any]) -> list[dict[str, Any]]:
         model_name = "TestModel"
         if model_name not in self._models:
             return []
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for instance in self._models[model_name].values():
             match = True
             for key, value in query.items():
@@ -1058,7 +1053,7 @@ class MockModelInstance:
 
 class MockCache(CacheAdapterProtocol):
     def __init__(self) -> None:
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
         self._initialized: bool = False
 
     async def init(self) -> "MockCache":
@@ -1068,7 +1063,7 @@ class MockCache(CacheAdapterProtocol):
     async def get(self, key: str, default: Any = None) -> Any:
         return self._data.get(key, default)
 
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         self._data[key] = value
         return True
 
@@ -1081,7 +1076,7 @@ class MockCache(CacheAdapterProtocol):
     async def exists(self, key: str) -> bool:
         return key in self._data
 
-    async def clear(self, namespace: Optional[str] = None) -> bool:
+    async def clear(self, namespace: str | None = None) -> bool:
         if namespace:
             keys_to_delete = [
                 k for k in self._data.keys() if k.startswith(f"{namespace}:")
@@ -1092,12 +1087,10 @@ class MockCache(CacheAdapterProtocol):
             self._data.clear()
         return True
 
-    async def multi_get(self, keys: List[str]) -> List[Any]:
+    async def multi_get(self, keys: list[str]) -> list[Any]:
         return [self._data.get(key) for key in keys]
 
-    async def multi_set(
-        self, mapping: Dict[str, Any], ttl: Optional[int] = None
-    ) -> bool:
+    async def multi_set(self, mapping: dict[str, Any], ttl: int | None = None) -> bool:
         for key, value in mapping.items():
             self._data[key] = value
         return True

@@ -43,8 +43,8 @@ class FtpdBaseSettings(Settings):
     root_dir: str = "/tmp/ftp"  # nosec B108
 
     use_tls: bool = False
-    cert_file: t.Optional[str] = None
-    key_file: t.Optional[str] = None
+    cert_file: str | None = None
+    key_file: str | None = None
 
 
 class FtpdProtocol(t.Protocol):
@@ -65,7 +65,7 @@ class FtpdProtocol(t.Protocol):
         pass
 
     @abstractmethod
-    async def list_dir(self, path: str) -> t.List[FileInfo]:
+    async def list_dir(self, path: str) -> list[FileInfo]:
         pass
 
     @abstractmethod
@@ -110,7 +110,7 @@ class FtpdProtocol(t.Protocol):
 
     @abstractmethod
     @asynccontextmanager
-    async def connect(self) -> t.AsyncGenerator["FtpdProtocol", None]:
+    async def connect(self) -> t.AsyncGenerator["FtpdProtocol"]:
         yield self
 
 
@@ -135,7 +135,7 @@ class FtpdBase(AdapterBase):
         pass
 
     @abstractmethod
-    async def list_dir(self, path: str) -> t.List[FileInfo]:
+    async def list_dir(self, path: str) -> list[FileInfo]:
         pass
 
     @abstractmethod
@@ -180,5 +180,5 @@ class FtpdBase(AdapterBase):
 
     @abstractmethod
     @asynccontextmanager
-    async def connect(self) -> t.AsyncGenerator["FtpdBase", None]:
+    async def connect(self) -> t.AsyncGenerator["FtpdBase"]:
         yield self

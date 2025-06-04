@@ -1,7 +1,8 @@
 """Tests for the HTTPX Requests adapter."""
 
+from collections.abc import AsyncGenerator
 from types import TracebackType
-from typing import Any, AsyncGenerator, Optional, Type
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -41,9 +42,9 @@ class MockAsyncCacheClient:
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         pass
 
@@ -83,7 +84,7 @@ def mock_redis() -> MockAsyncRedis:
 
 
 @pytest.fixture
-async def requests_adapter() -> AsyncGenerator[Requests, None]:
+async def requests_adapter() -> AsyncGenerator[Requests]:
     with (
         patch("acb.adapters.requests.httpx.AsyncRedis") as mock_redis_cls,
         patch("acb.adapters.requests.httpx.AsyncRedisStorage") as mock_storage_cls,

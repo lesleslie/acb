@@ -33,7 +33,7 @@ class Storage(StorageBase):
 
         return True
 
-    async def get_file(self, path: str) -> t.Optional[bytes]:
+    async def get_file(self, path: str) -> bytes | None:
         if not hasattr(self, "_files"):
             self._files: dict[str, bytes] = {}
         return self._files.get(path)

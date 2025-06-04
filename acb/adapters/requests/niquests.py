@@ -10,7 +10,7 @@ from ._base import RequestsBase, RequestsBaseSettings
 class RequestsSettings(RequestsBaseSettings):
     base_url: str = ""
     timeout: int = 10
-    auth: t.Optional[tuple[str, SecretStr]] = None
+    auth: tuple[str, SecretStr] | None = None
 
 
 class Requests(RequestsBase):
@@ -25,9 +25,9 @@ class Requests(RequestsBase):
         self,
         url: str,
         timeout: int = 10,
-        params: t.Optional[dict[str, t.Any]] = None,
-        headers: t.Optional[dict[str, str]] = None,
-        cookies: t.Optional[dict[str, str]] = None,
+        params: dict[str, t.Any] | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: dict[str, str] | None = None,
     ) -> t.Any:
         response = await self.client.get(
             url, timeout=timeout, params=params, headers=headers, cookies=cookies
@@ -38,9 +38,9 @@ class Requests(RequestsBase):
     async def post(
         self,
         url: str,
-        data: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
         timeout: int = 10,
-        json: t.Optional[dict[str, t.Any]] = None,
+        json: dict[str, t.Any] | None = None,
     ) -> t.Any:
         response = await self.client.post(url, data=data, json=json, timeout=timeout)
         response.raise_for_status()
@@ -49,9 +49,9 @@ class Requests(RequestsBase):
     async def put(
         self,
         url: str,
-        data: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
         timeout: int = 10,
-        json: t.Optional[dict[str, t.Any]] = None,
+        json: dict[str, t.Any] | None = None,
     ) -> t.Any:
         response = await self.client.put(url, data=data, json=json, timeout=timeout)
         response.raise_for_status()
@@ -66,8 +66,8 @@ class Requests(RequestsBase):
         self,
         url: str,
         timeout: int = 10,
-        data: t.Optional[dict[str, t.Any]] = None,
-        json: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
+        json: dict[str, t.Any] | None = None,
     ) -> t.Any:
         response = await self.client.patch(url, timeout=timeout, data=data, json=json)
         response.raise_for_status()
@@ -87,8 +87,8 @@ class Requests(RequestsBase):
         self,
         method: str,
         url: str,
-        data: t.Optional[dict[str, t.Any]] = None,
-        json: t.Optional[dict[str, t.Any]] = None,
+        data: dict[str, t.Any] | None = None,
+        json: dict[str, t.Any] | None = None,
         timeout: int = 10,
     ) -> t.Any:
         response = await self.client.request(

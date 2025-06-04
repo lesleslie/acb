@@ -20,8 +20,8 @@ class MockMemoryCache(CacheBase):
         self,
         key: str,
         default: t.Any = None,
-        loads_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        loads_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> t.Any:
         key = f"{self._namespace}{key}"
@@ -33,8 +33,8 @@ class MockMemoryCache(CacheBase):
         key: str,
         value: t.Any,
         ttl: t.Any = None,
-        dumps_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        dumps_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _cas_token: t.Any = None,
         _conn: t.Any = None,
     ) -> bool:
@@ -45,7 +45,7 @@ class MockMemoryCache(CacheBase):
         return True
 
     async def delete(
-        self, key: str, namespace: t.Optional[str] = None, _conn: t.Any = None
+        self, key: str, namespace: str | None = None, _conn: t.Any = None
     ) -> int:
         key = f"{self._namespace}{key}"
         if key in self._data:
@@ -56,7 +56,7 @@ class MockMemoryCache(CacheBase):
         return 0
 
     async def exists(
-        self, key: str, namespace: t.Optional[str] = None, _conn: t.Any = None
+        self, key: str, namespace: str | None = None, _conn: t.Any = None
     ) -> bool:
         key = f"{self._namespace}{key}"
         self._cleanup_expired()
@@ -65,8 +65,8 @@ class MockMemoryCache(CacheBase):
     async def multi_get(
         self,
         keys: list[str],
-        loads_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        loads_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> list[t.Any]:
         return [await self.get(key) for key in keys]
@@ -75,17 +75,15 @@ class MockMemoryCache(CacheBase):
         self,
         pairs: dict[str, t.Any],
         ttl: t.Any = None,
-        dumps_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        dumps_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> t.Literal[True]:
         for key, value in pairs.items():
             await self.set(key, value, ttl=ttl)
         return True
 
-    async def clear(
-        self, namespace: t.Optional[str] = None, _conn: t.Any = None
-    ) -> bool:
+    async def clear(self, namespace: str | None = None, _conn: t.Any = None) -> bool:
         if namespace is None:
             namespace = self._namespace
         else:
@@ -114,7 +112,7 @@ class MockMemoryCache(CacheBase):
         self,
         key: str,
         ttl: float,
-        namespace: t.Optional[str] = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> bool:
         key = f"{self._namespace}{key}"
@@ -129,7 +127,7 @@ class MockMemoryCache(CacheBase):
         return namespaced_cache
 
     def cached(
-        self, ttl: t.Optional[float] = None
+        self, ttl: float | None = None
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -177,8 +175,8 @@ class MockRedisCache(CacheBase):
         self,
         key: str,
         default: t.Any = None,
-        loads_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        loads_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> t.Any:
         key = f"{self._namespace}{key}"
@@ -190,8 +188,8 @@ class MockRedisCache(CacheBase):
         key: str,
         value: t.Any,
         ttl: t.Any = None,
-        dumps_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        dumps_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _cas_token: t.Any = None,
         _conn: t.Any = None,
     ) -> bool:
@@ -202,7 +200,7 @@ class MockRedisCache(CacheBase):
         return True
 
     async def delete(
-        self, key: str, namespace: t.Optional[str] = None, _conn: t.Any = None
+        self, key: str, namespace: str | None = None, _conn: t.Any = None
     ) -> int:
         key = f"{self._namespace}{key}"
         if key in self._data:
@@ -213,7 +211,7 @@ class MockRedisCache(CacheBase):
         return 0
 
     async def exists(
-        self, key: str, namespace: t.Optional[str] = None, _conn: t.Any = None
+        self, key: str, namespace: str | None = None, _conn: t.Any = None
     ) -> bool:
         key = f"{self._namespace}{key}"
         self._cleanup_expired()
@@ -222,8 +220,8 @@ class MockRedisCache(CacheBase):
     async def multi_get(
         self,
         keys: list[str],
-        loads_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        loads_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> list[t.Any]:
         return [await self.get(key) for key in keys]
@@ -232,17 +230,15 @@ class MockRedisCache(CacheBase):
         self,
         pairs: dict[str, t.Any],
         ttl: t.Any = None,
-        dumps_fn: t.Optional[t.Callable[[t.Any], t.Any]] = None,
-        namespace: t.Optional[str] = None,
+        dumps_fn: t.Callable[[t.Any], t.Any] | None = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> t.Literal[True]:
         for key, value in pairs.items():
             await self.set(key, value, ttl=ttl)
         return True
 
-    async def clear(
-        self, namespace: t.Optional[str] = None, _conn: t.Any = None
-    ) -> bool:
+    async def clear(self, namespace: str | None = None, _conn: t.Any = None) -> bool:
         if namespace is None:
             namespace = self._namespace
         else:
@@ -271,7 +267,7 @@ class MockRedisCache(CacheBase):
         self,
         key: str,
         ttl: float,
-        namespace: t.Optional[str] = None,
+        namespace: str | None = None,
         _conn: t.Any = None,
     ) -> bool:
         key = f"{self._namespace}{key}"
@@ -286,7 +282,7 @@ class MockRedisCache(CacheBase):
         return namespaced_cache
 
     def cached(
-        self, ttl: t.Optional[float] = None
+        self, ttl: float | None = None
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
