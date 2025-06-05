@@ -1,0 +1,144 @@
+# .windsurfrules - ACB Workspace Rules
+name: ACB Workspace Rules
+description: Configuration for ACB and dependent packages
+version: 1.0.0
+
+rules:
+  # ACB Architecture
+  - rule: adapter_pattern_implementation
+    description: |
+      Always follow the ACB adapter implementation pattern with public/private method delegation
+    examples:
+      - |
+        # Proper implementation pattern for adapters
+        class ExampleAdapter:
+            async def method_name(self, *args, **kwargs):
+                # Public method delegates to private implementation
+                return await self._method_name(*args, **kwargs)
+
+            async def _method_name(self, *args, **kwargs):
+                # Private implementation contains the actual logic
+                ...
+
+  - rule: async_adapter_interfaces
+    description: |
+      All ACB adapters must implement consistent async interfaces with proper delegation
+    examples:
+      - |
+        # Use _ensure_client pattern for connections
+        async def _ensure_client(self) -> ClientType:
+            if self._client is None:
+                self._client = await self._create_client()
+            return self._client
+
+  # Testing Requirements
+  - rule: adapter_test_mocks
+    description: |
+      Mock classes must match the signature and behavior of actual implementations
+      with proper delegation between public and private methods
+    examples:
+      - |
+        # Mock implementation should mirror the adapter pattern
+        class MockAdapter:
+            async def method(self, *args, **kwargs):
+                # Delegate to _method
+                return await self._method(*args, **kwargs)
+
+            async def _method(self, *args, **kwargs):
+                # Private implementation for testing
+                ...
+
+  - rule: context_manager_testing
+    description: |
+      Always mock both __aenter__ and __aexit__ methods when testing async context managers
+    examples:
+      - |
+        # Proper async context manager mocking
+        mock_conn = AsyncMock()
+        mock_conn.__aenter__.return_value = mock_conn
+        mock_conn.__aexit__.return_value = None
+
+  - rule: cached_property_testing
+    description: |
+      Clear cached properties before testing by deleting attributes
+    examples:
+      - |
+        # Clear cached property before test
+        if hasattr(adapter, "engine"):
+            del adapter.engine
+
+  # ACB Component Organization
+  - rule: modular_dependencies
+    description: |
+      Group dependencies by adapter type in pyproject.toml optional dependencies
+    examples:
+      - |
+        # Add new adapters to appropriate optional dependency group
+        [project.optional-dependencies]
+        cache = [...]
+        sql = [...]
+        # new_adapter_type = [...]
+
+  - rule: initialization_pattern
+    description: |
+      Follow ACB initialization patterns for consistent component lifecycle
+    examples:
+      - |
+        async def initialize(self) -> None:
+            # Setup initial state
+            await self._ensure_client()
+
+        async def shutdown(self) -> None:
+            # Clean up resources
+            if self._client is not None:
+                await self._client.close()
+                self._client = None
+
+  # Configuration Management
+  - rule: settings_pattern
+    description: |
+      Use ACB settings pattern for component configuration
+    examples:
+      - |
+        class ExampleSettings(BaseSettings):
+            host: str = "localhost"
+            port: int = 8080
+            model_config = ConfigDict(env_prefix="EXAMPLE_")
+
+  # Runtime Behavior
+  - rule: exception_handling
+    description: |
+      Implement consistent error handling with appropriate exception types
+    examples:
+      - |
+        try:
+            await self._operation()
+        except ExternalLibraryError as e:
+            raise AdapterError(f"Operation failed: {e}") from e
+
+  # Project Structure
+  - rule: module_organization
+    description: |
+      Organize adapters by external service type following ACB patterns
+    structure:
+      - acb/
+        - adapters/
+          - type_name/
+            - _base.py  # Base adapter and protocols
+            - implementations.py  # Specific implementations
+
+  # Documentation
+  - rule: adapter_documentation
+    description: |
+      Document adapter capabilities and configuration requirements
+    examples:
+      - |
+        """Adapter for ExampleService integration.
+
+        This adapter requires the following environment variables:
+        - EXAMPLE_API_KEY: API key for authentication
+        - EXAMPLE_REGION: Service region
+
+        Optional configuration:
+        - EXAMPLE_TIMEOUT: Connection timeout in seconds (default: 30)
+        """
