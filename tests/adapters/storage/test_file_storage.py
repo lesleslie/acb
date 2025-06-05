@@ -577,8 +577,12 @@ class TestFileStorage:
         mock_client.open.return_value.__enter__.return_value = mock_file
 
         file_path = "test/path/file.txt"
-        content = "test content"
-        content_bytes = content.encode("utf-8")
+        content_bytes = b"test content"
+
+        async_true = AsyncMock()
+        async_true.return_value = True
+        path_mock = AsyncMock()
+        path_mock.exists = path_mock.is_file = path_mock.is_dir = async_true
 
         with patch.object(storage_adapter, "client", new=mock_client):
             with patch.object(storage_adapter, "root_dir", new=None):
@@ -660,3 +664,27 @@ class TestFileStorage:
                 assert not result
 
                 storage_adapter.logger.error.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_put_file_with_string_content_and_path_mock(
+        self, storage_adapter: Storage
+    ) -> None:
+        mock_file = MagicMock()
+        mock_client = MagicMock()
+        mock_client.open.return_value.__enter__.return_value = mock_file
+
+        file_path = "test/path/file.txt"
+        content_bytes = b"test content"
+
+        async_true = AsyncMock()
+        async_true.return_value = True
+        path_mock = AsyncMock()
+        path_mock.exists = path_mock.is_file = path_mock.is_dir = async_true
+
+        with patch.object(storage_adapter, "client", new=mock_client):
+            with patch.object(storage_adapter, "root_dir", new=None):
+                result = await storage_adapter.put_file(file_path, content_bytes)
+
+                mock_file.write.assert_called_once_with(content_bytes)
+
+                assert result

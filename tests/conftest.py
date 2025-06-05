@@ -14,8 +14,8 @@ from _pytest.main import Session
 from _pytest.monkeypatch import MonkeyPatch
 from acb.config import Config
 
-type TaskSet = set[asyncio.Task[object]]
-type MarkerTuple = tuple[str, str]
+TaskSet: t.TypeAlias = set[asyncio.Task[object]]
+MarkerTuple: t.TypeAlias = tuple[str, str]
 
 original_exists = os.path.exists
 

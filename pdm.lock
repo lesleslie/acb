@@ -5,7 +5,7 @@
 groups = ["default", "cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:84fe39b777bd4bd4504b2637ece474f8aa0debf35e18224a552b472a16d991eb"
+content_hash = "sha256:a272f49169b8728e3d58a79f7e2d8b1fdc6225556ebfe31c7945362ac5a422c5"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -608,7 +608,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.19.6"
+version = "0.19.8"
 summary = ""
 dependencies = [
     "autotyping",
@@ -629,8 +629,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.19.6-py3-none-any.whl", hash = "sha256:81cf7c3d947ca793307b3ba2abc3074f9574f3a597ff2015a1ff4be342a39928"},
-    {file = "crackerjack-0.19.6.tar.gz", hash = "sha256:3a8563ca3b68e0ada8073964f44355f47ac1026b8b2cbd5c49b19218965d6249"},
+    {file = "crackerjack-0.19.8-py3-none-any.whl", hash = "sha256:e24748f31b7a43018db08810167ab22296910721f99a15e6fd34a31606b21dd5"},
+    {file = "crackerjack-0.19.8.tar.gz", hash = "sha256:83164d825382514eb1b7ba218310abbc67924096428ee1a885f3878981dad1a2"},
 ]
 
 [[package]]
@@ -2015,11 +2015,11 @@ files = [
 
 [[package]]
 name = "pbs-installer"
-version = "2025.5.29"
+version = "2025.6.4"
 summary = ""
 files = [
-    {file = "pbs_installer-2025.5.29-py3-none-any.whl", hash = "sha256:bfb281f850e95fbad62e872359b055e3c161d18048be3f5748b2b0b2b42f8922"},
-    {file = "pbs_installer-2025.5.29.tar.gz", hash = "sha256:11849df09c13c37330ac54c86645e13e8ff5d07a2a1c63d3489d4774a52c9d05"},
+    {file = "pbs_installer-2025.6.4-py3-none-any.whl", hash = "sha256:0eb351b4d92edbe3786fcadbb60f1b4385d79d1760b66a2907c7c67363544286"},
+    {file = "pbs_installer-2025.6.4.tar.gz", hash = "sha256:65dea3b2c68d37a49b710cc8946c584729927b59fbc5596c9dd2c820dcd56992"},
 ]
 
 [[package]]

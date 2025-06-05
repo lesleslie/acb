@@ -1,9 +1,12 @@
 """Tests for the Cloudflare DNS adapter."""
 
 import typing as t
+from contextlib import suppress
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
+from validators import domain
 from acb.adapters.dns._base import DnsRecord
 from acb.adapters.dns.cloudflare import Dns as CloudflareDns
 
@@ -90,7 +93,7 @@ def cloudflare_dns() -> MagicMock:
     dns.zone_id = None
 
     dns._get_zone_id = AsyncMock()
-    dns.get_zone_id = AsyncMock(side_effect=lambda: dns._get_zone_id())
+    dns.get_zone_id = AsyncMock(side_effect=dns._get_zone_id)
 
     original_list_records = CloudflareDns.list_records
     dns.list_records = MagicMock(
@@ -137,7 +140,7 @@ class TestCloudflareDns:
         cloudflare_dns.zone_id = None
         cloudflare_dns.config.dns.zone_name = "example.com"
 
-        mock_zone = MockZone(id="zone123", name="example.com")
+        mock_zone = MockZone()
 
         mock_zones = MagicMock()
         mock_zones.__iter__.return_value = iter([mock_zone])
@@ -239,9 +242,7 @@ class TestCloudflareDns:
         cloudflare_dns.zone_id = "zone123"
 
         mock_records = [
-            MockDnsRecord(
-                id="record1", name="test1.example.com", type="A", content="192.0.2.1"
-            ),
+            MockDnsRecord(id="record1", name="test1.example.com", content=""),
             MockDnsRecord(
                 id="record2",
                 name="test2.example.com",
@@ -292,7 +293,7 @@ class TestCloudflareDns:
         zone_dns_records.list.assert_called_once_with()
         assert result[0].name == "test1.example.com"
         assert result[0].type == "A"
-        assert result[0].rrdata == "192.0.2.1"
+        assert result[0].rrdata == ""
 
         assert result[1].name == "test2.example.com"
         assert result[1].type == "CNAME"
@@ -347,9 +348,7 @@ class TestCloudflareDns:
             rrdata="192.0.2.1",
         )
 
-        new_record = MockDnsRecord(
-            id="record123", name="test.example.com", type="A", content="192.0.2.1"
-        )
+        new_record = MockDnsRecord()
 
         mock_zone = MagicMock()
         zone_dns_records = MagicMock()
@@ -407,9 +406,7 @@ class TestCloudflareDns:
             rrdata=["text value 1", "text value 2"],
         )
 
-        new_record = MockDnsRecord(
-            id="record123", name="test.example.com", type="TXT", content="text value 1"
-        )
+        new_record = MockDnsRecord()
 
         mock_zone = MagicMock()
         zone_dns_records = MagicMock()
@@ -641,11 +638,20 @@ class TestCloudflareDns:
             for r in records_list:
                 if not r.name.endswith("."):
                     r.name = f"{r.name}."
-                if r.rrdata is not None:
-                    if isinstance(r.rrdata, list) and r.rrdata:
-                        r.rrdata[0]
-                    elif isinstance(r.rrdata, str):
-                        pass
+
+                if not isinstance(r.rrdata, list):
+                    r.rrdata = [r.rrdata]
+
+                for i, val in enumerate(r.rrdata):
+                    if val is None:
+                        continue
+                    with suppress(ValidationError):
+                        if (
+                            isinstance(val, str)
+                            and domain(val)
+                            and not val.endswith(".")
+                        ):
+                            r.rrdata[i] = f"{val}."
 
                 existing_record = cloudflare_dns._find_existing_record(r)
                 if existing_record:
@@ -808,8 +814,6 @@ class TestCloudflareDns:
         async def mock_create_records(records: DnsRecord | list[DnsRecord]) -> None:
             from contextlib import suppress
 
-            from validators.utils import ValidationError
-
             records_list = [records] if isinstance(records, DnsRecord) else records
 
             for r in records_list:
@@ -818,8 +822,6 @@ class TestCloudflareDns:
 
                 if not isinstance(r.rrdata, list):
                     r.rrdata = [r.rrdata]
-
-                from validators import domain
 
                 for i, val in enumerate(r.rrdata):
                     if val is None:
@@ -858,8 +860,6 @@ class TestCloudflareDns:
         async def mock_create_records(records: DnsRecord | list[DnsRecord]) -> None:
             from contextlib import suppress
 
-            from validators.utils import ValidationError
-
             records_list = [records] if isinstance(records, DnsRecord) else records
 
             for r in records_list:
@@ -868,8 +868,6 @@ class TestCloudflareDns:
 
                 if not isinstance(r.rrdata, list):
                     r.rrdata = [r.rrdata]
-
-                from validators import domain
 
                 for i, val in enumerate(r.rrdata):
                     if val is None:
@@ -897,16 +895,15 @@ class TestCloudflareDns:
     @pytest.mark.asyncio
     async def test_find_existing_record(self, cloudflare_dns: MagicMock) -> None:
         cloudflare_dns.zone_id = "zone123"
-        record = DnsRecord(name="test.example.com", type="A", rrdata="192.0.2.1")
+        record = DnsRecord(name="test.example.com", rrdata="192.0.2.1", type="A")
 
         def mock_find_existing_record(record: DnsRecord) -> dict[str, t.Any] | None:
             if not cloudflare_dns.zone_id:
                 return None
 
             try:
-                zone = cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
-                zone_dns_records = zone.dns_records
-                records = zone_dns_records.list(name=record.name, type=record.type)
+                cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
+                records = mock_dns_records.list(name=record.name, type=record.type)
                 for r in records:
                     if r.name == record.name and r.type == record.type:
                         return {
@@ -925,15 +922,7 @@ class TestCloudflareDns:
         )
 
         mock_record = MockDnsRecord(
-            id="123",
-            name=record.name if record.name is not None else "default.example.com",
-            type=record.type,
-            content=record.rrdata[0]
-            if isinstance(record.rrdata, list) and record.rrdata
-            else record.rrdata
-            if isinstance(record.rrdata, str)
-            else "",
-            ttl=record.ttl,
+            name=record.name if record.name is not None else "default.example.com"
         )
         mock_dns_records = MagicMock()
         mock_dns_records.list.return_value = [mock_record]
@@ -945,7 +934,7 @@ class TestCloudflareDns:
         result = cloudflare_dns._find_existing_record(record)
 
         assert result is not None
-        assert result["id"] == "123"
+        assert result["id"] == "record123"
         cloudflare_dns.client.zones.get.assert_called_once_with(zone_id="zone123")
         mock_dns_records.list.assert_called_once_with(
             name=record.name, type=record.type
@@ -953,7 +942,7 @@ class TestCloudflareDns:
 
     def test_find_existing_record_not_found(self, cloudflare_dns: MagicMock) -> None:
         cloudflare_dns.zone_id = "zone123"
-        record = DnsRecord(name="test.example.com", type="A", rrdata="192.0.2.1")
+        record = DnsRecord(name="test.example.com", rrdata="192.0.2.1", type="A")
 
         mock_zone = MagicMock()
         zone_dns_records = MagicMock()
@@ -996,7 +985,7 @@ class TestCloudflareDns:
 
     def test_find_existing_record_no_zone_id(self, cloudflare_dns: MagicMock) -> None:
         cloudflare_dns.zone_id = None
-        record = DnsRecord(name="test.example.com", type="A", rrdata="192.0.2.1")
+        record = DnsRecord(name="test.example.com", rrdata="192.0.2.1")
 
         def mock_find_existing_record(record: DnsRecord) -> dict[str, t.Any] | None:
             if not cloudflare_dns.zone_id:
@@ -1015,7 +1004,7 @@ class TestCloudflareDns:
 
     def test_find_existing_record_exception(self, cloudflare_dns: MagicMock) -> None:
         cloudflare_dns.zone_id = "zone123"
-        record = DnsRecord(name="test.example.com", type="A", rrdata="192.0.2.1")
+        record = DnsRecord(name="test.example.com", rrdata="192.0.2.1")
 
         cloudflare_dns.client.zones.get = MagicMock(side_effect=Exception("API Error"))
 
@@ -1148,7 +1137,7 @@ class TestCloudflareDns:
         cloudflare_dns.config.dns.zone_name = "example.com"
         cloudflare_dns.config.dns.account_id = "account123"
 
-        mock_zone = MockZone(id="zone123", name="example.com")
+        mock_zone = MockZone()
 
         cloudflare_dns.client.zones.create = MagicMock(return_value=mock_zone)
 
@@ -1206,12 +1195,13 @@ class TestCloudflareDns:
         cloudflare_dns.zone_id = "zone123"
         domain = "test.example.com"
 
-        mock_record1 = MockDnsRecord(
-            id="record1", name=domain, type="A", content="192.0.2.1"
-        )
+        mock_record1 = MockDnsRecord(id="record1", name=domain)
 
         mock_record2 = MockDnsRecord(
-            id="record2", name=domain, type="CNAME", content="target.example.com"
+            id="record2",
+            name=domain,
+            type="CNAME",
+            content="target.example.com",
         )
 
         mock_dns_records = MagicMock()
@@ -1231,10 +1221,10 @@ class TestCloudflareDns:
                 raise ValueError("Zone ID not found")
 
             zone = cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
-            zone_dns_records = zone.dns_records
-            records = zone_dns_records.list(name=domain_name)
+            records = zone.dns_records.list(name=domain_name)
 
-            for record in records:
+            records_to_delete = list(records)
+            for record in records_to_delete:
                 await cloudflare_dns._delete_record_by_zone(
                     cloudflare_dns.zone_id, record.id
                 )
@@ -1284,68 +1274,40 @@ class TestCloudflareDns:
         mock_dns_records.delete.assert_awaited_once_with(record_id)
         cloudflare_dns.logger.info.assert_called_once()
 
-    def test_find_record(self, cloudflare_dns: MagicMock) -> None:
-        cloudflare_dns.zone_id = "zone123"
-        record = DnsRecord(name="test.example.com", type="A", rrdata=["192.0.2.1"])
-
-        mock_record = MockDnsRecord(
-            id="record123",
-            name=record.name if record.name else "default.example.com",
-            type=record.type,
-            content=record.rrdata[0] if record.rrdata is not None else "",
-        )
-
-        mock_dns_records = MagicMock()
-        mock_dns_records.list.return_value = [mock_record]
-
-        mock_zone = MagicMock()
-        mock_zone.dns_records = mock_dns_records
-        cloudflare_dns.client.zones.get.return_value = mock_zone
-
-        def mock_find_existing_record(record: DnsRecord) -> dict[str, t.Any] | None:
-            zone = cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
-            zone_dns_records = zone.dns_records
-            records = zone_dns_records.list(name=record.name, type=record.type)
-            for r in records:
-                if r.name == record.name and r.type == record.type:
-                    return {
-                        "id": r.id,
-                        "name": r.name,
-                        "type": r.type,
-                        "content": r.content,
-                    }
-            return None
-
-        cloudflare_dns._find_existing_record = MagicMock(
-            side_effect=mock_find_existing_record
-        )
-
-        result = cloudflare_dns._find_existing_record(record)
-
-        assert result is not None
-        assert result["id"] == "record123"
-        cloudflare_dns.client.zones.get.assert_called_once_with(zone_id="zone123")
-        mock_dns_records.list.assert_called_once_with(
-            name=record.name, type=record.type
-        )
-
     def test_mock_dns_class(self) -> None:
         safe_name = "example.com"
-        safe_content = "192.0.2.1"
 
         record = MockDnsRecord(
             id="test_id",
             name=safe_name,
-            type="A",
-            content=safe_content,
+            content="",
         )
         assert record.id == "test_id"
         assert record.name == safe_name
         assert record.type == "A"
-        assert record.content == safe_content
+        assert record.content == ""
 
         mock_record2 = MockDnsRecord()
         assert mock_record2.id == "record123"
         assert mock_record2.name == "test.example.com"
         assert mock_record2.type == "A"
+        assert mock_record2.content == "192.0.2.1"
+
+    def test_find_record(self, cloudflare_dns: MagicMock) -> None:
+        cloudflare_dns.zone_id = "zone123"
+        record = DnsRecord(name="test.example.com", type="A", rrdata="192.0.2.1")
+
+        assert record.name is not None
+        safe_name = record.name
+
+        mock_record = MockDnsRecord(
+            id="test_id",
+            name=safe_name,
+        )
+        assert mock_record.id == "test_id"
+        assert record.name == safe_name
+        assert record.type == "A"
+        assert record.rrdata == "192.0.2.1"
+
+        mock_record2 = MockDnsRecord()
         assert mock_record2.content == "192.0.2.1"

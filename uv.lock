@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.16.3"
+version = "0.16.4"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -115,7 +115,7 @@ requires-dist = [
     { name = "blake3", specifier = ">=1.0.5" },
     { name = "brotli", specifier = ">=1.1" },
     { name = "coredis", marker = "extra == 'cache'", specifier = ">=4.22" },
-    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.19.6" },
+    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.19.8" },
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dill", specifier = ">=0.4" },
     { name = "faker", marker = "extra == 'demo'", specifier = ">=37.3" },
@@ -757,7 +757,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.19.6"
+version = "0.19.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autotyping" },
@@ -777,9 +777,9 @@ dependencies = [
     { name = "typer" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/d4/c799481ffe7580d0afb977da2d0fef547ae51c74d0516877ef6cb4e447fa/crackerjack-0.19.6.tar.gz", hash = "sha256:3a8563ca3b68e0ada8073964f44355f47ac1026b8b2cbd5c49b19218965d6249", size = 44610, upload-time = "2025-06-04T22:20:53.069Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/81/615a383c2a12429963a6654da047845d16cc12a24a5e35ca4018c9588392/crackerjack-0.19.8.tar.gz", hash = "sha256:83164d825382514eb1b7ba218310abbc67924096428ee1a885f3878981dad1a2", size = 44682, upload-time = "2025-06-04T23:46:20.177Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1e/1f/6fc3248400f2deefe9651ab500c2dc88fcd4d068484e2103ffcf35ecb06d/crackerjack-0.19.6-py3-none-any.whl", hash = "sha256:81cf7c3d947ca793307b3ba2abc3074f9574f3a597ff2015a1ff4be342a39928", size = 38860, upload-time = "2025-06-04T22:20:51.757Z" },
+    { url = "https://files.pythonhosted.org/packages/33/cc/9da7e647621f8504a0e9622295466e4ecc9c3a2381100d10315010ed7d20/crackerjack-0.19.8-py3-none-any.whl", hash = "sha256:e24748f31b7a43018db08810167ab22296910721f99a15e6fd34a31606b21dd5", size = 39194, upload-time = "2025-06-04T23:46:18.694Z" },
 ]
 
 [[package]]

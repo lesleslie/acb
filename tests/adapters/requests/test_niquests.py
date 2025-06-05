@@ -138,7 +138,7 @@ async def test_client_property(mock_session: MockNiquestsAsyncSession) -> None:
 
     assert adapter.client.base_url == "https://api.example.com"
 
-    mock_response = MockNiquestsResponse(status_code=200)
+    mock_response = MockNiquestsResponse()
     adapter.client.get.return_value = mock_response
 
     result = await adapter.get("/test")
@@ -148,7 +148,7 @@ async def test_client_property(mock_session: MockNiquestsAsyncSession) -> None:
 
 @pytest.mark.asyncio
 async def test_get(requests_adapter: Requests) -> None:
-    mock_response = MockNiquestsResponse(status_code=200, json_data={"key": "value"})
+    mock_response = MockNiquestsResponse(json_data={"key": "value"})
     requests_adapter.client.get.return_value = mock_response
 
     response = await requests_adapter.get(
@@ -188,7 +188,7 @@ async def test_post(requests_adapter: Requests) -> None:
 
 @pytest.mark.asyncio
 async def test_put(requests_adapter: Requests) -> None:
-    mock_response = MockNiquestsResponse(status_code=200)
+    mock_response = MockNiquestsResponse()
     requests_adapter.client.put.return_value = mock_response
 
     response = await requests_adapter.put(url="/test", json={"key": "value"}, timeout=5)
@@ -214,7 +214,7 @@ async def test_delete(requests_adapter: Requests) -> None:
 
 @pytest.mark.asyncio
 async def test_patch(requests_adapter: Requests) -> None:
-    mock_response = MockNiquestsResponse(status_code=200)
+    mock_response = MockNiquestsResponse()
     requests_adapter.client.patch.return_value = mock_response
 
     response = await requests_adapter.patch(
@@ -230,7 +230,7 @@ async def test_patch(requests_adapter: Requests) -> None:
 
 @pytest.mark.asyncio
 async def test_head(requests_adapter: Requests) -> None:
-    mock_response = MockNiquestsResponse(status_code=200)
+    mock_response = MockNiquestsResponse()
     requests_adapter.client.head.return_value = mock_response
 
     response = await requests_adapter.head(url="/test", timeout=5)
@@ -242,7 +242,7 @@ async def test_head(requests_adapter: Requests) -> None:
 
 @pytest.mark.asyncio
 async def test_options(requests_adapter: Requests) -> None:
-    mock_response = MockNiquestsResponse(status_code=200)
+    mock_response = MockNiquestsResponse()
     requests_adapter.client.options.return_value = mock_response
 
     response = await requests_adapter.options(url="/test", timeout=5)
@@ -254,7 +254,7 @@ async def test_options(requests_adapter: Requests) -> None:
 
 @pytest.mark.asyncio
 async def test_request(requests_adapter: Requests) -> None:
-    mock_response = MockNiquestsResponse(status_code=200)
+    mock_response = MockNiquestsResponse()
     requests_adapter.client.request.return_value = mock_response
 
     response = await requests_adapter.request(

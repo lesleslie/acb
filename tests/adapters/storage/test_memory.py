@@ -55,7 +55,7 @@ class TestMemoryStorage(StorageTestInterface):
             mock_super_init.assert_called_once()
 
             memory_storage = t.cast(Storage, storage)
-            assert memory_storage._initialized is True
+            assert memory_storage._initialized
             assert hasattr(memory_storage, "_files")
             assert isinstance(memory_storage._files, dict)
             assert hasattr(memory_storage, "_directories")
@@ -89,7 +89,7 @@ class TestMemoryStorage(StorageTestInterface):
     @pytest.mark.asyncio
     async def test_delete_nonexistent_file(self, storage: Storage) -> None:
         result = await storage.delete_file("nonexistent.txt")
-        assert result is False
+        assert not result
 
     @pytest.mark.asyncio
     async def test_lazy_initialization(
@@ -107,4 +107,4 @@ class TestMemoryStorage(StorageTestInterface):
         ):
             await adapter.file_exists("test/path")
 
-        assert adapter._files == {}
+        assert not adapter._files

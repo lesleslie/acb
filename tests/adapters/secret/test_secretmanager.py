@@ -204,7 +204,7 @@ class TestSecretManager:
 
             result = await secret_manager.exists("existing_secret")
 
-            assert result is True
+            assert result
             mock_get.assert_called_once_with("existing_secret")
 
             mock_get.reset_mock()
@@ -212,7 +212,7 @@ class TestSecretManager:
 
             result = await secret_manager.exists("non_existing_secret")
 
-            assert result is False
+            assert not result
 
     @pytest.mark.asyncio
     async def test_delete(self, secret_manager: Secret, mock_client: MagicMock) -> None:

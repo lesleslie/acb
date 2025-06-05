@@ -1,126 +1,131 @@
 [build-system]
 build-backend = "pdm.backend"
 requires = [
-  "pdm-backend",
+    "pdm-backend",
 ]
 
 [project]
 name = "acb"
-version = "0.16.4"
+version = "0.16.5"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
-license.text = "BSD-3-CLAUSE"
 authors = [
-  { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
+    { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
 requires-python = ">=3.13"
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Framework :: AsyncIO",
-  "Framework :: Pydantic",
-  "Framework :: Pydantic :: 2",
-  "License :: OSI Approved :: BSD License",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.13",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Framework :: Pydantic",
+    "Framework :: Pydantic :: 2",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
 dependencies = [
-  "aioconsole>=0.8.1",
-  "anyio>=4.9",
-  "arrow>=1.3",
-  "bevy>=2.0.2",
-  "blake3>=1.0.5",
-  "brotli>=1.1",
-  "devtools>=0.12.2",
-  "dill>=0.4",
-  "google-api-python-client>=2.171",
-  "google-crc32c>=1.7.1",
-  "icecream>=2.1.4",
-  "inflection>=0.5.1",
-  "loguru>=0.7.3",
-  "msgspec[toml,yaml]",
-  "nest-asyncio>=1.6",
-  "pydantic[email]>=2.11.5",
-  "pydantic-settings>=2.9.1",
-  "pyfiglet>=1.0.3",
-  "pyyaml>=6.0.2",
-  "toml>=0.10.2",
-  "tomli-w>=1.2",
+    "aioconsole>=0.8.1",
+    "anyio>=4.9",
+    "arrow>=1.3",
+    "bevy>=2.0.2",
+    "blake3>=1.0.5",
+    "brotli>=1.1",
+    "devtools>=0.12.2",
+    "dill>=0.4",
+    "google-api-python-client>=2.171",
+    "google-crc32c>=1.7.1",
+    "icecream>=2.1.4",
+    "inflection>=0.5.1",
+    "loguru>=0.7.3",
+    "msgspec[toml,yaml]",
+    "nest-asyncio>=1.6",
+    "pydantic[email]>=2.11.5",
+    "pydantic-settings>=2.9.1",
+    "pyfiglet>=1.0.3",
+    "pyyaml>=6.0.2",
+    "toml>=0.10.2",
+    "tomli-w>=1.2",
 ]
 
-optional-dependencies.cache = [
-  "aiocache[redis]>=0.12.3",
-  "coredis>=4.22",
-  "logfire[redis]>=3.17",
+[project.license]
+text = "BSD-3-CLAUSE"
+
+[project.optional-dependencies]
+cache = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.22",
+    "logfire[redis]>=3.17",
 ]
-optional-dependencies.demo = [
-  "faker>=37.3",
+demo = [
+    "faker>=37.3",
 ]
-optional-dependencies.dev = [
-  "crackerjack>=0.19.6",
-  "pytest>=8.4",
-  "pytest-anyio>=0",
-  "pytest-asyncio>=1",
-  "pytest-benchmark>=5.1",
-  "pytest-cov>=6.1.1",
-  "pytest-mock>=3.14.1",
-  "pytest-timeout>=2.4",
+dev = [
+    "crackerjack>=0.19.8",
+    "pytest>=8.4",
+    "pytest-anyio>=0",
+    "pytest-asyncio>=1",
+    "pytest-benchmark>=5.1",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.14.1",
+    "pytest-timeout>=2.4",
 ]
-optional-dependencies.dns = [
-  "google-cloud-dns>=0.35.1",
-  "python-cloudflare>=1.0.1",
-  "validators>=0.35",
+dns = [
+    "google-cloud-dns>=0.35.1",
+    "python-cloudflare>=1.0.1",
+    "validators>=0.35",
 ]
-optional-dependencies.ftpd = [
-  "aioftp>=0.25.1",
-  "asyncssh>=2.21",
+ftpd = [
+    "aioftp>=0.25.1",
+    "asyncssh>=2.21",
 ]
-optional-dependencies.monitoring = [
-  "logfire[system-metrics]>=3.17",
-  "sentry-sdk[loguru]>=2.29.1",
+monitoring = [
+    "logfire[system-metrics]>=3.17",
+    "sentry-sdk[loguru]>=2.29.1",
 ]
-optional-dependencies.nosql = [
-  "beanie>=1.29",
-  "google-cloud-firestore>=2.21",
-  "motor>=3.7.1",
-  "redis-om>=0.3.5",
+nosql = [
+    "beanie>=1.29",
+    "google-cloud-firestore>=2.21",
+    "motor>=3.7.1",
+    "redis-om>=0.3.5",
 ]
-optional-dependencies.requests = [
-  "hishel>=0.1.2",
-  "httpx[http2]>=0.28.1",
-  "logfire[httpx]>=3.17",
-  "niquests>=3.14.1",
-  "sentry-sdk[httpx]>=2.29.1",
+requests = [
+    "hishel>=0.1.2",
+    "httpx[http2]>=0.28.1",
+    "logfire[httpx]>=3.17",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.29.1",
 ]
-optional-dependencies.secret = [
-  "google-cloud-secret-manager>=2.23.3",
-  "infisicalsdk>=1.0.8",
+secret = [
+    "google-cloud-secret-manager>=2.23.3",
+    "infisicalsdk>=1.0.8",
 ]
-optional-dependencies.smtp = [
-  "mailgun>=1.0.1",
+smtp = [
+    "mailgun>=1.0.1",
 ]
-optional-dependencies.sql = [
-  "aiomysql>=0.2",
-  "babel>=2.17",
-  "greenlet>=3.2.2",
-  "logfire[sqlalchemy]>=3.17",
-  "pymysql>=1.1.1",
-  "sentry-sdk[sqlalchemy]>=2.29.1",
-  "sqlalchemy>=2.0.41",
-  "sqlalchemy-utils>=0.41.2",
-  "sqlmodel>=0.0.24",
+sql = [
+    "aiomysql>=0.2",
+    "babel>=2.17",
+    "greenlet>=3.2.2",
+    "logfire[sqlalchemy]>=3.17",
+    "pymysql>=1.1.1",
+    "sentry-sdk[sqlalchemy]>=2.29.1",
+    "sqlalchemy>=2.0.41",
+    "sqlalchemy-utils>=0.41.2",
+    "sqlmodel>=0.0.24",
 ]
-optional-dependencies.storage = [
-  "adlfs>=2024.12",
-  "gcsfs>=2025.5.1",
-  "s3fs>=2025.5.1",
+storage = [
+    "adlfs>=2024.12",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
 ]
-urls.Documentation = "https://github.com/lesleslie/acb"
-urls.Homepage = "https://github.com/lesleslie/acb"
-urls.Repository = "https://github.com/lesleslie/acb"
+
+[project.urls]
+Documentation = "https://github.com/lesleslie/acb"
+Homepage = "https://github.com/lesleslie/acb"
+Repository = "https://github.com/lesleslie/acb"
 
 [tool.ruff]
 target-version = "py313"
@@ -130,34 +135,44 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-format.docstring-code-format = true
-lint.extend-select = [
-  "C901",
-  "D",
-  "F",
-  "I",
-  "UP",
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+extend-select = [
+    "C901",
+    "D",
+    "F",
+    "I",
+    "UP",
 ]
-lint.ignore = [
-  "D100",
-  "D101",
-  "D102",
-  "D103",
-  "D104",
-  "D105",
-  "D106",
-  "D107",
-  "F821",
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "F821",
+    "UP040",
 ]
-lint.fixable = [
-  "ALL",
+fixable = [
+    "ALL",
 ]
-lint.unfixable = [  ]
-lint.isort.no-lines-before = [
-  "first-party",
+unfixable = []
+
+[tool.ruff.lint.isort]
+no-lines-before = [
+    "first-party",
 ]
-lint.mccabe.max-complexity = 13
-lint.pydocstyle.convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 13
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.codespell]
 skip = "*/data/*"
@@ -172,23 +187,23 @@ indent = 2
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 python_files = [
-  "test_*.py",
-  "*_test.py",
+    "test_*.py",
+    "*_test.py",
 ]
 testpaths = [
-  "tests",
-  "acb",
+    "tests",
+    "acb",
 ]
 python_classes = [
-  "Test*",
+    "Test*",
 ]
 python_functions = [
-  "test_*",
+    "test_*",
 ]
 markers = [
-  "unit: marks test as a unit test",
-  "benchmark: mark test as a benchmark (disables parallel execution)",
-  "integration: marks test as an integration test",
+    "unit: marks test as a unit test",
+    "benchmark: mark test as a benchmark (disables parallel execution)",
+    "integration: marks test as an integration test",
 ]
 timeout = 60
 timeout_method = "thread"
@@ -202,45 +217,45 @@ warmup_iterations = 0
 [tool.coverage.run]
 branch = false
 source = [
-  "acb",
+    "acb",
 ]
 data_file = ".coverage"
 parallel = false
 omit = [
-  "*/tests/*",
-  "*/site-packages/*",
-  "*/__pycache__/*",
-  "*/__init__.py",
-  "*/_version.py",
-  "*/conftest.py",
-  "*/test_*.py",
-  "*/_test.py",
+    "*/tests/*",
+    "*/site-packages/*",
+    "*/__pycache__/*",
+    "*/__init__.py",
+    "*/_version.py",
+    "*/conftest.py",
+    "*/test_*.py",
+    "*/_test.py",
 ]
 
 [tool.coverage.report]
 exclude_also = [
-  "pragma: no cover",
-  "def __repr__",
-  "raise NotImplementedError",
-  "if __name__ == .__main__.:",
-  "pass",
-  "raise ImportError",
-  "except ImportError",
-  "def __str__",
-  "@abstractmethod",
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "except ImportError",
+    "def __str__",
+    "@abstractmethod",
 ]
 ignore_errors = false
 
 [tool.pyright]
 verboseOutput = true
 include = [
-  "acb",
+    "acb",
 ]
 exclude = [
-  "scratch",
+    "scratch",
 ]
 extraPaths = [
-  ".venv/lib/python3.13/site-packages/",
+    ".venv/lib/python3.13/site-packages/",
 ]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
@@ -257,27 +272,27 @@ pythonVersion = "3.13"
 
 [tool.creosote]
 paths = [
-  "acb",
+    "acb",
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-  "pytest",
-  "pyyaml",
-  "google-api-python-client",
-  "pytest-asyncio",
-  "uv",
-  "tomli-w",
-  "pytest-xdist",
-  "pyfiglet",
-  "pdm",
-  "pytest-cov",
-  "autotyping",
-  "pytest-timeout",
-  "pre-commit",
-  "pytest-mock",
-  "google-crc32c",
-  "pytest-benchmark",
-  "pdm-bump",
+    "pytest-asyncio",
+    "pdm-bump",
+    "pytest-mock",
+    "pre-commit",
+    "google-api-python-client",
+    "tomli-w",
+    "pytest-timeout",
+    "pyyaml",
+    "google-crc32c",
+    "pytest-cov",
+    "uv",
+    "pdm",
+    "pytest",
+    "autotyping",
+    "pyfiglet",
+    "pytest-xdist",
+    "pytest-benchmark",
 ]
 
 [tool.refurb]
@@ -286,27 +301,27 @@ quiet = true
 
 [tool.bandit]
 target = [
-  "acb",
+    "acb",
 ]
 skips = [
-  "B602",
-  "B603",
-  "B704",
-  "B101",
-  "B106",
-  "B404",
-  "B403",
-  "B105",
-  "B311",
-  "B301",
-  "B607",
+    "B311",
+    "B603",
+    "B403",
+    "B404",
+    "B106",
+    "B301",
+    "B607",
+    "B101",
+    "B704",
+    "B105",
+    "B602",
 ]
 
 [tool.vulture]
 min_confidence = 86
 paths = [
-  "acb",
+    "acb",
 ]
 ignore_names = [
-  "cls",
+    "cls",
 ]

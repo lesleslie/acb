@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from acb.adapters.ftpd._base import FileInfo
 from acb.adapters.ftpd.sftp import Ftpd, SFTPClient, SSHClientConnection
 
 
@@ -16,7 +15,7 @@ class MockFileAttr:
     def __init__(
         self,
         filename: str,
-        size: int = 1024,
+        size: int = 0,
         is_dir_val: bool = False,
         is_file_val: bool = True,
         is_symlink_val: bool = False,
@@ -42,6 +41,10 @@ class MockFileAttr:
         self.is_dir = self._BooleanCallable(is_dir_val)
         self.is_file = self._BooleanCallable(is_file_val)
         self.is_symlink = self._BooleanCallable(is_symlink_val)
+
+    @property
+    def name(self) -> str:
+        return self.filename
 
     class _BooleanCallable:
         def __init__(self, value: bool) -> None:
@@ -289,8 +292,8 @@ async def test_list_dir_files(sftp_adapter: Ftpd) -> None:
 
     sftp_adapter._ensure_client = AsyncMock(return_value=mock_sftp_client)
 
-    file1 = MockFileAttr("file1.txt", size=100, is_file_val=True)
-    file2 = MockFileAttr("dir1", size=0, is_dir_val=True)
+    file1 = MockFileAttr("file1.txt", size=100)
+    file2 = MockFileAttr("dir1", is_dir_val=True)
 
     mock_listdir = AsyncMock(return_value=[file1, file2])
     mock_sftp_client.listdir = mock_listdir
@@ -302,6 +305,7 @@ async def test_list_dir_files(sftp_adapter: Ftpd) -> None:
     assert result[0].name == "file1.txt"
     assert result[0].is_file
     assert not result[0].is_dir
+
     assert result[1].name == "dir1"
     assert result[1].is_dir
     assert not result[1].is_file
@@ -364,8 +368,8 @@ async def test_list_dir(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) ->
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
 
-    file1 = MockFileAttr("file1.txt", size=100, is_file_val=True)
-    file2 = MockFileAttr("file2.txt", size=200, is_file_val=True)
+    file1 = MockFileAttr("file1.txt", size=100)
+    file2 = MockFileAttr("file2.txt", size=200)
 
     mock_listdir = AsyncMock(return_value=[file1, file2])
     mock_sftp_client.listdir = mock_listdir
@@ -483,7 +487,7 @@ async def test_is_dir(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) -> N
     sftp_adapter._ensure_client = mock_ensure_client
 
     path = "/test/dir"
-    mock_file_attr = MockFileAttr("dir", size=0, is_dir_val=True)
+    mock_file_attr = MockFileAttr("dir", is_dir_val=True)
 
     mock_stat = AsyncMock(return_value=mock_file_attr)
     mock_sftp_client.stat = mock_stat
@@ -503,7 +507,7 @@ async def test_is_not_dir(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) 
     sftp_adapter._ensure_client = mock_ensure_client
 
     path = "/test/file.txt"
-    mock_file_attr = MockFileAttr("file.txt", size=1024, is_file_val=True)
+    mock_file_attr = MockFileAttr("file.txt")
 
     mock_stat = AsyncMock(return_value=mock_file_attr)
     mock_sftp_client.stat = mock_stat
@@ -522,12 +526,12 @@ async def test_rmdir_non_recursive(
     sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
 ) -> None:
     path = "/test/dir"
-
-    sftp_adapter._ensure_client = AsyncMock(return_value=mock_sftp_client)
+    mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
+    sftp_adapter._ensure_client = mock_ensure_client
     mock_sftp_client.rmdir = AsyncMock()
     mock_sftp_client.listdir = AsyncMock()
 
-    await sftp_adapter.rmdir(path, recursive=False)
+    await sftp_adapter.rmdir(path)
 
     mock_sftp_client.rmdir.assert_awaited_once_with(path)
     assert mock_sftp_client.listdir.await_count == 0
@@ -540,9 +544,9 @@ async def test_rmdir_recursive(
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
 
-    file1 = FileInfo(name="file1.txt", size=100, is_file=True, is_dir=False)
-    file2 = FileInfo(name="subdir", size=0, is_file=False, is_dir=True)
-    file3 = FileInfo(name="file2.txt", size=100, is_file=True, is_dir=False)
+    file1 = MockFileAttr("file1.txt", size=100)
+    file2 = MockFileAttr("subdir", is_dir_val=True)
+    file3 = MockFileAttr("file2.txt", size=100)
 
     list_dir_results = {"/test/dir": [file1, file2], "/test/dir/subdir": [file3]}
 
@@ -579,9 +583,9 @@ async def test_rmdir_recursive_with_nested_directories(
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
 
-    file_attr1 = MockFileAttr("file1.txt", is_file_val=True)
+    file_attr1 = MockFileAttr("file1.txt")
     file_attr2 = MockFileAttr("subdir", is_dir_val=True)
-    subdir_file = MockFileAttr("subfile.txt", is_file_val=True)
+    subdir_file = MockFileAttr("subfile.txt")
 
     async def mock_listdir_side_effect(path: str) -> list[MockFileAttr]:
         if path == "/test/dir":
@@ -625,7 +629,7 @@ async def test_stat(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) -> Non
 
     file_path = "/test/file.txt"
     file_name = "file.txt"
-    mock_file_attr = MockFileAttr(file_name, size=1024, is_file_val=True)
+    mock_file_attr = MockFileAttr(file_name)
 
     mock_stat = AsyncMock(return_value=mock_file_attr)
     mock_sftp_client.stat = mock_stat
@@ -687,7 +691,7 @@ async def test_dir_exists_true(sftp_adapter: Ftpd) -> None:
     sftp_adapter._ensure_client = mock_ensure_client
 
     path = "/test/dir"
-    mock_file_attr = MockFileAttr("dir", is_dir_val=True, is_file_val=False)
+    mock_file_attr = MockFileAttr("dir", is_dir_val=True)
 
     mock_stat = AsyncMock(return_value=mock_file_attr)
     mock_sftp_client.stat = mock_stat
@@ -844,7 +848,8 @@ async def test_stat_file_info(
     sftp_adapter._ensure_client = mock_ensure_client
 
     file_path = "/test/file.txt"
-    return_value = MockFileAttr("file.txt", is_file_val=True)
+    return_value = MockFileAttr("file.txt")
+
     mock_sftp_client.stat = AsyncMock(return_value=return_value)
 
     result = await sftp_adapter.stat(file_path)

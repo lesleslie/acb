@@ -222,13 +222,13 @@ class TestInfisical:
         with patch.object(infisical_adapter, "get") as mock_get:
             mock_get.return_value = "test-value"
             result = await infisical_adapter.exists("existing_secret")
-            assert result is True
+            assert result
             mock_get.assert_called_once_with("existing_secret")
 
             mock_get.reset_mock()
             mock_get.side_effect = Exception("Not found")
             result = await infisical_adapter.exists("non_existing_secret")
-            assert result is False
+            assert not result
 
     @pytest.mark.asyncio
     async def test_set(self, infisical_adapter: Secret) -> None:
@@ -254,7 +254,7 @@ class TestInfisical:
     async def test_list_versions(self, infisical_adapter: Secret) -> None:
         with patch.object(infisical_adapter, "logger") as mock_logger:
             result = await infisical_adapter.list_versions("test_secret")
-            assert result == []
+            assert not result
             mock_logger.warning.assert_called_once()
 
     @pytest.mark.asyncio

@@ -75,7 +75,6 @@ repos:
     rev: v2.1.0
     hooks:
       - id: refurb
-        exclude: ^tests/
 
   # Code quality tier 3 - thorough checks
   - repo: local
