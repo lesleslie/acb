@@ -290,19 +290,28 @@ The Cache adapter works well with other ACB adapters:
 Common integration patterns:
 
 ```python
+from acb.depends import depends
+from acb.config import Config
+
 # Caching database query results
-@cache.cached(ttl=config.cache.query_ttl)
-async def get_users_by_role(role: str):
-    async with sql.get_session() as session:
-        statement = select(User).where(User.role == role)
-        result = await session.execute(statement)
-        return result.scalars().all()
+@depends.inject
+async def get_users_by_role(role: str, config: Config = depends()):
+    @cache.cached(ttl=config.cache.query_ttl)
+    async def _get_users_by_role():
+        async with sql.get_session() as session:
+            statement = select(User).where(User.role == role)
+            result = await session.execute(statement)
+            return result.scalars().all()
+    return await _get_users_by_role()
 
 # Caching API responses
-@cache.cached(ttl=config.cache.response_ttl)
-async def get_weather(city: str):
-    response = await requests.get(f"https://api.weather.com/{city}")
-    return response.json()
+@depends.inject
+async def get_weather(city: str, config: Config = depends()):
+    @cache.cached(ttl=config.cache.response_ttl)
+    async def _get_weather():
+        response = await requests.get(f"https://api.weather.com/{city}")
+        return response.json()
+    return await _get_weather()
 ```
 
 ## Additional Resources

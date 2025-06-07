@@ -79,26 +79,27 @@ ACB supports various optional dependencies for different adapters and functional
 
 | Feature Group | Components | Installation Command |
 |---------|------------|----------------------|
-| Cache | Memory, Redis | `pdm add "acb[cache]"` or `pdm add "acb[redis]"` |
-| SQL | Database (MySQL, PostgreSQL) | `pdm add "acb[sql]"` |
-| NoSQL | Database (MongoDB, Firestore, Redis) | `pdm add "acb[nosql]"` |
-| Storage | File storage (S3, GCS, Azure, local) | `pdm add "acb[storage]"` |
-| DNS | Domain name management | `pdm add "acb[dns]"` |
-| Requests | HTTP clients (HTTPX, Niquests) | `pdm add "acb[requests]"` |
-| SMTP | Email sending (Gmail, Mailgun) | `pdm add "acb[smtp]"` |
+| Cache | Memory, Redis | `pdm add "acb[cache]"` |
+| DNS | Domain name management (Cloud DNS, Cloudflare) | `pdm add "acb[dns]"` |
 | FTPD | File transfer protocols (FTP, SFTP) | `pdm add "acb[ftpd]"` |
-| Secret | Secret management | `pdm add "acb[secret]"` |
 | Monitoring | Error tracking (Sentry), Logging (Logfire) | `pdm add "acb[monitoring]"` |
+| NoSQL | Database (MongoDB, Firestore, Redis) | `pdm add "acb[nosql]"` |
+| Requests | HTTP clients (HTTPX, Niquests) | `pdm add "acb[requests]"` |
+| Secret | Secret management (Infisical, Secret Manager) | `pdm add "acb[secret]"` |
+| SMTP | Email sending (Gmail, Mailgun) | `pdm add "acb[smtp]"` |
+| SQL | Database (MySQL, PostgreSQL) | `pdm add "acb[sql]"` |
+| Storage | File storage (S3, GCS, Azure, local) | `pdm add "acb[storage]"` |
+| Demo | Demo/example utilities | `pdm add "acb[demo]"` |
+| Development | Development tools | `pdm add "acb[dev]"` |
 | Multiple Features | Combined dependencies | `pdm add "acb[cache,sql,nosql]"` |
 | Web Application | Typical web app stack | `pdm add "acb[cache,sql,storage]"` |
-| Development | Development tools | `pdm add "acb[dev]"` |
 | All Features | All optional dependencies | `pdm add "acb[all]"` |
 
 ## Architecture Overview
 
 ACB follows a component-based architecture with automatic discovery and registration of modules:
 
-```
+```text
 acb/
 ├── actions/         # Reusable utility functions (compress, encode, hash)
 ├── adapters/        # Integration modules for external systems
@@ -232,15 +233,23 @@ This means you can switch from a memory cache to Redis by changing a single line
 from acb.depends import depends
 from acb.adapters import import_adapter
 
-# Step 1: Import the adapter class (not an instance)
-# This gets the adapter implementation specified in your settings/adapters.yml
-# (e.g., if you have "cache: redis" in your settings, this will import the Redis adapter)
+# Method 1: Explicit adapter import
 Cache = import_adapter("cache")
 
-# Step 2: Get an instance of the adapter via dependency injection
+# Method 2: Automatic detection (convenience feature)
+# ACB can automatically detect the adapter name from the variable name
+Cache = import_adapter()  # Automatically detects "cache" from variable name
+
+# Method 3: Multiple adapters at once
+Cache, Storage, SQL = import_adapter("cache", "storage", "sql")
+
+# Method 4: Multiple adapters with automatic detection
+Cache, Storage, SQL = import_adapter()  # Detects all three from variable names
+
+# Get an instance of the adapter via dependency injection
 cache = depends.get(Cache)
 
-# Step 3: Use the adapter with a consistent API
+# Use the adapter with a consistent API
 # These methods work the same way regardless of whether you're using
 # the memory cache or Redis implementation
 async def cache_example():

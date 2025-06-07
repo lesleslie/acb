@@ -81,7 +81,7 @@ pdm add "acb[config]"
 pdm add "acb[secret,config]"
 ```
 
-For more detailed configuration information, refer to [Configuration Documentation](./configuration.md).
+For more detailed configuration information, refer to [Configuration Documentation](./CONFIGURATION.md).
 
 ---
 
@@ -106,6 +106,7 @@ Developers decorate their functions or classes with `@depends.inject` to have co
 ```python
 from acb.depends import depends
 from acb.config import Config
+from acb.adapters import import_adapter
 
 import typing as t
 
@@ -128,7 +129,7 @@ async def process_file(file_id: str,
     return cached_data
 ```
 
-For more information on dependency injection, please see the [Dependency Injection Documentation](./dependency-injection.md).
+For more information on dependency injection, please see the [Dependency Injection Documentation](./DEPENDENCY-INJECTION.md).
 
 ---
 
@@ -274,7 +275,7 @@ init_debug()  # Configures debug output based on environment
 
 5. **Performance Considerations**: In production environments, be selective about what you debug to avoid performance impacts.
 
-For detailed examples and further instructions, refer to the [Debug Documentation](./debug.md).
+For detailed examples and further instructions, refer to the [Debug Documentation](./DEBUG.md).
 
 ---
 
@@ -313,7 +314,7 @@ pdm add "acb[structlog]"
 pdm add "acb[loguru,structlog]"
 ```
 
-For more details on logging configuration and customization, see the [Logging Documentation](./logging.md).
+For more details on logging configuration and customization, see the [Logging Documentation](./LOGGING.md).
 
 ---
 

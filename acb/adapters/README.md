@@ -42,32 +42,6 @@ These extensions maintain compatibility with ACB's core infrastructure while add
 
 ACB includes the following adapter categories:
 
-### Adapters
-
-ACB includes the following adapter categories:
-
-### Caching Adapters
-- [**Cache**](./cache/README.md): Fast data caching
-  - **Memory**: In-memory cache for development and small applications
-  - **Redis**: Distributed cache using Redis
-
-### NoSQL Database Adapters
-- [**NoSQL**](./nosql/README.md): Non-relational databases
-  - **Firestore**: Google Cloud Firestore database using Google Cloud Firestore API
-  - **MongoDB**: MongoDB document database using Beanie ODM
-
-### SQL Database Adapters
-- [**SQL**](./sql/README.md): Relational databases
-  - **MySQL**: MySQL/MariaDB database adapter
-
-### Storage Adapters
-- [**Storage**](./storage/README.md): File and object storage
-  - **Azure**: Azure Blob storage
-  - **Cloud Storage**: Google Cloud Storage
-  - **File**: Local file system storage
-  - **Memory**: In-memory storage for testing
-  - **S3**: Amazon S3 or S3-compatible storage
-
 ### Caching Adapters
 - [**Cache**](./cache/README.md): Fast data caching
   - **Memory**: In-memory cache for development and small applications
@@ -149,11 +123,17 @@ The following adapter-specific dependency groups are available:
 | Feature Group | Components                                    | Installation Command        |
 |---------------|-----------------------------------------------|-----------------------------|
 | cache         | Redis, memory                                 | `pdm add "acb[cache]"`      |
-| sql           | MySQL, PostgreSQL                             | `pdm add "acb[sql]"`        |
+| dns           | Cloud DNS, Cloudflare                         | `pdm add "acb[dns]"`        |
+| ftpd          | FTP, SFTP servers                             | `pdm add "acb[ftpd]"`       |
+| monitoring    | Sentry, Logfire                              | `pdm add "acb[monitoring]"` |
 | nosql         | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `pdm add "acb[nosql]"`      |
-| storage       | S3, GCS, Azure, Local                         | `pdm add "acb[storage]"`    |
+| requests      | HTTPX, Niquests HTTP clients                 | `pdm add "acb[requests]"`   |
 | secret        | Infisical, Secret Manager                     | `pdm add "acb[secret]"`     |
-| monitoring    | Error tracking and monitoring                 | `pdm add "acb[monitoring]"` |
+| smtp          | Gmail, Mailgun email sending                  | `pdm add "acb[smtp]"`       |
+| sql           | MySQL, PostgreSQL                             | `pdm add "acb[sql]"`        |
+| storage       | S3, GCS, Azure, Local                         | `pdm add "acb[storage]"`    |
+| demo          | Demo/example utilities                        | `pdm add "acb[demo]"`       |
+| dev           | Development tools                             | `pdm add "acb[dev]"`        |
 
 ## Configuration
 
@@ -163,7 +143,7 @@ Adapters are configured in the `settings/adapters.yml` file. This file defines w
 # Example adapters.yml
 cache: redis       # Use Redis for caching
 logger: loguru     # Use Loguru for logging
-sql: pgsql         # Use PostgreSQL for SQL database
+sql: pgsql         # Use PostgreSQL for SQL database (or: mysql)
 storage: s3        # Use S3 for storage
 # Other adapters use their default implementation or are disabled when set to null
 secret:            # Secret adapter is disabled
@@ -206,8 +186,12 @@ from acb.depends import depends
 from acb.adapters import import_adapter
 import typing as t
 
-# Define adapter types
-Storage, Logger = import_adapter()
+# Method 1: Explicit adapter imports
+Storage, Logger = import_adapter("storage", "logger")
+
+# Method 2: Automatic detection (convenience feature)
+# ACB detects adapter names from variable names on the left side of assignment
+Storage, Logger = import_adapter()  # Automatically detects "storage" and "logger"
 
 @depends.inject
 async def process_file(
@@ -237,19 +221,20 @@ from acb.depends import depends
 Cache, Storage, SQL = import_adapter()
 
 # Use them together
+@depends.inject
 async def backup_data(key: str, cache: Cache = depends(), sql: SQL = depends(), storage: Storage = depends()) -> bool:
     # Get data from cache
-    data: dict[str, t.Any] | None = await Cache.get(key)
+    data: dict[str, t.Any] | None = await cache.get(key)
     if not data:
         # If not in cache, get from database
-        data = await SQL.fetch_one("SELECT data FROM items WHERE key = ?", key)
+        data = await sql.fetch_one("SELECT data FROM items WHERE key = ?", key)
         if data:
             # Store in cache for next time
-            await Cache.set(key, data, ttl=3600)
+            await cache.set(key, data, ttl=3600)
 
     # Backup to storage
     if data:
-        await Storage.put_file(f"backups/{key}.json", data)
+        await storage.put_file(f"backups/{key}.json", data)
         return True
     return False
 ```
