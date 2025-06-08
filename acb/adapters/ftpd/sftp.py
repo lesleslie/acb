@@ -1,7 +1,7 @@
 import asyncio
 import os
 import typing as t
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from functools import cached_property
 from pathlib import Path
 
@@ -32,7 +32,7 @@ class FtpdSettings(FtpdBaseSettings):
 class SFTPHandler(SFTPServer):
     def __init__(self, conn: SSHServerConnection) -> None:
         conn.get_extra_info("ftpd_root_dir")
-        super().__init__(conn, chroot=None)  # type: ignore
+        super().__init__(t.cast(t.Any, conn), chroot=None)
 
 
 class Ftpd(FtpdBase):
@@ -50,7 +50,6 @@ class Ftpd(FtpdBase):
     async def start(self, logger: Logger = depends()) -> None:
         try:
             Path(self.config.ftpd.root_dir).mkdir(parents=True, exist_ok=True)
-
             self._server_acceptor = await asyncssh.create_server(
                 self._create_server_connection,
                 self.config.ftpd.host,
@@ -61,7 +60,6 @@ class Ftpd(FtpdBase):
                 process_factory=self._process_factory,
                 encoding=None,
             )
-
             logger.info(
                 f"SFTP server started on {self.config.ftpd.host}:{self.config.ftpd.port}"
             )
@@ -70,8 +68,9 @@ class Ftpd(FtpdBase):
             raise
 
     def _create_server_connection(self) -> asyncssh.SSHServer:
-        class ServerConnection(asyncssh.SSHServer, asyncssh.SSHServerChannel[t.Any]):
-            config: t.Any = None
+        class ServerConnection(asyncssh.SSHServer):
+            def __init__(self, config: t.Any) -> None:
+                self.config = config
 
             def connection_made(self, conn: SSHServerConnection) -> None:
                 conn.set_extra_info(ftpd_root_dir=self.config.ftpd.root_dir)
@@ -89,9 +88,7 @@ class Ftpd(FtpdBase):
                     return password == self.config.ftpd.password.get_secret_value()
                 return False
 
-        conn = ServerConnection()  # type: ignore
-        conn.config = self.config  # type: ignore
-        return conn
+        return ServerConnection(self.config)
 
     def _process_factory(self, process: SSHServerProcess[t.Any]) -> None:
         process.exit(0)
@@ -119,9 +116,7 @@ class Ftpd(FtpdBase):
                 client_keys=self.config.ftpd.client_keys or None,
                 encoding=None,
             )
-
             self._sftp_client = await self._client.start_sftp_client()
-
         return self._sftp_client
 
     @asynccontextmanager
@@ -131,7 +126,8 @@ class Ftpd(FtpdBase):
             yield self
         finally:
             if client:
-                client.close()  # type: ignore
+                with suppress(AttributeError, Exception):
+                    await client.__aexit__(None, None, None)
             if self._client:
                 self._client.close()
             self._sftp_client = None

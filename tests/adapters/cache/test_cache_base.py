@@ -126,9 +126,9 @@ class MockCache(CacheBase):
 
 class TestCacheBaseSettings:
     def test_init(self) -> None:
-        val: int | None = 300
-        settings: MockCacheBaseSettings = MockCacheBaseSettings(ttl=val)  # type: ignore
-        assert settings.ttl == val
+        val: int = 300
+        settings: MockCacheBaseSettings = MockCacheBaseSettings(default_ttl=val)
+        assert settings.default_ttl == val
 
 
 class TestCacheBase:

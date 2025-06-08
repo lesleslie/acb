@@ -40,27 +40,38 @@ class SqlBaseSettings(Settings):
         super().__init__(**values)
         if self.cloudsql_proxy:
             self.port = self.cloudsql_proxy_port if not config.deployed else self.port
-        url_kwargs = dict(
-            drivername=self._driver,
-            username=self.user.get_secret_value(),
-            password=self.password.get_secret_value(),
-            host=(
-                self.local_host if not config.deployed else self.host.get_secret_value()
-            ),
-            port=self.port,
-            database=config.app.name,
-        )
         self.poolclass = getattr(pool, self.poolclass) if self.poolclass else None
-        self._url = URL.create(**url_kwargs)  # type: ignore
-        async_url_kwargs = dict(drivername=self._async_driver)
-        self._async_url = URL.create(**(url_kwargs | async_url_kwargs))  # type: ignore
+        self._url = URL.create(
+            drivername=self._driver,
+            username=str(self.user.get_secret_value()) if self.user else None,
+            password=str(self.password.get_secret_value()) if self.password else None,
+            host=self.local_host
+            if not config.deployed
+            else str(self.host.get_secret_value())
+            if self.host
+            else None,
+            port=int(self.port) if self.port else None,
+            database=str(config.app.name),
+        )
+        self._async_url = URL.create(
+            drivername=self._async_driver,
+            username=str(self.user.get_secret_value()) if self.user else None,
+            password=str(self.password.get_secret_value()) if self.password else None,
+            host=self.local_host
+            if not config.deployed
+            else str(self.host.get_secret_value())
+            if self.host
+            else None,
+            port=int(self.port) if self.port else None,
+            database=str(config.app.name),
+        )
         self.engine_kwargs["echo"] = (
-            "debug" if config.logger.verbose else config.debug.sql
+            "debug" if config.logger.verbose else getattr(config.debug, "sql", False)
         )
         self.engine_kwargs["echo_pool"] = (
-            "debug" if config.logger.verbose else config.debug.sql
+            "debug" if config.logger.verbose else getattr(config.debug, "sql", False)
         )
-        self.engine_kwargs = (  # type: ignore
+        self.engine_kwargs = (
             dict(poolclass=self.poolclass, pool_pre_ping=self.pool_pre_ping)
             | self.engine_kwargs
         )
@@ -68,7 +79,9 @@ class SqlBaseSettings(Settings):
 
 class SqlProtocol(t.Protocol):
     def engine(self) -> AsyncEngine: ...
+
     def session(self) -> AsyncSession: ...
+
     def get_session(self) -> t.AsyncGenerator[AsyncSession]: ...
 
     async def init(self) -> None: ...
@@ -99,23 +112,19 @@ class SqlBase(AdapterBase):
         async with self.engine.begin() as conn:
             yield conn
 
-    async def init(
-        self,
-    ) -> None:
-        sqlalchemy_log._add_default_handler = lambda _: None  # type: ignore
+    async def init(self) -> None:
+        sqlalchemy_log._add_default_handler = lambda _: None
         async with self.get_conn() as conn:
-            if self.config.debug.sql:
+            if getattr(self.config.debug, "sql", False):
                 ps = await conn.execute(text("SHOW FULL PROCESSLIST"))
                 show_ps = [p for p in ps]
                 debug(show_ps)
                 ids = [
                     a[0]
                     for a in show_ps
-                    if (
-                        len(a) > 3
-                        and a[1] == self.config.sql.user.get_secret_value()
-                        and a[3] == self.config.app.name
-                    )
+                    if len(a) > 3
+                    and a[1] == self.config.sql.user.get_secret_value()
+                    and (a[3] == self.config.app.name)
                 ]
                 debug(ids)
             try:

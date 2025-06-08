@@ -83,10 +83,7 @@ class NosqlProtocol(t.Protocol):
 
     @abstractmethod
     async def count(
-        self,
-        collection: str,
-        filter: dict[str, t.Any] | None = None,
-        **kwargs: t.Any,
+        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
     ) -> int:
         pass
 
@@ -233,10 +230,7 @@ class NosqlBase(AdapterBase):
 
     @abstractmethod
     async def count(
-        self,
-        collection: str,
-        filter: dict[str, t.Any] | None = None,
-        **kwargs: t.Any,
+        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
     ) -> int:
         pass
 

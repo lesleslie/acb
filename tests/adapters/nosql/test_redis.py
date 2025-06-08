@@ -126,13 +126,11 @@ def mock_redis_client() -> MockRedisClient:
 @pytest.fixture
 async def nosql(mock_redis_client: MockRedisClient) -> RedisNosql:
     with (
-        patch("acb.adapters.nosql.redis.Redis") as mock_redis_cls,
         patch("redis.asyncio.from_url") as mock_from_url,
         patch("redis_om.get_redis_connection") as mock_get_redis_connection,
     ):
         mock_from_url.return_value = mock_redis_client
         mock_get_redis_connection.return_value = mock_redis_client
-        mock_redis_cls.return_value = mock_redis_client
 
         nosql = RedisNosql()
         nosql.config = MagicMock()

@@ -33,7 +33,6 @@ class Nosql(NosqlBase):
                 kwargs["project"] = self.config.nosql.project_id
             if self.config.nosql.credentials_path:
                 kwargs["credentials"] = self.config.nosql.credentials_path
-
             self._client = firestore.Client(**kwargs)
         return self._client
 
@@ -59,7 +58,6 @@ class Nosql(NosqlBase):
     def _convert_to_dict(self, doc: firestore.DocumentSnapshot) -> dict[str, t.Any]:
         if not doc.exists:
             return {}
-
         data = doc.to_dict()
         if data is None:
             data = {}
@@ -77,15 +75,12 @@ class Nosql(NosqlBase):
     ) -> list[dict[str, t.Any]]:
         collection_ref = self._get_collection_ref(collection)
         query = collection_ref
-
         for key, value in filter.items():
             if key == "_id":
                 continue
             query = query.where(filter=FieldFilter(key, "==", value))
-
         if "limit" in kwargs:
             query = query.limit(kwargs["limit"])
-
         if "order_by" in kwargs:
             for field in kwargs["order_by"]:
                 direction = (
@@ -95,14 +90,10 @@ class Nosql(NosqlBase):
                 )
                 field_name = field.removeprefix("-")
                 query = query.order_by(field_name, direction=direction)
-
         docs = query.stream()
-
         results = [self._convert_to_dict(doc) for doc in docs]
-
         if "_id" in filter:
             results = [doc for doc in results if doc.get("_id") == filter["_id"]]
-
         return results
 
     async def find_one(
@@ -114,7 +105,6 @@ class Nosql(NosqlBase):
             if doc.exists:
                 return self._convert_to_dict(doc)
             return None
-
         results = await self.find(collection, filter, limit=1, **kwargs)
         return results[0] if results else None
 
@@ -122,7 +112,6 @@ class Nosql(NosqlBase):
         self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
     ) -> t.Any:
         collection_ref = self._get_collection_ref(collection)
-
         if "_id" in document:
             doc_id = document["_id"]
             doc_ref = collection_ref.document(doc_id)
@@ -130,7 +119,6 @@ class Nosql(NosqlBase):
         else:
             doc_ref = collection_ref.add(document)[1]
             doc_id = doc_ref.id
-
         return doc_id
 
     async def insert_many(
@@ -139,7 +127,6 @@ class Nosql(NosqlBase):
         ids = []
         batch = self.client.batch()
         collection_ref = self._get_collection_ref(collection)
-
         for doc in documents:
             if "_id" in doc:
                 doc_id = doc["_id"]
@@ -149,9 +136,7 @@ class Nosql(NosqlBase):
                 doc_ref = collection_ref.document()
                 batch.set(doc_ref, doc)
                 doc_id = doc_ref.id
-
             ids.append(doc_id)
-
         batch.commit()
         return ids
 
@@ -165,15 +150,12 @@ class Nosql(NosqlBase):
         doc = await self.find_one(collection, filter)
         if not doc:
             return {"modified_count": 0}
-
         doc_id = doc["_id"]
         doc_ref = self._get_collection_ref(collection).document(doc_id)
-
         if "$set" in update:
             doc_ref.update(update["$set"])
         else:
             doc_ref.update(update)
-
         return {"modified_count": 1}
 
     async def update_many(
@@ -186,19 +168,15 @@ class Nosql(NosqlBase):
         docs = await self.find(collection, filter)
         if not docs:
             return {"modified_count": 0}
-
         batch = self.client.batch()
         collection_ref = self._get_collection_ref(collection)
-
         for doc in docs:
             doc_id = doc["_id"]
             doc_ref = collection_ref.document(doc_id)
-
             if "$set" in update:
                 batch.update(doc_ref, update["$set"])
             else:
                 batch.update(doc_ref, update)
-
         batch.commit()
         return {"modified_count": len(docs)}
 
@@ -208,12 +186,9 @@ class Nosql(NosqlBase):
         doc = await self.find_one(collection, filter)
         if not doc:
             return {"deleted_count": 0}
-
         doc_id = doc["_id"]
         doc_ref = self._get_collection_ref(collection).document(doc_id)
-
         doc_ref.delete()
-
         return {"deleted_count": 1}
 
     async def delete_many(
@@ -222,23 +197,17 @@ class Nosql(NosqlBase):
         docs = await self.find(collection, filter)
         if not docs:
             return {"deleted_count": 0}
-
         batch = self.client.batch()
         collection_ref = self._get_collection_ref(collection)
-
         for doc in docs:
             doc_id = doc["_id"]
             doc_ref = collection_ref.document(doc_id)
             batch.delete(doc_ref)
-
         batch.commit()
         return {"deleted_count": len(docs)}
 
     async def count(
-        self,
-        collection: str,
-        filter: dict[str, t.Any] | None = None,
-        **kwargs: t.Any,
+        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
     ) -> int:
         docs = await self.find(collection, filter or {})
         return len(docs)
@@ -247,14 +216,13 @@ class Nosql(NosqlBase):
         self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
     ) -> list[dict[str, t.Any]]:
         docs = await self.find(collection, {})
-
         for stage in pipeline:
             if "$match" in stage:
                 filter_dict = stage["$match"]
                 docs = [
                     doc
                     for doc in docs
-                    if all(doc.get(k) == v for k, v in filter_dict.items())
+                    if all((doc.get(k) == v for k, v in filter_dict.items()))
                 ]
             elif "$project" in stage:
                 projection = stage["$project"]
@@ -263,7 +231,6 @@ class Nosql(NosqlBase):
                 docs = docs[: stage["$limit"]]
             elif "$skip" in stage:
                 docs = docs[stage["$skip"] :]
-
         return docs
 
     @asynccontextmanager

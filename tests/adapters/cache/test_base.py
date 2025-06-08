@@ -32,14 +32,14 @@ class TestMsgPackSerializer:
         ):
             mock_encode.return_value = b"encoded_data"
             mock_compress.return_value = b"compressed_data"
-            result: bytes = serializer.dumps(test_data)
+            result: str = serializer.dumps(test_data)
             mock_encode.assert_called_once_with(test_data)
             mock_compress.assert_called_once_with(b"encoded_data")
-            assert result == b"compressed_data"
+            assert result == "compressed_data"
 
     def test_loads(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
-        test_data: bytes = b"compressed_data"
+        test_data: str = "compressed_data"
         with (
             patch("acb.adapters.cache._base.decompress.brotli") as mock_decompress,
             patch("acb.adapters.cache._base.msgpack.decode") as mock_decode,
@@ -47,10 +47,10 @@ class TestMsgPackSerializer:
             mock_decompress.return_value = b"decompressed_data"
             mock_decode.return_value = {"key": "value"}
             result: t.Any = serializer.loads(test_data)
-            mock_decompress.assert_called_once_with(test_data)
+            mock_decompress.assert_called_once_with(test_data.encode("latin-1"))
             mock_decode.assert_called_once_with(b"decompressed_data")
             assert result == {"key": "value"}
-        result_none: t.Any = serializer.loads(None)
+        result_none: t.Any = serializer.loads("")
         assert result_none is None
 
     def test_integration(self) -> None:
@@ -70,9 +70,9 @@ class TestMsgPackSerializer:
             mock_compress.return_value = b"compressed_data"
             mock_decompress.return_value = b"decompressed_data"
             mock_decode.return_value = test_data
-            serialized: bytes = serializer.dumps(test_data)
-            assert isinstance(serialized, bytes)
-            assert serialized == b"compressed_data"
+            serialized: str = serializer.dumps(test_data)
+            assert isinstance(serialized, str)
+            assert serialized == "compressed_data"
             deserialized: t.Any = serializer.loads(serialized)
             assert deserialized == test_data
 

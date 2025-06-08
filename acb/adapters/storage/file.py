@@ -35,7 +35,6 @@ class Storage(StorageBase):
                 )
             except AttributeError:
                 path = "."
-
         fs = LocalFileSystem(auto_mkdir=True, asynchronous=False)
         dirfs = self.file_system(path=path, fs=fs)
         return AsyncFileSystemWrapper(dirfs)

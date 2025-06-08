@@ -21,7 +21,6 @@ __all__ = [
     "print_debug_info",
     "debug",
 ]
-
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 
 
@@ -30,7 +29,6 @@ def get_calling_module(config: Config = depends()) -> Path | None:
     with suppress(AttributeError, TypeError):
         mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
         mod = Path(mod).parent
-
         if config.debug is not None:
             debug_mod = getattr(config.debug, mod.stem, None)
             return mod if debug_mod else None
@@ -38,11 +36,7 @@ def get_calling_module(config: Config = depends()) -> Path | None:
 
 
 @depends.inject
-def patch_record(
-    mod: Path | None,
-    msg: str,
-    logger: Logger = depends(),
-) -> None:
+def patch_record(mod: Path | None, msg: str, logger: Logger = depends()) -> None:
     with suppress(Exception):
         if mod is not None:
             logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
@@ -86,22 +80,12 @@ def init_debug(config: Config = depends()) -> None:
         outputFunction=print_debug_info,
         argToStringFunction=lambda o: pformat(o, highlight=False),
     )
-    debug.configureOutput(
-        prefix="    debug:  ",
-        includeContext=True,
-        **debug_args,
-    )
-
+    debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
     is_production = config.deployed
     if config.debug is not None and hasattr(config.debug, "production"):
         is_production = is_production or config.debug.production
-
     if is_production:
-        debug.configureOutput(
-            prefix="",
-            includeContext=False,
-            **debug_args,
-        )
+        debug.configureOutput(prefix="", includeContext=False, **debug_args)
 
 
 init_debug()

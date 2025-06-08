@@ -40,15 +40,15 @@ class TestMailgunSmtpSettings:
             description="Test Mailgun SMTP",
             expression="match_recipient('.*@example.com')",
         )
-        assert settings.name == "mailgun"
+        assert settings.name == "mailgun"  # type: ignore
         assert settings.domain == "example.com"
-        assert settings.from_email == "test@example.com"
+        assert settings.from_email == "test@example.com"  # type: ignore
         assert settings.api_key == "test_api_key"
-        assert settings.route_name == "route_name"
-        assert settings.priority == 10
-        assert settings.actions == ["forward('example.com')"]
-        assert settings.description == "Test Mailgun SMTP"
-        assert settings.expression == "match_recipient('.*@example.com')"
+        assert settings.route_name == "route_name"  # type: ignore
+        assert settings.priority == 10  # type: ignore
+        assert settings.actions == ["forward('example.com')"]  # type: ignore
+        assert settings.description == "Test Mailgun SMTP"  # type: ignore
+        assert settings.expression == "match_recipient('.*@example.com')"  # type: ignore
 
     def test_init_with_config(self) -> None:
         mock_config: MagicMock = MagicMock()
@@ -69,7 +69,7 @@ class TestMailgunSmtpSettings:
             settings = MailgunSmtpSettings(**test_values)
 
             assert settings.domain == "mail.example.com"
-            assert settings.from_email == "info@example.com"
+            assert settings.from_email == "info@example.com"  # type: ignore
             assert settings.api_url == "https://api.mailgun.net/v3/domains"
             assert settings.mx_servers == ["smtp.mailgun.com"]
             assert settings.api_key.get_secret_value() == "test-api-key"

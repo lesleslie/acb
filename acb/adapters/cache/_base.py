@@ -26,23 +26,34 @@ class MsgPackSerializer(BaseSerializer):
         self.use_list = use_list
         super().__init__(*args, **kwargs)
 
-    def dumps(self, value: t.Any) -> bytes:  # type: ignore
+    def dumps(self, value: t.Any) -> str:
         msgpack_data = msgpack.encode(value)
-        return compress.brotli(msgpack_data)
+        return compress.brotli(msgpack_data).decode("latin-1")
 
-    def loads(self, value: bytes | None) -> t.Any:  # type: ignore
-        if value is None:
+    def loads(self, value: str) -> t.Any:
+        if not value:
             return None
-        msgpack_data = decompress.brotli(value)
-        return msgpack.decode(msgpack_data)  # type: ignore
+        data_bytes = value.encode("latin-1")
+        msgpack_data = decompress.brotli(data_bytes)
+        if not msgpack_data:
+            return None
+        try:
+            msgpack_bytes = msgpack_data.encode("latin-1")
+        except AttributeError:
+            msgpack_bytes = t.cast(bytes, msgpack_data)
+        return msgpack.decode(msgpack_bytes)
 
 
 class CacheProtocol(t.Protocol):
     async def set(self, key: str, value: bytes, ttl: int | None = None) -> None: ...
+
     async def get(self, key: str) -> bytes | None: ...
+
     async def exists(self, key: str) -> bool: ...
+
     async def clear(self, namespace: str) -> None: ...
-    async def scan(self, pattern: str) -> t.AsyncIterator[str]: ...  # noqa
+
+    async def scan(self, pattern: str) -> t.AsyncIterator[str]: ...
 
 
 class CacheBase(BaseCache):

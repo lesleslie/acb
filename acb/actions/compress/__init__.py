@@ -6,7 +6,6 @@ from pathlib import Path
 import brotli
 
 __all__: list[str] = ["compress", "decompress"]
-
 ContentType = str | bytes | Path
 
 
@@ -32,27 +31,18 @@ class Compress:
             data = content.encode()
         else:
             data = content
-
         gzip_buffer = BytesIO()
-        gz = GzipFile(
-            mode="wb",
-            compresslevel=compresslevel,
-            fileobj=gzip_buffer,
-        )
+        gz = GzipFile(mode="wb", compresslevel=compresslevel, fileobj=gzip_buffer)
         gz.write(data)
         gz.close()
         result = gzip_buffer.getvalue()
-
         if output_path is not None:
             Path(output_path).write_bytes(result)
             return None
         return result
 
     @staticmethod
-    def brotli(
-        content: ContentType,
-        level: int = 3,
-    ) -> bytes:
+    def brotli(content: ContentType, level: int = 3) -> bytes:
         if isinstance(content, Path):
             if not content.exists():
                 raise FileNotFoundError(f"File not found: {content}")
@@ -68,7 +58,6 @@ class Compress:
             data = content.encode()
         else:
             data = content
-
         return brotli.compress(data, quality=level)
 
 
@@ -93,7 +82,6 @@ class Decompress:
             data = content.encode()
         else:
             data = content
-
         gzip_buffer = BytesIO(data)
         try:
             with GzipFile(fileobj=gzip_buffer, mode="rb") as gz:
@@ -119,7 +107,6 @@ class Decompress:
             data = content.encode()
         else:
             data = content
-
         return brotli.decompress(data).decode()
 
 

@@ -6,7 +6,6 @@ from functools import cached_property
 from pathlib import Path
 
 from aioftp import AsyncPathIO, Client, Permission, Server, User
-from aioftp.pathio import PathIO
 from acb.depends import depends
 from acb.logger import Logger
 
@@ -22,39 +21,31 @@ class FtpdSettings(FtpdBaseSettings):
 
 class Ftpd(FtpdBase):
     _client: Client | None = None
-    _path_io: PathIO | None = None
+    _path_io: AsyncPathIO | None = None
 
     @cached_property
     def server(self) -> Server:
         Path(self.config.ftpd.root_dir).mkdir(parents=True, exist_ok=True)
-
         user = User(
             login=self.config.ftpd.username,
             password=self.config.ftpd.password.get_secret_value(),
             base_path=self.config.ftpd.root_dir,
-            permissions=[
-                Permission(path="/", readable=True, writable=True),
-            ],
+            permissions=[Permission(path="/", readable=True, writable=True)],
         )
-
         users = [user]
         if self.config.ftpd.anonymous:
             anonymous_user = User(
                 login="anonymous",
-                password="",  # nosec B106
+                password="",
                 base_path=self.config.ftpd.root_dir,
-                permissions=[
-                    Permission(path="/", readable=True, writable=False),
-                ],
+                permissions=[Permission(path="/", readable=True, writable=False)],
             )
             users.append(anonymous_user)
-
         server_kwargs: dict[str, t.Any] = {
             "users": users,
             "path_io_factory": AsyncPathIO,
             "maximum_connections": self.config.ftpd.max_connections,
         }
-
         if hasattr(self.config.ftpd, "host"):
             server_kwargs["host"] = self.config.ftpd.host
         if hasattr(self.config.ftpd, "port"):
@@ -69,7 +60,6 @@ class Ftpd(FtpdBase):
             )
         if hasattr(self.config.ftpd, "timeout"):
             server_kwargs["timeout"] = self.config.ftpd.timeout
-
         return Server(**server_kwargs)
 
     @depends.inject
@@ -102,10 +92,10 @@ class Ftpd(FtpdBase):
             )
         return self._client
 
-    async def _ensure_path_io(self) -> PathIO:
+    async def _ensure_path_io(self) -> AsyncPathIO:
         if self._path_io is None:
-            self._path_io = AsyncPathIO()  # type: ignore
-        return self._path_io  # type: ignore
+            self._path_io = AsyncPathIO()
+        return self._path_io
 
     @asynccontextmanager
     async def connect(self) -> t.AsyncGenerator["Ftpd"]:

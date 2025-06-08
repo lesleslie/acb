@@ -35,7 +35,7 @@ class SmtpSettings(SmtpBaseSettings):
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
-        super().__init__(**values)  # type: ignore
+        super().__init__(**values)
         self.mx_servers = [
             "1 aspmx.l.google.com.",
             "2 alt1.aspmx.l.google.com.",
@@ -43,7 +43,6 @@ class SmtpSettings(SmtpBaseSettings):
             "4 alt3.aspmx.l.google.com.",
             "5 alt4.aspmx.l.google.com.",
         ]
-
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             self.client_id = values.get("client_id", "test-client-id")
             self.client_secret = values.get(
@@ -52,11 +51,6 @@ class SmtpSettings(SmtpBaseSettings):
             self.refresh_token = values.get(
                 "refresh_token", SecretStr("test-refresh-token")
             )
-
-    def __getattr__(self, item: str) -> t.Any:
-        if item == "__pydantic_fields_set__" and hasattr(self, "__pydantic_fields__"):
-            return getattr(self, "__pydantic_fields__")
-        return super().__getattr__(item)
 
 
 class Smtp(SmtpBase):
@@ -71,7 +65,6 @@ class Smtp(SmtpBase):
             client_secret=self.config.smtp.client_secret.get_secret_value(),
             scopes=self.config.smtp.scopes,
         )
-
         return build("gmail", "v1", credentials=credentials)
 
     async def get_response(
@@ -82,7 +75,6 @@ class Smtp(SmtpBase):
         params: dict[str, int] | None = None,
     ) -> dict[str, t.Any]:
         self.logger.debug(f"Gmail adapter: {req_type} request for {domain}")
-
         return {"message": "success", "status": "ok"}
 
     async def list_domains(self) -> list[str]:
@@ -125,18 +117,15 @@ class Smtp(SmtpBase):
 
     async def get_dns_records(self, domain: str) -> list[DnsRecord]:
         records = []
-
         rrdata = self.config.smtp.mx_servers
         record = DnsRecord.model_validate(dict(name=domain, type="MX", rrdata=rrdata))
         records.append(record)
-
         spf_record = DnsRecord.model_validate(
             dict(
                 name=domain, type="TXT", rrdata=["v=spf1 include:_spf.google.com ~all"]
             )
         )
         records.append(spf_record)
-
         dmarc_record = DnsRecord.model_validate(
             dict(
                 name=f"_dmarc.{domain}",
@@ -145,7 +134,6 @@ class Smtp(SmtpBase):
             )
         )
         records.append(dmarc_record)
-
         debug(records)
         return records
 
@@ -166,7 +154,6 @@ class Smtp(SmtpBase):
                 .execute()
             )
             forwards = result.get("forwardingAddresses", [])
-
             routes = [
                 {
                     "id": forward.get("forwardingEmail"),
@@ -206,7 +193,7 @@ class Smtp(SmtpBase):
             else:
                 self.logger.error("No email found in route")
 
-                class DeleteRouteError(HttpxResponse):  # type: ignore
+                class DeleteRouteError(HttpxResponse):
                     def __init__(self) -> None:
                         super().__init__(400)
                         self._json = {"message": "No email found in route"}
@@ -218,7 +205,7 @@ class Smtp(SmtpBase):
         except HttpError as error:
             self.logger.error(f"Error deleting Gmail forwarding address: {error}")
 
-            class DeleteRouteError(HttpxResponse):
+            class DeleteRouteErrorResponse(HttpxResponse):
                 def __init__(self) -> None:
                     super().__init__(500)
                     self._json = {"message": str(error)}
@@ -226,18 +213,17 @@ class Smtp(SmtpBase):
                 def json(self, **kwargs: t.Any) -> dict[str, str]:
                     return self._json
 
-            return DeleteRouteError()
+            return DeleteRouteErrorResponse()
 
     @staticmethod
     def get_name(address: str) -> str:
-        pattern = r"'(.+)@.+"
+        pattern = "'(.+)@.+"
         name = search(pattern, address)
         return name.group(1) if name else ""
 
     async def delete_routes(self, delete_all: bool = False) -> None:
         forwards = self.config.smtp.forwards.keys()
         routes = await self.list_routes()
-
         deletes = []
         if delete_all:
             deletes = routes
@@ -245,11 +231,9 @@ class Smtp(SmtpBase):
             deletes.extend(
                 [r for r in routes if self.get_name(r["expression"]) not in forwards]
             )
-
             for f in forwards:
                 fs = [r for r in routes if self.get_name(r["expression"]) == f]
                 deletes.extend(fs[1:])
-
         for d in deletes:
             await self.delete_route(d)
 
@@ -258,10 +242,8 @@ class Smtp(SmtpBase):
     ) -> dict[str, t.Any]:
         try:
             service = self._get_gmail_service()
-
             if not isinstance(forwarding_addresses, list):
                 forwarding_addresses = [forwarding_addresses]
-
             results = []
             for forward_address in forwarding_addresses:
                 try:
@@ -276,7 +258,6 @@ class Smtp(SmtpBase):
                         )
                     else:
                         raise
-
                 result = (
                     service.users()
                     .settings()
@@ -290,13 +271,11 @@ class Smtp(SmtpBase):
                     )
                     .execute()
                 )
-
                 results.append(result)
                 self.logger.info(
                     f"Created forwarding from {domain_address}@{self.config.smtp.domain} to {forward_address}"
                 )
-
-            return {"message": "Forwarding created", "results": results}  # type: ignore
+            return {"message": "Forwarding created", "results": results}
         except HttpError as error:
             self.logger.error(f"Error creating Gmail forwarding: {error}")
             return {"error": str(error)}
@@ -310,31 +289,25 @@ class Smtp(SmtpBase):
     ) -> dict[str, t.Any]:
         try:
             service = self._get_gmail_service()
-
             message = MIMEMultipart("alternative")
             message["to"] = to
             message["from"] = (
                 f"{self.config.smtp.default_from_name} <{self.config.smtp.default_from}>"
             )
             message["subject"] = subject
-
             if html:
                 message.attach(MIMEText(body, "html"))
             else:
                 message.attach(MIMEText(body, "plain"))
-
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-
             result = (
                 service.users()
                 .messages()
                 .send(userId="me", body={"raw": encoded_message})
                 .execute()
             )
-
             self.logger.info(f"Email sent to {to}, message ID: {result['id']}")
             return {"id": result["id"], "status": "sent"}
-
         except HttpError as error:
             self.logger.error(f"Error sending email: {error}")
             return {"error": str(error), "status": "failed"}

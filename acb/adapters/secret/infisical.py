@@ -29,7 +29,6 @@ class Secret(SecretBase):
             token=self.config.secret.token,
             cache_ttl=self.config.secret.cache_ttl,
         )
-
         if (
             not self.config.secret.token
             and self.config.secret.client_id
@@ -39,7 +38,6 @@ class Secret(SecretBase):
                 client_id=self.config.secret.client_id,
                 client_secret=self.config.secret.client_secret,
             )
-
         return client
 
     @depends.inject
@@ -57,24 +55,20 @@ class Secret(SecretBase):
     async def list(self, adapter: str | None = None) -> list[str]:
         try:
             filter_prefix = f"{self.prefix}{adapter}_" if adapter else self.prefix
-
             project_id = self.config.secret.project_id
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
-
             response = await asyncio.to_thread(
                 self.client.secrets.list_secrets,
                 project_id=project_id,
                 environment_slug=self.config.secret.environment,
                 secret_path=self.config.secret.secret_path,
             )
-
             secret_names = [
                 self.extract_secret_name(secret.secretKey)
                 for secret in response.secrets
                 if secret.secretKey.startswith(filter_prefix)
             ]
-
             return secret_names
         except Exception as e:
             self.logger.error(f"Failed to list secrets: {e}")
@@ -85,9 +79,7 @@ class Secret(SecretBase):
             project_id = self.config.secret.project_id
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
-
             full_name = f"{self.prefix}{name}"
-
             response = await asyncio.to_thread(
                 self.client.secrets.get_secret_by_name,
                 secret_name=full_name,
@@ -96,7 +88,6 @@ class Secret(SecretBase):
                 secret_path=self.config.secret.secret_path,
                 version=version or "",
             )
-
             self.logger.info(f"Fetched secret - {name}")
             return response.secretValue
         except Exception as e:
@@ -108,9 +99,7 @@ class Secret(SecretBase):
             project_id = self.config.secret.project_id
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
-
             full_name = f"{self.prefix}{name}"
-
             await asyncio.to_thread(
                 self.client.secrets.create_secret_by_name,
                 secret_name=full_name,
@@ -119,7 +108,6 @@ class Secret(SecretBase):
                 secret_path=self.config.secret.secret_path,
                 secret_value=value,
             )
-
             self.logger.debug(f"Created secret - {name}")
         except Exception as e:
             self.logger.error(f"Failed to create secret {name}: {e}")
@@ -130,9 +118,7 @@ class Secret(SecretBase):
             project_id = self.config.secret.project_id
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
-
             full_name = f"{self.prefix}{name}"
-
             await asyncio.to_thread(
                 self.client.secrets.update_secret_by_name,
                 current_secret_name=full_name,
@@ -141,7 +127,6 @@ class Secret(SecretBase):
                 secret_path=self.config.secret.secret_path,
                 secret_value=value,
             )
-
             self.logger.debug(f"Updated secret - {name}")
         except Exception as e:
             self.logger.error(f"Failed to update secret {name}: {e}")
@@ -165,9 +150,7 @@ class Secret(SecretBase):
             project_id = self.config.secret.project_id
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
-
             full_name = f"{self.prefix}{name}"
-
             await asyncio.to_thread(
                 self.client.secrets.delete_secret_by_name,
                 secret_name=full_name,
@@ -175,7 +158,6 @@ class Secret(SecretBase):
                 environment_slug=self.config.secret.environment,
                 secret_path=self.config.secret.secret_path,
             )
-
             self.logger.debug(f"Deleted secret - {name}")
         except Exception as e:
             self.logger.error(f"Failed to delete secret {name}: {e}")

@@ -5,11 +5,7 @@ import nest_asyncio
 from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
-from acb.actions import hash
-from acb.adapters import (
-    get_adapter,
-    tmp_path,
-)
+from acb.adapters import get_adapter, tmp_path
 from acb.config import AdapterBase, Config, Settings
 from acb.debug import debug
 from acb.depends import depends
@@ -35,7 +31,6 @@ class StorageBaseSettings(Settings):
         super().__init__(**values)
         self.prefix = self.prefix or config.app.name or ""
         self.user_project = self.user_project or config.app.name or ""
-
         storage_adapter = get_adapter("storage")
         if storage_adapter is not None:
             self.local_fs = storage_adapter.name in ("file", "memory")
@@ -53,20 +48,34 @@ class StorageBucketProtocol(t.Protocol):
     client: t.Any
 
     def get_name(self, path: AsyncPath) -> str: ...
+
     def get_path(self, path: AsyncPath) -> str: ...
+
     def get_url(self, path: AsyncPath) -> str: ...
+
     async def get_date_created(self, path: AsyncPath) -> t.Any: ...
+
     async def get_date_updated(self, path: AsyncPath) -> t.Any: ...
+
     async def get_size(self, path: AsyncPath) -> int: ...
+
     @staticmethod
     async def get_checksum(path: AsyncPath) -> int: ...
+
     async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> t.Any: ...
+
     async def stat(self, path: AsyncPath) -> t.Any: ...
+
     async def list(self, dir_path: AsyncPath) -> t.Any: ...
+
     async def exists(self, path: AsyncPath) -> t.Any: ...
+
     async def create_bucket(self, path: AsyncPath) -> t.Any: ...
+
     async def open(self, path: AsyncPath) -> t.BinaryIO: ...
+
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any: ...
+
     async def delete(self, path: AsyncPath) -> t.Any: ...
 
 
@@ -77,12 +86,7 @@ class StorageBucket:
     prefix: str | None = None
     config: Config = depends()
 
-    def __init__(
-        self,
-        client: t.Any,
-        bucket: str,
-        prefix: str | None = None,
-    ) -> None:
+    def __init__(self, client: t.Any, bucket: str, prefix: str | None = None) -> None:
         self.client = client
         self.name = bucket
         self.bucket = self.config.storage.buckets[bucket]
@@ -111,7 +115,10 @@ class StorageBucket:
 
     @staticmethod
     async def get_checksum(path: AsyncPath) -> int:
-        return await hash.crc32c(path)  # type: ignore
+        from acb.actions.hash import hash
+
+        checksum_hex = await hash.crc32c(path)
+        return int(checksum_hex, 16)
 
     async def get_signed_url(self, path: AsyncPath, expires: int = 3600) -> t.Any:
         return await self.client._sign(self.get_path(path), expires=expires)
@@ -140,8 +147,7 @@ class StorageBucket:
 
     async def create_bucket(self, path: AsyncPath) -> t.Any:
         create_args: dict[str, t.Any] = dict(
-            create_parents=True,
-            enable_versioning=False,
+            create_parents=True, enable_versioning=False
         )
         if self.name == "media":
             create_args["acl"] = "public-read"
@@ -185,6 +191,7 @@ class StorageProtocol(t.Protocol):
 
     @cached_property
     def client(self) -> t.Any: ...
+
     async def init(self) -> None: ...
 
 
@@ -209,10 +216,15 @@ class StorageMediaProtocol(t.Protocol):
     _name: str
 
     def name(self) -> str: ...
+
     def path(self) -> str: ...
+
     async def size(self) -> t.Any: ...
+
     async def checksum(self) -> t.Any: ...
+
     async def open(self) -> t.Any: ...
+
     async def write(self, file: t.BinaryIO) -> t.Any: ...
 
 

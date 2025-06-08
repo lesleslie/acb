@@ -20,25 +20,21 @@ class MockSmtpBase(SmtpBase):
 class TestSmtpBaseSettings:
     def test_init_basic(self) -> None:
         settings: SmtpBaseSettings = SmtpBaseSettings(
-            name="test_smtp",
             domain="example.com",
-            from_email="test@example.com",
+            default_from="test@example.com",
             api_key=SecretStr("test_api_key"),
         )
-        assert settings.name == "test_smtp"
         assert settings.domain == "example.com"
-        assert settings.from_email == "test@example.com"
+        assert settings.default_from == "test@example.com"
         assert settings.api_key.get_secret_value() == "test_api_key"
 
     def test_init_defaults(self) -> None:
         settings: SmtpBaseSettings = SmtpBaseSettings(
-            name="test_smtp",
             domain="example.com",
-            from_email="test@example.com",
+            default_from="test@example.com",
         )
-        assert settings.name == "test_smtp"
         assert settings.domain == "example.com"
-        assert settings.from_email == "test@example.com"
+        assert settings.default_from == "test@example.com"
         assert settings.api_key is None
 
     def test_init_with_config(self) -> None:
@@ -68,11 +64,10 @@ class TestSmtpBaseSettings:
 
     def test_email_validation(self) -> None:
         settings = SmtpBaseSettings(
-            name="test_smtp",
             domain="example.com",
-            from_email="valid@example.com",
+            default_from="valid@example.com",
         )
-        assert settings.from_email == "valid@example.com"
+        assert settings.default_from == "valid@example.com"
 
 
 class TestSmtpBase:

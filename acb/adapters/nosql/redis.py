@@ -4,7 +4,6 @@ from functools import cached_property
 
 import redis.asyncio as redis
 from pydantic import field_validator
-from redis.asyncio import Redis
 from redis_om import HashModel, Migrator, get_redis_connection
 from acb.config import Config
 from acb.depends import depends
@@ -21,7 +20,7 @@ class NosqlSettings(NosqlBaseSettings):
 
     @field_validator("cache_db")
     @classmethod
-    def cache_db_not_zero(cls, v: int) -> int:  # noqa: F841
+    def cache_db_not_zero(cls, v: int) -> int:
         if v < 3 and v != 0:
             raise ValueError("must be > 3 (0-2 are reserved)")
         return 0
@@ -39,11 +38,11 @@ class NosqlSettings(NosqlBaseSettings):
 
 class Nosql(NosqlBase):
     _models: dict[str, type[HashModel]] = {}
-    _client: Redis | None = None  # type: ignore
+    _client: t.Any = None
     _transaction: t.Any | None = None
 
     @cached_property
-    def client(self) -> Redis:  # type: ignore
+    def client(self) -> t.Any:
         if not self._client:
             self._client = redis.from_url(
                 self.config.nosql.connection_string,
@@ -65,7 +64,6 @@ class Nosql(NosqlBase):
         try:
             await self.client.ping()
             self.logger.info("Redis connection initialized successfully")
-
             Migrator().run()
         except Exception as e:
             self.logger.error(f"Failed to initialize Redis connection: {e}")
@@ -83,23 +81,27 @@ class Nosql(NosqlBase):
         results = []
         pattern = self._get_key(collection, "*")
         keys = await self.client.keys(pattern)
-
         limit = kwargs.get("limit")
         if limit is not None:
             keys = keys[:limit]
-
         for key in keys:
             data = await self.client.hgetall(key)
-            if data and self._matches_filter(data, filter):
-                data["_id"] = key.split(":")[-1]
-                results.append(data)
-
+            if data:
+                str_data = {
+                    k.decode() if isinstance(k, bytes) else k: v.decode()
+                    if isinstance(v, bytes)
+                    else v
+                    for k, v in data.items()
+                }
+                if self._matches_filter(str_data, filter):
+                    key_str = key.decode() if isinstance(key, bytes) else key
+                    str_data["_id"] = key_str.split(":")[-1]
+                    results.append(str_data)
         return results
 
     def _matches_filter(self, data: dict[str, t.Any], filter: dict[str, t.Any]) -> bool:
         if not filter:
             return True
-
         for key, value in filter.items():
             if key not in data or data[key] != value:
                 return False
@@ -112,10 +114,15 @@ class Nosql(NosqlBase):
             key = self._get_key(collection, filter["_id"])
             data = await self.client.hgetall(key)
             if data:
-                data["_id"] = filter["_id"]
-                return data
+                str_data = {
+                    k.decode() if isinstance(k, bytes) else k: v.decode()
+                    if isinstance(v, bytes)
+                    else v
+                    for k, v in data.items()
+                }
+                str_data["_id"] = filter["_id"]
+                return str_data
             return None
-
         results = await self.find(collection, filter, limit=1, **kwargs)
         return results[0] if results else None
 
@@ -125,16 +132,12 @@ class Nosql(NosqlBase):
         doc_id = document.get(
             "_id", str(await self.client.incr(f"{collection}:id_counter"))
         )
-
         if "_id" in document:
             document = document.copy()
             del document["_id"]
-
         key = self._get_key(collection, doc_id)
-        await self.client.hset(key, mapping=document)  # type: ignore
-
+        await self.client.hset(key, mapping=t.cast(dict[t.Any, t.Any], document))
         await self.client.sadd(self._get_key(collection), doc_id)
-
         return doc_id
 
     async def insert_many(
@@ -156,18 +159,14 @@ class Nosql(NosqlBase):
         doc = await self.find_one(collection, filter)
         if not doc:
             return None
-
         doc_id = doc["_id"]
         key = self._get_key(collection, doc_id)
-
         if "$set" in update:
             await self.client.hset(
-                key,
-                mapping=update["$set"],  # type: ignore
+                key, mapping=t.cast(dict[t.Any, t.Any], update["$set"])
             )
         else:
-            await self.client.hset(key, mapping=update)  # type: ignore
-
+            await self.client.hset(key, mapping=t.cast(dict[t.Any, t.Any], update))
         return {"modified_count": 1}
 
     async def update_many(
@@ -179,21 +178,16 @@ class Nosql(NosqlBase):
     ) -> t.Any:
         docs = await self.find(collection, filter)
         modified_count = 0
-
         for doc in docs:
             doc_id = doc["_id"]
             key = self._get_key(collection, doc_id)
-
             if "$set" in update:
                 await self.client.hset(
-                    key,
-                    mapping=update["$set"],  # type: ignore
+                    key, mapping=t.cast(dict[t.Any, t.Any], update["$set"])
                 )
             else:
-                await self.client.hset(key, mapping=update)  # type: ignore
-
+                await self.client.hset(key, mapping=t.cast(dict[t.Any, t.Any], update))
             modified_count += 1
-
         return {"modified_count": modified_count}
 
     async def delete_one(
@@ -202,14 +196,10 @@ class Nosql(NosqlBase):
         doc = await self.find_one(collection, filter)
         if not doc:
             return {"deleted_count": 0}
-
         doc_id = doc["_id"]
         key = self._get_key(collection, doc_id)
-
         await self.client.delete(key)
-
         await self.client.srem(self._get_key(collection), doc_id)
-
         return {"deleted_count": 1}
 
     async def delete_many(
@@ -217,28 +207,19 @@ class Nosql(NosqlBase):
     ) -> t.Any:
         docs = await self.find(collection, filter)
         deleted_count = 0
-
         for doc in docs:
             doc_id = doc["_id"]
             key = self._get_key(collection, doc_id)
-
             await self.client.delete(key)
-
             await self.client.srem(self._get_key(collection), doc_id)
-
             deleted_count += 1
-
         return {"deleted_count": deleted_count}
 
     async def count(
-        self,
-        collection: str,
-        filter: dict[str, t.Any] | None = None,
-        **kwargs: t.Any,
+        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
     ) -> int:
         if not filter:
             return await self.client.scard(self._get_key(collection))
-
         docs = await self.find(collection, filter)
         return len(docs)
 
@@ -246,7 +227,6 @@ class Nosql(NosqlBase):
         self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
     ) -> list[dict[str, t.Any]]:
         docs = await self.find(collection, {})
-
         for stage in pipeline:
             if "$match" in stage:
                 docs = [
@@ -259,7 +239,6 @@ class Nosql(NosqlBase):
                 docs = docs[: stage["$limit"]]
             elif "$skip" in stage:
                 docs = docs[stage["$skip"] :]
-
         return docs
 
     @asynccontextmanager

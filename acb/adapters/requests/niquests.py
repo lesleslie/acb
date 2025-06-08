@@ -1,6 +1,7 @@
 import typing as t
 from functools import cached_property
 
+import niquests
 from pydantic import SecretStr
 from acb.depends import depends
 
@@ -15,8 +16,8 @@ class RequestsSettings(RequestsBaseSettings):
 
 class Requests(RequestsBase):
     @cached_property
-    def client(self) -> "niquests.AsyncSession":  # type: ignore
-        session = niquests.AsyncSession()  # type: ignore
+    def client(self) -> "niquests.AsyncSession":
+        session = niquests.AsyncSession()
         if self.config.requests.base_url:
             session.base_url = self.config.requests.base_url
         return session

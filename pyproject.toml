@@ -6,9 +6,10 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.7"
+version = "0.16.8"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
+license.text = "BSD-3-CLAUSE"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -50,20 +51,16 @@ dependencies = [
     "tomli-w>=1.2",
 ]
 
-[project.license]
-text = "BSD-3-CLAUSE"
-
-[project.optional-dependencies]
-cache = [
+optional-dependencies.cache = [
     "aiocache[redis]>=0.12.3",
     "coredis>=4.22",
-    "logfire[redis]>=3.17",
+    "logfire[redis]>=3.18",
 ]
-demo = [
+optional-dependencies.demo = [
     "faker>=37.3",
 ]
-dev = [
-    "crackerjack>=0.19.8",
+optional-dependencies.dev = [
+    "crackerjack>=0.20.14",
     "pytest>=8.4",
     "pytest-anyio>=0",
     "pytest-asyncio>=1",
@@ -72,60 +69,58 @@ dev = [
     "pytest-mock>=3.14.1",
     "pytest-timeout>=2.4",
 ]
-dns = [
+optional-dependencies.dns = [
     "google-cloud-dns>=0.35.1",
     "python-cloudflare>=1.0.1",
     "validators>=0.35",
 ]
-ftpd = [
+optional-dependencies.ftpd = [
     "aioftp>=0.25.1",
     "asyncssh>=2.21",
 ]
-monitoring = [
-    "logfire[system-metrics]>=3.17",
+optional-dependencies.monitoring = [
+    "logfire[system-metrics]>=3.18",
     "sentry-sdk[loguru]>=2.29.1",
 ]
-nosql = [
+optional-dependencies.nosql = [
     "beanie>=1.29",
     "google-cloud-firestore>=2.21",
     "motor>=3.7.1",
     "redis-om>=0.3.5",
 ]
-requests = [
+optional-dependencies.requests = [
     "hishel>=0.1.2",
     "httpx[http2]>=0.28.1",
-    "logfire[httpx]>=3.17",
+    "logfire[httpx]>=3.18",
     "niquests>=3.14.1",
     "sentry-sdk[httpx]>=2.29.1",
 ]
-secret = [
-    "google-cloud-secret-manager>=2.23.3",
+optional-dependencies.secret = [
+    "google-cloud-secret-manager>=2.24",
     "infisicalsdk>=1.0.8",
 ]
-smtp = [
+optional-dependencies.smtp = [
     "mailgun>=1.0.1",
 ]
-sql = [
+optional-dependencies.sql = [
     "aiomysql>=0.2",
     "babel>=2.17",
-    "greenlet>=3.2.2",
-    "logfire[sqlalchemy]>=3.17",
+    "greenlet>=3.2.3",
+    "logfire[sqlalchemy]>=3.18",
     "pymysql>=1.1.1",
     "sentry-sdk[sqlalchemy]>=2.29.1",
     "sqlalchemy>=2.0.41",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
 ]
-storage = [
+optional-dependencies.storage = [
     "adlfs>=2024.12",
     "gcsfs>=2025.5.1",
     "s3fs>=2025.5.1",
 ]
-
-[project.urls]
-Documentation = "https://github.com/lesleslie/acb"
-Homepage = "https://github.com/lesleslie/acb"
-Repository = "https://github.com/lesleslie/acb"
+urls.Documentation = "https://github.com/lesleslie/acb"
+urls.Homepage = "https://github.com/lesleslie/acb"
+urls.Repository = "https://github.com/lesleslie/acb"
 
 [tool.ruff]
 target-version = "py313"
@@ -135,18 +130,15 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-extend-select = [
+format.docstring-code-format = true
+lint.extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-ignore = [
+lint.ignore = [
     "D100",
     "D101",
     "D102",
@@ -158,21 +150,15 @@ ignore = [
     "F821",
     "UP040",
 ]
-fixable = [
+lint.fixable = [
     "ALL",
 ]
-unfixable = []
-
-[tool.ruff.lint.isort]
-no-lines-before = [
+lint.unfixable = [  ]
+lint.isort.no-lines-before = [
     "first-party",
 ]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 13
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+lint.mccabe.max-complexity = 13
+lint.pydocstyle.convention = "google"
 
 [tool.codespell]
 skip = "*/data/*"
@@ -181,7 +167,7 @@ ignore-words-list = "crate,uptodate,nd"
 
 [tool.pyproject-fmt]
 column_width = 120
-indent = 2
+indent = 4
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -276,23 +262,24 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
+    "pyfiglet",
     "pytest-benchmark",
-    "pytest-cov",
-    "pytest-asyncio",
-    "pdm-bump",
-    "pytest-xdist",
     "uv",
-    "autotyping",
-    "pytest-mock",
-    "tomli-w",
-    "pyyaml",
+    "pytest-cov",
+    "google-crc32c",
+    "pytest-xdist",
+    "keyring",
     "pre-commit",
-    "pdm",
+    "tomli-w",
+    "pytest-timeout",
+    "pyyaml",
+    "autotyping",
+    "pdm-bump",
+    "pytest-asyncio",
     "google-api-python-client",
     "pytest",
-    "pytest-timeout",
-    "pyfiglet",
-    "google-crc32c",
+    "pdm",
+    "pytest-mock",
 ]
 
 [tool.refurb]
@@ -304,16 +291,16 @@ target = [
     "acb",
 ]
 skips = [
+    "B607",
     "B602",
-    "B403",
+    "B704",
     "B106",
     "B101",
-    "B404",
-    "B607",
     "B301",
-    "B603",
-    "B704",
+    "B403",
     "B311",
+    "B603",
+    "B404",
     "B105",
 ]
 

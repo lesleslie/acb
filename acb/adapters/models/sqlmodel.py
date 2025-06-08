@@ -13,9 +13,7 @@ from acb.depends import depends
 from ._base import ModelsBase, ModelsBaseSettings
 
 imported_models: ContextVar[list[t.Any]] = ContextVar("imported_models", default=[])
-
 base_models_paths = [AsyncPath(root_path / p) for p in ("models", "models.py")]
-
 if get_adapter("schemas"):
     import_adapter("schemas")
 
@@ -39,7 +37,7 @@ class Models(ModelsBase):
                 if isclass(m)
                 and issubclass(m, SQLModel)
                 and hasattr(m, "__table__")
-                and n not in imported_models.get()
+                and (n not in imported_models.get())
             }.items():
                 setattr(self.sql, name, model)
                 _imported_models.append(name)
@@ -63,7 +61,7 @@ class Models(ModelsBase):
                     async for s in path.iterdir()
                     if s.suffix == ".py"
                     and await s.is_file()
-                    and not s.stem.startswith("_")
+                    and (not s.stem.startswith("_"))
                 ]:
                     await self.import_models(_path)
             elif await path.is_file():

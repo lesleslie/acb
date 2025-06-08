@@ -21,10 +21,9 @@ Dns, Requests = import_adapter()
 class SmtpSettings(SmtpBaseSettings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
-        super().__init__(**values)  # type: ignore
+        super().__init__(**values)
         self.api_url = "https://api.mailgun.net/v3/domains"
         self.mx_servers = ["smtp.mailgun.com"]
-
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             self.api_key = values.get("api_key", SecretStr("test-api-key"))
             self.password = values.get("password", SecretStr("test-password"))
@@ -59,15 +58,15 @@ class Smtp(SmtpBase):
         )
         match req_type:
             case "get":
-                resp = await self.requests.get(url)  # type: ignore
+                resp = await self.requests.get(url)
             case "put":
                 url = "".join([url, "/connection"])
-                resp = await self.requests.put(url, data=data)  # type: ignore
+                resp = await self.requests.put(url, data=data)
             case "post":
                 url = "".join([url, "/connection"])
-                resp = await self.requests.post(url, data=data)  # type: ignore
+                resp = await self.requests.post(url, data=data)
             case "delete":
-                resp = await self.requests.delete(url)  # type: ignore
+                resp = await self.requests.delete(url)
             case _:
                 raise ValueError
         return await load.json(resp.json())
@@ -168,7 +167,7 @@ class Smtp(SmtpBase):
 
     @staticmethod
     def get_name(address: str) -> str:
-        pattern = r"'(.+)@.+"
+        pattern = "'(.+)@.+"
         name = search(pattern, address)
         return name.group(1) if name else ""
 
@@ -212,19 +211,18 @@ class Smtp(SmtpBase):
         }
         routes = await self.list_routes()
         for r in routes:
-            if (r["expression"] == route["expression"]) and (
-                r["actions"] == route["action"]
+            if (
+                r["expression"] == route["expression"]
+                and r["actions"] == route["action"]
             ):
                 self.logger.debug(
-                    f"Route for {domain_address}  ==> "
-                    f"{', '.join(forwarding_addresses)} exists"
+                    f"Route for {domain_address}  ==> {', '.join(forwarding_addresses)} exists"
                 )
             elif r["expression"] == route["expression"]:
                 await self.delete_route(r)
         resp = await self.get_response("post", data=route)
         self.logger.info(
-            f"Created route for {domain_address}  ==> "
-            f" {', '.join(forwarding_addresses)}"
+            f"Created route for {domain_address}  ==>  {', '.join(forwarding_addresses)}"
         )
         return resp
 
@@ -233,7 +231,7 @@ class Smtp(SmtpBase):
             await self.create_route(name, forward)
 
     async def init(self) -> None:
-        await self.create_dns_records()  # type: ignore
+        await self.create_dns_records()
         await self.delete_routes()
         await self.create_routes()
 

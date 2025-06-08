@@ -20,8 +20,7 @@ class SmtpBaseSettings(Settings):
     ssl: bool = False
     template_folder: AsyncPath | None = None
     forwards: dict[str, EmailStr] = dict(
-        admin="pat@example.com",
-        info="terry@example.com",
+        admin="pat@example.com", info="terry@example.com"
     )
 
     @depends.inject

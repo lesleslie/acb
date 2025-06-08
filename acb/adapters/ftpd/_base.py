@@ -35,13 +35,10 @@ class FtpdBaseSettings(Settings):
     host: str = "127.0.0.1"
     port: int = 8021
     max_connections: int = 42
-
     username: str = "ftpuser"
     password: SecretStr = Field(default=SecretStr("ftppass"))
     anonymous: bool = False
-
-    root_dir: str = "/tmp/ftp"  # nosec B108
-
+    root_dir: str = "tmp/ftp"
     use_tls: bool = False
     cert_file: str | None = None
     key_file: str | None = None

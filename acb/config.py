@@ -33,11 +33,9 @@ from .depends import depends
 
 if not _testing:
     nest_asyncio.apply()
-
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
-
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
 
@@ -45,6 +43,7 @@ class Platform(str, Enum):
     aws = "aws"
     gcp = "gcp"
     azure = "azure"
+    cloudflare = "cloudflare"
 
 
 async def get_version() -> str:
@@ -71,9 +70,7 @@ class PydanticSettingsProtocol(t.Protocol):
     model_config: SettingsConfigDict
 
     def __init__(
-        self,
-        settings_cls: type["Settings"],
-        secrets_path: AsyncPath = ...,
+        self, settings_cls: type["Settings"], secrets_path: AsyncPath = ...
     ) -> None: ...
 
     def get_model_secrets(self) -> dict[str, FieldInfo]: ...
@@ -86,14 +83,10 @@ class PydanticSettingsProtocol(t.Protocol):
 class PydanticSettingsSource:
     adapter_name: str = "app"
     settings_cls: type["Settings"]
-    model_config = SettingsConfigDict(
-        arbitrary_types_allowed=True,
-    )
+    model_config = SettingsConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
-        self,
-        settings_cls: type["Settings"],
-        secrets_path: AsyncPath | None = None,
+        self, settings_cls: type["Settings"], secrets_path: AsyncPath | None = None
     ) -> None:
         from acb.adapters import secrets_path as sp
 
@@ -137,7 +130,6 @@ class FileSecretSource(PydanticSettingsSource):
 
     async def __call__(self) -> dict[str, t.Any]:
         data = {}
-
         if _testing:
             model_secrets = self.get_model_secrets()
             for field_key, field_info in model_secrets.items():
@@ -147,11 +139,9 @@ class FileSecretSource(PydanticSettingsSource):
                 else:
                     data[field_name] = SecretStr(f"test_secret_for_{field_name}")
             return data
-
         self.secrets_path = await AsyncPath(self.secrets_path).expanduser()
         if not await self.secrets_path.exists():
             await self.secrets_path.mkdir(parents=True, exist_ok=True)
-
         model_secrets = self.get_model_secrets()
         for field_key in model_secrets:
             field_key = field_key.removeprefix(f"{app_name}_")
@@ -161,14 +151,12 @@ class FileSecretSource(PydanticSettingsSource):
                 field_value = await self.get_field_value(field_key)
             except Exception as e:
                 raise SettingsError(
-                    f"Error getting value for field '{field_key}' from "
-                    f"source '{self.__class__.__name__}: {e}'"
+                    f"Error getting value for field '{field_key}' from source '{self.__class__.__name__}: {e}'"
                 )
             if field_value is not None:
                 field_name = field_key.removeprefix(f"{self.adapter_name}_")
                 data[field_name] = field_value
                 _app_secrets.get().add(field_key)
-
         return data
 
 
@@ -180,7 +168,6 @@ class ManagerSecretSource(PydanticSettingsSource):
 
     async def load_secrets(self) -> t.Any:
         data = {}
-
         if _testing:
             adapter_secrets = self.get_model_secrets()
             for field_key, field_info in adapter_secrets.items():
@@ -190,7 +177,6 @@ class ManagerSecretSource(PydanticSettingsSource):
                 else:
                     data[field_name] = SecretStr(f"test_secret_for_{field_name}")
             return data
-
         adapter_secrets = self.get_model_secrets()
         missing_secrets = {
             n: v for n, v in adapter_secrets.items() if n not in _app_secrets.get()
@@ -222,14 +208,12 @@ class YamlSettingsSource(PydanticSettingsSource):
         global project, app_name, debug
         if self.adapter_name == "secret":
             return {}
-
         yml_path = AsyncPath(settings_path / f"{self.adapter_name}.yml")
-
         if _testing:
             default_settings = {
                 name: info.default
                 for name, info in self.settings_cls.model_fields.items()
-                if (info.annotation is not SecretStr)
+                if info.annotation is not SecretStr
             }
             if self.adapter_name == "debug":
                 debug = default_settings
@@ -237,18 +221,15 @@ class YamlSettingsSource(PydanticSettingsSource):
                 project = "test_project"
                 app_name = "test_app"
             return default_settings
-
-        if not await yml_path.exists() and not _deployed:
+        if not await yml_path.exists() and (not _deployed):
             dump_settings = {
                 name: info.default
                 for name, info in self.settings_cls.model_fields.items()
-                if (info.annotation is not SecretStr)
-                and ("Optional" not in (str(info.annotation)))
+                if info.annotation is not SecretStr
+                and "Optional" not in str(info.annotation)
             }
             await dump.yaml(dump_settings, yml_path)
-
         yml_settings = await load.yaml(yml_path)
-
         if self.adapter_name == "debug":
             for adapter in [
                 a
@@ -257,14 +238,11 @@ class YamlSettingsSource(PydanticSettingsSource):
             ]:
                 yml_settings[adapter.category] = False
             debug = yml_settings
-
         if not _deployed:
             await dump.yaml(yml_settings, yml_path, sort_keys=True)
-
         if self.adapter_name == "app":
             project = yml_settings.get("project")
             app_name = yml_settings["name"]
-
         return yml_settings or {}
 
     async def __call__(self) -> dict[str, t.Any]:
@@ -280,20 +258,15 @@ class YamlSettingsSource(PydanticSettingsSource):
 class SettingsProtocol(t.Protocol):
     model_config: t.ClassVar[SettingsConfigDict]
 
-    def __init__(
-        __pydantic_self__,  # type: ignore
-        _secrets_path: AsyncPath = ...,
-        **values: t.Any,
-    ) -> None: ...
+    def __init__(self, _secrets_path: AsyncPath = ..., **values: t.Any) -> None: ...
 
     _settings_build_values: t.Callable[..., t.Awaitable[dict[str, t.Any]]]
-
     settings_customize_sources: t.Callable[..., tuple[PydanticSettingsProtocol, ...]]
 
 
 @rich.repr.auto
 class Settings(BaseModel):
-    model_config: t.ClassVar[SettingsConfigDict] = SettingsConfigDict(  # type: ignore
+    model_config = SettingsConfigDict(
         extra="allow",
         arbitrary_types_allowed=True,
         validate_default=True,
@@ -302,26 +275,16 @@ class Settings(BaseModel):
     )
 
     def __init__(
-        __pydantic_self__,  # type: ignore
-        _secrets_path: AsyncPath = secrets_path,
-        **values: t.Any,
+        self, _secrets_path: AsyncPath = secrets_path, **values: t.Any
     ) -> None:
-        build_settings = __pydantic_self__._settings_build_values(
-            values,
-            _secrets_path=_secrets_path,
+        build_settings = self._settings_build_values(
+            values, _secrets_path=_secrets_path
         )
         build_settings = asyncio.run(build_settings)
-        if not isinstance(build_settings, dict):  # type: ignore
-            build_settings = {}
         super().__init__(**build_settings)
 
-    def __getattr__(self, item: str) -> t.Any:
-        return super().__getattr__(item)  # type: ignore
-
     async def _settings_build_values(
-        self,
-        init_kwargs: dict[str, t.Any],
-        _secrets_path: AsyncPath = secrets_path,
+        self, init_kwargs: dict[str, t.Any], _secrets_path: AsyncPath = secrets_path
     ) -> dict[str, t.Any]:
         _secrets_path = secrets_path or self.model_config.get("secrets_dir")
         init_settings: InitSettingsSource = InitSettingsSource(
@@ -334,7 +297,6 @@ class Settings(BaseModel):
             self.__class__, secrets_path=secrets_path
         )
         yaml_settings: YamlSettingsSource = YamlSettingsSource(self.__class__)
-
         sources = self.settings_customize_sources(
             settings_cls=self.__class__,
             init_settings=t.cast(PydanticSettingsProtocol, init_settings),
@@ -348,7 +310,7 @@ class Settings(BaseModel):
 
     @classmethod
     def settings_customize_sources(
-        cls,  # noqa: F841
+        cls,
         settings_cls: type["Settings"],
         init_settings: PydanticSettingsProtocol,
         yaml_settings: PydanticSettingsProtocol,
@@ -379,13 +341,13 @@ class AppSettings(Settings):
     timezone: str | None = "US/Pacific"
     version: str | None = Field(default_factory=get_version_default)
 
-    def __init__(self, **values: t.Any) -> None:  # noqa: F841
+    def __init__(self, **values: t.Any) -> None:
         super().__init__(**values)
         self.title = self.title or titleize(self.name)
 
     @field_validator("name")
     @classmethod
-    def cloud_compliant_app_name(cls, v: str) -> str:  # noqa: F841
+    def cloud_compliant_app_name(cls, v: str) -> str:
         not_ok = [" ", "_", "."]
         _name = v
         for p in not_ok:
@@ -452,7 +414,6 @@ class Config(metaclass=AdapterMeta):
 
 depends.set(Config)
 depends.get(Config).init()
-
 Logger = import_adapter()
 
 

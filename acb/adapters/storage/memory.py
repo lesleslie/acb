@@ -23,14 +23,11 @@ class Storage(StorageBase):
             self._files: dict[str, bytes] = {}
         if not hasattr(self, "_directories"):
             self._directories: set[str] = set()
-
         self._files[path] = content
-
         parts = path.split("/")
         if len(parts) > 1:
             directory = "/".join(parts[:-1])
             self._directories.add(directory)
-
         return True
 
     async def get_file(self, path: str) -> bytes | None:

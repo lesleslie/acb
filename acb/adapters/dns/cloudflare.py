@@ -35,10 +35,8 @@ class Dns(DnsBase):
             self.client = MagicMock()
             self.zone_id = "test-zone-id"
             return
-
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
-
             if self.config.dns.api_token:
                 self.client = CloudflareClient(
                     api_token=self.config.dns.api_token.get_secret_value()
@@ -50,7 +48,6 @@ class Dns(DnsBase):
                     if self.config.dns.api_key
                     else None,
                 )
-
             if self.config.dns.zone_name:
                 await self._get_zone_id()
             else:
@@ -79,12 +76,10 @@ class Dns(DnsBase):
         if not self.config.dns.account_id:
             self.logger.error("Account ID is required to create a zone")
             raise ValueError("Account ID is required to create a zone")
-
         try:
             if self.zone_id:
                 self.logger.info(f"Zone '{self.config.dns.zone_name}' already exists")
                 return
-
             zone = self.client.zones.create(
                 account={"id": self.config.dns.account_id},
                 name=self.config.dns.zone_name,
@@ -102,21 +97,19 @@ class Dns(DnsBase):
         if not self.zone_id:
             self.logger.error("Zone ID not found. Initialize the adapter first.")
             raise ValueError("Zone ID not found")
-
         try:
             records = []
-            zone = self.client.zones.get(zone_id=self.zone_id)
-            dns_records = zone.dns_records.list(name=self.config.dns.zone_name)  # type: ignore
-
+            dns_records = self.client.dns.records.list(
+                zone_id=self.zone_id, name=self.config.dns.zone_name
+            )
             for record in dns_records:
                 dns_record = DnsRecord(
-                    name=record.name,
-                    type=record.type,
-                    ttl=record.ttl,
-                    rrdata=record.content,
+                    name=str(record.name) if record.name else "",
+                    type=str(record.type) if record.type else "A",
+                    ttl=int(record.ttl) if record.ttl else 300,
+                    rrdata=str(record.content) if record.content else "",
                 )
                 records.append(dns_record)
-
             return records
         except Exception as e:
             self.logger.error(f"Error listing records: {e}")
@@ -126,10 +119,10 @@ class Dns(DnsBase):
         if not self.zone_id:
             self.logger.error("Zone ID not found. Initialize the adapter first.")
             raise ValueError("Zone ID not found")
-
         try:
-            zone = self.client.zones.get(zone_id=self.zone_id)
-            zone.dns_records.delete(dns_record_id=record_id)  # type: ignore
+            self.client.dns.records.delete(
+                zone_id=self.zone_id, dns_record_id=record_id
+            )
             self.logger.info(f"Deleted record with ID: {record_id}")
         except Exception as e:
             self.logger.error(f"Error deleting record: {e}")
@@ -139,21 +132,18 @@ class Dns(DnsBase):
         if not self.zone_id:
             self.logger.error("Zone ID not found. Initialize the adapter first.")
             raise ValueError("Zone ID not found")
-
         try:
             content = (
                 record.rrdata[0] if isinstance(record.rrdata, list) else record.rrdata
             )
-
-            zone = self.client.zones.get(zone_id=self.zone_id)
-            new_record = zone.dns_records.create(  # type: ignore
-                name=record.name,
-                type=record.type,
-                content=content,
-                ttl=record.ttl,
+            new_record = self.client.dns.records.create(
+                zone_id=self.zone_id,
+                name=str(record.name) if record.name else "",
+                type=t.cast(t.Any, record.type),
+                content=str(content) if content else "",
+                ttl=record.ttl or 300,
                 proxied=self.config.dns.proxied,
             )
-
             self.logger.info(f"Created record: {new_record.name} ({new_record.type})")
         except Exception as e:
             self.logger.error(f"Error creating record: {e}")
@@ -162,10 +152,12 @@ class Dns(DnsBase):
     def _find_existing_record(self, record: DnsRecord) -> dict[str, t.Any] | None:
         if not self.zone_id:
             return None
-
         try:
-            zone = self.client.zones.get(zone_id=self.zone_id)
-            dns_records = zone.dns_records.list(name=record.name, type=record.type)  # type: ignore
+            dns_records = self.client.dns.records.list(
+                zone_id=self.zone_id,
+                name=t.cast(t.Any, record.name),
+                type=t.cast(t.Any, record.type),
+            )
             if dns_records:
                 existing_record = list(dns_records)[0]
                 return {
@@ -183,26 +175,21 @@ class Dns(DnsBase):
 
     async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         records = [records] if isinstance(records, DnsRecord) else records
-
         for record in records:
             if not record.name.endswith("."):
                 record.name = f"{record.name}."
-
             if not isinstance(record.rrdata, list):
                 record.rrdata = [record.rrdata]
-
             for i, r in enumerate(record.rrdata):
                 with suppress(ValidationError):
-                    if isinstance(r, str) and domain(r) and not r.endswith("."):
+                    if isinstance(r, str) and domain(r) and (not r.endswith(".")):
                         r = f"{r}."
                         record.rrdata[i] = r
                     if record.type == "TXT":
                         if r.startswith('"') and r.endswith('"'):
                             r = r[1:-1]
                         record.rrdata[i] = f'"{r}"'
-
             existing_record = self._find_existing_record(record)
-
             if existing_record:
                 content = record.rrdata[0] or record.rrdata
                 if (
@@ -214,7 +201,6 @@ class Dns(DnsBase):
                     self.logger.info(
                         f"Deleting record for update: {record.name} ({record.type})"
                     )
-
                     await self._create_record(record)
                 else:
                     self.logger.info(

@@ -35,12 +35,12 @@ class TestGmailSmtpSettings:
             app_pwd="test_password",
             subdomain="mail",
         )
-        assert settings.name == "gmail"
+        assert settings.name == "gmail"  # type: ignore
         assert settings.domain == "example.com"
-        assert settings.from_email == "test@example.com"
-        assert settings.app_token == "test_token"
-        assert settings.app_pwd == "test_password"
-        assert settings.subdomain == "mail"
+        assert settings.from_email == "test@example.com"  # type: ignore
+        assert settings.app_token == "test_token"  # type: ignore
+        assert settings.app_pwd == "test_password"  # type: ignore
+        assert settings.subdomain == "mail"  # type: ignore
 
     def test_init_with_config(self) -> None:
         mock_config: MagicMock = MagicMock()

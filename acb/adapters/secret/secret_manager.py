@@ -61,8 +61,7 @@ class Secret(SecretBase):
             )
             version = await self.client.create_secret(request)
             request = AddSecretVersionRequest(
-                parent=version.name,
-                payload={"data": value.encode()},
+                parent=version.name, payload={"data": value.encode()}
             )
             await self.client.add_secret_version(request)
             self.logger.debug(f"Created secret - {name}")
@@ -70,8 +69,7 @@ class Secret(SecretBase):
     async def update(self, name: str, value: str) -> None:
         secret = self.client.secret_path(self.project, name)
         request = AddSecretVersionRequest(
-            parent=secret,
-            payload={"data": value.encode()},
+            parent=secret, payload={"data": value.encode()}
         )
         await self.client.add_secret_version(request)
         self.logger.debug(f"Updated secret - {name}")

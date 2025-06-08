@@ -108,10 +108,7 @@ class Nosql(NosqlBase):
         return await self.db[collection].delete_many(filter, **kwargs)
 
     async def count(
-        self,
-        collection: str,
-        filter: dict[str, t.Any] | None = None,
-        **kwargs: t.Any,
+        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
     ) -> int:
         return await self.db[collection].count_documents(filter or {}, **kwargs)
 

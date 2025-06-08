@@ -18,7 +18,7 @@ class TestModelsSettings:
     def test_init(self) -> None:
         settings = ModelsSettings()
         settings.path = AsyncPath("/test/models")  # type: ignore
-        assert settings.path == AsyncPath("/test/models")
+        assert settings.path == AsyncPath("/test/models")  # type: ignore
 
 
 class TestModels:

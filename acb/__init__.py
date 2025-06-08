@@ -13,12 +13,7 @@ from rich.padding import Padding
 from rich.table import Table
 
 from .actions import Action, action_registry, register_actions
-from .adapters import (
-    Adapter,
-    _deployed,
-    get_adapters,
-    register_adapters,
-)
+from .adapters import Adapter, _deployed, get_adapters, register_adapters
 from .console import console
 
 nest_asyncio.apply()
@@ -27,7 +22,6 @@ nest_asyncio.apply()
 @rich.repr.auto
 class Pkg(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
     name: str
     path: AsyncPath
     actions: list[Action] = []
@@ -53,7 +47,6 @@ def register_pkg() -> None:
 
 
 register_pkg()
-
 table_args: dict[str, t.Any] = {
     "show_lines": True,
     "box": box.ROUNDED,
@@ -65,9 +58,7 @@ table_args: dict[str, t.Any] = {
 def display_components() -> None:
     if not _deployed:
         pkgs = Table(
-            title="[b][u bright_white]A[/u bright_white][bright_green]synchronous "
-            "[u bright_white]C[/u bright_white][bright_green]omponent "
-            "[u bright_white]B[/u bright_white][bright_green]ase[/b]",
+            title="[b][u bright_white]A[/u bright_white][bright_green]synchronous [u bright_white]C[/u bright_white][bright_green]omponent [u bright_white]B[/u bright_white][bright_green]ase[/b]",
             **table_args,
         )
         for prop in ("Pkg", "Path"):
@@ -80,7 +71,6 @@ def display_components() -> None:
             )
         pkgs_padded: RenderableType = Padding(pkgs, (2, 4, 0, 4))
         console.print(pkgs_padded)
-
         actns = Table(
             title="[b][u bright_white]A[/u bright_white][bright_green]ctions",
             **table_args,
@@ -96,7 +86,6 @@ def display_components() -> None:
             )
         actns_padded: RenderableType = Padding(actns, (0, 4, 1, 4))
         console.print(actns_padded)
-
         adptrs = Table(
             title="[b][u bright_white]A[/u bright_white][bright_green]datpters",
             **table_args,

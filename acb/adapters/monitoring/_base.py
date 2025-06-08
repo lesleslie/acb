@@ -7,7 +7,7 @@ class MonitoringBaseSettings(Settings):
 
     @field_validator("traces_sample_rate")
     @classmethod
-    def check_traces_sample_rate(cls, v: float) -> float:  # noqa: F841
+    def check_traces_sample_rate(cls, v: float) -> float:
         if v > 1 or v < 0:
             raise ValueError("sample rate must be between 0 and 1")
         return v

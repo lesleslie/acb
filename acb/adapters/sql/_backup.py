@@ -25,15 +25,16 @@ class SqlBackupUtils(BaseModel):
 
     @staticmethod
     def get_timestamp(name: str) -> str | None:
-        pattern = r"(.*)(-)(?P<timestamp>[\d]{10})(-)(.*)"
+        pattern = "(.*)(-)(?P<timestamp>[\\d]{10})(-)(.*)"
         match = search(pattern, name)
         return match.group("timestamp") or None
 
     def get_files(self) -> t.Generator[t.Any, t.Any, t.Any]:
         blobs = self.storage.sql.list()
-        for blob in blobs:
-            if self.get_timestamp(blob.name):
-                yield blob.name
+        if blobs is not None:
+            for blob in blobs:
+                if self.get_timestamp(blob.name):
+                    yield blob.name
 
     def get_timestamps(self) -> list[int]:
         if not self.files:
@@ -58,9 +59,7 @@ class SqlBackupUtils(BaseModel):
         return False
 
     def get_path(
-        self,
-        class_name: str = "",
-        timestamp: t.Any = arrow.utcnow().timestamp,
+        self, class_name: str = "", timestamp: t.Any = arrow.utcnow().timestamp
     ) -> Path:
         self.backup_path = Path(
             f"{self.config.app.name}-{int(timestamp)}-{class_name}.json"
@@ -70,7 +69,6 @@ class SqlBackupUtils(BaseModel):
 
 class SqlBackupDates(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
     today: arrow.Arrow = arrow.utcnow()
     white_list: list[int] = []
     black_list: list[int] = []
@@ -94,9 +92,9 @@ class SqlBackupDates(BaseModel):
     ) -> t.Generator[t.Any, t.Any, t.Any]:
         reference = self.today.int_timestamp
         method_mapping: dict[str, t.Any] = {
-            "week": lambda obj: getattr(obj, "isocalendar")()[1],  # type: ignore
-            "month": lambda obj: getattr(obj, "month"),  # type: ignore
-            "year": lambda obj: getattr(obj, "year"),  # type: ignore
+            "week": lambda obj: getattr(obj, "isocalendar")()[1],
+            "month": lambda obj: getattr(obj, "month"),
+            "year": lambda obj: getattr(obj, "year"),
         }
         for dt in dates:
             comp_date = datetime.fromtimestamp(int(dt))
@@ -110,8 +108,8 @@ class SqlBackupDates(BaseModel):
 
     def process(self) -> None:
         last_w = self.today.shift(days=-7).int_timestamp
-        last_m = self.today.shift(days=-(self.get_last_month_length())).int_timestamp
-        last_y = self.today.shift(days=-(self.get_last_year_length())).int_timestamp
+        last_m = self.today.shift(days=-self.get_last_month_length()).int_timestamp
+        last_y = self.today.shift(days=-self.get_last_year_length()).int_timestamp
         backups_week = []
         backups_month = []
         backups_year = []
@@ -146,11 +144,8 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
 
     @staticmethod
     def show() -> list[t.Any]:
-        return [
-            m
-            for m in SQLModel.metadata.schema  # type: ignore
-            if isinstance(m, type) and issubclass(m, SQLModel)
-        ]
+        schema = getattr(SQLModel.metadata, "schema", None) or []
+        return [m for m in schema if isinstance(m, type) and issubclass(m, SQLModel)]
 
     def get_mapped_classes(self) -> list[t.Any]:
         self.add_subclasses(SQLModel)
@@ -179,7 +174,6 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
     async def save(self) -> None:
         data = await self.get_data()
         timestamp = arrow.utcnow().int_timestamp
-
         for class_name in data.keys():
             path = self.get_path(class_name=class_name, timestamp=timestamp)
             self.logger.debug(f"Backing up - {path.name}")
@@ -217,15 +211,15 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
 
     async def restore_rows(self, path: AsyncPath) -> t.Any:
         contents = await self.storage.sql.read(path)
-        pattern = r"-(\D+).json"
+        pattern = "-(\\D+).json"
         model = search(pattern, path.name).group(1)
         if contents:
             loaded_model = create_model(
                 model,
                 __base__=SQLModel,
                 __cls_kwargs__={"table": True},
-                **load.json(contents),
-            ).save()  # type: ignore
+                **t.cast(dict[str, t.Any], load.json(contents)),
+            )
             if loaded_model:
                 async with self.sql.session() as session:
                     for m in self.show():
@@ -238,7 +232,7 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         paths = [
             AsyncPath(b.name)
             async for b in self.storage.sql.list()
-            if (timestamp in b.name)
+            if timestamp in b.name
         ]
         when = arrow.Arrow.fromtimestamp(timestamp).humanize()
         self.logger.info(f"Restoring backup from {when}.....")
@@ -259,39 +253,40 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
         if not black_list:
             self.logger.debug("==> No backup to be deleted.")
             return True
-
         self.logger.debug(f"==> {len(white_list)} backups will be kept:")
         for timestamp in white_list:
             date_formatted = arrow.Arrow.fromtimestamp(timestamp).humanize()
             self.logger.debug(f"ID: {timestamp} (from {date_formatted})")
-            if self.config.debug.sql:
+            if getattr(self.config.debug, "sql", False):
                 for f in self.by_timestamp(str(timestamp)):
                     self.logger.debug(f)
-
         delete_list = []
         self.logger.debug(f"==> {len(black_list)} backups will be deleted:")
         for timestamp in black_list:
             date_formatted = arrow.Arrow.fromtimestamp(timestamp).humanize()
             self.logger.debug(f"ID: {timestamp} (from {date_formatted})")
             for f in self.by_timestamp(str(timestamp)):
-                if self.config.debug.database:
+                if getattr(self.config.debug, "database", False):
                     self.logger.debug(f)
                 delete_list.append(f)
-
         self.delete_backups(delete_list)
         return True
 
     async def run(self) -> None:
         if not self.config.deployed:
             last_backup = self.get_last_backup()
-            if self.config.debug.database and self.sure_delete:
+            if getattr(self.config.debug, "database", False) and self.sure_delete:
                 blobs = [b.name for b in self.storage.sql.list()]
                 for b in blobs:
                     self.storage.sql.delete(b)
                 last_backup = None
             if not last_backup:
                 await self.save()
-            elif last_backup and self.config.debug.database and not self.sure_delete:
+            elif (
+                last_backup
+                and getattr(self.config.debug, "database", False)
+                and (not self.sure_delete)
+            ):
                 self.logger.info(f"Restoring last backup - {last_backup}")
                 await self.restore_backup(last_backup)
             self.clean()

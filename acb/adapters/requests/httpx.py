@@ -115,7 +115,7 @@ class Requests(RequestsBase):
     async def close(self) -> None:
         pass
 
-    async def init(self) -> None:  # type: ignore
+    async def init(self) -> None:
         self.logger.debug(self.config.cache)
         self.storage = AsyncRedisStorage(
             client=AsyncRedis(
@@ -124,7 +124,7 @@ class Requests(RequestsBase):
             ),
             ttl=self.config.requests.cache_ttl,
         )
-        self.controller = Controller(key_generator=self.cache_key)  # type: ignore
+        self.controller = Controller(key_generator=t.cast(t.Any, self.cache_key))
 
 
 depends.set(Requests)

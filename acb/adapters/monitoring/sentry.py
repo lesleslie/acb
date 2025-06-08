@@ -18,7 +18,7 @@ class MonitoringSettings(MonitoringBaseSettings):
 
     @field_validator("sample_rate", "profiles_sample_rate")
     @classmethod
-    def check_sentry_sample_rates(cls, v: float) -> float:  # noqa: F841
+    def check_sentry_sample_rates(cls, v: float) -> float:
         if v > 1 or v < 0:
             raise ValueError("sample rate must be between 0 and 1")
         return v
@@ -41,10 +41,7 @@ class Monitoring(MonitoringBase):
             debug=self.config.monitoring.debug,
             traces_sample_rate=self.config.monitoring.traces_sample_rate,
             profiles_sample_rate=self.config.monitoring.profiles_sample_rate,
-            integrations=[
-                GcpIntegration(),
-                AsyncioIntegration(),
-            ],
+            integrations=[GcpIntegration(), AsyncioIntegration()],
         )
 
 

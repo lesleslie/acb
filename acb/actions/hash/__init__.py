@@ -6,11 +6,10 @@ from pathlib import Path
 from warnings import catch_warnings
 
 from anyio import Path as AsyncPath
-from blake3 import blake3  # type: ignore
+from blake3 import blake3
 from google_crc32c import value as crc32c_value
 
 __all__: list[str] = ["hash"]
-
 with catch_warnings(action="ignore", category=RuntimeWarning):
     from google_crc32c import value as crc32c_value
 
@@ -65,7 +64,6 @@ class Hash:
             obj = "".join([str(a) for a in obj]).encode()
         elif isinstance(obj, str):
             obj = obj.encode()
-
         return blake3(obj).hexdigest()
 
     @staticmethod
@@ -84,7 +82,6 @@ class Hash:
             obj = json.dumps(obj, sort_keys=True).encode()
         elif isinstance(obj, str):
             obj = obj.encode()
-
         return f"{crc32c_value(obj):08x}"
 
     @staticmethod
@@ -106,7 +103,6 @@ class Hash:
             obj = json.dumps(obj, sort_keys=True).encode()
         elif isinstance(obj, str):
             obj = obj.encode()
-
         return hashlib.md5(obj, usedforsecurity=usedforsecurity).hexdigest()
 
 

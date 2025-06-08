@@ -32,7 +32,6 @@ class Dns(DnsBase):
             self.client = MagicMock()
             self.zone = MagicMock()
             return
-
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             self.client = DnsClient(project=self.config.app.project)
@@ -40,7 +39,6 @@ class Dns(DnsBase):
     def create_zone(self) -> None:
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             return
-
         self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")
         if not self.zone.exists():
             self.logger.info(f"Creating cloud_dns zone '{self.config.app.name}...")
@@ -53,13 +51,9 @@ class Dns(DnsBase):
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             return [
                 DnsRecord(
-                    name="test.example.com.",
-                    type="A",
-                    ttl=300,
-                    rrdata=["192.0.2.1"],
+                    name="test.example.com.", type="A", ttl=300, rrdata=["192.0.2.1"]
                 )
             ]
-
         records = self.zone.list_resource_record_sets()
         records = [
             DnsRecord.model_validate(
@@ -84,8 +78,8 @@ class Dns(DnsBase):
             changes.create()
             await self.wait_for_changes(changes)
         except (Conflict, BadRequest) as err:
-            change = changes.additions[0]  # type: ignore
-            if change.name.split(".")[1] != self.config.app.project:
+            change = changes.additions[0] if changes.additions else None
+            if change and change.name.split(".")[1] != self.config.app.project:
                 raise err
             self.logger.info("Development domain detected - no changes made")
 
@@ -129,7 +123,7 @@ class Dns(DnsBase):
                 record.rrdata = [record.rrdata]
             for i, r in enumerate(record.rrdata):
                 with suppress(ValidationError):
-                    if isinstance(r, str) and domain(r) and not r.endswith("."):
+                    if isinstance(r, str) and domain(r) and (not r.endswith(".")):
                         r = f"{r}."
                         record.rrdata[i] = r
                     if record.type == "TXT":

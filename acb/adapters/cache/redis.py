@@ -27,7 +27,7 @@ class CacheSettings(CacheBaseSettings):
         self.host = SecretStr(self.local_host) if not config.deployed else self.host
 
 
-class Cache(CacheBase, RedisBackend):  # type: ignore
+class Cache(CacheBase, RedisBackend):
     def __init__(self, redis_url: str | None = None, **kwargs: t.Any) -> None:
         self.redis_url = redis_url
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "redis_url"}
@@ -57,7 +57,6 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
     async def init(self, *args: t.Any, **kwargs: t.Any) -> None:
         if not hasattr(self, "_namespace"):
             self._namespace = f"{self.config.app.name}:"
-
         if not hasattr(self, "_serializer"):
             self._serializer = PickleSerializer()
         redis_kwargs = dict(
@@ -73,9 +72,9 @@ class Cache(CacheBase, RedisBackend):  # type: ignore
         if self.config.cache.cluster:
             self.logger.info("RedisCluster mode enabled")
             del redis_kwargs["health_check_interval"]
-            self.client = RedisCluster(**redis_kwargs)  # type: ignore
+            self.client = RedisCluster(**redis_kwargs)
         else:
-            self.client = Redis(**redis_kwargs)  # type: ignore
+            self.client = Redis(**redis_kwargs)
 
 
 depends.set(Cache)

@@ -87,7 +87,7 @@ async def redis_cache() -> AsyncGenerator[Cache]:
         mock_redis_cls.return_value = mock_client
 
         mock_serializer = MagicMock()
-        mock_serializer.dumps.return_value = b"serialized_data"
+        mock_serializer.dumps.return_value = "serialized_data"
         mock_serializer.loads.return_value = {"key": "value"}
         mock_serializer_cls.return_value = mock_serializer
 
@@ -134,7 +134,7 @@ async def redis_cluster_cache() -> AsyncGenerator[Cache]:
         mock_redis_cls.return_value = mock_client
 
         mock_serializer = MagicMock()
-        mock_serializer.dumps.return_value = b"serialized_data"
+        mock_serializer.dumps.return_value = "serialized_data"
         mock_serializer.loads.return_value = {"key": "value"}
         mock_serializer_cls.return_value = mock_serializer
 

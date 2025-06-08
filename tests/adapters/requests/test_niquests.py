@@ -149,7 +149,7 @@ async def test_client_property(mock_session: MockNiquestsAsyncSession) -> None:
 @pytest.mark.asyncio
 async def test_get(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse(json_data={"key": "value"})
-    requests_adapter.client.get.return_value = mock_response
+    requests_adapter.client.get.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.get(
         url="/test",
@@ -159,7 +159,7 @@ async def test_get(requests_adapter: Requests) -> None:
         cookies={"cookie": "value"},
     )
 
-    requests_adapter.client.get.assert_called_once_with(
+    requests_adapter.client.get.assert_called_once_with(  # type: ignore[attr-defined]
         "/test",
         timeout=5,
         params={"param": "value"},
@@ -173,13 +173,13 @@ async def test_get(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_post(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse(status_code=201)
-    requests_adapter.client.post.return_value = mock_response
+    requests_adapter.client.post.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.post(
         url="/test", data={"key": "value"}, timeout=5
     )
 
-    requests_adapter.client.post.assert_called_once_with(
+    requests_adapter.client.post.assert_called_once_with(  # type: ignore[attr-defined]
         "/test", data={"key": "value"}, json=None, timeout=5
     )
 
@@ -189,11 +189,11 @@ async def test_post(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_put(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse()
-    requests_adapter.client.put.return_value = mock_response
+    requests_adapter.client.put.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.put(url="/test", json={"key": "value"}, timeout=5)
 
-    requests_adapter.client.put.assert_called_once_with(
+    requests_adapter.client.put.assert_called_once_with(  # type: ignore[attr-defined]
         "/test", data=None, json={"key": "value"}, timeout=5
     )
 
@@ -203,11 +203,11 @@ async def test_put(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_delete(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse(status_code=204)
-    requests_adapter.client.delete.return_value = mock_response
+    requests_adapter.client.delete.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.delete(url="/test", timeout=5)
 
-    requests_adapter.client.delete.assert_called_once_with("/test", timeout=5)
+    requests_adapter.client.delete.assert_called_once_with("/test", timeout=5)  # type: ignore[attr-defined]
 
     assert response == mock_response
 
@@ -215,13 +215,13 @@ async def test_delete(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_patch(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse()
-    requests_adapter.client.patch.return_value = mock_response
+    requests_adapter.client.patch.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.patch(
         url="/test", json={"key": "value"}, timeout=5
     )
 
-    requests_adapter.client.patch.assert_called_once_with(
+    requests_adapter.client.patch.assert_called_once_with(  # type: ignore[attr-defined]
         "/test", timeout=5, data=None, json={"key": "value"}
     )
 
@@ -231,11 +231,11 @@ async def test_patch(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_head(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse()
-    requests_adapter.client.head.return_value = mock_response
+    requests_adapter.client.head.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.head(url="/test", timeout=5)
 
-    requests_adapter.client.head.assert_called_once_with("/test", timeout=5)
+    requests_adapter.client.head.assert_called_once_with("/test", timeout=5)  # type: ignore[attr-defined]
 
     assert response == mock_response
 
@@ -243,11 +243,11 @@ async def test_head(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_options(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse()
-    requests_adapter.client.options.return_value = mock_response
+    requests_adapter.client.options.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.options(url="/test", timeout=5)
 
-    requests_adapter.client.options.assert_called_once_with("/test", timeout=5)
+    requests_adapter.client.options.assert_called_once_with("/test", timeout=5)  # type: ignore[attr-defined]
 
     assert response == mock_response
 
@@ -255,13 +255,13 @@ async def test_options(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_request(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse()
-    requests_adapter.client.request.return_value = mock_response
+    requests_adapter.client.request.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.request(
         method="GET", url="/test", json={"key": "value"}, timeout=5
     )
 
-    requests_adapter.client.request.assert_called_once_with(
+    requests_adapter.client.request.assert_called_once_with(  # type: ignore[attr-defined]
         "GET", "/test", data=None, json={"key": "value"}, timeout=5
     )
 
@@ -271,13 +271,13 @@ async def test_request(requests_adapter: Requests) -> None:
 @pytest.mark.asyncio
 async def test_close(requests_adapter: Requests) -> None:
     await requests_adapter.close()
-    requests_adapter.client.close.assert_called_once()
+    requests_adapter.client.close.assert_called_once()  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
 async def test_raise_for_status(requests_adapter: Requests) -> None:
     mock_response = MockNiquestsResponse(status_code=404)
-    requests_adapter.client.get.return_value = mock_response
+    requests_adapter.client.get.return_value = mock_response  # type: ignore[attr-defined]
 
     with pytest.raises(Exception):
         await requests_adapter.get(url="/test")

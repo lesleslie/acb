@@ -22,12 +22,12 @@ def yaml_encode(
     enc_hook: t.Callable[[t.Any], t.Any] | None = None,
     sort_keys: bool = False,
 ) -> bytes:
-    dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
-    dumper.add_representer(
+    dumper_class = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
+    dumper_class.add_representer(
         type(None),
         lambda dumper, value: dumper.represent_scalar("tag:yaml.org,2002:null", ""),
     )
-    return yaml.dump_all(
+    result = yaml.dump_all(
         [
             msgspec.yaml._to_builtins(
                 obj,
@@ -36,10 +36,11 @@ def yaml_encode(
             )
         ],
         encoding="utf-8",
-        Dumper=dumper,  # type: ignore
+        Dumper=t.cast(t.Any, dumper_class),
         allow_unicode=True,
         sort_keys=sort_keys,
     )
+    return result.encode() if isinstance(result, str) else result or b""
 
 
 msgspec.yaml.encode = yaml_encode
@@ -82,7 +83,6 @@ class Encode:
     secret_key: str | None = None
     secure_salt: str | None = None
     serializer: t.Callable[..., t.Any] | None = None
-
     json: SerializerMethod
     yaml: SerializerMethod
     msgpack: SerializerMethod
@@ -105,10 +105,8 @@ class Encode:
         ) -> t.Any:
             self.path = path
             self.sort_keys = sort_keys
-
             frame = sys._getframe(1)
             caller_name = frame.f_code.co_name
-
             if caller_name.startswith("test_"):
                 if "decode" in caller_name or default_action == "decode":
                     self.action = "decode"
@@ -116,22 +114,17 @@ class Encode:
                     self.action = "encode"
             else:
                 self.action = default_action
-
             if serializer_name in self.serializers:
                 serializer = self.serializers[serializer_name]
-
                 if self.action == "encode":
                     self.serializer = getattr(serializer, "encode", None)
                 else:
                     self.serializer = getattr(serializer, "decode", None)
-
                 if self.serializer is None:
                     raise AttributeError(
                         f"No {self.action} method found for {serializer_name}"
                     )
-
                 return await self.process(obj, **kwargs)
-
             raise ValueError(f"Unknown serializer: {serializer_name}")
 
         return method
@@ -139,9 +132,8 @@ class Encode:
     async def _decode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
         if obj is None:
             raise ValueError("Cannot decode from None input")
-        if isinstance(obj, str | bytes) and not obj:
+        if isinstance(obj, str | bytes) and (not obj):
             raise ValueError("Cannot decode from empty input")
-
         if isinstance(obj, AsyncPath):
             try:
                 try:
@@ -160,20 +152,18 @@ class Encode:
                     obj = text.encode("utf-8") if text else ""
             except FileNotFoundError:
                 raise FileNotFoundError(f"File not found: {obj}")
-
         if isinstance(obj, str) and self.serializer in (
             msgspec.json.decode,
             msgspec.yaml.decode,
             msgspec.toml.decode,
         ):
             obj = obj.encode("utf-8")
-
         try:
             return self.serializer(obj, **kwargs)
         except msgspec.DecodeError as e:
-            raise msgspec.DecodeError(f"Failed to decode: {e}")  # type: ignore
+            raise msgspec.DecodeError(f"Failed to decode: {e}")
         except toml.decoder.TomlDecodeError as e:
-            raise toml.decoder.TomlDecodeError(f"Failed to decode: {e}")  # type: ignore
+            raise toml.decoder.TomlDecodeError(f"Failed to decode: {e}", "", 0)
         except Exception as e:
             raise RuntimeError(f"Error during decoding: {e}") from e
 
@@ -182,14 +172,10 @@ class Encode:
             if self.action == "decode":
                 return await self._decode(obj, **kwargs)
             raise TypeError(f"Cannot encode a Path object directly: {obj}")
-
         obj = self._preprocess_data(obj, kwargs)
-
         data = self._serialize(obj, kwargs)
-
         if self.path is not None:
             await self._write_to_path(data)
-
         return data
 
     def _preprocess_data(self, obj: t.Any, kwargs: dict[str, t.Any]) -> t.Any:
@@ -199,24 +185,20 @@ class Encode:
             and isinstance(obj, dict)
         ):
             obj = {k: obj[k] for k in sorted(obj.keys())}
-
         if self.serializer is msgspec.yaml.encode:
             kwargs["sort_keys"] = self.sort_keys
-
         if self.serializer is msgspec.toml.encode and isinstance(obj, dict):
             for key, value in obj.items():
                 if isinstance(value, list) and any(
                     isinstance(item, dict) for item in value
                 ):
                     obj[key] = str(value)
-
         return obj
 
     def _serialize(self, obj: t.Any, kwargs: dict[str, t.Any]) -> bytes:
         if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
             indent = kwargs.pop("indent")
             return json.dumps(obj, indent=indent).encode()
-
         try:
             return self.serializer(obj, **kwargs)
         except TypeError as e:
@@ -253,45 +235,36 @@ class Encode:
     ) -> t.Any:
         self.path = path
         self.sort_keys = sort_keys
-
         frame = sys._getframe(1)
-
         code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
-        pattern = r"await\s+(\w+)\.(\w+)\("
+        pattern = "await\\s+(\\w+)\\.(\\w+)\\("
         calling_method = search(pattern, code_context)
-
         if calling_method:
             caller_obj = calling_method.group(1)
             serializer_name = calling_method.group(2)
-
             if caller_obj in ("encode", "dump"):
                 self.action = "encode"
             elif caller_obj in ("decode", "load"):
                 self.action = "decode"
             else:
                 self.action = "encode"
-
             if serializer_name in self.serializers:
                 serializer = self.serializers[serializer_name]
                 if self.action == "encode":
                     self.serializer = getattr(serializer, "encode")
                 else:
                     self.serializer = getattr(serializer, "decode")
-
                 return await self.process(obj, **kwargs)
-
         caller_name = frame.f_code.co_name
         if "encode" in caller_name or "dump" in caller_name:
             self.action = "encode"
         else:
             self.action = "decode"
-
         serializer = self.serializers["json"]
         if self.action == "encode":
             self.serializer = getattr(serializer, "encode")
         else:
             self.serializer = getattr(serializer, "decode")
-
         return await self.process(obj, **kwargs)
 
 
@@ -299,6 +272,5 @@ encode = Encode()
 decode = Encode()
 dump = Encode()
 load = Encode()
-
 for s in serializers.__dict__:
     setattr(decode, s, decode._create_method(s, "decode"))

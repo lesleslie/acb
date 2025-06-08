@@ -10,7 +10,6 @@ from pathlib import Path
 
 import nest_asyncio
 import rich.repr
-from aioconsole import aprint  # noqa  # type: ignore
 from anyio import Path as AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
@@ -20,7 +19,6 @@ from ..actions.encode import yaml_encode
 from ..depends import depends
 
 nest_asyncio.apply()
-
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 _testing: bool = os.getenv("TESTING", "False").lower() == "true"
 root_path: AsyncPath = AsyncPath(Path.cwd())
@@ -60,7 +58,6 @@ class AdapterProtocol(t.Protocol):
 @rich.repr.auto
 class Adapter(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
     name: str
     class_name: str
     category: str
@@ -82,14 +79,13 @@ class Adapter(BaseModel):
         return (
             self.name == other.name
             and self.class_name == other.class_name
-            and self.category == other.category
-            and self.pkg == other.pkg
-            and self.module == other.module
+            and (self.category == other.category)
+            and (self.pkg == other.pkg)
+            and (self.module == other.module)
         )
 
 
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
-
 core_adapters = [
     Adapter(
         name="config",
@@ -142,7 +138,6 @@ async def _import_adapter(adapter_category: str) -> t.Any:
         from unittest.mock import MagicMock
 
         return MagicMock()
-
     try:
         adapter = get_adapter(adapter_category)
         if adapter is None:
@@ -157,7 +152,9 @@ async def _import_adapter(adapter_category: str) -> t.Any:
         module = import_module(adapter.module)
     except ModuleNotFoundError:
         spec = util.spec_from_file_location(adapter.path.stem, adapter.path)
-        module = util.module_from_spec(spec)  # type: ignore
+        if spec is None:
+            raise AdapterNotFound(f"Failed to create module spec for {adapter.module}")
+        module = util.module_from_spec(spec)
         if spec.loader is not None:
             spec.loader.exec_module(module)
         sys.modules[adapter.name] = module
@@ -189,9 +186,7 @@ async def _import_adapter(adapter_category: str) -> t.Any:
     return adapter_class
 
 
-async def gather_imports(
-    adapter_categories: list[str],
-) -> t.Any:
+async def gather_imports(adapter_categories: list[str]) -> t.Any:
     imports = [_import_adapter(category) for category in adapter_categories]
     _imports = await asyncio.gather(*imports, return_exceptions=True)
     results = []
@@ -202,37 +197,38 @@ async def gather_imports(
     return results
 
 
-def import_adapter(
-    adapter_categories: str | list[str] | None = None,
-) -> t.Any:
+def import_adapter(adapter_categories: str | list[str] | None = None) -> t.Any:
     if _testing or "pytest" in sys.modules:
         from unittest.mock import MagicMock
 
         if isinstance(adapter_categories, str):
             return MagicMock()
-
         if not adapter_categories:
             try:
+                context = stack()[1][4]
                 adapter_categories = [
                     c.strip()
-                    for c in (
-                        stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
-                    ).split(",")
+                    for c in (context[0] if context else "")
+                    .split("=")[0]
+                    .strip()
+                    .lower()
+                    .split(",")
                 ]
             except (IndexError, AttributeError, TypeError):
                 return MagicMock()
-
         return tuple(MagicMock() for _ in adapter_categories)
-
     if isinstance(adapter_categories, str):
         adapter_categories = [adapter_categories]
     if not adapter_categories:
         try:
+            context = stack()[1][4]
             adapter_categories = [
                 c.strip()
-                for c in (
-                    stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
-                ).split(",")
+                for c in (context[0] if context else "")
+                .split("=")[0]
+                .strip()
+                .lower()
+                .split(",")
             ]
         except (IndexError, AttributeError, TypeError):
             raise ValueError(
@@ -257,7 +253,7 @@ async def path_adapters(path: AsyncPath) -> dict[str, list[AsyncPath]]:
             if not m.name.startswith("_") and m.suffix == ".py"
         ]
         async for a in path.iterdir()
-        if await a.is_dir() and not a.name.startswith("__")
+        if await a.is_dir() and (not a.name.startswith("__"))
     }
 
 
@@ -301,9 +297,9 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
         adapters.extend(_modules)
     if (
         not await adapter_settings_path.exists()
-        and not _deployed
-        and not _testing
-        and root_path.stem != "acb"
+        and (not _deployed)
+        and (not _testing)
+        and (root_path.stem != "acb")
     ):
         await settings_path.mkdir(exist_ok=True)
         categories = set()
@@ -323,7 +319,7 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
     _adapters.update(
         {a.category: None for a in adapters if a.category not in _adapters}
     )
-    if not _testing and not root_path.stem == "acb" and not _deployed:
+    if not _testing and (not root_path.stem == "acb") and (not _deployed):
         await adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
     enabled_adapters = {a: m for a, m in _adapters.items() if m}
     for a in [a for a in adapters if enabled_adapters.get(a.category) == a.name]:

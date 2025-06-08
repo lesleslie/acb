@@ -91,7 +91,7 @@ class Logger(_Logger, LoggerBase):
             self.configure(handlers=[])
             return
 
-        def patch_name(record: dict[str, t.Any]) -> str:  # type: ignore
+        def patch_name(record: dict[str, t.Any]) -> str:
             mod_parts = record["name"].split(".")
             mod_name = ".".join(mod_parts[:-1])
             if len(mod_parts) > 3:
@@ -110,8 +110,7 @@ class Logger(_Logger, LoggerBase):
                 levelno_ = self.level(level_).no
             except ValueError:
                 raise ValueError(
-                    f"The filter dict contains a module '{name}' associated to a level "
-                    f" name which does not exist: '{level_}'"
+                    f"The filter dict contains a module '{name}' associated to a level  name which does not exist: '{level_}'"
                 )
             if level_ is False:
                 return False
@@ -119,7 +118,7 @@ class Logger(_Logger, LoggerBase):
 
         self.remove()
         self.configure(
-            patcher=lambda record: record["extra"].update(mod_name=patch_name(record)),
+            patcher=lambda record: record["extra"].update(mod_name=patch_name(record))
         )
         self.config.logger.log_level = (
             self.config.logger.deployed_level.upper()
@@ -129,18 +128,17 @@ class Logger(_Logger, LoggerBase):
         self.config.logger.level_per_module = {
             m: "DEBUG" if v else self.config.logger.log_level for m, v in debug.items()
         }
-
         try:
             self.add(
                 self.async_sink,
-                filter=filter_by_module,  # type: ignore
+                filter=t.cast(t.Any, filter_by_module),
                 **self.config.logger.settings,
             )
         except ValueError as e:
             if "event loop is required" in str(e):
                 self.add(
                     lambda msg: print(msg, end=""),
-                    filter=filter_by_module,  # type: ignore
+                    filter=t.cast(t.Any, filter_by_module),
                     **{
                         k: v
                         for k, v in self.config.logger.settings.items()
@@ -149,7 +147,6 @@ class Logger(_Logger, LoggerBase):
                 )
             else:
                 raise
-
         for level, color in self.config.logger.level_colors.items():
             self.level(level.upper(), color=f"[{color}]")
         if self.config.debug.logger:
@@ -173,12 +170,10 @@ class InterceptHandler(logging.Handler):
             level = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
-
-        frame, depth = currentframe(), 0
+        frame, depth = (currentframe(), 0)
         while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
             frame = frame.f_back
             depth += 1
-
         logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )

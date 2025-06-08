@@ -36,12 +36,12 @@ class Depends:
     def get(category: t.Any = None) -> t.Any:
         if not category:
             with suppress(AttributeError, IndexError):
-                category = [
-                    c.strip()
-                    for c in (
-                        stack()[1][4][0].split("=")[0].strip().lower()  # type: ignore
-                    ).split(",")
-                ][0].removeprefix("self.")
+                context = stack()[1][4]
+                if context:
+                    category = [
+                        c.strip()
+                        for c in context[0].split("=")[0].strip().lower().split(",")
+                    ][0].removeprefix("self.")
         class_ = category
         if isinstance(class_, str):
             from .adapters import _import_adapter
