@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.16.7"
+version = "0.16.8"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -41,6 +41,7 @@ demo = [
 ]
 dev = [
     { name = "crackerjack" },
+    { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-anyio" },
     { name = "pytest-asyncio" },
@@ -48,6 +49,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-timeout" },
+    { name = "pyyaml" },
 ]
 dns = [
     { name = "google-cloud-dns" },
@@ -110,17 +112,17 @@ requires-dist = [
     { name = "arrow", specifier = ">=1.3" },
     { name = "asyncssh", marker = "extra == 'ftpd'", specifier = ">=2.21" },
     { name = "babel", marker = "extra == 'sql'", specifier = ">=2.17" },
-    { name = "beanie", marker = "extra == 'nosql'", specifier = ">=1.29" },
+    { name = "beanie", marker = "extra == 'nosql'", specifier = ">=1.30" },
     { name = "bevy", specifier = ">=2.0.2" },
     { name = "blake3", specifier = ">=1.0.5" },
     { name = "brotli", specifier = ">=1.1" },
     { name = "coredis", marker = "extra == 'cache'", specifier = ">=4.22" },
-    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.20.14" },
+    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.20.15" },
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dill", specifier = ">=0.4" },
     { name = "faker", marker = "extra == 'demo'", specifier = ">=37.3" },
     { name = "gcsfs", marker = "extra == 'storage'", specifier = ">=2025.5.1" },
-    { name = "google-api-python-client", specifier = ">=2.171" },
+    { name = "google-api-python-client", specifier = ">=2.172" },
     { name = "google-cloud-dns", marker = "extra == 'dns'", specifier = ">=0.35.1" },
     { name = "google-cloud-firestore", marker = "extra == 'nosql'", specifier = ">=2.21" },
     { name = "google-cloud-secret-manager", marker = "extra == 'secret'", specifier = ">=2.24" },
@@ -141,6 +143,7 @@ requires-dist = [
     { name = "msgspec", extras = ["toml", "yaml"] },
     { name = "nest-asyncio", specifier = ">=1.6" },
     { name = "niquests", marker = "extra == 'requests'", specifier = ">=3.14.1" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.11.5" },
     { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "pyfiglet", specifier = ">=1.0.3" },
@@ -154,6 +157,7 @@ requires-dist = [
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.4" },
     { name = "python-cloudflare", marker = "extra == 'dns'", specifier = ">=1.0.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.2" },
     { name = "redis-om", marker = "extra == 'nosql'", specifier = ">=0.3.5" },
     { name = "s3fs", marker = "extra == 'storage'", specifier = ">=2025.5.1" },
     { name = "sentry-sdk", extras = ["httpx"], marker = "extra == 'requests'", specifier = ">=2.29.1" },
@@ -480,19 +484,18 @@ wheels = [
 
 [[package]]
 name = "beanie"
-version = "1.29.0"
+version = "1.30.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "lazy-model" },
     { name = "motor" },
     { name = "pydantic" },
-    { name = "toml" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/df/a1/e77d6957d17138c821ed3b7fb34a9271e33d9809eaf05c07a250cd443613/beanie-1.29.0.tar.gz", hash = "sha256:f078620c3515a8222d40a3a8ab195b1d8f1153010f009ed5d205b73371c43869", size = 174878, upload-time = "2025-01-06T17:51:01.281Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/1c/feee03924a8f255d76236a8f71fde310da52ab4e03abd1254cd9309d73e1/beanie-1.30.0.tar.gz", hash = "sha256:33ead17ff2742144c510b4b24e188f6b316dd1b614d86b57a3cfe20bc7b768c9", size = 176743, upload-time = "2025-06-10T19:48:01.119Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/28/f6038727827ed06659a57b3c70e6f4a339f57f92ce910f868ac928843a30/beanie-1.29.0-py3-none-any.whl", hash = "sha256:aeb53e6648ceccf70eb35c35233e45406fe4de4c9887075581c01b968bfec2c7", size = 86545, upload-time = "2025-01-06T17:50:58.483Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/f2/adfea21c19d73ad2e90f5346c166523dadc33493a0b398d543eeb9b67e7a/beanie-1.30.0-py3-none-any.whl", hash = "sha256:385f1b850b36a19dd221aeb83e838c83ec6b47bbf6aeac4e5bf8b8d40bfcfe51", size = 87140, upload-time = "2025-06-10T19:47:59.066Z" },
 ]
 
 [[package]]
@@ -757,7 +760,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.20.14"
+version = "0.20.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autotyping" },
@@ -773,14 +776,15 @@ dependencies = [
     { name = "pytest-mock" },
     { name = "pytest-timeout" },
     { name = "pytest-xdist" },
+    { name = "pyyaml" },
     { name = "rich" },
     { name = "tomli-w" },
     { name = "typer" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/f3/b7d9297bcecd5897f0505fc469b070f92b141429fddfb0352102794630f1/crackerjack-0.20.14.tar.gz", hash = "sha256:2b40afd5c3601209d77cde257ed3aa05f7328965369667bfe0c2e9b97e6950c0", size = 61420, upload-time = "2025-06-08T14:37:08.526Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/06/4d844fba4b61c05e8da4fd1743b1da6a88a3169541428a256451d2091420/crackerjack-0.20.15.tar.gz", hash = "sha256:cf5e4293d57d82bece72a73cc4a62da53c7e0d1476dcaadcdb529d760307b8ad", size = 61413, upload-time = "2025-06-10T22:27:36.727Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/7e/fdc946cfac4668d3db2bb697ce4ed2a99c39d919a3d3e1d34e28973eaac7/crackerjack-0.20.14-py3-none-any.whl", hash = "sha256:842008fdb41ab9523ffc3b88dc1f7428cfb308c9ebb21cd446067b13db87c030", size = 48244, upload-time = "2025-06-08T14:37:06.584Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/ce/9afc10c2ecb223111c3abde6a8685a1fb0af42a791c703ed8890d2e8aac1/crackerjack-0.20.15-py3-none-any.whl", hash = "sha256:bba86fbb0616dabad98585717d266803c935eb7d50e785671211f293d7468cf7", size = 48296, upload-time = "2025-06-10T22:27:35.156Z" },
 ]
 
 [[package]]
@@ -1059,7 +1063,7 @@ grpc = [
 
 [[package]]
 name = "google-api-python-client"
-version = "2.171.0"
+version = "2.172.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "google-api-core" },
@@ -1068,7 +1072,10 @@ dependencies = [
     { name = "httplib2" },
     { name = "uritemplate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/35/99/237cd2510aecca9fabb54007e58553274cc43cb3c18512ee1ea574d11b87/google_api_python_client-2.171.0.tar.gz", hash = "sha256:057a5c08d28463c6b9eb89746355de5f14b7ed27a65c11fdbf1d06c66bb66b23", size = 13028937, upload-time = "2025-06-03T18:57:38.732Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/02/69/c0cec6be5878d4de161f64096edb3d4a2d1a838f036b8425ea8358d0dfb3/google_api_python_client-2.172.0.tar.gz", hash = "sha256:dcb3b7e067154b2aa41f1776cf86584a5739c0ac74e6ff46fc665790dca0e6a6", size = 13074841, upload-time = "2025-06-10T16:58:41.181Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/fc/8850ccf21c5df43faeaf8bba8c4149ee880b41b8dc7066e3259bcfd921ca/google_api_python_client-2.172.0-py3-none-any.whl", hash = "sha256:9f1b9a268d5dc1228207d246c673d3a09ee211b41a11521d38d9212aeaa43af7", size = 13595800, upload-time = "2025-06-10T16:58:38.143Z" },
+]
 
 [[package]]
 name = "google-auth"
@@ -1163,6 +1170,9 @@ dependencies = [
     { name = "protobuf" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/58/7a/2fa6735ec693d822fe08a76709c4d95d9b5b4c02e83e720497355039d2ee/google_cloud_secret_manager-2.24.0.tar.gz", hash = "sha256:ce573d40ffc2fb7d01719243a94ee17aa243ea642a6ae6c337501e58fbf642b5", size = 269516, upload-time = "2025-06-05T22:22:22.965Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/be/af/db1217cae1809e69a4527ee6293b82a9af2a1fb2313ad110c775e8f3c820/google_cloud_secret_manager-2.24.0-py3-none-any.whl", hash = "sha256:9bea1254827ecc14874bc86c63b899489f8f50bfe1442bfb2517530b30b3a89b", size = 218050, upload-time = "2025-06-10T02:02:19.88Z" },
+]
 
 [[package]]
 name = "google-cloud-storage"

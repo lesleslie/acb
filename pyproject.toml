@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.8"
+version = "0.16.9"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -36,7 +36,7 @@ dependencies = [
     "brotli>=1.1",
     "devtools>=0.12.2",
     "dill>=0.4",
-    "google-api-python-client>=2.171",
+    "google-api-python-client>=2.172",
     "google-crc32c>=1.7.1",
     "icecream>=2.1.4",
     "inflection>=0.5.1",
@@ -60,7 +60,8 @@ optional-dependencies.demo = [
     "faker>=37.3",
 ]
 optional-dependencies.dev = [
-    "crackerjack>=0.20.14",
+    "crackerjack>=0.20.15",
+    "pre-commit>=4.2",
     "pytest>=8.4",
     "pytest-anyio>=0",
     "pytest-asyncio>=1",
@@ -68,6 +69,7 @@ optional-dependencies.dev = [
     "pytest-cov>=6.1.1",
     "pytest-mock>=3.14.1",
     "pytest-timeout>=2.4",
+    "pyyaml>=6.0.2",
 ]
 optional-dependencies.dns = [
     "google-cloud-dns>=0.35.1",
@@ -83,7 +85,7 @@ optional-dependencies.monitoring = [
     "sentry-sdk[loguru]>=2.29.1",
 ]
 optional-dependencies.nosql = [
-    "beanie>=1.29",
+    "beanie>=1.30",
     "google-cloud-firestore>=2.21",
     "motor>=3.7.1",
     "redis-om>=0.3.5",
@@ -262,24 +264,24 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyfiglet",
-    "pytest-benchmark",
-    "uv",
     "pytest-cov",
-    "google-crc32c",
     "pytest-xdist",
-    "keyring",
+    "pytest",
     "pre-commit",
-    "tomli-w",
+    "google-crc32c",
+    "uv",
+    "pdm",
+    "pytest-asyncio",
+    "pytest-mock",
     "pytest-timeout",
-    "pyyaml",
     "autotyping",
     "pdm-bump",
-    "pytest-asyncio",
     "google-api-python-client",
-    "pytest",
-    "pdm",
-    "pytest-mock",
+    "pytest-benchmark",
+    "keyring",
+    "pyfiglet",
+    "tomli-w",
+    "pyyaml",
 ]
 
 [tool.refurb]
@@ -291,17 +293,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B607",
-    "B602",
     "B704",
     "B106",
-    "B101",
+    "B105",
+    "B602",
+    "B607",
     "B301",
+    "B101",
     "B403",
     "B311",
     "B603",
     "B404",
-    "B105",
 ]
 
 [tool.vulture]
