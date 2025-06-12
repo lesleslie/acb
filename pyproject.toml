@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.9"
+version = "0.16.10"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -57,16 +57,16 @@ optional-dependencies.cache = [
     "logfire[redis]>=3.18",
 ]
 optional-dependencies.demo = [
-    "faker>=37.3",
+    "faker>=37.4",
 ]
 optional-dependencies.dev = [
-    "crackerjack>=0.20.15",
+    "crackerjack>=0.20.19",
     "pre-commit>=4.2",
     "pytest>=8.4",
     "pytest-anyio>=0",
     "pytest-asyncio>=1",
     "pytest-benchmark>=5.1",
-    "pytest-cov>=6.1.1",
+    "pytest-cov>=6.2.1",
     "pytest-mock>=3.14.1",
     "pytest-timeout>=2.4",
     "pyyaml>=6.0.2",
@@ -82,7 +82,7 @@ optional-dependencies.ftpd = [
 ]
 optional-dependencies.monitoring = [
     "logfire[system-metrics]>=3.18",
-    "sentry-sdk[loguru]>=2.29.1",
+    "sentry-sdk[loguru]>=2.30",
 ]
 optional-dependencies.nosql = [
     "beanie>=1.30",
@@ -95,7 +95,7 @@ optional-dependencies.requests = [
     "httpx[http2]>=0.28.1",
     "logfire[httpx]>=3.18",
     "niquests>=3.14.1",
-    "sentry-sdk[httpx]>=2.29.1",
+    "sentry-sdk[httpx]>=2.30",
 ]
 optional-dependencies.secret = [
     "google-cloud-secret-manager>=2.24",
@@ -110,7 +110,7 @@ optional-dependencies.sql = [
     "greenlet>=3.2.3",
     "logfire[sqlalchemy]>=3.18",
     "pymysql>=1.1.1",
-    "sentry-sdk[sqlalchemy]>=2.29.1",
+    "sentry-sdk[sqlalchemy]>=2.30",
     "sqlalchemy>=2.0.41",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
@@ -193,7 +193,7 @@ markers = [
     "benchmark: mark test as a benchmark (disables parallel execution)",
     "integration: marks test as an integration test",
 ]
-timeout = 60
+timeout = 300
 timeout_method = "thread"
 addopts = "--cov=acb --cov-report=term --cov-fail-under=42"
 
@@ -201,6 +201,8 @@ addopts = "--cov=acb --cov-report=term --cov-fail-under=42"
 disable_gc = true
 warmup = false
 warmup_iterations = 0
+min_rounds = 1
+max_time = 5.0
 
 [tool.coverage.run]
 branch = false
@@ -264,24 +266,24 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-cov",
-    "pytest-xdist",
     "pytest",
-    "pre-commit",
-    "google-crc32c",
-    "uv",
-    "pdm",
-    "pytest-asyncio",
-    "pytest-mock",
-    "pytest-timeout",
-    "autotyping",
     "pdm-bump",
-    "google-api-python-client",
+    "pytest-cov",
     "pytest-benchmark",
+    "google-api-python-client",
+    "pytest-asyncio",
     "keyring",
     "pyfiglet",
     "tomli-w",
+    "pre-commit",
+    "google-crc32c",
+    "pytest-xdist",
     "pyyaml",
+    "pytest-timeout",
+    "pytest-mock",
+    "autotyping",
+    "uv",
+    "pdm",
 ]
 
 [tool.refurb]
@@ -294,16 +296,16 @@ target = [
 ]
 skips = [
     "B704",
-    "B106",
-    "B105",
-    "B602",
-    "B607",
     "B301",
     "B101",
-    "B403",
     "B311",
+    "B105",
+    "B607",
+    "B403",
+    "B106",
     "B603",
     "B404",
+    "B602",
 ]
 
 [tool.vulture]

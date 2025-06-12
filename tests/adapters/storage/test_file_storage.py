@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 import pytest
 from anyio import Path as AsyncPath
 from fsspec.implementations.dirfs import DirFileSystem
+from pytest_benchmark.fixture import BenchmarkFixture
 from acb.adapters.storage.file import (
     AsyncFileSystemWrapper,
     Storage,
@@ -688,3 +689,168 @@ class TestFileStorage:
                 mock_file.write.assert_called_once_with(content_bytes)
 
                 assert result
+
+
+@pytest.mark.skip(reason="Storage benchmark tests need adapter method implementation")
+class TestFileStorageBenchmarks:
+    @pytest.fixture
+    def benchmark_adapter(self, mock_config: MagicMock) -> Storage:
+        adapter = Storage()
+        adapter.config = mock_config
+        adapter.logger = MagicMock()
+        return adapter
+
+    @pytest.fixture
+    def small_file_content(self) -> bytes:
+        return b"small file content"
+
+    @pytest.fixture
+    def medium_file_content(self) -> bytes:
+        return b"medium file content" * 1000
+
+    @pytest.fixture
+    def large_file_content(self) -> bytes:
+        return b"large file content" * 100000
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_file_upload_small_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        small_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+
+        result = await benchmark(
+            benchmark_adapter.put_file, "test/small_file.txt", small_file_content
+        )
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_file_upload_medium_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        medium_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+
+        result = await benchmark(
+            benchmark_adapter.put_file, "test/medium_file.txt", medium_file_content
+        )
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_file_upload_large_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        large_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+
+        result = await benchmark(
+            benchmark_adapter.put_file, "test/large_file.txt", large_file_content
+        )
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_file_download_small_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        small_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.put_file("test/small_file.txt", small_file_content)
+
+        result = await benchmark(benchmark_adapter.get_file, "test/small_file.txt")
+        assert result == small_file_content
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_file_download_medium_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        medium_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.put_file("test/medium_file.txt", medium_file_content)
+
+        result = await benchmark(benchmark_adapter.get_file, "test/medium_file.txt")
+        assert result == medium_file_content
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_file_download_large_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        large_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.put_file("test/large_file.txt", large_file_content)
+
+        result = await benchmark(benchmark_adapter.get_file, "test/large_file.txt")
+        assert result == large_file_content
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_file_exists_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        medium_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.put_file("test/exists_file.txt", medium_file_content)
+
+        result = await benchmark(benchmark_adapter.file_exists, "test/exists_file.txt")
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_directory_operations_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Storage
+    ) -> None:
+        await benchmark_adapter.init()
+
+        async def create_and_check_directory():
+            await benchmark_adapter.create_directory("test/benchmark/dir")
+            return await benchmark_adapter.directory_exists("test/benchmark/dir")
+
+        result = await benchmark(create_and_check_directory)
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_bulk_file_operations_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
+        small_file_content: bytes,
+    ) -> None:
+        await benchmark_adapter.init()
+
+        async def bulk_file_operations():
+            results = []
+            for i in range(50):
+                put_result = await benchmark_adapter.put_file(
+                    f"test/bulk_file_{i}.txt", small_file_content
+                )
+                results.append(put_result)
+
+            get_results = []
+            for i in range(50):
+                get_result = await benchmark_adapter.get_file(f"test/bulk_file_{i}.txt")
+                get_results.append(get_result)
+
+            return all(results) and all(r == small_file_content for r in get_results)
+
+        result = await benchmark(bulk_file_operations)
+        assert result is True

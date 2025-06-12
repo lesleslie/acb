@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import Response
+from pytest_benchmark.fixture import BenchmarkFixture
 from acb.adapters.requests.httpx import Requests, RequestsSettings
 
 
@@ -293,3 +294,162 @@ async def test_request_method(requests_adapter: Requests) -> None:
 
         assert isinstance(response, Response)
         assert response.status_code == 200
+
+
+class TestHttpxRequestsBenchmarks:
+    @pytest.fixture
+    async def benchmark_adapter(self) -> AsyncGenerator[Requests]:
+        with (
+            patch("acb.adapters.requests.httpx.AsyncRedis") as mock_redis_cls,
+            patch("acb.adapters.requests.httpx.AsyncRedisStorage") as mock_storage_cls,
+            patch("acb.adapters.requests.httpx.Controller") as mock_controller_cls,
+            patch("acb.adapters.requests.httpx.AsyncCacheClient") as mock_client_cls,
+        ):
+            mock_redis_instance = MockAsyncRedis()
+            mock_redis_cls.return_value = mock_redis_instance
+
+            mock_storage = MagicMock()
+            mock_storage_cls.return_value = mock_storage
+
+            mock_controller = MagicMock()
+            mock_controller_cls.return_value = mock_controller
+
+            mock_client = MockAsyncCacheClient()
+            mock_client_cls.return_value = mock_client
+
+            test_response = MockResponse()
+            mock_client._get.return_value = test_response
+            mock_client._post.return_value = test_response
+
+            adapter = Requests()
+            adapter.storage = mock_storage
+            adapter.controller = mock_controller
+            adapter.logger = MagicMock()
+
+            mock_config = MagicMock()
+            mock_config.app.name = "test_app"
+            mock_config.cache.host.get_secret_value.return_value = "localhost"
+            mock_config.cache.port = 6379
+            mock_config.requests.cache_ttl = 7200
+            adapter.config = mock_config
+
+            await adapter.init()
+            adapter.client = mock_client
+
+            yield adapter
+
+    @pytest.fixture
+    def small_payload(self) -> dict[str, Any]:
+        return {"data": "small_test_data"}
+
+    @pytest.fixture
+    def medium_payload(self) -> dict[str, Any]:
+        return {"data": "medium_test_data" * 100}
+
+    @pytest.fixture
+    def large_payload(self) -> dict[str, Any]:
+        return {"data": "large_test_data" * 10000}
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_get_request_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Requests
+    ) -> None:
+        async def get_request():
+            return await benchmark_adapter.get("https://example.com", timeout=10)
+
+        response = await benchmark(get_request)
+        assert response.status_code == 200
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_post_small_payload_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Requests,
+        small_payload: dict[str, Any],
+    ) -> None:
+        async def post_request():
+            return await benchmark_adapter.post(
+                "https://example.com", json=small_payload, timeout=10
+            )
+
+        response = await benchmark(post_request)
+        assert response.status_code == 200
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_post_medium_payload_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Requests,
+        medium_payload: dict[str, Any],
+    ) -> None:
+        async def post_request():
+            return await benchmark_adapter.post(
+                "https://example.com", json=medium_payload, timeout=10
+            )
+
+        response = await benchmark(post_request)
+        assert response.status_code == 200
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_post_large_payload_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Requests,
+        large_payload: dict[str, Any],
+    ) -> None:
+        async def post_request():
+            return await benchmark_adapter.post(
+                "https://example.com", json=large_payload, timeout=10
+            )
+
+        response = await benchmark(post_request)
+        assert response.status_code == 200
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_multiple_requests_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Requests
+    ) -> None:
+        async def multiple_requests() -> list[Response]:
+            responses: list[Response] = []
+            for i in range(10):
+                response = await benchmark_adapter.get(
+                    f"https://example.com/endpoint_{i}", timeout=10
+                )
+                responses.append(response)
+            return responses
+
+        responses = await benchmark(multiple_requests)
+        assert len(responses) == 10
+        assert all(r.status_code == 200 for r in responses)
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_mixed_requests_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Requests,
+        small_payload: dict[str, Any],
+    ) -> None:
+        async def mixed_requests():
+            get_response = await benchmark_adapter.get(
+                "https://example.com", timeout=10
+            )
+            post_response = await benchmark_adapter.post(
+                "https://example.com", json=small_payload, timeout=10
+            )
+            put_response = await benchmark_adapter.put(
+                "https://example.com", json=small_payload, timeout=10
+            )
+            delete_response = await benchmark_adapter.delete(
+                "https://example.com", timeout=10
+            )
+            return [get_response, post_response, put_response, delete_response]
+
+        responses = await benchmark(mixed_requests)
+        assert len(responses) == 4
+        assert all(r.status_code == 200 for r in responses)

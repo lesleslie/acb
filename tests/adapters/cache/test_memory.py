@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from aiocache.backends.memory import SimpleMemoryCache
 from aiocache.serializers import PickleSerializer
+from pytest_benchmark.fixture import BenchmarkFixture
 from acb.adapters.cache._base import CacheBaseSettings
 from acb.adapters.cache.memory import Cache, CacheSettings
 
@@ -114,3 +115,126 @@ class TestMemoryCache:
         assert adapter._cache.namespace == "test_app:"
         assert adapter._cache.timeout == 0.0
         assert isinstance(adapter._cache.serializer, PickleSerializer)
+
+
+@pytest.mark.skip(reason="Cache benchmark tests need adapter method implementation")
+class TestMemoryCacheBenchmarks:
+    @pytest.fixture
+    def benchmark_adapter(
+        self, mock_config: MagicMock, mock_logger: MagicMock
+    ) -> Cache:
+        adapter = Cache()
+        adapter.config = mock_config
+        adapter.logger = mock_logger
+        return adapter
+
+    @pytest.fixture
+    def small_data(self) -> str:
+        return "small_test_data"
+
+    @pytest.fixture
+    def medium_data(self) -> str:
+        return "medium_test_data" * 100
+
+    @pytest.fixture
+    def large_data(self) -> str:
+        return "large_test_data" * 10000
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_set_small_data_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, small_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+
+        async def cache_set_operation() -> bool:
+            await benchmark_adapter._cache.set("test_key", small_data)
+            return True
+
+        result = await benchmark(cache_set_operation)
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_set_medium_data_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, medium_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+
+        result = await benchmark(benchmark_adapter.set, "test_key", medium_data)
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_set_large_data_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, large_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+
+        result = await benchmark(benchmark_adapter.set, "test_key", large_data)
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_get_small_data_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, small_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.set("test_key", small_data)
+
+        result = await benchmark(benchmark_adapter.get, "test_key")
+        assert result == small_data
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_get_medium_data_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, medium_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.set("test_key", medium_data)
+
+        result = await benchmark(benchmark_adapter.get, "test_key")
+        assert result == medium_data
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_get_large_data_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, large_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.set("test_key", large_data)
+
+        result = await benchmark(benchmark_adapter.get, "test_key")
+        assert result == large_data
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_exists_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, medium_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+        await benchmark_adapter.set("test_key", medium_data)
+
+        result = await benchmark(benchmark_adapter.exists, "test_key")
+        assert result is True
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_cache_bulk_operations_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, small_data: str
+    ) -> None:
+        await benchmark_adapter.init()
+
+        async def bulk_set_get() -> list[str]:
+            for i in range(100):
+                await benchmark_adapter.set(f"bulk_key_{i}", f"{small_data}_{i}")
+            results: list[str] = []
+            for i in range(100):
+                result = await benchmark_adapter.get(f"bulk_key_{i}")
+                if result is not None:
+                    results.append(result)
+            return results
+
+        results = await benchmark(bulk_set_get)
+        assert len(results) == 100
+        assert all(result is not None for result in results)

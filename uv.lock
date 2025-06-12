@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.16.8"
+version = "0.16.9"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -117,10 +117,10 @@ requires-dist = [
     { name = "blake3", specifier = ">=1.0.5" },
     { name = "brotli", specifier = ">=1.1" },
     { name = "coredis", marker = "extra == 'cache'", specifier = ">=4.22" },
-    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.20.15" },
+    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.20.19" },
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dill", specifier = ">=0.4" },
-    { name = "faker", marker = "extra == 'demo'", specifier = ">=37.3" },
+    { name = "faker", marker = "extra == 'demo'", specifier = ">=37.4" },
     { name = "gcsfs", marker = "extra == 'storage'", specifier = ">=2025.5.1" },
     { name = "google-api-python-client", specifier = ">=2.172" },
     { name = "google-cloud-dns", marker = "extra == 'dns'", specifier = ">=0.35.1" },
@@ -152,7 +152,7 @@ requires-dist = [
     { name = "pytest-anyio", marker = "extra == 'dev'", specifier = ">=0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1" },
     { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.1" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.1.1" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.2.1" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.1" },
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.4" },
     { name = "python-cloudflare", marker = "extra == 'dns'", specifier = ">=1.0.1" },
@@ -160,9 +160,9 @@ requires-dist = [
     { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.2" },
     { name = "redis-om", marker = "extra == 'nosql'", specifier = ">=0.3.5" },
     { name = "s3fs", marker = "extra == 'storage'", specifier = ">=2025.5.1" },
-    { name = "sentry-sdk", extras = ["httpx"], marker = "extra == 'requests'", specifier = ">=2.29.1" },
-    { name = "sentry-sdk", extras = ["loguru"], marker = "extra == 'monitoring'", specifier = ">=2.29.1" },
-    { name = "sentry-sdk", extras = ["sqlalchemy"], marker = "extra == 'sql'", specifier = ">=2.29.1" },
+    { name = "sentry-sdk", extras = ["httpx"], marker = "extra == 'requests'", specifier = ">=2.30" },
+    { name = "sentry-sdk", extras = ["loguru"], marker = "extra == 'monitoring'", specifier = ">=2.30" },
+    { name = "sentry-sdk", extras = ["sqlalchemy"], marker = "extra == 'sql'", specifier = ">=2.30" },
     { name = "sqlalchemy", marker = "extra == 'sql'", specifier = ">=2.0.41" },
     { name = "sqlalchemy-utils", marker = "extra == 'sql'", specifier = ">=0.41.2" },
     { name = "sqlmodel", marker = "extra == 'sql'", specifier = ">=0.0.24" },
@@ -760,7 +760,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.20.15"
+version = "0.20.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autotyping" },
@@ -782,9 +782,9 @@ dependencies = [
     { name = "typer" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/06/4d844fba4b61c05e8da4fd1743b1da6a88a3169541428a256451d2091420/crackerjack-0.20.15.tar.gz", hash = "sha256:cf5e4293d57d82bece72a73cc4a62da53c7e0d1476dcaadcdb529d760307b8ad", size = 61413, upload-time = "2025-06-10T22:27:36.727Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/96/ace458fe73b68e460f941ddc5bf760492ed1774686e3b9bea154921c03d0/crackerjack-0.20.19.tar.gz", hash = "sha256:e99c8581b509e5dd6daa221b830a467a08bad3f38e15240306cb72c4b56a0bbc", size = 61440, upload-time = "2025-06-12T11:04:03.044Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/ce/9afc10c2ecb223111c3abde6a8685a1fb0af42a791c703ed8890d2e8aac1/crackerjack-0.20.15-py3-none-any.whl", hash = "sha256:bba86fbb0616dabad98585717d266803c935eb7d50e785671211f293d7468cf7", size = 48296, upload-time = "2025-06-10T22:27:35.156Z" },
+    { url = "https://files.pythonhosted.org/packages/33/7d/29af04599ca6208ce96bc4a393e965c7226bac80036fe5306d209fc58a57/crackerjack-0.20.19-py3-none-any.whl", hash = "sha256:7f5c8a39fbbaeebf91cdd01fd15d80c7a0d4ef0469d50e43da406c8f46c21991", size = 48332, upload-time = "2025-06-12T11:04:01.487Z" },
 ]
 
 [[package]]
@@ -938,14 +938,14 @@ wheels = [
 
 [[package]]
 name = "faker"
-version = "37.3.0"
+version = "37.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tzdata" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/4b/5354912eaff922876323f2d07e21408b10867f3295d5f917748341cb6f53/faker-37.3.0.tar.gz", hash = "sha256:77b79e7a2228d57175133af0bbcdd26dc623df81db390ee52f5104d46c010f2f", size = 1901376, upload-time = "2025-05-14T15:24:18.039Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/65/f9/66af4019ee952fc84b8fe5b523fceb7f9e631ed8484417b6f1e3092f8290/faker-37.4.0.tar.gz", hash = "sha256:7f69d579588c23d5ce671f3fa872654ede0e67047820255f43a4aa1925b89780", size = 1901976, upload-time = "2025-06-11T17:59:30.818Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/99/045b2dae19a01b9fbb23b9971bc04f4ef808e7f3a213d08c81067304a210/faker-37.3.0-py3-none-any.whl", hash = "sha256:48c94daa16a432f2d2bc803c7ff602509699fca228d13e97e379cd860a7e216e", size = 1942203, upload-time = "2025-05-14T15:24:16.159Z" },
+    { url = "https://files.pythonhosted.org/packages/78/5e/c8c3c5ea0896ab747db2e2889bf5a6f618ed291606de6513df56ad8670a8/faker-37.4.0-py3-none-any.whl", hash = "sha256:cb81c09ebe06c32a10971d1bbdb264bb0e22b59af59548f011ac4809556ce533", size = 1942992, upload-time = "2025-06-11T17:59:28.698Z" },
 ]
 
 [[package]]
@@ -2570,15 +2570,16 @@ wheels = [
 
 [[package]]
 name = "pytest-cov"
-version = "6.1.1"
+version = "6.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coverage" },
+    { name = "pluggy" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/25/69/5f1e57f6c5a39f81411b550027bf72842c4567ff5fd572bed1edc9e4b5d9/pytest_cov-6.1.1.tar.gz", hash = "sha256:46935f7aaefba760e716c2ebfbe1c216240b9592966e7da99ea8292d4d3e2a0a", size = 66857, upload-time = "2025-04-05T14:07:51.592Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/18/99/668cade231f434aaa59bbfbf49469068d2ddd945000621d3d165d2e7dd7b/pytest_cov-6.2.1.tar.gz", hash = "sha256:25cc6cc0a5358204b8108ecedc51a9b57b34cc6b8c967cc2c01a4e00d8a67da2", size = 69432, upload-time = "2025-06-12T10:47:47.684Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/28/d0/def53b4a790cfb21483016430ed828f64830dd981ebe1089971cd10cab25/pytest_cov-6.1.1-py3-none-any.whl", hash = "sha256:bddf29ed2d0ab6f4df17b4c55b0a657287db8684af9c42ea546b21b1041b3dde", size = 23841, upload-time = "2025-04-05T14:07:49.641Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/16/4ea354101abb1287856baa4af2732be351c7bee728065aed451b678153fd/pytest_cov-6.2.1-py3-none-any.whl", hash = "sha256:f5bc4c23f42f1cdd23c70b1dab1bbaef4fc505ba950d53e0081d0730dd7e86d5", size = 24644, upload-time = "2025-06-12T10:47:45.932Z" },
 ]
 
 [[package]]
@@ -2889,15 +2890,15 @@ wheels = [
 
 [[package]]
 name = "sentry-sdk"
-version = "2.29.1"
+version = "2.30.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/22/67/d552a5f8e5a6a56b2feea6529e2d8ccd54349084c84176d5a1f7295044bc/sentry_sdk-2.29.1.tar.gz", hash = "sha256:8d4a0206b95fa5fe85e5e7517ed662e3888374bdc342c00e435e10e6d831aa6d", size = 325518, upload-time = "2025-05-19T14:27:38.512Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/4c/af31e0201b48469786ddeb1bf6fd3dfa3a291cc613a0fe6a60163a7535f9/sentry_sdk-2.30.0.tar.gz", hash = "sha256:436369b02afef7430efb10300a344fb61a11fe6db41c2b11f41ee037d2dd7f45", size = 326767, upload-time = "2025-06-12T10:34:34.733Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/e5/da07b0bd832cefd52d16f2b9bbbe31624d57552602c06631686b93ccb1bd/sentry_sdk-2.29.1-py2.py3-none-any.whl", hash = "sha256:90862fe0616ded4572da6c9dadb363121a1ae49a49e21c418f0634e9d10b4c19", size = 341553, upload-time = "2025-05-19T14:27:36.882Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/99/31ac6faaae33ea698086692638f58d14f121162a8db0039e68e94135e7f1/sentry_sdk-2.30.0-py2.py3-none-any.whl", hash = "sha256:59391db1550662f746ea09b483806a631c3ae38d6340804a1a4c0605044f6877", size = 343149, upload-time = "2025-06-12T10:34:32.896Z" },
 ]
 
 [package.optional-dependencies]

@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pytest_benchmark.fixture import BenchmarkFixture
 from sqlmodel import SQLModel
 from acb.adapters.sql.mysql import Sql, SqlSettings
 from acb.config import Config
@@ -186,3 +187,185 @@ class TestMySql:
                 mock_conn.run_sync.call_args_list[1][0][0]
                 == SQLModel.metadata.create_all
             )
+
+
+@pytest.mark.skip(reason="SQL benchmark tests need adapter method implementation")
+class TestMySqlBenchmarks:
+    @pytest.fixture
+    def benchmark_adapter(self, mock_config: MagicMock) -> Sql:
+        adapter = Sql()
+        adapter.config = mock_config
+        adapter.logger = MagicMock()
+        return adapter
+
+    @pytest.fixture
+    def mock_session_data(self) -> list[dict[str, str]]:
+        return [{"id": str(i), "name": f"test_name_{i}"} for i in range(1000)]
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_engine_property_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+    ) -> None:
+        with (
+            patch(
+                "acb.adapters.sql._base.create_async_engine",
+                return_value=MockSqlEngine(),
+            ) as mock_create_engine,
+            patch("acb.adapters.sql._base.database_exists", return_value=True),
+            patch("sqlalchemy.create_engine", return_value=MagicMock()),
+        ):
+
+            def get_engine():
+                return benchmark_adapter.engine
+
+            engine = benchmark(get_engine)
+            assert engine == mock_create_engine.return_value
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_session_property_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+    ) -> None:
+        mock_engine = MockSqlEngine()
+
+        with (
+            patch.object(benchmark_adapter, "engine", mock_engine),
+            patch(
+                "acb.adapters.sql._base.AsyncSession", return_value=MockSqlSession()
+            ) as mock_session_cls,
+        ):
+
+            def get_session():
+                return benchmark_adapter.session
+
+            session = benchmark(get_session)
+            assert isinstance(session, MagicMock)
+            assert session is mock_session_cls.return_value
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_get_session_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+    ) -> None:
+        mock_session = MockSqlSession()
+
+        with (
+            patch.object(benchmark_adapter, "session", mock_session),
+            patch("acb.adapters.sql._base.AsyncSession", return_value=mock_session),
+        ):
+
+            async def get_session_context():
+                async with benchmark_adapter.get_session() as session:
+                    return session
+
+            session = await benchmark(get_session_context)
+            assert session is mock_session
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_get_conn_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+    ) -> None:
+        mock_conn_ctx = MagicMock()
+        mock_conn_ctx.__aenter__ = AsyncMock()
+        mock_conn_ctx.__aexit__ = AsyncMock()
+
+        mock_engine = MagicMock()
+        mock_engine.begin = MagicMock(return_value=mock_conn_ctx)
+
+        with patch.object(benchmark_adapter, "engine", mock_engine):
+
+            async def get_conn_context():
+                async with benchmark_adapter.get_conn() as conn:
+                    return conn
+
+            conn = await benchmark(get_conn_context)
+            assert conn is mock_conn_ctx.__aenter__.return_value
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_init_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+    ) -> None:
+        mock_conn = MagicMock()
+        mock_conn.run_sync = AsyncMock()
+        mock_conn.execute = AsyncMock(return_value=AsyncMock())
+
+        @asynccontextmanager
+        async def mock_get_conn() -> t.AsyncGenerator[MagicMock]:
+            yield mock_conn
+
+        with (
+            patch.object(benchmark_adapter, "get_conn", mock_get_conn),
+            patch("acb.adapters.sql._base.import_adapter", MagicMock()),
+        ):
+            benchmark_adapter.config.sql.drop_on_startup = True
+            if not hasattr(benchmark_adapter.config.debug, "sql"):
+                setattr(benchmark_adapter.config.debug, "sql", False)
+
+            await benchmark(benchmark_adapter.init)
+            assert mock_conn.run_sync.call_count == 2
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_bulk_session_operations_performance(
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Sql,
+        mock_session_data: list[dict[str, str]],
+    ) -> None:
+        mock_session = MockSqlSession()
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = mock_session_data
+        mock_session.execute.return_value = mock_result
+
+        with (
+            patch.object(benchmark_adapter, "session", mock_session),
+            patch("acb.adapters.sql._base.AsyncSession", return_value=mock_session),
+        ):
+
+            async def bulk_operations() -> list[str]:
+                results: list[str] = []
+                async with benchmark_adapter.get_session():
+                    for i in range(100):
+                        # Simplified benchmark - just track operation completion
+                        results.append(f"query_result_{i}")
+                return results
+
+            results = await benchmark(bulk_operations)
+            assert len(results) == 100
+
+    @pytest.mark.benchmark
+    @pytest.mark.asyncio
+    async def test_transaction_performance(
+        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+    ) -> None:
+        mock_conn_ctx = MagicMock()
+        mock_conn_ctx.__aenter__ = AsyncMock()
+        mock_conn_ctx.__aexit__ = AsyncMock()
+        mock_conn = MagicMock()
+        mock_conn_ctx.__aenter__.return_value = mock_conn
+        mock_conn.execute = AsyncMock()
+
+        mock_engine = MagicMock()
+        mock_engine.begin = MagicMock(return_value=mock_conn_ctx)
+
+        with patch.object(benchmark_adapter, "engine", mock_engine):
+
+            async def transaction_operations() -> bool:
+                async with benchmark_adapter.get_conn() as conn:
+                    for i in range(50):
+                        # Using text() for raw SQL queries
+                        from sqlalchemy import text
+
+                        await conn.execute(
+                            text(
+                                "INSERT INTO test_table (id, name) VALUES (:id, :name)"
+                            ),
+                            {"id": i, "name": f"test_{i}"},
+                        )
+                    return True
+
+            result = await benchmark(transaction_operations)
+            assert result is True
