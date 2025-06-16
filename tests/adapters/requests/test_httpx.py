@@ -170,6 +170,9 @@ async def test_get_method(requests_adapter: Requests) -> None:
         test_response = MockResponse()
         mock_client._get.return_value = test_response
 
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
+
         response = await requests_adapter.get("https://example.com", timeout=10)
 
         mock_client_cls.assert_called_once()
@@ -188,6 +191,9 @@ async def test_post_method(requests_adapter: Requests) -> None:
         test_response = MockResponse()
         mock_client._post.return_value = test_response
 
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
+
         response = await requests_adapter.post(
             "https://example.com", data={"key": "value"}, timeout=10
         )
@@ -204,6 +210,9 @@ async def test_put_method(requests_adapter: Requests) -> None:
         mock_client_cls.return_value = mock_client
         test_response = MockResponse()
         mock_client._put.return_value = test_response
+
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
 
         response = await requests_adapter.put(
             "https://example.com", data={"key": "value"}, timeout=10
@@ -222,6 +231,9 @@ async def test_delete_method(requests_adapter: Requests) -> None:
         test_response = MockResponse()
         mock_client._delete.return_value = test_response
 
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
+
         response = await requests_adapter.delete("https://example.com", timeout=10)
 
         mock_client_cls.assert_called_once()
@@ -236,6 +248,9 @@ async def test_patch_method(requests_adapter: Requests) -> None:
         mock_client_cls.return_value = mock_client
         test_response = MockResponse()
         mock_client._patch.return_value = test_response
+
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
 
         response = await requests_adapter.patch(
             "https://example.com", data={"key": "value"}, timeout=10
@@ -254,6 +269,9 @@ async def test_head_method(requests_adapter: Requests) -> None:
         test_response = MockResponse()
         mock_client._head.return_value = test_response
 
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
+
         response = await requests_adapter.head("https://example.com", timeout=10)
 
         mock_client_cls.assert_called_once()
@@ -269,6 +287,9 @@ async def test_options_method(requests_adapter: Requests) -> None:
         test_response = MockResponse()
         mock_client._options.return_value = test_response
 
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
+
         response = await requests_adapter.options("https://example.com", timeout=10)
 
         mock_client_cls.assert_called_once()
@@ -283,6 +304,9 @@ async def test_request_method(requests_adapter: Requests) -> None:
         mock_client_cls.return_value = mock_client
         test_response = MockResponse()
         mock_client._request.return_value = test_response
+
+        # Clear the client cache to ensure fresh client creation
+        requests_adapter._client_cache.clear()
 
         response = await requests_adapter.request(
             "GET", "https://example.com", timeout=10

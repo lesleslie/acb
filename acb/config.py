@@ -422,4 +422,53 @@ class AdapterBase(metaclass=AdapterMeta):
     config: Config = depends()
     logger: Logger = depends()
 
-    async def init(self) -> None: ...
+    def __init__(self, **kwargs: t.Any) -> None:
+        self._client = None
+        self._client_lock = None
+        self._resource_cache: dict[str, t.Any] = {}
+        self._initialization_args = kwargs
+
+    async def _ensure_client(self) -> t.Any:
+        if self._client is None:
+            if self._client_lock is None:
+                import asyncio
+
+                self._client_lock = asyncio.Lock()
+            async with self._client_lock:
+                if self._client is None:
+                    self._client = await self._create_client()
+        return self._client
+
+    async def _create_client(self) -> t.Any:
+        raise NotImplementedError("Subclasses must implement _create_client()")
+
+    async def _ensure_resource(
+        self, resource_name: str, factory_func: t.Callable[[], t.Awaitable[t.Any]]
+    ) -> t.Any:
+        """Generic helper for lazy-loading any named resource with caching."""
+        if resource_name not in self._resource_cache:
+            if self._client_lock is None:
+                import asyncio
+
+                self._client_lock = asyncio.Lock()
+
+            async with self._client_lock:
+                if resource_name not in self._resource_cache:
+                    self._resource_cache[resource_name] = await factory_func()
+        return self._resource_cache[resource_name]
+
+    async def _cleanup_resources(self) -> None:
+        if self._client is not None:
+            if hasattr(self._client, "close"):
+                await self._client.close()
+            elif hasattr(self._client, "aclose"):
+                await self._client.aclose()
+        for resource in self._resource_cache.values():
+            if hasattr(resource, "close"):
+                try:
+                    await resource.close()
+                except Exception as e:
+                    self.logger.warning(f"Error closing resource: {e}")
+
+    async def init(self) -> None:
+        pass

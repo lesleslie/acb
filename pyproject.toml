@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.10"
+version = "0.16.11"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -43,7 +43,7 @@ dependencies = [
     "loguru>=0.7.3",
     "msgspec[toml,yaml]",
     "nest-asyncio>=1.6",
-    "pydantic[email]>=2.11.5",
+    "pydantic[email]>=2.11.7",
     "pydantic-settings>=2.9.1",
     "pyfiglet>=1.0.3",
     "pyyaml>=6.0.2",
@@ -54,13 +54,13 @@ dependencies = [
 optional-dependencies.cache = [
     "aiocache[redis]>=0.12.3",
     "coredis>=4.22",
-    "logfire[redis]>=3.18",
+    "logfire[redis]>=3.19",
 ]
 optional-dependencies.demo = [
     "faker>=37.4",
 ]
 optional-dependencies.dev = [
-    "crackerjack>=0.20.19",
+    "crackerjack>=0.20.20",
     "pre-commit>=4.2",
     "pytest>=8.4",
     "pytest-anyio>=0",
@@ -77,11 +77,11 @@ optional-dependencies.dns = [
     "validators>=0.35",
 ]
 optional-dependencies.ftpd = [
-    "aioftp>=0.25.1",
+    "aioftp>=0.25.2",
     "asyncssh>=2.21",
 ]
 optional-dependencies.monitoring = [
-    "logfire[system-metrics]>=3.18",
+    "logfire[system-metrics]>=3.19",
     "sentry-sdk[loguru]>=2.30",
 ]
 optional-dependencies.nosql = [
@@ -93,7 +93,7 @@ optional-dependencies.nosql = [
 optional-dependencies.requests = [
     "hishel>=0.1.2",
     "httpx[http2]>=0.28.1",
-    "logfire[httpx]>=3.18",
+    "logfire[httpx]>=3.19",
     "niquests>=3.14.1",
     "sentry-sdk[httpx]>=2.30",
 ]
@@ -108,7 +108,7 @@ optional-dependencies.sql = [
     "aiomysql>=0.2",
     "babel>=2.17",
     "greenlet>=3.2.3",
-    "logfire[sqlalchemy]>=3.18",
+    "logfire[sqlalchemy]>=3.19",
     "pymysql>=1.1.1",
     "sentry-sdk[sqlalchemy]>=2.30",
     "sqlalchemy>=2.0.41",
@@ -266,24 +266,24 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest",
-    "pdm-bump",
-    "pytest-cov",
-    "pytest-benchmark",
+    "tomli-w",
+    "uv",
     "google-api-python-client",
+    "pytest-benchmark",
+    "pyyaml",
+    "pytest-xdist",
+    "pdm",
+    "pre-commit",
+    "pdm-bump",
+    "pytest-timeout",
+    "pytest",
+    "pytest-cov",
+    "autotyping",
     "pytest-asyncio",
     "keyring",
-    "pyfiglet",
-    "tomli-w",
-    "pre-commit",
-    "google-crc32c",
-    "pytest-xdist",
-    "pyyaml",
-    "pytest-timeout",
     "pytest-mock",
-    "autotyping",
-    "uv",
-    "pdm",
+    "google-crc32c",
+    "pyfiglet",
 ]
 
 [tool.refurb]
@@ -295,17 +295,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B704",
-    "B301",
-    "B101",
-    "B311",
-    "B105",
-    "B607",
     "B403",
-    "B106",
     "B603",
     "B404",
+    "B105",
+    "B301",
     "B602",
+    "B101",
+    "B311",
+    "B607",
+    "B704",
+    "B106",
 ]
 
 [tool.vulture]

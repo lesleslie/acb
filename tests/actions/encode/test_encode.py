@@ -6,8 +6,8 @@ import typing as t
 from pathlib import Path
 from unittest.mock import patch
 
-import msgpack
 import msgspec
+import msgspec.msgpack
 import pytest
 import toml
 import yaml
@@ -115,7 +115,7 @@ class TestEncode:
     async def test_msgpack_encode(self) -> None:
         result_bytes: bytes = await encode.msgpack(TEST_DATA)
         assert isinstance(result_bytes, bytes)
-        decoded: t.Any = msgpack.unpackb(result_bytes)
+        decoded: t.Any = msgspec.msgpack.decode(result_bytes)
         if isinstance(decoded, dict):
             dict_result: dict[str, t.Any] = decoded
         else:
@@ -128,7 +128,7 @@ class TestEncode:
         await encode.msgpack(TEST_DATA, path=output_file)
         assert output_file.exists()
         content: bytes = output_file.read_bytes()
-        decoded: t.Any = msgpack.unpackb(content)
+        decoded: t.Any = msgspec.msgpack.decode(content)
         if isinstance(decoded, dict):
             dict_result: dict[str, t.Any] = decoded
         else:
@@ -196,7 +196,7 @@ class TestEncode:
     async def test_nested_data_msgpack_encode(self) -> None:
         result_bytes: bytes = await encode.msgpack(NESTED_TEST_DATA)
         assert isinstance(result_bytes, bytes)
-        decoded: t.Any = msgpack.unpackb(result_bytes)
+        decoded: t.Any = msgspec.msgpack.decode(result_bytes)
         if isinstance(decoded, dict):
             dict_result: dict[str, t.Any] = decoded
         else:

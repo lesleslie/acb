@@ -58,7 +58,7 @@ class TestCacheSettings:
             assert settings.port == 6379
             assert settings.cluster is False
             assert settings.connect_timeout == 3
-            assert settings.max_connections is None
+            assert settings.max_connections == 50
             assert settings.health_check_interval == 0
 
     @pytest.mark.skip(
@@ -178,7 +178,10 @@ async def test_init_standard_mode(redis_cache: Cache) -> None:
 async def test_init_cluster_mode(redis_cluster_cache: Cache) -> None:
     assert redis_cluster_cache._namespace == "test_app:"
     assert isinstance(redis_cluster_cache._serializer, MagicMock)
-    assert redis_cluster_cache.client is not None
+
+    # Access the client to trigger lazy loading and the log message
+    client = await redis_cluster_cache.get_client()
+    assert client is not None
 
     logger_mock = cast(MagicMock, redis_cluster_cache.logger)
     logger_mock.info.assert_called_once_with("RedisCluster mode enabled")

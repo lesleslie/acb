@@ -86,6 +86,13 @@ class Adapter(BaseModel):
 
 
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
+_enabled_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
+    "_enabled_adapters_cache", default={}
+)
+_installed_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
+    "_installed_adapters_cache", default={}
+)
+
 core_adapters = [
     Adapter(
         name="config",
@@ -106,31 +113,38 @@ core_adapters = [
         path=AsyncPath(__file__).parent / "logger.py",
     ),
 ]
+
+
+def _update_adapter_caches() -> None:
+    enabled_cache = {}
+    installed_cache = {}
+    for adapter in adapter_registry.get():
+        if adapter.enabled:
+            enabled_cache[adapter.category] = adapter
+        if adapter.installed:
+            installed_cache[adapter.category] = adapter
+    _enabled_adapters_cache.set(enabled_cache)
+    _installed_adapters_cache.set(installed_cache)
+
+
 adapter_registry.get().extend([*core_adapters])
+_update_adapter_caches()
 
 
 def get_adapter(category: str) -> Adapter | None:
-    adapter = next(
-        (a for a in adapter_registry.get() if a.category == category and a.enabled),
-        None,
-    )
-    return adapter
+    return _enabled_adapters_cache.get().get(category)
 
 
 def get_adapters() -> list[Adapter]:
-    return [a for a in adapter_registry.get() if a.enabled]
+    return list(_enabled_adapters_cache.get().values())
 
 
 def get_installed_adapter(category: str) -> Adapter | None:
-    adapter = next(
-        (a for a in adapter_registry.get() if a.category == category and a.installed),
-        None,
-    )
-    return adapter
+    return _installed_adapters_cache.get().get(category)
 
 
 def get_installed_adapters() -> list[Adapter]:
-    return [a for a in adapter_registry.get() if a.installed]
+    return list(_installed_adapters_cache.get().values())
 
 
 async def _import_adapter(adapter_category: str) -> t.Any:
@@ -337,4 +351,5 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
             continue
         registry.append(a)
         _adapter_import_locks.get()[a.category] = asyncio.Lock()
+    _update_adapter_caches()
     return adapters

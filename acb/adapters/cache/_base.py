@@ -59,3 +59,22 @@ class CacheProtocol(t.Protocol):
 class CacheBase(BaseCache):
     config: Config = depends()
     logger: Logger = depends()
+
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__()
+        self._client = None
+        self._client_lock = None
+
+    async def _ensure_client(self) -> t.Any:
+        if self._client is None:
+            if self._client_lock is None:
+                import asyncio
+
+                self._client_lock = asyncio.Lock()
+            async with self._client_lock:
+                if self._client is None:
+                    self._client = await self._create_client()
+        return self._client
+
+    async def _create_client(self) -> t.Any:
+        raise NotImplementedError("Subclasses must implement _create_client()")

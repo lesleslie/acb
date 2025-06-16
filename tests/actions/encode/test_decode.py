@@ -7,8 +7,8 @@ import typing as t
 from typing import Final
 from unittest.mock import AsyncMock, patch
 
-import msgpack
 import msgspec
+import msgspec.msgpack
 import pytest
 import toml
 import yaml
@@ -56,7 +56,7 @@ class TestDecode:
 
     @pytest.fixture
     def msgpack_bytes(self) -> bytes | None:
-        return msgpack.packb(TEST_DATA)
+        return msgspec.msgpack.encode(TEST_DATA)
 
     @pytest.fixture
     def pickle_bytes(self) -> bytes:

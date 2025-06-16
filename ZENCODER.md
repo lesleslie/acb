@@ -79,6 +79,26 @@ project/
 6. **Pathlib for files**: `pathlib.Path` (sync) or `anyio.Path` (async)
 7. **Configuration in pyproject.toml** - avoid separate config files
 
+## Code Quality Compliance
+**Refurb Standards** (Modern Python):
+- Use `pathlib.Path` instead of `os.path`
+- Use `str.removeprefix()` / `str.removesuffix()` instead of slicing
+- Use `|` for union types instead of `Union`
+- Use `dict1 | dict2` for merging instead of `{**dict1, **dict2}`
+- Use `any()` / `all()` instead of manual loops
+- Use list/dict comprehensions appropriately
+- Use `enumerate()` instead of manual indexing
+- Always use context managers for resources
+
+**Bandit Security** (Never do):
+- `eval()`, `exec()`, `compile()` with user input
+- `subprocess.shell=True` or `os.system()`
+- `random` for crypto - use `secrets` module
+- Hardcoded passwords/secrets in code
+- String concatenation for SQL - use parameterized queries
+- Predictable temp file names - use `tempfile`
+- Missing encoding in file operations
+
 ## Version Management
 ```bash
 python -m crackerjack -b micro    # Bump version only

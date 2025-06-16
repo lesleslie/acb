@@ -148,8 +148,12 @@ class TestMemoryCache:
         with patch.object(
             SimpleMemoryCache, "__init__", return_value=None
         ) as mock_init:
+            # Init should not create the cache (lazy loading)
             await cache.init()
+            mock_init.assert_not_called()
 
+            # Cache should be created only when accessed
+            _ = cache._cache
             mock_init.assert_called_once()
             _, kwargs = mock_init.call_args
             assert isinstance(kwargs["serializer"], PickleSerializer)

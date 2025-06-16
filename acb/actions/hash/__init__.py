@@ -37,6 +37,31 @@ class Hash:
         return Blake3Hasher()
 
     @staticmethod
+    async def _normalize_input(obj: t.Any) -> bytes:
+        if obj is None:
+            raise TypeError("Cannot hash None value")
+        if isinstance(obj, Path | AsyncPath):
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            return await path.read_bytes()
+        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
+            path = AsyncPath(obj)
+            if not await path.exists():
+                raise FileNotFoundError(f"File not found: {obj}")
+            return await path.read_bytes()
+        elif isinstance(obj, dict):
+            return json.dumps(obj, sort_keys=True).encode()
+        elif isinstance(obj, list):
+            return "".join([str(a) for a in obj]).encode()
+        elif isinstance(obj, str):
+            return obj.encode()
+        elif isinstance(obj, bytes):
+            return obj
+        else:
+            raise TypeError(f"Unsupported type for hashing: {type(obj)}")
+
+    @staticmethod
     async def blake3(
         obj: Path
         | AsyncPath
@@ -46,64 +71,21 @@ class Hash:
         | dict[str, t.Any]
         | None = None,
     ) -> str:
-        if obj is None:
-            raise TypeError("Cannot hash None value")
-        if isinstance(obj, Path | AsyncPath):
-            path = AsyncPath(obj)
-            if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
-            obj = await path.read_bytes()
-        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
-            path = AsyncPath(obj)
-            if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
-            obj = await path.read_bytes()
-        elif isinstance(obj, dict):
-            obj = json.dumps(obj, sort_keys=True).encode()
-        elif isinstance(obj, list):
-            obj = "".join([str(a) for a in obj]).encode()
-        elif isinstance(obj, str):
-            obj = obj.encode()
-        return blake3(obj).hexdigest()
+        data = await Hash._normalize_input(obj)
+        return blake3(data).hexdigest()
 
     @staticmethod
     async def crc32c(obj: Path | AsyncPath | str | bytes | dict[str, t.Any]) -> str:
-        if isinstance(obj, Path | AsyncPath):
-            path = AsyncPath(obj)
-            if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
-            obj = await path.read_bytes()
-        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
-            path = AsyncPath(obj)
-            if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
-            obj = await path.read_bytes()
-        elif isinstance(obj, dict):
-            obj = json.dumps(obj, sort_keys=True).encode()
-        elif isinstance(obj, str):
-            obj = obj.encode()
-        return f"{crc32c_value(obj):08x}"
+        data = await Hash._normalize_input(obj)
+        return f"{crc32c_value(data):08x}"
 
     @staticmethod
     async def md5(
         obj: Path | AsyncPath | str | bytes | dict[str, t.Any],
         usedforsecurity: bool = False,
     ) -> str:
-        if isinstance(obj, Path | AsyncPath):
-            path = AsyncPath(obj)
-            if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
-            obj = await path.read_bytes()
-        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
-            path = AsyncPath(obj)
-            if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
-            obj = await path.read_bytes()
-        elif isinstance(obj, dict):
-            obj = json.dumps(obj, sort_keys=True).encode()
-        elif isinstance(obj, str):
-            obj = obj.encode()
-        return hashlib.md5(obj, usedforsecurity=usedforsecurity).hexdigest()
+        data = await Hash._normalize_input(obj)
+        return hashlib.md5(data, usedforsecurity=usedforsecurity).hexdigest()
 
 
 hash: Hash = Hash()

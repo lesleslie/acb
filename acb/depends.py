@@ -46,7 +46,14 @@ class Depends:
         if isinstance(class_, str):
             from .adapters import _import_adapter
 
-            class_ = asyncio.run(_import_adapter(class_))
+            try:
+                asyncio.get_running_loop()
+                import nest_asyncio
+
+                nest_asyncio.apply()
+                class_ = asyncio.run(_import_adapter(class_))
+            except RuntimeError:
+                class_ = asyncio.run(_import_adapter(class_))
         return t.cast(class_, get_repository().get(class_))
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:

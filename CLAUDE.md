@@ -196,6 +196,66 @@ Self-contained utility functions automatically discovered and registered:
 4. **Quality**: Use ruff for formatting and pyright for type checking
 5. **Automation**: Use crackerjack for comprehensive workflows
 
+## Code Quality Compliance
+
+When generating code, AI assistants MUST follow these standards to ensure compliance with Refurb and Bandit pre-commit hooks:
+
+### Refurb Standards (Modern Python Patterns)
+
+**Use modern syntax and built-ins:**
+- Use `pathlib.Path` instead of `os.path` operations
+- Use `str.removeprefix()` and `str.removesuffix()` instead of string slicing
+- Use `itertools.batched()` for chunking sequences (Python 3.12+)
+- Prefer `match` statements over complex `if/elif` chains
+- Use `|` for union types instead of `Union` from typing
+- Use `dict1 | dict2` for merging instead of `{**dict1, **dict2}`
+
+**Use efficient built-in functions:**
+- Use `any()` and `all()` instead of manual boolean loops
+- Use list/dict comprehensions over manual loops when appropriate
+- Use `enumerate()` instead of manual indexing with `range(len())`
+- Use `zip()` for parallel iteration instead of manual indexing
+
+**Resource management:**
+- Always use context managers (`with` statements) for file operations
+- Use `tempfile` module for temporary files instead of manual paths
+- Prefer `subprocess.run()` over `subprocess.Popen()` when possible
+
+### Bandit Security Standards
+
+**Never use dangerous functions:**
+- Avoid `eval()`, `exec()`, or `compile()` with any user input
+- Never use `subprocess.shell=True` or `os.system()`
+- Don't use `pickle` with untrusted data
+- Avoid `yaml.load()` - use `yaml.safe_load()` instead
+
+**Cryptography and secrets:**
+- Use `secrets` module for cryptographic operations, never `random`
+- Never hardcode passwords, API keys, or secrets in source code
+- Use environment variables or secure configuration for sensitive data
+- Use `hashlib` with explicit algorithms, avoid MD5/SHA1 for security
+
+**File and path security:**
+- Always validate file paths to prevent directory traversal
+- Use `tempfile.mkstemp()` instead of predictable temporary file names
+- Always specify encoding when opening files
+- Validate all external inputs before processing
+
+**Database and injection prevention:**
+- Use parameterized queries, never string concatenation for SQL
+- Validate and sanitize all user inputs
+- Use prepared statements for database operations
+
+### Integration with Pre-commit Hooks
+
+These standards align with the project's pre-commit hooks:
+- **Refurb**: Automatically suggests modern Python patterns
+- **Bandit**: Scans for security vulnerabilities
+- **Pyright**: Enforces type safety
+- **Ruff**: Handles formatting and additional linting
+
+By following these guidelines during code generation, AI assistants will produce code that passes all quality checks without requiring manual fixes.
+
 ## Important Rules from .windsurfrules
 
 - Always implement adapter pattern with public/private method delegation

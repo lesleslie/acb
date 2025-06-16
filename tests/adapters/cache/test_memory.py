@@ -61,8 +61,12 @@ class TestMemoryCache:
             adapter.config = mock_config
             adapter.logger = mock_logger
 
+            # Initialize adapter - should not create cache yet (lazy loading)
             await adapter.init()
+            mock_smc.assert_not_called()
 
+            # Access _cache property to trigger lazy creation
+            cache = adapter._cache
             mock_smc.assert_called_once()
             call_kwargs = mock_smc.call_args[1]
             assert "namespace" in call_kwargs
@@ -71,6 +75,7 @@ class TestMemoryCache:
             assert isinstance(call_kwargs["serializer"], PickleSerializer)
 
             assert mock_instance.timeout == 0.0
+            assert cache is mock_instance
 
     @pytest.mark.asyncio
     async def test_init_with_custom_kwargs(
@@ -84,8 +89,12 @@ class TestMemoryCache:
             adapter.config = mock_config
             adapter.logger = mock_logger
 
+            # Pass kwargs to init - they should be stored for lazy creation
             await adapter.init(timeout=5.0)
+            mock_smc.assert_not_called()
 
+            # Access _cache property to trigger lazy creation with stored kwargs
+            cache = adapter._cache
             mock_smc.assert_called_once()
             call_kwargs = mock_smc.call_args[1]
             assert "namespace" in call_kwargs
@@ -96,6 +105,7 @@ class TestMemoryCache:
             assert call_kwargs["timeout"] == 5.0
 
             assert mock_instance.timeout == 0.0
+            assert cache is mock_instance
 
     @pytest.mark.asyncio
     async def test_integration_init(self) -> None:

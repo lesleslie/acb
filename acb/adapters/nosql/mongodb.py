@@ -30,9 +30,14 @@ class NosqlSettings(NosqlBaseSettings):
 class Nosql(NosqlBase):
     _transaction = None
 
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__(**kwargs)
+        self._client = None
+        self._db = None
+
     @cached_property
     def client(self) -> AsyncIOMotorClient[t.Any]:
-        if not self._client:
+        if self._client is None:
             self._client = AsyncIOMotorClient(
                 self.config.nosql.connection_string,
                 **self.config.nosql.connection_options,
@@ -41,7 +46,7 @@ class Nosql(NosqlBase):
 
     @cached_property
     def db(self) -> t.Any:
-        if not self._db:
+        if self._db is None:
             self._db = self.client[self.config.nosql.database]
         return self._db
 
