@@ -276,12 +276,16 @@ class TestMailgunSmtp:
             mock_list_routes.return_value = []
             mock_get_response.return_value = {"message": "Route created"}
 
+            # Create mock logger
+            mock_logger = MagicMock()
+            smtp.logger = mock_logger
+
             result = await smtp.create_route("admin", "admin@example.com")
 
             mock_list_routes.assert_called_once()
             mock_get_response.assert_called_once()
             assert result == {"message": "Route created"}
-            smtp.logger.info.assert_called_once()
+            mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_init(self, smtp: MailgunSmtp) -> None:

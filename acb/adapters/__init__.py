@@ -38,7 +38,6 @@ _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
 _adapter_import_locks: ContextVar[dict[str, asyncio.Lock]] = ContextVar(
     "_adapter_import_locks", default={}
 )
-default_adapters = dict(app="default", storage="file", cache="memory")
 
 
 class AdapterNotFound(Exception): ...
@@ -147,21 +146,87 @@ def get_installed_adapters() -> list[Adapter]:
     return list(_installed_adapters_cache.get().values())
 
 
-async def _import_adapter(adapter_category: str) -> t.Any:
-    if _testing or "pytest" in sys.modules:
-        from unittest.mock import MagicMock
+_adapter_config_loaded: bool = False
 
-        return MagicMock()
+
+async def _ensure_adapter_configuration() -> None:
+    global _adapter_config_loaded
+    if _adapter_config_loaded:
+        return
+    _adapter_config_loaded = True
+    if _testing or "pytest" in sys.modules:
+        return
+    from contextlib import suppress
+
+    with suppress(Exception):
+        cwd_path = AsyncPath(Path.cwd())
+        cwd_settings_path = cwd_path / "settings"
+        cwd_adapter_settings_path = cwd_settings_path / "adapters.yml"
+        if cwd_path.stem in ("acb", "fastblocks"):
+            return
+        has_pyproject = await (cwd_path / "pyproject.toml").exists()
+        if has_pyproject:
+            has_src = await (cwd_path / "src").exists()
+            has_package_dir = await (cwd_path / cwd_path.stem).exists()
+            if has_src or has_package_dir:
+                return
+        if not await cwd_adapter_settings_path.exists() and not _deployed:
+            await cwd_settings_path.mkdir(exist_ok=True)
+            categories = set()
+            categories.update(a.category for a in adapter_registry.get())
+            settings_dict = {
+                cat: None for cat in categories if cat not in ("logger", "config")
+            }
+            await cwd_adapter_settings_path.write_bytes(
+                yaml_encode(settings_dict, sort_keys=True)
+            )
+        if await cwd_adapter_settings_path.exists():
+            _adapters = yaml_decode(await cwd_adapter_settings_path.read_text())
+            enabled_adapters = {a: m for a, m in _adapters.items() if m}
+            for adapter in adapter_registry.get():
+                if enabled_adapters.get(adapter.category) == adapter.name:
+                    adapter.enabled = True
+            _update_adapter_caches()
+
+
+async def _import_adapter_module_for_deps(adapter_category: str) -> None:
+    from contextlib import suppress
+
+    if adapter_category == "app":
+        for adapter in adapter_registry.get():
+            if adapter.category == adapter_category:
+                with suppress(ImportError, AdapterNotFound, AdapterNotInstalled):
+                    import_module(adapter.module)
+                break
+
+
+async def _find_adapter(adapter_category: str) -> Adapter:
     try:
         adapter = get_adapter(adapter_category)
-        if adapter is None:
-            raise AdapterNotFound(
-                f"{adapter_category} adapter not found – check adapters.yml"
-            )
+        if adapter is not None:
+            return adapter
+        from contextlib import suppress
+
+        current_path = AsyncPath(Path.cwd())
+        for pkg_path in (current_path, current_path.parent):
+            adapters_dir = pkg_path / "adapters"
+            if await adapters_dir.exists():
+                with suppress(Exception):
+                    await register_adapters(pkg_path)
+                    await _ensure_adapter_configuration()
+                    adapter = get_adapter(adapter_category)
+                    if adapter is not None:
+                        return adapter
+        raise AdapterNotFound(
+            f"{adapter_category} adapter not found – check adapters.yml and ensure package registration"
+        )
     except AttributeError:
         raise AdapterNotFound(
             f"{adapter_category} adapter not found – check adapters.yml"
         )
+
+
+async def _load_module(adapter: Adapter) -> t.Any:
     try:
         module = import_module(adapter.module)
     except ModuleNotFoundError:
@@ -172,26 +237,65 @@ async def _import_adapter(adapter_category: str) -> t.Any:
         if spec.loader is not None:
             spec.loader.exec_module(module)
         sys.modules[adapter.name] = module
+    return module
+
+
+async def _initialize_adapter(
+    adapter: Adapter, module: t.Any, adapter_category: str
+) -> t.Any:
+    """Initialize an adapter with settings and dependencies."""
+    from contextlib import suppress
+
+    adapter_class: t.Any = getattr(module, adapter.class_name)
+
+    adapter_settings = None
+    adapter_settings_class_name = f"{adapter.class_name}Settings"
+    if hasattr(module, adapter_settings_class_name):
+        adapter_settings_class = getattr(module, adapter_settings_class_name)
+        with suppress(Exception):
+            adapter_settings = adapter_settings_class()
+
+    if adapter_settings is not None:
+        from ..config import Config
+
+        config = depends.get(Config)
+        setattr(config, adapter_category, adapter_settings)
+
+    instance = depends.get(adapter_class)
+    if hasattr(instance, "init"):
+        init_result = instance.init()
+        if hasattr(init_result, "__await__"):
+            await init_result
+
+    from ..logger import Logger
+
+    logger = depends.get(Logger)
+    logger.info(f"Adapter initialized: {adapter.class_name}")
+
+    return adapter_class
+
+
+async def _import_adapter(adapter_category: str) -> t.Any:
+    if _testing or "pytest" in sys.modules:
+        from unittest.mock import MagicMock
+
+        return MagicMock()
+    await _ensure_adapter_configuration()
+    await _import_adapter_module_for_deps(adapter_category)
+    adapter = await _find_adapter(adapter_category)
+    module = await _load_module(adapter)
     adapter_class: t.Any = getattr(module, adapter.class_name)
     if adapter.installed:
         return adapter_class
-    async with _adapter_import_locks.get()[adapter_category]:
+    locks = _adapter_import_locks.get()
+    if adapter_category not in locks:
+        locks[adapter_category] = asyncio.Lock()
+    async with locks[adapter_category]:
         if adapter.installed:
             return adapter_class
         try:
             adapter.installed = True
-            adapter_settings_class_name = f"{adapter.class_name}Settings"
-            adapter_settings_class = getattr(module, adapter_settings_class_name)
-            adapter_settings = adapter_settings_class()
-            from ..config import Config
-            from ..logger import Logger
-
-            config = depends.get(Config)
-            setattr(config, adapter_category, adapter_settings)
-            instance = depends.get(adapter_class)
-            await instance.init()
-            logger = depends.get(Logger)
-            logger.info(f"Adapter initialized: {adapter.class_name}")
+            return await _initialize_adapter(adapter, module, adapter_category)
         except Exception as e:
             adapter.installed = False
             raise AdapterNotInstalled(
@@ -309,35 +413,6 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
     for adapter_name, modules in pkg_adapters.items():
         _modules = extract_adapter_modules(modules, adapter_name)
         adapters.extend(_modules)
-    if (
-        not await adapter_settings_path.exists()
-        and (not _deployed)
-        and (not _testing)
-        and (root_path.stem != "acb")
-    ):
-        await settings_path.mkdir(exist_ok=True)
-        categories = set()
-        categories.update(a.category for a in adapter_registry.get() + adapters)
-        await adapter_settings_path.write_bytes(
-            yaml_encode(
-                {cat: None for cat in categories if cat not in ("logger", "config")}
-                | default_adapters,
-                sort_keys=True,
-            )
-        )
-    _adapters = (
-        {}
-        if _testing or root_path.stem == "acb"
-        else yaml_decode(await adapter_settings_path.read_text())
-    )
-    _adapters.update(
-        {a.category: None for a in adapters if a.category not in _adapters}
-    )
-    if not _testing and (not root_path.stem == "acb") and (not _deployed):
-        await adapter_settings_path.write_bytes(yaml_encode(_adapters, sort_keys=True))
-    enabled_adapters = {a: m for a, m in _adapters.items() if m}
-    for a in [a for a in adapters if enabled_adapters.get(a.category) == a.name]:
-        a.enabled = True
     registry = adapter_registry.get()
     for a in adapters:
         module = ".".join(a.module.split(".")[-2:])
@@ -347,8 +422,6 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
         )
         if remove:
             registry.remove(remove)
-        if module in [".".join(_a.module.split(".")[-2:]) for _a in registry]:
-            continue
         registry.append(a)
         _adapter_import_locks.get()[a.category] = asyncio.Lock()
     _update_adapter_caches()

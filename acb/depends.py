@@ -44,6 +44,10 @@ class Depends:
                     ][0].removeprefix("self.")
         class_ = category
         if isinstance(class_, str):
+            with suppress(Exception):
+                result = get_repository().get(class_)
+                if result is not None:
+                    return t.cast(class_, result)
             from .adapters import _import_adapter
 
             try:

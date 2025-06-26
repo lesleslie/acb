@@ -86,6 +86,8 @@ class TestFirestore:
     @pytest.mark.asyncio
     async def test_init(self, nosql: FirestoreNosql) -> None:
         original_init = nosql.init
+        mock_logger = MagicMock()
+        nosql.logger = mock_logger
 
         async def mock_init() -> None:
             nosql.logger.info("Initializing Firestore connection")
@@ -94,7 +96,7 @@ class TestFirestore:
 
         await nosql.init()
 
-        nosql.logger.info.assert_called_once()
+        mock_logger.info.assert_called_once()
 
         nosql.init = original_init
 

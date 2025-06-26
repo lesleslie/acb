@@ -121,8 +121,8 @@ class Ftpd(FtpdBase):
             info = FileInfo(
                 name=t.cast(str, file_info[1].get("name")),
                 size=t.cast(int, file_info[1].get("size", 0)),
-                is_dir=t.cast(str, file_info[1].get("type")) == "dir",
-                is_file=t.cast(str, file_info[1].get("type")) == "file",
+                is_dir=file_info[1].get("type") == "dir",
+                is_file=file_info[1].get("type") == "file",
                 permissions=t.cast(str, file_info[1].get("permissions", "")),
                 mtime=t.cast(float, file_info[1].get("modify", 0.0)),
                 owner=t.cast(str, file_info[1].get("owner", "")),
@@ -167,11 +167,11 @@ class Ftpd(FtpdBase):
         file_info = await client.stat(path)
         return FileInfo(
             name=os.path.basename(path),
-            size=file_info.get("size", 0),
+            size=int(file_info.get("size", 0)),
             is_dir=file_info["type"] == "dir",
             is_file=file_info["type"] == "file",
             permissions=file_info.get("permissions", ""),
-            mtime=file_info.get("modify", 0.0),
+            mtime=float(file_info.get("modify", 0.0)),
             owner=file_info.get("owner", ""),
             group=file_info.get("group", ""),
         )

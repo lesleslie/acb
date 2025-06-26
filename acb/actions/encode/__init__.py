@@ -22,6 +22,13 @@ def yaml_encode(
     enc_hook: t.Callable[[t.Any], t.Any] | None = None,
     sort_keys: bool = False,
 ) -> bytes:
+    def path_enc_hook(obj: t.Any) -> t.Any:
+        if isinstance(obj, Path | AsyncPath):
+            return str(obj)
+        if enc_hook is not None:
+            return enc_hook(obj)
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
     dumper_class = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
     dumper_class.add_representer(
         type(None),
@@ -32,7 +39,7 @@ def yaml_encode(
             msgspec.yaml._to_builtins(
                 obj,
                 builtin_types=(_datetime.datetime, _datetime.date),
-                enc_hook=enc_hook,
+                enc_hook=path_enc_hook,
             )
         ],
         encoding="utf-8",
@@ -274,3 +281,4 @@ dump = Encode()
 load = Encode()
 for s in serializers.__dict__:
     setattr(decode, s, decode._create_method(s, "decode"))
+    setattr(load, s, load._create_method(s, "decode"))

@@ -215,9 +215,14 @@ class TestRedis:
         original_get = nosql.config.nosql.get
         nosql.config.nosql.get.return_value = redis_settings
 
+        # Create mock logger BEFORE accessing client
+        mock_logger = MagicMock()
+        nosql.logger = mock_logger
+
         try:
-            assert nosql.client is not None
-            nosql.logger.info.assert_any_call(
+            # Test the init method which calls the logger
+            await nosql.init()
+            mock_logger.info.assert_any_call(
                 "Redis connection initialized successfully"
             )
         finally:
@@ -249,10 +254,14 @@ class TestRedis:
 
         nosql.init = mock_init_error
 
+        # Create mock logger
+        mock_logger = MagicMock()
+        nosql.logger = mock_logger
+
         with pytest.raises(Exception) as excinfo:
             await nosql.init()
         assert "Connection error" in str(excinfo.value)
-        assert nosql.logger.error.call_count == 1
+        assert mock_logger.error.call_count == 1
 
         nosql.init = original_init
 

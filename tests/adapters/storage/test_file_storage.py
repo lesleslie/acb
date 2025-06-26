@@ -508,13 +508,17 @@ class TestFileStorage:
 
         test_adapter = TestableStorage(storage_adapter)
 
+        # Create mock logger
+        mock_logger = MagicMock()
+        test_adapter.logger = mock_logger
+
         result = await test_adapter.file_exists("test/path/file.txt")
 
         test_adapter._test_client.exists.assert_called_once_with("test/path/file.txt")
 
         assert not result
 
-        test_adapter.logger.error.assert_called_once()
+        mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_directory_exception(self, storage_adapter: Storage) -> None:
@@ -533,6 +537,10 @@ class TestFileStorage:
 
         test_adapter = TestableStorage(storage_adapter)
 
+        # Create mock logger
+        mock_logger = MagicMock()
+        test_adapter.logger = mock_logger
+
         result = await test_adapter.create_directory("test/path/directory")
 
         test_adapter._test_client.mkdir.assert_called_once_with(
@@ -541,7 +549,7 @@ class TestFileStorage:
 
         assert not result
 
-        test_adapter.logger.error.assert_called_once()
+        mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_directory_exists_exception(self, storage_adapter: Storage) -> None:
@@ -561,6 +569,10 @@ class TestFileStorage:
 
         test_adapter = TestableStorage(storage_adapter)
 
+        # Create mock logger
+        mock_logger = MagicMock()
+        test_adapter.logger = mock_logger
+
         result = await test_adapter.directory_exists("test/path/directory")
 
         test_adapter._test_client.exists.assert_called_once_with("test/path/directory")
@@ -569,7 +581,7 @@ class TestFileStorage:
 
         assert not result
 
-        test_adapter.logger.error.assert_called_once()
+        mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_put_file_with_string_content(self, storage_adapter: Storage) -> None:
@@ -602,11 +614,15 @@ class TestFileStorage:
 
         with patch.object(storage_adapter, "client", new=mock_client):
             with patch.object(storage_adapter, "root_dir", new=None):
+                # Create mock logger
+                mock_logger = MagicMock()
+                storage_adapter.logger = mock_logger
+
                 result = await storage_adapter.put_file(file_path, content)
 
                 assert not result
 
-                storage_adapter.logger.error.assert_called_once()
+                mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_file_nonexistent(self, storage_adapter: Storage) -> None:
@@ -631,11 +647,15 @@ class TestFileStorage:
 
         with patch.object(storage_adapter, "client", new=mock_client):
             with patch.object(storage_adapter, "root_dir", new=None):
+                # Create mock logger
+                mock_logger = MagicMock()
+                storage_adapter.logger = mock_logger
+
                 result = await storage_adapter.get_file(file_path)
 
                 assert result is None
 
-                storage_adapter.logger.error.assert_called_once()
+                mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_file_nonexistent(self, storage_adapter: Storage) -> None:
@@ -660,11 +680,15 @@ class TestFileStorage:
 
         with patch.object(storage_adapter, "client", new=mock_client):
             with patch.object(storage_adapter, "root_dir", new=None):
+                # Create mock logger
+                mock_logger = MagicMock()
+                storage_adapter.logger = mock_logger
+
                 result = await storage_adapter.delete_file(file_path)
 
                 assert not result
 
-                storage_adapter.logger.error.assert_called_once()
+                mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_put_file_with_string_content_and_path_mock(

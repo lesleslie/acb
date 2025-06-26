@@ -29,7 +29,9 @@ class Monitoring(MonitoringBase):
         for adapter in [a.name for a in get_installed_adapters()]:
             match adapter:
                 case "loguru":
-                    self.logger.configure(handlers=[loguru_handler()])
+                    from loguru import logger
+
+                    logger.configure(handlers=[loguru_handler()])
                 case "httpx":
                     instrument_httpx()
                 case "redis":

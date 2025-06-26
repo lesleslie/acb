@@ -173,9 +173,13 @@ class TestGmailSmtp:
 
     @pytest.mark.asyncio
     async def test_get_response(self, smtp: GmailSmtp) -> None:
+        # Create mock logger
+        mock_logger = MagicMock()
+        smtp.logger = mock_logger
+
         result = await smtp.get_response("get", domain="example.com")
 
-        smtp.logger.debug.assert_called_once()
+        mock_logger.debug.assert_called_once()
         assert result["message"] == "success"
         assert result["status"] == "ok"
 
@@ -212,17 +216,25 @@ class TestGmailSmtp:
 
     @pytest.mark.asyncio
     async def test_create_domain(self, smtp: GmailSmtp) -> None:
+        # Create mock logger
+        mock_logger = MagicMock()
+        smtp.logger = mock_logger
+
         result = await smtp.create_domain("example.com")
 
-        smtp.logger.info.assert_called_once()
+        mock_logger.info.assert_called_once()
         assert result["message"] == "Domain configured for Gmail"
         assert result["domain"] == "example.com"
 
     @pytest.mark.asyncio
     async def test_delete_domain(self, smtp: GmailSmtp) -> None:
+        # Create mock logger
+        mock_logger = MagicMock()
+        smtp.logger = mock_logger
+
         result = await smtp.delete_domain("example.com")
 
-        smtp.logger.info.assert_called_once()
+        mock_logger.info.assert_called_once()
         assert result["message"] == "Domain deletion simulated"
         assert result["domain"] == "example.com"
 
@@ -245,11 +257,15 @@ class TestGmailSmtp:
             mock_records = [MagicMock(), MagicMock()]
             mock_get_records.return_value = mock_records
 
+            # Create mock logger
+            mock_logger = MagicMock()
+            smtp.logger = mock_logger
+
             await smtp.create_dns_records(dns=mock_dns)
 
             mock_get_records.assert_called_once_with("example.com")
             mock_dns.create_records.assert_called_once_with(mock_records)
-            smtp.logger.info.assert_called_once()
+            mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_list_routes(self, smtp: GmailSmtp) -> None:
@@ -274,6 +290,10 @@ class TestGmailSmtp:
 
     @pytest.mark.asyncio
     async def test_delete_route(self, smtp: GmailSmtp) -> None:
+        # Create mock logger BEFORE calling the method
+        mock_logger = MagicMock()
+        smtp.logger = mock_logger
+
         with patch.object(smtp, "_get_gmail_service") as mock_get_service:
             mock_service = MagicMock()
             mock_get_service.return_value = mock_service
@@ -287,11 +307,16 @@ class TestGmailSmtp:
             mock_service.users().settings().forwardingAddresses().delete.assert_called_once_with(
                 userId="me", forwardingEmail="admin@example.com"
             )
+
             assert response.status_code == 200
-            smtp.logger.info.assert_called_once()
+            mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_route(self, smtp: GmailSmtp) -> None:
+        # Create mock logger BEFORE calling the method
+        mock_logger = MagicMock()
+        smtp.logger = mock_logger
+
         with patch.object(smtp, "_get_gmail_service") as mock_get_service:
             mock_service = MagicMock()
             mock_get_service.return_value = mock_service
@@ -310,11 +335,16 @@ class TestGmailSmtp:
                 userId="me", body={"forwardingEmail": "admin@example.com"}
             )
             mock_service.users().settings().updateAutoForwarding.assert_called_once()
+
             assert result["message"] == "Forwarding created"
-            smtp.logger.info.assert_called()
+            mock_logger.info.assert_called()
 
     @pytest.mark.asyncio
     async def test_send_email(self, smtp: GmailSmtp) -> None:
+        # Create mock logger BEFORE calling the method
+        mock_logger = MagicMock()
+        smtp.logger = mock_logger
+
         with (
             patch.object(smtp, "_get_gmail_service") as mock_get_service,
             patch("acb.adapters.smtp.gmail.MIMEMultipart") as mock_mime_multipart,
@@ -353,7 +383,7 @@ class TestGmailSmtp:
 
             assert result["id"] == "message-id-123"
             assert result["status"] == "sent"
-            smtp.logger.info.assert_called_once()
+            mock_logger.info.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_init(self, smtp: GmailSmtp) -> None:

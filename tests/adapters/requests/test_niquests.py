@@ -118,10 +118,12 @@ class TestRequestsSettings:
 
 @pytest.mark.asyncio
 async def test_init(requests_adapter: Requests) -> None:
+    # Create mock logger
+    mock_logger = MagicMock()
+    requests_adapter.logger = mock_logger
+
     await requests_adapter.init()
-    requests_adapter.logger.debug.assert_called_once_with(
-        "Niquests adapter initialized"
-    )
+    mock_logger.debug.assert_called_once_with("Niquests adapter initialized")
 
 
 @pytest.mark.asyncio

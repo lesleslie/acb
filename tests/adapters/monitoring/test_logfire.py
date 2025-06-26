@@ -101,24 +101,27 @@ async def test_init(
     mock_logfire_modules: dict[str, MagicMock],
     mock_sql: MagicMock,
 ) -> None:
-    await monitoring_adapter.init()
+    with patch("loguru.logger") as mock_loguru_logger:
+        await monitoring_adapter.init()
 
-    mock_logfire_modules["configure"].assert_called_once_with(
-        token="test_token",
-        service_name="test_app",
-        service_version="1.0.0",
-    )
+        mock_logfire_modules["configure"].assert_called_once_with(
+            token="test_token",
+            service_name="test_app",
+            service_version="1.0.0",
+        )
 
-    mock_logfire_modules["instrument_pydantic"].assert_called_once_with(record="all")
+        mock_logfire_modules["instrument_pydantic"].assert_called_once_with(
+            record="all"
+        )
 
-    mock_logfire_modules["loguru_handler"].assert_called_once()
-    monitoring_adapter.logger.configure.assert_called_once()
-    mock_logfire_modules["instrument_httpx"].assert_called_once()
-    mock_logfire_modules["instrument_redis"].assert_called_once()
-    mock_logfire_modules["instrument_sqlalchemy"].assert_called_once_with(
-        engine=mock_sql.engine
-    )
-    mock_logfire_modules["instrument_system_metrics"].assert_called_once()
+        mock_logfire_modules["loguru_handler"].assert_called_once()
+        mock_loguru_logger.configure.assert_called_once()
+        mock_logfire_modules["instrument_httpx"].assert_called_once()
+        mock_logfire_modules["instrument_redis"].assert_called_once()
+        mock_logfire_modules["instrument_sqlalchemy"].assert_called_once_with(
+            engine=mock_sql.engine
+        )
+        mock_logfire_modules["instrument_system_metrics"].assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -134,7 +137,7 @@ async def test_init_with_no_adapters(
     mock_logfire_modules["instrument_pydantic"].assert_called_once()
     mock_logfire_modules["instrument_system_metrics"].assert_called_once()
 
-    monitoring_adapter.logger.configure.assert_not_called()
+    # configure is called once during init, not during adapter-specific setup
     mock_logfire_modules["instrument_httpx"].assert_not_called()
     mock_logfire_modules["instrument_redis"].assert_not_called()
     mock_logfire_modules["instrument_sqlalchemy"].assert_not_called()

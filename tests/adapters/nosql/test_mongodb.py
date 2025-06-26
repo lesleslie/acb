@@ -95,6 +95,8 @@ class TestMongoDB:
         nosql.config.nosql.get.return_value = mongodb_settings
 
         original_init = nosql.init
+        mock_logger = MagicMock()
+        nosql.logger = mock_logger
 
         async def mock_init() -> None:
             nosql.logger.info("Initializing MongoDB connection")
@@ -104,7 +106,7 @@ class TestMongoDB:
         nosql.init = mock_init
 
         await nosql.init()
-        assert nosql.logger.info.call_count == 2
+        assert mock_logger.info.call_count == 2
 
         nosql.init = original_init
 
@@ -119,6 +121,8 @@ class TestMongoDB:
         nosql.config.nosql.get.return_value = mongodb_settings
 
         original_init = nosql.init
+        mock_logger = MagicMock()
+        nosql.logger = mock_logger
 
         async def mock_init_error() -> None:
             nosql.logger.info("Initializing MongoDB connection")
@@ -132,7 +136,7 @@ class TestMongoDB:
         with pytest.raises(Exception) as excinfo:
             await nosql.init()
         assert "Connection error" in str(excinfo.value)
-        assert nosql.logger.error.call_count == 1
+        assert mock_logger.error.call_count == 1
 
         nosql.init = original_init
 

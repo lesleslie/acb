@@ -414,13 +414,34 @@ class Config(metaclass=AdapterMeta):
 
 depends.set(Config)
 depends.get(Config).init()
-Logger = import_adapter()
+
+Logger = None
 
 
 @rich.repr.auto
 class AdapterBase(metaclass=AdapterMeta):
     config: Config = depends()
-    logger: Logger = depends()
+
+    @property
+    def logger(self):
+        if not hasattr(self, "_logger"):
+            try:
+                Logger = import_adapter("logger")
+                self._logger = depends.get(Logger)
+            except Exception:
+                import logging
+
+                self._logger = logging.getLogger(self.__class__.__name__)
+        return self._logger
+
+    @logger.setter
+    def logger(self, value: t.Any) -> None:
+        self._logger = value
+
+    @logger.deleter
+    def logger(self) -> None:
+        if hasattr(self, "_logger"):
+            delattr(self, "_logger")
 
     def __init__(self, **kwargs: t.Any) -> None:
         self._client = None
