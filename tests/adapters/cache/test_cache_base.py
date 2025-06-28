@@ -48,6 +48,9 @@ class MockCache(CacheBase):
         self._multi_set = AsyncMock()
         self._multi_delete = AsyncMock()
 
+    async def _create_client(self) -> t.Any:
+        return MagicMock()
+
     async def get(
         self,
         key: str,

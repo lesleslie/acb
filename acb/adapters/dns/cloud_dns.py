@@ -117,31 +117,48 @@ class Dns(DnsBase):
     async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         records = [records] if isinstance(records, DnsRecord) else records
         for record in records:
-            if not record.name.endswith("."):
-                record.name = f"{record.name}."
-            if not isinstance(record.rrdata, list):
-                record.rrdata = [record.rrdata]
-            for i, r in enumerate(record.rrdata):
-                with suppress(ValidationError):
-                    if isinstance(r, str) and domain(r) and (not r.endswith(".")):
-                        r = f"{r}."
-                        record.rrdata[i] = r
-                    if record.type == "TXT":
-                        record.rrdata[i] = f'"{r}"'
-            current_record = self.get_current_record(record)
-            if current_record:
-                if current_record.__dict__ == record.__dict__:
-                    continue
-                self.current_record_sets.append(self.get_record_set(current_record))
-                self.logger.info(f"Deleting - {current_record}")
-            record_set = self.get_record_set(record)
-            self.new_record_sets.append(record_set)
-            self.logger.info(f"Creating - {record}")
+            self._normalize_record(record)
+            await self._process_record(record)
+        await self._apply_pending_changes()
+
+    def _normalize_record(self, record: DnsRecord) -> None:
+        if record.name and not record.name.endswith("."):
+            record.name = f"{record.name}."
+        if not isinstance(record.rrdata, list):
+            record.rrdata = [record.rrdata] if record.rrdata is not None else []
+        self._normalize_record_data(record)
+
+    def _normalize_record_data(self, record: DnsRecord) -> None:
+        if not isinstance(record.rrdata, list):
+            return
+        for i, r in enumerate(record.rrdata):
+            with suppress(ValidationError):
+                if isinstance(r, str) and domain(r) and (not r.endswith(".")):
+                    r = f"{r}."
+                    record.rrdata[i] = r
+                if record.type == "TXT":
+                    record.rrdata[i] = f'"{r}"'
+
+    async def _process_record(self, record: DnsRecord) -> None:
+        current_record = self.get_current_record(record)
+        if current_record and current_record.__dict__ == record.__dict__:
+            return
+
+        if current_record:
+            self.current_record_sets.append(self.get_record_set(current_record))
+            self.logger.info(f"Deleting - {current_record}")
+
+        record_set = self.get_record_set(record)
+        self.new_record_sets.append(record_set)
+        self.logger.info(f"Creating - {record}")
+
+    async def _apply_pending_changes(self) -> None:
         if self.current_record_sets:
             await self.delete_record_sets()
         if self.new_record_sets:
-            return await self.add_record_sets()
-        self.logger.info("No DNS changes detected")
+            await self.add_record_sets()
+        else:
+            self.logger.info("No DNS changes detected")
 
 
 depends.set(Dns)

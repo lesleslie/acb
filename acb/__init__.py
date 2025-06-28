@@ -57,7 +57,6 @@ try:
         a.pkg == "acb" and a.category == "models" for a in adapter_registry.get()
     ):
         acb_adapters_path = AsyncPath(Path(__file__).parent / "adapters")
-
         essential_adapters = [
             Adapter(
                 name="sqlmodel",
@@ -90,11 +89,9 @@ try:
                 path=acb_adapters_path / "storage" / "file.py",
             ),
         ]
-
         registry = adapter_registry.get()
         registry.extend(essential_adapters)
         _update_adapter_caches()
-
 except Exception as e:
     print(f"Warning: ACB essential adapters registration failed: {e}")
     pass

@@ -1021,25 +1021,36 @@ class MockModels(ModelsAdapterProtocol):
         del self._models[model_name][id]
         return True
 
+    def _instance_matches_query(self, instance: Any, query: dict[str, Any]) -> bool:
+        """Check if an instance matches the given query criteria."""
+        for key, value in query.items():
+            if not hasattr(instance, key) or getattr(instance, key) != value:
+                return False
+        return True
+
+    def _instance_to_dict(self, instance: Any) -> dict[str, Any]:
+        """Convert a model instance to a dictionary representation."""
+        result_dict = {"id": instance.id}
+        for k, v in vars(instance).items():
+            if k != "id":
+                result_dict[k] = v
+        return result_dict
+
     async def find(self, query: dict[str, Any]) -> list[dict[str, Any]]:
+        """Find model instances matching the query criteria."""
         model_name = "TestModel"
         if model_name not in self._models:
             return []
 
-        results: list[dict[str, Any]] = []
-        for instance in self._models[model_name].values():
-            match = True
-            for key, value in query.items():
-                if not hasattr(instance, key) or getattr(instance, key) != value:
-                    match = False
-                    break
+        # Filter instances that match the query
+        matching_instances = [
+            instance
+            for instance in self._models[model_name].values()
+            if self._instance_matches_query(instance, query)
+        ]
 
-            if match:
-                result_dict = {"id": instance.id}
-                for k, v in vars(instance).items():
-                    if k != "id":
-                        result_dict[k] = v
-                results.append(result_dict)
+        # Convert matching instances to dictionaries
+        results = [self._instance_to_dict(instance) for instance in matching_instances]
 
         return results
 

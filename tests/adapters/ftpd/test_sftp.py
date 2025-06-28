@@ -210,22 +210,25 @@ async def test_adapter_cleanup(sftp_adapter: Ftpd) -> None:
     sftp_adapter._sftp_client = t.cast(t.Any, mock_sftp_client)
     sftp_adapter._client = t.cast(t.Any, mock_ssh_client)
 
-    async def cleanup() -> None:
-        if sftp_adapter._sftp_client:
-            if hasattr(sftp_adapter._sftp_client, "close"):
-                close_method = getattr(sftp_adapter._sftp_client, "close")
-                if callable(close_method):
-                    result = close_method()
-                    if inspect.isawaitable(result):
-                        await result
+    async def safely_close_client(client: t.Any) -> None:
+        """Safely close a client if it has a close method."""
+        if not client:
+            return
 
-        if sftp_adapter._client:
-            if hasattr(sftp_adapter._client, "close"):
-                close_method = getattr(sftp_adapter._client, "close")
-                if callable(close_method):
-                    result = close_method()
-                    if inspect.isawaitable(result):
-                        await result
+        if not hasattr(client, "close"):
+            return
+
+        close_method = getattr(client, "close")
+        if not callable(close_method):
+            return
+
+        result = close_method()
+        if inspect.isawaitable(result):
+            await result
+
+    async def cleanup() -> None:
+        await safely_close_client(sftp_adapter._sftp_client)
+        await safely_close_client(sftp_adapter._client)
 
         sftp_adapter._sftp_client = None
         sftp_adapter._client = None

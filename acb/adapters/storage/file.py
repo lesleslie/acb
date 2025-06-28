@@ -70,22 +70,30 @@ class Storage(StorageBase):
     async def get_file(self, path: str) -> bytes | None:
         try:
             if self.root_dir:
-                full_path = Path(self.root_dir) / path
-                if not full_path.exists():
-                    return None
-                return full_path.read_bytes()
+                return await self._get_file_from_root_dir(path)
             else:
-                if not await self.file_exists(path):
-                    return None
-                try:
-                    with self.client.open(path, "rb") as f:
-                        content = f.read()
-                        if isinstance(content, str):
-                            return content.encode("utf-8")
-                        return content
-                except Exception as e:
-                    self.logger.error(f"Error getting file {path}: {e}")
-                    return None
+                return await self._get_file_from_client(path)
+        except Exception as e:
+            self.logger.error(f"Error getting file {path}: {e}")
+            return None
+
+    async def _get_file_from_root_dir(self, path: str) -> bytes | None:
+        if self.root_dir is None:
+            return None
+        full_path = Path(self.root_dir) / path
+        if not full_path.exists():
+            return None
+        return full_path.read_bytes()
+
+    async def _get_file_from_client(self, path: str) -> bytes | None:
+        if not await self.file_exists(path):
+            return None
+        try:
+            with self.client.open(path, "rb") as f:
+                content = f.read()
+                if isinstance(content, str):
+                    return content.encode("utf-8")
+                return content
         except Exception as e:
             self.logger.error(f"Error getting file {path}: {e}")
             return None

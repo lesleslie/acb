@@ -137,34 +137,54 @@ class Encode:
         return method
 
     async def _decode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
+        self._validate_decode_input(obj)
+        obj = await self._load_from_path(obj)
+        obj = self._prepare_string_input(obj)
+        return self._perform_decode(obj, **kwargs)
+
+    def _validate_decode_input(self, obj: t.Any) -> None:
         if obj is None:
             raise ValueError("Cannot decode from None input")
         if isinstance(obj, str | bytes) and (not obj):
             raise ValueError("Cannot decode from empty input")
+
+    async def _load_from_path(self, obj: t.Any) -> t.Any:
         if isinstance(obj, AsyncPath):
-            try:
-                try:
-                    obj = await obj.read_bytes()
-                except (AttributeError, NotImplementedError):
-                    text = await obj.read_text()
-                    obj = text.encode("utf-8") if text else ""
-            except FileNotFoundError:
-                raise FileNotFoundError(f"File not found: {obj}")
+            return await self._read_async_path(obj)
         elif isinstance(obj, Path):
+            return self._read_sync_path(obj)
+        return obj
+
+    async def _read_async_path(self, path: AsyncPath) -> bytes:
+        try:
             try:
-                try:
-                    obj = obj.read_bytes()
-                except (AttributeError, NotImplementedError):
-                    text = obj.read_text()
-                    obj = text.encode("utf-8") if text else ""
-            except FileNotFoundError:
-                raise FileNotFoundError(f"File not found: {obj}")
+                return await path.read_bytes()
+            except (AttributeError, NotImplementedError):
+                text = await path.read_text()
+                return text.encode("utf-8") if text else b""
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File not found: {path}")
+
+    def _read_sync_path(self, path: Path) -> bytes:
+        try:
+            try:
+                return path.read_bytes()
+            except (AttributeError, NotImplementedError):
+                text = path.read_text()
+                return text.encode() if text else b""
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File not found: {path}")
+
+    def _prepare_string_input(self, obj: t.Any) -> t.Any:
         if isinstance(obj, str) and self.serializer in (
             msgspec.json.decode,
             msgspec.yaml.decode,
             msgspec.toml.decode,
         ):
-            obj = obj.encode("utf-8")
+            return obj.encode("utf-8")
+        return obj
+
+    def _perform_decode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
         try:
             return self.serializer(obj, **kwargs)
         except msgspec.DecodeError as e:
@@ -281,4 +301,4 @@ dump = Encode()
 load = Encode()
 for s in serializers.__dict__:
     setattr(decode, s, decode._create_method(s, "decode"))
-    setattr(load, s, load._create_method(s, "decode"))
+    setattr(load, s, load._create_method(s, "encode"))

@@ -51,13 +51,9 @@ depends.get(Config).logger = LoggerSettings()
 @t.runtime_checkable
 class LoggerProtocol(t.Protocol):
     def debug(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
-
     def info(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
-
     def warning(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
-
     def error(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None: ...
-
     def init(self) -> None: ...
 
 
@@ -86,39 +82,29 @@ class Logger(_Logger, LoggerBase):
         await aprint(message, end="")
 
     def init(self) -> None:
-        if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
-            self.remove()
-            self.configure(handlers=[])
+        if self._is_testing_mode():
+            self._configure_for_testing()
             return
+        self._configure_logger()
+        self._setup_level_colors()
+        self._log_debug_levels()
+        self._log_app_info()
 
-        def patch_name(record: dict[str, t.Any]) -> str:
-            mod_parts = record["name"].split(".")
-            mod_name = ".".join(mod_parts[:-1])
-            if len(mod_parts) > 3:
-                mod_name = ".".join(mod_parts[1:-1])
-            return mod_name.replace("_sdk", "")
+    def _is_testing_mode(self) -> bool:
+        return (
+            "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true"
+        )
 
-        def filter_by_module(record: dict[str, t.Any]) -> bool:
-            try:
-                name = record["name"].split(".")[-2]
-            except IndexError:
-                name = record["name"]
-            level_ = self.config.logger.log_level
-            if name in self.config.logger.level_per_module:
-                level_ = self.config.logger.level_per_module[name]
-            try:
-                levelno_ = self.level(level_).no
-            except ValueError:
-                raise ValueError(
-                    f"The filter dict contains a module '{name}' associated to a level  name which does not exist: '{level_}'"
-                )
-            if level_ is False:
-                return False
-            return record["level"].no >= levelno_
+    def _configure_for_testing(self) -> None:
+        self.remove()
+        self.configure(handlers=[])
 
+    def _configure_logger(self) -> None:
         self.remove()
         self.configure(
-            patcher=lambda record: record["extra"].update(mod_name=patch_name(record))
+            patcher=lambda record: record["extra"].update(
+                mod_name=self._patch_name(record)
+            )
         )
         self.config.logger.log_level = (
             self.config.logger.deployed_level.upper()
@@ -128,33 +114,66 @@ class Logger(_Logger, LoggerBase):
         self.config.logger.level_per_module = {
             m: "DEBUG" if v else self.config.logger.log_level for m, v in debug.items()
         }
+        self._add_logger_sink()
+
+    def _patch_name(self, record: dict[str, t.Any]) -> str:
+        mod_parts = record["name"].split(".")
+        mod_name = ".".join(mod_parts[:-1])
+        if len(mod_parts) > 3:
+            mod_name = ".".join(mod_parts[1:-1])
+        return mod_name.replace("_sdk", "")
+
+    def _filter_by_module(self, record: dict[str, t.Any]) -> bool:
+        try:
+            name = record["name"].split(".")[-2]
+        except IndexError:
+            name = record["name"]
+        level_ = self.config.logger.log_level
+        if name in self.config.logger.level_per_module:
+            level_ = self.config.logger.level_per_module[name]
+        try:
+            levelno_ = self.level(level_).no
+        except ValueError:
+            raise ValueError(
+                f"The filter dict contains a module '{name}' associated to a level  name which does not exist: '{level_}'"
+            )
+        if level_ is False:
+            return False
+        return record["level"].no >= levelno_
+
+    def _add_logger_sink(self) -> None:
         try:
             self.add(
                 self.async_sink,
-                filter=t.cast(t.Any, filter_by_module),
+                filter=t.cast(t.Any, self._filter_by_module),
                 **self.config.logger.settings,
             )
         except ValueError as e:
             if "event loop is required" in str(e):
-                self.add(
-                    lambda msg: print(msg, end=""),
-                    filter=t.cast(t.Any, filter_by_module),
-                    **{
-                        k: v
-                        for k, v in self.config.logger.settings.items()
-                        if k != "enqueue"
-                    },
-                )
+                self._add_sync_sink()
             else:
                 raise
+
+    def _add_sync_sink(self) -> None:
+        self.add(
+            lambda msg: print(msg, end=""),
+            filter=t.cast(t.Any, self._filter_by_module),
+            **{k: v for k, v in self.config.logger.settings.items() if k != "enqueue"},
+        )
+
+    def _setup_level_colors(self) -> None:
         for level, color in self.config.logger.level_colors.items():
             self.level(level.upper(), color=f"[{color}]")
+
+    def _log_debug_levels(self) -> None:
         if self.config.debug.logger:
             self.debug("debug")
             self.info("info")
             self.warning("warning")
             self.error("error")
             self.critical("critical")
+
+    def _log_app_info(self) -> None:
         self.info(f"App path: {self.config.root_path}")
         self.info(f"App deployed: {self.config.deployed}")
 

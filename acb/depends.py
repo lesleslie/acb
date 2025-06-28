@@ -11,13 +11,10 @@ from bevy import inject as inject_dependency
 class DependsProtocol(t.Protocol):
     @staticmethod
     def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]: ...
-
     @staticmethod
     def set(class_: t.Any, instance: t.Any = None) -> t.Any: ...
-
     @staticmethod
     def get(*args: t.Any) -> t.Any: ...
-
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any: ...
 
 

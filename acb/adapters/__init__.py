@@ -91,7 +91,6 @@ _enabled_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
 _installed_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
     "_installed_adapters_cache", default={}
 )
-
 core_adapters = [
     Adapter(
         name="config",
@@ -151,42 +150,66 @@ _adapter_config_loaded: bool = False
 
 async def _ensure_adapter_configuration() -> None:
     global _adapter_config_loaded
-    if _adapter_config_loaded:
+    if _adapter_config_loaded or _should_skip_configuration():
         return
     _adapter_config_loaded = True
-    if _testing or "pytest" in sys.modules:
-        return
     from contextlib import suppress
 
     with suppress(Exception):
-        cwd_path = AsyncPath(Path.cwd())
-        cwd_settings_path = cwd_path / "settings"
-        cwd_adapter_settings_path = cwd_settings_path / "adapters.yml"
-        if cwd_path.stem in ("acb", "fastblocks"):
-            return
-        has_pyproject = await (cwd_path / "pyproject.toml").exists()
-        if has_pyproject:
-            has_src = await (cwd_path / "src").exists()
-            has_package_dir = await (cwd_path / cwd_path.stem).exists()
-            if has_src or has_package_dir:
-                return
-        if not await cwd_adapter_settings_path.exists() and not _deployed:
-            await cwd_settings_path.mkdir(exist_ok=True)
-            categories = set()
-            categories.update(a.category for a in adapter_registry.get())
-            settings_dict = {
-                cat: None for cat in categories if cat not in ("logger", "config")
-            }
-            await cwd_adapter_settings_path.write_bytes(
-                yaml_encode(settings_dict, sort_keys=True)
-            )
-        if await cwd_adapter_settings_path.exists():
-            _adapters = yaml_decode(await cwd_adapter_settings_path.read_text())
-            enabled_adapters = {a: m for a, m in _adapters.items() if m}
-            for adapter in adapter_registry.get():
-                if enabled_adapters.get(adapter.category) == adapter.name:
-                    adapter.enabled = True
-            _update_adapter_caches()
+        await _setup_adapter_configuration()
+
+
+def _should_skip_configuration() -> bool:
+    return _testing or "pytest" in sys.modules
+
+
+async def _setup_adapter_configuration() -> None:
+    cwd_path = AsyncPath(Path.cwd())
+    if await _should_skip_project_setup(cwd_path):
+        return
+    cwd_settings_path = cwd_path / "settings"
+    cwd_adapter_settings_path = cwd_settings_path / "adapters.yml"
+    await _create_adapter_settings_if_needed(
+        cwd_settings_path, cwd_adapter_settings_path
+    )
+    await _load_and_apply_adapter_settings(cwd_adapter_settings_path)
+
+
+async def _should_skip_project_setup(cwd_path: AsyncPath) -> bool:
+    if cwd_path.stem in ("acb", "fastblocks"):
+        return True
+    has_pyproject = await (cwd_path / "pyproject.toml").exists()
+    if has_pyproject:
+        has_src = await (cwd_path / "src").exists()
+        has_package_dir = await (cwd_path / cwd_path.stem).exists()
+        return has_src or has_package_dir
+    return False
+
+
+async def _create_adapter_settings_if_needed(
+    cwd_settings_path: AsyncPath, cwd_adapter_settings_path: AsyncPath
+) -> None:
+    if not await cwd_adapter_settings_path.exists() and not _deployed:
+        await cwd_settings_path.mkdir(exist_ok=True)
+        categories = {a.category for a in adapter_registry.get()}
+        settings_dict = {
+            cat: None for cat in categories if cat not in ("logger", "config")
+        }
+        await cwd_adapter_settings_path.write_bytes(
+            yaml_encode(settings_dict, sort_keys=True)
+        )
+
+
+async def _load_and_apply_adapter_settings(
+    cwd_adapter_settings_path: AsyncPath,
+) -> None:
+    if await cwd_adapter_settings_path.exists():
+        _adapters = yaml_decode(await cwd_adapter_settings_path.read_text())
+        enabled_adapters = {a: m for a, m in _adapters.items() if m}
+        for adapter in adapter_registry.get():
+            if enabled_adapters.get(adapter.category) == adapter.name:
+                adapter.enabled = True
+        _update_adapter_caches()
 
 
 async def _import_adapter_module_for_deps(adapter_category: str) -> None:
@@ -243,35 +266,29 @@ async def _load_module(adapter: Adapter) -> t.Any:
 async def _initialize_adapter(
     adapter: Adapter, module: t.Any, adapter_category: str
 ) -> t.Any:
-    """Initialize an adapter with settings and dependencies."""
     from contextlib import suppress
 
     adapter_class: t.Any = getattr(module, adapter.class_name)
-
     adapter_settings = None
     adapter_settings_class_name = f"{adapter.class_name}Settings"
     if hasattr(module, adapter_settings_class_name):
         adapter_settings_class = getattr(module, adapter_settings_class_name)
         with suppress(Exception):
             adapter_settings = adapter_settings_class()
-
     if adapter_settings is not None:
         from ..config import Config
 
         config = depends.get(Config)
         setattr(config, adapter_category, adapter_settings)
-
     instance = depends.get(adapter_class)
     if hasattr(instance, "init"):
         init_result = instance.init()
         if hasattr(init_result, "__await__"):
             await init_result
-
     from ..logger import Logger
 
     logger = depends.get(Logger)
     logger.info(f"Adapter initialized: {adapter.class_name}")
-
     return adapter_class
 
 
@@ -301,7 +318,6 @@ async def _import_adapter(adapter_category: str) -> t.Any:
             raise AdapterNotInstalled(
                 f"Failed to install {adapter.class_name} adapter: {e}"
             )
-    return adapter_class
 
 
 async def gather_imports(adapter_categories: list[str]) -> t.Any:

@@ -72,11 +72,8 @@ class PydanticSettingsProtocol(t.Protocol):
     def __init__(
         self, settings_cls: type["Settings"], secrets_path: AsyncPath = ...
     ) -> None: ...
-
     def get_model_secrets(self) -> dict[str, FieldInfo]: ...
-
     async def __call__(self) -> dict[str, t.Any]: ...
-
     def __repr__(self) -> str: ...
 
 
@@ -167,36 +164,60 @@ class ManagerSecretSource(PydanticSettingsSource):
         return secret
 
     async def load_secrets(self) -> t.Any:
-        data = {}
         if _testing:
-            adapter_secrets = self.get_model_secrets()
-            for field_key, field_info in adapter_secrets.items():
-                field_name = field_key.removeprefix(f"{self.adapter_name}_")
-                if hasattr(field_info, "default") and field_info.default is not None:
-                    data[field_name] = field_info.default
-                else:
-                    data[field_name] = SecretStr(f"test_secret_for_{field_name}")
-            return data
+            return await self._load_test_secrets()
+        return await self._load_production_secrets()
+
+    async def _load_test_secrets(self) -> dict[str, t.Any]:
+        data = {}
+        adapter_secrets = self.get_model_secrets()
+        for field_key, field_info in adapter_secrets.items():
+            field_name = field_key.removeprefix(f"{self.adapter_name}_")
+            if hasattr(field_info, "default") and field_info.default is not None:
+                data[field_name] = field_info.default
+            else:
+                data[field_name] = SecretStr(f"test_secret_for_{field_name}")
+        return data
+
+    async def _load_production_secrets(self) -> dict[str, t.Any]:
+        data = {}
         adapter_secrets = self.get_model_secrets()
         missing_secrets = {
             n: v for n, v in adapter_secrets.items() if n not in _app_secrets.get()
         }
         if missing_secrets and self.secret_manager:
-            manager_secrets = await self.secret_manager.list(self.adapter_name)
-            for field_key, field_value in missing_secrets.items():
-                stored_field_key = "_".join((app_name, field_key))
-                secret_path = self.secrets_path / field_key
-                if not await secret_path.exists():
-                    if field_key not in manager_secrets:
-                        await self.secret_manager.create(
-                            stored_field_key, field_value.default.get_secret_value()
-                        )
-                secret = await self.secret_manager.get(stored_field_key)
-                await secret_path.write_text(secret)
-                field_name = field_key.removeprefix(f"{self.adapter_name}_")
-                data[field_name] = SecretStr(secret)
-                _app_secrets.get().add(field_key)
+            await self._process_missing_secrets(missing_secrets, data)
         return data
+
+    async def _process_missing_secrets(
+        self, missing_secrets: dict[str, t.Any], data: dict[str, t.Any]
+    ) -> None:
+        manager_secrets = await self.secret_manager.list(self.adapter_name)
+        for field_key, field_value in missing_secrets.items():
+            await self._process_secret_field(
+                field_key, field_value, manager_secrets, data
+            )
+
+    async def _process_secret_field(
+        self,
+        field_key: str,
+        field_value: t.Any,
+        manager_secrets: list[str],
+        data: dict[str, t.Any],
+    ) -> None:
+        stored_field_key = "_".join((app_name, field_key))
+        secret_path = self.secrets_path / field_key
+
+        if not await secret_path.exists() and field_key not in manager_secrets:
+            await self.secret_manager.create(
+                stored_field_key, field_value.default.get_secret_value()
+            )
+
+        secret = await self.secret_manager.get(stored_field_key)
+        await secret_path.write_text(secret)
+        field_name = field_key.removeprefix(f"{self.adapter_name}_")
+        data[field_name] = SecretStr(secret)
+        _app_secrets.get().add(field_key)
 
     async def __call__(self) -> t.Any:
         data = await self.load_secrets()
@@ -414,7 +435,6 @@ class Config(metaclass=AdapterMeta):
 
 depends.set(Config)
 depends.get(Config).init()
-
 Logger = None
 
 
@@ -466,13 +486,11 @@ class AdapterBase(metaclass=AdapterMeta):
     async def _ensure_resource(
         self, resource_name: str, factory_func: t.Callable[[], t.Awaitable[t.Any]]
     ) -> t.Any:
-        """Generic helper for lazy-loading any named resource with caching."""
         if resource_name not in self._resource_cache:
             if self._client_lock is None:
                 import asyncio
 
                 self._client_lock = asyncio.Lock()
-
             async with self._client_lock:
                 if resource_name not in self._resource_cache:
                     self._resource_cache[resource_name] = await factory_func()

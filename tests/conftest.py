@@ -236,40 +236,80 @@ def cleanup_async_tasks() -> Generator[None, Any, Any]:
                     )
 
 
-def pytest_sessionfinish(session: Session, exitstatus: int | pytest.ExitCode) -> None:
+def _get_event_loop() -> asyncio.AbstractEventLoop | None:
+    """Get the current event loop safely."""
     try:
-        loop = asyncio.get_event_loop()
+        return asyncio.get_event_loop()
     except RuntimeError:
+        return None
+
+
+def _cancel_pending_tasks(loop: asyncio.AbstractEventLoop) -> set[asyncio.Task]:
+    """Cancel all pending tasks except the current one."""
+    tasks = asyncio.all_tasks(loop=loop)
+    if not tasks:
+        return set()
+
+    current = asyncio.current_task(loop=loop)
+
+    # Cancel all non-current, non-completed tasks
+    for task in tasks:
+        if task != current and not task.done():
+            task.cancel()
+
+    return tasks
+
+
+def _wait_for_task_completion(
+    loop: asyncio.AbstractEventLoop, tasks: set[asyncio.Task], timeout: float = 3.0
+) -> None:
+    """Wait for tasks to complete with timeout."""
+    if not tasks or not loop.is_running():
         return
 
-    tasks = asyncio.all_tasks(loop=loop)
-    if tasks:
-        current = asyncio.current_task(loop=loop)
-        for task in tasks:
-            if task != current and not task.done():
-                task.cancel()
+    try:
+        future = asyncio.wait_for(
+            asyncio.gather(*tasks, return_exceptions=True),
+            timeout=timeout,
+        )
+        loop.run_until_complete(future)
+    except (TimeoutError, RuntimeError):
+        print("Warning: Some tasks did not complete during cleanup")
 
-        try:
-            if loop.is_running():
-                future = asyncio.wait_for(
-                    asyncio.gather(*tasks, return_exceptions=True),
-                    timeout=3.0,
-                )
-                loop.run_until_complete(future)
-        except (TimeoutError, RuntimeError):
-            print("Warning: Some tasks did not complete during cleanup")
 
+def _close_event_loop(loop: asyncio.AbstractEventLoop) -> None:
+    """Safely close the event loop."""
+    if loop.is_closed():
+        return
+
+    # Final pause to allow any remaining callbacks to run
+    with suppress(RuntimeError, asyncio.CancelledError):
+        loop.run_until_complete(asyncio.sleep(0.1))
+
+    # Close the loop
+    with suppress(Exception) as exc:
+        loop.close()
+
+    if exc:
+        print(f"Error closing event loop: {exc.exception}")
+
+
+def pytest_sessionfinish(session: Session, exitstatus: int | pytest.ExitCode) -> None:
+    """Clean up asyncio resources when pytest session finishes."""
+    # Get the event loop
+    loop = _get_event_loop()
+    if loop is None:
+        return
+
+    # Cancel pending tasks
+    tasks = _cancel_pending_tasks(loop)
+
+    # Wait for tasks to complete
+    _wait_for_task_completion(loop, tasks)
+
+    # Close the event loop
     with suppress(RuntimeError):
-        if not loop.is_closed():
-            try:
-                loop.run_until_complete(asyncio.sleep(0.1))
-            except (RuntimeError, asyncio.CancelledError):
-                pass
-
-            try:
-                loop.close()
-            except Exception as e:
-                print(f"Error closing event loop: {e}")
+        _close_event_loop(loop)
 
 
 def pytest_addoption(parser: Parser) -> None:

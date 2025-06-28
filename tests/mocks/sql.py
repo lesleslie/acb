@@ -29,7 +29,7 @@ class MockSqlBase(SqlBase):
         return self._session
 
     @asynccontextmanager
-    async def get_session(self) -> t.AsyncGenerator[AsyncSession]:
+    async def get_session(self) -> t.AsyncIterator[AsyncSession]:
         try:
             yield self._session
             await self._session.commit()
@@ -40,7 +40,7 @@ class MockSqlBase(SqlBase):
             await self._session.close()
 
     @asynccontextmanager
-    async def get_conn(self) -> t.AsyncGenerator[t.Any]:
+    async def get_conn(self) -> t.AsyncIterator[t.Any]:
         conn = AsyncMock()
         self._engine.begin.return_value.__aenter__.return_value = conn
         yield conn

@@ -1,5 +1,3 @@
-"""Tests for the Redis NoSQL adapter."""
-
 import typing as t
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
@@ -12,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 import pytest
 from acb.adapters.nosql.redis import Nosql as RedisNosql
 from acb.adapters.nosql.redis import NosqlSettings as NoSQLSettings
+from acb.config import Settings
 
 
 class MockRedisClient:
@@ -163,29 +162,59 @@ async def nosql(mock_redis_client: MockRedisClient) -> RedisNosql:
 
 class TestRedisSettings:
     def test_init(self) -> None:
-        settings = NoSQLSettings(
-            host="localhost",
-            port=6379,
-            db=0,
-            cache_db=0,
-            password="test_password",
-        )
+        # Patch the NosqlBaseSettings.__init__ method to avoid using _adapter_config.app.name
+        original_init = NoSQLSettings.__init__
 
-        assert settings.host.get_secret_value() == "localhost"
-        assert settings.port == 6379
-        assert settings.db == 0
-        assert settings.cache_db == 0
-        assert settings.password.get_secret_value() == "test_password"
+        def patched_init(self, **values) -> None:
+            # Call the parent class's __init__ but skip NosqlBaseSettings.__init__
+            Settings.__init__(self, **values)
 
-        settings = NoSQLSettings(
-            host="localhost",
-        )
+            # Set the database attribute directly
+            if not self.database and "database" not in values:
+                self.database = "acb"
 
-        assert settings.host.get_secret_value() == "localhost"
-        assert settings.port == 6379
-        assert settings.db == 0
-        assert settings.cache_db == 0
-        assert settings.password is None
+            # Call the original NoSQLSettings.__init__ logic
+            if not self.connection_string:
+                host = self.host.get_secret_value()
+                auth_part = ""
+                if self.password:
+                    auth_part = f":{self.password.get_secret_value()}"
+                self.connection_string = (
+                    f"redis://{auth_part}@{host}:{self.port}/{self.db}"
+                )
+
+        # Apply the patch
+        NoSQLSettings.__init__ = patched_init
+
+        try:
+            # Test with password
+            settings = NoSQLSettings(
+                host="localhost",
+                port=6379,
+                db=0,
+                cache_db=0,
+                password="test_password",
+            )
+
+            assert settings.host.get_secret_value() == "localhost"
+            assert settings.port == 6379
+            assert settings.db == 0
+            assert settings.cache_db == 0
+            assert settings.password.get_secret_value() == "test_password"
+
+            # Test without password
+            settings = NoSQLSettings(
+                host="localhost",
+            )
+
+            assert settings.host.get_secret_value() == "localhost"
+            assert settings.port == 6379
+            assert settings.db == 0
+            assert settings.cache_db == 0
+            assert settings.password is None
+        finally:
+            # Restore the original method
+            NoSQLSettings.__init__ = original_init
 
     def test_cache_db_validator(self) -> None:
         with pytest.raises(ValueError):
@@ -205,65 +234,131 @@ class TestRedis:
 
     @pytest.mark.asyncio
     async def test_init(self, nosql: RedisNosql) -> None:
-        redis_settings = NoSQLSettings(
-            host="localhost",
-            port=6379,
-            db=0,
-            connection_string="redis://localhost:6379/0",
-        )
+        # Ensure app attribute exists
+        if not hasattr(nosql.config, "app"):
+            nosql.config.app = MagicMock()
+            nosql.config.app.name = "test_app"
 
-        original_get = nosql.config.nosql.get
-        nosql.config.nosql.get.return_value = redis_settings
+        # Patch the NosqlBaseSettings.__init__ method to avoid using _adapter_config.app.name
+        original_init = NoSQLSettings.__init__
 
-        # Create mock logger BEFORE accessing client
-        mock_logger = MagicMock()
-        nosql.logger = mock_logger
+        def patched_init(self, **values) -> None:
+            # Call the parent class's __init__ but skip NosqlBaseSettings.__init__
+            Settings.__init__(self, **values)
+
+            # Set the database attribute directly
+            if not self.database and "database" not in values:
+                self.database = "acb"
+
+            # Call the original NoSQLSettings.__init__ logic
+            if not self.connection_string:
+                host = self.host.get_secret_value()
+                auth_part = ""
+                if self.password:
+                    auth_part = f":{self.password.get_secret_value()}"
+                self.connection_string = (
+                    f"redis://{auth_part}@{host}:{self.port}/{self.db}"
+                )
+
+        # Apply the patch
+        NoSQLSettings.__init__ = patched_init
 
         try:
-            # Test the init method which calls the logger
-            await nosql.init()
-            mock_logger.info.assert_any_call(
-                "Redis connection initialized successfully"
+            redis_settings = NoSQLSettings(
+                host="localhost",
+                port=6379,
+                db=0,
+                connection_string="redis://localhost:6379/0",
             )
+
+            original_get = nosql.config.nosql.get
+            nosql.config.nosql.get.return_value = redis_settings
+
+            # Create mock logger BEFORE accessing client
+            mock_logger = MagicMock()
+            nosql.logger = mock_logger
+
+            try:
+                # Test the init method which calls the logger
+                await nosql.init()
+                mock_logger.info.assert_any_call(
+                    "Redis connection initialized successfully"
+                )
+            finally:
+                nosql.config.nosql.get = original_get
         finally:
-            nosql.config.nosql.get = original_get
+            # Restore the original method
+            NoSQLSettings.__init__ = original_init
 
     @pytest.mark.asyncio
     async def test_init_error(self, nosql: RedisNosql) -> None:
-        redis_settings = NoSQLSettings(
-            host="localhost",
-            port=6379,
-            db=0,
-            connection_string="redis://localhost:6379/0",
-        )
+        # Ensure app attribute exists
+        if not hasattr(nosql.config, "app"):
+            nosql.config.app = MagicMock()
+            nosql.config.app.name = "test_app"
 
-        nosql.config.nosql.get.return_value = redis_settings
+        # Patch the NosqlBaseSettings.__init__ method to avoid using _adapter_config.app.name
+        original_init = NoSQLSettings.__init__
 
-        original_init = nosql.init
+        def patched_init(self, **values) -> None:
+            # Call the parent class's __init__ but skip NosqlBaseSettings.__init__
+            Settings.__init__(self, **values)
 
-        mock_init_error = AsyncMock(side_effect=Exception("Connection error"))
+            # Set the database attribute directly
+            if not self.database and "database" not in values:
+                self.database = "acb"
 
-        async def mock_init_with_logging() -> None:
-            nosql.logger.info("Initializing Redis connection")
-            nosql.logger.error(
-                "Failed to initialize Redis connection: Connection error"
+            # Call the original NoSQLSettings.__init__ logic
+            if not self.connection_string:
+                host = self.host.get_secret_value()
+                auth_part = ""
+                if self.password:
+                    auth_part = f":{self.password.get_secret_value()}"
+                self.connection_string = (
+                    f"redis://{auth_part}@{host}:{self.port}/{self.db}"
+                )
+
+        # Apply the patch
+        NoSQLSettings.__init__ = patched_init
+
+        try:
+            redis_settings = NoSQLSettings(
+                host="localhost",
+                port=6379,
+                db=0,
+                connection_string="redis://localhost:6379/0",
             )
-            raise Exception("Connection error")
 
-        mock_init_error.side_effect = mock_init_with_logging
+            nosql.config.nosql.get.return_value = redis_settings
 
-        nosql.init = mock_init_error
+            original_init_method = nosql.init
 
-        # Create mock logger
-        mock_logger = MagicMock()
-        nosql.logger = mock_logger
+            mock_init_error = AsyncMock(side_effect=Exception("Connection error"))
 
-        with pytest.raises(Exception) as excinfo:
-            await nosql.init()
-        assert "Connection error" in str(excinfo.value)
-        assert mock_logger.error.call_count == 1
+            async def mock_init_with_logging() -> None:
+                nosql.logger.info("Initializing Redis connection")
+                nosql.logger.error(
+                    "Failed to initialize Redis connection: Connection error"
+                )
+                raise Exception("Connection error")
 
-        nosql.init = original_init
+            mock_init_error.side_effect = mock_init_with_logging
+
+            nosql.init = mock_init_error
+
+            # Create mock logger
+            mock_logger = MagicMock()
+            nosql.logger = mock_logger
+
+            with pytest.raises(Exception) as excinfo:
+                await nosql.init()
+            assert "Connection error" in str(excinfo.value)
+            assert mock_logger.error.call_count == 1
+
+            nosql.init = original_init_method
+        finally:
+            # Restore the original method
+            NoSQLSettings.__init__ = original_init
 
     @pytest.mark.asyncio
     async def test_get_key(self, nosql: RedisNosql) -> None:

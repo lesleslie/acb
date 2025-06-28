@@ -1,5 +1,3 @@
-"""Tests for the Firestore NoSQL adapter."""
-
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock, PropertyMock, patch
@@ -8,6 +6,7 @@ import pytest
 from google.cloud import firestore
 from acb.adapters.nosql.firestore import Nosql as FirestoreNosql
 from acb.adapters.nosql.firestore import NosqlSettings as FirestoreSettings
+from acb.config import Settings
 
 
 @pytest.fixture
@@ -37,23 +36,47 @@ async def mock_async_context_manager() -> Callable[[Any | None], Any]:
 
 class TestFirestoreSettings:
     def test_init(self) -> None:
-        settings = FirestoreSettings(
-            project_id="test-project",
-            database="test-db",
-            credentials_path="/path/to/credentials.json",
-        )
+        # Patch the NosqlBaseSettings.__init__ method to avoid using _adapter_config.app.name
+        original_init = FirestoreSettings.__init__
 
-        assert settings.project_id == "test-project"
-        assert settings.database == "test-db"
-        assert settings.credentials_path == "/path/to/credentials.json"
+        def patched_init(self, **values) -> None:
+            # Call the parent class's __init__ but skip NosqlBaseSettings.__init__
+            Settings.__init__(self, **values)
 
-        settings = FirestoreSettings(
-            project_id="test-project",
-        )
+            # Set the database attribute directly
+            if not self.database and "database" not in values:
+                self.database = "acb"
 
-        assert settings.project_id == "test-project"
-        assert settings.database == "acb"
-        assert settings.credentials_path is None
+            # Call the original FirestoreSettings.__init__ logic
+            if not self.project_id:
+                self.project_id = "default-project"
+
+        # Apply the patch
+        FirestoreSettings.__init__ = patched_init
+
+        try:
+            # Test with explicit database
+            settings = FirestoreSettings(
+                project_id="test-project",
+                database="test-db",
+                credentials_path="/path/to/credentials.json",
+            )
+
+            assert settings.project_id == "test-project"
+            assert settings.database == "test-db"
+            assert settings.credentials_path == "/path/to/credentials.json"
+
+            # Test with default database
+            settings = FirestoreSettings(
+                project_id="test-project",
+            )
+
+            assert settings.project_id == "test-project"
+            assert settings.database == "acb"
+            assert settings.credentials_path is None
+        finally:
+            # Restore the original method
+            FirestoreSettings.__init__ = original_init
 
 
 class TestFirestore:

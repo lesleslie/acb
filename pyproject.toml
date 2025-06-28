@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.12"
+version = "0.16.13"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -36,15 +36,15 @@ dependencies = [
     "brotli>=1.1",
     "devtools>=0.12.2",
     "dill>=0.4",
-    "google-api-python-client>=2.172",
+    "google-api-python-client>=2.174",
     "google-crc32c>=1.7.1",
-    "icecream>=2.1.4",
+    "icecream>=2.1.5",
     "inflection>=0.5.1",
     "loguru>=0.7.3",
     "msgspec[toml,yaml]",
     "nest-asyncio>=1.6",
     "pydantic[email]>=2.11.7",
-    "pydantic-settings>=2.9.1",
+    "pydantic-settings>=2.10.1",
     "pyfiglet>=1.0.3",
     "pyyaml>=6.0.2",
     "toml>=0.10.2",
@@ -53,16 +53,16 @@ dependencies = [
 
 optional-dependencies.cache = [
     "aiocache[redis]>=0.12.3",
-    "coredis>=4.22",
-    "logfire[redis]>=3.19",
+    "coredis>=4.23.1",
+    "logfire[redis]>=3.21.1",
 ]
 optional-dependencies.demo = [
     "faker>=37.4",
 ]
 optional-dependencies.dev = [
-    "crackerjack>=0.20.20",
+    "crackerjack>=0.21.8",
     "pre-commit>=4.2",
-    "pytest>=8.4",
+    "pytest>=8.4.1",
     "pytest-anyio>=0",
     "pytest-asyncio>=1",
     "pytest-benchmark>=5.1",
@@ -77,12 +77,12 @@ optional-dependencies.dns = [
     "validators>=0.35",
 ]
 optional-dependencies.ftpd = [
-    "aioftp>=0.25.2",
+    "aioftp>=0.26.2",
     "asyncssh>=2.21",
 ]
 optional-dependencies.monitoring = [
-    "logfire[system-metrics]>=3.19",
-    "sentry-sdk[loguru]>=2.30",
+    "logfire[system-metrics]>=3.21.1",
+    "sentry-sdk[loguru]>=2.32",
 ]
 optional-dependencies.nosql = [
     "beanie>=1.30",
@@ -93,24 +93,24 @@ optional-dependencies.nosql = [
 optional-dependencies.requests = [
     "hishel>=0.1.2",
     "httpx[http2]>=0.28.1",
-    "logfire[httpx]>=3.19",
+    "logfire[httpx]>=3.21.1",
     "niquests>=3.14.1",
-    "sentry-sdk[httpx]>=2.30",
+    "sentry-sdk[httpx]>=2.32",
 ]
 optional-dependencies.secret = [
     "google-cloud-secret-manager>=2.24",
-    "infisicalsdk>=1.0.8",
+    "infisicalsdk>=1.0.9",
 ]
 optional-dependencies.smtp = [
-    "mailgun>=1.0.1",
+    "mailgun>=1.0.2",
 ]
 optional-dependencies.sql = [
     "aiomysql>=0.2",
     "babel>=2.17",
     "greenlet>=3.2.3",
-    "logfire[sqlalchemy]>=3.19",
+    "logfire[sqlalchemy]>=3.21.1",
     "pymysql>=1.1.1",
-    "sentry-sdk[sqlalchemy]>=2.30",
+    "sentry-sdk[sqlalchemy]>=2.32",
     "sqlalchemy>=2.0.41",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
@@ -149,6 +149,7 @@ lint.ignore = [
     "D105",
     "D106",
     "D107",
+    "E402",
     "F821",
     "UP040",
 ]
@@ -243,6 +244,7 @@ include = [
 ]
 exclude = [
     "scratch",
+    "acb/actions/handle/__init__.py",
 ]
 extraPaths = [
     ".venv/lib/python3.13/site-packages/",
@@ -257,6 +259,11 @@ reportUnknownArgumentType = false
 reportInvalidTypeForm = false
 reportUnknownLambdaType = false
 reportUnknownParameterType = "warning"
+reportMissingParameterType = "warning"
+reportAttributeAccessIssue = "warning"
+reportUnusedFunction = "warning"
+reportUndefinedVariable = "warning"
+reportMissingTypeArgument = "warning"
 reportPrivateUsage = false
 pythonVersion = "3.13"
 
@@ -266,24 +273,26 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "google-crc32c",
-    "pytest-cov",
-    "pytest-xdist",
-    "pyfiglet",
-    "google-api-python-client",
-    "pdm-bump",
-    "pytest-mock",
-    "pre-commit",
-    "tomli-w",
-    "autotyping",
-    "pytest-asyncio",
     "pytest-timeout",
+    "pytest-mock",
+    "pdm",
+    "pyfiglet",
+    "pdm-bump",
+    "google-crc32c",
+    "pytest-benchmark",
+    "inflection",
+    "pydantic-settings",
+    "pytest-cov",
+    "google-api-python-client",
+    "pytest-asyncio",
+    "uv",
+    "autotyping",
+    "pytest-xdist",
+    "tomli-w",
     "keyring",
     "pytest",
-    "pytest-benchmark",
+    "pre-commit",
     "pyyaml",
-    "uv",
-    "pdm",
 ]
 
 [tool.refurb]
@@ -295,17 +304,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B403",
     "B704",
     "B106",
-    "B602",
-    "B311",
-    "B607",
-    "B105",
+    "B603",
     "B404",
+    "B607",
+    "B403",
+    "B602",
     "B101",
+    "B311",
     "B301",
+    "B105",
 ]
 
 [tool.vulture]

@@ -176,38 +176,69 @@ class Dns(DnsBase):
     async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         records = [records] if isinstance(records, DnsRecord) else records
         for record in records:
-            if not record.name.endswith("."):
-                record.name = f"{record.name}."
-            if not isinstance(record.rrdata, list):
-                record.rrdata = [record.rrdata]
-            for i, r in enumerate(record.rrdata):
-                with suppress(ValidationError):
-                    if isinstance(r, str) and domain(r) and (not r.endswith(".")):
-                        r = f"{r}."
-                        record.rrdata[i] = r
-                    if record.type == "TXT":
-                        if r.startswith('"') and r.endswith('"'):
-                            r = r[1:-1]
-                        record.rrdata[i] = f'"{r}"'
-            existing_record = self._find_existing_record(record)
-            if existing_record:
-                content = record.rrdata[0] or record.rrdata
-                if (
-                    existing_record["content"] != content
-                    or existing_record["ttl"] != record.ttl
-                    or existing_record["proxied"] != self.config.dns.proxied
-                ):
-                    await self._delete_record(existing_record["id"])
-                    self.logger.info(
-                        f"Deleting record for update: {record.name} ({record.type})"
-                    )
-                    await self._create_record(record)
-                else:
-                    self.logger.info(
-                        f"Record already exists and is up to date: {record.name} ({record.type})"
-                    )
-            else:
-                await self._create_record(record)
+            self._normalize_record(record)
+            await self._process_record_update(record)
+
+    def _normalize_record(self, record: DnsRecord) -> None:
+        if record.name and not record.name.endswith("."):
+            record.name = f"{record.name}."
+        if not isinstance(record.rrdata, list):
+            record.rrdata = [record.rrdata] if record.rrdata is not None else []
+        self._normalize_record_data(record)
+
+    def _normalize_record_data(self, record: DnsRecord) -> None:
+        if not isinstance(record.rrdata, list):
+            return
+        for i, r in enumerate(record.rrdata):
+            with suppress(ValidationError):
+                if isinstance(r, str) and domain(r) and (not r.endswith(".")):
+                    r = f"{r}."
+                    record.rrdata[i] = r
+                if record.type == "TXT":
+                    r = self._normalize_txt_record(r)
+                    record.rrdata[i] = f'"{r}"'
+
+    def _normalize_txt_record(self, r: t.Any) -> str:
+        if isinstance(r, str) and r.startswith('"') and r.endswith('"'):
+            return r[1:-1]
+        return str(r) if r is not None else ""
+
+    async def _process_record_update(self, record: DnsRecord) -> None:
+        existing_record = self._find_existing_record(record)
+        if existing_record:
+            await self._handle_existing_record(record, existing_record)
+        else:
+            await self._create_record(record)
+
+    async def _handle_existing_record(
+        self, record: DnsRecord, existing_record: dict[str, t.Any]
+    ) -> None:
+        if not isinstance(record.rrdata, list) or not record.rrdata:
+            content = ""
+        else:
+            content = str(record.rrdata[0]) if record.rrdata[0] is not None else ""
+        if self._record_needs_update(record, existing_record, content):
+            await self._update_existing_record(record, existing_record)
+        else:
+            self.logger.info(
+                f"Record already exists and is up to date: {record.name} ({record.type})"
+            )
+
+    def _record_needs_update(
+        self, record: DnsRecord, existing_record: dict[str, t.Any], content: str
+    ) -> bool:
+        return (
+            existing_record["content"] != content
+            or existing_record["ttl"] != record.ttl
+            or existing_record["proxied"] != self.config.dns.proxied
+        )
+
+    async def _update_existing_record(
+        self, record: DnsRecord, existing_record: dict[str, t.Any]
+    ) -> None:
+        await self._delete_record(existing_record["id"])
+        self.logger.info(f"Deleting record for update: {record.name} ({record.type})")
+        await self._create_record(record)
 
 
 depends.set(Dns)
