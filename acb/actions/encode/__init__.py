@@ -50,7 +50,7 @@ def yaml_encode(
     return result.encode() if isinstance(result, str) else result or b""
 
 
-msgspec.yaml.encode = yaml_encode
+msgspec.yaml.encode = t.cast(t.Any, yaml_encode)
 
 
 @dataclass
@@ -161,7 +161,7 @@ class Encode:
                 return await path.read_bytes()
             except (AttributeError, NotImplementedError):
                 text = await path.read_text()
-                return text.encode("utf-8") if text else b""
+                return text.encode() if text else b""
         except FileNotFoundError:
             raise FileNotFoundError(f"File not found: {path}")
 
@@ -185,6 +185,8 @@ class Encode:
         return obj
 
     def _perform_decode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
+        if self.serializer is None:
+            raise ValueError("Serializer not set")
         try:
             return self.serializer(obj, **kwargs)
         except msgspec.DecodeError as e:
@@ -223,6 +225,8 @@ class Encode:
         return obj
 
     def _serialize(self, obj: t.Any, kwargs: dict[str, t.Any]) -> bytes:
+        if self.serializer is None:
+            raise ValueError("Serializer not set")
         if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
             indent = kwargs.pop("indent")
             return json.dumps(obj, indent=indent).encode()

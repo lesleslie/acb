@@ -123,16 +123,16 @@ class TestAzureBlobStorage:
         mock_client = MockAzureBlobFileSystem()
         mock_bucket = MockStorageBucket()
 
-        with patch.object(Storage, "client", new=mock_client):
-            with patch(
-                "acb.adapters.storage._base.StorageBucket", return_value=mock_bucket
-            ) as mock_bucket_cls:
-                await storage_adapter.init()
+        storage_adapter._client = mock_client
+        with patch(
+            "acb.adapters.storage._base.StorageBucket", return_value=mock_bucket
+        ) as mock_bucket_cls:
+            await storage_adapter.init()
 
-                mock_bucket_cls.assert_any_call(mock_client, "templates")
-                mock_bucket_cls.assert_any_call(mock_client, "test")
-                mock_bucket_cls.assert_any_call(mock_client, "media")
+            mock_bucket_cls.assert_any_call(mock_client, "templates")
+            mock_bucket_cls.assert_any_call(mock_client, "test")
+            mock_bucket_cls.assert_any_call(mock_client, "media")
 
-                assert storage_adapter.templates == mock_bucket
-                assert storage_adapter.test == mock_bucket
-                assert storage_adapter.media == mock_bucket
+            assert storage_adapter.templates == mock_bucket
+            assert storage_adapter.test == mock_bucket
+            assert storage_adapter.media == mock_bucket

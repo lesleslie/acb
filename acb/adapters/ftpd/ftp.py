@@ -6,6 +6,7 @@ from functools import cached_property
 from pathlib import Path
 
 from aioftp import AsyncPathIO, Client, Permission, Server, User
+from anyio import Path as AsyncPath
 from acb.depends import depends
 from acb.logger import Logger
 
@@ -30,7 +31,7 @@ class Ftpd(FtpdBase):
             login=self.config.ftpd.username,
             password=self.config.ftpd.password.get_secret_value(),
             base_path=self.config.ftpd.root_dir,
-            permissions=[Permission(path="/", readable=True, writable=True)],
+            permissions=[Permission()],
         )
         users = [user]
         if self.config.ftpd.anonymous:
@@ -38,7 +39,7 @@ class Ftpd(FtpdBase):
                 login="anonymous",
                 password="",
                 base_path=self.config.ftpd.root_dir,
-                permissions=[Permission(path="/", readable=True, writable=False)],
+                permissions=[Permission(writable=False)],
             )
             users.append(anonymous_user)
         server_kwargs: dict[str, t.Any] = {
@@ -181,7 +182,9 @@ class Ftpd(FtpdBase):
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
             await self.download(path, temp_path)
-            return Path(temp_path).read_text()
+            # Use async file operations
+            async_path = AsyncPath(temp_path)
+            return await async_path.read_text()
         finally:
             if temp_path.exists():
                 temp_path.unlink()
@@ -193,7 +196,9 @@ class Ftpd(FtpdBase):
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
             await self.download(path, temp_path)
-            return Path(temp_path).read_bytes()
+            # Use async file operations
+            async_path = AsyncPath(temp_path)
+            return await async_path.read_bytes()
         finally:
             if temp_path.exists():
                 temp_path.unlink()
@@ -204,7 +209,9 @@ class Ftpd(FtpdBase):
         temp_dir = tempfile.mkdtemp()
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
-            Path(temp_path).write_text(content)
+            # Use async file operations
+            async_path = AsyncPath(temp_path)
+            await async_path.write_text(content)
             await self.upload(temp_path, path)
         finally:
             if temp_path.exists():
@@ -216,7 +223,9 @@ class Ftpd(FtpdBase):
         temp_dir = tempfile.mkdtemp()
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
-            Path(temp_path).write_bytes(content)
+            # Use async file operations
+            async_path = AsyncPath(temp_path)
+            await async_path.write_bytes(content)
             await self.upload(temp_path, path)
         finally:
             if temp_path.exists():

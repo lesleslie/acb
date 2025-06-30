@@ -1,7 +1,7 @@
 import asyncio
 import builtins
 import os
-from functools import cached_property
+import typing as t
 
 from infisical_sdk import InfisicalSDKClient
 from acb.depends import depends
@@ -22,8 +22,10 @@ class SecretSettings(SecretBaseSettings):
 
 
 class Secret(SecretBase):
-    @cached_property
-    def client(self) -> InfisicalSDKClient:
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__()
+
+    async def _create_client(self) -> InfisicalSDKClient:
         client = InfisicalSDKClient(
             host=self.config.secret.host,
             token=self.config.secret.token,
@@ -40,9 +42,19 @@ class Secret(SecretBase):
             )
         return client
 
+    async def get_client(self) -> InfisicalSDKClient:
+        return await self._ensure_client()
+
+    @property
+    def client(self) -> InfisicalSDKClient:
+        if self._client is None:
+            raise RuntimeError("Client not initialized. Call get_client() first.")
+        return self._client
+
     @depends.inject
     async def init(self, logger: Logger = depends()) -> None:
         try:
+            await self.get_client()
             await self.list()
             logger.info("Infisical secret adapter initialized successfully")
         except Exception as e:
@@ -58,8 +70,9 @@ class Secret(SecretBase):
             project_id = self.config.secret.project_id
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
+            client = await self.get_client()
             response = await asyncio.to_thread(
-                self.client.secrets.list_secrets,
+                client.secrets.list_secrets,
                 project_id=project_id,
                 environment_slug=self.config.secret.environment,
                 secret_path=self.config.secret.secret_path,
@@ -80,8 +93,9 @@ class Secret(SecretBase):
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
             full_name = f"{self.prefix}{name}"
+            client = await self.get_client()
             response = await asyncio.to_thread(
-                self.client.secrets.get_secret_by_name,
+                client.secrets.get_secret_by_name,
                 secret_name=full_name,
                 project_id=project_id,
                 environment_slug=self.config.secret.environment,
@@ -100,8 +114,9 @@ class Secret(SecretBase):
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
             full_name = f"{self.prefix}{name}"
+            client = await self.get_client()
             await asyncio.to_thread(
-                self.client.secrets.create_secret_by_name,
+                client.secrets.create_secret_by_name,
                 secret_name=full_name,
                 project_id=project_id,
                 environment_slug=self.config.secret.environment,
@@ -119,8 +134,9 @@ class Secret(SecretBase):
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
             full_name = f"{self.prefix}{name}"
+            client = await self.get_client()
             await asyncio.to_thread(
-                self.client.secrets.update_secret_by_name,
+                client.secrets.update_secret_by_name,
                 current_secret_name=full_name,
                 project_id=project_id,
                 environment_slug=self.config.secret.environment,
@@ -151,8 +167,9 @@ class Secret(SecretBase):
             if not project_id:
                 raise ValueError("Project ID is required but not set in configuration")
             full_name = f"{self.prefix}{name}"
+            client = await self.get_client()
             await asyncio.to_thread(
-                self.client.secrets.delete_secret_by_name,
+                client.secrets.delete_secret_by_name,
                 secret_name=full_name,
                 project_id=project_id,
                 environment_slug=self.config.secret.environment,

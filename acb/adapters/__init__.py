@@ -160,7 +160,9 @@ async def _ensure_adapter_configuration() -> None:
 
 
 def _should_skip_configuration() -> bool:
-    return _testing or "pytest" in sys.modules
+    from ..config import _library_usage_mode
+
+    return _testing or "pytest" in sys.modules or _library_usage_mode
 
 
 async def _setup_adapter_configuration() -> None:

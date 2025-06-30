@@ -1,5 +1,4 @@
 import typing as t
-from functools import cached_property
 from pathlib import Path
 from typing import BinaryIO
 
@@ -22,8 +21,7 @@ class Storage(StorageBase):
         super().__init__(**kwargs)
         self.root_dir = root_dir
 
-    @cached_property
-    def client(self) -> AsyncFileSystem:
+    async def _create_client(self) -> AsyncFileSystem:
         if self.root_dir is not None:
             path = self.root_dir
         else:
@@ -38,6 +36,15 @@ class Storage(StorageBase):
         fs = LocalFileSystem(auto_mkdir=True, asynchronous=False)
         dirfs = self.file_system(path=path, fs=fs)
         return AsyncFileSystemWrapper(dirfs)
+
+    @property
+    def client(self) -> t.Any:
+        if self._client is None:
+            raise RuntimeError("Client not initialized. Call get_client() first.")
+        return self._client
+
+    async def get_client(self) -> t.Any:
+        return await self._ensure_client()
 
     async def init(self) -> None:
         self._initialized = True

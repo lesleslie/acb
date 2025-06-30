@@ -74,7 +74,7 @@ class TestPgSql:
             patch("acb.adapters.sql._base.database_exists", return_value=True),
             patch("sqlalchemy.create_engine", return_value=MagicMock()),
         ):
-            engine = pgsql_adapter.engine
+            engine = await pgsql_adapter.get_engine()
 
             mock_create_engine.assert_called_once_with(
                 pgsql_adapter.config.sql._async_url,
@@ -85,8 +85,8 @@ class TestPgSql:
 
     @pytest.mark.asyncio
     async def test_engine_property_create_database(self, pgsql_adapter: Sql) -> None:
-        if "engine" in pgsql_adapter.__dict__:
-            del pgsql_adapter.__dict__["engine"]
+        pgsql_adapter._engine = None
+        pgsql_adapter._client = None
 
         mock_engine = MockSqlEngine()
         mock_db_exists = MagicMock(return_value=False)
@@ -97,12 +97,12 @@ class TestPgSql:
             patch("acb.adapters.sql._base.create_database", mock_create_db),
             patch(
                 "acb.adapters.sql._base.create_async_engine", return_value=mock_engine
-            ),
+            ) as mock_create_engine,
             patch("sqlalchemy.create_engine", return_value=MagicMock()),
         ):
-            engine = pgsql_adapter.engine
+            engine = await pgsql_adapter.get_engine()
 
-            assert engine is mock_engine
+            assert engine == mock_create_engine.return_value
 
             mock_db_exists.assert_called_once_with(pgsql_adapter.config.sql._url)
             mock_create_db.assert_called_once_with(pgsql_adapter.config.sql._url)
@@ -111,20 +111,13 @@ class TestPgSql:
     async def test_session_property(self, pgsql_adapter: Sql) -> None:
         mock_engine = MockSqlEngine()
 
-        with (
-            patch.object(pgsql_adapter, "engine", mock_engine),
-            patch(
-                "acb.adapters.sql._base.AsyncSession", return_value=MockSqlSession()
-            ) as mock_session_cls,
-        ):
-            session = pgsql_adapter.session
+        pgsql_adapter._engine = mock_engine
+        mock_session = MockSqlSession()
+        pgsql_adapter._session = mock_session
 
-            mock_session_cls.assert_called_once_with(
-                mock_engine, expire_on_commit=False
-            )
-
+        async with pgsql_adapter.get_session() as session:
             assert isinstance(session, MagicMock)
-            assert session is mock_session_cls.return_value
+            assert session is mock_session
 
     @pytest.mark.asyncio
     async def test_get_session(self, pgsql_adapter: Sql) -> None:

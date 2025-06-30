@@ -29,6 +29,8 @@ class Pkg(BaseModel):
 
 
 pkg_registry: ContextVar[list[Pkg]] = ContextVar("pkg_registry", default=[])
+_lazy_registration_queue: list[tuple[str, AsyncPath]] = []
+_registration_completed: bool = False
 
 
 def register_pkg() -> None:
@@ -38,12 +40,34 @@ def register_pkg() -> None:
     else:
         raise RuntimeError("Could not determine caller frame")
     name = path.stem
+    if name not in [item[0] for item in _lazy_registration_queue]:
+        _lazy_registration_queue.append((name, path))
+
+
+async def _process_registration_queue() -> None:
+    global _registration_completed
+    if _registration_completed or not _lazy_registration_queue:
+        return
     registry = pkg_registry.get()
-    if name not in [p.name for p in registry]:
-        actions = asyncio.run(register_actions(path))
-        adapters = asyncio.run(register_adapters(path))
-        pkg = Pkg(name=name, path=path, actions=actions, adapters=adapters)
-        registry.append(pkg)
+    existing_names = {p.name for p in registry}
+    for name, path in _lazy_registration_queue:
+        if name not in existing_names:
+            actions = await register_actions(path)
+            adapters = await register_adapters(path)
+            pkg = Pkg(name=name, path=path, actions=actions, adapters=adapters)
+            registry.append(pkg)
+            existing_names.add(name)
+    _lazy_registration_queue.clear()
+    _registration_completed = True
+
+
+def ensure_registration() -> None:
+    if _lazy_registration_queue and not _registration_completed:
+        try:
+            asyncio.get_running_loop()
+            asyncio.create_task(_process_registration_queue())
+        except RuntimeError:
+            asyncio.run(_process_registration_queue())
 
 
 try:
@@ -104,6 +128,7 @@ table_args: dict[str, t.Any] = {
 
 
 def display_components() -> None:
+    ensure_registration()
     if not _deployed:
         pkgs = Table(
             title="[b][u bright_white]A[/u bright_white][bright_green]synchronous [u bright_white]C[/u bright_white][bright_green]omponent [u bright_white]B[/u bright_white][bright_green]ase[/b]",

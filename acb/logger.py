@@ -35,7 +35,7 @@ class LoggerSettings(Settings):
     def __init__(self, **values: t.Any) -> None:
         super().__init__(**values)
         self.settings = dict(
-            format="".join(self.format.values()),
+            format="".join(self.format.values() if self.format else []),
             enqueue=True,
             backtrace=False,
             catch=False,

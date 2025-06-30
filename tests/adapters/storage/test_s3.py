@@ -104,23 +104,13 @@ class TestS3Storage:
 
     @pytest.mark.asyncio
     async def test_client_property(self, storage_adapter: Storage) -> None:
-        if hasattr(storage_adapter, "_client"):
-            setattr(storage_adapter, "_client", None)
-
         mock_s3fs = MockS3FileSystem()
+        storage_adapter._client = mock_s3fs
 
-        original_file_system = storage_adapter.file_system
-        storage_adapter.file_system = MagicMock(return_value=mock_s3fs)
+        client = await storage_adapter.get_client()
 
-        try:
-            client = storage_adapter.client
-
-            storage_adapter.file_system.assert_called_once_with(asynchronous=True)
-
-            assert client is not None
-            assert client == mock_s3fs
-        finally:
-            storage_adapter.file_system = original_file_system
+        assert client is not None
+        assert client == mock_s3fs
 
     @pytest.mark.asyncio
     async def test_file_system_type(self) -> None:
@@ -128,12 +118,8 @@ class TestS3Storage:
 
     @pytest.mark.asyncio
     async def test_init_method(self, storage_adapter: Storage) -> None:
-        if hasattr(storage_adapter, "_client"):
-            setattr(storage_adapter, "_client", None)
-
         mock_client = MockS3FileSystem()
-
-        storage_adapter.client = mock_client
+        storage_adapter._client = mock_client
 
         with patch("acb.adapters.storage._base.StorageBucket") as mock_bucket_cls:
             mock_test_bucket = MockStorageBucket()

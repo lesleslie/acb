@@ -2,7 +2,6 @@
 
 import typing as t
 from contextlib import asynccontextmanager
-from functools import cached_property
 from unittest.mock import AsyncMock, MagicMock
 
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -12,37 +11,45 @@ from acb.adapters.sql._base import SqlBase
 
 class MockSqlBase(SqlBase):
     def __init__(self) -> None:
+        super().__init__()
         self._engine = AsyncMock(spec=AsyncEngine)
-        self._session_maker = AsyncMock()
-        self._session = AsyncMock(spec=AsyncSession)
-        self._session_maker.return_value = self._session
+        self._session_mock = AsyncMock(spec=AsyncSession)
         self._initialized = True
         self.config = MagicMock()
         self.config.app.name = "test"
 
-    @cached_property
-    def engine(self) -> AsyncEngine:
-        return self._engine
+    async def _create_client(self) -> AsyncEngine:
+        return t.cast(AsyncEngine, self._engine)
 
-    @cached_property
+    async def get_engine(self) -> AsyncEngine:
+        return t.cast(AsyncEngine, self._engine)
+
+    @property
+    def engine(self) -> AsyncEngine:
+        return t.cast(AsyncEngine, self._engine)
+
+    async def _ensure_session(self) -> AsyncSession:
+        return self._session_mock
+
+    @property
     def session(self) -> AsyncSession:
-        return self._session
+        return self._session_mock
 
     @asynccontextmanager
     async def get_session(self) -> t.AsyncIterator[AsyncSession]:
         try:
-            yield self._session
-            await self._session.commit()
+            yield self._session_mock
+            await self._session_mock.commit()
         except Exception:
-            await self._session.rollback()
+            await self._session_mock.rollback()
             raise
         finally:
-            await self._session.close()
+            await self._session_mock.close()
 
     @asynccontextmanager
     async def get_conn(self) -> t.AsyncIterator[t.Any]:
         conn = AsyncMock()
-        self._engine.begin.return_value.__aenter__.return_value = conn
+        conn.return_value = conn
         yield conn
 
     async def init(self) -> None:

@@ -83,7 +83,7 @@ class TestInfisical:
     async def test_list(
         self, infisical_adapter: Secret, mock_infisical_client: MagicMock
     ) -> None:
-        infisical_adapter.client = mock_infisical_client
+        infisical_adapter._client = mock_infisical_client
 
         async def async_mock_func(*args: t.Any, **kwargs: t.Any) -> t.Any:
             func = args[0]
@@ -116,7 +116,7 @@ class TestInfisical:
     async def test_get(
         self, infisical_adapter: Secret, mock_infisical_client: MagicMock
     ) -> None:
-        infisical_adapter.client = mock_infisical_client
+        infisical_adapter._client = mock_infisical_client
 
         expected_prefix = infisical_adapter.prefix
 
@@ -148,7 +148,7 @@ class TestInfisical:
     async def test_create(
         self, infisical_adapter: Secret, mock_infisical_client: MagicMock
     ) -> None:
-        infisical_adapter.client = mock_infisical_client
+        infisical_adapter._client = mock_infisical_client
 
         expected_prefix = infisical_adapter.prefix
 
@@ -172,7 +172,7 @@ class TestInfisical:
     async def test_update(
         self, infisical_adapter: Secret, mock_infisical_client: MagicMock
     ) -> None:
-        infisical_adapter.client = mock_infisical_client
+        infisical_adapter._client = mock_infisical_client
 
         expected_prefix = infisical_adapter.prefix
 
@@ -198,7 +198,7 @@ class TestInfisical:
     async def test_delete(
         self, infisical_adapter: Secret, mock_infisical_client: MagicMock
     ) -> None:
-        infisical_adapter.client = mock_infisical_client
+        infisical_adapter._client = mock_infisical_client
 
         expected_prefix = infisical_adapter.prefix
 
@@ -264,7 +264,7 @@ class TestInfisical:
         mock_infisical_client: MagicMock,
         mock_logger: MagicMock,
     ) -> None:
-        infisical_adapter.client = mock_infisical_client
+        infisical_adapter._client = mock_infisical_client
         infisical_adapter.logger = mock_logger
 
         async def async_mock_func(*args: t.Any, **kwargs: t.Any) -> t.Any:

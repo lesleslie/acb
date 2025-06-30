@@ -1,5 +1,4 @@
 import typing as t
-from functools import cached_property
 
 from aiocache.backends.memory import SimpleMemoryCache
 from aiocache.serializers import PickleSerializer
@@ -16,8 +15,7 @@ class Cache(CacheBase):
         super().__init__()
         self._init_kwargs = kwargs
 
-    @cached_property
-    def _cache(self) -> SimpleMemoryCache:
+    async def _create_client(self) -> SimpleMemoryCache:
         cache = SimpleMemoryCache(
             serializer=PickleSerializer(),
             namespace=f"{self.config.app.name}:",
@@ -26,9 +24,26 @@ class Cache(CacheBase):
         cache.timeout = 0.0
         return cache
 
+    async def get_client(self) -> SimpleMemoryCache:
+        return await self._ensure_client()
+
+    @property
+    def _cache(self) -> SimpleMemoryCache:
+        """Compatibility property for existing tests."""
+        client = getattr(self, "_client", None)
+        if client is None:
+            # Create synchronously for test compatibility
+            cache = SimpleMemoryCache(
+                serializer=PickleSerializer(),
+                namespace=f"{self.config.app.name}:",
+                **self._init_kwargs,
+            )
+            cache.timeout = 0.0
+            self._client = cache
+        return self._client
+
     async def init(self, *args: t.Any, **kwargs: t.Any) -> None:
         self._init_kwargs.update(kwargs)
-        pass
 
 
 depends.set(Cache)

@@ -1,6 +1,5 @@
 import typing as t
 from contextlib import asynccontextmanager
-from functools import cached_property
 
 from pydantic import SecretStr
 from sqlalchemy import log as sqlalchemy_log
@@ -88,8 +87,12 @@ class SqlProtocol(t.Protocol):
 
 
 class SqlBase(AdapterBase):
-    @cached_property
-    def engine(self) -> AsyncEngine:
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__()
+        self._engine: AsyncEngine | None = None
+        self._session: AsyncSession | None = None
+
+    async def _create_client(self) -> AsyncEngine:
         self.logger.debug(self.config.sql._async_url)
         if not database_exists(self.config.sql._url):
             self.logger.debug(self.config.sql._async_url)
@@ -98,18 +101,37 @@ class SqlBase(AdapterBase):
             self.config.sql._async_url, **self.config.sql.engine_kwargs
         )
 
-    @cached_property
+    async def get_engine(self) -> AsyncEngine:
+        return await self._ensure_client()
+
+    @property
+    def engine(self) -> AsyncEngine:
+        if self._engine is None:
+            raise RuntimeError("Engine not initialized. Call get_engine() first.")
+        return self._engine
+
+    async def _ensure_session(self) -> AsyncSession:
+        if self._session is None:
+            engine = await self.get_engine()
+            self._session = AsyncSession(engine, expire_on_commit=False)
+        return self._session
+
+    @property
     def session(self) -> AsyncSession:
-        return AsyncSession(self.engine, expire_on_commit=False)
+        if self._session is None:
+            raise RuntimeError("Session not initialized. Call _ensure_session() first.")
+        return self._session
 
     @asynccontextmanager
     async def get_session(self) -> t.AsyncGenerator[AsyncSession]:
-        async with self.session as sess:
+        session = await self._ensure_session()
+        async with session as sess:
             yield sess
 
     @asynccontextmanager
     async def get_conn(self) -> t.AsyncGenerator[AsyncConnection]:
-        async with self.engine.begin() as conn:
+        engine = await self.get_engine()
+        async with engine.begin() as conn:
             yield conn
 
     async def init(self) -> None:

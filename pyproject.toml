@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.13"
+version = "0.16.14"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -60,6 +60,7 @@ optional-dependencies.demo = [
     "faker>=37.4",
 ]
 optional-dependencies.dev = [
+    "complexipy>=3",
     "crackerjack>=0.21.8",
     "pre-commit>=4.2",
     "pytest>=8.4.1",
@@ -70,6 +71,7 @@ optional-dependencies.dev = [
     "pytest-mock>=3.14.1",
     "pytest-timeout>=2.4",
     "pyyaml>=6.0.2",
+    "refurb>=2.1",
 ]
 optional-dependencies.dns = [
     "google-cloud-dns>=0.35.1",
@@ -243,8 +245,8 @@ include = [
     "acb",
 ]
 exclude = [
-    "scratch",
     "acb/actions/handle/__init__.py",
+    "scratch",
 ]
 extraPaths = [
     ".venv/lib/python3.13/site-packages/",
@@ -273,26 +275,26 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-timeout",
-    "pytest-mock",
-    "pdm",
-    "pyfiglet",
-    "pdm-bump",
-    "google-crc32c",
-    "pytest-benchmark",
-    "inflection",
-    "pydantic-settings",
     "pytest-cov",
-    "google-api-python-client",
-    "pytest-asyncio",
-    "uv",
-    "autotyping",
-    "pytest-xdist",
-    "tomli-w",
     "keyring",
+    "inflection",
+    "pdm-bump",
+    "pytest-xdist",
+    "pdm",
+    "pytest-benchmark",
+    "autotyping",
+    "pytest-asyncio",
+    "pytest-timeout",
+    "tomli-w",
     "pytest",
-    "pre-commit",
+    "uv",
+    "pytest-mock",
+    "pyfiglet",
     "pyyaml",
+    "pydantic-settings",
+    "pre-commit",
+    "google-crc32c",
+    "google-api-python-client",
 ]
 
 [tool.refurb]
@@ -304,17 +306,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B704",
-    "B106",
-    "B603",
-    "B404",
-    "B607",
-    "B403",
-    "B602",
     "B101",
-    "B311",
+    "B603",
     "B301",
+    "B106",
     "B105",
+    "B403",
+    "B311",
+    "B607",
+    "B404",
+    "B602",
+    "B704",
 ]
 
 [tool.vulture]

@@ -1,5 +1,4 @@
 import typing as t
-from functools import cached_property
 
 import niquests
 from pydantic import SecretStr
@@ -15,12 +14,23 @@ class RequestsSettings(RequestsBaseSettings):
 
 
 class Requests(RequestsBase):
-    @cached_property
-    def client(self) -> "niquests.AsyncSession":
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__()
+
+    async def _create_client(self) -> "niquests.AsyncSession":
         session = niquests.AsyncSession()
         if self.config.requests.base_url:
             session.base_url = self.config.requests.base_url
         return session
+
+    async def get_client(self) -> "niquests.AsyncSession":
+        return await self._ensure_client()
+
+    @property
+    def client(self) -> "niquests.AsyncSession":
+        if self._client is None:
+            raise RuntimeError("Client not initialized. Call get_client() first.")
+        return self._client
 
     async def get(
         self,
@@ -30,7 +40,8 @@ class Requests(RequestsBase):
         headers: dict[str, str] | None = None,
         cookies: dict[str, str] | None = None,
     ) -> t.Any:
-        response = await self.client.get(
+        client = await self.get_client()
+        response = await client.get(
             url, timeout=timeout, params=params, headers=headers, cookies=cookies
         )
         response.raise_for_status()
@@ -43,7 +54,8 @@ class Requests(RequestsBase):
         timeout: int = 10,
         json: dict[str, t.Any] | None = None,
     ) -> t.Any:
-        response = await self.client.post(url, data=data, json=json, timeout=timeout)
+        client = await self.get_client()
+        response = await client.post(url, data=data, json=json, timeout=timeout)
         response.raise_for_status()
         return response
 
@@ -54,12 +66,14 @@ class Requests(RequestsBase):
         timeout: int = 10,
         json: dict[str, t.Any] | None = None,
     ) -> t.Any:
-        response = await self.client.put(url, data=data, json=json, timeout=timeout)
+        client = await self.get_client()
+        response = await client.put(url, data=data, json=json, timeout=timeout)
         response.raise_for_status()
         return response
 
     async def delete(self, url: str, timeout: int = 10) -> t.Any:
-        response = await self.client.delete(url, timeout=timeout)
+        client = await self.get_client()
+        response = await client.delete(url, timeout=timeout)
         response.raise_for_status()
         return response
 
@@ -70,17 +84,20 @@ class Requests(RequestsBase):
         data: dict[str, t.Any] | None = None,
         json: dict[str, t.Any] | None = None,
     ) -> t.Any:
-        response = await self.client.patch(url, timeout=timeout, data=data, json=json)
+        client = await self.get_client()
+        response = await client.patch(url, timeout=timeout, data=data, json=json)
         response.raise_for_status()
         return response
 
     async def head(self, url: str, timeout: int = 10) -> t.Any:
-        response = await self.client.head(url, timeout=timeout)
+        client = await self.get_client()
+        response = await client.head(url, timeout=timeout)
         response.raise_for_status()
         return response
 
     async def options(self, url: str, timeout: int = 10) -> t.Any:
-        response = await self.client.options(url, timeout=timeout)
+        client = await self.get_client()
+        response = await client.options(url, timeout=timeout)
         response.raise_for_status()
         return response
 
@@ -92,14 +109,16 @@ class Requests(RequestsBase):
         json: dict[str, t.Any] | None = None,
         timeout: int = 10,
     ) -> t.Any:
-        response = await self.client.request(
+        client = await self.get_client()
+        response = await client.request(
             method, url, data=data, json=json, timeout=timeout
         )
         response.raise_for_status()
         return response
 
     async def close(self) -> None:
-        await self.client.close()
+        if self._client is not None:
+            await self._client.close()
 
     async def init(self) -> None:
         self.logger.debug("Niquests adapter initialized")

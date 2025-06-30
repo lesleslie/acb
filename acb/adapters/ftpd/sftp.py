@@ -146,7 +146,7 @@ class Ftpd(FtpdBase):
         result = []
         for file_attr in await client.listdir(path):
             info = FileInfo(
-                name=getattr(file_attr, "filename", str(file_attr)),
+                name=getattr(file_attr, "filename", file_attr),
                 size=getattr(file_attr, "size", 0) or 0,
                 is_dir=getattr(file_attr, "is_dir", bool)(),
                 is_file=getattr(file_attr, "is_file", lambda: True)(),

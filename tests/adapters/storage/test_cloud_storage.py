@@ -153,20 +153,25 @@ class TestGCSStorage:
     async def test_init_method(self, storage_adapter: Storage) -> None:
         mock_client = MockGCSFileSystem()
 
-        with patch.object(Storage, "client", new=mock_client):
-            with patch("acb.adapters.storage._base.StorageBucket") as mock_bucket_cls:
-                mock_bucket = MockStorageBucket()
-                mock_bucket_cls.return_value = mock_bucket
+        with (
+            patch.object(
+                storage_adapter, "get_client", new=AsyncMock(return_value=mock_client)
+            ) as mock_get_client,
+            patch("acb.adapters.storage._base.StorageBucket") as mock_bucket_cls,
+        ):
+            mock_bucket = MockStorageBucket()
+            mock_bucket_cls.return_value = mock_bucket
 
-                await storage_adapter.init()
+            await storage_adapter.init()
 
-                mock_bucket_cls.assert_any_call(mock_client, "templates")
-                mock_bucket_cls.assert_any_call(mock_client, "test")
-                mock_bucket_cls.assert_any_call(mock_client, "media")
+            mock_get_client.assert_called_once()
+            mock_bucket_cls.assert_any_call(mock_client, "templates")
+            mock_bucket_cls.assert_any_call(mock_client, "test")
+            mock_bucket_cls.assert_any_call(mock_client, "media")
 
-                assert storage_adapter.templates == mock_bucket
-                assert storage_adapter.test == mock_bucket
-                assert storage_adapter.media == mock_bucket
+            assert storage_adapter.templates == mock_bucket
+            assert storage_adapter.test == mock_bucket
+            assert storage_adapter.media == mock_bucket
 
     @pytest.mark.asyncio
     async def test_set_cors(

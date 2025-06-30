@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import typing as t
 from contextvars import ContextVar
 from enum import Enum
@@ -6,6 +7,7 @@ from functools import cached_property
 from pathlib import Path
 from secrets import token_bytes, token_urlsafe
 from string import punctuation
+from weakref import WeakKeyDictionary
 
 import nest_asyncio
 import rich.repr
@@ -37,6 +39,123 @@ project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
+
+_config_initialized: bool = False
+_library_usage_mode: bool = False
+
+
+def _is_build_tool_execution() -> bool:
+    return any(cmd in sys.argv[0] for cmd in ("pip", "setup.py", "build", "install"))
+
+
+def _should_skip_frame(filename: str) -> bool:
+    if any(skip in filename for skip in ("/site-packages/", "importlib", "_bootstrap")):
+        return True
+    return "acb" in filename
+
+
+def _is_project_root(directory: Path) -> bool:
+    return (directory / "pyproject.toml").exists() or (directory / "setup.py").exists()
+
+
+def _get_frame_stack() -> list[t.Any]:
+    import inspect
+
+    frame = inspect.currentframe()
+    if frame is None:
+        return []
+    frames = []
+    caller_frame = frame
+    while caller_frame:
+        caller_frame = caller_frame.f_back
+        if caller_frame is None:
+            break
+        frames.append(caller_frame)
+    return frames
+
+
+def _should_skip_caller_directory(caller_dir: Path) -> bool:
+    return caller_dir.name in ("acb", "test", "tests")
+
+
+def _find_project_root_in_path(caller_dir: Path) -> bool:
+    for potential_root in [caller_dir] + list(caller_dir.parents):
+        if _is_project_root(potential_root):
+            return True
+    return False
+
+
+def _process_frame_for_project(caller_frame: t.Any) -> bool:
+    filename = caller_frame.f_code.co_filename
+    if _should_skip_frame(filename):
+        return False
+    caller_dir = Path(filename).parent
+    if _should_skip_caller_directory(caller_dir):
+        return False
+
+    return _find_project_root_in_path(caller_dir)
+
+
+def _check_caller_frame_for_project() -> bool:
+    from contextlib import suppress
+
+    with suppress(Exception):
+        frames = _get_frame_stack()
+        for caller_frame in frames:
+            if _process_frame_for_project(caller_frame):
+                return True
+    return False
+
+
+def _detect_library_usage() -> bool:
+    if _is_build_tool_execution():
+        return True
+    if _testing or "pytest" in sys.modules:
+        return False
+    return _check_caller_frame_for_project()
+
+
+def _is_pytest_test_context() -> bool:
+    if "pytest" not in sys.modules:
+        return False
+    from contextlib import suppress
+
+    with suppress(Exception):
+        import inspect
+
+        for frame_info in inspect.stack():
+            filename = frame_info.filename
+            if "acb/tests/" in filename or filename.endswith(
+                "/acb/tests/test_config.py"
+            ):
+                return True
+    return False
+
+
+def _is_main_module_local() -> bool:
+    main_module = sys.modules.get("__main__")
+    if (
+        not main_module
+        or not hasattr(main_module, "__file__")
+        or main_module.__file__ is None
+    ):
+        return False
+    main_file = Path(main_module.__file__)
+    cwd = Path.cwd()
+    return main_file.parent == cwd or "acb" in str(main_file)
+
+
+def _should_initialize_eagerly() -> bool:
+    if _is_pytest_test_context():
+        return True
+    if _testing:
+        return True
+    if _detect_library_usage():
+        return False
+    return _is_main_module_local()
+
+
+_library_usage_mode = _detect_library_usage()
 
 
 class Platform(str, Enum):
@@ -124,36 +243,51 @@ class FileSecretSource(PydanticSettingsSource):
         path = self.secrets_path / field_name
         if await path.is_file():
             return SecretStr((await path.read_text()).strip())
+        return None
 
-    async def __call__(self) -> dict[str, t.Any]:
-        data = {}
-        if _testing:
-            model_secrets = self.get_model_secrets()
-            for field_key, field_info in model_secrets.items():
-                field_name = field_key.removeprefix(f"{self.adapter_name}_")
-                if hasattr(field_info, "default") and field_info.default is not None:
-                    data[field_name] = field_info.default
-                else:
-                    data[field_name] = SecretStr(f"test_secret_for_{field_name}")
-            return data
+    def _get_test_secret_data(self) -> dict[str, t.Any]:
+        data: dict[str, t.Any] = {}
+        model_secrets = self.get_model_secrets()
+        for field_key, field_info in model_secrets.items():
+            field_name = field_key.removeprefix(f"{self.adapter_name}_")
+            if hasattr(field_info, "default") and field_info.default is not None:
+                data[field_name] = field_info.default
+            else:
+                data[field_name] = SecretStr(f"test_secret_for_{field_name}")
+        return data
+
+    async def _ensure_secrets_directory(self) -> None:
         self.secrets_path = await AsyncPath(self.secrets_path).expanduser()
         if not await self.secrets_path.exists():
             await self.secrets_path.mkdir(parents=True, exist_ok=True)
+
+    async def _process_secret_field(
+        self, field_key: str, data: dict[str, t.Any]
+    ) -> None:
+        cleaned_field_key = field_key.removeprefix(f"{app_name}_")
+        if cleaned_field_key in _app_secrets.get():
+            return
+
+        try:
+            field_value = await self.get_field_value(cleaned_field_key)
+        except Exception as e:
+            raise SettingsError(
+                f"Error getting value for field '{cleaned_field_key}' from source '{self.__class__.__name__}: {e}'"
+            )
+
+        if field_value is not None:
+            field_name = cleaned_field_key.removeprefix(f"{self.adapter_name}_")
+            data[field_name] = field_value
+            _app_secrets.get().add(cleaned_field_key)
+
+    async def __call__(self) -> dict[str, t.Any]:
+        if _testing or _library_usage_mode:
+            return self._get_test_secret_data()
+        await self._ensure_secrets_directory()
+        data: dict[str, t.Any] = {}
         model_secrets = self.get_model_secrets()
         for field_key in model_secrets:
-            field_key = field_key.removeprefix(f"{app_name}_")
-            if field_key in _app_secrets.get():
-                continue
-            try:
-                field_value = await self.get_field_value(field_key)
-            except Exception as e:
-                raise SettingsError(
-                    f"Error getting value for field '{field_key}' from source '{self.__class__.__name__}: {e}'"
-                )
-            if field_value is not None:
-                field_name = field_key.removeprefix(f"{self.adapter_name}_")
-                data[field_name] = field_value
-                _app_secrets.get().add(field_key)
+            await self._process_secret_field(field_key, data)
         return data
 
 
@@ -164,7 +298,7 @@ class ManagerSecretSource(PydanticSettingsSource):
         return secret
 
     async def load_secrets(self) -> t.Any:
-        if _testing:
+        if _testing or _library_usage_mode:
             return await self._load_test_secrets()
         return await self._load_production_secrets()
 
@@ -180,7 +314,7 @@ class ManagerSecretSource(PydanticSettingsSource):
         return data
 
     async def _load_production_secrets(self) -> dict[str, t.Any]:
-        data = {}
+        data: dict[str, t.Any] = {}
         adapter_secrets = self.get_model_secrets()
         missing_secrets = {
             n: v for n, v in adapter_secrets.items() if n not in _app_secrets.get()
@@ -225,50 +359,69 @@ class ManagerSecretSource(PydanticSettingsSource):
 
 
 class YamlSettingsSource(PydanticSettingsSource):
-    async def load_yml_settings(self) -> t.Any:
+    def _get_default_settings(self) -> dict[str, t.Any]:
+        return {
+            name: info.default
+            for name, info in self.settings_cls.model_fields.items()
+            if info.annotation is not SecretStr
+        }
+
+    def _get_dump_settings(self) -> dict[str, t.Any]:
+        return {
+            name: info.default
+            for name, info in self.settings_cls.model_fields.items()
+            if info.annotation is not SecretStr
+            and "Optional" not in str(info.annotation)
+        }
+
+    def _update_global_variables(self, settings: dict[str, t.Any]) -> None:
         global project, app_name, debug
+        if self.adapter_name == "debug":
+            debug = settings
+        elif self.adapter_name == "app":
+            if _testing or _library_usage_mode:
+                project = "test_project" if _testing else "library_project"
+                app_name = "test_app" if _testing else "library_app"
+            else:
+                project = settings.get("project", "")
+                app_name = settings.get("name", "")
+
+    def _process_debug_settings(
+        self, yml_settings: dict[str, t.Any]
+    ) -> dict[str, t.Any]:
+        for adapter in adapter_registry.get():
+            if adapter.category not in (yml_settings.keys() or ("config", "logger")):
+                yml_settings[adapter.category] = False
+        return yml_settings
+
+    async def _handle_testing_mode(self) -> dict[str, t.Any]:
+        default_settings = self._get_default_settings()
+        self._update_global_variables(default_settings)
+        return default_settings
+
+    async def _create_yml_file_if_needed(self, yml_path: AsyncPath) -> None:
+        if not await yml_path.exists() and not _deployed:
+            dump_settings = self._get_dump_settings()
+            await dump.yaml(dump_settings, yml_path)
+
+    async def load_yml_settings(self) -> t.Any:
         if self.adapter_name == "secret":
             return {}
+        if _testing or _library_usage_mode:
+            return await self._handle_testing_mode()
         yml_path = AsyncPath(settings_path / f"{self.adapter_name}.yml")
-        if _testing:
-            default_settings = {
-                name: info.default
-                for name, info in self.settings_cls.model_fields.items()
-                if info.annotation is not SecretStr
-            }
-            if self.adapter_name == "debug":
-                debug = default_settings
-            if self.adapter_name == "app":
-                project = "test_project"
-                app_name = "test_app"
-            return default_settings
-        if not await yml_path.exists() and (not _deployed):
-            dump_settings = {
-                name: info.default
-                for name, info in self.settings_cls.model_fields.items()
-                if info.annotation is not SecretStr
-                and "Optional" not in str(info.annotation)
-            }
-            await dump.yaml(dump_settings, yml_path)
+        await self._create_yml_file_if_needed(yml_path)
         yml_settings = await load.yaml(yml_path)
         if self.adapter_name == "debug":
-            for adapter in [
-                a
-                for a in adapter_registry.get()
-                if a.category not in (yml_settings.keys() or ("config", "logger"))
-            ]:
-                yml_settings[adapter.category] = False
-            debug = yml_settings
+            yml_settings = self._process_debug_settings(yml_settings)
         if not _deployed:
             await dump.yaml(yml_settings, yml_path, sort_keys=True)
-        if self.adapter_name == "app":
-            project = yml_settings.get("project")
-            app_name = yml_settings["name"]
+        self._update_global_variables(yml_settings)
         return yml_settings or {}
 
     async def __call__(self) -> dict[str, t.Any]:
         data = {}
-        if _testing or Path.cwd().name != "acb":
+        if _testing or _library_usage_mode or Path.cwd().name != "acb":
             for field_name, field in (await self.load_yml_settings()).items():
                 if field is not None:
                     data[field_name] = field
@@ -298,16 +451,15 @@ class Settings(BaseModel):
     def __init__(
         self, _secrets_path: AsyncPath = secrets_path, **values: t.Any
     ) -> None:
-        build_settings = self._settings_build_values(
+        build_settings_coro = self._settings_build_values(
             values, _secrets_path=_secrets_path
         )
-        build_settings = asyncio.run(build_settings)
+        build_settings = asyncio.run(build_settings_coro)
         super().__init__(**build_settings)
 
     async def _settings_build_values(
         self, init_kwargs: dict[str, t.Any], _secrets_path: AsyncPath = secrets_path
     ) -> dict[str, t.Any]:
-        _secrets_path = secrets_path or self.model_config.get("secrets_dir")
         init_settings: InitSettingsSource = InitSettingsSource(
             self.__class__, init_kwargs=init_kwargs
         )
@@ -383,8 +535,29 @@ class AppSettings(Settings):
         return app_name
 
 
+class _LibraryDebugSettings:
+    def __init__(self) -> None:
+        self.production = False
+        self.secrets = False
+        self.logger = False
+
+
+class _LibraryAppSettings:
+    def __init__(self, name: str = "library_app") -> None:
+        self.name = name
+        self.secret_key = SecretStr(token_urlsafe(32))
+        self.secure_salt = SecretStr(str(token_bytes(32)))
+        self.title = titleize(name)
+        self.domain = None
+        self.platform = None
+        self.project = None
+        self.region = None
+        self.timezone = "US/Pacific"
+        self.version = "0.1.0"
+
+
 class AdapterMeta(type):
-    _instances = {}
+    _instances: dict[t.Any, t.Any] = {}
 
     def __call__(cls, *args: t.Any, **kwargs: t.Any) -> t.Any:
         if cls not in cls._instances:
@@ -413,12 +586,41 @@ class Config(metaclass=AdapterMeta):
     secrets_path: AsyncPath = secrets_path
     settings_path: AsyncPath = settings_path
     tmp_path: AsyncPath = tmp_path
-    debug: DebugSettings | None = None
-    app: AppSettings | None = None
+    _debug: DebugSettings | None = None
+    _app: AppSettings | None = None
+    _initialized: bool = False
 
-    def init(self) -> None:
-        self.debug = DebugSettings()
-        self.app = AppSettings()
+    def init(self, force: bool = False) -> None:
+        global _config_initialized
+        if _library_usage_mode and not force and not _testing:
+            return
+        if self._initialized and not force:
+            return
+        self._debug = DebugSettings()
+        self._app = AppSettings()
+        self._initialized = True
+        _config_initialized = True
+
+    def ensure_initialized(self) -> None:
+        if not self._initialized:
+            if _library_usage_mode:
+                self._debug = t.cast(DebugSettings, _LibraryDebugSettings())
+                self._app = t.cast(AppSettings, _LibraryAppSettings())
+                self._initialized = True
+            else:
+                self.init(force=True)
+
+    @property
+    def debug(self) -> DebugSettings | None:
+        if self._debug is None and not self._initialized:
+            self.ensure_initialized()
+        return self._debug
+
+    @property
+    def app(self) -> AppSettings | None:
+        if self._app is None and not self._initialized:
+            self.ensure_initialized()
+        return self._app
 
     def __getattr__(self, item: str) -> t.Any:
         if item in self.__dict__:
@@ -434,7 +636,12 @@ class Config(metaclass=AdapterMeta):
 
 
 depends.set(Config)
-depends.get(Config).init()
+
+if _should_initialize_eagerly():
+    depends.get(Config).init()
+
+_ADAPTER_LOCKS: WeakKeyDictionary = WeakKeyDictionary()
+
 Logger = None
 
 
@@ -465,17 +672,15 @@ class AdapterBase(metaclass=AdapterMeta):
 
     def __init__(self, **kwargs: t.Any) -> None:
         self._client = None
-        self._client_lock = None
         self._resource_cache: dict[str, t.Any] = {}
         self._initialization_args = kwargs
+        if self not in _ADAPTER_LOCKS:
+            _ADAPTER_LOCKS[self] = asyncio.Lock()
 
     async def _ensure_client(self) -> t.Any:
         if self._client is None:
-            if self._client_lock is None:
-                import asyncio
-
-                self._client_lock = asyncio.Lock()
-            async with self._client_lock:
+            lock = _ADAPTER_LOCKS[self]
+            async with lock:
                 if self._client is None:
                     self._client = await self._create_client()
         return self._client
@@ -487,11 +692,8 @@ class AdapterBase(metaclass=AdapterMeta):
         self, resource_name: str, factory_func: t.Callable[[], t.Awaitable[t.Any]]
     ) -> t.Any:
         if resource_name not in self._resource_cache:
-            if self._client_lock is None:
-                import asyncio
-
-                self._client_lock = asyncio.Lock()
-            async with self._client_lock:
+            lock = _ADAPTER_LOCKS[self]
+            async with lock:
                 if resource_name not in self._resource_cache:
                     self._resource_cache[resource_name] = await factory_func()
         return self._resource_cache[resource_name]

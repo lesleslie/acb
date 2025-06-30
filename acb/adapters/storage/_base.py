@@ -201,13 +201,25 @@ class StorageBase(AdapterBase):
     media: StorageBucket | None = None
     test: StorageBucket | None = None
 
-    @cached_property
-    def client(self) -> t.Any:
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__()
+
+    async def _create_client(self) -> t.Any:
         return self.file_system(asynchronous=True)
 
+    async def get_client(self) -> t.Any:
+        return await self._ensure_client()
+
+    @property
+    def client(self) -> t.Any:
+        if self._client is None:
+            raise RuntimeError("Client not initialized. Call get_client() first.")
+        return self._client
+
     async def init(self) -> None:
+        client = await self.get_client()
         for bucket in self.config.storage.buckets:
-            setattr(self, bucket, StorageBucket(self.client, bucket))
+            setattr(self, bucket, StorageBucket(client, bucket))
             self.logger.debug(f"{bucket.title()} storage bucket initialized")
 
 

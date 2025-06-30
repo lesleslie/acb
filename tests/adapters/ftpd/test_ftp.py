@@ -446,6 +446,7 @@ async def test_read_text(ftpd_adapter: Ftpd, mock_client: MockFtpClient) -> None
     with (
         patch("tempfile.mkdtemp") as mock_mkdtemp,
         patch("acb.adapters.ftpd.ftp.Path") as mock_path,
+        patch("acb.adapters.ftpd.ftp.AsyncPath") as mock_async_path,
         patch("acb.adapters.ftpd.ftp.os"),
     ):
         temp_dir = tempfile.gettempdir()
@@ -463,15 +464,17 @@ async def test_read_text(ftpd_adapter: Ftpd, mock_client: MockFtpClient) -> None
         str_method: t.Any = mock_temp_path.__str__
         str_method.return_value = f"{safe_temp_dir}/file.txt"
 
-        mock_read_text = MagicMock(return_value="file contents")
-        mock_temp_path.read_text = mock_read_text
-
         mock_temp_path.exists = MagicMock(return_value=True)
         mock_temp_path.unlink = MagicMock()
+
+        # Mock AsyncPath and its read_text method
+        mock_async_path_instance = MagicMock()
+        mock_async_path.return_value = mock_async_path_instance
+        mock_async_path_instance.read_text = AsyncMock(return_value="file contents")
 
         path = "/remote/file.txt"
         result = await ftpd_adapter.read_text(path)
 
         assert result == "file contents"
-        mock_read_text.assert_called_once()
+        mock_async_path_instance.read_text.assert_called_once()
         mock_client._download.assert_called_once()

@@ -75,7 +75,7 @@ class TestMySql:
             patch("acb.adapters.sql._base.database_exists", return_value=True),
             patch("sqlalchemy.create_engine", return_value=MagicMock()),
         ):
-            engine = mysql_adapter.engine
+            engine = await mysql_adapter.get_engine()
 
             mock_create_engine.assert_called_once_with(
                 mysql_adapter.config.sql._async_url,
@@ -86,8 +86,8 @@ class TestMySql:
 
     @pytest.mark.asyncio
     async def test_engine_property_create_database(self, mysql_adapter: Sql) -> None:
-        if "engine" in mysql_adapter.__dict__:
-            del mysql_adapter.__dict__["engine"]
+        mysql_adapter._engine = None
+        mysql_adapter._client = None
 
         mock_engine = MockSqlEngine()
         mock_db_exists = MagicMock(return_value=False)
@@ -98,12 +98,12 @@ class TestMySql:
             patch("acb.adapters.sql._base.create_database", mock_create_db),
             patch(
                 "acb.adapters.sql._base.create_async_engine", return_value=mock_engine
-            ),
+            ) as mock_create_engine,
             patch("sqlalchemy.create_engine", return_value=MagicMock()),
         ):
-            engine = mysql_adapter.engine
+            engine = await mysql_adapter.get_engine()
 
-            assert engine is mock_engine
+            assert engine == mock_create_engine.return_value
 
             mock_db_exists.assert_called_once_with(mysql_adapter.config.sql._url)
             mock_create_db.assert_called_once_with(mysql_adapter.config.sql._url)
@@ -112,20 +112,13 @@ class TestMySql:
     async def test_session_property(self, mysql_adapter: Sql) -> None:
         mock_engine = MockSqlEngine()
 
-        with (
-            patch.object(mysql_adapter, "engine", mock_engine),
-            patch(
-                "acb.adapters.sql._base.AsyncSession", return_value=MockSqlSession()
-            ) as mock_session_cls,
-        ):
-            session = mysql_adapter.session
+        mysql_adapter._engine = mock_engine
+        mock_session = MockSqlSession()
+        mysql_adapter._session = mock_session
 
-            mock_session_cls.assert_called_once_with(
-                mock_engine, expire_on_commit=False
-            )
-
+        async with mysql_adapter.get_session() as session:
             assert isinstance(session, MagicMock)
-            assert session is mock_session_cls.return_value
+            assert session is mock_session
 
     @pytest.mark.asyncio
     async def test_get_session(self, mysql_adapter: Sql) -> None:
@@ -202,8 +195,8 @@ class TestMySqlBenchmarks:
             patch("sqlalchemy.create_engine", return_value=MagicMock()),
         ):
 
-            def get_engine():
-                return benchmark_adapter.engine
+            async def get_engine():
+                return await benchmark_adapter.get_engine()
 
             engine = benchmark(get_engine)
             assert engine == mock_create_engine.return_value
@@ -222,8 +215,9 @@ class TestMySqlBenchmarks:
             ) as mock_session_cls,
         ):
 
-            def get_session():
-                return benchmark_adapter.session
+            async def get_session():
+                async with benchmark_adapter.get_session() as session:
+                    return session
 
             session = benchmark(get_session)
             assert isinstance(session, MagicMock)

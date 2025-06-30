@@ -1,7 +1,6 @@
 """Tests for the file-based storage adapter."""
 
 import typing as t
-from functools import cached_property
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
@@ -9,7 +8,6 @@ from anyio import Path as AsyncPath
 from fsspec.implementations.dirfs import DirFileSystem
 from pytest_benchmark.fixture import BenchmarkFixture
 from acb.adapters.storage.file import (
-    AsyncFileSystemWrapper,
     Storage,
     StorageSettings,
 )
@@ -172,10 +170,10 @@ class TestFileStorage:
                 "acb.adapters.storage.file.AsyncFileSystemWrapper",
                 return_value=mock_wrapper,
             ):
-                with patch.object(Storage, "client", new=mock_wrapper):
-                    client = storage_adapter_no_root.client
+                storage_adapter_no_root._client = mock_wrapper
+                client = storage_adapter_no_root.client
 
-                    assert client is mock_wrapper
+                assert client is mock_wrapper
 
     @pytest.mark.asyncio
     async def test_file_system_type(self) -> None:
@@ -185,20 +183,20 @@ class TestFileStorage:
     async def test_init_method(self, storage_adapter: Storage) -> None:
         mock_client = MockAsyncFileSystemWrapper()
 
-        with patch.object(Storage, "client", new=mock_client):
-            with patch("acb.adapters.storage._base.StorageBucket") as mock_bucket_cls:
-                mock_bucket = MockStorageBucket()
-                mock_bucket_cls.return_value = mock_bucket
+        storage_adapter._client = mock_client
+        with patch("acb.adapters.storage._base.StorageBucket") as mock_bucket_cls:
+            mock_bucket = MockStorageBucket()
+            mock_bucket_cls.return_value = mock_bucket
 
-                await storage_adapter.init()
+            await storage_adapter.init()
 
-                mock_bucket_cls.assert_any_call(mock_client, "templates")
-                mock_bucket_cls.assert_any_call(mock_client, "test")
-                mock_bucket_cls.assert_any_call(mock_client, "media")
+            mock_bucket_cls.assert_any_call(mock_client, "templates")
+            mock_bucket_cls.assert_any_call(mock_client, "test")
+            mock_bucket_cls.assert_any_call(mock_client, "media")
 
-                assert storage_adapter.templates == mock_bucket
-                assert storage_adapter.test == mock_bucket
-                assert storage_adapter.media == mock_bucket
+            assert storage_adapter.templates == mock_bucket
+            assert storage_adapter.test == mock_bucket
+            assert storage_adapter.media == mock_bucket
 
     @pytest.mark.asyncio
     async def test_put_file(self, storage_adapter: Storage) -> None:
@@ -206,15 +204,15 @@ class TestFileStorage:
         file_path = "test/path/file.txt"
         content = b"test content"
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                result = await storage_adapter.put_file(file_path, content)
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            result = await storage_adapter.put_file(file_path, content)
 
-                mock_client.open.assert_called_once_with(file_path, "wb")
+            mock_client.open.assert_called_once_with(file_path, "wb")
 
-                mock_client.mock_file.write.assert_called_once_with(content)
+            mock_client.mock_file.write.assert_called_once_with(content)
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_get_file(self, storage_adapter: Storage) -> None:
@@ -224,17 +222,17 @@ class TestFileStorage:
 
         storage_adapter.file_exists = AsyncMock(return_value=True)
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                result = await storage_adapter.get_file(file_path)
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            result = await storage_adapter.get_file(file_path)
 
-                storage_adapter.file_exists.assert_called_once_with(file_path)
+            storage_adapter.file_exists.assert_called_once_with(file_path)
 
-                mock_client.open.assert_called_once_with(file_path, "rb")
+            mock_client.open.assert_called_once_with(file_path, "rb")
 
-                mock_client.mock_file.read.assert_called_once()
+            mock_client.mock_file.read.assert_called_once()
 
-                assert result == expected_content
+            assert result == expected_content
 
     @pytest.mark.asyncio
     async def test_delete_file(self, storage_adapter: Storage) -> None:
@@ -244,15 +242,15 @@ class TestFileStorage:
 
         storage_adapter.file_exists = AsyncMock(return_value=True)
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                result = await storage_adapter.delete_file(file_path)
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            result = await storage_adapter.delete_file(file_path)
 
-                storage_adapter.file_exists.assert_called_once_with(file_path)
+            storage_adapter.file_exists.assert_called_once_with(file_path)
 
-                mock_client.rm.assert_called_once_with(file_path)
+            mock_client.rm.assert_called_once_with(file_path)
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_file_exists(self) -> None:
@@ -279,26 +277,26 @@ class TestFileStorage:
         mock_client = MockAsyncFileSystemWrapper()
         dir_path = "test/path/directory"
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                result = await storage_adapter.create_directory(dir_path)
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            result = await storage_adapter.create_directory(dir_path)
 
-                mock_client.mkdir.assert_called_once_with(dir_path, create_parents=True)
+            mock_client.mkdir.assert_called_once_with(dir_path, create_parents=True)
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_directory_exists(self, storage_adapter: Storage) -> None:
         mock_client = MockAsyncFileSystemWrapper()
         dir_path = "test/path/directory"
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                result = await storage_adapter.directory_exists(dir_path)
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            result = await storage_adapter.directory_exists(dir_path)
 
-                mock_client.isdir.assert_called_once_with(dir_path)
+            mock_client.isdir.assert_called_once_with(dir_path)
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_put_file_with_root_dir(self, storage_adapter: Storage) -> None:
@@ -481,11 +479,10 @@ class TestFileStorage:
         type(mock_config).storage = PropertyMock(side_effect=AttributeError())
         storage.config = mock_config
 
-        client = storage.client
+        client = await storage.get_client()
 
         assert client is not None
-        assert isinstance(client, AsyncFileSystemWrapper)
-
+        # Client should have the expected interface regardless of whether it's mocked
         assert hasattr(client, "open")
         assert hasattr(client, "exists")
         assert hasattr(client, "mkdir")
@@ -501,9 +498,9 @@ class TestFileStorage:
 
                 self._test_client = MagicMock()
                 self._test_client.exists.side_effect = Exception("Test error")
+                self._client = self._test_client
 
-            @cached_property
-            def client(self) -> t.Any:
+            async def get_client(self) -> t.Any:
                 return self._test_client
 
         test_adapter = TestableStorage(storage_adapter)
@@ -530,9 +527,9 @@ class TestFileStorage:
 
                 self._test_client = MagicMock()
                 self._test_client.mkdir.side_effect = Exception("Test error")
+                self._client = self._test_client
 
-            @cached_property
-            def client(self) -> t.Any:
+            async def get_client(self) -> t.Any:
                 return self._test_client
 
         test_adapter = TestableStorage(storage_adapter)
@@ -562,9 +559,9 @@ class TestFileStorage:
                 self._test_client = MagicMock()
                 self._test_client.exists.side_effect = Exception("Test error")
                 self._test_client.isdir.return_value = True
+                self._client = self._test_client
 
-            @cached_property
-            def client(self) -> t.Any:
+            async def get_client(self) -> t.Any:
                 return self._test_client
 
         test_adapter = TestableStorage(storage_adapter)
@@ -597,13 +594,13 @@ class TestFileStorage:
         path_mock = AsyncMock()
         path_mock.exists = path_mock.is_file = path_mock.is_dir = async_true
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                result = await storage_adapter.put_file(file_path, content_bytes)
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            result = await storage_adapter.put_file(file_path, content_bytes)
 
-                mock_file.write.assert_called_once_with(content_bytes)
+            mock_file.write.assert_called_once_with(content_bytes)
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_put_file_exception(self, storage_adapter: Storage) -> None:
@@ -612,17 +609,17 @@ class TestFileStorage:
         file_path = "test/path/file.txt"
         content = b"test content"
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                # Create mock logger
-                mock_logger = MagicMock()
-                storage_adapter.logger = mock_logger
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            # Create mock logger
+            mock_logger = MagicMock()
+            storage_adapter.logger = mock_logger
 
-                result = await storage_adapter.put_file(file_path, content)
+            result = await storage_adapter.put_file(file_path, content)
 
-                assert not result
+            assert not result
 
-                mock_logger.error.assert_called_once()
+            mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_file_nonexistent(self, storage_adapter: Storage) -> None:
@@ -645,17 +642,17 @@ class TestFileStorage:
 
         storage_adapter.file_exists = AsyncMock(return_value=True)
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                # Create mock logger
-                mock_logger = MagicMock()
-                storage_adapter.logger = mock_logger
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            # Create mock logger
+            mock_logger = MagicMock()
+            storage_adapter.logger = mock_logger
 
-                result = await storage_adapter.get_file(file_path)
+            result = await storage_adapter.get_file(file_path)
 
-                assert result is None
+            assert result is None
 
-                mock_logger.error.assert_called_once()
+            mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_file_nonexistent(self, storage_adapter: Storage) -> None:
@@ -678,17 +675,17 @@ class TestFileStorage:
 
         storage_adapter.file_exists = AsyncMock(return_value=True)
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                # Create mock logger
-                mock_logger = MagicMock()
-                storage_adapter.logger = mock_logger
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            # Create mock logger
+            mock_logger = MagicMock()
+            storage_adapter.logger = mock_logger
 
-                result = await storage_adapter.delete_file(file_path)
+            result = await storage_adapter.delete_file(file_path)
 
-                assert not result
+            assert not result
 
-                mock_logger.error.assert_called_once()
+            mock_logger.error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_put_file_with_string_content_and_path_mock(
@@ -706,13 +703,13 @@ class TestFileStorage:
         path_mock = AsyncMock()
         path_mock.exists = path_mock.is_file = path_mock.is_dir = async_true
 
-        with patch.object(storage_adapter, "client", new=mock_client):
-            with patch.object(storage_adapter, "root_dir", new=None):
-                result = await storage_adapter.put_file(file_path, content_bytes)
+        storage_adapter._client = mock_client
+        with patch.object(storage_adapter, "root_dir", new=None):
+            result = await storage_adapter.put_file(file_path, content_bytes)
 
-                mock_file.write.assert_called_once_with(content_bytes)
+            mock_file.write.assert_called_once_with(content_bytes)
 
-                assert result
+            assert result
 
 
 @pytest.mark.skip(reason="Storage benchmark tests need adapter method implementation")

@@ -44,7 +44,7 @@ class Depends:
             with suppress(Exception):
                 result = get_repository().get(class_)
                 if result is not None:
-                    return t.cast(class_, result)
+                    return result
             from .adapters import _import_adapter
 
             try:
@@ -55,7 +55,7 @@ class Depends:
                 class_ = asyncio.run(_import_adapter(class_))
             except RuntimeError:
                 class_ = asyncio.run(_import_adapter(class_))
-        return t.cast(class_, get_repository().get(class_))
+        return get_repository().get(class_)
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return dependency()
