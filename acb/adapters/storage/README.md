@@ -249,13 +249,11 @@ from acb.depends import depends
 from acb.adapters import import_adapter
 from anyio import Path as AsyncPath
 
-# Get access to source and destination storage
-# (This requires configuring two storage adapters)
-S3 = import_adapter("storage", implementation="s3")
-GCS = import_adapter("storage", implementation="cloud_storage")
+# Get access to storage (configured in settings/adapters.yml)
+# Note: To use multiple storage adapters, you'd need custom configuration
+Storage = import_adapter("storage")
 
-s3_storage = depends.get(S3)
-gcs_storage = depends.get(GCS)
+storage = depends.get(Storage)
 
 async def migrate_files(source_path: str, destination_path: str) -> None:
     """Migrate files from S3 to Google Cloud Storage"""

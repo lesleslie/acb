@@ -187,7 +187,8 @@ from acb.adapters import import_adapter
 import typing as t
 
 # Method 1: Explicit adapter imports
-Storage, Logger = import_adapter("storage", "logger")
+Storage = import_adapter("storage")
+Logger = import_adapter("logger")
 
 # Method 2: Automatic detection (convenience feature)
 # ACB detects adapter names from variable names on the left side of assignment
