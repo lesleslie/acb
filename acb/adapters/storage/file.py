@@ -1,7 +1,7 @@
 import typing as t
-from pathlib import Path
 from typing import BinaryIO
 
+from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from fsspec.implementations.asyn_wrapper import AsyncFileSystemWrapper
 from fsspec.implementations.dirfs import DirFileSystem
@@ -53,9 +53,9 @@ class Storage(StorageBase):
     async def put_file(self, path: str, content: bytes) -> bool:
         try:
             if self.root_dir:
-                full_path = Path(self.root_dir) / path
-                full_path.parent.mkdir(parents=True, exist_ok=True)
-                full_path.write_bytes(content)
+                full_path = AsyncPath(self.root_dir) / path
+                await full_path.parent.mkdir(parents=True, exist_ok=True)
+                await full_path.write_bytes(content)
                 return True
             else:
                 try:
@@ -87,10 +87,10 @@ class Storage(StorageBase):
     async def _get_file_from_root_dir(self, path: str) -> bytes | None:
         if self.root_dir is None:
             return None
-        full_path = Path(self.root_dir) / path
-        if not full_path.exists():
+        full_path = AsyncPath(self.root_dir) / path
+        if not await full_path.exists():
             return None
-        return full_path.read_bytes()
+        return await full_path.read_bytes()
 
     async def _get_file_from_client(self, path: str) -> bytes | None:
         if not await self.file_exists(path):
@@ -108,10 +108,10 @@ class Storage(StorageBase):
     async def delete_file(self, path: str) -> bool:
         try:
             if self.root_dir:
-                full_path = Path(self.root_dir) / path
-                if not full_path.exists():
+                full_path = AsyncPath(self.root_dir) / path
+                if not await full_path.exists():
                     return False
-                full_path.unlink()
+                await full_path.unlink()
                 return True
             else:
                 if not await self.file_exists(path):
@@ -129,8 +129,8 @@ class Storage(StorageBase):
     async def file_exists(self, path: str) -> bool:
         try:
             if self.root_dir:
-                full_path = Path(self.root_dir) / path
-                return full_path.exists() and full_path.is_file()
+                full_path = AsyncPath(self.root_dir) / path
+                return await full_path.exists() and await full_path.is_file()
             else:
                 try:
                     return self.client.exists(path)
@@ -144,8 +144,8 @@ class Storage(StorageBase):
     async def create_directory(self, path: str) -> bool:
         try:
             if self.root_dir:
-                full_path = Path(self.root_dir) / path
-                full_path.mkdir(parents=True, exist_ok=True)
+                full_path = AsyncPath(self.root_dir) / path
+                await full_path.mkdir(parents=True, exist_ok=True)
                 return True
             else:
                 try:
@@ -161,8 +161,8 @@ class Storage(StorageBase):
     async def directory_exists(self, path: str) -> bool:
         try:
             if self.root_dir:
-                full_path = Path(self.root_dir) / path
-                return full_path.exists() and full_path.is_dir()
+                full_path = AsyncPath(self.root_dir) / path
+                return await full_path.exists() and await full_path.is_dir()
             else:
                 try:
                     return self.client.exists(path) and self.client.isdir(path)

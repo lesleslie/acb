@@ -29,10 +29,8 @@ class Cache(CacheBase):
 
     @property
     def _cache(self) -> SimpleMemoryCache:
-        """Compatibility property for existing tests."""
         client = getattr(self, "_client", None)
         if client is None:
-            # Create synchronously for test compatibility
             cache = SimpleMemoryCache(
                 serializer=PickleSerializer(),
                 namespace=f"{self.config.app.name}:",

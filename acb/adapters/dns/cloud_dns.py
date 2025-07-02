@@ -143,11 +143,9 @@ class Dns(DnsBase):
         current_record = self.get_current_record(record)
         if current_record and current_record.__dict__ == record.__dict__:
             return
-
         if current_record:
             self.current_record_sets.append(self.get_record_set(current_record))
             self.logger.info(f"Deleting - {current_record}")
-
         record_set = self.get_record_set(record)
         self.new_record_sets.append(record_set)
         self.logger.info(f"Creating - {record}")

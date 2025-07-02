@@ -103,6 +103,16 @@ try:
                 path=acb_adapters_path / "cache" / "memory.py",
             ),
             Adapter(
+                name="redis",
+                class_name="Cache",
+                category="cache",
+                pkg="acb",
+                module="acb.adapters.cache.redis",
+                enabled=False,
+                installed=False,
+                path=acb_adapters_path / "cache" / "redis.py",
+            ),
+            Adapter(
                 name="file",
                 class_name="Storage",
                 category="storage",
@@ -111,6 +121,26 @@ try:
                 enabled=False,
                 installed=False,
                 path=acb_adapters_path / "storage" / "file.py",
+            ),
+            Adapter(
+                name="httpx",
+                class_name="Requests",
+                category="requests",
+                pkg="acb",
+                module="acb.adapters.requests.httpx",
+                enabled=False,
+                installed=False,
+                path=acb_adapters_path / "requests" / "httpx.py",
+            ),
+            Adapter(
+                name="cloudflare",
+                class_name="Dns",
+                category="dns",
+                pkg="acb",
+                module="acb.adapters.dns.cloudflare",
+                enabled=False,
+                installed=False,
+                path=acb_adapters_path / "dns" / "cloudflare.py",
             ),
         ]
         registry = adapter_registry.get()

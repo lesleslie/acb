@@ -1,19 +1,11 @@
-"""Simplified tests for the Redis Cache adapter."""
+"""Tests for the Redis Cache adapter using optimized test infrastructure."""
 
 import typing as t
-from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
-from tests.adapters.cache.test_cache_base import assert_cache_operations
 
-
-@asynccontextmanager
-async def mock_redis_client() -> t.AsyncGenerator[AsyncMock]:
-    with patch("redis.asyncio.Redis") as mock_redis:
-        mock_client = AsyncMock()
-        mock_redis.from_url.return_value = mock_client
-        yield mock_client
+from .test_cache_base import assert_cache_operations
 
 
 class RedisCache:

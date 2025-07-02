@@ -4,6 +4,7 @@ import sys
 import tempfile
 import typing as t
 from contextvars import ContextVar
+from functools import cache
 from importlib import import_module, util
 from inspect import stack
 from pathlib import Path
@@ -44,6 +45,13 @@ class AdapterNotFound(Exception): ...
 
 
 class AdapterNotInstalled(Exception): ...
+
+
+class StaticImportError(ImportError):
+    pass
+
+
+AdapterClass = t.TypeVar("AdapterClass")
 
 
 @t.runtime_checkable
@@ -145,6 +153,89 @@ def get_installed_adapters() -> list[Adapter]:
     return list(_installed_adapters_cache.get().values())
 
 
+@cache
+def get_adapter_class(category: str, name: str) -> type[t.Any]:
+    module_path = f"acb.adapters.{category}.{name}"
+    static_mappings = {
+        "cache.memory": ("acb.adapters.cache.memory", "Cache"),
+        "cache.redis": ("acb.adapters.cache.redis", "Cache"),
+        "storage.file": ("acb.adapters.storage.file", "Storage"),
+        "storage.memory": ("acb.adapters.storage.memory", "Storage"),
+        "storage.s3": ("acb.adapters.storage.s3", "Storage"),
+        "storage.azure": ("acb.adapters.storage.azure", "Storage"),
+        "storage.cloud_storage": ("acb.adapters.storage.cloud_storage", "Storage"),
+        "sql.mysql": ("acb.adapters.sql.mysql", "Sql"),
+        "sql.pgsql": ("acb.adapters.sql.pgsql", "Sql"),
+        "nosql.mongodb": ("acb.adapters.nosql.mongodb", "Nosql"),
+        "nosql.redis": ("acb.adapters.nosql.redis", "Nosql"),
+        "nosql.firestore": ("acb.adapters.nosql.firestore", "Nosql"),
+        "monitoring.sentry": ("acb.adapters.monitoring.sentry", "Monitoring"),
+        "monitoring.logfire": ("acb.adapters.monitoring.logfire", "Monitoring"),
+        "secret.infisical": ("acb.adapters.secret.infisical", "Secret"),
+        "secret.secret_manager": ("acb.adapters.secret.secret_manager", "Secret"),
+        "requests.httpx": ("acb.adapters.requests.httpx", "Requests"),
+        "requests.niquests": ("acb.adapters.requests.niquests", "Requests"),
+        "smtp.gmail": ("acb.adapters.smtp.gmail", "Smtp"),
+        "smtp.mailgun": ("acb.adapters.smtp.mailgun", "Smtp"),
+        "dns.cloudflare": ("acb.adapters.dns.cloudflare", "Dns"),
+        "dns.cloud_dns": ("acb.adapters.dns.cloud_dns", "Dns"),
+        "ftpd.ftp": ("acb.adapters.ftpd.ftp", "Ftpd"),
+        "ftpd.sftp": ("acb.adapters.ftpd.sftp", "Ftpd"),
+        "models.sqlmodel": ("acb.adapters.models.sqlmodel", "Models"),
+    }
+    lookup_key = f"{category}.{name}"
+    if lookup_key in static_mappings:
+        module_path, class_name = static_mappings[lookup_key]
+        try:
+            from importlib import import_module
+
+            module = import_module(module_path)
+            return getattr(module, class_name)
+        except (ImportError, AttributeError) as e:
+            raise StaticImportError(f"Failed to import {module_path}.{class_name}: {e}")
+    try:
+        from importlib import import_module
+
+        from inflection import camelize
+
+        module_path = f"acb.adapters.{category}.{name}"
+        class_name = camelize(category)
+        module = import_module(module_path)
+        return getattr(module, class_name)
+    except (ImportError, AttributeError) as e:
+        raise StaticImportError(f"Failed to import {module_path}: {e}")
+
+
+def try_import_adapter(category: str, name: str | None = None) -> type[t.Any] | None:
+    if name is None:
+        adapter_info = get_adapter(category)
+        if adapter_info:
+            name = adapter_info.name
+        else:
+            return None
+    try:
+        return get_adapter_class(category, name)
+    except StaticImportError:
+        return None
+
+
+def import_adapter_fast(category: str, name: str | None = None) -> type[t.Any]:
+    adapter_class = try_import_adapter(category, name)
+    if adapter_class is None:
+        available_adapters = list(_get_available_adapters(category))
+        raise ImportError(
+            f"Could not import {category} adapter '{name}'. "
+            f"Available: {available_adapters}"
+        )
+    return adapter_class
+
+
+def _get_available_adapters(category: str) -> t.Iterator[str]:
+    for adapter in adapter_registry.get():
+        if adapter.category == category:
+            yield adapter.name
+
+
 _adapter_config_loaded: bool = False
 
 
@@ -184,13 +275,26 @@ async def _should_skip_project_setup(cwd_path: AsyncPath) -> bool:
     if has_pyproject:
         has_src = await (cwd_path / "src").exists()
         has_package_dir = await (cwd_path / cwd_path.stem).exists()
-        return has_src or has_package_dir
+        has_acb_dir = await (cwd_path / "acb").exists()
+        is_acb_package = (
+            has_acb_dir and await (cwd_path / "acb" / "__init__.py").exists()
+        )
+        return has_src or has_package_dir or is_acb_package
+
     return False
 
 
 async def _create_adapter_settings_if_needed(
     cwd_settings_path: AsyncPath, cwd_adapter_settings_path: AsyncPath
 ) -> None:
+    if _testing or "pytest" in sys.modules:
+        return
+
+    from ..config import _library_usage_mode
+
+    if _library_usage_mode:
+        return
+
     if not await cwd_adapter_settings_path.exists() and not _deployed:
         await cwd_settings_path.mkdir(exist_ok=True)
         categories = {a.category for a in adapter_registry.get()}
@@ -334,46 +438,82 @@ async def gather_imports(adapter_categories: list[str]) -> t.Any:
 
 
 def import_adapter(adapter_categories: str | list[str] | None = None) -> t.Any:
-    if _testing or "pytest" in sys.modules:
-        from unittest.mock import MagicMock
-
-        if isinstance(adapter_categories, str):
-            return MagicMock()
-        if not adapter_categories:
-            try:
-                context = stack()[1][4]
-                adapter_categories = [
-                    c.strip()
-                    for c in (context[0] if context else "")
-                    .split("=")[0]
-                    .strip()
-                    .lower()
-                    .split(",")
-                ]
-            except (IndexError, AttributeError, TypeError):
-                return MagicMock()
-        return tuple(MagicMock() for _ in adapter_categories)
     if isinstance(adapter_categories, str):
-        adapter_categories = [adapter_categories]
+        adapter_info = get_adapter(adapter_categories)
+        adapter_name = adapter_info.name if adapter_info else None
+        adapter_class = try_import_adapter(adapter_categories, adapter_name)
+        if adapter_class:
+            return adapter_class
+
+        return import_adapter_with_context([adapter_categories])
+
+    return import_adapter_with_context(adapter_categories)
+
+
+def _extract_adapter_categories_from_stack() -> list[str]:
+    frame_idx = 1
+    for i in range(1, min(4, len(stack()))):
+        frame_context = str(stack()[i][4]) if stack()[i][4] else ""
+        if "import_adapter_with_context" in frame_context:
+            frame_idx = i + 1
+            break
+    context = stack()[frame_idx][4]
+    return [
+        c.strip()
+        for c in (context[0] if context else "")
+        .split("=")[0]
+        .strip()
+        .lower()
+        .split(",")
+    ]
+
+
+def _handle_testing_mode(adapter_categories: str | list[str] | None) -> t.Any:
+    from unittest.mock import MagicMock
+
+    if isinstance(adapter_categories, str):
+        return MagicMock()
     if not adapter_categories:
         try:
-            context = stack()[1][4]
-            adapter_categories = [
-                c.strip()
-                for c in (context[0] if context else "")
-                .split("=")[0]
-                .strip()
-                .lower()
-                .split(",")
-            ]
+            adapter_categories = _extract_adapter_categories_from_stack()
+        except (IndexError, AttributeError, TypeError):
+            return MagicMock()
+
+    return tuple(MagicMock() for _ in adapter_categories)
+
+
+def _normalize_adapter_categories(
+    adapter_categories: str | list[str] | None,
+) -> list[str]:
+    if isinstance(adapter_categories, str):
+        return [adapter_categories]
+
+    if not adapter_categories:
+        try:
+            return _extract_adapter_categories_from_stack()
         except (IndexError, AttributeError, TypeError):
             raise ValueError(
                 "Could not determine adapter categories from calling context"
             )
+
+    return adapter_categories
+
+
+def import_adapter_with_context(
+    adapter_categories: str | list[str] | None = None,
+) -> t.Any:
+    if _testing or "pytest" in sys.modules:
+        return _handle_testing_mode(adapter_categories)
+
+    normalized_categories = _normalize_adapter_categories(adapter_categories)
+
     try:
-        imported_adapters = asyncio.run(gather_imports(adapter_categories))
+        imported_adapters = asyncio.run(gather_imports(normalized_categories))
     except Exception as e:
-        raise AdapterNotInstalled(f"Failed to install adapters: {e}")
+        raise AdapterNotInstalled(
+            f"Failed to install adapters {normalized_categories}: {e}"
+        )
+
     return (
         imported_adapters[0]
         if len(imported_adapters) == 1

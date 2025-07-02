@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.14"
+version = "0.16.15"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -51,17 +51,29 @@ dependencies = [
     "tomli-w>=1.2",
 ]
 
+optional-dependencies.all = [
+    "acb[cache,dns,ftpd,monitoring,nosql,requests,secret,smtp,sql,storage]",
+]
+optional-dependencies.api = [
+    "acb[cache,nosql,requests,monitoring,secret]",
+]
 optional-dependencies.cache = [
     "aiocache[redis]>=0.12.3",
     "coredis>=4.23.1",
     "logfire[redis]>=3.21.1",
+]
+optional-dependencies.cloud-native = [
+    "acb[cache,sql,storage,secret,monitoring,dns]",
+]
+optional-dependencies.dataplatform = [
+    "acb[sql,nosql,storage,monitoring]",
 ]
 optional-dependencies.demo = [
     "faker>=37.4",
 ]
 optional-dependencies.dev = [
     "complexipy>=3",
-    "crackerjack>=0.21.8",
+    "crackerjack>=0.22.3",
     "pre-commit>=4.2",
     "pytest>=8.4.1",
     "pytest-anyio>=0",
@@ -81,6 +93,15 @@ optional-dependencies.dns = [
 optional-dependencies.ftpd = [
     "aioftp>=0.26.2",
     "asyncssh>=2.21",
+]
+optional-dependencies.gcp = [
+    "acb[dns,secret,nosql,storage]",
+]
+optional-dependencies.microservice = [
+    "acb[cache,requests,monitoring,secret]",
+]
+optional-dependencies.minimal = [
+    "acb[cache,requests]",
 ]
 optional-dependencies.monitoring = [
     "logfire[system-metrics]>=3.21.1",
@@ -121,6 +142,9 @@ optional-dependencies.storage = [
     "adlfs>=2024.12",
     "gcsfs>=2025.5.1",
     "s3fs>=2025.5.1",
+]
+optional-dependencies.webapp = [
+    "acb[cache,sql,storage,requests,monitoring]",
 ]
 urls.Documentation = "https://github.com/lesleslie/acb"
 urls.Homepage = "https://github.com/lesleslie/acb"
@@ -245,8 +269,8 @@ include = [
     "acb",
 ]
 exclude = [
-    "acb/actions/handle/__init__.py",
     "scratch",
+    "acb/actions/handle/__init__.py",
 ]
 extraPaths = [
     ".venv/lib/python3.13/site-packages/",
@@ -277,24 +301,24 @@ deps-file = "pyproject.toml"
 exclude-deps = [
     "pytest-cov",
     "keyring",
-    "inflection",
-    "pdm-bump",
-    "pytest-xdist",
     "pdm",
-    "pytest-benchmark",
-    "autotyping",
-    "pytest-asyncio",
+    "pre-commit",
+    "pdm-bump",
     "pytest-timeout",
+    "google-crc32c",
+    "autotyping",
     "tomli-w",
-    "pytest",
+    "google-api-python-client",
     "uv",
     "pytest-mock",
-    "pyfiglet",
-    "pyyaml",
+    "inflection",
+    "pytest",
     "pydantic-settings",
-    "pre-commit",
-    "google-crc32c",
-    "google-api-python-client",
+    "pytest-benchmark",
+    "pyfiglet",
+    "pytest-asyncio",
+    "pyyaml",
+    "pytest-xdist",
 ]
 
 [tool.refurb]
@@ -306,17 +330,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B101",
-    "B603",
-    "B301",
-    "B106",
-    "B105",
-    "B403",
-    "B311",
-    "B607",
     "B404",
     "B602",
+    "B311",
+    "B603",
+    "B607",
     "B704",
+    "B101",
+    "B105",
+    "B301",
+    "B403",
+    "B106",
 ]
 
 [tool.vulture]

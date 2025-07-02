@@ -1,7 +1,6 @@
 import typing as t
 from abc import abstractmethod
 from contextlib import asynccontextmanager
-from functools import cached_property
 
 from pydantic import SecretStr
 from acb.config import AdapterBase, Config, Settings
@@ -148,7 +147,6 @@ class NosqlBase(AdapterBase):
     def __init__(self) -> None:
         super().__init__()
         self._collections: dict[str, NosqlCollection] = {}
-        self._client: t.Any | None = None
         self._db: t.Any | None = None
 
     def __getattr__(self, name: str) -> NosqlCollection:
@@ -156,17 +154,14 @@ class NosqlBase(AdapterBase):
             self._collections[name] = NosqlCollection(self, name)
         return self._collections[name]
 
-    @cached_property
-    def client(self) -> t.Any:
-        if self._client is None:
-            raise ValueError("Client is not initialized. Call init() first.")
-        return self._client
+    async def get_client(self) -> t.Any:
+        return await self._ensure_client()
 
-    @cached_property
-    def db(self) -> t.Any:
-        if self._db is None:
-            raise ValueError("Database is not initialized. Call init() first.")
-        return self._db
+    async def get_db(self) -> t.Any:
+        return await self._ensure_resource("db", self._create_db)
+
+    async def _create_db(self) -> t.Any:
+        raise NotImplementedError("Subclasses must implement _create_db()")
 
     @abstractmethod
     async def init(self) -> None:
@@ -241,5 +236,6 @@ class NosqlBase(AdapterBase):
         pass
 
     @asynccontextmanager
-    async def transaction(self) -> t.AsyncGenerator[None]:
-        yield None
+    async def transaction(self) -> t.AsyncGenerator[t.Any]:
+        db = await self.get_db()
+        yield db

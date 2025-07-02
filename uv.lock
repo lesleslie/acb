@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.16.13"
+version = "0.16.14"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -31,10 +31,95 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+all = [
+    { name = "adlfs" },
+    { name = "aiocache", extra = ["redis"] },
+    { name = "aioftp" },
+    { name = "aiomysql" },
+    { name = "asyncssh" },
+    { name = "babel" },
+    { name = "beanie" },
+    { name = "coredis" },
+    { name = "gcsfs" },
+    { name = "google-cloud-dns" },
+    { name = "google-cloud-firestore" },
+    { name = "google-cloud-secret-manager" },
+    { name = "greenlet" },
+    { name = "hishel" },
+    { name = "httpx", extra = ["http2"] },
+    { name = "infisicalsdk" },
+    { name = "logfire", extra = ["httpx", "redis", "sqlalchemy", "system-metrics"] },
+    { name = "mailgun" },
+    { name = "motor" },
+    { name = "niquests" },
+    { name = "pymysql" },
+    { name = "python-cloudflare" },
+    { name = "redis-om" },
+    { name = "s3fs" },
+    { name = "sentry-sdk", extra = ["httpx", "loguru", "sqlalchemy"] },
+    { name = "sqlalchemy" },
+    { name = "sqlalchemy-utils" },
+    { name = "sqlmodel" },
+    { name = "validators" },
+]
+api = [
+    { name = "aiocache", extra = ["redis"] },
+    { name = "beanie" },
+    { name = "coredis" },
+    { name = "google-cloud-firestore" },
+    { name = "google-cloud-secret-manager" },
+    { name = "hishel" },
+    { name = "httpx", extra = ["http2"] },
+    { name = "infisicalsdk" },
+    { name = "logfire", extra = ["httpx", "redis", "system-metrics"] },
+    { name = "motor" },
+    { name = "niquests" },
+    { name = "redis-om" },
+    { name = "sentry-sdk", extra = ["httpx", "loguru"] },
+]
 cache = [
     { name = "aiocache", extra = ["redis"] },
     { name = "coredis" },
     { name = "logfire", extra = ["redis"] },
+]
+cloud-native = [
+    { name = "adlfs" },
+    { name = "aiocache", extra = ["redis"] },
+    { name = "aiomysql" },
+    { name = "babel" },
+    { name = "coredis" },
+    { name = "gcsfs" },
+    { name = "google-cloud-dns" },
+    { name = "google-cloud-secret-manager" },
+    { name = "greenlet" },
+    { name = "infisicalsdk" },
+    { name = "logfire", extra = ["redis", "sqlalchemy", "system-metrics"] },
+    { name = "pymysql" },
+    { name = "python-cloudflare" },
+    { name = "s3fs" },
+    { name = "sentry-sdk", extra = ["loguru", "sqlalchemy"] },
+    { name = "sqlalchemy" },
+    { name = "sqlalchemy-utils" },
+    { name = "sqlmodel" },
+    { name = "validators" },
+]
+dataplatform = [
+    { name = "adlfs" },
+    { name = "aiomysql" },
+    { name = "babel" },
+    { name = "beanie" },
+    { name = "gcsfs" },
+    { name = "google-cloud-firestore" },
+    { name = "greenlet" },
+    { name = "logfire", extra = ["sqlalchemy", "system-metrics"] },
+    { name = "motor" },
+    { name = "pymysql" },
+    { name = "redis-om" },
+    { name = "s3fs" },
+    { name = "sentry-sdk", extra = ["loguru", "sqlalchemy"] },
+    { name = "sqlalchemy" },
+    { name = "sqlalchemy-utils" },
+    { name = "sqlmodel" },
 ]
 demo = [
     { name = "faker" },
@@ -61,6 +146,40 @@ dns = [
 ftpd = [
     { name = "aioftp" },
     { name = "asyncssh" },
+]
+gcp = [
+    { name = "adlfs" },
+    { name = "beanie" },
+    { name = "gcsfs" },
+    { name = "google-cloud-dns" },
+    { name = "google-cloud-firestore" },
+    { name = "google-cloud-secret-manager" },
+    { name = "infisicalsdk" },
+    { name = "motor" },
+    { name = "python-cloudflare" },
+    { name = "redis-om" },
+    { name = "s3fs" },
+    { name = "validators" },
+]
+microservice = [
+    { name = "aiocache", extra = ["redis"] },
+    { name = "coredis" },
+    { name = "google-cloud-secret-manager" },
+    { name = "hishel" },
+    { name = "httpx", extra = ["http2"] },
+    { name = "infisicalsdk" },
+    { name = "logfire", extra = ["httpx", "redis", "system-metrics"] },
+    { name = "niquests" },
+    { name = "sentry-sdk", extra = ["httpx", "loguru"] },
+]
+minimal = [
+    { name = "aiocache", extra = ["redis"] },
+    { name = "coredis" },
+    { name = "hishel" },
+    { name = "httpx", extra = ["http2"] },
+    { name = "logfire", extra = ["httpx", "redis"] },
+    { name = "niquests" },
+    { name = "sentry-sdk", extra = ["httpx"] },
 ]
 monitoring = [
     { name = "logfire", extra = ["system-metrics"] },
@@ -102,9 +221,36 @@ storage = [
     { name = "gcsfs" },
     { name = "s3fs" },
 ]
+webapp = [
+    { name = "adlfs" },
+    { name = "aiocache", extra = ["redis"] },
+    { name = "aiomysql" },
+    { name = "babel" },
+    { name = "coredis" },
+    { name = "gcsfs" },
+    { name = "greenlet" },
+    { name = "hishel" },
+    { name = "httpx", extra = ["http2"] },
+    { name = "logfire", extra = ["httpx", "redis", "sqlalchemy", "system-metrics"] },
+    { name = "niquests" },
+    { name = "pymysql" },
+    { name = "s3fs" },
+    { name = "sentry-sdk", extra = ["httpx", "loguru", "sqlalchemy"] },
+    { name = "sqlalchemy" },
+    { name = "sqlalchemy-utils" },
+    { name = "sqlmodel" },
+]
 
 [package.metadata]
 requires-dist = [
+    { name = "acb", extras = ["cache", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"], marker = "extra == 'all'" },
+    { name = "acb", extras = ["cache", "nosql", "requests", "monitoring", "secret"], marker = "extra == 'api'" },
+    { name = "acb", extras = ["cache", "requests"], marker = "extra == 'minimal'" },
+    { name = "acb", extras = ["cache", "requests", "monitoring", "secret"], marker = "extra == 'microservice'" },
+    { name = "acb", extras = ["cache", "sql", "storage", "requests", "monitoring"], marker = "extra == 'webapp'" },
+    { name = "acb", extras = ["cache", "sql", "storage", "secret", "monitoring", "dns"], marker = "extra == 'cloud-native'" },
+    { name = "acb", extras = ["dns", "secret", "nosql", "storage"], marker = "extra == 'gcp'" },
+    { name = "acb", extras = ["sql", "nosql", "storage", "monitoring"], marker = "extra == 'dataplatform'" },
     { name = "adlfs", marker = "extra == 'storage'", specifier = ">=2024.12" },
     { name = "aiocache", extras = ["redis"], marker = "extra == 'cache'", specifier = ">=0.12.3" },
     { name = "aioconsole", specifier = ">=0.8.1" },
@@ -120,7 +266,7 @@ requires-dist = [
     { name = "brotli", specifier = ">=1.1" },
     { name = "complexipy", marker = "extra == 'dev'", specifier = ">=3" },
     { name = "coredis", marker = "extra == 'cache'", specifier = ">=4.23.1" },
-    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.21.8" },
+    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.22.3" },
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dill", specifier = ">=0.4" },
     { name = "faker", marker = "extra == 'demo'", specifier = ">=37.4" },
@@ -174,7 +320,7 @@ requires-dist = [
     { name = "tomli-w", specifier = ">=1.2" },
     { name = "validators", marker = "extra == 'dns'", specifier = ">=0.35" },
 ]
-provides-extras = ["cache", "demo", "dev", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage"]
+provides-extras = ["all", "api", "cache", "cloud-native", "dataplatform", "demo", "dev", "dns", "ftpd", "gcp", "microservice", "minimal", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage", "webapp"]
 
 [[package]]
 name = "adlfs"
@@ -785,7 +931,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.22.0"
+version = "0.22.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autotyping" },
@@ -807,9 +953,9 @@ dependencies = [
     { name = "typer" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9f/f8/71c3657dcc0e35c097115eac88b83e7905224faa783076502d32f50fc027/crackerjack-0.22.0.tar.gz", hash = "sha256:36d8012cd26079824b72433d35f93d47dbc4d8f9c7709a3315fe97c340a2783d", size = 66014, upload-time = "2025-06-30T03:53:07.441Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c9/69/66c457a11fdf6e9d12f2af771831cd467928fa65a5c9a4f4dbdc1562ccc6/crackerjack-0.22.3.tar.gz", hash = "sha256:77f82f7a2ceb335676277cbb2961b8e04421685d3e092a1a306122c407647aa3", size = 66619, upload-time = "2025-07-02T10:56:38.306Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/20/05dd8c9afd2d1b9ff8c4cfbb80df57e0a33038773bd13ce69566a25e826e/crackerjack-0.22.0-py3-none-any.whl", hash = "sha256:43eef2af020949459f64f29f712d8a473ab4138dfab409e9615a10cc0aef2c23", size = 52666, upload-time = "2025-06-30T03:53:05.694Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/8a/a3215e3ca125873f1fdebea8f2f802bb1bb69463b86d62b9977195a4ad42/crackerjack-0.22.3-py3-none-any.whl", hash = "sha256:4a68c65b8f22255ceb8b86368c650b1a6a0132fc771f40e3b642e11ada4c4c56", size = 53206, upload-time = "2025-07-02T10:56:36.724Z" },
 ]
 
 [[package]]

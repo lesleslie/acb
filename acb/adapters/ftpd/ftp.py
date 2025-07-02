@@ -182,7 +182,6 @@ class Ftpd(FtpdBase):
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
             await self.download(path, temp_path)
-            # Use async file operations
             async_path = AsyncPath(temp_path)
             return await async_path.read_text()
         finally:
@@ -196,7 +195,6 @@ class Ftpd(FtpdBase):
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
             await self.download(path, temp_path)
-            # Use async file operations
             async_path = AsyncPath(temp_path)
             return await async_path.read_bytes()
         finally:
@@ -209,7 +207,6 @@ class Ftpd(FtpdBase):
         temp_dir = tempfile.mkdtemp()
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
-            # Use async file operations
             async_path = AsyncPath(temp_path)
             await async_path.write_text(content)
             await self.upload(temp_path, path)
@@ -223,7 +220,6 @@ class Ftpd(FtpdBase):
         temp_dir = tempfile.mkdtemp()
         temp_path = Path(temp_dir) / os.path.basename(path)
         try:
-            # Use async file operations
             async_path = AsyncPath(temp_path)
             await async_path.write_bytes(content)
             await self.upload(temp_path, path)

@@ -11,3 +11,6 @@
 /__pycache__/
 /*.pyc
 /.zencoder/
+
+# ACB settings directory (should only be created by consuming applications)
+/settings/

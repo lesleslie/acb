@@ -308,12 +308,12 @@ class TestFileStorage:
         mock_path = MagicMock(spec=AsyncPath)
         mock_path.__truediv__.return_value = full_path
         full_path.parent = MagicMock(spec=AsyncPath)
-        full_path.parent.mkdir = MagicMock()
-        full_path.write_bytes = MagicMock()
+        full_path.parent.mkdir = AsyncMock()
+        full_path.write_bytes = AsyncMock()
 
         with patch.object(storage_adapter, "root_dir", new=root_dir):
             with patch(
-                "acb.adapters.storage.file.Path", return_value=mock_path
+                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
             ) as mock_path_cls:
                 result = await storage_adapter.put_file(file_path, content)
 
@@ -338,12 +338,12 @@ class TestFileStorage:
 
         mock_path = MagicMock(spec=AsyncPath)
         mock_path.__truediv__.return_value = full_path
-        full_path.exists = MagicMock(return_value=True)
-        full_path.read_bytes = MagicMock(return_value=expected_content)
+        full_path.exists = AsyncMock(return_value=True)
+        full_path.read_bytes = AsyncMock(return_value=expected_content)
 
         with patch.object(storage_adapter, "root_dir", new=root_dir):
             with patch(
-                "acb.adapters.storage.file.Path", return_value=mock_path
+                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
             ) as mock_path_cls:
                 result = await storage_adapter.get_file(file_path)
 
@@ -365,12 +365,12 @@ class TestFileStorage:
 
         mock_path = MagicMock(spec=AsyncPath)
         mock_path.__truediv__.return_value = full_path
-        full_path.exists = MagicMock(return_value=True)
-        full_path.unlink = MagicMock()
+        full_path.exists = AsyncMock(return_value=True)
+        full_path.unlink = AsyncMock()
 
         with patch.object(storage_adapter, "root_dir", new=root_dir):
             with patch(
-                "acb.adapters.storage.file.Path", return_value=mock_path
+                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
             ) as mock_path_cls:
                 result = await storage_adapter.delete_file(file_path)
 
@@ -401,16 +401,16 @@ class TestFileStorage:
             def __truediv__(self, other: str) -> "MockPath":
                 return MockPath(f"{self.path_str}/{other}")
 
-            def exists(self) -> bool:
+            async def exists(self) -> bool:
                 return True
 
-            def is_file(self) -> bool:
+            async def is_file(self) -> bool:
                 return True
 
             def __str__(self) -> str:
                 return self.path_str
 
-        with patch("acb.adapters.storage.file.Path", MockPath):
+        with patch("acb.adapters.storage.file.AsyncPath", MockPath):
             storage_adapter.root_dir = root_dir
 
             result = await storage_adapter.file_exists(file_path)
@@ -427,11 +427,11 @@ class TestFileStorage:
 
         mock_path = MagicMock(spec=AsyncPath)
         mock_path.__truediv__.return_value = full_path
-        full_path.mkdir = MagicMock()
+        full_path.mkdir = AsyncMock()
 
         with patch.object(storage_adapter, "root_dir", new=root_dir):
             with patch(
-                "acb.adapters.storage.file.Path", return_value=mock_path
+                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
             ) as mock_path_cls:
                 result = await storage_adapter.create_directory(dir_path)
 
@@ -453,12 +453,12 @@ class TestFileStorage:
 
         mock_path = MagicMock(spec=AsyncPath)
         mock_path.__truediv__.return_value = full_path
-        full_path.exists = MagicMock(return_value=True)
-        full_path.is_dir = MagicMock(return_value=True)
+        full_path.exists = AsyncMock(return_value=True)
+        full_path.is_dir = AsyncMock(return_value=True)
 
         with patch.object(storage_adapter, "root_dir", new=root_dir):
             with patch(
-                "acb.adapters.storage.file.Path", return_value=mock_path
+                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
             ) as mock_path_cls:
                 result = await storage_adapter.directory_exists(dir_path)
 
