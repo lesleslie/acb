@@ -240,8 +240,10 @@ Cache = import_adapter("cache")
 # ACB can automatically detect the adapter name from the variable name
 Cache = import_adapter()  # Automatically detects "cache" from variable name
 
-# Method 3: Multiple adapters at once
-Cache, Storage, SQL = import_adapter("cache", "storage", "sql")
+# Method 3: Multiple adapters - use separate calls
+Cache = import_adapter("cache")
+Storage = import_adapter("storage")
+SQL = import_adapter("sql")
 
 # Method 4: Multiple adapters with automatic detection
 Cache, Storage, SQL = import_adapter()  # Detects all three from variable names

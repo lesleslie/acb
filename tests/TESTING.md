@@ -28,17 +28,17 @@ The test configuration is defined in `pyproject.toml` and `tests/conftest.py`. T
 
 ### Avoiding File System Operations
 
-Tests should **never** create actual files, directories, or settings during test execution. Instead, use the simplified mock fixtures provided in `tests/conftest.py`:
+Tests should **never** create actual files, directories, or settings during test execution. Instead, use the mock fixtures provided in `tests/conftest.py`:
 
-- `temp_dir`: Returns a mock Path object instead of creating an actual directory
 - `mock_config`: Provides a mocked Config object with mock paths
 - `mock_file_system`: Simplified in-memory file system for tests
-- `patch_file_operations`: Patches pathlib.Path operations to use the mock file system
 - `mock_async_file_system`: Simplified in-memory async file system for tests
-- `patch_async_file_operations`: Patches anyio.Path operations to use the mock async file system
 - `mock_settings`: Provides mock settings without creating actual settings files
 - `mock_tmp_path`: Simple mock replacement for pytest's built-in tmp_path fixture
 - `mock_tempfile`: Simple mock replacement for Python's tempfile module
+- `mock_async_path`: Mock for AsyncPath objects
+- `mock_path_constructor`: Mock for Path constructor
+- `mock_secrets_path`: Mock for secrets directory path
 
 The mock file system implementations have been simplified to reduce complexity while still providing the necessary functionality.
 

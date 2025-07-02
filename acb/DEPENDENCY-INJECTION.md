@@ -80,7 +80,11 @@ Adapters are registered automatically when imported:
 from acb.adapters import import_adapter
 
 # Import and register adapters
-Cache, Storage = import_adapter("cache", "storage")
+Cache = import_adapter("cache")
+Storage = import_adapter("storage")
+
+# Or use automatic detection
+# Cache, Storage = import_adapter()  # Detects from variable names
 
 @depends.inject
 async def process_data(

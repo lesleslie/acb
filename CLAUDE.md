@@ -132,7 +132,11 @@ from acb.depends import depends
 from acb.adapters import import_adapter
 
 # Import adapter classes (not instances)
-Cache, Storage = import_adapter("cache", "storage")
+Cache = import_adapter("cache")
+Storage = import_adapter("storage")
+
+# Or use the no-argument form that infers from context
+# Cache, Storage = import_adapter()  # Infers from variable names
 
 @depends.inject
 async def my_function(
@@ -153,8 +157,8 @@ async def my_function(
 - Clear cached properties before tests: `del adapter.property_name`
 
 ### Test Organization
-- Base test files: `test_<category>_base.py` (shared fixtures, base tests)
 - Implementation tests: `test_<implementation>.py` (specific behavior)
+- Shared functionality: `test_<category>_base.py` (when needed for common test patterns)
 - Use pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`
 
 ### File System Mocking
