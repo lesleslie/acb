@@ -244,10 +244,13 @@ async def _ensure_adapter_configuration() -> None:
     if _adapter_config_loaded or _should_skip_configuration():
         return
     _adapter_config_loaded = True
-    from contextlib import suppress
 
-    with suppress(Exception):
+    try:
         await _setup_adapter_configuration()
+    except Exception as e:
+        print(f"ACB: Setup failed: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def _should_skip_configuration() -> bool:
@@ -269,16 +272,21 @@ async def _setup_adapter_configuration() -> None:
 
 
 async def _should_skip_project_setup(cwd_path: AsyncPath) -> bool:
-    if cwd_path.stem in ("acb", "fastblocks"):
+    if cwd_path.stem in ("acb",):
         return True
     has_pyproject = await (cwd_path / "pyproject.toml").exists()
     if has_pyproject:
         has_src = await (cwd_path / "src").exists()
-        has_package_dir = await (cwd_path / cwd_path.stem).exists()
         has_acb_dir = await (cwd_path / "acb").exists()
         is_acb_package = (
             has_acb_dir and await (cwd_path / "acb" / "__init__.py").exists()
         )
+        # Check if this is an application with settings directory
+        has_settings = await (cwd_path / "settings").exists()
+        if has_settings:
+            return False  # Don't skip applications with settings
+        
+        has_package_dir = await (cwd_path / cwd_path.stem).exists()
         return has_src or has_package_dir or is_acb_package
 
     return False
@@ -312,9 +320,34 @@ async def _load_and_apply_adapter_settings(
     if await cwd_adapter_settings_path.exists():
         _adapters = yaml_decode(await cwd_adapter_settings_path.read_text())
         enabled_adapters = {a: m for a, m in _adapters.items() if m}
-        for adapter in adapter_registry.get():
+        
+        # Ensure all registered packages have their adapters registered
+        from .. import pkg_registry, ensure_registration_async
+        await ensure_registration_async()
+        
+        # Register adapters from any packages that don't have adapters yet
+        for pkg in pkg_registry.get():
+            if not pkg.adapters:  # Package hasn't had its adapters registered yet
+                try:
+                    await register_adapters(pkg.path)
+                except Exception:
+                    pass  # Package adapter registration failed
+        
+        # Enable adapters from all sources (main registry + package registries)
+        all_adapters = list(adapter_registry.get())
+        
+        # Add adapters from registered packages to the main registry if needed
+        for pkg in pkg_registry.get():
+            for adapter in pkg.adapters:
+                if adapter not in all_adapters:
+                    adapter_registry.get().append(adapter)
+                    all_adapters.append(adapter)
+        
+        # Now enable adapters based on settings
+        for adapter in all_adapters:
             if enabled_adapters.get(adapter.category) == adapter.name:
                 adapter.enabled = True
+                        
         _update_adapter_caches()
 
 
@@ -346,6 +379,7 @@ async def _find_adapter(adapter_category: str) -> Adapter:
                     adapter = get_adapter(adapter_category)
                     if adapter is not None:
                         return adapter
+                        
         raise AdapterNotFound(
             f"{adapter_category} adapter not found – check adapters.yml and ensure package registration"
         )

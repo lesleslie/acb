@@ -292,15 +292,29 @@ class UnifiedSettingsSource(PydanticSettingsSource):
                 if info.annotation is not SecretStr
                 and "Optional" not in str(info.annotation)
             }
-            await dump.yaml(dump_settings, yml_path)
-        yml_settings = await load.yaml(yml_path)
+            # Only create the settings file if it contains meaningful settings
+            # Skip empty dictionaries or dictionaries with only None/empty values
+            if dump_settings and any(
+                value is not None and value != {} and value != [] 
+                for value in dump_settings.values()
+            ):
+                await dump.yaml(dump_settings, yml_path)
+        
+        # Load settings from file if it exists, otherwise use empty dict
+        if await yml_path.exists():
+            yml_settings = await load.yaml(yml_path)
+        else:
+            yml_settings = {}
         if self.adapter_name == "debug":
             for adapter in adapter_registry.get():
                 if adapter.category not in (
                     yml_settings.keys() or ("config", "logger")
                 ):
                     yml_settings[adapter.category] = False
-        if not _deployed:
+        if not _deployed and yml_settings and any(
+            value is not None and value != {} and value != [] 
+            for value in yml_settings.values()
+        ):
             await dump.yaml(yml_settings, yml_path, sort_keys=True)
         self._update_global_variables(yml_settings)
         return yml_settings or {}

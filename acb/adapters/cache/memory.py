@@ -43,5 +43,46 @@ class Cache(CacheBase):
     async def init(self, *args: t.Any, **kwargs: t.Any) -> None:
         self._init_kwargs.update(kwargs)
 
+    # Implement required aiocache BaseCache abstract methods
+    async def _set(self, key: str, value: t.Any, ttl: int | None = None, _cas_token: t.Any = None, _conn: t.Any = None) -> None:
+        cache = await self.get_client()
+        await cache.set(key, value, ttl=ttl)
+
+    async def _get(self, key: str, encoding: str = "utf-8", _conn: t.Any = None) -> t.Any:
+        cache = await self.get_client()
+        return await cache.get(key)
+
+    async def _delete(self, key: str, _conn: t.Any = None) -> bool:
+        cache = await self.get_client()
+        return await cache.delete(key)
+
+    async def _exists(self, key: str, _conn: t.Any = None) -> bool:
+        cache = await self.get_client()
+        return await cache.exists(key)
+
+    async def _clear(self, namespace: str = None, _conn: t.Any = None) -> bool:
+        cache = await self.get_client()
+        return await cache.clear(namespace=namespace)
+
+    async def _multi_set(self, pairs: t.List[t.Tuple[str, t.Any]], ttl: int | None = None, _conn: t.Any = None) -> None:
+        cache = await self.get_client()
+        await cache.multi_set(pairs, ttl=ttl)
+
+    async def _multi_get(self, keys: t.List[str], encoding: str = "utf-8", _conn: t.Any = None) -> t.List[t.Any]:
+        cache = await self.get_client()
+        return await cache.multi_get(keys)
+
+    async def _add(self, key: str, value: t.Any, ttl: int | None = None, _conn: t.Any = None) -> bool:
+        cache = await self.get_client()
+        return await cache.add(key, value, ttl=ttl)
+
+    async def _increment(self, key: str, delta: int = 1, _conn: t.Any = None) -> int:
+        cache = await self.get_client()
+        return await cache.increment(key, delta=delta)
+
+    async def _expire(self, key: str, ttl: int, _conn: t.Any = None) -> bool:
+        cache = await self.get_client()
+        return await cache.expire(key, ttl=ttl)
+
 
 depends.set(Cache)

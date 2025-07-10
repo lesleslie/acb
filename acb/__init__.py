@@ -70,6 +70,11 @@ def ensure_registration() -> None:
             asyncio.run(_process_registration_queue())
 
 
+async def ensure_registration_async() -> None:
+    if _lazy_registration_queue and not _registration_completed:
+        await _process_registration_queue()
+
+
 try:
     from pathlib import Path
 

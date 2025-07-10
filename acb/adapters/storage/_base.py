@@ -141,7 +141,7 @@ class StorageBucket:
         return await self.client._ls(self.get_path(dir_path))
 
     async def exists(self, path: AsyncPath) -> t.Any:
-        if get_adapter("storage").name == "memory":
+        if self.config.storage.memory_fs:
             return self.client.isfile(self.get_path(path))
         return await self.client._exists(self.get_path(path))
 
@@ -170,7 +170,7 @@ class StorageBucket:
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
         try:
-            if get_adapter("storage").name == "memory":
+            if self.config.storage.memory_fs:
                 self.client.pipe_file(stor_path, data)
             else:
                 await self.client._pipe_file(stor_path, data)

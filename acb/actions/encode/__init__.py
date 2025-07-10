@@ -305,4 +305,4 @@ dump = Encode()
 load = Encode()
 for s in serializers.__dict__:
     setattr(decode, s, decode._create_method(s, "decode"))
-    setattr(load, s, load._create_method(s, "encode"))
+    setattr(load, s, load._create_method(s, "decode"))

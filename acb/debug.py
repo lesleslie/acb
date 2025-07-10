@@ -24,9 +24,9 @@ __all__ = [
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 
 
-@depends.inject
-def get_calling_module(config: Config = depends()) -> Path | None:
+def get_calling_module() -> Path | None:
     with suppress(AttributeError, TypeError):
+        config = depends.get("config") 
         mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
         mod = Path(mod).parent
         if config.debug is not None:
@@ -74,18 +74,30 @@ async def pprint(obj: t.Any) -> None:
     await aprint(pformat(obj), use_stderr=True)
 
 
-@depends.inject
-def init_debug(config: Config = depends()) -> None:
-    debug_args = dict(
-        outputFunction=print_debug_info,
-        argToStringFunction=lambda o: pformat(o, highlight=False),
-    )
-    debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
-    is_production = config.deployed
-    if config.debug is not None and hasattr(config.debug, "production"):
-        is_production = is_production or config.debug.production
-    if is_production:
-        debug.configureOutput(prefix="", includeContext=False, **debug_args)
+def init_debug() -> None:
+    import warnings
+    # Suppress icecream RuntimeWarnings about source code analysis
+    warnings.filterwarnings("ignore", category=RuntimeWarning, module="icecream")
+    
+    try:
+        config = depends.get("config")
+        debug_args = dict(
+            outputFunction=print_debug_info,
+            argToStringFunction=lambda o: pformat(o, highlight=False),
+        )
+        debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
+        is_production = config.deployed
+        if config.debug is not None and hasattr(config.debug, "production"):
+            is_production = is_production or config.debug.production
+        if is_production:
+            debug.configureOutput(prefix="", includeContext=False, **debug_args)
+    except Exception:
+        # Fallback configuration if config isn't available yet
+        debug_args = dict(
+            outputFunction=print_debug_info,
+            argToStringFunction=lambda o: pformat(o, highlight=False),
+        )
+        debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
 
 
 init_debug()
