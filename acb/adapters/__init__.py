@@ -156,49 +156,11 @@ def get_installed_adapters() -> list[Adapter]:
 @cache
 def get_adapter_class(category: str, name: str) -> type[t.Any]:
     module_path = f"acb.adapters.{category}.{name}"
-    static_mappings = {
-        "cache.memory": ("acb.adapters.cache.memory", "Cache"),
-        "cache.redis": ("acb.adapters.cache.redis", "Cache"),
-        "storage.file": ("acb.adapters.storage.file", "Storage"),
-        "storage.memory": ("acb.adapters.storage.memory", "Storage"),
-        "storage.s3": ("acb.adapters.storage.s3", "Storage"),
-        "storage.azure": ("acb.adapters.storage.azure", "Storage"),
-        "storage.cloud_storage": ("acb.adapters.storage.cloud_storage", "Storage"),
-        "sql.mysql": ("acb.adapters.sql.mysql", "Sql"),
-        "sql.pgsql": ("acb.adapters.sql.pgsql", "Sql"),
-        "nosql.mongodb": ("acb.adapters.nosql.mongodb", "Nosql"),
-        "nosql.redis": ("acb.adapters.nosql.redis", "Nosql"),
-        "nosql.firestore": ("acb.adapters.nosql.firestore", "Nosql"),
-        "monitoring.sentry": ("acb.adapters.monitoring.sentry", "Monitoring"),
-        "monitoring.logfire": ("acb.adapters.monitoring.logfire", "Monitoring"),
-        "secret.infisical": ("acb.adapters.secret.infisical", "Secret"),
-        "secret.secret_manager": ("acb.adapters.secret.secret_manager", "Secret"),
-        "requests.httpx": ("acb.adapters.requests.httpx", "Requests"),
-        "requests.niquests": ("acb.adapters.requests.niquests", "Requests"),
-        "smtp.gmail": ("acb.adapters.smtp.gmail", "Smtp"),
-        "smtp.mailgun": ("acb.adapters.smtp.mailgun", "Smtp"),
-        "dns.cloudflare": ("acb.adapters.dns.cloudflare", "Dns"),
-        "dns.cloud_dns": ("acb.adapters.dns.cloud_dns", "Dns"),
-        "ftpd.ftp": ("acb.adapters.ftpd.ftp", "Ftpd"),
-        "ftpd.sftp": ("acb.adapters.ftpd.sftp", "Ftpd"),
-        "models.sqlmodel": ("acb.adapters.models.sqlmodel", "Models"),
-    }
-    lookup_key = f"{category}.{name}"
-    if lookup_key in static_mappings:
-        module_path, class_name = static_mappings[lookup_key]
-        try:
-            from importlib import import_module
-
-            module = import_module(module_path)
-            return getattr(module, class_name)
-        except (ImportError, AttributeError) as e:
-            raise StaticImportError(f"Failed to import {module_path}.{class_name}: {e}")
     try:
         from importlib import import_module
 
         from inflection import camelize
 
-        module_path = f"acb.adapters.{category}.{name}"
         class_name = camelize(category)
         module = import_module(module_path)
         return getattr(module, class_name)
@@ -244,12 +206,12 @@ async def _ensure_adapter_configuration() -> None:
     if _adapter_config_loaded or _should_skip_configuration():
         return
     _adapter_config_loaded = True
-
     try:
         await _setup_adapter_configuration()
     except Exception as e:
         print(f"ACB: Setup failed: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -272,7 +234,7 @@ async def _setup_adapter_configuration() -> None:
 
 
 async def _should_skip_project_setup(cwd_path: AsyncPath) -> bool:
-    if cwd_path.stem in ("acb",):
+    if cwd_path.stem == "acb":
         return True
     has_pyproject = await (cwd_path / "pyproject.toml").exists()
     if has_pyproject:
@@ -281,11 +243,9 @@ async def _should_skip_project_setup(cwd_path: AsyncPath) -> bool:
         is_acb_package = (
             has_acb_dir and await (cwd_path / "acb" / "__init__.py").exists()
         )
-        # Check if this is an application with settings directory
         has_settings = await (cwd_path / "settings").exists()
         if has_settings:
-            return False  # Don't skip applications with settings
-        
+            return False
         has_package_dir = await (cwd_path / cwd_path.stem).exists()
         return has_src or has_package_dir or is_acb_package
 
@@ -317,38 +277,54 @@ async def _create_adapter_settings_if_needed(
 async def _load_and_apply_adapter_settings(
     cwd_adapter_settings_path: AsyncPath,
 ) -> None:
-    if await cwd_adapter_settings_path.exists():
-        _adapters = yaml_decode(await cwd_adapter_settings_path.read_text())
-        enabled_adapters = {a: m for a, m in _adapters.items() if m}
-        
-        # Ensure all registered packages have their adapters registered
-        from .. import pkg_registry, ensure_registration_async
-        await ensure_registration_async()
-        
-        # Register adapters from any packages that don't have adapters yet
-        for pkg in pkg_registry.get():
-            if not pkg.adapters:  # Package hasn't had its adapters registered yet
-                try:
-                    await register_adapters(pkg.path)
-                except Exception:
-                    pass  # Package adapter registration failed
-        
-        # Enable adapters from all sources (main registry + package registries)
-        all_adapters = list(adapter_registry.get())
-        
-        # Add adapters from registered packages to the main registry if needed
-        for pkg in pkg_registry.get():
-            for adapter in pkg.adapters:
-                if adapter not in all_adapters:
-                    adapter_registry.get().append(adapter)
-                    all_adapters.append(adapter)
-        
-        # Now enable adapters based on settings
-        for adapter in all_adapters:
-            if enabled_adapters.get(adapter.category) == adapter.name:
-                adapter.enabled = True
-                        
-        _update_adapter_caches()
+    if not await cwd_adapter_settings_path.exists():
+        return
+
+    enabled_adapters = await _load_enabled_adapters(cwd_adapter_settings_path)
+    await _ensure_package_registration()
+    all_adapters = await _collect_all_adapters()
+    _enable_configured_adapters(all_adapters, enabled_adapters)
+    _update_adapter_caches()
+
+
+async def _load_enabled_adapters(
+    cwd_adapter_settings_path: AsyncPath,
+) -> dict[str, str]:
+    _adapters = yaml_decode(await cwd_adapter_settings_path.read_text())
+    return {a: m for a, m in _adapters.items() if m}
+
+
+async def _ensure_package_registration() -> None:
+    from .. import ensure_registration_async, pkg_registry
+
+    await ensure_registration_async()
+    for pkg in pkg_registry.get():
+        if not pkg.adapters:
+            from contextlib import suppress
+
+            with suppress(Exception):
+                await register_adapters(pkg.path)
+
+
+async def _collect_all_adapters() -> list[Adapter]:
+    from .. import pkg_registry
+
+    all_adapters = list(adapter_registry.get())
+    for pkg in pkg_registry.get():
+        for adapter in pkg.adapters:
+            if adapter not in all_adapters:
+                adapter_registry.get().append(adapter)
+                all_adapters.append(adapter)
+
+    return all_adapters
+
+
+def _enable_configured_adapters(
+    all_adapters: list[Adapter], enabled_adapters: dict[str, str]
+) -> None:
+    for adapter in all_adapters:
+        if enabled_adapters.get(adapter.category) == adapter.name:
+            adapter.enabled = True
 
 
 async def _import_adapter_module_for_deps(adapter_category: str) -> None:
@@ -379,7 +355,6 @@ async def _find_adapter(adapter_category: str) -> Adapter:
                     adapter = get_adapter(adapter_category)
                     if adapter is not None:
                         return adapter
-                        
         raise AdapterNotFound(
             f"{adapter_category} adapter not found – check adapters.yml and ensure package registration"
         )

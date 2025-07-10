@@ -6,9 +6,10 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.17"
+version = "0.16.18"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
+license.text = "BSD-3-CLAUSE"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -35,7 +36,7 @@ dependencies = [
     "brotli>=1.1",
     "devtools>=0.12.2",
     "dill>=0.4",
-    "google-api-python-client>=2.174",
+    "google-api-python-client>=2.176",
     "google-crc32c>=1.7.1",
     "icecream>=2.1.5",
     "inflection>=0.5.1",
@@ -50,33 +51,29 @@ dependencies = [
     "tomli-w>=1.2",
 ]
 
-[project.license]
-text = "BSD-3-CLAUSE"
-
-[project.optional-dependencies]
-all = [
+optional-dependencies.all = [
     "acb[cache,dns,ftpd,monitoring,nosql,requests,secret,smtp,sql,storage]",
 ]
-api = [
+optional-dependencies.api = [
     "acb[cache,nosql,requests,monitoring,secret]",
 ]
-cache = [
+optional-dependencies.cache = [
     "aiocache[redis]>=0.12.3",
     "coredis>=4.23.1",
     "logfire[redis]>=3.21.1",
 ]
-cloud-native = [
+optional-dependencies.cloud-native = [
     "acb[cache,sql,storage,secret,monitoring,dns]",
 ]
-dataplatform = [
+optional-dependencies.dataplatform = [
     "acb[sql,nosql,storage,monitoring]",
 ]
-demo = [
+optional-dependencies.demo = [
     "faker>=37.4",
 ]
-dev = [
-    "complexipy>=3",
-    "crackerjack>=0.22.3",
+optional-dependencies.dev = [
+    "complexipy>=3.2",
+    "crackerjack>=0.22.5",
     "pre-commit>=4.2",
     "pytest>=8.4.1",
     "pytest-anyio>=0",
@@ -88,49 +85,49 @@ dev = [
     "pyyaml>=6.0.2",
     "refurb>=2.1",
 ]
-dns = [
+optional-dependencies.dns = [
     "google-cloud-dns>=0.35.1",
     "python-cloudflare>=1.0.1",
     "validators>=0.35",
 ]
-ftpd = [
+optional-dependencies.ftpd = [
     "aioftp>=0.26.2",
     "asyncssh>=2.21",
 ]
-gcp = [
+optional-dependencies.gcp = [
     "acb[dns,secret,nosql,storage]",
 ]
-microservice = [
+optional-dependencies.microservice = [
     "acb[cache,requests,monitoring,secret]",
 ]
-minimal = [
+optional-dependencies.minimal = [
     "acb[cache,requests]",
 ]
-monitoring = [
+optional-dependencies.monitoring = [
     "logfire[system-metrics]>=3.21.1",
     "sentry-sdk[loguru]>=2.32",
 ]
-nosql = [
+optional-dependencies.nosql = [
     "beanie>=1.30",
     "google-cloud-firestore>=2.21",
     "motor>=3.7.1",
     "redis-om>=0.3.5",
 ]
-requests = [
+optional-dependencies.requests = [
     "hishel>=0.1.2",
     "httpx[http2]>=0.28.1",
     "logfire[httpx]>=3.21.1",
     "niquests>=3.14.1",
     "sentry-sdk[httpx]>=2.32",
 ]
-secret = [
+optional-dependencies.secret = [
     "google-cloud-secret-manager>=2.24",
     "infisicalsdk>=1.0.9",
 ]
-smtp = [
+optional-dependencies.smtp = [
     "mailgun>=1.0.2",
 ]
-sql = [
+optional-dependencies.sql = [
     "aiomysql>=0.2",
     "babel>=2.17",
     "greenlet>=3.2.3",
@@ -141,19 +138,17 @@ sql = [
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
 ]
-storage = [
+optional-dependencies.storage = [
     "adlfs>=2024.12",
     "gcsfs>=2025.5.1",
     "s3fs>=2025.5.1",
 ]
-webapp = [
+optional-dependencies.webapp = [
     "acb[cache,sql,storage,requests,monitoring]",
 ]
-
-[project.urls]
-Documentation = "https://github.com/lesleslie/acb"
-Homepage = "https://github.com/lesleslie/acb"
-Repository = "https://github.com/lesleslie/acb"
+urls.Documentation = "https://github.com/lesleslie/acb"
+urls.Homepage = "https://github.com/lesleslie/acb"
+urls.Repository = "https://github.com/lesleslie/acb"
 
 [tool.ruff]
 target-version = "py313"
@@ -163,45 +158,36 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-extend-select = [
+format.docstring-code-format = true
+lint.extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-ignore = [
-    "D105",
-    "D102",
-    "D101",
-    "D103",
-    "E402",
-    "F821",
-    "D104",
+lint.ignore = [
     "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
     "D106",
     "D107",
+    "E402",
+    "F821",
     "UP040",
 ]
-fixable = [
+lint.fixable = [
     "ALL",
 ]
-unfixable = []
-
-[tool.ruff.lint.isort]
-no-lines-before = [
+lint.unfixable = [  ]
+lint.isort.no-lines-before = [
     "first-party",
 ]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 13
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+lint.mccabe.max-complexity = 13
+lint.pydocstyle.convention = "google"
 
 [tool.codespell]
 skip = "*/data/*"
@@ -313,26 +299,26 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pydantic-settings",
-    "autotyping",
-    "inflection",
-    "tomli-w",
-    "pyfiglet",
-    "pytest-cov",
     "pytest-benchmark",
-    "pdm",
-    "pdm-bump",
-    "pytest-timeout",
-    "pytest-asyncio",
-    "google-crc32c",
-    "keyring",
-    "uv",
-    "pytest-mock",
-    "pyyaml",
-    "pytest",
-    "pre-commit",
     "pytest-xdist",
     "google-api-python-client",
+    "keyring",
+    "pdm",
+    "pytest-mock",
+    "pyyaml",
+    "pytest-timeout",
+    "inflection",
+    "pydantic-settings",
+    "pytest-cov",
+    "pre-commit",
+    "pyfiglet",
+    "google-crc32c",
+    "tomli-w",
+    "pytest-asyncio",
+    "autotyping",
+    "uv",
+    "pdm-bump",
+    "pytest",
 ]
 
 [tool.refurb]
@@ -344,17 +330,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B602",
+    "B403",
     "B301",
+    "B106",
+    "B603",
+    "B105",
+    "B704",
+    "B607",
     "B311",
+    "B602",
     "B404",
     "B101",
-    "B106",
-    "B607",
-    "B704",
-    "B105",
-    "B403",
-    "B603",
 ]
 
 [tool.vulture]

@@ -6,6 +6,15 @@
 
 ACB's configuration system is built on [Pydantic](https://pydantic-docs.helpmanual.io/) and [pydantic-settings](https://pydantic-settings.helpmanual.io/) to provide flexible, layered configuration management.
 
+### ACB 0.16.17+ Configuration Changes
+
+Starting with ACB 0.16.17, the configuration system includes significant improvements:
+
+- **Library Usage Mode Detection**: ACB automatically detects when it's being used as a library vs. standalone application
+- **Smart Initialization**: Configuration loading is optimized based on usage context
+- **Better Error Handling**: Improved configuration loading with better error messages
+- **Enhanced Adapter Integration**: Tighter integration between configuration and the new static adapter system
+
 ## Configuration Sources
 
 The configuration system aggregates settings from multiple sources in order of precedence:
@@ -171,14 +180,86 @@ class MySettings(Settings):
 6. **Use environment-specific configurations** for different deployment stages
 7. **Document all configuration options** with clear descriptions
 
+## Library vs. Application Usage Modes (ACB 0.16.17+)
+
+ACB now automatically detects how it's being used and adjusts its behavior accordingly:
+
+### Library Usage Mode
+
+When ACB is used as a dependency in another project, it enters "library mode":
+
+```python
+# Automatic detection scenarios:
+# - ACB installed via pip/pdm in another project
+# - Import in setup.py, build scripts, or installation context
+# - Used within another package without local ACB development
+```
+
+**Library Mode Behavior:**
+- Minimal configuration loading
+- No automatic settings file creation
+- Reduced startup overhead
+- Compatible with existing project structures
+
+### Application Usage Mode
+
+When ACB is used as the primary framework for an application:
+
+```python
+# Detection scenarios:
+# - Running from main module in project root
+# - ACB_LIBRARY_MODE environment variable not set
+# - settings/ directory exists in current working directory
+```
+
+**Application Mode Behavior:**
+- Full configuration loading from settings/ directory
+- Automatic creation of default configuration files
+- Complete adapter system initialization
+- Comprehensive error reporting
+
+### Manual Override
+
+You can manually control the usage mode:
+
+```bash
+# Force library mode
+export ACB_LIBRARY_MODE=true
+
+# Force application mode (unset the variable)
+unset ACB_LIBRARY_MODE
+```
+
+### Configuration Loading in Different Modes
+
+| Feature | Library Mode | Application Mode |
+|---------|-------------|------------------|
+| Settings file auto-creation | No | Yes |
+| Adapter configuration loading | Minimal | Full |
+| Error reporting | Reduced | Comprehensive |
+| Startup performance | Fast | Standard |
+| Configuration validation | Basic | Full |
+
 ## Troubleshooting
 
 ### Common Issues
 
-**Missing Configuration Files**: ACB will use defaults if configuration files are missing.
+**Missing Configuration Files**: ACB will use defaults if configuration files are missing. In application mode, ACB will create default configuration files automatically.
+
+**Library Mode Detection Issues**: If ACB incorrectly detects library mode when you want application mode, ensure you're running from the project root or set `ACB_LIBRARY_MODE=false`.
+
+**Configuration Loading Errors**: Check that your current working directory has the expected structure for your usage mode.
 
 **Secret Loading Errors**: Check file permissions and YAML syntax in secret files.
 
 **Environment Variable Conflicts**: Use unique prefixes for different settings models.
 
 **Validation Errors**: Review field types and custom validators when configuration fails to load.
+
+### ACB 0.16.17+ Specific Issues
+
+**Adapter Configuration Not Loading**: Ensure you're in application mode if you need full adapter configuration. Check for the presence of `settings/adapters.yml` file.
+
+**Static Mapping Errors**: If you're getting "StaticImportError" exceptions, ensure your adapters are properly registered in the static mapping system.
+
+**Library Integration Problems**: When integrating ACB into an existing project, ensure proper package registration if you're extending ACB with custom adapters.

@@ -34,10 +34,10 @@ Caching is a crucial component of high-performance applications. The ACB Cache a
 
 ## Available Implementations
 
-| Implementation | Description | Best For |
-|----------------|-------------|----------|
-| **Memory** | In-memory caching using local process memory | Development, small applications, testing |
-| **Redis** | Distributed caching using Redis | Production, distributed systems, shared caching |
+| Implementation | Description | Best For | Interface |
+|----------------|-------------|----------|-----------|
+| **Memory** | In-memory caching using aiocache SimpleMemoryCache | Development, small applications, testing | Full aiocache BaseCache interface |
+| **Redis** | Distributed caching using Redis with aiocache | Production, distributed systems, shared caching | Full aiocache BaseCache interface |
 
 ## Installation
 
@@ -137,16 +137,29 @@ cached_user = await cache.get("user:1234")
 
 ### Multi-Key Operations
 
+Both memory and Redis cache implementations support efficient multi-key operations through the aiocache interface:
+
 ```python
-# Set multiple keys at once
-await cache.multi_set({
-    "product:1": {"name": "Widget", "price": 19.99},
-    "product:2": {"name": "Gadget", "price": 24.99},
-    "product:3": {"name": "Doohickey", "price": 14.99}
-})
+# Set multiple keys at once using multi_set
+pairs = [
+    ("product:1", {"name": "Widget", "price": 19.99}),
+    ("product:2", {"name": "Gadget", "price": 24.99}),
+    ("product:3", {"name": "Doohickey", "price": 14.99})
+]
+await cache.multi_set(pairs, ttl=300)
 
 # Get multiple keys at once - returns results in the same order as keys
 products = await cache.multi_get(["product:1", "product:2", "product:3"])
+
+# Additional aiocache operations
+# Add a value only if the key doesn't exist
+added = await cache.add("unique:key", "value", ttl=60)
+
+# Increment a numeric value atomically
+new_value = await cache.increment("counter:visits", delta=1)
+
+# Set expiration on an existing key
+await cache.expire("existing:key", ttl=120)
 ```
 
 ### Cache Decorators
@@ -224,22 +237,54 @@ await user_cache.clear()  # Removes all keys with prefix "users:"
 
 ## Implementation Details
 
-The Cache adapter implements these core methods:
+### ACB 0.16.17+ Architecture
+
+Starting with ACB 0.16.17, the cache adapter has been completely rewritten to use the aiocache library interface for both memory and Redis implementations. This provides:
+
+- **Unified Interface**: Both implementations use the same aiocache BaseCache abstract methods
+- **Consistent Behavior**: Memory and Redis caches behave identically from an API perspective
+- **Better Performance**: Optimized serialization with PickleSerializer
+- **Full Feature Support**: All aiocache operations are supported
+
+### Core Interface Methods
+
+The Cache adapter now implements the full aiocache BaseCache interface:
 
 ```python
-class CacheBase:
-    async def get(self, key: str) -> t.Any: ...
-    async def set(self, key: str, value: t.Any, ttl: int | None = None) -> bool: ...
-    async def delete(self, key: str) -> int: ...
+# Core aiocache methods implemented by both memory and Redis adapters
+class Cache(BaseCache):
+    # Basic operations
+    async def get(self, key: str, encoding: str = "utf-8") -> t.Any: ...
+    async def set(self, key: str, value: t.Any, ttl: int | None = None) -> None: ...
+    async def delete(self, key: str) -> bool: ...
     async def exists(self, key: str) -> bool: ...
-    async def multi_get(self, keys: list[str]) -> list[t.Any]: ...
-    async def multi_set(self, pairs: dict[str, t.Any], ttl: int | None = None) -> bool: ...
     async def clear(self, namespace: str | None = None) -> bool: ...
-    async def incr(self, key: str) -> int: ...
+
+    # Advanced operations
+    async def multi_get(self, keys: list[str], encoding: str = "utf-8") -> list[t.Any]: ...
+    async def multi_set(self, pairs: list[tuple[str, t.Any]], ttl: int | None = None) -> None: ...
+    async def add(self, key: str, value: t.Any, ttl: int | None = None) -> bool: ...
+    async def increment(self, key: str, delta: int = 1) -> int: ...
     async def expire(self, key: str, ttl: int) -> bool: ...
-    def namespace(self, namespace: str) -> "CacheBase": ...
-    def cached(self, ttl: int | None = None) -> t.Callable: ...
 ```
+
+### Memory Cache Implementation
+
+The memory cache adapter uses aiocache's `SimpleMemoryCache` with these features:
+
+- **PickleSerializer**: Handles complex Python objects automatically
+- **Namespace Support**: Automatic key prefixing with application name
+- **Zero Timeout**: Optimized for local access without network delays
+- **Thread-Safe**: Safe for concurrent access within the same process
+
+### Redis Cache Implementation
+
+The Redis cache adapter leverages aiocache's Redis backend with:
+
+- **Connection Pooling**: Efficient Redis connection management
+- **Distributed Access**: Shared cache across multiple application instances
+- **Persistence Options**: Configurable Redis persistence settings
+- **Network Optimized**: Batch operations for better network efficiency
 
 ## Performance Considerations
 

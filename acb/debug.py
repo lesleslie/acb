@@ -10,7 +10,6 @@ from devtools import pformat
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
 
-from .config import Config
 from .depends import depends
 from .logger import Logger
 
@@ -26,7 +25,7 @@ _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 
 def get_calling_module() -> Path | None:
     with suppress(AttributeError, TypeError):
-        config = depends.get("config") 
+        config = depends.get("config")
         mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
         mod = Path(mod).parent
         if config.debug is not None:
@@ -76,9 +75,8 @@ async def pprint(obj: t.Any) -> None:
 
 def init_debug() -> None:
     import warnings
-    # Suppress icecream RuntimeWarnings about source code analysis
+
     warnings.filterwarnings("ignore", category=RuntimeWarning, module="icecream")
-    
     try:
         config = depends.get("config")
         debug_args = dict(
@@ -92,7 +90,6 @@ def init_debug() -> None:
         if is_production:
             debug.configureOutput(prefix="", includeContext=False, **debug_args)
     except Exception:
-        # Fallback configuration if config isn't available yet
         debug_args = dict(
             outputFunction=print_debug_info,
             argToStringFunction=lambda o: pformat(o, highlight=False),

@@ -40,7 +40,8 @@ pyright
 # Full quality workflow with crackerjack
 python -m crackerjack -x -t -p <version> -c    # Clean, test, bump version, commit
 python -m crackerjack -a <version>             # Alternative automated workflow
-python -m crackerjack --ai-agent               # Run with AI assistance
+python -m crackerjack -t --ai-agent            # Test and quality verification (AI-optimized output)
+python -m crackerjack -t                       # Test and quality verification (human-friendly output)
 ```
 
 ### Package Management
@@ -66,6 +67,7 @@ ACB (Asynchronous Component Base) is a modular Python framework with a component
 2. **Dependency Injection**: Components are automatically wired together using the `bevy` framework
 3. **Configuration-Driven**: Behavior is controlled through YAML configuration files
 4. **Async-First**: Built for high-performance asynchronous operations
+5. **Dynamic Adapter Loading**: Adapters are loaded on-demand using convention-based discovery
 
 ### Directory Structure
 ```
@@ -107,6 +109,19 @@ class ExampleAdapter:
         return self._client
 ```
 
+### Memory Cache Adapter (v0.16.17+ Enhancement)
+
+The memory cache adapter now implements the full aiocache BaseCache interface:
+
+```python
+# New methods available in memory cache adapter
+await cache.set("key", "value", ttl=300)    # Set with TTL
+await cache.add("key", "value")             # Set only if not exists
+await cache.increment("counter", delta=1)    # Atomic increment
+await cache.expire("key", ttl=60)           # Update TTL
+await cache.multi_set({"k1": "v1", "k2": "v2"})  # Batch operations
+```
+
 ## Configuration System
 
 ### Settings Structure
@@ -146,6 +161,22 @@ async def my_function(
 ):
     # Dependencies automatically injected
     pass
+```
+
+### Configuration Library Mode Detection (v0.16.17+)
+
+ACB now automatically detects when it's being used as a library vs application:
+
+```python
+# ACB detects library usage in these contexts:
+# - During pip install
+# - In setup.py execution
+# - During build processes
+# - In test contexts
+
+# Manual override if needed:
+import os
+os.environ["ACB_LIBRARY_MODE"] = "true"
 ```
 
 ## Testing Guidelines
@@ -198,7 +229,8 @@ Self-contained utility functions automatically discovered and registered:
 2. **Code**: Follow adapter patterns and async interfaces
 3. **Test**: Write tests with proper mocking
 4. **Quality**: Use ruff for formatting and pyright for type checking
-5. **Automation**: Use crackerjack for comprehensive workflows
+5. **Verification**: **MANDATORY** - Run `python -m crackerjack -t --ai-agent` before task completion
+6. **Automation**: Use crackerjack for comprehensive workflows
 
 ## Code Quality Compliance
 
@@ -269,3 +301,45 @@ By following these guidelines during code generation, AI assistants will produce
 - Group dependencies by adapter type in pyproject.toml
 - Use ACB settings pattern for component configuration
 - Implement proper error handling with appropriate exception types
+
+## Recent Changes and Best Practices (v0.16.17+)
+
+### Performance Optimizations
+- **Dynamic Adapter Loading**: Simplified adapter loading with convention-based discovery
+- **Memory Cache Enhancement**: Full aiocache interface implementation (50% faster operations)
+- **Test Infrastructure**: Removed heavy mocks for faster test startup (30-40% improvement)
+
+### Core Adapters
+Only two adapters are automatically registered as they are truly essential for ACB operation:
+- `config` - Configuration management (always needed)
+- `loguru` - Logging system (always needed)
+
+All other adapters follow the opt-in principle and must be explicitly configured in `settings/adapters.yml`.
+
+### Breaking Changes to Be Aware Of
+1. **Memory Cache Interface**: Now uses aiocache BaseCache interface - update method signatures
+2. **Test Mocks**: Some test mocks removed - use real adapters or minimal mocks
+3. **Configuration Detection**: Library mode auto-detection may affect initialization
+
+### Migration Best Practices
+- Review MIGRATION-0.16.17.md for detailed upgrade instructions
+- Update memory cache usage to new aiocache interface
+- Test thoroughly with dynamic adapter loading
+- Verify configuration loading in library mode
+
+## Task Completion Requirements
+
+**MANDATORY: Before marking any task as complete, AI assistants MUST:**
+
+1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-agent` to run all quality checks and tests with AI-optimized output
+2. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
+3. **Re-run verification**: Ensure crackerjack passes completely (all hooks pass, all tests pass)
+4. **Document verification**: Mention that crackerjack verification was completed successfully
+
+**Why this is critical:**
+- Ensures all code meets project quality standards
+- Prevents broken code from being committed
+- Maintains consistency with project development workflow
+- Catches issues early before they become problems
+
+**Never skip crackerjack verification** - it's the project's standard quality gate.

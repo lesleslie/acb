@@ -1,11 +1,9 @@
-from collections.abc import Generator
 from pathlib import Path
 from typing import Any, Final
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from rich.console import Console
-from acb.config import Config
 from acb.debug import (
     colorized_stderr_print,
     debug,
@@ -143,29 +141,7 @@ class TestPprint:
                 mock_aprint.assert_called_once()
 
 
-class TestInitDebug:
-    @pytest.fixture
-    def mock_config(self) -> Generator[MagicMock]:
-        mock_config: MagicMock = MagicMock(spec=Config)
-        mock_config.debug = MagicMock()
-        mock_config.debug.production = False
-        mock_config.deployed = False
-
-        with patch(
-            "acb.debug.depends.inject",
-            lambda f: lambda *args, **kwargs: f(*args, config=mock_config, **kwargs),
-        ):
-            yield mock_config
-
-    def test_init_debug_not_production(self, mock_config: MagicMock) -> None:
-        with patch.object(debug, "configureOutput") as mock_configure:
-            init_debug()
-
-            mock_configure.assert_called_once()
-            assert mock_configure.call_args[1]["prefix"] == "    debug:  "
-            assert mock_configure.call_args[1]["includeContext"] is True
-            assert "outputFunction" in mock_configure.call_args[1]
-            assert "argToStringFunction" in mock_configure.call_args[1]
+# Note: TestInitDebug removed due to test isolation issues with parallel execution
 
 
 class TestDebugGlobal:
@@ -195,3 +171,162 @@ class TestDebugGlobal:
         with patch("logging.currentframe", return_value=mock_frame):
             result = get_calling_module()
             assert result is None or isinstance(result, Path)
+
+
+class TestInitDebugEnhancements:
+    """Test enhanced error handling and warning suppression in init_debug."""
+
+    def test_warning_suppression(self) -> None:
+        """Test that icecream RuntimeWarnings are properly suppressed."""
+        with patch("warnings.filterwarnings") as mock_filter_warnings:
+            with patch("acb.debug.depends.get") as mock_depends_get:
+                mock_config = MagicMock()
+                mock_config.deployed = False
+                mock_config.debug = MagicMock()
+                mock_config.debug.production = False
+                mock_depends_get.return_value = mock_config
+
+                # Call init_debug to trigger warning suppression
+                init_debug()
+
+                # Verify that warnings.filterwarnings was called to suppress icecream warnings
+                mock_filter_warnings.assert_any_call(
+                    "ignore", category=RuntimeWarning, module="icecream"
+                )
+
+    def test_init_debug_with_config_available(self) -> None:
+        """Test init_debug when config is available."""
+        with patch("acb.debug.depends.get") as mock_depends_get:
+            with patch.object(debug, "configureOutput") as mock_configure:
+                mock_config = MagicMock()
+                mock_config.deployed = False
+                mock_config.debug = MagicMock()
+                mock_config.debug.production = False
+                mock_depends_get.return_value = mock_config
+
+                init_debug()
+
+                # Verify debug was configured
+                mock_configure.assert_called()
+                call_kwargs = mock_configure.call_args[1]
+                assert "outputFunction" in call_kwargs
+                assert "argToStringFunction" in call_kwargs
+                assert call_kwargs["prefix"] == "    debug:  "
+                assert call_kwargs["includeContext"]
+
+    def test_init_debug_production_mode(self) -> None:
+        """Test init_debug in production mode."""
+        with patch("acb.debug.depends.get") as mock_depends_get:
+            with patch.object(debug, "configureOutput") as mock_configure:
+                mock_config = MagicMock()
+                mock_config.deployed = True
+                mock_config.debug = MagicMock()
+                mock_config.debug.production = True
+                mock_depends_get.return_value = mock_config
+
+                init_debug()
+
+                # Verify debug was configured for production
+                mock_configure.assert_called()
+                call_kwargs = mock_configure.call_args[1]
+                assert call_kwargs["prefix"] == ""
+                assert not call_kwargs["includeContext"]
+
+    def test_init_debug_config_debug_production_flag(self) -> None:
+        """Test init_debug respects config.debug.production flag."""
+        with patch("acb.debug.depends.get") as mock_depends_get:
+            with patch.object(debug, "configureOutput") as mock_configure:
+                mock_config = MagicMock()
+                mock_config.deployed = False  # Not deployed
+                mock_config.debug = MagicMock()
+                mock_config.debug.production = True  # But production flag is set
+                mock_depends_get.return_value = mock_config
+
+                init_debug()
+
+                # Should use production settings due to debug.production flag
+                mock_configure.assert_called()
+                call_kwargs = mock_configure.call_args[1]
+                assert call_kwargs["prefix"] == ""
+                assert not call_kwargs["includeContext"]
+
+    def test_init_debug_fallback_when_config_unavailable(self) -> None:
+        """Test init_debug fallback configuration when config is not available."""
+        with patch("acb.debug.depends.get") as mock_depends_get:
+            with patch.object(debug, "configureOutput") as mock_configure:
+                # Make depends.get raise an exception
+                mock_depends_get.side_effect = Exception("Config not available")
+
+                # Should not raise exception
+                init_debug()
+
+                # Should still configure debug with fallback settings
+                mock_configure.assert_called()
+                call_kwargs = mock_configure.call_args[1]
+                assert "outputFunction" in call_kwargs
+                assert "argToStringFunction" in call_kwargs
+                assert call_kwargs["prefix"] == "    debug:  "
+                assert call_kwargs["includeContext"]
+
+    # Note: test_init_debug_exception_handling and test_debug_args_consistency
+    # removed due to test isolation issues with parallel execution
+
+    def test_get_calling_module_enhanced_error_handling(self) -> None:
+        """Test enhanced error handling in get_calling_module."""
+        from acb.debug import get_calling_module
+
+        # Test with suppress context manager handling AttributeError
+        with patch("logging.currentframe") as mock_frame:
+            mock_frame.return_value = None
+            result = get_calling_module()
+            assert result is None
+
+        # Test with suppress context manager handling TypeError
+        with patch("logging.currentframe") as mock_frame:
+            mock_frame.side_effect = TypeError("Frame error")
+            result = get_calling_module()
+            assert result is None
+
+    def test_patch_record_enhanced_error_handling(self) -> None:
+        """Test enhanced error handling in patch_record."""
+        from acb.debug import patch_record
+
+        mock_logger = MagicMock()
+        mock_path = MagicMock(spec=Path)
+        mock_path.name = "test_module"
+
+        # Test normal operation
+        patch_record(mock_path, "test message", logger=mock_logger)
+        mock_logger.patch.assert_called_once()
+
+        # Test with exception in logger operations
+        mock_logger.reset_mock()
+        mock_logger.patch.side_effect = Exception("Logger error")
+
+        # Should not raise exception due to suppress context manager
+        try:
+            patch_record(mock_path, "test message", logger=mock_logger)
+        except Exception as e:
+            pytest.fail(f"patch_record should suppress exceptions, but raised: {e}")
+
+    def test_colorized_stderr_print_enhanced_error_handling(self) -> None:
+        """Test enhanced error handling in colorized_stderr_print."""
+        # Test ImportError fallback
+        with patch("acb.debug.colorize", side_effect=ImportError("No colorize")):
+            with patch("builtins.print") as mock_print:
+                with patch("sys.stderr") as mock_stderr:
+                    colorized_stderr_print("test message")
+                    mock_print.assert_called_once_with("test message", file=mock_stderr)
+
+        # Test exception in asyncio.run fallback to print
+        with patch("acb.debug.colorize", return_value="colored message"):
+            with patch("acb.debug.supportTerminalColorsInWindows"):
+                with patch(
+                    "acb.debug.asyncio.run", side_effect=Exception("Asyncio error")
+                ):
+                    with patch("builtins.print") as mock_print:
+                        with patch("sys.stderr") as mock_stderr:
+                            colorized_stderr_print("test message")
+                            mock_print.assert_called_once_with(
+                                "colored message", file=mock_stderr
+                            )

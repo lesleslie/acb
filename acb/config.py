@@ -281,43 +281,73 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         if self.adapter_name == "secret":
             return {}
         if _testing or _library_usage_mode:
-            default_settings = self._get_default_settings()
-            self._update_global_variables(default_settings)
-            return default_settings
+            return self._handle_testing_mode()
         yml_path = AsyncPath(settings_path / f"{self.adapter_name}.yml")
-        if not await yml_path.exists() and not _deployed:
-            dump_settings = {
-                name: info.default
-                for name, info in self.settings_cls.model_fields.items()
-                if info.annotation is not SecretStr
-                and "Optional" not in str(info.annotation)
-            }
-            # Only create the settings file if it contains meaningful settings
-            # Skip empty dictionaries or dictionaries with only None/empty values
-            if dump_settings and any(
-                value is not None and value != {} and value != [] 
-                for value in dump_settings.values()
-            ):
-                await dump.yaml(dump_settings, yml_path)
-        
-        # Load settings from file if it exists, otherwise use empty dict
-        if await yml_path.exists():
-            yml_settings = await load.yaml(yml_path)
-        else:
-            yml_settings = {}
-        if self.adapter_name == "debug":
-            for adapter in adapter_registry.get():
-                if adapter.category not in (
-                    yml_settings.keys() or ("config", "logger")
-                ):
-                    yml_settings[adapter.category] = False
-        if not _deployed and yml_settings and any(
-            value is not None and value != {} and value != [] 
-            for value in yml_settings.values()
-        ):
-            await dump.yaml(yml_settings, yml_path, sort_keys=True)
+        await self._create_default_settings_file(yml_path)
+        yml_settings = await self._load_settings_from_file(yml_path)
+        yml_settings = self._process_debug_settings(yml_settings)
+        await self._update_settings_file(yml_path, yml_settings)
         self._update_global_variables(yml_settings)
-        return yml_settings or {}
+        return yml_settings
+
+    def _handle_testing_mode(self) -> dict[str, t.Any]:
+        default_settings = self._get_default_settings()
+        self._update_global_variables(default_settings)
+        return default_settings
+
+    async def _create_default_settings_file(self, yml_path: AsyncPath) -> None:
+        if await yml_path.exists() or _deployed:
+            return
+        dump_settings = self._get_dump_settings()
+        if self._should_create_settings_file(dump_settings):
+            await dump.yaml(dump_settings, yml_path)
+
+    def _get_dump_settings(self) -> dict[str, t.Any]:
+        return {
+            name: info.default
+            for name, info in self.settings_cls.model_fields.items()
+            if info.annotation is not SecretStr
+            and "Optional" not in str(info.annotation)
+        }
+
+    def _should_create_settings_file(self, dump_settings: dict[str, t.Any]) -> bool:
+        return bool(dump_settings) and any(
+            value is not None and value != {} and value != []
+            for value in dump_settings.values()
+        )
+
+    async def _load_settings_from_file(self, yml_path: AsyncPath) -> dict[str, t.Any]:
+        if await yml_path.exists():
+            return await load.yaml(yml_path)
+        return {}
+
+    def _process_debug_settings(
+        self, yml_settings: dict[str, t.Any]
+    ) -> dict[str, t.Any]:
+        if self.adapter_name != "debug":
+            return yml_settings
+
+        for adapter in adapter_registry.get():
+            if adapter.category not in (yml_settings.keys() or ("config", "logger")):
+                yml_settings[adapter.category] = False
+        return yml_settings
+
+    async def _update_settings_file(
+        self, yml_path: AsyncPath, yml_settings: dict[str, t.Any]
+    ) -> None:
+        if not self._should_update_settings_file(yml_settings):
+            return
+        await dump.yaml(yml_settings, yml_path, sort_keys=True)
+
+    def _should_update_settings_file(self, yml_settings: dict[str, t.Any]) -> bool:
+        return (
+            not _deployed
+            and bool(yml_settings)
+            and any(
+                value is not None and value != {} and value != []
+                for value in yml_settings.values()
+            )
+        )
 
     async def __call__(self) -> dict[str, t.Any]:
         data = {}

@@ -23,9 +23,18 @@ ACB's adapter system is designed around these principles:
 1. **Standardized Interfaces**: Each adapter category defines a consistent interface through a base class
 2. **Multiple Implementations**: Different providers can be used interchangeably
 3. **Configuration-driven**: Adapters are enabled through configuration rather than code changes
-4. **Automatic Registration**: Adapters are discovered and registered when your application starts
+4. **Static Registration**: Adapters use hardcoded mappings for improved performance and reliability (ACB 0.16.17+)
 5. **Dependency Injection**: Adapters are accessed through the dependency injection system
 6. **Extensibility**: Projects built on ACB can add their own domain-specific adapters
+
+### ACB 0.16.17+ Adapter Registration Changes
+
+Starting with ACB 0.16.17, the adapter system has been significantly refactored:
+
+- **BREAKING CHANGE**: Dynamic adapter discovery has been replaced with static adapter mappings
+- **Performance Improvement**: Faster adapter loading through predefined mappings
+- **Reliability**: Eliminates runtime discovery issues and import errors
+- **Core Adapters**: Only config and loguru adapters are automatically registered as they are required for ACB operation
 
 ### Extension by Other Projects
 
@@ -240,11 +249,71 @@ async def backup_data(key: str, cache: Cache = depends(), sql: SQL = depends(), 
     return False
 ```
 
+## Static Adapter Mappings (ACB 0.16.17+)
+
+ACB now uses a hardcoded static mapping system for adapter registration. This provides better performance and reliability compared to the previous dynamic discovery system.
+
+### Built-in Adapter Mappings
+
+The following adapters are pre-registered in the static mapping system:
+
+```python
+static_mappings = {
+    # Cache adapters
+    "cache.memory": ("acb.adapters.cache.memory", "Cache"),
+    "cache.redis": ("acb.adapters.cache.redis", "Cache"),
+
+    # Storage adapters
+    "storage.file": ("acb.adapters.storage.file", "Storage"),
+    "storage.memory": ("acb.adapters.storage.memory", "Storage"),
+    "storage.s3": ("acb.adapters.storage.s3", "Storage"),
+    "storage.azure": ("acb.adapters.storage.azure", "Storage"),
+    "storage.cloud_storage": ("acb.adapters.storage.cloud_storage", "Storage"),
+
+    # SQL adapters
+    "sql.mysql": ("acb.adapters.sql.mysql", "Sql"),
+    "sql.pgsql": ("acb.adapters.sql.pgsql", "Sql"),
+
+    # NoSQL adapters
+    "nosql.mongodb": ("acb.adapters.nosql.mongodb", "Nosql"),
+    "nosql.redis": ("acb.adapters.nosql.redis", "Nosql"),
+    "nosql.firestore": ("acb.adapters.nosql.firestore", "Nosql"),
+
+    # And many more...
+}
+```
+
+### Core Adapters
+
+These adapters are always available and don't need to be enabled in configuration:
+
+```python
+core_adapters = [
+    Adapter(
+        name="config",
+        module="acb.config",
+        class_name="Config",
+        category="config",
+        enabled=True,
+        installed=True,
+    ),
+    Adapter(
+        name="loguru",
+        module="acb.logger",
+        class_name="Logger",
+        category="logger",
+        enabled=True,
+        installed=True,
+    ),
+]
+```
+
 ## Implementing Custom Adapters
 
-You can create your own adapters to extend ACB:
+With the new static mapping system, implementing custom adapters requires additional steps:
 
-1. Create the adapter directory structure:
+### 1. Create the Adapter Structure
+
 ```
 myapp/adapters/payment/
 ├── __init__.py
@@ -253,8 +322,10 @@ myapp/adapters/payment/
 └── paypal.py
 ```
 
-2. Define the base interface in `_base.py`:
+### 2. Define the Base Interface
+
 ```python
+# myapp/adapters/payment/_base.py
 from acb.config import Settings
 from typing import Protocol
 
@@ -272,17 +343,20 @@ class PaymentBase(Protocol):
         ...
 ```
 
-3. Implement specific providers like `stripe.py`:
+### 3. Implement the Adapter
+
 ```python
+# myapp/adapters/payment/stripe.py
 from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
+from acb.depends import depends
 import stripe
 import typing as t
 
 class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
 
-class Stripe:
+class Payment:  # Note: Use category name as class name
     settings: StripeSettings | None = None
 
     async def init(self) -> None:
@@ -291,7 +365,7 @@ class Stripe:
 
     async def charge(self, amount: float, description: str) -> str:
         response: t.Any = await stripe.PaymentIntent.create(
-            amount=int(amount * 100),  # Convert to cents
+            amount=int(amount * 100),
             currency=self.settings.currency if self.settings else "USD",
             description=description
         )
@@ -303,31 +377,54 @@ class Stripe:
             return True
         except stripe.error.StripeError:
             return False
+
+# Register the adapter with dependency injection
+depends.set(Payment)
 ```
 
-4. Update your `settings/adapters.yml` file:
+### 4. Register in Package Registry (if needed)
+
+For packages that extend ACB, you may need to register your adapters in the package registry:
+
+```python
+# myapp/__init__.py
+from acb import register_package
+from pathlib import Path
+
+# Register your package with ACB
+register_package(Path(__file__).parent)
+```
+
+### 5. Configure the Adapter
+
 ```yaml
-# Enable your custom adapter
+# settings/adapters.yml
 payment: stripe
 ```
 
-5. Use your adapter:
+### 6. Use Your Custom Adapter
+
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
 
 # Import your adapter
-Payment = import_adapter()
+Payment = import_adapter("payment")
 
 @depends.inject
 async def payment_example(payment: Payment = depends()) -> dict[str, str | bool]:
-    # Use it
     transaction_id: str = await payment.charge(19.99, "Premium subscription")
-
-    # Later, if needed, refund the payment
     success: bool = await payment.refund(transaction_id)
     return {"transaction_id": transaction_id, "refunded": success}
 ```
+
+### Migration from Dynamic Discovery
+
+If you were using the old dynamic discovery system, you'll need to:
+
+1. **Update adapter class names**: Ensure your adapter class name matches the category (e.g., `Payment` for `payment` category)
+2. **Add explicit registration**: Use `depends.set()` to register your adapter class
+3. **Consider static mappings**: For better performance, consider contributing your adapter to the core static mappings
 
 ## Adapter Lifecycle
 
