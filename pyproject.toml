@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.16.18"
+version = "0.17.0"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -73,7 +73,7 @@ optional-dependencies.demo = [
 ]
 optional-dependencies.dev = [
     "complexipy>=3.2",
-    "crackerjack>=0.22.5",
+    "crackerjack>=0.22.7",
     "pre-commit>=4.2",
     "pytest>=8.4.1",
     "pytest-anyio>=0",
@@ -129,12 +129,14 @@ optional-dependencies.smtp = [
 ]
 optional-dependencies.sql = [
     "aiomysql>=0.2",
+    "aiosqlite>=0.20",
     "babel>=2.17",
     "greenlet>=3.2.3",
     "logfire[sqlalchemy]>=3.21.1",
     "pymysql>=1.1.1",
     "sentry-sdk[sqlalchemy]>=2.32",
     "sqlalchemy>=2.0.41",
+    "sqlalchemy-libsql>=0.2",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
 ]
@@ -299,26 +301,26 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-benchmark",
-    "pytest-xdist",
-    "google-api-python-client",
-    "keyring",
-    "pdm",
-    "pytest-mock",
-    "pyyaml",
-    "pytest-timeout",
-    "inflection",
-    "pydantic-settings",
-    "pytest-cov",
-    "pre-commit",
     "pyfiglet",
+    "keyring",
     "google-crc32c",
-    "tomli-w",
     "pytest-asyncio",
-    "autotyping",
-    "uv",
+    "pdm",
+    "google-api-python-client",
     "pdm-bump",
+    "tomli-w",
+    "inflection",
+    "uv",
+    "pytest-benchmark",
+    "pytest-timeout",
+    "pytest-mock",
+    "autotyping",
+    "pyyaml",
+    "pydantic-settings",
     "pytest",
+    "pytest-xdist",
+    "pre-commit",
+    "pytest-cov",
 ]
 
 [tool.refurb]
@@ -330,17 +332,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B403",
-    "B301",
-    "B106",
-    "B603",
-    "B105",
-    "B704",
-    "B607",
-    "B311",
     "B602",
-    "B404",
+    "B105",
+    "B311",
+    "B603",
+    "B106",
+    "B403",
+    "B607",
     "B101",
+    "B301",
+    "B404",
+    "B704",
 ]
 
 [tool.vulture]

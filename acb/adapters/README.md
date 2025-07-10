@@ -106,6 +106,7 @@ ACB includes the following adapter categories:
 - [**SQL**](./sql/README.md): Relational databases
   - **MySQL**: MySQL/MariaDB database adapter
   - **PostgreSQL**: PostgreSQL database adapter
+  - **SQLite**: SQLite database adapter (local files and Turso cloud databases)
 
 ### Storage Adapters
 - [**Storage**](./storage/README.md): File and object storage
@@ -139,7 +140,7 @@ The following adapter-specific dependency groups are available:
 | requests      | HTTPX, Niquests HTTP clients                 | `pdm add "acb[requests]"`   |
 | secret        | Infisical, Secret Manager                     | `pdm add "acb[secret]"`     |
 | smtp          | Gmail, Mailgun email sending                  | `pdm add "acb[smtp]"`       |
-| sql           | MySQL, PostgreSQL                             | `pdm add "acb[sql]"`        |
+| sql           | MySQL, PostgreSQL, SQLite (including Turso)  | `pdm add "acb[sql]"`        |
 | storage       | S3, GCS, Azure, Local                         | `pdm add "acb[storage]"`    |
 | demo          | Demo/example utilities                        | `pdm add "acb[demo]"`       |
 | dev           | Development tools                             | `pdm add "acb[dev]"`        |
@@ -152,7 +153,7 @@ Adapters are configured in the `settings/adapters.yml` file. This file defines w
 # Example adapters.yml
 cache: redis       # Use Redis for caching
 logger: loguru     # Use Loguru for logging
-sql: pgsql         # Use PostgreSQL for SQL database (or: mysql)
+sql: pgsql         # Use PostgreSQL for SQL database (or: mysql, sqlite)
 storage: s3        # Use S3 for storage
 # Other adapters use their default implementation or are disabled when set to null
 secret:            # Secret adapter is disabled

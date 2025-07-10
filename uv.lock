@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.16.17"
+version = "0.16.18"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -36,6 +36,7 @@ all = [
     { name = "aiocache", extra = ["redis"] },
     { name = "aioftp" },
     { name = "aiomysql" },
+    { name = "aiosqlite" },
     { name = "asyncssh" },
     { name = "babel" },
     { name = "beanie" },
@@ -58,6 +59,7 @@ all = [
     { name = "s3fs" },
     { name = "sentry-sdk", extra = ["httpx", "loguru", "sqlalchemy"] },
     { name = "sqlalchemy" },
+    { name = "sqlalchemy-libsql" },
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
     { name = "validators" },
@@ -86,6 +88,7 @@ cloud-native = [
     { name = "adlfs" },
     { name = "aiocache", extra = ["redis"] },
     { name = "aiomysql" },
+    { name = "aiosqlite" },
     { name = "babel" },
     { name = "coredis" },
     { name = "gcsfs" },
@@ -99,6 +102,7 @@ cloud-native = [
     { name = "s3fs" },
     { name = "sentry-sdk", extra = ["loguru", "sqlalchemy"] },
     { name = "sqlalchemy" },
+    { name = "sqlalchemy-libsql" },
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
     { name = "validators" },
@@ -106,6 +110,7 @@ cloud-native = [
 dataplatform = [
     { name = "adlfs" },
     { name = "aiomysql" },
+    { name = "aiosqlite" },
     { name = "babel" },
     { name = "beanie" },
     { name = "gcsfs" },
@@ -118,6 +123,7 @@ dataplatform = [
     { name = "s3fs" },
     { name = "sentry-sdk", extra = ["loguru", "sqlalchemy"] },
     { name = "sqlalchemy" },
+    { name = "sqlalchemy-libsql" },
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
 ]
@@ -207,12 +213,14 @@ smtp = [
 ]
 sql = [
     { name = "aiomysql" },
+    { name = "aiosqlite" },
     { name = "babel" },
     { name = "greenlet" },
     { name = "logfire", extra = ["sqlalchemy"] },
     { name = "pymysql" },
     { name = "sentry-sdk", extra = ["sqlalchemy"] },
     { name = "sqlalchemy" },
+    { name = "sqlalchemy-libsql" },
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
 ]
@@ -225,6 +233,7 @@ webapp = [
     { name = "adlfs" },
     { name = "aiocache", extra = ["redis"] },
     { name = "aiomysql" },
+    { name = "aiosqlite" },
     { name = "babel" },
     { name = "coredis" },
     { name = "gcsfs" },
@@ -237,6 +246,7 @@ webapp = [
     { name = "s3fs" },
     { name = "sentry-sdk", extra = ["httpx", "loguru", "sqlalchemy"] },
     { name = "sqlalchemy" },
+    { name = "sqlalchemy-libsql" },
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
 ]
@@ -256,6 +266,7 @@ requires-dist = [
     { name = "aioconsole", specifier = ">=0.8.1" },
     { name = "aioftp", marker = "extra == 'ftpd'", specifier = ">=0.26.2" },
     { name = "aiomysql", marker = "extra == 'sql'", specifier = ">=0.2" },
+    { name = "aiosqlite", marker = "extra == 'sql'", specifier = ">=0.20" },
     { name = "anyio", specifier = ">=4.9" },
     { name = "arrow", specifier = ">=1.3" },
     { name = "asyncssh", marker = "extra == 'ftpd'", specifier = ">=2.21" },
@@ -266,7 +277,7 @@ requires-dist = [
     { name = "brotli", specifier = ">=1.1" },
     { name = "complexipy", marker = "extra == 'dev'", specifier = ">=3.2" },
     { name = "coredis", marker = "extra == 'cache'", specifier = ">=4.23.1" },
-    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.22.5" },
+    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.22.7" },
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dill", specifier = ">=0.4" },
     { name = "faker", marker = "extra == 'demo'", specifier = ">=37.4" },
@@ -314,6 +325,7 @@ requires-dist = [
     { name = "sentry-sdk", extras = ["loguru"], marker = "extra == 'monitoring'", specifier = ">=2.32" },
     { name = "sentry-sdk", extras = ["sqlalchemy"], marker = "extra == 'sql'", specifier = ">=2.32" },
     { name = "sqlalchemy", marker = "extra == 'sql'", specifier = ">=2.0.41" },
+    { name = "sqlalchemy-libsql", marker = "extra == 'sql'", specifier = ">=0.2" },
     { name = "sqlalchemy-utils", marker = "extra == 'sql'", specifier = ">=0.41.2" },
     { name = "sqlmodel", marker = "extra == 'sql'", specifier = ">=0.0.24" },
     { name = "toml", specifier = ">=0.10.2" },
@@ -471,6 +483,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ba/b5/6d55e80f6d8a08ce22b982eafa278d823b541c925f11ee774b0b9c43473d/aiosignal-1.3.2.tar.gz", hash = "sha256:a8c255c66fafb1e499c9351d0bf32ff2d8a0321595ebac3b93713656d2436f54", size = 19424, upload-time = "2024-12-13T17:10:40.86Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/6a/bc7e17a3e87a2985d3e8f4da4cd0f481060eb78fb08596c42be62c90a4d9/aiosignal-1.3.2-py2.py3-none-any.whl", hash = "sha256:45cde58e409a301715980c2b01d0c28bdde3770d8290b5eb2173759d9acb31a5", size = 7597, upload-time = "2024-12-13T17:10:38.469Z" },
+]
+
+[[package]]
+name = "aiosqlite"
+version = "0.21.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/7d/8bca2bf9a247c2c5dfeec1d7a5f40db6518f88d314b8bca9da29670d2671/aiosqlite-0.21.0.tar.gz", hash = "sha256:131bb8056daa3bc875608c631c678cda73922a2d4ba8aec373b19f18c17e7aa3", size = 13454, upload-time = "2025-02-03T07:30:16.235Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f5/10/6c25ed6de94c49f88a91fa5018cb4c0f3625f31d5be9f771ebe5cc7cd506/aiosqlite-0.21.0-py3-none-any.whl", hash = "sha256:2549cf4057f95f53dcba16f2b64e8e2791d7e1adedb13197dd8ed77bb226d7d0", size = 15792, upload-time = "2025-02-03T07:30:13.6Z" },
 ]
 
 [[package]]
@@ -931,7 +955,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.22.5"
+version = "0.22.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autotyping" },
@@ -953,9 +977,9 @@ dependencies = [
     { name = "typer" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c1/c4/c06fc01cd56e6769e3bc5b7a3426e82da66e3519d3b1953678c967da2bfd/crackerjack-0.22.5.tar.gz", hash = "sha256:091aa7d3dce10e03278c35abf784d7308772dab3a7210f40e701f0f9d3e3ad8a", size = 66929, upload-time = "2025-07-10T08:57:48.072Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/67/66/6dad85224c37be4387c83600f4cb061d2aa996519760cae6bf69b694375d/crackerjack-0.22.7.tar.gz", hash = "sha256:03568657cb3c892948f94b81be754bb3cc09ffaa97629abaa8cfb15f3407dd36", size = 67236, upload-time = "2025-07-10T17:27:43.475Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/a7/b8e19bbbaed0806334d92f583740fdef7c926faae3a3c4231c077600c6e2/crackerjack-0.22.5-py3-none-any.whl", hash = "sha256:996cd1402bbae8384f1d42fcf72123971f1afbdaec09141f309ab259ef909e1c", size = 53736, upload-time = "2025-07-10T08:57:46.298Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/9d/88694a4f48278534b8d6be15c26bedb1e3e2d750b9c82b82f2420af1b9ed/crackerjack-0.22.7-py3-none-any.whl", hash = "sha256:68916d5fd02989781660768f5f5b6d7962fa7c6026d20b2295f082ea3e31180a", size = 54124, upload-time = "2025-07-10T17:27:41.956Z" },
 ]
 
 [[package]]
@@ -1856,6 +1880,17 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/af/67/b625fd6ae22575255aade0a24f45e1d430b7e7279729c9c51d4faac982d2/libcst-1.8.2-cp313-cp313t-musllinux_1_2_x86_64.whl", hash = "sha256:dd4310ea8ddc49cc8872e083737cf806299b17f93159a1f354d59aa08993e876", size = 2380767, upload-time = "2025-06-13T20:56:13.995Z" },
     { url = "https://files.pythonhosted.org/packages/e6/84/fb88f2ffdb045ff7323a6c05dd3d243a9eb3cb3517a6269dee43fbfb9990/libcst-1.8.2-cp313-cp313t-win_amd64.whl", hash = "sha256:51bbafdd847529e8a16d1965814ed17831af61452ee31943c414cb23451de926", size = 2083403, upload-time = "2025-06-13T20:56:15.959Z" },
     { url = "https://files.pythonhosted.org/packages/d3/8f/da755d6d517eb8ec9664afae967b00a9b8dd567bbbb350e261359c1b47fc/libcst-1.8.2-cp313-cp313t-win_arm64.whl", hash = "sha256:4f14f5045766646ed9e8826b959c6d07194788babed1e0ba08c94ea4f39517e3", size = 1974355, upload-time = "2025-06-13T20:56:18.064Z" },
+]
+
+[[package]]
+name = "libsql-experimental"
+version = "0.0.55"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/14/d3eb81673e2096f38eb48f08e38b447f6f2fdc37a50bdb1810d4a225a7aa/libsql_experimental-0.0.55.tar.gz", hash = "sha256:34df13ad6da446e4ccede9b3803af40684da399c8f304848b54ea37e7111b249", size = 31954, upload-time = "2025-06-09T07:26:48.682Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/9f/3589b9590ba948922bd200a02d754fa29e739da81a2953367e9283667a16/libsql_experimental-0.0.55-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:f3bfd7af2ca9d1ff8f8c7f7fce5f1a650bfe53c23b45658253480fe287283bae", size = 4881245, upload-time = "2025-06-09T07:26:37.382Z" },
+    { url = "https://files.pythonhosted.org/packages/37/cf/4aead944cb90f82ab1b61edc78dbe893420e8c4ceee19e1fdae775b1273d/libsql_experimental-0.0.55-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:b3476a78edb8f59aa6c571d6def1840fff8d263eb4bbc4b26b2afd7400cb9ba2", size = 4656348, upload-time = "2025-06-09T07:26:39.04Z" },
+    { url = "https://files.pythonhosted.org/packages/70/73/134dc2db0c3805f62953c85778bf93ac2f4a5ad81d49e592be990b012711/libsql_experimental-0.0.55-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7a5dd325f87425546e0a7f0d460d4b6e1852bc4d4194a7b5ad127614ef8b3b10", size = 5273740, upload-time = "2025-06-09T07:26:40.597Z" },
 ]
 
 [[package]]
@@ -3179,6 +3214,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/fa/2e/677c17c5d6a004c3c45334ab1dbe7b7deb834430b282b8a0f75ae220c8eb/sqlalchemy-2.0.41-cp313-cp313-win32.whl", hash = "sha256:bfc9064f6658a3d1cadeaa0ba07570b83ce6801a1314985bf98ec9b95d74e15f", size = 2082420, upload-time = "2025-05-14T17:55:52.69Z" },
     { url = "https://files.pythonhosted.org/packages/e9/61/e8c1b9b6307c57157d328dd8b8348ddc4c47ffdf1279365a13b2b98b8049/sqlalchemy-2.0.41-cp313-cp313-win_amd64.whl", hash = "sha256:82ca366a844eb551daff9d2e6e7a9e5e76d2612c8564f58db6c19a726869c1df", size = 2108329, upload-time = "2025-05-14T17:55:54.495Z" },
     { url = "https://files.pythonhosted.org/packages/1c/fc/9ba22f01b5cdacc8f5ed0d22304718d2c758fce3fd49a5372b886a86f37c/sqlalchemy-2.0.41-py3-none-any.whl", hash = "sha256:57df5dc6fdb5ed1a88a1ed2195fd31927e705cad62dedd86b46972752a80f576", size = 1911224, upload-time = "2025-05-14T17:39:42.154Z" },
+]
+
+[[package]]
+name = "sqlalchemy-libsql"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "greenlet" },
+    { name = "libsql-experimental" },
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9c/3e/a628dad23a5310e00db674a5ddf92300acb4199a06ea82385cc48f6e9289/sqlalchemy_libsql-0.2.0.tar.gz", hash = "sha256:f6349c89ea10b941a9cd87ebb65330c660aff996c12d3da7e1696572c360edd1", size = 6405, upload-time = "2025-05-30T17:59:14.812Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a2/b9/7a3b645766a9f0f2ba27580d1ec6eb1ade754b30f0c88fcc6bee4cc2cb20/sqlalchemy_libsql-0.2.0-py3-none-any.whl", hash = "sha256:852a731c64f318581942c81a5e18c9752a553af25608abbff04cd54ae1f3d451", size = 5929, upload-time = "2025-05-30T17:59:13.913Z" },
 ]
 
 [[package]]

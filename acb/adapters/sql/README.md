@@ -2,7 +2,7 @@ Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/sql
 
 # SQL Adapter
 
-The SQL adapter provides a standardized interface for relational database operations in ACB applications, with support for MySQL/MariaDB and PostgreSQL.
+The SQL adapter provides a standardized interface for relational database operations in ACB applications, with support for MySQL/MariaDB, PostgreSQL, and SQLite (including Turso).
 
 ## Table of Contents
 
@@ -39,6 +39,7 @@ The ACB SQL adapter offers a consistent way to interact with relational database
 |----------------|-------------|----------|
 | **MySQL** | MySQL/MariaDB database adapter | Applications using MySQL/MariaDB |
 | **PostgreSQL** | PostgreSQL database adapter | Applications using PostgreSQL |
+| **SQLite** | SQLite/Turso database adapter | Local development, testing, edge deployments, Turso cloud databases |
 
 ## Installation
 
@@ -62,6 +63,9 @@ sql: mysql
 
 # Or use PostgreSQL implementation
 sql: pgsql
+
+# Or use SQLite implementation (local or Turso)
+sql: sqlite
 ```
 
 ### SQL Settings
@@ -70,6 +74,7 @@ The SQL adapter settings can be customized in your `settings/app.yml` file:
 
 ```yaml
 sql:
+  # For MySQL/PostgreSQL:
   # Database host (defaults to 127.0.0.1 for local development)
   host: "db.example.com"
 
@@ -79,6 +84,15 @@ sql:
   # Database credentials
   user: "dbuser"
   password: "dbpassword"
+
+  # For SQLite:
+  # Local SQLite database
+  database_url: "sqlite:///data/app.db"
+
+  # Or Turso cloud database
+  database_url: "libsql://mydb.turso.io?authToken=your_token&secure=true"
+  auth_token: "your_turso_auth_token"  # Alternative way to provide token
+  wal_mode: true  # Enable WAL mode for SQLite (ignored for Turso)
 
   # Connection pool settings
   pool_pre_ping: true
@@ -115,6 +129,86 @@ async with sql.get_session() as session:
     # Work with the results
     for user in users:
         print(f"User: {user.name}, Email: {user.email}")
+```
+
+## SQLite and Turso Usage
+
+### Local SQLite Database
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+# Configure for local SQLite (in settings/app.yml)
+# sql:
+#   database_url: "sqlite:///data/app.db"
+#   wal_mode: true
+
+SQL = import_adapter("sql")
+sql = depends.get(SQL)
+
+# The adapter automatically:
+# - Creates the data directory if it doesn't exist
+# - Enables WAL mode for better concurrency
+# - Uses aiosqlite driver for async operations
+
+async with sql.get_session() as session:
+    result = await session.execute("SELECT sqlite_version()")
+    version = result.scalar()
+    print(f"SQLite version: {version}")
+```
+
+### Turso Cloud Database
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+# Configure for Turso (in settings/app.yml)
+# sql:
+#   database_url: "libsql://mydb.turso.io?authToken=your_token&secure=true"
+#   # Or provide token separately:
+#   # auth_token: "your_turso_auth_token"
+
+SQL = import_adapter("sql")
+sql = depends.get(SQL)
+
+# The adapter automatically:
+# - Detects Turso URL pattern
+# - Uses sqlalchemy-libsql driver for HTTP access
+# - Handles authentication tokens
+# - Supports secure connections
+
+async with sql.get_session() as session:
+    # Works exactly the same as local SQLite!
+    result = await session.execute("SELECT COUNT(*) FROM users")
+    count = result.scalar()
+    print(f"Users in Turso database: {count}")
+```
+
+### Dual Mode Development
+
+```python
+import os
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+# Switch between local and remote based on environment
+def get_database_url():
+    if os.getenv("ENVIRONMENT") == "production":
+        return "libsql://prod-db.turso.io?authToken=prod_token&secure=true"
+    else:
+        return "sqlite:///data/dev.db"
+
+# Use the same code for both local and remote!
+SQL = import_adapter("sql")
+sql = depends.get(SQL)
+
+async with sql.get_session() as session:
+    # This works identically for both SQLite and Turso
+    users = await session.execute("SELECT * FROM users LIMIT 10")
+    for user in users:
+        print(user)
 ```
 
 ## Advanced Usage
@@ -314,6 +408,8 @@ async with sql.get_session() as session:
 |----------------|------------------|-------------------|----------|
 | **MySQL** | Fast | Very Fast | High write workloads, simpler queries |
 | **PostgreSQL** | Very Fast | Fast | Complex queries, JSONB data, full-text search |
+| **SQLite** | Very Fast | Fast | Local development, testing, single-user apps, edge deployments |
+| **Turso** | Fast | Fast | Globally distributed SQLite, serverless apps, edge computing |
 
 5. **Async Execution**: Remember that database operations are asynchronous and should be properly awaited:
 
