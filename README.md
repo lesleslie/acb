@@ -169,16 +169,16 @@ data = {
     "features": ["actions", "adapters", "dependency injection"]
 }
 
-# Encode as JSON
-json_data = encode.json(data)
+# Encode as JSON (async method)
+json_data = await encode.json(data)
 print(f"JSON: {json_data}")
 
-# Encode as YAML
-yaml_data = encode.yaml(data)
+# Encode as YAML (async method)
+yaml_data = await encode.yaml(data)
 print(f"YAML:\n{yaml_data}")
 
-# Decode back from JSON
-original = decode.json(json_data)
+# Decode back from JSON (async method)
+original = await decode.json(json_data)
 print(f"Decoded: {original}")
 ```
 
@@ -187,13 +187,13 @@ print(f"Decoded: {original}")
 ```python
 from acb.actions.hash import hash
 
-# Generate a secure hash using blake3 (very fast and secure)
+# Generate a secure hash using blake3 (very fast and secure) - async method
 file_content = b"This is the content of my file"
-file_hash = hash.blake3(file_content)
+file_hash = await hash.blake3(file_content)
 print(f"File hash: {file_hash}")
 
-# Generate a CRC32C checksum (good for data integrity checks)
-checksum = hash.crc32c(file_content)
+# Generate a CRC32C checksum (good for data integrity checks) - async method
+checksum = await hash.crc32c(file_content)
 print(f"Checksum: {checksum}")
 ```
 

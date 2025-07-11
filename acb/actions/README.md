@@ -12,6 +12,7 @@ Actions are modular, self-contained utility functions that perform specific task
   - [Encode/Decode](#encodedecode)
   - [Hash](#hash)
 - [Creating Custom Actions](#creating-custom-actions)
+- [Adapter-Agnostic Design](#adapter-agnostic-design)
 - [Action Registration](#action-registration)
 - [Best Practices](#best-practices)
 
@@ -23,6 +24,7 @@ ACB actions provide utility functions for common operations like compression, se
 - **Auto-registered**: Discovered and registered automatically
 - **Easily extendable**: Add your own actions in your project
 - **Consistently structured**: Similar patterns across all actions
+- **Adapter-agnostic**: Actions avoid direct adapter imports and use dynamic adapter access when needed
 
 ## Available Actions
 
@@ -137,7 +139,7 @@ from acb.actions.hash import hash
 from anyio import Path as AsyncPath
 import typing as t
 
-async def hash_examples() -> dict[str, str | int]:
+async def hash_examples() -> dict[str, str]:
     # Hash a string
     text = "Hash this text"
     blake3_hash: str = await hash.blake3(text)
@@ -149,8 +151,8 @@ async def hash_examples() -> dict[str, str | int]:
     print(file_hash)  # Returns the hash of the file's contents
 
     # Get CRC32C checksum (useful for Google Cloud Storage)
-    crc: int = await hash.crc32c("Checksum this")
-    print(crc)  # Returns an integer
+    crc: str = await hash.crc32c("Checksum this")
+    print(crc)  # Returns a hexadecimal string
 
     # Get MD5 hash (when compatibility is needed)
     md5sum: str = await hash.md5("Legacy hash")
@@ -228,6 +230,100 @@ class Validate(BaseModel):
 validate = Validate()
 ```
 
+## Adapter-Agnostic Design
+
+Actions in ACB follow an **adapter-agnostic design philosophy**. This means actions should be designed to work independently of specific adapter implementations while still being able to interact with adapters when necessary.
+
+### Core Principles
+
+1. **Avoid Direct Adapter Imports**: Actions should not import adapters directly using `from acb.adapters import X`
+2. **Use Dynamic Adapter Access**: When adapter functionality is needed, use `depends.get()` for dynamic access
+3. **Depend on Protocol Interfaces**: When possible, depend on protocol interfaces rather than concrete adapter implementations
+4. **Keep Actions Pure**: Prefer pure utility functions that don't require external dependencies
+
+### When Actions Need Adapters
+
+When an action needs to interact with adapters, use dynamic imports via the dependency injection system:
+
+```python
+from acb.depends import depends
+from pydantic import BaseModel
+import typing as t
+
+class FileAction(BaseModel):
+    @staticmethod
+    async def process_file(filename: str, data: bytes) -> dict[str, t.Any]:
+        """Process and store a file using dynamic adapter access."""
+
+        # Dynamic adapter access - adapter-agnostic approach
+        try:
+            storage = depends.get("storage")
+            cache = depends.get("cache")
+
+            # Process the file
+            processed_data = await storage.put_file(filename, data)
+
+            # Cache the result
+            cache_key = f"file_process:{filename}"
+            await cache.set(cache_key, processed_data, ttl=3600)
+
+            return {
+                "filename": filename,
+                "size": len(data),
+                "cached": True,
+                "storage_path": processed_data.get("path")
+            }
+        except Exception as e:
+            # Graceful fallback when adapters aren't available
+            return {
+                "filename": filename,
+                "size": len(data),
+                "cached": False,
+                "error": str(e)
+            }
+
+# Export instance
+file_action = FileAction()
+```
+
+### Protocol-Based Interfaces
+
+When creating actions that work with multiple adapter types, define and use protocol interfaces:
+
+```python
+from typing import Protocol
+from acb.depends import depends
+
+class StorageProtocol(Protocol):
+    async def put_file(self, filename: str, data: bytes) -> dict[str, t.Any]: ...
+    async def get_file(self, filename: str) -> bytes: ...
+
+class CloudAction(BaseModel):
+    @staticmethod
+    async def backup_data(data: bytes, filename: str) -> dict[str, t.Any]:
+        """Backup data using any storage adapter that implements StorageProtocol."""
+
+        # Get storage adapter dynamically
+        storage: StorageProtocol = depends.get("storage")
+
+        # Use protocol interface - works with any compatible adapter
+        result = await storage.put_file(f"backup/{filename}", data)
+
+        return {
+            "backup_created": True,
+            "backup_path": result.get("path"),
+            "size": len(data)
+        }
+```
+
+### Benefits of Adapter-Agnostic Design
+
+- **Flexibility**: Actions work with different adapter implementations
+- **Testability**: Actions can be tested independently of specific adapters
+- **Maintainability**: Changes to adapters don't break actions
+- **Reusability**: Actions can be used across different projects and configurations
+- **Cloud Portability**: Switch between cloud providers without changing action code
+
 ## Action Registration
 
 Actions are registered automatically when your application starts. The `register_actions()` function in `acb/actions/__init__.py` scans the actions directory and registers each action module.
@@ -238,14 +334,33 @@ You don't need to manually register actions — simply create your action module
 
 Here are recommended best practices for creating and using actions:
 
+### Design Principles
+
 1. **Keep Actions Focused**: Each action should do one thing well
-2. **Document Methods**: Include docstrings for all methods explaining parameters and return values
-3. **Provide Type Hints**: Use Python type hints to improve code clarity and editor support
-4. **Make Methods Static**: Action methods should typically be stateless and static
-5. **Handle Exceptions**: Properly handle and document potential exceptions
-6. **Consider Async**: Use async methods for I/O operations to maintain non-blocking behavior
-7. **Use Consistent Naming**: Follow naming conventions across all action modules
-8. **Add Validation**: Validate inputs to avoid unexpected behavior
+2. **Prefer Pure Functions**: Create stateless utility functions when possible
+3. **Follow Adapter-Agnostic Design**: Avoid direct adapter imports; use `depends.get()` for dynamic access
+4. **Use Protocol Interfaces**: Depend on protocol interfaces rather than concrete adapter implementations
+
+### Code Quality
+
+5. **Document Methods**: Include docstrings for all methods explaining parameters and return values
+6. **Provide Type Hints**: Use Python type hints to improve code clarity and editor support
+7. **Make Methods Static**: Action methods should typically be stateless and static
+8. **Handle Exceptions**: Properly handle and document potential exceptions
+
+### Performance and Architecture
+
+9. **Consider Async**: Use async methods for I/O operations to maintain non-blocking behavior
+10. **Use Consistent Naming**: Follow naming conventions across all action modules
+11. **Add Validation**: Validate inputs to avoid unexpected behavior
+12. **Graceful Degradation**: When adapters aren't available, provide meaningful fallbacks
+
+### Adapter Integration
+
+13. **Dynamic Adapter Access**: Use `depends.get("adapter_name")` instead of direct imports
+14. **Error Handling for Missing Adapters**: Handle cases where required adapters aren't registered
+15. **Protocol Compliance**: Ensure adapter dependencies follow established protocol interfaces
+16. **Minimize Adapter Dependencies**: Keep actions functional even when adapters are unavailable
 
 ## Related Resources
 
