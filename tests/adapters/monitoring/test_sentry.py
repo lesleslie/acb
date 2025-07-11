@@ -23,10 +23,10 @@ def mock_integrations() -> dict[str, MagicMock]:
     }
 
     integrations["GcpIntegration"].return_value = MagicMock(
-        name="GcpIntegration_instance"
+        name="GcpIntegration_instance",
     )
     integrations["AsyncioIntegration"].return_value = MagicMock(
-        name="AsyncioIntegration_instance"
+        name="AsyncioIntegration_instance",
     )
 
     return integrations
@@ -51,7 +51,8 @@ def patch_integrations(
 
 @pytest.fixture
 def monitoring_adapter(
-    mock_sentry_init: MagicMock, patch_integrations: None
+    mock_sentry_init: MagicMock,
+    patch_integrations: None,
 ) -> Monitoring:
     mock_config = MagicMock()
     mock_config.monitoring = MonitoringSettings(
@@ -97,7 +98,8 @@ async def test_init(
 
 @pytest.mark.asyncio
 async def test_init_production_environment(
-    monitoring_adapter: Monitoring, mock_sentry_init: MagicMock
+    monitoring_adapter: Monitoring,
+    mock_sentry_init: MagicMock,
 ) -> None:
     monitoring_adapter.config.deployed = True
 
@@ -118,7 +120,9 @@ class TestMonitoringSettings:
 
     def test_valid_sample_rates(self) -> None:
         settings = MonitoringSettings(
-            sample_rate=0.5, profiles_sample_rate=0.75, traces_sample_rate=0.25
+            sample_rate=0.5,
+            profiles_sample_rate=0.75,
+            traces_sample_rate=0.25,
         )
         assert settings.sample_rate == 0.5
         assert settings.profiles_sample_rate == 0.75

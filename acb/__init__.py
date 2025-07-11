@@ -8,13 +8,15 @@ import rich.repr
 from anyio import Path as AsyncPath
 from pydantic import BaseModel, ConfigDict
 from rich import box
-from rich.console import RenderableType
 from rich.padding import Padding
 from rich.table import Table
 
 from .actions import Action, action_registry, register_actions
 from .adapters import Adapter, _deployed, get_adapters, register_adapters
 from .console import console
+
+if t.TYPE_CHECKING:
+    from rich.console import RenderableType
 
 nest_asyncio.apply()
 
@@ -38,7 +40,8 @@ def register_pkg() -> None:
     if frame is not None and frame.f_back is not None:
         path = AsyncPath(frame.f_back.f_code.co_filename).parent
     else:
-        raise RuntimeError("Could not determine caller frame")
+        msg = "Could not determine caller frame"
+        raise RuntimeError(msg)
     name = path.stem
     if name not in [item[0] for item in _lazy_registration_queue]:
         _lazy_registration_queue.append((name, path))

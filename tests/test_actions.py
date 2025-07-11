@@ -1,10 +1,12 @@
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from acb.actions.compress import compress, decompress
 from acb.actions.encode import decode, encode
 from acb.actions.hash import hash
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 @pytest.mark.unit
@@ -96,11 +98,7 @@ class TestHashActions:
         ]
 
         for data in test_cases:
-            if isinstance(data, str):
-                result: str = await hash.blake3(data)
-                assert isinstance(result, str)
-                assert len(result) == 64
-            elif isinstance(data, bytes):
+            if isinstance(data, str | bytes):
                 result: str = await hash.blake3(data)
                 assert isinstance(result, str)
                 assert len(result) == 64

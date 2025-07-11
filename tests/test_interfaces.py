@@ -37,7 +37,8 @@ class StorageTestInterface:
 
     @pytest.mark.asyncio
     async def test_put_get_file_with_path(
-        self, storage: StorageAdapterProtocol
+        self,
+        storage: StorageAdapterProtocol,
     ) -> None:
         content = b"test content"
         await storage.put_file("subdir/test.txt", content)
@@ -201,10 +202,16 @@ class SQLAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
     async def execute(self, query: str, *args: Any, **kwargs: Any) -> bool: ...
     async def fetch_one(
-        self, query: str, *args: Any, **kwargs: Any
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> dict[str, Any] | None: ...
     async def fetch_all(
-        self, query: str, *args: Any, **kwargs: Any
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]: ...
     async def fetch_val(self, query: str, *args: Any, **kwargs: Any) -> Any: ...
     def transaction(self) -> t.AsyncContextManager[t.Any]: ...
@@ -254,10 +261,14 @@ class NoSQLAdapterProtocol(Protocol):
     async def delete(self, collection: str, id: str) -> bool: ...
     async def exists(self, collection: str, id: str) -> bool: ...
     async def find(
-        self, collection: str, query: dict[str, Any]
+        self,
+        collection: str,
+        query: dict[str, Any],
     ) -> list[dict[str, Any]]: ...
     async def query(
-        self, collection: str, query: dict[str, Any]
+        self,
+        collection: str,
+        query: dict[str, Any],
     ) -> list[dict[str, Any]]: ...
 
 
@@ -367,7 +378,11 @@ class RequestsTestInterface:
 class SMTPAdapterProtocol(Protocol):
     async def init(self) -> Any: ...
     async def send_email(
-        self, to: str | list[str], subject: str, body: Any, **kwargs: Any
+        self,
+        to: str | list[str],
+        subject: str,
+        body: Any,
+        **kwargs: Any,
     ) -> bool: ...
     async def send_template(
         self,
@@ -580,7 +595,10 @@ class MonitoringAdapterProtocol(Protocol):
     async def log_event(self, event_name: str, data: dict[str, Any]) -> bool: ...
     async def log_error(self, error_name: str, data: dict[str, Any]) -> bool: ...
     async def log_metric(
-        self, metric_name: str, value: float, tags: dict[str, str] | None = None
+        self,
+        metric_name: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> bool: ...
 
 
@@ -682,14 +700,20 @@ class MockSQL(SQLAdapterProtocol):
         return True
 
     async def fetch_one(
-        self, query: str, *args: Any, **kwargs: Any
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> dict[str, Any] | None:
         if "SELECT 1" in query:
             return {"value": 1}
         return None
 
     async def fetch_all(
-        self, query: str, *args: Any, **kwargs: Any
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]:
         if "UNION" in query:
             return [{"value": 1}, {"value": 2}]
@@ -746,7 +770,9 @@ class MockNoSQL(NoSQLAdapterProtocol):
         return key in self._data
 
     async def query(
-        self, collection: str, query: dict[str, Any]
+        self,
+        collection: str,
+        query: dict[str, Any],
     ) -> list[dict[str, Any]]:
         results: list[dict[str, Any]] = []
         for key, value in self._data.items():
@@ -761,7 +787,9 @@ class MockNoSQL(NoSQLAdapterProtocol):
         return results
 
     async def find(
-        self, collection: str, query: dict[str, Any]
+        self,
+        collection: str,
+        query: dict[str, Any],
     ) -> list[dict[str, Any]]:
         return await self.query(collection, query)
 
@@ -820,7 +848,11 @@ class MockSMTP(SMTPAdapterProtocol):
         return self
 
     async def send_email(
-        self, to: str | list[str], subject: str, body: Any, **kwargs: Any
+        self,
+        to: str | list[str],
+        subject: str,
+        body: Any,
+        **kwargs: Any,
     ) -> bool:
         self._emails.append({"to": to, "subject": subject, "body": body} | kwargs)
         return True
@@ -834,7 +866,7 @@ class MockSMTP(SMTPAdapterProtocol):
     ) -> bool:
         self._emails.append(
             {"to": to, "template_name": template_name, "template_data": template_data}
-            | kwargs
+            | kwargs,
         )
         return True
 
@@ -945,19 +977,26 @@ class MockMonitoring(MonitoringAdapterProtocol):
         return self
 
     async def log_event(
-        self, event_name: str, data: dict[str, Any] | None = None
+        self,
+        event_name: str,
+        data: dict[str, Any] | None = None,
     ) -> bool:
         self._events.append({"name": event_name, "data": data or {}})
         return True
 
     async def log_error(
-        self, error_name: str, data: dict[str, Any] | None = None
+        self,
+        error_name: str,
+        data: dict[str, Any] | None = None,
     ) -> bool:
         self._errors.append({"name": error_name, "data": data or {}})
         return True
 
     async def log_metric(
-        self, metric_name: str, value: float, tags: dict[str, str] | None = None
+        self,
+        metric_name: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> bool:
         self._metrics.append({"name": metric_name, "value": value, "tags": tags or {}})
         return True
@@ -1050,9 +1089,7 @@ class MockModels(ModelsAdapterProtocol):
         ]
 
         # Convert matching instances to dictionaries
-        results = [self._instance_to_dict(instance) for instance in matching_instances]
-
-        return results
+        return [self._instance_to_dict(instance) for instance in matching_instances]
 
 
 class MockModelInstance:
@@ -1089,9 +1126,7 @@ class MockCache(CacheAdapterProtocol):
 
     async def clear(self, namespace: str | None = None) -> bool:
         if namespace:
-            keys_to_delete = [
-                k for k in self._data.keys() if k.startswith(f"{namespace}:")
-            ]
+            keys_to_delete = [k for k in self._data if k.startswith(f"{namespace}:")]
             for key in keys_to_delete:
                 del self._data[key]
         else:

@@ -54,10 +54,12 @@ class Ftpd(FtpdBase):
         if hasattr(self.config.ftpd, "host"):
             server_kwargs["passive_host"] = self.config.ftpd.host
         if hasattr(self.config.ftpd, "passive_ports_min") and hasattr(
-            self.config.ftpd, "passive_ports_max"
+            self.config.ftpd,
+            "passive_ports_max",
         ):
             server_kwargs["passive_ports"] = range(
-                self.config.ftpd.passive_ports_min, self.config.ftpd.passive_ports_max
+                self.config.ftpd.passive_ports_min,
+                self.config.ftpd.passive_ports_max,
             )
         if hasattr(self.config.ftpd, "timeout"):
             server_kwargs["timeout"] = self.config.ftpd.timeout
@@ -68,11 +70,11 @@ class Ftpd(FtpdBase):
         try:
             await self.server.start()
             logger.info(
-                f"FTP server started on {self.config.ftpd.host}:{self.config.ftpd.port}"
+                f"FTP server started on {self.config.ftpd.host}:{self.config.ftpd.port}",
             )
         except Exception as exc:
             await self.server.close()
-            logger.error(f"Error starting FTP server: {exc}")
+            logger.exception(f"Error starting FTP server: {exc}")
             raise
 
     @depends.inject
@@ -81,7 +83,7 @@ class Ftpd(FtpdBase):
             await self.server.close()
             logger.info("FTP server stopped")
         except Exception as exc:
-            logger.error(f"Error stopping FTP server: {exc}")
+            logger.exception(f"Error stopping FTP server: {exc}")
             raise
 
     async def _ensure_client(self) -> Client:
@@ -89,7 +91,8 @@ class Ftpd(FtpdBase):
             self._client = Client()
             await self._client.connect(self.config.ftpd.host, self.config.ftpd.port)
             await self._client.login(
-                self.config.ftpd.username, self.config.ftpd.password.get_secret_value()
+                self.config.ftpd.username,
+                self.config.ftpd.password.get_secret_value(),
             )
         return self._client
 
@@ -120,14 +123,14 @@ class Ftpd(FtpdBase):
         result = []
         async for file_info in client.list(path):
             info = FileInfo(
-                name=t.cast(str, file_info[1].get("name")),
-                size=t.cast(int, file_info[1].get("size", 0)),
+                name=t.cast("str", file_info[1].get("name")),
+                size=t.cast("int", file_info[1].get("size", 0)),
                 is_dir=file_info[1].get("type") == "dir",
                 is_file=file_info[1].get("type") == "file",
-                permissions=t.cast(str, file_info[1].get("permissions", "")),
-                mtime=t.cast(float, file_info[1].get("modify", 0.0)),
-                owner=t.cast(str, file_info[1].get("owner", "")),
-                group=t.cast(str, file_info[1].get("group", "")),
+                permissions=t.cast("str", file_info[1].get("permissions", "")),
+                mtime=t.cast("float", file_info[1].get("modify", 0.0)),
+                owner=t.cast("str", file_info[1].get("owner", "")),
+                group=t.cast("str", file_info[1].get("group", "")),
             )
             result.append(info)
         return result

@@ -103,7 +103,9 @@ class TestCacheBaseSettings:
                 self.response_ttl = self.default_ttl if mock_config.deployed else 1
 
         settings: TestCacheBaseSettings = TestCacheBaseSettings(
-            default_ttl=3600, query_ttl=300, template_ttl=7200
+            default_ttl=3600,
+            query_ttl=300,
+            template_ttl=7200,
         )
 
         assert settings.default_ttl == 3600
@@ -146,7 +148,9 @@ class TestMemoryCache:
         cache.config = mock_config
 
         with patch.object(
-            SimpleMemoryCache, "__init__", return_value=None
+            SimpleMemoryCache,
+            "__init__",
+            return_value=None,
         ) as mock_init:
             # Init should not create the cache (lazy loading)
             await cache.init()

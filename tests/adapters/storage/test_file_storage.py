@@ -143,7 +143,8 @@ class TestFileStorage:
 
     @pytest.mark.asyncio
     async def test_client_property_with_root_dir(
-        self, storage_adapter: Storage
+        self,
+        storage_adapter: Storage,
     ) -> None:
         mock_dirfs = MockDirFileSystem()
         mock_wrapper = MockAsyncFileSystemWrapper()
@@ -160,7 +161,8 @@ class TestFileStorage:
 
     @pytest.mark.asyncio
     async def test_client_property_without_root_dir(
-        self, storage_adapter_no_root: Storage
+        self,
+        storage_adapter_no_root: Storage,
     ) -> None:
         mock_dirfs = MockDirFileSystem()
         mock_wrapper = MockAsyncFileSystemWrapper()
@@ -311,23 +313,27 @@ class TestFileStorage:
         full_path.parent.mkdir = AsyncMock()
         full_path.write_bytes = AsyncMock()
 
-        with patch.object(storage_adapter, "root_dir", new=root_dir):
-            with patch(
-                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
-            ) as mock_path_cls:
-                result = await storage_adapter.put_file(file_path, content)
+        with (
+            patch.object(storage_adapter, "root_dir", new=root_dir),
+            patch(
+                "acb.adapters.storage.file.AsyncPath",
+                return_value=mock_path,
+            ) as mock_path_cls,
+        ):
+            result = await storage_adapter.put_file(file_path, content)
 
-                mock_path_cls.assert_called_once_with(root_dir)
+            mock_path_cls.assert_called_once_with(root_dir)
 
-                mock_path.__truediv__.assert_called_once_with(file_path)
+            mock_path.__truediv__.assert_called_once_with(file_path)
 
-                full_path.parent.mkdir.assert_called_once_with(
-                    parents=True, exist_ok=True
-                )
+            full_path.parent.mkdir.assert_called_once_with(
+                parents=True,
+                exist_ok=True,
+            )
 
-                full_path.write_bytes.assert_called_once_with(content)
+            full_path.write_bytes.assert_called_once_with(content)
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_get_file_with_root_dir(self, storage_adapter: Storage) -> None:
@@ -341,21 +347,24 @@ class TestFileStorage:
         full_path.exists = AsyncMock(return_value=True)
         full_path.read_bytes = AsyncMock(return_value=expected_content)
 
-        with patch.object(storage_adapter, "root_dir", new=root_dir):
-            with patch(
-                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
-            ) as mock_path_cls:
-                result = await storage_adapter.get_file(file_path)
+        with (
+            patch.object(storage_adapter, "root_dir", new=root_dir),
+            patch(
+                "acb.adapters.storage.file.AsyncPath",
+                return_value=mock_path,
+            ) as mock_path_cls,
+        ):
+            result = await storage_adapter.get_file(file_path)
 
-                mock_path_cls.assert_called_once_with(root_dir)
+            mock_path_cls.assert_called_once_with(root_dir)
 
-                mock_path.__truediv__.assert_called_once_with(file_path)
+            mock_path.__truediv__.assert_called_once_with(file_path)
 
-                full_path.exists.assert_called_once()
+            full_path.exists.assert_called_once()
 
-                full_path.read_bytes.assert_called_once()
+            full_path.read_bytes.assert_called_once()
 
-                assert result == expected_content
+            assert result == expected_content
 
     @pytest.mark.asyncio
     async def test_delete_file_with_root_dir(self, storage_adapter: Storage) -> None:
@@ -368,21 +377,24 @@ class TestFileStorage:
         full_path.exists = AsyncMock(return_value=True)
         full_path.unlink = AsyncMock()
 
-        with patch.object(storage_adapter, "root_dir", new=root_dir):
-            with patch(
-                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
-            ) as mock_path_cls:
-                result = await storage_adapter.delete_file(file_path)
+        with (
+            patch.object(storage_adapter, "root_dir", new=root_dir),
+            patch(
+                "acb.adapters.storage.file.AsyncPath",
+                return_value=mock_path,
+            ) as mock_path_cls,
+        ):
+            result = await storage_adapter.delete_file(file_path)
 
-                mock_path_cls.assert_called_once_with(root_dir)
+            mock_path_cls.assert_called_once_with(root_dir)
 
-                mock_path.__truediv__.assert_called_once_with(file_path)
+            mock_path.__truediv__.assert_called_once_with(file_path)
 
-                full_path.exists.assert_called_once()
+            full_path.exists.assert_called_once()
 
-                full_path.unlink.assert_called_once()
+            full_path.unlink.assert_called_once()
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_file_exists_with_root_dir(self, storage_adapter: Storage) -> None:
@@ -419,7 +431,8 @@ class TestFileStorage:
 
     @pytest.mark.asyncio
     async def test_create_directory_with_root_dir(
-        self, storage_adapter: Storage
+        self,
+        storage_adapter: Storage,
     ) -> None:
         root_dir = "/path/to/storage"
         dir_path = "test/path/directory"
@@ -429,23 +442,27 @@ class TestFileStorage:
         mock_path.__truediv__.return_value = full_path
         full_path.mkdir = AsyncMock()
 
-        with patch.object(storage_adapter, "root_dir", new=root_dir):
-            with patch(
-                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
-            ) as mock_path_cls:
-                result = await storage_adapter.create_directory(dir_path)
+        with (
+            patch.object(storage_adapter, "root_dir", new=root_dir),
+            patch(
+                "acb.adapters.storage.file.AsyncPath",
+                return_value=mock_path,
+            ) as mock_path_cls,
+        ):
+            result = await storage_adapter.create_directory(dir_path)
 
-                mock_path_cls.assert_called_once_with(root_dir)
+            mock_path_cls.assert_called_once_with(root_dir)
 
-                mock_path.__truediv__.assert_called_once_with(dir_path)
+            mock_path.__truediv__.assert_called_once_with(dir_path)
 
-                full_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
+            full_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_directory_exists_with_root_dir(
-        self, storage_adapter: Storage
+        self,
+        storage_adapter: Storage,
     ) -> None:
         root_dir = "/path/to/storage"
         dir_path = "test/path/directory"
@@ -456,20 +473,23 @@ class TestFileStorage:
         full_path.exists = AsyncMock(return_value=True)
         full_path.is_dir = AsyncMock(return_value=True)
 
-        with patch.object(storage_adapter, "root_dir", new=root_dir):
-            with patch(
-                "acb.adapters.storage.file.AsyncPath", return_value=mock_path
-            ) as mock_path_cls:
-                result = await storage_adapter.directory_exists(dir_path)
+        with (
+            patch.object(storage_adapter, "root_dir", new=root_dir),
+            patch(
+                "acb.adapters.storage.file.AsyncPath",
+                return_value=mock_path,
+            ) as mock_path_cls,
+        ):
+            result = await storage_adapter.directory_exists(dir_path)
 
-                mock_path_cls.assert_called_once_with(root_dir)
+            mock_path_cls.assert_called_once_with(root_dir)
 
-                mock_path.__truediv__.assert_called_once_with(dir_path)
+            mock_path.__truediv__.assert_called_once_with(dir_path)
 
-                full_path.exists.assert_called_once()
-                full_path.is_dir.assert_called_once()
+            full_path.exists.assert_called_once()
+            full_path.is_dir.assert_called_once()
 
-                assert result
+            assert result
 
     @pytest.mark.asyncio
     async def test_client_property_with_config_attribute_error(self) -> None:
@@ -515,7 +535,7 @@ class TestFileStorage:
 
         assert not result
 
-        mock_logger.error.assert_called_once()
+        mock_logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_directory_exception(self, storage_adapter: Storage) -> None:
@@ -541,12 +561,13 @@ class TestFileStorage:
         result = await test_adapter.create_directory("test/path/directory")
 
         test_adapter._test_client.mkdir.assert_called_once_with(
-            "test/path/directory", create_parents=True
+            "test/path/directory",
+            create_parents=True,
         )
 
         assert not result
 
-        mock_logger.error.assert_called_once()
+        mock_logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_directory_exists_exception(self, storage_adapter: Storage) -> None:
@@ -578,7 +599,7 @@ class TestFileStorage:
 
         assert not result
 
-        mock_logger.error.assert_called_once()
+        mock_logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_put_file_with_string_content(self, storage_adapter: Storage) -> None:
@@ -619,7 +640,7 @@ class TestFileStorage:
 
             assert not result
 
-            mock_logger.error.assert_called_once()
+            mock_logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_file_nonexistent(self, storage_adapter: Storage) -> None:
@@ -652,7 +673,7 @@ class TestFileStorage:
 
             assert result is None
 
-            mock_logger.error.assert_called_once()
+            mock_logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_file_nonexistent(self, storage_adapter: Storage) -> None:
@@ -685,11 +706,12 @@ class TestFileStorage:
 
             assert not result
 
-            mock_logger.error.assert_called_once()
+            mock_logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_put_file_with_string_content_and_path_mock(
-        self, storage_adapter: Storage
+        self,
+        storage_adapter: Storage,
     ) -> None:
         mock_file = MagicMock()
         mock_client = MagicMock()
@@ -744,7 +766,9 @@ class TestFileStorageBenchmarks:
         await benchmark_adapter.init()
 
         result = await benchmark(
-            benchmark_adapter.put_file, "test/small_file.txt", small_file_content
+            benchmark_adapter.put_file,
+            "test/small_file.txt",
+            small_file_content,
         )
         assert result is True
 
@@ -759,7 +783,9 @@ class TestFileStorageBenchmarks:
         await benchmark_adapter.init()
 
         result = await benchmark(
-            benchmark_adapter.put_file, "test/medium_file.txt", medium_file_content
+            benchmark_adapter.put_file,
+            "test/medium_file.txt",
+            medium_file_content,
         )
         assert result is True
 
@@ -774,7 +800,9 @@ class TestFileStorageBenchmarks:
         await benchmark_adapter.init()
 
         result = await benchmark(
-            benchmark_adapter.put_file, "test/large_file.txt", large_file_content
+            benchmark_adapter.put_file,
+            "test/large_file.txt",
+            large_file_content,
         )
         assert result is True
 
@@ -837,7 +865,9 @@ class TestFileStorageBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_directory_operations_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Storage
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Storage,
     ) -> None:
         await benchmark_adapter.init()
 
@@ -862,7 +892,8 @@ class TestFileStorageBenchmarks:
             results = []
             for i in range(50):
                 put_result = await benchmark_adapter.put_file(
-                    f"test/bulk_file_{i}.txt", small_file_content
+                    f"test/bulk_file_{i}.txt",
+                    small_file_content,
                 )
                 results.append(put_result)
 

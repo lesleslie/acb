@@ -27,7 +27,11 @@ class MockRedisClient:
         return await self._get(key)
 
     async def set(
-        self, key: str, value: bytes, ex: int | None = None, nx: bool = False
+        self,
+        key: str,
+        value: bytes,
+        ex: int | None = None,
+        nx: bool = False,
     ) -> bool:
         return await self._set(key, value, ex=ex, nx=nx)
 
@@ -62,7 +66,7 @@ class TestCacheSettings:
             assert settings.health_check_interval == 0
 
     @pytest.mark.skip(
-        reason="Host setting behavior in deployed mode needs further investigation"
+        reason="Host setting behavior in deployed mode needs further investigation",
     )
     def test_deployed_mode(self) -> None:
         mock_config = MagicMock()
@@ -178,7 +182,7 @@ async def test_init_standard_mode(redis_cache: Cache) -> None:
     assert isinstance(redis_cache._serializer, MagicMock)
     assert redis_cache.client is not None
 
-    logger_mock = cast(MagicMock, redis_cache.logger)
+    logger_mock = cast("MagicMock", redis_cache.logger)
     logger_mock.info.assert_not_called()
 
 
@@ -195,7 +199,7 @@ async def test_init_cluster_mode(redis_cluster_cache: Cache) -> None:
     # that would have been logged in the original code
     redis_cluster_cache.logger.info("RedisCluster mode enabled")
 
-    logger_mock = cast(MagicMock, redis_cluster_cache.logger)
+    logger_mock = cast("MagicMock", redis_cluster_cache.logger)
     logger_mock.info.assert_called_once_with("RedisCluster mode enabled")
 
 

@@ -127,14 +127,13 @@ class StorageBucket:
         _path = self.get_path(path)
         if self.config.storage.memory_fs:
             info = self.client.info(_path)
-            stat = dict(
-                name=info.get("name"),
-                size=info.get("size"),
-                type=info.get("type"),
-                mtime=self.client.modified(_path).timestamp(),
-                created=self.client.created(_path).timestamp(),
-            )
-            return stat
+            return {
+                "name": info.get("name"),
+                "size": info.get("size"),
+                "type": info.get("type"),
+                "mtime": self.client.modified(_path).timestamp(),
+                "created": self.client.created(_path).timestamp(),
+            }
         return await self.client._info(_path)
 
     async def list(self, dir_path: AsyncPath) -> t.Any:
@@ -146,9 +145,10 @@ class StorageBucket:
         return await self.client._exists(self.get_path(path))
 
     async def create_bucket(self, path: AsyncPath) -> t.Any:
-        create_args: dict[str, t.Any] = dict(
-            create_parents=True, enable_versioning=False
-        )
+        create_args: dict[str, t.Any] = {
+            "create_parents": True,
+            "enable_versioning": False,
+        }
         if self.name == "media":
             create_args["acl"] = "public-read"
             if self.config.storage.cors:
@@ -165,7 +165,7 @@ class StorageBucket:
             raise FileNotFoundError
         except Exception as e:
             debug(e)
-            raise e
+            raise
 
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
         stor_path = self.get_path(path)
@@ -176,7 +176,7 @@ class StorageBucket:
                 await self.client._pipe_file(stor_path, data)
         except Exception as e:
             debug(e)
-            raise e
+            raise
 
     async def delete(self, path: AsyncPath) -> t.Any:
         stor_path = self.get_path(path)
@@ -213,7 +213,8 @@ class StorageBase(AdapterBase):
     @property
     def client(self) -> t.Any:
         if self._client is None:
-            raise RuntimeError("Client not initialized. Call get_client() first.")
+            msg = "Client not initialized. Call get_client() first."
+            raise RuntimeError(msg)
         return self._client
 
     async def init(self) -> None:
@@ -276,7 +277,12 @@ class StorageFile:
 
 class StorageImage(StorageFile):
     def __init__(
-        self, *, name: str, storage: StorageBucket, height: int, width: int
+        self,
+        *,
+        name: str,
+        storage: StorageBucket,
+        height: int,
+        width: int,
     ) -> None:
         super().__init__(name=name, storage=storage)
         self._width = width

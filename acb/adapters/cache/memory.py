@@ -55,7 +55,10 @@ class Cache(CacheBase):
         await cache.set(key, value, ttl=ttl)
 
     async def _get(
-        self, key: str, encoding: str = "utf-8", _conn: t.Any = None
+        self,
+        key: str,
+        encoding: str = "utf-8",
+        _conn: t.Any = None,
     ) -> t.Any:
         cache = await self.get_client()
         return await cache.get(key)
@@ -82,13 +85,20 @@ class Cache(CacheBase):
         await cache.multi_set(pairs, ttl=ttl)
 
     async def _multi_get(
-        self, keys: list[str], encoding: str = "utf-8", _conn: t.Any = None
+        self,
+        keys: list[str],
+        encoding: str = "utf-8",
+        _conn: t.Any = None,
     ) -> list[t.Any]:
         cache = await self.get_client()
         return await cache.multi_get(keys)
 
     async def _add(
-        self, key: str, value: t.Any, ttl: int | None = None, _conn: t.Any = None
+        self,
+        key: str,
+        value: t.Any,
+        ttl: int | None = None,
+        _conn: t.Any = None,
     ) -> bool:
         cache = await self.get_client()
         return await cache.add(key, value, ttl=ttl)

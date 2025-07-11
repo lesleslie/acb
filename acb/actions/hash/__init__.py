@@ -39,27 +39,26 @@ class Hash:
     @staticmethod
     async def _normalize_input(obj: t.Any) -> bytes:
         if obj is None:
-            raise TypeError("Cannot hash None value")
-        if isinstance(obj, Path | AsyncPath):
+            msg = "Cannot hash None value"
+            raise TypeError(msg)
+        if isinstance(obj, Path | AsyncPath) or (
+            isinstance(obj, str) and (os.path.sep in obj or obj.startswith("."))
+        ):
             path = AsyncPath(obj)
             if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
+                msg = f"File not found: {obj}"
+                raise FileNotFoundError(msg)
             return await path.read_bytes()
-        elif isinstance(obj, str) and (os.path.sep in obj or obj.startswith(".")):
-            path = AsyncPath(obj)
-            if not await path.exists():
-                raise FileNotFoundError(f"File not found: {obj}")
-            return await path.read_bytes()
-        elif isinstance(obj, dict):
+        if isinstance(obj, dict):
             return json.dumps(obj, sort_keys=True).encode()
-        elif isinstance(obj, list):
+        if isinstance(obj, list):
             return "".join([str(a) for a in obj]).encode()
-        elif isinstance(obj, str):
+        if isinstance(obj, str):
             return obj.encode()
-        elif isinstance(obj, bytes):
+        if isinstance(obj, bytes):
             return obj
-        else:
-            raise TypeError(f"Unsupported type for hashing: {type(obj)}")
+        msg = f"Unsupported type for hashing: {type(obj)}"
+        raise TypeError(msg)
 
     @staticmethod
     async def blake3(

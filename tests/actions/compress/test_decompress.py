@@ -73,7 +73,8 @@ def test_gzip_decompress_async_path(tmp_gzip_file: Path) -> None:
 
 def test_gzip_decompress_with_mock(tmp_gzip_file: Path) -> None:
     with patch(
-        "acb.actions.compress.Decompress.gzip", return_value=TEST_BYTES.decode()
+        "acb.actions.compress.Decompress.gzip",
+        return_value=TEST_BYTES.decode(),
     ):
         result: str = decompress.gzip(tmp_gzip_file.read_bytes())
         assert result == TEST_BYTES.decode()

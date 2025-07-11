@@ -27,5 +27,5 @@ class RichConsole(Console):
 
 
 console = RichConsole()
-if not os.getenv("DEPLOYED", "False").lower() == "true":
+if os.getenv("DEPLOYED", "False").lower() != "true":
     install(console=console)

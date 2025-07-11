@@ -20,29 +20,29 @@ class LoggerSettings(Settings):
     deployed_level: str = "WARNING"
     log_level: str | None = "INFO"
     serialize: bool | None = False
-    format: dict[str, str] | None = dict(
-        time="<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
-        level=" <level>{level:>8}</level>",
-        sep=" <b><w>in</w></b> ",
-        name="<b>{extra[mod_name]:>20}</b>",
-        line="<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
-        message="  <level>{message}</level>",
-    )
+    format: dict[str, str] | None = {
+        "time": "<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
+        "level": " <level>{level:>8}</level>",
+        "sep": " <b><w>in</w></b> ",
+        "name": "<b>{extra[mod_name]:>20}</b>",
+        "line": "<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
+        "message": "  <level>{message}</level>",
+    }
     level_per_module: dict[str, str | None] | None = {}
     level_colors: dict[str, str] | None = {}
     settings: dict[str, t.Any] | None = {}
 
     def __init__(self, **values: t.Any) -> None:
         super().__init__(**values)
-        self.settings = dict(
-            format="".join(self.format.values() if self.format else []),
-            enqueue=True,
-            backtrace=False,
-            catch=False,
-            serialize=self.serialize,
-            diagnose=False,
-            colorize=True,
-        )
+        self.settings = {
+            "format": "".join(self.format.values() if self.format else []),
+            "enqueue": True,
+            "backtrace": False,
+            "catch": False,
+            "serialize": self.serialize,
+            "diagnose": False,
+            "colorize": True,
+        }
 
 
 depends.get(Config).logger = LoggerSettings()
@@ -103,8 +103,8 @@ class Logger(_Logger, LoggerBase):
         self.remove()
         self.configure(
             patcher=lambda record: record["extra"].update(
-                mod_name=self._patch_name(record)
-            )
+                mod_name=self._patch_name(record),
+            ),
         )
         self.config.logger.log_level = (
             self.config.logger.deployed_level.upper()
@@ -134,8 +134,9 @@ class Logger(_Logger, LoggerBase):
         try:
             levelno_ = self.level(level_).no
         except ValueError:
+            msg = f"The filter dict contains a module '{name}' associated to a level  name which does not exist: '{level_}'"
             raise ValueError(
-                f"The filter dict contains a module '{name}' associated to a level  name which does not exist: '{level_}'"
+                msg,
             )
         if level_ is False:
             return False
@@ -145,7 +146,7 @@ class Logger(_Logger, LoggerBase):
         try:
             self.add(
                 self.async_sink,
-                filter=t.cast(t.Any, self._filter_by_module),
+                filter=t.cast("t.Any", self._filter_by_module),
                 **self.config.logger.settings,
             )
         except ValueError as e:
@@ -157,7 +158,7 @@ class Logger(_Logger, LoggerBase):
     def _add_sync_sink(self) -> None:
         self.add(
             lambda msg: print(msg, end=""),
-            filter=t.cast(t.Any, self._filter_by_module),
+            filter=t.cast("t.Any", self._filter_by_module),
             **{k: v for k, v in self.config.logger.settings.items() if k != "enqueue"},
         )
 
@@ -194,7 +195,8 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
         logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage()
+            level,
+            record.getMessage(),
         )
 
 

@@ -18,14 +18,16 @@ class Compress:
     ) -> bytes | None:
         if isinstance(content, Path):
             if not content.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = content.read_bytes()
         elif isinstance(content, str) and (
             os.path.sep in content or content.startswith(".")
         ):
             path = Path(content)
             if not path.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = path.read_bytes()
         elif isinstance(content, str):
             data = content.encode()
@@ -45,14 +47,16 @@ class Compress:
     def brotli(content: ContentType, level: int = 3) -> bytes:
         if isinstance(content, Path):
             if not content.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = content.read_bytes()
         elif isinstance(content, str) and (
             os.path.sep in content or content.startswith(".")
         ):
             path = Path(content)
             if not path.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = path.read_bytes()
         elif isinstance(content, str):
             data = content.encode()
@@ -69,14 +73,16 @@ class Decompress:
     def gzip(content: ContentType) -> str:
         if isinstance(content, Path):
             if not content.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = content.read_bytes()
         elif isinstance(content, str) and (
             os.path.sep in content or content.startswith(".")
         ):
             path = Path(content)
             if not path.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = path.read_bytes()
         elif isinstance(content, str):
             data = content.encode()
@@ -88,20 +94,23 @@ class Decompress:
                 decompressed = gz.read()
             return decompressed.decode()
         except BadGzipFile as e:
-            raise BadGzipFile(f"Not a gzipped file: {e}")
+            msg = f"Not a gzipped file: {e}"
+            raise BadGzipFile(msg)
 
     @staticmethod
     def brotli(content: ContentType) -> str:
         if isinstance(content, Path):
             if not content.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = content.read_bytes()
         elif isinstance(content, str) and (
             os.path.sep in content or content.startswith(".")
         ):
             path = Path(content)
             if not path.exists():
-                raise FileNotFoundError(f"File not found: {content}")
+                msg = f"File not found: {content}"
+                raise FileNotFoundError(msg)
             data = path.read_bytes()
         elif isinstance(content, str):
             data = content.encode()

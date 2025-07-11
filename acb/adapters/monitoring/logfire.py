@@ -37,7 +37,9 @@ class Monitoring(MonitoringBase):
                 case "redis":
                     instrument_redis()
                 case "sqlalchemy":
-                    sql = depends.get()
+                    from acb.adapters.sql._base import SqlBase
+
+                    sql: SqlBase = depends.get()
                     instrument_sqlalchemy(engine=sql.engine)
                 case _:
                     pass

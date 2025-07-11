@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 from acb.actions.compress import compress, decompress
@@ -48,11 +49,11 @@ class TestActionsDocumentedExamples:
         original = await decode.json(json_data)
         assert original == data
 
-    async def _encode_json_data(self, data):
+    async def _encode_json_data(self, data: dict[str, str | list[str]]) -> str:
         """Helper method to encode JSON data."""
         return await encode.json(data)
 
-    async def _encode_yaml_data(self, data):
+    async def _encode_yaml_data(self, data: dict[str, str | list[str]]) -> str:
         """Helper method to encode YAML data."""
         return await encode.yaml(data)
 
@@ -115,23 +116,27 @@ class TestActionsDetailedDocumentedExamples:
         assert toml_decoded == data
         assert pickle_decoded == data
 
-    async def _encode_json_detailed(self, data):
+    async def _encode_json_detailed(self, data: dict[str, Any]) -> bytes:
         """Helper method to encode JSON data."""
         return await encode.json(data)
 
-    async def _encode_yaml_detailed(self, data, sort_keys: bool = False):
+    async def _encode_yaml_detailed(
+        self,
+        data: dict[str, Any],
+        sort_keys: bool = False,
+    ) -> bytes:
         """Helper method to encode YAML data."""
         return await encode.yaml(data, sort_keys=sort_keys)
 
-    async def _encode_msgpack_detailed(self, data):
+    async def _encode_msgpack_detailed(self, data: dict[str, Any]) -> bytes:
         """Helper method to encode msgpack data."""
         return await encode.msgpack(data)
 
-    async def _encode_toml_detailed(self, data):
+    async def _encode_toml_detailed(self, data: dict[str, Any]) -> bytes:
         """Helper method to encode TOML data."""
         return await encode.toml(data)
 
-    async def _encode_pickle_detailed(self, data):
+    async def _encode_pickle_detailed(self, data: dict[str, Any]) -> bytes:
         """Helper method to encode pickle data."""
         return await encode.pickle(data)
 
@@ -269,7 +274,7 @@ class TestCustomActionDocumentedExample:
             def email(email: str) -> bool:
                 """Validate an email address."""
                 pattern = re.compile(
-                    r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                    r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
                 )
                 return bool(pattern.match(email))
 
@@ -277,7 +282,7 @@ class TestCustomActionDocumentedExample:
             def url(url: str) -> bool:
                 """Validate a URL."""
                 pattern = re.compile(
-                    r"^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$"
+                    r"^(http|https)://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$",
                 )
                 return bool(pattern.match(url))
 

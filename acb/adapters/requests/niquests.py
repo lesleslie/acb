@@ -29,7 +29,8 @@ class Requests(RequestsBase):
     @property
     def client(self) -> "niquests.AsyncSession":
         if self._client is None:
-            raise RuntimeError("Client not initialized. Call get_client() first.")
+            msg = "Client not initialized. Call get_client() first."
+            raise RuntimeError(msg)
         return self._client
 
     async def get(
@@ -42,7 +43,11 @@ class Requests(RequestsBase):
     ) -> t.Any:
         client = await self.get_client()
         response = await client.get(
-            url, timeout=timeout, params=params, headers=headers, cookies=cookies
+            url,
+            timeout=timeout,
+            params=params,
+            headers=headers,
+            cookies=cookies,
         )
         response.raise_for_status()
         return response
@@ -111,7 +116,11 @@ class Requests(RequestsBase):
     ) -> t.Any:
         client = await self.get_client()
         response = await client.request(
-            method, url, data=data, json=json, timeout=timeout
+            method,
+            url,
+            data=data,
+            json=json,
+            timeout=timeout,
         )
         response.raise_for_status()
         return response

@@ -86,7 +86,8 @@ def test_gzip_compression_level_comparison() -> None:
     result1 = compress.gzip(test_data, compresslevel=1)
     result9 = compress.gzip(test_data, compresslevel=9)
 
-    assert result1 is not None and result9 is not None
+    assert result1 is not None
+    assert result9 is not None
 
     assert gzip.decompress(result1).decode() == test_data
     assert gzip.decompress(result9).decode() == test_data

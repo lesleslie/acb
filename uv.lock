@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.17.0"
+version = "0.17.1"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -133,6 +133,7 @@ demo = [
 dev = [
     { name = "complexipy" },
     { name = "crackerjack" },
+    { name = "nest-asyncio" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-anyio" },
@@ -302,6 +303,7 @@ requires-dist = [
     { name = "motor", marker = "extra == 'nosql'", specifier = ">=3.7.1" },
     { name = "msgspec", extras = ["toml", "yaml"] },
     { name = "nest-asyncio", specifier = ">=1.6" },
+    { name = "nest-asyncio", marker = "extra == 'dev'", specifier = ">=1" },
     { name = "niquests", marker = "extra == 'requests'", specifier = ">=3.14.1" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.11.7" },

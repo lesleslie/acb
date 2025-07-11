@@ -20,7 +20,8 @@ class MonitoringSettings(MonitoringBaseSettings):
     @classmethod
     def check_sentry_sample_rates(cls, v: float) -> float:
         if v > 1 or v < 0:
-            raise ValueError("sample rate must be between 0 and 1")
+            msg = "sample rate must be between 0 and 1"
+            raise ValueError(msg)
         return v
 
     @depends.inject

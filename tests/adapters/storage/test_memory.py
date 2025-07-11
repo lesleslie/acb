@@ -28,7 +28,8 @@ def memory_fs() -> MockMemoryFileSystem:
 
 @pytest.fixture
 async def storage(
-    memory_fs: t.Any, storage_settings: t.Any
+    memory_fs: t.Any,
+    storage_settings: t.Any,
 ) -> t.AsyncGenerator[Storage]:
     with patch("acb.adapters.storage.memory.MemoryFileSystem", return_value=memory_fs):
         storage_instance = Storage(settings=storage_settings)
@@ -54,7 +55,7 @@ class TestMemoryStorage(StorageTestInterface):
 
             mock_super_init.assert_called_once()
 
-            memory_storage = t.cast(Storage, storage)
+            memory_storage = t.cast("Storage", storage)
             assert memory_storage._initialized
             assert hasattr(memory_storage, "_files")
             assert isinstance(memory_storage._files, dict)
@@ -93,7 +94,9 @@ class TestMemoryStorage(StorageTestInterface):
 
     @pytest.mark.asyncio
     async def test_lazy_initialization(
-        self, storage_settings: Settings, memory_fs: MockMemoryFileSystem
+        self,
+        storage_settings: Settings,
+        memory_fs: MockMemoryFileSystem,
     ) -> None:
         adapter = Storage()
         adapter.config = MagicMock()
@@ -103,7 +106,8 @@ class TestMemoryStorage(StorageTestInterface):
         assert not hasattr(adapter, "_fs") or adapter._fs is None
 
         with patch(
-            "acb.adapters.storage.memory.MemoryFileSystem", return_value=memory_fs
+            "acb.adapters.storage.memory.MemoryFileSystem",
+            return_value=memory_fs,
         ):
             await adapter.file_exists("test/path")
 

@@ -51,36 +51,38 @@ class Dns(DnsBase):
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             return [
                 DnsRecord(
-                    name="test.example.com.", type="A", ttl=300, rrdata=["192.0.2.1"]
-                )
+                    name="test.example.com.",
+                    type="A",
+                    ttl=300,
+                    rrdata=["192.0.2.1"],
+                ),
             ]
         records = self.zone.list_resource_record_sets()
-        records = [
+        return [
             DnsRecord.model_validate(
-                dict(
-                    name=record.name,
-                    type=record.record_type,
-                    ttl=record.ttl,
-                    rrdata=record.rrdatas,
-                )
+                {
+                    "name": record.name,
+                    "type": record.record_type,
+                    "ttl": record.ttl,
+                    "rrdata": record.rrdatas,
+                },
             )
             for record in records
         ]
-        return records
 
     async def wait_for_changes(self, changes: Changes) -> None:
         while changes.status != "done":
             await sleep(3)
             changes.reload()
 
-    async def apply_changes(self, changes: Changes):
+    async def apply_changes(self, changes: Changes) -> None:
         try:
             changes.create()
             await self.wait_for_changes(changes)
-        except (Conflict, BadRequest) as err:
+        except (Conflict, BadRequest):
             change = changes.additions[0] if changes.additions else None
             if change and change.name.split(".")[1] != self.config.app.project:
-                raise err
+                raise
             self.logger.info("Development domain detected - no changes made")
 
     async def delete_record_sets(self) -> None:
@@ -113,6 +115,7 @@ class Dns(DnsBase):
         ]
         if len(current_record) == 1:
             return current_record[0]
+        return None
 
     async def create_records(self, records: list[DnsRecord] | DnsRecord) -> None:
         records = [records] if isinstance(records, DnsRecord) else records

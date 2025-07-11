@@ -31,11 +31,11 @@ class MockGCSFileSystem(MagicMock):
         self.asynchronous = True
 
         self.exists = MagicMock(
-            side_effect=lambda path, **kwargs: self._exists(path, **kwargs)
+            side_effect=lambda path, **kwargs: self._exists(path, **kwargs),
         )
         self.ls = MagicMock(side_effect=lambda path, **kwargs: self._ls(path, **kwargs))
         self.info = MagicMock(
-            side_effect=lambda path, **kwargs: self._info(path, **kwargs)
+            side_effect=lambda path, **kwargs: self._info(path, **kwargs),
         )
 
 
@@ -134,7 +134,8 @@ class TestGCSStorage:
         mock_client = MockGCSClient()
 
         with patch(
-            "acb.adapters.storage.cloud_storage.Client", return_value=mock_client
+            "acb.adapters.storage.cloud_storage.Client",
+            return_value=mock_client,
         ) as mock_client_cls:
             mock_config = MagicMock()
             mock_config.app.project = "test-project"
@@ -155,7 +156,9 @@ class TestGCSStorage:
 
         with (
             patch.object(
-                storage_adapter, "get_client", new=AsyncMock(return_value=mock_client)
+                storage_adapter,
+                "get_client",
+                new=AsyncMock(return_value=mock_client),
             ) as mock_get_client,
             patch("acb.adapters.storage._base.StorageBucket") as mock_bucket_cls,
         ):
@@ -175,7 +178,9 @@ class TestGCSStorage:
 
     @pytest.mark.asyncio
     async def test_set_cors(
-        self, storage_adapter: Storage, mock_gcs_client: MockGCSClient
+        self,
+        storage_adapter: Storage,
+        mock_gcs_client: MockGCSClient,
     ) -> None:
         with patch.object(Storage, "get_client", return_value=mock_gcs_client):
             cors_config: dict[str, dict[str, list[str] | int]] = {
@@ -184,7 +189,7 @@ class TestGCSStorage:
                     "method": ["GET", "POST"],
                     "responseHeader": ["Content-Type"],
                     "maxAgeSeconds": 3600,
-                }
+                },
             }
 
             if (
@@ -207,13 +212,15 @@ class TestGCSStorage:
 
     @pytest.mark.asyncio
     async def test_remove_cors(
-        self, storage_adapter: Storage, mock_gcs_client: MockGCSClient
+        self,
+        storage_adapter: Storage,
+        mock_gcs_client: MockGCSClient,
     ) -> None:
         with patch.object(Storage, "get_client", return_value=mock_gcs_client):
             storage_adapter.remove_cors("test-bucket")
 
             mock_gcs_client.storage_client.get_bucket.assert_called_once_with(
-                "test-bucket"
+                "test-bucket",
             )
 
             bucket = mock_gcs_client.storage_client.get_bucket.return_value

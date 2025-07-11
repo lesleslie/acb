@@ -34,8 +34,8 @@ class MockSqlSession(MagicMock):
 
 class TestPgSqlSettings:
     def test_driver_settings(self) -> None:
-        assert getattr(SqlSettings._driver, "default") == "postgresql+psycopg2"
-        assert getattr(SqlSettings._async_driver, "default") == "postgresql+asyncpg"
+        assert SqlSettings._driver.default == "postgresql+psycopg2"
+        assert SqlSettings._async_driver.default == "postgresql+asyncpg"
 
 
 class TestPgSql:
@@ -96,7 +96,8 @@ class TestPgSql:
             patch("acb.adapters.sql._base.database_exists", mock_db_exists),
             patch("acb.adapters.sql._base.create_database", mock_create_db),
             patch(
-                "acb.adapters.sql._base.create_async_engine", return_value=mock_engine
+                "acb.adapters.sql._base.create_async_engine",
+                return_value=mock_engine,
             ) as mock_create_engine,
             patch("sqlalchemy.create_engine", return_value=MagicMock()),
         ):
@@ -125,7 +126,7 @@ class TestPgSql:
         # The get_session method is now decorated with @asynccontextmanager and @handle.connection_pool
         # which makes it more difficult to mock properly
         pytest.skip(
-            "This test needs to be rewritten to handle the asynccontextmanager properly"
+            "This test needs to be rewritten to handle the asynccontextmanager properly",
         )
 
     @pytest.mark.asyncio
@@ -134,7 +135,7 @@ class TestPgSql:
         # The get_conn method is now decorated with @asynccontextmanager and @handle.connection_pool
         # which makes it more difficult to mock properly
         pytest.skip(
-            "This test needs to be rewritten to handle the asynccontextmanager properly"
+            "This test needs to be rewritten to handle the asynccontextmanager properly",
         )
 
     @pytest.mark.asyncio
@@ -153,7 +154,7 @@ class TestPgSql:
         ):
             pgsql_adapter.config.sql.drop_on_startup = True
             if not hasattr(pgsql_adapter.config.debug, "sql"):
-                setattr(pgsql_adapter.config.debug, "sql", False)
+                pgsql_adapter.config.debug.sql = False
 
             await pgsql_adapter.init()
 

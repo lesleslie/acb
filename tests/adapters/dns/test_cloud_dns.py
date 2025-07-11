@@ -41,13 +41,13 @@ def cloud_dns(
     dns._client = mock_client
 
     dns.get_zone = AsyncMock(
-        return_value={"name": "example-com", "dnsName": "example.com."}
+        return_value={"name": "example-com", "dnsName": "example.com."},
     )  # type: ignore
     dns.create_zone = AsyncMock(
-        return_value={"name": "test-domain-zone", "dnsName": "example.com."}
+        return_value={"name": "test-domain-zone", "dnsName": "example.com."},
     )  # type: ignore
     dns._create_zone = AsyncMock(
-        return_value={"name": "test-domain-zone", "dnsName": "example.com."}
+        return_value={"name": "test-domain-zone", "dnsName": "example.com."},
     )  # type: ignore
     dns.list_records = AsyncMock(return_value=[])  # type: ignore
     dns._list_records = AsyncMock(return_value=[])  # type: ignore
@@ -122,7 +122,9 @@ class TestCloudDns:
             DnsRecord(name="www", type="A", ttl=300, rrdata=["192.168.1.1"]),
         ]
         with patch.object(
-            cloud_dns, "create_records", new_callable=AsyncMock
+            cloud_dns,
+            "create_records",
+            new_callable=AsyncMock,
         ) as mock_create:
             await mock_create(records)
             mock_create.assert_called_once_with(records)

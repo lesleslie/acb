@@ -54,15 +54,15 @@ class SqlBackupUtils(BaseModel):
                 yield name
 
     def valid(self, timestamp: int) -> bool:
-        if timestamp in self.get_timestamps():
-            return True
-        return False
+        return timestamp in self.get_timestamps()
 
     def get_path(
-        self, class_name: str = "", timestamp: t.Any = arrow.utcnow().timestamp
+        self,
+        class_name: str = "",
+        timestamp: t.Any = arrow.utcnow().timestamp,
     ) -> Path:
         self.backup_path = Path(
-            f"{self.config.app.name}-{int(timestamp)}-{class_name}.json"
+            f"{self.config.app.name}-{int(timestamp)}-{class_name}.json",
         )
         return self.backup_path
 
@@ -88,13 +88,15 @@ class SqlBackupDates(BaseModel):
         return 366 if isleap(last_day.year) else 365
 
     def filter_dates(
-        self, dates: list[t.Any], period: str = "week"
+        self,
+        dates: list[t.Any],
+        period: str = "week",
     ) -> t.Generator[t.Any, t.Any, t.Any]:
         reference = self.today.int_timestamp
         method_mapping: dict[str, t.Any] = {
-            "week": lambda obj: getattr(obj, "isocalendar")()[1],
-            "month": lambda obj: getattr(obj, "month"),
-            "year": lambda obj: getattr(obj, "year"),
+            "week": lambda obj: obj.isocalendar()[1],
+            "month": lambda obj: obj.month,
+            "year": lambda obj: obj.year,
         }
         for dt in dates:
             comp_date = datetime.fromtimestamp(int(dt))
@@ -129,7 +131,7 @@ class SqlBackupDates(BaseModel):
                 self.filter_dates(backups_month),
                 self.filter_dates(backups_year, "month"),
                 self.filter_dates(backups_older, "year"),
-            )
+            ),
         )
         diff_as_list = [d for d in self.dates if d not in self.white_list]
         self.black_list.extend(sorted(diff_as_list, reverse=True))
@@ -174,11 +176,13 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
     async def save(self) -> None:
         data = await self.get_data()
         timestamp = arrow.utcnow().int_timestamp
-        for class_name in data.keys():
+        for class_name in data:
             path = self.get_path(class_name=class_name, timestamp=timestamp)
             self.logger.debug(f"Backing up - {path.name}")
             await self.backup(
-                class_name=class_name, data=data[class_name], timestamp=timestamp
+                class_name=class_name,
+                data=data[class_name],
+                timestamp=timestamp,
             )
 
     async def get_backups(self) -> list[int]:
@@ -218,7 +222,7 @@ class SqlBackup(SqlBackupDates, SqlBackupUtils):
                 model,
                 __base__=SQLModel,
                 __cls_kwargs__={"table": True},
-                **t.cast(dict[str, t.Any], load.json(contents)),
+                **t.cast("dict[str, t.Any]", load.json(contents)),
             )
             if loaded_model:
                 async with self.sql.session() as session:

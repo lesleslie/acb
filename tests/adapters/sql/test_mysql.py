@@ -35,8 +35,8 @@ class MockSqlSession(MagicMock):
 
 class TestMySqlSettings:
     def test_driver_settings(self) -> None:
-        assert getattr(SqlSettings._driver, "default") == "mysql+pymysql"
-        assert getattr(SqlSettings._async_driver, "default") == "mysql+aiomysql"
+        assert SqlSettings._driver.default == "mysql+pymysql"
+        assert SqlSettings._async_driver.default == "mysql+aiomysql"
 
 
 class TestMySql:
@@ -97,7 +97,8 @@ class TestMySql:
             patch("acb.adapters.sql._base.database_exists", mock_db_exists),
             patch("acb.adapters.sql._base.create_database", mock_create_db),
             patch(
-                "acb.adapters.sql._base.create_async_engine", return_value=mock_engine
+                "acb.adapters.sql._base.create_async_engine",
+                return_value=mock_engine,
             ) as mock_create_engine,
             patch("sqlalchemy.create_engine", return_value=MagicMock()),
         ):
@@ -126,7 +127,7 @@ class TestMySql:
         # The get_session method is now decorated with @asynccontextmanager and @handle.connection_pool
         # which makes it more difficult to mock properly
         pytest.skip(
-            "This test needs to be rewritten to handle the asynccontextmanager properly"
+            "This test needs to be rewritten to handle the asynccontextmanager properly",
         )
 
     @pytest.mark.asyncio
@@ -135,7 +136,7 @@ class TestMySql:
         # The get_conn method is now decorated with @asynccontextmanager and @handle.connection_pool
         # which makes it more difficult to mock properly
         pytest.skip(
-            "This test needs to be rewritten to handle the asynccontextmanager properly"
+            "This test needs to be rewritten to handle the asynccontextmanager properly",
         )
 
     @pytest.mark.asyncio
@@ -154,7 +155,7 @@ class TestMySql:
         ):
             mysql_adapter.config.sql.drop_on_startup = True
             if not hasattr(mysql_adapter.config.debug, "sql"):
-                setattr(mysql_adapter.config.debug, "sql", False)
+                mysql_adapter.config.debug.sql = False
 
             await mysql_adapter.init()
 
@@ -184,7 +185,9 @@ class TestMySqlBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_engine_property_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Sql,
     ) -> None:
         with (
             patch(
@@ -204,14 +207,17 @@ class TestMySqlBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_session_property_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Sql,
     ) -> None:
         mock_engine = MockSqlEngine()
 
         with (
             patch.object(benchmark_adapter, "engine", mock_engine),
             patch(
-                "acb.adapters.sql._base.AsyncSession", return_value=MockSqlSession()
+                "acb.adapters.sql._base.AsyncSession",
+                return_value=MockSqlSession(),
             ) as mock_session_cls,
         ):
 
@@ -226,31 +232,37 @@ class TestMySqlBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_get_session_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Sql,
     ) -> None:
         # Skip this test as it requires more complex mocking of the asynccontextmanager
         # The get_session method is now decorated with @asynccontextmanager and @handle.connection_pool
         # which makes it more difficult to mock properly
         pytest.skip(
-            "This test needs to be rewritten to handle the asynccontextmanager properly"
+            "This test needs to be rewritten to handle the asynccontextmanager properly",
         )
 
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_get_conn_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Sql,
     ) -> None:
         # Skip this test as it requires more complex mocking of the asynccontextmanager
         # The get_conn method is now decorated with @asynccontextmanager and @handle.connection_pool
         # which makes it more difficult to mock properly
         pytest.skip(
-            "This test needs to be rewritten to handle the asynccontextmanager properly"
+            "This test needs to be rewritten to handle the asynccontextmanager properly",
         )
 
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_init_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Sql,
     ) -> None:
         mock_conn = MagicMock()
         mock_conn.run_sync = AsyncMock()
@@ -266,7 +278,7 @@ class TestMySqlBenchmarks:
         ):
             benchmark_adapter.config.sql.drop_on_startup = True
             if not hasattr(benchmark_adapter.config.debug, "sql"):
-                setattr(benchmark_adapter.config.debug, "sql", False)
+                benchmark_adapter.config.debug.sql = False
 
             await benchmark(benchmark_adapter.init)
             assert mock_conn.run_sync.call_count == 2
@@ -303,7 +315,9 @@ class TestMySqlBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_transaction_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Sql
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Sql,
     ) -> None:
         mock_conn_ctx = MagicMock()
         mock_conn_ctx.__aenter__ = AsyncMock()
@@ -325,7 +339,7 @@ class TestMySqlBenchmarks:
 
                         await conn.execute(
                             text(
-                                "INSERT INTO test_table (id, name) VALUES (:id, :name)"
+                                "INSERT INTO test_table (id, name) VALUES (:id, :name)",
                             ),
                             {"id": i, "name": f"test_{i}"},
                         )

@@ -42,7 +42,7 @@ class Requests(RequestsBase):
         )
 
     async def _create_controller(self) -> Controller:
-        return Controller(key_generator=t.cast(t.Any, self.cache_key))
+        return Controller(key_generator=t.cast("t.Any", self.cache_key))
 
     async def get_storage(self) -> AsyncRedisStorage:
         if self._storage is None:
@@ -100,7 +100,11 @@ class Requests(RequestsBase):
     ) -> HttpxResponse:
         client = await self._get_cached_client()
         return await client.get(
-            url, timeout=timeout, params=params, headers=headers, cookies=cookies
+            url,
+            timeout=timeout,
+            params=params,
+            headers=headers,
+            cookies=cookies,
         )
 
     async def post(

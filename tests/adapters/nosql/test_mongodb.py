@@ -55,7 +55,7 @@ class TestMongoDBSettings:
 
         conn_str = settings.connection_string
         assert conn_str is not None
-        assert "mongodb://test_user:test_password@localhost:27017/test_db" == conn_str
+        assert conn_str == "mongodb://test_user:test_password@localhost:27017/test_db"
 
         settings = MongoDBSettings(
             host=SecretStr("localhost"),
@@ -70,7 +70,7 @@ class TestMongoDBSettings:
 
         conn_str = settings.connection_string
         assert conn_str is not None
-        assert "mongodb://localhost:27017/test_db" == conn_str
+        assert conn_str == "mongodb://localhost:27017/test_db"
 
 
 class TestMongoDB:
@@ -101,7 +101,6 @@ class TestMongoDB:
         async def mock_init() -> None:
             nosql.logger.info("Initializing MongoDB connection")
             nosql.logger.info("MongoDB connection initialized successfully")
-            return None
 
         nosql.init = mock_init
 
@@ -127,9 +126,10 @@ class TestMongoDB:
         async def mock_init_error() -> None:
             nosql.logger.info("Initializing MongoDB connection")
             nosql.logger.error(
-                "Failed to initialize MongoDB connection: Connection error"
+                "Failed to initialize MongoDB connection: Connection error",
             )
-            raise Exception("Connection error")
+            msg = "Connection error"
+            raise Exception(msg)
 
         nosql.init = mock_init_error
 
@@ -145,7 +145,9 @@ class TestMongoDB:
         original_find = nosql.find
 
         async def mock_find(
-            collection: str, filter: dict[str, Any], **kwargs: Any
+            collection: str,
+            filter: dict[str, Any],
+            **kwargs: Any,
         ) -> list[dict[str, Any]]:
             assert collection == "test_collection"
             assert filter == {"test": "test"}
@@ -163,7 +165,9 @@ class TestMongoDB:
         original_find_one = nosql.find_one
 
         async def mock_find_one(
-            collection: str, filter: dict[str, Any], **kwargs: Any
+            collection: str,
+            filter: dict[str, Any],
+            **kwargs: Any,
         ) -> dict[str, Any]:
             assert collection == "test_collection"
             assert filter == {"_id": "test_id"}
@@ -182,7 +186,9 @@ class TestMongoDB:
         original_find = nosql.find
 
         async def mock_find(
-            collection: str, filter: dict[str, Any], **kwargs: Any
+            collection: str,
+            filter: dict[str, Any],
+            **kwargs: Any,
         ) -> list[dict[str, Any]]:
             if collection == "test_collection" and filter == {"status": "active"}:
                 return [
@@ -206,7 +212,9 @@ class TestMongoDB:
         original_insert_one = nosql.insert_one
 
         async def mock_insert_one(
-            collection: str, document: dict[str, Any], **kwargs: Any
+            collection: str,
+            document: dict[str, Any],
+            **kwargs: Any,
         ) -> dict[str, Any]:
             assert collection == "test_collection"
             assert document == {"data": "test_data"}

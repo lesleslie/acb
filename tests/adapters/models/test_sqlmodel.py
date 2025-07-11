@@ -44,8 +44,7 @@ class TestModels:
 
     @pytest.fixture
     def models_settings(self) -> ModelsSettings:
-        settings = ModelsSettings()
-        return settings
+        return ModelsSettings()
 
     @pytest.fixture
     def models_instance(self, mock_config: MagicMock) -> "TestModels":
@@ -110,13 +109,15 @@ class TestModels:
             mock_is_dir.return_value = True
             mock_exists.return_value = False
 
-            with patch.object(
-                models_instance,
-                "_import_models_directory",
-                side_effect=FileNotFoundError("Directory not found"),
+            with (
+                patch.object(
+                    models_instance,
+                    "_import_models_directory",
+                    side_effect=FileNotFoundError("Directory not found"),
+                ),
+                pytest.raises(FileNotFoundError),
             ):
-                with pytest.raises(FileNotFoundError):
-                    await models_instance.import_models(path)
+                await models_instance.import_models(path)
 
     @pytest.mark.asyncio
     async def test_init(self) -> None:

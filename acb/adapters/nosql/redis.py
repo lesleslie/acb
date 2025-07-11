@@ -22,7 +22,8 @@ class NosqlSettings(NosqlBaseSettings):
     @classmethod
     def cache_db_not_zero(cls, v: int) -> int:
         if v < 3 and v != 0:
-            raise ValueError("must be > 3 (0-2 are reserved)")
+            msg = "must be > 3 (0-2 are reserved)"
+            raise ValueError(msg)
         return 0
 
     @depends.inject
@@ -54,19 +55,20 @@ class Nosql(NosqlBase):
     @cached_property
     def om_client(self) -> t.Any:
         return get_redis_connection(
-            url=self.config.nosql.connection_string, decode_responses=True
+            url=self.config.nosql.connection_string,
+            decode_responses=True,
         )
 
     async def init(self) -> None:
         self.logger.info(
-            f"Initializing Redis connection to {self.config.nosql.connection_string}"
+            f"Initializing Redis connection to {self.config.nosql.connection_string}",
         )
         try:
             await self.client.ping()
             self.logger.info("Redis connection initialized successfully")
             Migrator().run()
         except Exception as e:
-            self.logger.error(f"Failed to initialize Redis connection: {e}")
+            self.logger.exception(f"Failed to initialize Redis connection: {e}")
             raise
 
     def _get_key(self, collection: str, id: str | None = None) -> str:
@@ -76,7 +78,10 @@ class Nosql(NosqlBase):
         return f"{prefix}{collection}"
 
     async def find(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         results = []
         pattern = self._get_key(collection, "*")
@@ -108,7 +113,10 @@ class Nosql(NosqlBase):
         return True
 
     async def find_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         if "_id" in filter:
             key = self._get_key(collection, filter["_id"])
@@ -127,21 +135,28 @@ class Nosql(NosqlBase):
         return results[0] if results else None
 
     async def insert_one(
-        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        document: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         doc_id = document.get(
-            "_id", str(await self.client.incr(f"{collection}:id_counter"))
+            "_id",
+            str(await self.client.incr(f"{collection}:id_counter")),
         )
         if "_id" in document:
             document = document.copy()
             del document["_id"]
         key = self._get_key(collection, doc_id)
-        await self.client.hset(key, mapping=t.cast(dict[t.Any, t.Any], document))
+        await self.client.hset(key, mapping=t.cast("dict[t.Any, t.Any]", document))
         await self.client.sadd(self._get_key(collection), doc_id)
         return doc_id
 
     async def insert_many(
-        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        documents: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[t.Any]:
         ids = []
         for doc in documents:
@@ -163,10 +178,11 @@ class Nosql(NosqlBase):
         key = self._get_key(collection, doc_id)
         if "$set" in update:
             await self.client.hset(
-                key, mapping=t.cast(dict[t.Any, t.Any], update["$set"])
+                key,
+                mapping=t.cast("dict[t.Any, t.Any]", update["$set"]),
             )
         else:
-            await self.client.hset(key, mapping=t.cast(dict[t.Any, t.Any], update))
+            await self.client.hset(key, mapping=t.cast("dict[t.Any, t.Any]", update))
         return {"modified_count": 1}
 
     async def update_many(
@@ -183,15 +199,21 @@ class Nosql(NosqlBase):
             key = self._get_key(collection, doc_id)
             if "$set" in update:
                 await self.client.hset(
-                    key, mapping=t.cast(dict[t.Any, t.Any], update["$set"])
+                    key,
+                    mapping=t.cast("dict[t.Any, t.Any]", update["$set"]),
                 )
             else:
-                await self.client.hset(key, mapping=t.cast(dict[t.Any, t.Any], update))
+                await self.client.hset(
+                    key, mapping=t.cast("dict[t.Any, t.Any]", update)
+                )
             modified_count += 1
         return {"modified_count": modified_count}
 
     async def delete_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         doc = await self.find_one(collection, filter)
         if not doc:
@@ -203,7 +225,10 @@ class Nosql(NosqlBase):
         return {"deleted_count": 1}
 
     async def delete_many(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         docs = await self.find(collection, filter)
         deleted_count = 0
@@ -216,7 +241,10 @@ class Nosql(NosqlBase):
         return {"deleted_count": deleted_count}
 
     async def count(
-        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         if not filter:
             return await self.client.scard(self._get_key(collection))
@@ -224,7 +252,10 @@ class Nosql(NosqlBase):
         return len(docs)
 
     async def aggregate(
-        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        pipeline: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         docs = await self.find(collection, {})
         for stage in pipeline:
@@ -249,7 +280,7 @@ class Nosql(NosqlBase):
             yield None
             await pipeline.execute()
         except Exception as e:
-            self.logger.error(f"Transaction failed: {e}")
+            self.logger.exception(f"Transaction failed: {e}")
             with suppress(Exception):
                 await pipeline.discard()
             raise

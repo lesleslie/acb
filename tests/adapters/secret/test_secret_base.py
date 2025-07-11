@@ -45,8 +45,7 @@ class MockSecret(SecretBase):
             full_name = secret_path
 
         app_prefix = f"{self.config.app.name}_"
-        name = full_name.removeprefix(app_prefix)
-        return name
+        return full_name.removeprefix(app_prefix)
 
     async def get(self, name: str, version: str | None = None) -> str | None:
         version_str = version or "latest"
@@ -91,7 +90,8 @@ class MockSecret(SecretBase):
             f"{self.config.app.name}_{adapter}_" if adapter else self.config.app.name
         )
         request = ListSecretsRequest(
-            parent=f"projects/{self.project}", filter=filter_str
+            parent=f"projects/{self.project}",
+            filter=filter_str,
         )
         client_secrets = await self.client.list_secrets(request=request)
         result = []
@@ -144,7 +144,9 @@ class TestSecretManager:
 
     @pytest.mark.asyncio
     async def test_get(
-        self, secret_manager: MockSecret, mock_client: MagicMock
+        self,
+        secret_manager: MockSecret,
+        mock_client: MagicMock,
     ) -> None:
         mock_version = MagicMock()
         mock_version.payload.data = b"placeholder-value"
@@ -164,7 +166,9 @@ class TestSecretManager:
 
     @pytest.mark.asyncio
     async def test_create(
-        self, secret_manager: MockSecret, mock_client: MagicMock
+        self,
+        secret_manager: MockSecret,
+        mock_client: MagicMock,
     ) -> None:
         mock_secret = MagicMock()
         mock_secret.name = "projects/test-project/secrets/config_version"
@@ -177,7 +181,9 @@ class TestSecretManager:
 
     @pytest.mark.asyncio
     async def test_update(
-        self, secret_manager: MockSecret, mock_client: MagicMock
+        self,
+        secret_manager: MockSecret,
+        mock_client: MagicMock,
     ) -> None:
         mock_client.secret_path.return_value = (
             "projects/test-project/secrets/db_settings"
@@ -186,13 +192,16 @@ class TestSecretManager:
         await secret_manager.update("config_version", "updated-placeholder")
 
         mock_client.secret_path.assert_called_once_with(
-            "test-project", "config_version"
+            "test-project",
+            "config_version",
         )
         mock_client.add_secret_version.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete(
-        self, secret_manager: MockSecret, mock_client: MagicMock
+        self,
+        secret_manager: MockSecret,
+        mock_client: MagicMock,
     ) -> None:
         mock_client.secret_path.return_value = (
             "projects/test-project/secrets/config_version"
@@ -201,7 +210,8 @@ class TestSecretManager:
         await secret_manager.delete("config_version")
 
         mock_client.secret_path.assert_called_once_with(
-            "test-project", "config_version"
+            "test-project",
+            "config_version",
         )
         mock_client.delete_secret.assert_called_once()
         request_arg = mock_client.delete_secret.call_args[1]["request"]
@@ -210,7 +220,9 @@ class TestSecretManager:
 
     @pytest.mark.asyncio
     async def test_list(
-        self, secret_manager: MockSecret, mock_client: MagicMock
+        self,
+        secret_manager: MockSecret,
+        mock_client: MagicMock,
     ) -> None:
         mock_secret1 = MagicMock()
         mock_secret1.name = "projects/test-project/secrets/test_app_sql_username"

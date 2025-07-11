@@ -47,7 +47,8 @@ class TestColorizedStderrPrint:
                         return None
 
                     with patch(
-                        "acb.debug.asyncio.run", side_effect=mock_run_impl
+                        "acb.debug.asyncio.run",
+                        side_effect=mock_run_impl,
                     ) as mock_run:
                         colorized_stderr_print("Test message")
 
@@ -56,7 +57,8 @@ class TestColorizedStderrPrint:
                         mock_support.assert_called_once()
 
                         mock_aprint.assert_called_once_with(
-                            "Colored test message", use_stderr=True
+                            "Colored test message",
+                            use_stderr=True,
                         )
 
                         mock_run.assert_called_once()
@@ -69,16 +71,20 @@ class TestColorizedStderrPrint:
                 mock_support.return_value.__enter__ = MagicMock()
                 mock_support.return_value.__exit__ = MagicMock()
 
-                with patch(
-                    "acb.debug.asyncio.run", side_effect=Exception("Test exception")
+                with (
+                    patch(
+                        "acb.debug.asyncio.run",
+                        side_effect=Exception("Test exception"),
+                    ),
+                    patch("sys.stderr") as mock_stderr,
                 ):
-                    with patch("sys.stderr") as mock_stderr:
-                        with patch("builtins.print") as mock_print:
-                            colorized_stderr_print("Test message")
+                    with patch("builtins.print") as mock_print:
+                        colorized_stderr_print("Test message")
 
-                            mock_print.assert_called_once_with(
-                                "Colored test message", file=mock_stderr
-                            )
+                        mock_print.assert_called_once_with(
+                            "Colored test message",
+                            file=mock_stderr,
+                        )
 
     def test_colorized_stderr_print_with_no_color_support(self) -> None:
         with patch("acb.debug.colorize", side_effect=ImportError):
@@ -191,7 +197,9 @@ class TestInitDebugEnhancements:
 
                 # Verify that warnings.filterwarnings was called to suppress icecream warnings
                 mock_filter_warnings.assert_any_call(
-                    "ignore", category=RuntimeWarning, module="icecream"
+                    "ignore",
+                    category=RuntimeWarning,
+                    module="icecream",
                 )
 
     def test_init_debug_with_config_available(self) -> None:
@@ -322,11 +330,13 @@ class TestInitDebugEnhancements:
         with patch("acb.debug.colorize", return_value="colored message"):
             with patch("acb.debug.supportTerminalColorsInWindows"):
                 with patch(
-                    "acb.debug.asyncio.run", side_effect=Exception("Asyncio error")
+                    "acb.debug.asyncio.run",
+                    side_effect=Exception("Asyncio error"),
                 ):
                     with patch("builtins.print") as mock_print:
                         with patch("sys.stderr") as mock_stderr:
                             colorized_stderr_print("test message")
                             mock_print.assert_called_once_with(
-                                "colored message", file=mock_stderr
+                                "colored message",
+                                file=mock_stderr,
                             )

@@ -271,7 +271,8 @@ class TestEncode:
     async def test_pickle_encode_invalid(self) -> None:
         class InvalidClass:
             def __reduce__(self) -> tuple[str, tuple[()]]:
-                raise ValueError("Invalid class")
+                msg = "Invalid class"
+                raise ValueError(msg)
 
         with pytest.raises(ValueError):
             await encode.pickle(InvalidClass())
@@ -297,7 +298,7 @@ class TestEncode:
             await encode.msgpack(object())
 
     @pytest.mark.parametrize(
-        "data,expected_type",
+        ("data", "expected_type"),
         [
             (True, bool),
             (1, int),
@@ -310,7 +311,9 @@ class TestEncode:
     )
     @pytest.mark.asyncio
     async def test_json_encode_type_errors(
-        self, data: t.Any, expected_type: type
+        self,
+        data: t.Any,
+        expected_type: type,
     ) -> None:
         with patch.object(msgspec.json, "encode") as mock_encode:
             mock_encode.side_effect = TypeError("Failed to encode")
@@ -321,7 +324,7 @@ class TestEncode:
             assert "Failed to encode" in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "data,expected_type",
+        ("data", "expected_type"),
         [
             (True, bool),
             (1, int),
@@ -334,7 +337,9 @@ class TestEncode:
     )
     @pytest.mark.asyncio
     async def test_yaml_encode_type_errors(
-        self, data: t.Any, expected_type: type
+        self,
+        data: t.Any,
+        expected_type: type,
     ) -> None:
         with patch("msgspec.yaml.encode") as mock_encode:
             mock_encode.side_effect = TypeError("Failed to encode")
@@ -345,7 +350,7 @@ class TestEncode:
             assert "Failed to encode" in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "data,expected_type",
+        ("data", "expected_type"),
         [
             (True, bool),
             (1, int),
@@ -358,7 +363,9 @@ class TestEncode:
     )
     @pytest.mark.asyncio
     async def test_toml_encode_type_errors(
-        self, data: t.Any, expected_type: type
+        self,
+        data: t.Any,
+        expected_type: type,
     ) -> None:
         with patch("msgspec.toml.encode") as mock_encode:
             mock_encode.side_effect = TypeError("Failed to encode")
@@ -369,7 +376,7 @@ class TestEncode:
             assert "Failed to encode" in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "data,expected_type",
+        ("data", "expected_type"),
         [
             (True, bool),
             (1, int),
@@ -382,7 +389,9 @@ class TestEncode:
     )
     @pytest.mark.asyncio
     async def test_msgpack_encode_type_errors(
-        self, data: t.Any, expected_type: type
+        self,
+        data: t.Any,
+        expected_type: type,
     ) -> None:
         with patch("msgspec.msgpack.encode") as mock_encode:
             mock_encode.side_effect = TypeError("Failed to encode")
@@ -393,7 +402,7 @@ class TestEncode:
             assert "Failed to encode" in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "data,expected_type",
+        ("data", "expected_type"),
         [
             (True, bool),
             (1, int),
@@ -406,7 +415,9 @@ class TestEncode:
     )
     @pytest.mark.asyncio
     async def test_pickle_encode_type_errors(
-        self, data: t.Any, expected_type: type
+        self,
+        data: t.Any,
+        expected_type: type,
     ) -> None:
         with patch("acb.actions.encode.serializers.pickle.encode") as mock_dumps:
             mock_dumps.side_effect = TypeError("Failed to encode")

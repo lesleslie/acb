@@ -26,25 +26,37 @@ class NosqlBaseSettings(Settings):
 class NosqlProtocol(t.Protocol):
     @abstractmethod
     async def find(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         pass
 
     @abstractmethod
     async def find_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         pass
 
     @abstractmethod
     async def insert_one(
-        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        document: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         pass
 
     @abstractmethod
     async def insert_many(
-        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        documents: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[t.Any]:
         pass
 
@@ -70,25 +82,37 @@ class NosqlProtocol(t.Protocol):
 
     @abstractmethod
     async def delete_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         pass
 
     @abstractmethod
     async def delete_many(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         pass
 
     @abstractmethod
     async def count(
-        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         pass
 
     @abstractmethod
     async def aggregate(
-        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        pipeline: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         pass
 
@@ -99,12 +123,16 @@ class NosqlCollection:
         self.name: str = name
 
     async def find(
-        self, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         return await self.adapter.find(self.name, filter or {}, **kwargs)
 
     async def find_one(
-        self, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         return await self.adapter.find_one(self.name, filter or {}, **kwargs)
 
@@ -112,17 +140,25 @@ class NosqlCollection:
         return await self.adapter.insert_one(self.name, document, **kwargs)
 
     async def insert_many(
-        self, documents: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        documents: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[t.Any]:
         return await self.adapter.insert_many(self.name, documents, **kwargs)
 
     async def update_one(
-        self, filter: dict[str, t.Any], update: dict[str, t.Any], **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         return await self.adapter.update_one(self.name, filter, update, **kwargs)
 
     async def update_many(
-        self, filter: dict[str, t.Any], update: dict[str, t.Any], **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any],
+        update: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         return await self.adapter.update_many(self.name, filter, update, **kwargs)
 
@@ -133,12 +169,16 @@ class NosqlCollection:
         return await self.adapter.delete_many(self.name, filter, **kwargs)
 
     async def count(
-        self, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         return await self.adapter.count(self.name, filter, **kwargs)
 
     async def aggregate(
-        self, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        pipeline: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         return await self.adapter.aggregate(self.name, pipeline, **kwargs)
 
@@ -161,7 +201,8 @@ class NosqlBase(AdapterBase):
         return await self._ensure_resource("db", self._create_db)
 
     async def _create_db(self) -> t.Any:
-        raise NotImplementedError("Subclasses must implement _create_db()")
+        msg = "Subclasses must implement _create_db()"
+        raise NotImplementedError(msg)
 
     @abstractmethod
     async def init(self) -> None:
@@ -169,25 +210,37 @@ class NosqlBase(AdapterBase):
 
     @abstractmethod
     async def find(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         pass
 
     @abstractmethod
     async def find_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         pass
 
     @abstractmethod
     async def insert_one(
-        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        document: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         pass
 
     @abstractmethod
     async def insert_many(
-        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        documents: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[t.Any]:
         pass
 
@@ -213,25 +266,37 @@ class NosqlBase(AdapterBase):
 
     @abstractmethod
     async def delete_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         pass
 
     @abstractmethod
     async def delete_many(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         pass
 
     @abstractmethod
     async def count(
-        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         pass
 
     @abstractmethod
     async def aggregate(
-        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        pipeline: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         pass
 

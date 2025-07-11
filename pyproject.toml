@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.17.1"
+version = "0.18.0"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -74,6 +74,7 @@ optional-dependencies.demo = [
 optional-dependencies.dev = [
     "complexipy>=3.2",
     "crackerjack>=0.22.7",
+    "nest-asyncio>=1",
     "pre-commit>=4.2",
     "pytest>=8.4.1",
     "pytest-anyio>=0",
@@ -301,26 +302,26 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm-bump",
-    "pdm",
-    "pytest-mock",
-    "google-crc32c",
-    "pydantic-settings",
+    "pytest-benchmark",
     "google-api-python-client",
-    "tomli-w",
+    "inflection",
+    "pytest-mock",
+    "pre-commit",
+    "pdm",
     "pytest",
-    "autotyping",
-    "pytest-asyncio",
+    "tomli-w",
+    "pytest-xdist",
+    "pydantic-settings",
     "uv",
+    "pyyaml",
+    "google-crc32c",
+    "autotyping",
+    "pytest-cov",
+    "pyfiglet",
+    "pdm-bump",
     "keyring",
     "pytest-timeout",
-    "pyyaml",
-    "pyfiglet",
-    "pre-commit",
-    "pytest-benchmark",
-    "inflection",
-    "pytest-cov",
-    "pytest-xdist",
+    "pytest-asyncio",
 ]
 
 [tool.refurb]
@@ -332,17 +333,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
-    "B311",
-    "B403",
-    "B602",
-    "B106",
-    "B607",
-    "B704",
-    "B301",
     "B105",
-    "B404",
+    "B301",
+    "B704",
+    "B603",
+    "B607",
     "B101",
+    "B106",
+    "B602",
+    "B311",
+    "B404",
+    "B403",
 ]
 
 [tool.vulture]

@@ -207,8 +207,8 @@ async def test_adapter_cleanup(sftp_adapter: Ftpd) -> None:
     mock_sftp_client = MockSFTPClient()
     mock_ssh_client = MockSSHClient()
 
-    sftp_adapter._sftp_client = t.cast(t.Any, mock_sftp_client)
-    sftp_adapter._client = t.cast(t.Any, mock_ssh_client)
+    sftp_adapter._sftp_client = t.cast("t.Any", mock_sftp_client)
+    sftp_adapter._client = t.cast("t.Any", mock_ssh_client)
 
     async def safely_close_client(client: t.Any) -> None:
         """Safely close a client if it has a close method."""
@@ -218,7 +218,7 @@ async def test_adapter_cleanup(sftp_adapter: Ftpd) -> None:
         if not hasattr(client, "close"):
             return
 
-        close_method = getattr(client, "close")
+        close_method = client.close
         if not callable(close_method):
             return
 
@@ -241,7 +241,8 @@ async def test_adapter_cleanup(sftp_adapter: Ftpd) -> None:
 
 @pytest.mark.asyncio
 async def test_connect_context(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -255,20 +256,20 @@ async def test_connect_context(
             yield sftp_adapter
         finally:
             if client:
-                await t.cast(MockSFTPClient, client).close()
+                await t.cast("MockSFTPClient", client).close()
             if sftp_adapter._client:
                 sftp_adapter._client.close()
             sftp_adapter._sftp_client = None
             sftp_adapter._client = None
 
-    setattr(sftp_adapter, "connect", patched_connect)
+    sftp_adapter.connect = patched_connect
 
     try:
         async with sftp_adapter.connect() as adapter:
             assert adapter is sftp_adapter
             mock_ensure_client.assert_awaited_once()
     finally:
-        setattr(sftp_adapter, "connect", original_connect)
+        sftp_adapter.connect = original_connect
 
 
 @pytest.mark.asyncio
@@ -397,7 +398,9 @@ async def test_list_dir(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) ->
 
 @pytest.mark.asyncio
 async def test_put_file(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient, tmp_path: Path
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
+    tmp_path: Path,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -417,7 +420,9 @@ async def test_put_file(
 
 @pytest.mark.asyncio
 async def test_get_file(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient, tmp_path: Path
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
+    tmp_path: Path,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -436,7 +441,8 @@ async def test_get_file(
 
 @pytest.mark.asyncio
 async def test_delete_file(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -526,7 +532,8 @@ async def test_is_not_dir(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) 
 
 @pytest.mark.asyncio
 async def test_rmdir_non_recursive(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     path = "/test/dir"
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
@@ -542,7 +549,8 @@ async def test_rmdir_non_recursive(
 
 @pytest.mark.asyncio
 async def test_rmdir_recursive(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -581,7 +589,8 @@ async def test_rmdir_recursive(
 
 @pytest.mark.asyncio
 async def test_rmdir_recursive_with_nested_directories(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -593,7 +602,7 @@ async def test_rmdir_recursive_with_nested_directories(
     async def mock_listdir_side_effect(path: str) -> list[MockFileAttr]:
         if path == "/test/dir":
             return [file_attr1, file_attr2]
-        elif path == "/test/dir/subdir":
+        if path == "/test/dir/subdir":
             return [subdir_file]
         return []
 
@@ -648,7 +657,8 @@ async def test_stat(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) -> Non
 
 @pytest.mark.asyncio
 async def test_exists_true(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -669,7 +679,8 @@ async def test_exists_true(
 
 @pytest.mark.asyncio
 async def test_exists_false(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -746,7 +757,8 @@ async def test_start_service(sftp_adapter: Ftpd) -> None:
 
 @pytest.mark.asyncio
 async def test_handler_creation(
-    sftp_adapter: Ftpd, mock_server_connection: MockServerConnection
+    sftp_adapter: Ftpd,
+    mock_server_connection: MockServerConnection,
 ) -> None:
     handler_factory_options = [
         "_create_handler",
@@ -787,14 +799,15 @@ async def test_write_text(sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient) 
 
 @pytest.mark.asyncio
 async def test_start_server_with_listen(
-    sftp_adapter: Ftpd, mock_server_connection: MockServerConnection
+    sftp_adapter: Ftpd,
+    mock_server_connection: MockServerConnection,
 ) -> None:
     if not hasattr(sftp_adapter, "start_server"):
         pytest.skip("start_server method not found on Ftpd adapter")
         return
 
     start_server_method = t.cast(
-        t.Callable[[t.Any], t.Awaitable[None]],
+        "t.Callable[[t.Any], t.Awaitable[None]]",
         getattr(sftp_adapter, "start_server", None),
     )
 
@@ -811,15 +824,16 @@ async def test_start_server_with_listen(
 
 @pytest.mark.asyncio
 async def test_sftp_handler_factory(
-    sftp_adapter: Ftpd, mock_server_connection: MockServerConnection
+    sftp_adapter: Ftpd,
+    mock_server_connection: MockServerConnection,
 ) -> None:
     if not hasattr(sftp_adapter, "sftp_handler_factory"):
         pytest.skip("sftp_handler_factory method not found on Ftpd adapter")
         return
 
     handler_factory = t.cast(
-        t.Callable[[t.Any], t.Awaitable[t.Any] | t.Callable[[t.Any], t.Any]],
-        getattr(sftp_adapter, "sftp_handler_factory"),
+        "t.Callable[[t.Any], t.Awaitable[t.Any] | t.Callable[[t.Any], t.Any]]",
+        sftp_adapter.sftp_handler_factory,
     )
 
     with patch("acb.adapters.ftpd.sftp.asyncssh.SFTPServer") as mock_sftp_server:
@@ -831,7 +845,7 @@ async def test_sftp_handler_factory(
             result = await handler
         elif callable(handler):
             if inspect.iscoroutinefunction(handler) or inspect.isasyncgenfunction(
-                handler
+                handler,
             ):
                 result = await handler(conn)
             else:
@@ -845,7 +859,8 @@ async def test_sftp_handler_factory(
 
 @pytest.mark.asyncio
 async def test_stat_file_info(
-    sftp_adapter: Ftpd, mock_sftp_client: MockSFTPClient
+    sftp_adapter: Ftpd,
+    mock_sftp_client: MockSFTPClient,
 ) -> None:
     mock_ensure_client = AsyncMock(return_value=mock_sftp_client)
     sftp_adapter._ensure_client = mock_ensure_client
@@ -869,8 +884,8 @@ async def test_cleanup(sftp_adapter: Ftpd) -> None:
     mock_sftp_client = MockSFTPClient()
     mock_client = MockSSHClient()
 
-    sftp_adapter._sftp_client = t.cast(t.Any, mock_sftp_client)
-    sftp_adapter._client = t.cast(t.Any, mock_client)
+    sftp_adapter._sftp_client = t.cast("t.Any", mock_sftp_client)
+    sftp_adapter._client = t.cast("t.Any", mock_client)
 
     assert isinstance(sftp_adapter._sftp_client, MockSFTPClient)
     assert isinstance(sftp_adapter._client, MockSSHClient)

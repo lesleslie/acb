@@ -86,7 +86,8 @@ class TestStorageBase:
     @pytest.fixture
     def storage(self) -> MockStorage:
         storage: MockStorage = MockStorage(
-            bucket_name="test-bucket", region="us-west-1"
+            bucket_name="test-bucket",
+            region="us-west-1",
         )
         return storage
 

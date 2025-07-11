@@ -46,10 +46,12 @@ class SmtpSettings(SmtpBaseSettings):
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             self.client_id = values.get("client_id", "test-client-id")
             self.client_secret = values.get(
-                "client_secret", SecretStr("test-client-secret")
+                "client_secret",
+                SecretStr("test-client-secret"),
             )
             self.refresh_token = values.get(
-                "refresh_token", SecretStr("test-refresh-token")
+                "refresh_token",
+                SecretStr("test-refresh-token"),
             )
 
 
@@ -118,20 +120,24 @@ class Smtp(SmtpBase):
     async def get_dns_records(self, domain: str) -> list[DnsRecord]:
         records = []
         rrdata = self.config.smtp.mx_servers
-        record = DnsRecord.model_validate(dict(name=domain, type="MX", rrdata=rrdata))
+        record = DnsRecord.model_validate(
+            {"name": domain, "type": "MX", "rrdata": rrdata}
+        )
         records.append(record)
         spf_record = DnsRecord.model_validate(
-            dict(
-                name=domain, type="TXT", rrdata=["v=spf1 include:_spf.google.com ~all"]
-            )
+            {
+                "name": domain,
+                "type": "TXT",
+                "rrdata": ["v=spf1 include:_spf.google.com ~all"],
+            },
         )
         records.append(spf_record)
         dmarc_record = DnsRecord.model_validate(
-            dict(
-                name=f"_dmarc.{domain}",
-                type="TXT",
-                rrdata=[f"v=DMARC1; p=none; rua=mailto:postmaster@{domain}"],
-            )
+            {
+                "name": f"_dmarc.{domain}",
+                "type": "TXT",
+                "rrdata": [f"v=DMARC1; p=none; rua=mailto:postmaster@{domain}"],
+            },
         )
         records.append(dmarc_record)
         debug(records)
@@ -154,7 +160,7 @@ class Smtp(SmtpBase):
                 .execute()
             )
             forwards = result.get("forwardingAddresses", [])
-            routes = [
+            return [
                 {
                     "id": forward.get("forwardingEmail"),
                     "expression": f"match_recipient('{forward.get('forwardingEmail')}@{self.config.smtp.domain}')",
@@ -166,9 +172,8 @@ class Smtp(SmtpBase):
                 }
                 for forward in forwards
             ]
-            return routes
         except HttpError as error:
-            self.logger.error(f"Error listing Gmail forwarding addresses: {error}")
+            self.logger.exception(f"Error listing Gmail forwarding addresses: {error}")
             return []
 
     async def delete_route(self, route: dict[str, str]) -> HttpxResponse:
@@ -177,7 +182,8 @@ class Smtp(SmtpBase):
             email = route.get("id")
             if email:
                 service.users().settings().forwardingAddresses().delete(
-                    userId="me", forwardingEmail=email
+                    userId="me",
+                    forwardingEmail=email,
                 ).execute()
                 self.logger.info(f"Deleted forwarding address {email}")
 
@@ -190,20 +196,19 @@ class Smtp(SmtpBase):
                         return self._json
 
                 return DeleteRouteResponse()
-            else:
-                self.logger.error("No email found in route")
+            self.logger.error("No email found in route")
 
-                class DeleteRouteError(HttpxResponse):
-                    def __init__(self) -> None:
-                        super().__init__(400)
-                        self._json = {"message": "No email found in route"}
+            class DeleteRouteError(HttpxResponse):
+                def __init__(self) -> None:
+                    super().__init__(400)
+                    self._json = {"message": "No email found in route"}
 
-                    def json(self, **kwargs: t.Any) -> dict[str, str]:
-                        return self._json
+                def json(self, **kwargs: t.Any) -> dict[str, str]:
+                    return self._json
 
-                return DeleteRouteError()
+            return DeleteRouteError()
         except HttpError as error:
-            self.logger.error(f"Error deleting Gmail forwarding address: {error}")
+            self.logger.exception(f"Error deleting Gmail forwarding address: {error}")
 
             class DeleteRouteErrorResponse(HttpxResponse):
                 def __init__(self) -> None:
@@ -229,7 +234,7 @@ class Smtp(SmtpBase):
             deletes = routes
         else:
             deletes.extend(
-                [r for r in routes if self.get_name(r["expression"]) not in forwards]
+                [r for r in routes if self.get_name(r["expression"]) not in forwards],
             )
             for f in forwards:
                 fs = [r for r in routes if self.get_name(r["expression"]) == f]
@@ -238,7 +243,9 @@ class Smtp(SmtpBase):
             await self.delete_route(d)
 
     async def create_route(
-        self, domain_address: str, forwarding_addresses: list[str] | str
+        self,
+        domain_address: str,
+        forwarding_addresses: list[str] | str,
     ) -> dict[str, t.Any]:
         try:
             service = self._get_gmail_service()
@@ -248,13 +255,14 @@ class Smtp(SmtpBase):
             for forward_address in forwarding_addresses:
                 try:
                     service.users().settings().forwardingAddresses().create(
-                        userId="me", body={"forwardingEmail": forward_address}
+                        userId="me",
+                        body={"forwardingEmail": forward_address},
                     ).execute()
                     self.logger.info(f"Created forwarding address {forward_address}")
                 except HttpError as error:
                     if error.resp.status == 409:
                         self.logger.debug(
-                            f"Forwarding address {forward_address} already exists"
+                            f"Forwarding address {forward_address} already exists",
                         )
                     else:
                         raise
@@ -273,11 +281,11 @@ class Smtp(SmtpBase):
                 )
                 results.append(result)
                 self.logger.info(
-                    f"Created forwarding from {domain_address}@{self.config.smtp.domain} to {forward_address}"
+                    f"Created forwarding from {domain_address}@{self.config.smtp.domain} to {forward_address}",
                 )
             return {"message": "Forwarding created", "results": results}
         except HttpError as error:
-            self.logger.error(f"Error creating Gmail forwarding: {error}")
+            self.logger.exception(f"Error creating Gmail forwarding: {error}")
             return {"error": str(error)}
 
     async def create_routes(self) -> None:
@@ -285,7 +293,11 @@ class Smtp(SmtpBase):
             await self.create_route(name, forward)
 
     async def send_email(
-        self, to: str, subject: str, body: str, html: bool = False
+        self,
+        to: str,
+        subject: str,
+        body: str,
+        html: bool = False,
     ) -> dict[str, t.Any]:
         try:
             service = self._get_gmail_service()
@@ -309,7 +321,7 @@ class Smtp(SmtpBase):
             self.logger.info(f"Email sent to {to}, message ID: {result['id']}")
             return {"id": result["id"], "status": "sent"}
         except HttpError as error:
-            self.logger.error(f"Error sending email: {error}")
+            self.logger.exception(f"Error sending email: {error}")
             return {"error": str(error), "status": "failed"}
 
     async def init(self) -> None:

@@ -171,7 +171,8 @@ def mock_client() -> MockFtpClient:
 
 @pytest.fixture
 async def ftpd_adapter(
-    mock_client: MockFtpClient, mock_server: MockServer
+    mock_client: MockFtpClient,
+    mock_server: MockServer,
 ) -> t.AsyncGenerator[Ftpd]:
     with (
         patch("aioftp.Client", return_value=mock_client),
@@ -224,7 +225,7 @@ async def test_start_server(ftpd_adapter: Ftpd, mock_server: MockServer) -> None
         await ftpd_adapter.start(logger=mock_logger)
 
     mock_server._close.assert_called_once()
-    mock_logger.error.assert_called_once()
+    mock_logger.exception.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -242,7 +243,7 @@ async def test_stop_server(ftpd_adapter: Ftpd, mock_server: MockServer) -> None:
     with pytest.raises(Exception, match="Server stop error"):
         await ftpd_adapter.stop(logger=mock_logger)
 
-    mock_logger.error.assert_called_once()
+    mock_logger.exception.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -250,8 +251,8 @@ async def test_ensure_client(ftpd_adapter: Ftpd, mock_client: MockFtpClient) -> 
     ftpd_adapter._client = None
 
     async def mock_ensure_client() -> AioFtpClient:
-        ftpd_adapter._client = t.cast(AioFtpClient, mock_client)
-        return t.cast(AioFtpClient, mock_client)
+        ftpd_adapter._client = t.cast("AioFtpClient", mock_client)
+        return t.cast("AioFtpClient", mock_client)
 
     original_ensure_client = ftpd_adapter._ensure_client
 
@@ -312,7 +313,8 @@ async def test_mkdir(ftpd_adapter: Ftpd, mock_client: MockFtpClient) -> None:
 
 @pytest.mark.asyncio
 async def test_rmdir_non_recursive(
-    ftpd_adapter: Ftpd, mock_client: MockFtpClient
+    ftpd_adapter: Ftpd,
+    mock_client: MockFtpClient,
 ) -> None:
     path = "/remote/empty_dir"
 
@@ -352,11 +354,9 @@ async def test_rmdir_recursive(ftpd_adapter: Ftpd, mock_client: MockFtpClient) -
 
         async def mock_delete(path: str) -> None:
             call_tracker["delete"].append(path)
-            return None
 
         async def mock_rmdir_non_recursive(path: str) -> None:
             call_tracker["rmdir"].append(path)
-            return None
 
         ftpd_adapter.list_dir = mock_list_dir
         ftpd_adapter.delete = mock_delete

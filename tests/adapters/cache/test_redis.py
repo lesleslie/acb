@@ -42,7 +42,7 @@ class RedisCache:
     async def _mock_keys(self, pattern: str) -> list[str]:
         if pattern.endswith("*"):
             prefix = pattern[:-1]
-            return [k for k in self._data.keys() if k.startswith(prefix)]
+            return [k for k in self._data if k.startswith(prefix)]
         return []
 
     async def init(self) -> "RedisCache":
@@ -89,7 +89,9 @@ class RedisCache:
         return result
 
     async def multi_set(
-        self, mapping: dict[str, t.Any], ttl: int | None = None
+        self,
+        mapping: dict[str, t.Any],
+        ttl: int | None = None,
     ) -> bool:
         for key, value in mapping.items():
             full_key: str = f"{self._namespace}{key}"
@@ -124,7 +126,8 @@ async def test_multi_get(redis_cache: RedisCache) -> None:
 @pytest.mark.asyncio
 async def test_multi_set(redis_cache: RedisCache) -> None:
     result: bool = await redis_cache.multi_set(
-        {"key1": "value1", "key2": "value2"}, ttl=60
+        {"key1": "value1", "key2": "value2"},
+        ttl=60,
     )
 
     assert result

@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Never
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -93,7 +93,9 @@ class TestFirestore:
     def test_client_property(self, nosql: FirestoreNosql) -> None:
         mock_client = MagicMock(spec=firestore.Client)
         with patch.object(
-            type(nosql), "client", new_callable=PropertyMock
+            type(nosql),
+            "client",
+            new_callable=PropertyMock,
         ) as mock_prop:
             mock_prop.return_value = mock_client
             assert nosql.client is not None
@@ -127,9 +129,10 @@ class TestFirestore:
     async def test_init_error(self, nosql: FirestoreNosql) -> None:
         original_init = nosql.init
 
-        async def mock_init():
+        async def mock_init() -> Never:
             nosql.logger.info("Initializing Firestore connection")
-            raise Exception("Connection error")
+            msg = "Connection error"
+            raise Exception(msg)
 
         nosql.init = mock_init
 

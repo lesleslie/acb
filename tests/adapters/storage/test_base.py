@@ -44,7 +44,8 @@ def mock_app_settings() -> MagicMock:
 
 @pytest.fixture
 def mock_config(
-    mock_storage_settings: MagicMock, mock_app_settings: MagicMock
+    mock_storage_settings: MagicMock,
+    mock_app_settings: MagicMock,
 ) -> MagicMock:
     config: MagicMock = MagicMock(spec=Config)
     config.storage = mock_storage_settings
@@ -61,7 +62,11 @@ def mock_client() -> AsyncMock:
     client._rm_file = AsyncMock()
     client._exists = AsyncMock(return_value=True)
     client._info = AsyncMock(
-        return_value={"size": 100, "timeCreated": "2023-01-01", "updated": "2023-01-02"}
+        return_value={
+            "size": 100,
+            "timeCreated": "2023-01-01",
+            "updated": "2023-01-02",
+        },
     )
     client._ls = AsyncMock(return_value=["file1.txt", "file2.txt"])
     client._mkdir = AsyncMock()
@@ -74,7 +79,7 @@ def mock_client() -> AsyncMock:
 
     client.pipe_file = MagicMock()
     client.info = MagicMock(
-        return_value={"name": "test.txt", "size": 100, "type": "file"}
+        return_value={"name": "test.txt", "size": 100, "type": "file"},
     )
     client.modified = MagicMock()
     client.created = MagicMock()
@@ -114,7 +119,8 @@ def mock_storage() -> StorageBase:
 
 @pytest.fixture
 async def mock_storage_bucket(
-    mock_storage: StorageBase, mock_config: MagicMock
+    mock_storage: StorageBase,
+    mock_config: MagicMock,
 ) -> StorageBucket:
     mock_bucket = MagicMock(spec=StorageBucket)
 
@@ -126,7 +132,7 @@ async def mock_storage_bucket(
     mock_bucket._get_path = AsyncMock(return_value="test-bucket/test-path")
     mock_bucket._get_url = AsyncMock(return_value="https://test-bucket/test-path")
     mock_bucket._get_signed_url = AsyncMock(
-        return_value="https://test-bucket/test-path?signed=true"
+        return_value="https://test-bucket/test-path?signed=true",
     )
     mock_bucket._read = AsyncMock(return_value=b"test data")
     mock_bucket._read_text = AsyncMock(return_value="test data")
@@ -182,7 +188,8 @@ def mock_storage_base(mock_client: AsyncMock, mock_storage: StorageBase) -> Stor
 
 def raise_exception(condition: bool, exception: type[Exception]) -> None:
     if condition:
-        raise exception("Test exception")
+        msg = "Test exception"
+        raise exception(msg)
 
 
 class StorageBaseSettingsTest:
@@ -353,14 +360,16 @@ class StorageFileImpl(StorageFile):
 class StorageFileTest:
     def test_init(self, mock_storage_bucket: StorageBucket) -> None:
         file: StorageFileImpl = StorageFileImpl(
-            name="test.txt", storage=mock_storage_bucket
+            name="test.txt",
+            storage=mock_storage_bucket,
         )
         assert file.storage == mock_storage_bucket
         assert file.name == "test.txt"
 
     def test_name_property(self, mock_storage_bucket: StorageBucket) -> None:
         file: StorageFileImpl = StorageFileImpl(
-            name="test.txt", storage=mock_storage_bucket
+            name="test.txt",
+            storage=mock_storage_bucket,
         )
         assert file.name == "test.txt"
 
@@ -370,26 +379,33 @@ class StorageFileTest:
         mock_storage_bucket: StorageBucket,
     ) -> None:
         file: StorageFileImpl = StorageFileImpl(
-            name="test.txt", storage=mock_storage_bucket
+            name="test.txt",
+            storage=mock_storage_bucket,
         )
         assert file.path == "test.txt"
 
     @pytest.mark.asyncio
     async def test_size_property(
-        self, mock_storage_bucket: StorageBucket, mock_client: AsyncMock
+        self,
+        mock_storage_bucket: StorageBucket,
+        mock_client: AsyncMock,
     ) -> None:
         file: StorageFileImpl = StorageFileImpl(
-            name="test.txt", storage=mock_storage_bucket
+            name="test.txt",
+            storage=mock_storage_bucket,
         )
         size = file.size
         assert size == 1024
 
     @pytest.mark.asyncio
     async def test_open_method(
-        self, mock_storage_bucket: StorageBucket, mock_client: AsyncMock
+        self,
+        mock_storage_bucket: StorageBucket,
+        mock_client: AsyncMock,
     ) -> None:
         file: StorageFileImpl = StorageFileImpl(
-            name="test.txt", storage=mock_storage_bucket
+            name="test.txt",
+            storage=mock_storage_bucket,
         )
 
         class AsyncContextManager:
@@ -412,10 +428,13 @@ class StorageFileTest:
 
     @pytest.mark.asyncio
     async def test_write_method(
-        self, mock_storage_bucket: StorageBucket, mock_client: AsyncMock
+        self,
+        mock_storage_bucket: StorageBucket,
+        mock_client: AsyncMock,
     ) -> None:
         file: StorageFileImpl = StorageFileImpl(
-            name="test.txt", storage=mock_storage_bucket
+            name="test.txt",
+            storage=mock_storage_bucket,
         )
 
         test_content = BytesIO(b"test content")
@@ -432,7 +451,11 @@ class StorageFileTest:
 
 class StorageImageImpl(StorageImage):
     def __init__(
-        self, name: str, storage: StorageBucket, height: int, width: int
+        self,
+        name: str,
+        storage: StorageBucket,
+        height: int,
+        width: int,
     ) -> None:
         super().__init__(name=name, storage=storage, height=height, width=width)
         self._storage = storage
@@ -456,7 +479,10 @@ class StorageImageImpl(StorageImage):
 class StorageImageTest:
     def test_init(self, mock_storage_bucket: StorageBucket) -> None:
         image: StorageImageImpl = StorageImageImpl(
-            name="test.jpg", storage=mock_storage_bucket, height=100, width=200
+            name="test.jpg",
+            storage=mock_storage_bucket,
+            height=100,
+            width=200,
         )
         assert image.name == "test.jpg"
         assert image._storage == mock_storage_bucket
@@ -465,23 +491,34 @@ class StorageImageTest:
 
     def test_height_property(self, mock_storage_bucket: StorageBucket) -> None:
         image: StorageImageImpl = StorageImageImpl(
-            name="test.jpg", storage=mock_storage_bucket, height=100, width=200
+            name="test.jpg",
+            storage=mock_storage_bucket,
+            height=100,
+            width=200,
         )
         assert image.height == 100
 
     def test_width_property(self, mock_storage_bucket: StorageBucket) -> None:
         image: StorageImageImpl = StorageImageImpl(
-            name="test.jpg", storage=mock_storage_bucket, height=100, width=200
+            name="test.jpg",
+            storage=mock_storage_bucket,
+            height=100,
+            width=200,
         )
         assert image.width == 200
 
     @pytest.mark.asyncio
     async def test_size_property(
-        self, mock_storage_bucket: StorageBucket, mock_client: AsyncMock
+        self,
+        mock_storage_bucket: StorageBucket,
+        mock_client: AsyncMock,
     ) -> None:
         mock_client.stat.return_value = {"size": 123}
         image: StorageImageImpl = StorageImageImpl(
-            name="test.jpg", storage=mock_storage_bucket, height=100, width=200
+            name="test.jpg",
+            storage=mock_storage_bucket,
+            height=100,
+            width=200,
         )
         result = image.size
         assert result == (100, 200)

@@ -19,7 +19,7 @@ class Config:
         self.debug.production: bool = False
         self.debug.logger: bool = False
         self.root_path: AsyncPath = AsyncPath(
-            root_path or tempfile.mkdtemp(prefix="test_logger_root_")
+            root_path or tempfile.mkdtemp(prefix="test_logger_root_"),
         )
         self.logger: t.Any = None
 
@@ -127,10 +127,7 @@ class TestLogger:
 
     @pytest.mark.asyncio
     async def test_async_sink(self) -> None:
-        with patch("acb.logger.aprint") as mock_aprint:
-            mock_aprint_coro: AsyncMock = AsyncMock()
-            mock_aprint.return_value = mock_aprint_coro
-
+        with patch("acb.logger.aprint", new_callable=AsyncMock) as mock_aprint:
             await Logger.async_sink("Test message")
 
             mock_aprint.assert_called_once_with("Test message", end="")

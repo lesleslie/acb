@@ -32,11 +32,11 @@ class MockS3FileSystem(MagicMock):
         self.asynchronous = True
 
         self.exists = MagicMock(
-            side_effect=lambda path, **kwargs: self._exists(path, **kwargs)
+            side_effect=lambda path, **kwargs: self._exists(path, **kwargs),
         )
         self.ls = MagicMock(side_effect=lambda path, **kwargs: self._ls(path, **kwargs))
         self.info = MagicMock(
-            side_effect=lambda path, **kwargs: self._info(path, **kwargs)
+            side_effect=lambda path, **kwargs: self._info(path, **kwargs),
         )
 
 
@@ -95,7 +95,8 @@ class TestS3Storage:
     @pytest.fixture
     def storage_adapter(self, mock_config: MagicMock) -> t.Generator[Storage]:
         with patch(
-            "acb.adapters.storage.s3.S3FileSystem", return_value=MockS3FileSystem()
+            "acb.adapters.storage.s3.S3FileSystem",
+            return_value=MockS3FileSystem(),
         ):
             adapter = Storage()
             adapter.config = mock_config

@@ -74,8 +74,7 @@ class TestMonitoringBaseSettings:
 class TestMonitoringBase:
     @pytest.fixture
     def monitoring(self) -> MockMonitoring:
-        monitoring = MockMonitoring()
-        return monitoring
+        return MockMonitoring()
 
     @pytest.mark.asyncio
     async def test_log_error(self, monitoring: MockMonitoring) -> None:

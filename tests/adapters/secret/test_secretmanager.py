@@ -41,7 +41,7 @@ class TestSecretManager:
     def mock_client(self) -> MagicMock:
         client = MagicMock()
         client.secret_path = MagicMock(
-            return_value="projects/test-project/secrets/acb_test_secret"
+            return_value="projects/test-project/secrets/acb_test_secret",
         )
         client.access_secret_version = AsyncMock()
         client.create_secret = AsyncMock()
@@ -64,7 +64,10 @@ class TestSecretManager:
 
     @pytest.fixture
     def secret_manager(
-        self, mock_config: MagicMock, mock_logger: MagicMock, mock_client: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
+        mock_client: MagicMock,
     ) -> t.Generator[Secret]:
         adapter = Secret()
         adapter.config = mock_config
@@ -74,7 +77,9 @@ class TestSecretManager:
         adapter.parent = "projects/test-project"
 
         with patch.object(
-            Secret, "client", new_callable=PropertyMock
+            Secret,
+            "client",
+            new_callable=PropertyMock,
         ) as mock_client_prop:
             mock_client_prop.return_value = mock_client
             yield adapter
@@ -172,13 +177,19 @@ class TestSecretManager:
     async def test_set(self, secret_manager: Secret) -> None:
         with (
             patch.object(
-                secret_manager, "exists", new_callable=AsyncMock
+                secret_manager,
+                "exists",
+                new_callable=AsyncMock,
             ) as mock_exists,
             patch.object(
-                secret_manager, "update", new_callable=AsyncMock
+                secret_manager,
+                "update",
+                new_callable=AsyncMock,
             ) as mock_update,
             patch.object(
-                secret_manager, "create", new_callable=AsyncMock
+                secret_manager,
+                "create",
+                new_callable=AsyncMock,
             ) as mock_create,
         ):
             mock_exists.return_value = True
@@ -225,7 +236,9 @@ class TestSecretManager:
 
     @pytest.mark.asyncio
     async def test_list_versions(
-        self, secret_manager: Secret, mock_client: MagicMock
+        self,
+        secret_manager: Secret,
+        mock_client: MagicMock,
     ) -> None:
         name = "test_secret"
 

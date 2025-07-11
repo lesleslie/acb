@@ -10,14 +10,14 @@ from ._base import StorageBase, StorageBaseSettings
 
 
 class StorageSettings(StorageBaseSettings):
-    cors: dict[str, dict[str, list[str] | int]] | None = dict(
-        upload={
+    cors: dict[str, dict[str, list[str] | int]] | None = {
+        "upload": {
             "origin": ["*"],
             "method": ["*"],
             "responseHeader": ["*"],
             "maxAgeSeconds": 600,
-        }
-    )
+        },
+    }
 
 
 class Storage(StorageBase):

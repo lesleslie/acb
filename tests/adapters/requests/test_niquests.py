@@ -10,7 +10,10 @@ from acb.adapters.requests.niquests import Requests, RequestsSettings
 
 class MockNiquestsResponse:
     def __init__(
-        self, status_code: int = 200, data: t.Any = None, json_data: t.Any = None
+        self,
+        status_code: int = 200,
+        data: t.Any = None,
+        json_data: t.Any = None,
     ) -> None:
         self.status_code = status_code
         self._data = data
@@ -18,7 +21,8 @@ class MockNiquestsResponse:
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise Exception(f"HTTP Error: {self.status_code}")
+            msg = f"HTTP Error: {self.status_code}"
+            raise Exception(msg)
 
     async def data(self) -> t.Any:
         return self._data
@@ -73,7 +77,7 @@ def requests_adapter(mock_session: MockNiquestsAsyncSession) -> Requests:
     object.__setattr__(adapter, "_client", mock_session)
 
     adapter.__class__.client = property(
-        lambda self: object.__getattribute__(self, "_client")
+        lambda self: object.__getattribute__(self, "_client"),
     )
 
     mock_session.base_url = "https://api.example.com"
@@ -133,7 +137,7 @@ async def test_client_property(mock_session: MockNiquestsAsyncSession) -> None:
     adapter.config.requests.base_url = "https://api.example.com"
     object.__setattr__(adapter, "_client", mock_session)
     adapter.__class__.client = property(
-        lambda self: object.__getattribute__(self, "_client")
+        lambda self: object.__getattribute__(self, "_client"),
     )
 
     mock_session.base_url = adapter.config.requests.base_url
@@ -178,11 +182,16 @@ async def test_post(requests_adapter: Requests) -> None:
     requests_adapter.client.post.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.post(
-        url="/test", data={"key": "value"}, timeout=5
+        url="/test",
+        data={"key": "value"},
+        timeout=5,
     )
 
     requests_adapter.client.post.assert_called_once_with(  # type: ignore[attr-defined]
-        "/test", data={"key": "value"}, json=None, timeout=5
+        "/test",
+        data={"key": "value"},
+        json=None,
+        timeout=5,
     )
 
     assert response == mock_response
@@ -196,7 +205,10 @@ async def test_put(requests_adapter: Requests) -> None:
     response = await requests_adapter.put(url="/test", json={"key": "value"}, timeout=5)
 
     requests_adapter.client.put.assert_called_once_with(  # type: ignore[attr-defined]
-        "/test", data=None, json={"key": "value"}, timeout=5
+        "/test",
+        data=None,
+        json={"key": "value"},
+        timeout=5,
     )
 
     assert response == mock_response
@@ -220,11 +232,16 @@ async def test_patch(requests_adapter: Requests) -> None:
     requests_adapter.client.patch.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.patch(
-        url="/test", json={"key": "value"}, timeout=5
+        url="/test",
+        json={"key": "value"},
+        timeout=5,
     )
 
     requests_adapter.client.patch.assert_called_once_with(  # type: ignore[attr-defined]
-        "/test", timeout=5, data=None, json={"key": "value"}
+        "/test",
+        timeout=5,
+        data=None,
+        json={"key": "value"},
     )
 
     assert response == mock_response
@@ -260,11 +277,18 @@ async def test_request(requests_adapter: Requests) -> None:
     requests_adapter.client.request.return_value = mock_response  # type: ignore[attr-defined]
 
     response = await requests_adapter.request(
-        method="GET", url="/test", json={"key": "value"}, timeout=5
+        method="GET",
+        url="/test",
+        json={"key": "value"},
+        timeout=5,
     )
 
     requests_adapter.client.request.assert_called_once_with(  # type: ignore[attr-defined]
-        "GET", "/test", data=None, json={"key": "value"}, timeout=5
+        "GET",
+        "/test",
+        data=None,
+        json={"key": "value"},
+        timeout=5,
     )
 
     assert response == mock_response

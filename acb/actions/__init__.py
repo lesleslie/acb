@@ -30,7 +30,8 @@ class Actions:
     def __getattr__(self, item: str) -> Action:
         if item in self.__dict__:
             return self.__dict__[item]
-        raise ActionNotFound(f"Action {item} not found")
+        msg = f"Action {item} not found"
+        raise ActionNotFound(msg)
 
 
 actions = Actions()
@@ -58,7 +59,8 @@ async def register_actions(path: AsyncPath) -> list[Action]:
     _actions: list[Action] = []
     for action_name, path in found_actions.items():
         action_index = next(
-            (i for i, a in enumerate(registry) if a.name == action_name), None
+            (i for i, a in enumerate(registry) if a.name == action_name),
+            None,
         )
         if action_index is not None:
             registry.pop(action_index)

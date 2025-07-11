@@ -13,7 +13,10 @@ from acb.adapters.requests.httpx import Requests, RequestsSettings
 
 class MockResponse(Response):
     def __init__(
-        self, status_code: int = 200, content: bytes = b"", **kwargs: Any
+        self,
+        status_code: int = 200,
+        content: bytes = b"",
+        **kwargs: Any,
     ) -> None:
         super().__init__(status_code, content=content, **kwargs)
 
@@ -195,7 +198,9 @@ async def test_post_method(requests_adapter: Requests) -> None:
         requests_adapter._client_cache.clear()
 
         response = await requests_adapter.post(
-            "https://example.com", data={"key": "value"}, timeout=10
+            "https://example.com",
+            data={"key": "value"},
+            timeout=10,
         )
 
         mock_client_cls.assert_called_once()
@@ -215,7 +220,9 @@ async def test_put_method(requests_adapter: Requests) -> None:
         requests_adapter._client_cache.clear()
 
         response = await requests_adapter.put(
-            "https://example.com", data={"key": "value"}, timeout=10
+            "https://example.com",
+            data={"key": "value"},
+            timeout=10,
         )
 
         mock_client_cls.assert_called_once()
@@ -253,7 +260,9 @@ async def test_patch_method(requests_adapter: Requests) -> None:
         requests_adapter._client_cache.clear()
 
         response = await requests_adapter.patch(
-            "https://example.com", data={"key": "value"}, timeout=10
+            "https://example.com",
+            data={"key": "value"},
+            timeout=10,
         )
 
         mock_client_cls.assert_called_once()
@@ -309,7 +318,9 @@ async def test_request_method(requests_adapter: Requests) -> None:
         requests_adapter._client_cache.clear()
 
         response = await requests_adapter.request(
-            "GET", "https://example.com", timeout=10
+            "GET",
+            "https://example.com",
+            timeout=10,
         )
 
         mock_client_cls.assert_called_once()
@@ -377,7 +388,9 @@ class TestHttpxRequestsBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_get_request_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Requests
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Requests,
     ) -> None:
         async def get_request():
             return await benchmark_adapter.get("https://example.com", timeout=10)
@@ -395,7 +408,9 @@ class TestHttpxRequestsBenchmarks:
     ) -> None:
         async def post_request():
             return await benchmark_adapter.post(
-                "https://example.com", json=small_payload, timeout=10
+                "https://example.com",
+                json=small_payload,
+                timeout=10,
             )
 
         response = await benchmark(post_request)
@@ -411,7 +426,9 @@ class TestHttpxRequestsBenchmarks:
     ) -> None:
         async def post_request():
             return await benchmark_adapter.post(
-                "https://example.com", json=medium_payload, timeout=10
+                "https://example.com",
+                json=medium_payload,
+                timeout=10,
             )
 
         response = await benchmark(post_request)
@@ -427,7 +444,9 @@ class TestHttpxRequestsBenchmarks:
     ) -> None:
         async def post_request():
             return await benchmark_adapter.post(
-                "https://example.com", json=large_payload, timeout=10
+                "https://example.com",
+                json=large_payload,
+                timeout=10,
             )
 
         response = await benchmark(post_request)
@@ -436,13 +455,16 @@ class TestHttpxRequestsBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_multiple_requests_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Requests
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Requests,
     ) -> None:
         async def multiple_requests() -> list[Response]:
             responses: list[Response] = []
             for i in range(10):
                 response = await benchmark_adapter.get(
-                    f"https://example.com/endpoint_{i}", timeout=10
+                    f"https://example.com/endpoint_{i}",
+                    timeout=10,
                 )
                 responses.append(response)
             return responses
@@ -461,16 +483,22 @@ class TestHttpxRequestsBenchmarks:
     ) -> None:
         async def mixed_requests():
             get_response = await benchmark_adapter.get(
-                "https://example.com", timeout=10
+                "https://example.com",
+                timeout=10,
             )
             post_response = await benchmark_adapter.post(
-                "https://example.com", json=small_payload, timeout=10
+                "https://example.com",
+                json=small_payload,
+                timeout=10,
             )
             put_response = await benchmark_adapter.put(
-                "https://example.com", json=small_payload, timeout=10
+                "https://example.com",
+                json=small_payload,
+                timeout=10,
             )
             delete_response = await benchmark_adapter.delete(
-                "https://example.com", timeout=10
+                "https://example.com",
+                timeout=10,
             )
             return [get_response, post_response, put_response, delete_response]
 

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, Never
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -20,8 +20,9 @@ class TestAdapterImport:
                 assert adapter is not None
 
     def test_import_nonexistent_adapter(self) -> None:
-        def mock_import_adapter(*args: Any, **kwargs: Any):
-            raise ImportError("Adapter not found")
+        def mock_import_adapter(*args: Any, **kwargs: Any) -> Never:
+            msg = "Adapter not found"
+            raise ImportError(msg)
 
         with pytest.raises(ImportError):
             mock_import_adapter("nonexistent_adapter")
@@ -71,7 +72,7 @@ class TestMonitoringAdapter:
         monitoring.configure(mock_config.monitoring)
 
         mock_monitoring.return_value.configure.assert_called_once_with(
-            mock_config.monitoring
+            mock_config.monitoring,
         )
 
 

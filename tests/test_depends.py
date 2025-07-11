@@ -77,7 +77,9 @@ class TestDepends:
 
         @depends.inject
         def test_function(
-            arg1: str, arg2: str, service: SampleService = depends()
+            arg1: str,
+            arg2: str,
+            service: SampleService = depends(),
         ) -> str:
             return f"{arg1}_{arg2}_{service.name}"
 
@@ -92,7 +94,9 @@ class TestDepends:
 
         @depends.inject
         def test_function(
-            arg1: str, arg2: str | None = None, service: SampleService = depends()
+            arg1: str,
+            arg2: str | None = None,
+            service: SampleService = depends(),
         ) -> str:
             return f"{arg1}_{arg2}_{service.name}"
 
@@ -115,7 +119,8 @@ class TestDepends:
 
         @depends.inject
         def test_function(
-            service1: SampleService = depends(), service2: AnotherService = depends()
+            service1: SampleService = depends(),
+            service2: AnotherService = depends(),
         ) -> str:
             return f"{service1.name}_{service2.name}"
 

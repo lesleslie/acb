@@ -64,7 +64,9 @@ class TestInfisical:
 
     @pytest.fixture
     def infisical_adapter(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> Secret:
         adapter = Secret()
         adapter.config = mock_config
@@ -81,7 +83,9 @@ class TestInfisical:
 
     @pytest.mark.asyncio
     async def test_list(
-        self, infisical_adapter: Secret, mock_infisical_client: MagicMock
+        self,
+        infisical_adapter: Secret,
+        mock_infisical_client: MagicMock,
     ) -> None:
         infisical_adapter._client = mock_infisical_client
 
@@ -114,7 +118,9 @@ class TestInfisical:
 
     @pytest.mark.asyncio
     async def test_get(
-        self, infisical_adapter: Secret, mock_infisical_client: MagicMock
+        self,
+        infisical_adapter: Secret,
+        mock_infisical_client: MagicMock,
     ) -> None:
         infisical_adapter._client = mock_infisical_client
 
@@ -146,7 +152,9 @@ class TestInfisical:
 
     @pytest.mark.asyncio
     async def test_create(
-        self, infisical_adapter: Secret, mock_infisical_client: MagicMock
+        self,
+        infisical_adapter: Secret,
+        mock_infisical_client: MagicMock,
     ) -> None:
         infisical_adapter._client = mock_infisical_client
 
@@ -170,7 +178,9 @@ class TestInfisical:
 
     @pytest.mark.asyncio
     async def test_update(
-        self, infisical_adapter: Secret, mock_infisical_client: MagicMock
+        self,
+        infisical_adapter: Secret,
+        mock_infisical_client: MagicMock,
     ) -> None:
         infisical_adapter._client = mock_infisical_client
 
@@ -196,7 +206,9 @@ class TestInfisical:
 
     @pytest.mark.asyncio
     async def test_delete(
-        self, infisical_adapter: Secret, mock_infisical_client: MagicMock
+        self,
+        infisical_adapter: Secret,
+        mock_infisical_client: MagicMock,
     ) -> None:
         infisical_adapter._client = mock_infisical_client
 
@@ -280,7 +292,7 @@ class TestInfisical:
 
                 mock_list.assert_called_once()
                 mock_logger.info.assert_called_once_with(
-                    "Infisical secret adapter initialized successfully"
+                    "Infisical secret adapter initialized successfully",
                 )
 
         mock_logger.reset_mock()
@@ -292,4 +304,4 @@ class TestInfisical:
                 with pytest.raises(Exception):
                     await infisical_adapter.init(logger=mock_logger)
 
-                mock_logger.error.assert_called_once()
+                mock_logger.exception.assert_called_once()

@@ -53,7 +53,7 @@ def _detect_library_usage() -> bool:
         return True
     if _testing or "pytest" in sys.modules:
         return False
-    return not Path.cwd().name == "acb" and "ACB_LIBRARY_MODE" not in os.environ
+    return Path.cwd().name != "acb" and "ACB_LIBRARY_MODE" not in os.environ
 
 
 def _is_pytest_test_context() -> bool:
@@ -67,7 +67,7 @@ def _is_pytest_test_context() -> bool:
         for frame_info in inspect.stack():
             filename = frame_info.filename
             if "acb/tests/" in filename or filename.endswith(
-                "/acb/tests/test_config.py"
+                "/acb/tests/test_config.py",
             ):
                 return True
     return False
@@ -110,8 +110,7 @@ async def get_version() -> str:
     pyproject_toml = root_path.parent / "pyproject.toml"
     if await pyproject_toml.exists():
         data = await load.toml(pyproject_toml)
-        version = data.get("project", {}).get("version", "0.1.0")
-        return version
+        return data.get("project", {}).get("version", "0.1.0")
     return "0.1.0"
 
 
@@ -130,7 +129,9 @@ class PydanticSettingsProtocol(t.Protocol):
     model_config: SettingsConfigDict
 
     def __init__(
-        self, settings_cls: type["Settings"], secrets_path: AsyncPath = ...
+        self,
+        settings_cls: type["Settings"],
+        secrets_path: AsyncPath = ...,
     ) -> None: ...
     def get_model_secrets(self) -> dict[str, FieldInfo]: ...
     async def __call__(self) -> dict[str, t.Any]: ...
@@ -143,20 +144,22 @@ class PydanticSettingsSource:
     model_config = SettingsConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
-        self, settings_cls: type["Settings"], secrets_path: AsyncPath | None = None
+        self,
+        settings_cls: type["Settings"],
+        secrets_path: AsyncPath | None = None,
     ) -> None:
         from acb.adapters import secrets_path as sp
 
         self.settings_cls = settings_cls
         self.adapter_name = underscore(
-            self.settings_cls.__name__.replace("Settings", "")
+            self.settings_cls.__name__.replace("Settings", ""),
         )
         self.secrets_path = secrets_path if secrets_path is not None else sp
         self.config = settings_cls.model_config
 
     def get_model_secrets(self) -> dict[str, FieldInfo]:
         return {
-            "_".join((self.adapter_name, n)): v
+            f"{self.adapter_name}_{n}": v
             for n, v in self.settings_cls.model_fields.items()
             if v.annotation is SecretStr
         }
@@ -170,7 +173,9 @@ class PydanticSettingsSource:
 
 class InitSettingsSource(PydanticSettingsSource):
     def __init__(
-        self, settings_cls: type["Settings"], init_kwargs: dict[str, t.Any]
+        self,
+        settings_cls: type["Settings"],
+        init_kwargs: dict[str, t.Any],
     ) -> None:
         self.init_kwargs = init_kwargs
         super().__init__(settings_cls=settings_cls)
@@ -192,8 +197,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
     @cached_property
     def secret_manager(self):
         try:
-            secret = depends.get()
-            return secret
+            return depends.get()
         except Exception:
             return None
 
@@ -234,19 +238,22 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         return None
 
     async def _get_manager_secret(
-        self, field_key: str, field_info: t.Any
+        self,
+        field_key: str,
+        field_info: t.Any,
     ) -> SecretStr | None:
         if not self.secret_manager:
             return None
 
-        stored_field_key = "_".join((app_name, field_key))
+        stored_field_key = f"{app_name}_{field_key}"
         secret_path = self.secrets_path / field_key
 
         try:
             manager_secrets = await self.secret_manager.list(self.adapter_name)
             if not await secret_path.exists() and field_key not in manager_secrets:
                 await self.secret_manager.create(
-                    stored_field_key, field_info.default.get_secret_value()
+                    stored_field_key,
+                    field_info.default.get_secret_value(),
                 )
 
             secret = await self.secret_manager.get(stored_field_key)
@@ -312,7 +319,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
 
     def _should_create_settings_file(self, dump_settings: dict[str, t.Any]) -> bool:
         return bool(dump_settings) and any(
-            value is not None and value != {} and value != []
+            value is not None and value not in ({}, [])
             for value in dump_settings.values()
         )
 
@@ -322,7 +329,8 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         return {}
 
     def _process_debug_settings(
-        self, yml_settings: dict[str, t.Any]
+        self,
+        yml_settings: dict[str, t.Any],
     ) -> dict[str, t.Any]:
         if self.adapter_name != "debug":
             return yml_settings
@@ -333,7 +341,9 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         return yml_settings
 
     async def _update_settings_file(
-        self, yml_path: AsyncPath, yml_settings: dict[str, t.Any]
+        self,
+        yml_path: AsyncPath,
+        yml_settings: dict[str, t.Any],
     ) -> None:
         if not self._should_update_settings_file(yml_settings):
             return
@@ -344,7 +354,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             not _deployed
             and bool(yml_settings)
             and any(
-                value is not None and value != {} and value != []
+                value is not None and value not in ({}, [])
                 for value in yml_settings.values()
             )
         )
@@ -383,23 +393,30 @@ class Settings(BaseModel):
     )
 
     def __init__(
-        self, _secrets_path: AsyncPath = secrets_path, **values: t.Any
+        self,
+        _secrets_path: AsyncPath = secrets_path,
+        **values: t.Any,
     ) -> None:
         build_settings_coro = self._settings_build_values(
-            values, _secrets_path=_secrets_path
+            values,
+            _secrets_path=_secrets_path,
         )
         build_settings = asyncio.run(build_settings_coro)
         super().__init__(**build_settings)
 
     async def _settings_build_values(
-        self, init_kwargs: dict[str, t.Any], _secrets_path: AsyncPath = secrets_path
+        self,
+        init_kwargs: dict[str, t.Any],
+        _secrets_path: AsyncPath = secrets_path,
     ) -> dict[str, t.Any]:
         unified_source = UnifiedSettingsSource(
-            self.__class__, init_kwargs=init_kwargs, secrets_path=_secrets_path
+            self.__class__,
+            init_kwargs=init_kwargs,
+            secrets_path=_secrets_path,
         )
         sources = self.settings_customize_sources(
             settings_cls=self.__class__,
-            unified_source=t.cast(PydanticSettingsProtocol, unified_source),
+            unified_source=t.cast("PydanticSettingsProtocol", unified_source),
         )
         return deep_update(*reversed([await source() for source in sources]))
 
@@ -445,9 +462,11 @@ class AppSettings(Settings):
             _name = _name.replace(p, "")
         app_name = _name.strip("-").lower()
         if len(app_name) < 3:
-            raise SystemExit("App name to short")
-        elif len(app_name) > 63:
-            raise SystemExit("App name to long")
+            msg = "App name to short"
+            raise SystemExit(msg)
+        if len(app_name) > 63:
+            msg = "App name to long"
+            raise SystemExit(msg)
         return app_name
 
 
@@ -520,8 +539,8 @@ class Config:
     def ensure_initialized(self) -> None:
         if not self._initialized:
             if _library_usage_mode:
-                self._debug = t.cast(DebugSettings, _LibraryDebugSettings())
-                self._app = t.cast(AppSettings, _LibraryAppSettings())
+                self._debug = t.cast("DebugSettings", _LibraryDebugSettings())
+                self._app = t.cast("AppSettings", _LibraryAppSettings())
                 self._initialized = True
             else:
                 self.init(force=True)
@@ -555,7 +574,8 @@ class Config:
                 adapter = get_adapter(item)
                 if adapter and hasattr(adapter, "settings"):
                     return adapter.settings
-        raise AttributeError(f"'Config' object has no attribute '{item}'")
+        msg = f"'Config' object has no attribute '{item}'"
+        raise AttributeError(msg)
 
 
 depends.set(Config, get_singleton_instance(Config))
@@ -609,10 +629,13 @@ class AdapterBase:
         return self._client
 
     async def _create_client(self) -> t.Any:
-        raise NotImplementedError("Subclasses must implement _create_client()")
+        msg = "Subclasses must implement _create_client()"
+        raise NotImplementedError(msg)
 
     async def _ensure_resource(
-        self, resource_name: str, factory_func: t.Callable[[], t.Awaitable[t.Any]]
+        self,
+        resource_name: str,
+        factory_func: t.Callable[[], t.Awaitable[t.Any]],
     ) -> t.Any:
         if resource_name not in self._resource_cache:
             lock = _ADAPTER_LOCKS[self]

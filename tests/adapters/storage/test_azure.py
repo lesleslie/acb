@@ -28,7 +28,7 @@ class MockAzureBlobFileSystem(MagicMock):
         self.open.return_value = mock_file
 
         self.url = MagicMock(
-            return_value="https://storageaccount.blob.core.windows.net/container/blob"
+            return_value="https://storageaccount.blob.core.windows.net/container/blob",
         )
         self.asynchronous = True
 
@@ -38,7 +38,7 @@ class MockStorageBucket(MagicMock):
         super().__init__(*args, **kwargs)
         self.create_bucket = AsyncMock()
         self.get_url = MagicMock(
-            return_value="https://storageaccount.blob.core.windows.net/container/blob"
+            return_value="https://storageaccount.blob.core.windows.net/container/blob",
         )
         self.stat = AsyncMock(return_value={"size": 100, "type": "file"})
         self.list = AsyncMock(return_value=["file1.txt", "file2.txt"])
@@ -54,7 +54,7 @@ class TestAzureBlobStorageSettings:
 
         settings = StorageSettings(
             connection_string=SecretStr(
-                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=testkey;EndpointSuffix=core.windows.net"
+                "DefaultEndpointsProtocol=https;AccountName=teststorage;AccountKey=testkey;EndpointSuffix=core.windows.net",
             ),
             prefix="test-prefix",
         )
@@ -105,14 +105,17 @@ class TestAzureBlobStorage:
     async def test_client_property(self, storage_adapter: Storage) -> None:
         mock_azure_fs = MockAzureBlobFileSystem()
 
-        with patch(
-            "acb.adapters.storage.azure.AzureBlobFileSystem", return_value=mock_azure_fs
+        with (
+            patch(
+                "acb.adapters.storage.azure.AzureBlobFileSystem",
+                return_value=mock_azure_fs,
+            ),
+            patch.object(Storage, "client", new_callable=lambda: mock_azure_fs),
         ):
-            with patch.object(Storage, "client", new_callable=lambda: mock_azure_fs):
-                client = storage_adapter.client
+            client = storage_adapter.client
 
-                assert client is not None
-                assert client == mock_azure_fs
+            assert client is not None
+            assert client == mock_azure_fs
 
     @pytest.mark.asyncio
     async def test_file_system_type(self) -> None:
@@ -125,7 +128,8 @@ class TestAzureBlobStorage:
 
         storage_adapter._client = mock_client
         with patch(
-            "acb.adapters.storage._base.StorageBucket", return_value=mock_bucket
+            "acb.adapters.storage._base.StorageBucket",
+            return_value=mock_bucket,
         ) as mock_bucket_cls:
             await storage_adapter.init()
 

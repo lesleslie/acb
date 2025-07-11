@@ -15,9 +15,8 @@ from anyio import Path as AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
 from pydantic import BaseModel, ConfigDict
-
-from ..actions.encode import yaml_encode
-from ..depends import depends
+from acb.actions.encode import yaml_encode
+from acb.depends import depends
 
 nest_asyncio.apply()
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
@@ -37,7 +36,8 @@ secrets_path: AsyncPath = (
 )
 _install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
 _adapter_import_locks: ContextVar[dict[str, asyncio.Lock]] = ContextVar(
-    "_adapter_import_locks", default={}
+    "_adapter_import_locks",
+    default={},
 )
 
 
@@ -94,10 +94,12 @@ class Adapter(BaseModel):
 
 adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
 _enabled_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
-    "_enabled_adapters_cache", default={}
+    "_enabled_adapters_cache",
+    default={},
 )
 _installed_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
-    "_installed_adapters_cache", default={}
+    "_installed_adapters_cache",
+    default={},
 )
 core_adapters = [
     Adapter(
@@ -165,7 +167,8 @@ def get_adapter_class(category: str, name: str) -> type[t.Any]:
         module = import_module(module_path)
         return getattr(module, class_name)
     except (ImportError, AttributeError) as e:
-        raise StaticImportError(f"Failed to import {module_path}: {e}")
+        msg = f"Failed to import {module_path}: {e}"
+        raise StaticImportError(msg)
 
 
 def try_import_adapter(category: str, name: str | None = None) -> type[t.Any] | None:
@@ -185,9 +188,12 @@ def import_adapter_fast(category: str, name: str | None = None) -> type[t.Any]:
     adapter_class = try_import_adapter(category, name)
     if adapter_class is None:
         available_adapters = list(_get_available_adapters(category))
-        raise ImportError(
+        msg = (
             f"Could not import {category} adapter '{name}'. "
             f"Available: {available_adapters}"
+        )
+        raise ImportError(
+            msg,
         )
     return adapter_class
 
@@ -208,15 +214,14 @@ async def _ensure_adapter_configuration() -> None:
     _adapter_config_loaded = True
     try:
         await _setup_adapter_configuration()
-    except Exception as e:
-        print(f"ACB: Setup failed: {e}")
+    except Exception:
         import traceback
 
         traceback.print_exc()
 
 
 def _should_skip_configuration() -> bool:
-    from ..config import _library_usage_mode
+    from acb.config import _library_usage_mode
 
     return _testing or "pytest" in sys.modules or _library_usage_mode
 
@@ -228,7 +233,8 @@ async def _setup_adapter_configuration() -> None:
     cwd_settings_path = cwd_path / "settings"
     cwd_adapter_settings_path = cwd_settings_path / "adapters.yml"
     await _create_adapter_settings_if_needed(
-        cwd_settings_path, cwd_adapter_settings_path
+        cwd_settings_path,
+        cwd_adapter_settings_path,
     )
     await _load_and_apply_adapter_settings(cwd_adapter_settings_path)
 
@@ -253,12 +259,13 @@ async def _should_skip_project_setup(cwd_path: AsyncPath) -> bool:
 
 
 async def _create_adapter_settings_if_needed(
-    cwd_settings_path: AsyncPath, cwd_adapter_settings_path: AsyncPath
+    cwd_settings_path: AsyncPath,
+    cwd_adapter_settings_path: AsyncPath,
 ) -> None:
     if _testing or "pytest" in sys.modules:
         return
 
-    from ..config import _library_usage_mode
+    from acb.config import _library_usage_mode
 
     if _library_usage_mode:
         return
@@ -270,7 +277,7 @@ async def _create_adapter_settings_if_needed(
             cat: None for cat in categories if cat not in ("logger", "config")
         }
         await cwd_adapter_settings_path.write_bytes(
-            yaml_encode(settings_dict, sort_keys=True)
+            yaml_encode(settings_dict, sort_keys=True),
         )
 
 
@@ -295,7 +302,7 @@ async def _load_enabled_adapters(
 
 
 async def _ensure_package_registration() -> None:
-    from .. import ensure_registration_async, pkg_registry
+    from acb import ensure_registration_async, pkg_registry
 
     await ensure_registration_async()
     for pkg in pkg_registry.get():
@@ -307,7 +314,7 @@ async def _ensure_package_registration() -> None:
 
 
 async def _collect_all_adapters() -> list[Adapter]:
-    from .. import pkg_registry
+    from acb import pkg_registry
 
     all_adapters = list(adapter_registry.get())
     for pkg in pkg_registry.get():
@@ -320,7 +327,8 @@ async def _collect_all_adapters() -> list[Adapter]:
 
 
 def _enable_configured_adapters(
-    all_adapters: list[Adapter], enabled_adapters: dict[str, str]
+    all_adapters: list[Adapter],
+    enabled_adapters: dict[str, str],
 ) -> None:
     for adapter in all_adapters:
         if enabled_adapters.get(adapter.category) == adapter.name:
@@ -355,12 +363,14 @@ async def _find_adapter(adapter_category: str) -> Adapter:
                     adapter = get_adapter(adapter_category)
                     if adapter is not None:
                         return adapter
+        msg = f"{adapter_category} adapter not found – check adapters.yml and ensure package registration"
         raise AdapterNotFound(
-            f"{adapter_category} adapter not found – check adapters.yml and ensure package registration"
+            msg,
         )
     except AttributeError:
+        msg = f"{adapter_category} adapter not found – check adapters.yml"
         raise AdapterNotFound(
-            f"{adapter_category} adapter not found – check adapters.yml"
+            msg,
         )
 
 
@@ -370,7 +380,8 @@ async def _load_module(adapter: Adapter) -> t.Any:
     except ModuleNotFoundError:
         spec = util.spec_from_file_location(adapter.path.stem, adapter.path)
         if spec is None:
-            raise AdapterNotFound(f"Failed to create module spec for {adapter.module}")
+            msg = f"Failed to create module spec for {adapter.module}"
+            raise AdapterNotFound(msg)
         module = util.module_from_spec(spec)
         if spec.loader is not None:
             spec.loader.exec_module(module)
@@ -379,7 +390,9 @@ async def _load_module(adapter: Adapter) -> t.Any:
 
 
 async def _initialize_adapter(
-    adapter: Adapter, module: t.Any, adapter_category: str
+    adapter: Adapter,
+    module: t.Any,
+    adapter_category: str,
 ) -> t.Any:
     from contextlib import suppress
 
@@ -391,7 +404,7 @@ async def _initialize_adapter(
         with suppress(Exception):
             adapter_settings = adapter_settings_class()
     if adapter_settings is not None:
-        from ..config import Config
+        from acb.config import Config
 
         config = depends.get(Config)
         setattr(config, adapter_category, adapter_settings)
@@ -400,7 +413,7 @@ async def _initialize_adapter(
         init_result = instance.init()
         if hasattr(init_result, "__await__"):
             await init_result
-    from ..logger import Logger
+    from acb.logger import Logger
 
     logger = depends.get(Logger)
     logger.info(f"Adapter initialized: {adapter.class_name}")
@@ -430,8 +443,9 @@ async def _import_adapter(adapter_category: str) -> t.Any:
             return await _initialize_adapter(adapter, module, adapter_category)
         except Exception as e:
             adapter.installed = False
+            msg = f"Failed to install {adapter.class_name} adapter: {e}"
             raise AdapterNotInstalled(
-                f"Failed to install {adapter.class_name} adapter: {e}"
+                msg,
             )
 
 
@@ -501,8 +515,9 @@ def _normalize_adapter_categories(
         try:
             return _extract_adapter_categories_from_stack()
         except (IndexError, AttributeError, TypeError):
+            msg = "Could not determine adapter categories from calling context"
             raise ValueError(
-                "Could not determine adapter categories from calling context"
+                msg,
             )
 
     return adapter_categories
@@ -519,8 +534,9 @@ def import_adapter_with_context(
     try:
         imported_adapters = asyncio.run(gather_imports(normalized_categories))
     except Exception as e:
+        msg = f"Failed to install adapters {normalized_categories}: {e}"
         raise AdapterNotInstalled(
-            f"Failed to install adapters {normalized_categories}: {e}"
+            msg,
         )
 
     return (

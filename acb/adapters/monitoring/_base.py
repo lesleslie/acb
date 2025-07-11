@@ -9,7 +9,8 @@ class MonitoringBaseSettings(Settings):
     @classmethod
     def check_traces_sample_rate(cls, v: float) -> float:
         if v > 1 or v < 0:
-            raise ValueError("sample rate must be between 0 and 1")
+            msg = "sample rate must be between 0 and 1"
+            raise ValueError(msg)
         return v
 
 

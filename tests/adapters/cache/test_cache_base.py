@@ -6,8 +6,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from acb.adapters.cache._base import CacheBase, CacheBaseSettings
-from acb.config import Config
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.config import Config
+    from acb.logger import Logger
 
 
 async def assert_cache_operations(cache: t.Any, key: str, value: t.Any) -> None:
@@ -35,8 +37,8 @@ class MockCache(CacheBase):
 
     def __init__(self) -> None:
         super().__init__()
-        self.config = cast(Config, MagicMock())
-        self.logger = cast(Logger, MagicMock())
+        self.config = cast("Config", MagicMock())
+        self.logger = cast("Logger", MagicMock())
         self.some_str_attr = ""
         self._get = AsyncMock()
         self._set = AsyncMock()
@@ -90,7 +92,9 @@ class MockCache(CacheBase):
         return await self._exists(key)
 
     async def clear(
-        self, namespace: str | None = None, _conn: t.Any | None = None
+        self,
+        namespace: str | None = None,
+        _conn: t.Any | None = None,
     ) -> None:
         await self._clear(namespace)
 

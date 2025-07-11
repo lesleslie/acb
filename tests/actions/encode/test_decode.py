@@ -166,7 +166,7 @@ class TestDecode:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "invalid_input,format_name",
+        ("invalid_input", "format_name"),
         [
             ("{not valid json}", "json"),
             ("not: valid: yaml: structure", "yaml"),
@@ -176,7 +176,9 @@ class TestDecode:
         ],
     )
     async def test_decode_error_handling(
-        self, invalid_input: str | bytes, format_name: str
+        self,
+        invalid_input: str | bytes,
+        format_name: str,
     ) -> None:
         with pytest.raises(Exception):
             await getattr(decode, format_name)(invalid_input)
@@ -199,7 +201,7 @@ class TestDecode:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "input_value,expected_type",
+        ("input_value", "expected_type"),
         [
             (b"bytes", bytes),
             ("string", str),
@@ -207,7 +209,9 @@ class TestDecode:
         ],
     )
     async def test_decode_return_type(
-        self, input_value: t.Any, expected_type: type
+        self,
+        input_value: t.Any,
+        expected_type: type,
     ) -> None:
         if input_value is None:
             with pytest.raises(Exception):
@@ -216,7 +220,7 @@ class TestDecode:
             with patch.object(msgspec.json, "decode") as mock_decode:
                 if isinstance(input_value, bytes):
                     mock_decode.return_value = {
-                        "value": input_value.decode("utf-8", errors="replace")
+                        "value": input_value.decode("utf-8", errors="replace"),
                     }
                 else:
                     mock_decode.return_value = {"value": input_value}

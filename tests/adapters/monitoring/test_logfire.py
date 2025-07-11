@@ -44,7 +44,8 @@ def mock_logfire_modules() -> t.Generator[dict[str, MagicMock]]:
             mocks["instrument_system_metrics"],
         ),
         patch(
-            "acb.adapters.monitoring.logfire.loguru_handler", mocks["loguru_handler"]
+            "acb.adapters.monitoring.logfire.loguru_handler",
+            mocks["loguru_handler"],
         ),
     ):
         yield mocks
@@ -111,7 +112,7 @@ async def test_init(
         )
 
         mock_logfire_modules["instrument_pydantic"].assert_called_once_with(
-            record="all"
+            record="all",
         )
 
         mock_logfire_modules["loguru_handler"].assert_called_once()
@@ -119,17 +120,19 @@ async def test_init(
         mock_logfire_modules["instrument_httpx"].assert_called_once()
         mock_logfire_modules["instrument_redis"].assert_called_once()
         mock_logfire_modules["instrument_sqlalchemy"].assert_called_once_with(
-            engine=mock_sql.engine
+            engine=mock_sql.engine,
         )
         mock_logfire_modules["instrument_system_metrics"].assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_init_with_no_adapters(
-    monitoring_adapter: Monitoring, mock_logfire_modules: dict[str, MagicMock]
+    monitoring_adapter: Monitoring,
+    mock_logfire_modules: dict[str, MagicMock],
 ) -> None:
     with patch(
-        "acb.adapters.monitoring.logfire.get_installed_adapters", return_value=[]
+        "acb.adapters.monitoring.logfire.get_installed_adapters",
+        return_value=[],
     ):
         await monitoring_adapter.init()
 

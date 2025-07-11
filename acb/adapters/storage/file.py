@@ -40,7 +40,8 @@ class Storage(StorageBase):
     @property
     def client(self) -> t.Any:
         if self._client is None:
-            raise RuntimeError("Client not initialized. Call get_client() first.")
+            msg = "Client not initialized. Call get_client() first."
+            raise RuntimeError(msg)
         return self._client
 
     async def get_client(self) -> t.Any:
@@ -57,31 +58,29 @@ class Storage(StorageBase):
                 await full_path.parent.mkdir(parents=True, exist_ok=True)
                 await full_path.write_bytes(content)
                 return True
-            else:
-                try:
-                    if isinstance(content, str):
-                        content_bytes = content.encode("utf-8")
-                    else:
-                        content_bytes = content
-                    with self.client.open(path, "wb") as f_obj:
-                        f = t.cast(BinaryIO, f_obj)
-                        f.write(content_bytes)
-                    return True
-                except Exception as e:
-                    self.logger.error(f"Error putting file {path}: {e}")
-                    return False
+            try:
+                if isinstance(content, str):
+                    content_bytes = content.encode("utf-8")
+                else:
+                    content_bytes = content
+                with self.client.open(path, "wb") as f_obj:
+                    f = t.cast("BinaryIO", f_obj)
+                    f.write(content_bytes)
+                return True
+            except Exception as e:
+                self.logger.exception(f"Error putting file {path}: {e}")
+                return False
         except Exception as e:
-            self.logger.error(f"Error putting file {path}: {e}")
+            self.logger.exception(f"Error putting file {path}: {e}")
             return False
 
     async def get_file(self, path: str) -> bytes | None:
         try:
             if self.root_dir:
                 return await self._get_file_from_root_dir(path)
-            else:
-                return await self._get_file_from_client(path)
+            return await self._get_file_from_client(path)
         except Exception as e:
-            self.logger.error(f"Error getting file {path}: {e}")
+            self.logger.exception(f"Error getting file {path}: {e}")
             return None
 
     async def _get_file_from_root_dir(self, path: str) -> bytes | None:
@@ -102,7 +101,7 @@ class Storage(StorageBase):
                     return content.encode("utf-8")
                 return content
         except Exception as e:
-            self.logger.error(f"Error getting file {path}: {e}")
+            self.logger.exception(f"Error getting file {path}: {e}")
             return None
 
     async def delete_file(self, path: str) -> bool:
@@ -113,17 +112,16 @@ class Storage(StorageBase):
                     return False
                 await full_path.unlink()
                 return True
-            else:
-                if not await self.file_exists(path):
-                    return False
-                try:
-                    self.client.rm(path)
-                    return True
-                except Exception as e:
-                    self.logger.error(f"Error deleting file {path}: {e}")
-                    return False
+            if not await self.file_exists(path):
+                return False
+            try:
+                self.client.rm(path)
+                return True
+            except Exception as e:
+                self.logger.exception(f"Error deleting file {path}: {e}")
+                return False
         except Exception as e:
-            self.logger.error(f"Error deleting file {path}: {e}")
+            self.logger.exception(f"Error deleting file {path}: {e}")
             return False
 
     async def file_exists(self, path: str) -> bool:
@@ -131,14 +129,13 @@ class Storage(StorageBase):
             if self.root_dir:
                 full_path = AsyncPath(self.root_dir) / path
                 return await full_path.exists() and await full_path.is_file()
-            else:
-                try:
-                    return self.client.exists(path)
-                except Exception as e:
-                    self.logger.error(f"Error checking if file exists {path}: {e}")
-                    return False
+            try:
+                return self.client.exists(path)
+            except Exception as e:
+                self.logger.exception(f"Error checking if file exists {path}: {e}")
+                return False
         except Exception as e:
-            self.logger.error(f"Error checking if file exists {path}: {e}")
+            self.logger.exception(f"Error checking if file exists {path}: {e}")
             return False
 
     async def create_directory(self, path: str) -> bool:
@@ -147,15 +144,14 @@ class Storage(StorageBase):
                 full_path = AsyncPath(self.root_dir) / path
                 await full_path.mkdir(parents=True, exist_ok=True)
                 return True
-            else:
-                try:
-                    self.client.mkdir(path, create_parents=True)
-                    return True
-                except Exception as e:
-                    self.logger.error(f"Error creating directory {path}: {e}")
-                    return False
+            try:
+                self.client.mkdir(path, create_parents=True)
+                return True
+            except Exception as e:
+                self.logger.exception(f"Error creating directory {path}: {e}")
+                return False
         except Exception as e:
-            self.logger.error(f"Error creating directory {path}: {e}")
+            self.logger.exception(f"Error creating directory {path}: {e}")
             return False
 
     async def directory_exists(self, path: str) -> bool:
@@ -163,14 +159,13 @@ class Storage(StorageBase):
             if self.root_dir:
                 full_path = AsyncPath(self.root_dir) / path
                 return await full_path.exists() and await full_path.is_dir()
-            else:
-                try:
-                    return self.client.exists(path) and self.client.isdir(path)
-                except Exception as e:
-                    self.logger.error(f"Error checking if directory exists {path}: {e}")
-                    return False
+            try:
+                return self.client.exists(path) and self.client.isdir(path)
+            except Exception as e:
+                self.logger.exception(f"Error checking if directory exists {path}: {e}")
+                return False
         except Exception as e:
-            self.logger.error(f"Error checking if directory exists {path}: {e}")
+            self.logger.exception(f"Error checking if directory exists {path}: {e}")
             return False
 
 

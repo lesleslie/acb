@@ -64,7 +64,10 @@ class MockRedisClient:
         return await self._incr(key)
 
     async def scan(
-        self, cursor: int = 0, match: str | None = None, count: int | None = None
+        self,
+        cursor: int = 0,
+        match: str | None = None,
+        count: int | None = None,
     ) -> tuple[int, list[str]]:
         return await self._scan(cursor, match, count)
 
@@ -282,7 +285,7 @@ class TestRedis:
                 # Test the init method which calls the logger
                 await nosql.init()
                 mock_logger.info.assert_any_call(
-                    "Redis connection initialized successfully"
+                    "Redis connection initialized successfully",
                 )
             finally:
                 nosql.config.nosql.get = original_get
@@ -338,9 +341,10 @@ class TestRedis:
             async def mock_init_with_logging() -> None:
                 nosql.logger.info("Initializing Redis connection")
                 nosql.logger.error(
-                    "Failed to initialize Redis connection: Connection error"
+                    "Failed to initialize Redis connection: Connection error",
                 )
-                raise Exception("Connection error")
+                msg = "Connection error"
+                raise Exception(msg)
 
             mock_init_error.side_effect = mock_init_with_logging
 
@@ -481,7 +485,7 @@ class TestRedis:
         nosql.client.hgetall = mock_hgetall
 
         nosql._get_key = MagicMock(
-            side_effect=lambda coll, id=None: f"{coll}:{id}" if id else coll
+            side_effect=lambda coll, id=None: f"{coll}:{id}" if id else coll,
         )
 
         try:
@@ -509,7 +513,7 @@ class TestRedis:
             return_value=[
                 {"_id": "1", "name": "test", "value": "123"},
                 {"_id": "2", "name": "test", "value": "456"},
-            ]
+            ],
         )
         nosql.find = mock_find
 
@@ -540,7 +544,7 @@ class TestRedis:
         nosql.client.hset = mock_hset
 
         nosql._get_key = MagicMock(
-            side_effect=lambda coll, id=None: f"{coll}:{id}" if id else coll
+            side_effect=lambda coll, id=None: f"{coll}:{id}" if id else coll,
         )
 
         try:
@@ -648,7 +652,7 @@ class TestRedis:
 
         original_get_key = nosql._get_key
         nosql._get_key = MagicMock(
-            side_effect=lambda coll, id=None: f"{coll}:{id}" if id else coll
+            side_effect=lambda coll, id=None: f"{coll}:{id}" if id else coll,
         )
 
         try:

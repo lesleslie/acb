@@ -35,7 +35,8 @@ class MockDnsRecord:
     def __getitem__(self, key: str) -> t.Any:
         if hasattr(self, key):
             return getattr(self, key)
-        raise KeyError(f"{key} not found")
+        msg = f"{key} not found"
+        raise KeyError(msg)
 
 
 class MockDnsRecords:
@@ -65,7 +66,8 @@ class CloudflareDnsTestHelper:
 
     @staticmethod
     def setup_record_mocks(
-        cloudflare_dns: MagicMock, existing_record: dict[str, t.Any] | None = None
+        cloudflare_dns: MagicMock,
+        existing_record: dict[str, t.Any] | None = None,
     ) -> None:
         """Set up common mocks for record tests."""
         cloudflare_dns._find_existing_record = MagicMock(return_value=existing_record)
@@ -110,7 +112,7 @@ class CloudflareDnsTestHelper:
                         and existing["proxied"] == cloudflare_dns.config.dns.proxied
                     ):
                         cloudflare_dns.logger.info(
-                            f"Record already exists and is up to date: {r.name} ({r.type})"
+                            f"Record already exists and is up to date: {r.name} ({r.type})",
                         )
 
         return mock_create_records
@@ -129,7 +131,7 @@ class CloudflareDnsTestHelper:
                     if existing["content"] != content:
                         await cloudflare_dns._delete_record(existing["id"])
                         cloudflare_dns.logger.info(
-                            f"Deleting record for update: {r.name} ({r.type})"
+                            f"Deleting record for update: {r.name} ({r.type})",
                         )
                         await cloudflare_dns._create_record(r)
 
@@ -171,14 +173,15 @@ def cloudflare_dns() -> MagicMock:
 
     original_list_records = CloudflareDns.list_records
     dns.list_records = MagicMock(
-        side_effect=lambda: original_list_records.__get__(dns, CloudflareDns)()
+        side_effect=lambda: original_list_records.__get__(dns, CloudflareDns)(),
     )
 
     original_find_existing_record = CloudflareDns._find_existing_record
     dns._find_existing_record = MagicMock(
         side_effect=lambda record: original_find_existing_record.__get__(
-            dns, CloudflareDns
-        )(record)
+            dns,
+            CloudflareDns,
+        )(record),
     )
 
     dns._create_record = AsyncMock()
@@ -190,13 +193,13 @@ def cloudflare_dns() -> MagicMock:
     original_create_records = CloudflareDns.create_records
     dns.create_records = AsyncMock(
         side_effect=lambda records: original_create_records.__get__(dns, CloudflareDns)(
-            records
-        )
+            records,
+        ),
     )
 
     original_create_zone = CloudflareDns.create_zone
     dns.create_zone = MagicMock(
-        side_effect=lambda: original_create_zone.__get__(dns, CloudflareDns)()
+        side_effect=lambda: original_create_zone.__get__(dns, CloudflareDns)(),
     )
 
     return dns
@@ -222,7 +225,7 @@ class TestCloudflareDns:
         async def mock_get_zone_id() -> None:
             try:
                 zones = cloudflare_dns.client.zones.list(
-                    name=cloudflare_dns.config.dns.zone_name
+                    name=cloudflare_dns.config.dns.zone_name,
                 )
                 if zones:
                     zones_list = list(zones)
@@ -230,18 +233,18 @@ class TestCloudflareDns:
                         zone = zones_list[0]
                         cloudflare_dns.zone_id = zone.id
                         cloudflare_dns.logger.info(
-                            f"Found zone {cloudflare_dns.config.dns.zone_name} with id {zone.id}"
+                            f"Found zone {cloudflare_dns.config.dns.zone_name} with id {zone.id}",
                         )
                     else:
                         cloudflare_dns.logger.warning(
-                            f"Zone '{cloudflare_dns.config.dns.zone_name}' not found"
+                            f"Zone '{cloudflare_dns.config.dns.zone_name}' not found",
                         )
                 else:
                     cloudflare_dns.logger.warning(
-                        f"Zone '{cloudflare_dns.config.dns.zone_name}' not found"
+                        f"Zone '{cloudflare_dns.config.dns.zone_name}' not found",
                     )
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error getting zone ID: {e}")
+                cloudflare_dns.logger.exception(f"Error getting zone ID: {e}")
                 raise
 
         cloudflare_dns.client.zones.list = MagicMock(return_value=mock_zones)
@@ -264,7 +267,7 @@ class TestCloudflareDns:
         async def mock_get_zone_id() -> None:
             try:
                 zones = cloudflare_dns.client.zones.list(
-                    name=cloudflare_dns.config.dns.zone_name
+                    name=cloudflare_dns.config.dns.zone_name,
                 )
                 if zones:
                     zones_list = list(zones)
@@ -272,18 +275,18 @@ class TestCloudflareDns:
                         zone = zones_list[0]
                         cloudflare_dns.zone_id = zone.id
                         cloudflare_dns.logger.info(
-                            f"Found zone {cloudflare_dns.config.dns.zone_name} with id {zone.id}"
+                            f"Found zone {cloudflare_dns.config.dns.zone_name} with id {zone.id}",
                         )
                     else:
                         cloudflare_dns.logger.warning(
-                            f"Zone '{cloudflare_dns.config.dns.zone_name}' not found"
+                            f"Zone '{cloudflare_dns.config.dns.zone_name}' not found",
                         )
                 else:
                     cloudflare_dns.logger.warning(
-                        f"Zone '{cloudflare_dns.config.dns.zone_name}' not found"
+                        f"Zone '{cloudflare_dns.config.dns.zone_name}' not found",
                     )
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error getting zone ID: {e}")
+                cloudflare_dns.logger.exception(f"Error getting zone ID: {e}")
                 raise
 
         cloudflare_dns.client.zones.list = MagicMock(return_value=mock_zones)
@@ -302,7 +305,8 @@ class TestCloudflareDns:
         cloudflare_dns.config.dns.zone_name = "example.com"
 
         async def mock_get_zone_id() -> None:
-            raise Exception("API Error")
+            msg = "API Error"
+            raise Exception(msg)
 
         cloudflare_dns.client.zones.list = MagicMock(side_effect=Exception("API Error"))
         cloudflare_dns._get_zone_id = AsyncMock(side_effect=mock_get_zone_id)
@@ -335,9 +339,10 @@ class TestCloudflareDns:
         def mock_list_records() -> list[DnsRecord]:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
             try:
                 cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
@@ -355,7 +360,7 @@ class TestCloudflareDns:
 
                 return result
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error listing records: {e}")
+                cloudflare_dns.logger.exception(f"Error listing records: {e}")
                 return []
 
         cloudflare_dns.list_records = MagicMock(side_effect=mock_list_records)
@@ -379,7 +384,7 @@ class TestCloudflareDns:
         def mock_list_records() -> list[DnsRecord]:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
                 return []
 
@@ -399,9 +404,10 @@ class TestCloudflareDns:
         def mock_list_records() -> list[DnsRecord]:
             try:
                 cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
-                raise Exception("Test exception")
+                msg = "Test exception"
+                raise Exception(msg)
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error listing records: {e}")
+                cloudflare_dns.logger.exception(f"Error listing records: {e}")
                 return []
 
         cloudflare_dns.list_records = MagicMock(side_effect=mock_list_records)
@@ -409,7 +415,7 @@ class TestCloudflareDns:
         result = cloudflare_dns.list_records()
 
         assert result == []
-        cloudflare_dns.logger.error.assert_called_once()
+        cloudflare_dns.logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_record(self, cloudflare_dns: MagicMock) -> None:
@@ -434,9 +440,10 @@ class TestCloudflareDns:
         async def mock_create_record(record: DnsRecord) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
             try:
                 cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
@@ -448,10 +455,10 @@ class TestCloudflareDns:
                 }
                 await zone_dns_records.create(**data)
                 cloudflare_dns.logger.info(
-                    f"Created record: {record.name} ({record.type})"
+                    f"Created record: {record.name} ({record.type})",
                 )
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error creating record: {e}")
+                cloudflare_dns.logger.exception(f"Error creating record: {e}")
                 raise
 
         cloudflare_dns._create_record = AsyncMock(side_effect=mock_create_record)
@@ -469,7 +476,8 @@ class TestCloudflareDns:
 
     @pytest.mark.asyncio
     async def test_create_record_with_list_rrdata(
-        self, cloudflare_dns: MagicMock
+        self,
+        cloudflare_dns: MagicMock,
     ) -> None:
         cloudflare_dns.zone_id = "zone123"
 
@@ -492,9 +500,10 @@ class TestCloudflareDns:
         async def mock_create_record(record: DnsRecord) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
             try:
                 cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
@@ -506,10 +515,10 @@ class TestCloudflareDns:
                 }
                 await zone_dns_records.create(**data)
                 cloudflare_dns.logger.info(
-                    f"Created record: {record.name} ({record.type})"
+                    f"Created record: {record.name} ({record.type})",
                 )
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error creating record: {e}")
+                cloudflare_dns.logger.exception(f"Error creating record: {e}")
                 raise
 
         cloudflare_dns._create_record = AsyncMock(side_effect=mock_create_record)
@@ -555,11 +564,10 @@ class TestCloudflareDns:
         async def mock_create_record(record: DnsRecord) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
-
-            return None
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
         cloudflare_dns._create_record = AsyncMock(side_effect=mock_create_record)
 
@@ -590,9 +598,10 @@ class TestCloudflareDns:
         async def mock_create_record(record: DnsRecord) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
             try:
                 cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
@@ -604,7 +613,7 @@ class TestCloudflareDns:
                 }
                 await zone_dns_records.create(**data)
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error creating record: {e}")
+                cloudflare_dns.logger.exception(f"Error creating record: {e}")
                 raise
 
         cloudflare_dns._create_record = AsyncMock(side_effect=mock_create_record)
@@ -613,7 +622,7 @@ class TestCloudflareDns:
             await cloudflare_dns._create_record(record)
 
         cloudflare_dns.client.zones.get.assert_called_once_with(zone_id="zone123")
-        cloudflare_dns.logger.error.assert_called_once()
+        cloudflare_dns.logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_records_single(self, cloudflare_dns: MagicMock) -> None:
@@ -701,7 +710,8 @@ class TestCloudflareDns:
 
     @pytest.mark.asyncio
     async def test_create_records_update_existing(
-        self, cloudflare_dns: MagicMock
+        self,
+        cloudflare_dns: MagicMock,
     ) -> None:
         """Test updating an existing record."""
         # Setup test data
@@ -745,7 +755,8 @@ class TestCloudflareDns:
 
     @pytest.mark.asyncio
     async def test_create_records_no_update_needed(
-        self, cloudflare_dns: MagicMock
+        self,
+        cloudflare_dns: MagicMock,
     ) -> None:
         """Test when a record exists and no update is needed."""
         # Setup test data
@@ -754,7 +765,10 @@ class TestCloudflareDns:
         cloudflare_dns.config.dns.ttl = 300
 
         record = DnsRecord(
-            name="test.example.com", type="A", ttl=300, rrdata=["192.0.2.1"]
+            name="test.example.com",
+            type="A",
+            ttl=300,
+            rrdata=["192.0.2.1"],
         )
 
         existing_record = {
@@ -774,7 +788,7 @@ class TestCloudflareDns:
         # Define a simple function to log no update needed
         def log_no_update(r) -> None:
             cloudflare_dns.logger.info(
-                f"Record already exists and is up to date: {r.name} ({r.type})"
+                f"Record already exists and is up to date: {r.name} ({r.type})",
             )
 
         # Create a simplified mock implementation
@@ -806,12 +820,13 @@ class TestCloudflareDns:
         cloudflare_dns._delete_record.assert_not_awaited()
         cloudflare_dns._create_record.assert_not_awaited()
         cloudflare_dns.logger.info.assert_called_with(
-            f"Record already exists and is up to date: {record.name} ({record.type})"
+            f"Record already exists and is up to date: {record.name} ({record.type})",
         )
 
     @pytest.mark.asyncio
     async def test_create_records_update_needed(
-        self, cloudflare_dns: MagicMock
+        self,
+        cloudflare_dns: MagicMock,
     ) -> None:
         """Test when a record exists and needs to be updated."""
         # Setup test data
@@ -820,7 +835,10 @@ class TestCloudflareDns:
         cloudflare_dns.config.dns.ttl = 300
 
         record = DnsRecord(
-            name="test.example.com", type="A", ttl=300, rrdata=["192.0.2.2"]
+            name="test.example.com",
+            type="A",
+            ttl=300,
+            rrdata=["192.0.2.2"],
         )
 
         existing_record = {
@@ -852,7 +870,7 @@ class TestCloudflareDns:
             # Update the record (we know it needs updating for this test)
             await cloudflare_dns._delete_record(existing["id"])
             cloudflare_dns.logger.info(
-                f"Deleting record for update: {r.name} ({r.type})"
+                f"Deleting record for update: {r.name} ({r.type})",
             )
             await cloudflare_dns._create_record(r)
 
@@ -867,12 +885,13 @@ class TestCloudflareDns:
         cloudflare_dns._delete_record.assert_awaited_once_with("rec123")
         cloudflare_dns._create_record.assert_awaited_once_with(record)
         cloudflare_dns.logger.info.assert_any_call(
-            f"Deleting record for update: {record.name} ({record.type})"
+            f"Deleting record for update: {record.name} ({record.type})",
         )
 
     @pytest.mark.asyncio
     async def test_create_records_txt_record_formatting(
-        self, cloudflare_dns: MagicMock
+        self,
+        cloudflare_dns: MagicMock,
     ) -> None:
         """Test TXT record formatting."""
         # Setup test data
@@ -914,13 +933,16 @@ class TestCloudflareDns:
 
     @pytest.mark.asyncio
     async def test_create_records_domain_rrdata_formatting(
-        self, cloudflare_dns: MagicMock
+        self,
+        cloudflare_dns: MagicMock,
     ) -> None:
         """Test domain record formatting in rrdata."""
         # Setup test data
         cloudflare_dns.zone_id = "zone123"
         record = DnsRecord(
-            name="mail.example.com", type="MX", rrdata="mailserver.example.com"
+            name="mail.example.com",
+            type="MX",
+            rrdata="mailserver.example.com",
         )
 
         # Setup mocks
@@ -984,15 +1006,15 @@ class TestCloudflareDns:
                         }
                 return None
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error finding existing record: {e}")
+                cloudflare_dns.logger.exception(f"Error finding existing record: {e}")
                 return None
 
         cloudflare_dns._find_existing_record = MagicMock(
-            side_effect=mock_find_existing_record
+            side_effect=mock_find_existing_record,
         )
 
         mock_record = MockDnsRecord(
-            name=record.name if record.name is not None else "default.example.com"
+            name=record.name if record.name is not None else "default.example.com",
         )
         mock_dns_records = MagicMock()
         mock_dns_records.list.return_value = [mock_record]
@@ -1007,7 +1029,8 @@ class TestCloudflareDns:
         assert result["id"] == "record123"
         cloudflare_dns.client.zones.get.assert_called_once_with(zone_id="zone123")
         mock_dns_records.list.assert_called_once_with(
-            name=record.name, type=record.type
+            name=record.name,
+            type=record.type,
         )
 
     def test_find_existing_record_not_found(self, cloudflare_dns: MagicMock) -> None:
@@ -1038,11 +1061,11 @@ class TestCloudflareDns:
                         }
                 return None
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error finding existing record: {e}")
+                cloudflare_dns.logger.exception(f"Error finding existing record: {e}")
                 return None
 
         cloudflare_dns._find_existing_record = MagicMock(
-            side_effect=mock_find_existing_record
+            side_effect=mock_find_existing_record,
         )
 
         result = cloudflare_dns._find_existing_record(record)
@@ -1050,7 +1073,8 @@ class TestCloudflareDns:
         assert result is None
         cloudflare_dns.client.zones.get.assert_called_once_with(zone_id="zone123")
         zone_dns_records.list.assert_called_once_with(
-            name=record.name, type=record.type
+            name=record.name,
+            type=record.type,
         )
 
     def test_find_existing_record_no_zone_id(self, cloudflare_dns: MagicMock) -> None:
@@ -1064,7 +1088,7 @@ class TestCloudflareDns:
             return None
 
         cloudflare_dns._find_existing_record = MagicMock(
-            side_effect=mock_find_existing_record
+            side_effect=mock_find_existing_record,
         )
 
         result = cloudflare_dns._find_existing_record(record)
@@ -1095,11 +1119,11 @@ class TestCloudflareDns:
                         }
                 return None
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error finding existing record: {e}")
+                cloudflare_dns.logger.exception(f"Error finding existing record: {e}")
                 return None
 
         cloudflare_dns._find_existing_record = MagicMock(
-            side_effect=mock_find_existing_record
+            side_effect=mock_find_existing_record,
         )
 
         zone_dns_records = MagicMock()
@@ -1108,7 +1132,7 @@ class TestCloudflareDns:
 
         assert result is None
         cloudflare_dns.client.zones.get.assert_called_once_with(zone_id="zone123")
-        cloudflare_dns.logger.error.assert_called_once()
+        cloudflare_dns.logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_record(self, cloudflare_dns: MagicMock) -> None:
@@ -1118,16 +1142,17 @@ class TestCloudflareDns:
         async def mock_delete_record(record_id: str) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
+                msg = "Zone ID not found"
+                raise ValueError(msg)
             try:
                 zone = cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
                 zone_dns_records = zone.dns_records
                 await zone_dns_records.delete(record_id)
                 cloudflare_dns.logger.info(f"Deleted record with ID {record_id}")
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error deleting record: {e}")
+                cloudflare_dns.logger.exception(f"Error deleting record: {e}")
                 raise
 
         cloudflare_dns._delete_record = AsyncMock(side_effect=mock_delete_record)
@@ -1153,11 +1178,10 @@ class TestCloudflareDns:
         async def mock_delete_record(record_id: str) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
-
-            return None
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
         cloudflare_dns._delete_record = AsyncMock(side_effect=mock_delete_record)
 
@@ -1182,16 +1206,17 @@ class TestCloudflareDns:
         async def mock_delete_record(record_id: str) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
             try:
                 cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
                 await zone_dns_records.delete(record_id)
                 cloudflare_dns.logger.info(f"Deleted record with ID {record_id}")
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error deleting record: {e}")
+                cloudflare_dns.logger.exception(f"Error deleting record: {e}")
                 raise
 
         cloudflare_dns._delete_record = AsyncMock(side_effect=mock_delete_record)
@@ -1200,7 +1225,7 @@ class TestCloudflareDns:
             await cloudflare_dns._delete_record(record_id)
 
         cloudflare_dns.client.zones.get.assert_called_once_with(zone_id="zone123")
-        cloudflare_dns.logger.error.assert_called_once()
+        cloudflare_dns.logger.exception.assert_called_once()
 
     def test_create_zone(self, cloudflare_dns: MagicMock) -> None:
         cloudflare_dns.zone_id = None
@@ -1215,7 +1240,9 @@ class TestCloudflareDns:
 
         assert cloudflare_dns.zone_id == "zone123"
         cloudflare_dns.client.zones.create.assert_called_once_with(
-            account={"id": "account123"}, name="example.com", type="full"
+            account={"id": "account123"},
+            name="example.com",
+            type="full",
         )
         cloudflare_dns.logger.info.assert_called_once()
 
@@ -1249,7 +1276,7 @@ class TestCloudflareDns:
         cloudflare_dns.config.dns.account_id = "account123"
 
         cloudflare_dns.client.zones.create = MagicMock(
-            side_effect=Exception("API Error")
+            side_effect=Exception("API Error"),
         )
 
         cloudflare_dns.logger.error = MagicMock()
@@ -1258,7 +1285,7 @@ class TestCloudflareDns:
             cloudflare_dns.create_zone()
 
         cloudflare_dns.client.zones.create.assert_called_once()
-        cloudflare_dns.logger.error.assert_called_once()
+        cloudflare_dns.logger.exception.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_records_by_domain(self, cloudflare_dns: MagicMock) -> None:
@@ -1286,9 +1313,10 @@ class TestCloudflareDns:
         async def mock_delete_records_by_domain(domain_name: str) -> None:
             if not cloudflare_dns.zone_id:
                 cloudflare_dns.logger.error(
-                    "Zone ID not found. Initialize the adapter first."
+                    "Zone ID not found. Initialize the adapter first.",
                 )
-                raise ValueError("Zone ID not found")
+                msg = "Zone ID not found"
+                raise ValueError(msg)
 
             zone = cloudflare_dns.client.zones.get(zone_id=cloudflare_dns.zone_id)
             records = zone.dns_records.list(name=domain_name)
@@ -1296,13 +1324,14 @@ class TestCloudflareDns:
             records_to_delete = list(records)
             for record in records_to_delete:
                 await cloudflare_dns._delete_record_by_zone(
-                    cloudflare_dns.zone_id, record.id
+                    cloudflare_dns.zone_id,
+                    record.id,
                 )
 
             cloudflare_dns.logger.info(f"Deleted all records for domain {domain_name}")
 
         cloudflare_dns.delete_records_by_domain = AsyncMock(
-            side_effect=mock_delete_records_by_domain
+            side_effect=mock_delete_records_by_domain,
         )
 
         await cloudflare_dns.delete_records_by_domain(domain)
@@ -1324,11 +1353,11 @@ class TestCloudflareDns:
                 await zone_dns_records.delete(record_id)
                 cloudflare_dns.logger.info(f"Deleted record with ID {record_id}")
             except Exception as e:
-                cloudflare_dns.logger.error(f"Error deleting record: {e}")
+                cloudflare_dns.logger.exception(f"Error deleting record: {e}")
                 raise
 
         cloudflare_dns.delete_record_by_zone = AsyncMock(
-            side_effect=mock_delete_record_by_zone
+            side_effect=mock_delete_record_by_zone,
         )
 
         mock_dns_records = MagicMock()

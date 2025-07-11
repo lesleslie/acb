@@ -32,7 +32,7 @@ class FtpdSettings(FtpdBaseSettings):
 class SFTPHandler(SFTPServer):
     def __init__(self, conn: SSHServerConnection) -> None:
         conn.get_extra_info("ftpd_root_dir")
-        super().__init__(t.cast(t.Any, conn), chroot=None)
+        super().__init__(t.cast("t.Any", conn), chroot=None)
 
 
 class Ftpd(FtpdBase):
@@ -61,10 +61,10 @@ class Ftpd(FtpdBase):
                 encoding=None,
             )
             logger.info(
-                f"SFTP server started on {self.config.ftpd.host}:{self.config.ftpd.port}"
+                f"SFTP server started on {self.config.ftpd.host}:{self.config.ftpd.port}",
             )
         except (OSError, Error) as exc:
-            logger.error(f"Error starting SFTP server: {exc}")
+            logger.exception(f"Error starting SFTP server: {exc}")
             raise
 
     def _create_server_connection(self) -> asyncssh.SSHServer:
@@ -76,9 +76,7 @@ class Ftpd(FtpdBase):
                 conn.set_extra_info(ftpd_root_dir=self.config.ftpd.root_dir)
 
             def begin_auth(self, username: str) -> bool:
-                if self.config.ftpd.anonymous and username == "anonymous":
-                    return False
-                return True
+                return not (self.config.ftpd.anonymous and username == "anonymous")
 
             def password_auth_supported(self) -> bool:
                 return True
@@ -102,7 +100,7 @@ class Ftpd(FtpdBase):
                 self._server_acceptor = None
             logger.info("SFTP server stopped")
         except Exception as exc:
-            logger.error(f"Error stopping SFTP server: {exc}")
+            logger.exception(f"Error stopping SFTP server: {exc}")
             raise
 
     async def _ensure_client(self) -> SFTPClient:

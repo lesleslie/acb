@@ -14,11 +14,11 @@ from .depends import depends
 from .logger import Logger
 
 __all__ = [
+    "colorized_stderr_print",
+    "debug",
     "get_calling_module",
     "patch_record",
-    "colorized_stderr_print",
     "print_debug_info",
-    "debug",
 ]
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 
@@ -44,18 +44,16 @@ def patch_record(mod: Path | None, msg: str, logger: Logger = depends()) -> None
 
 
 def colorized_stderr_print(s: str) -> None:
+    import sys
+
     try:
         colored = colorize(s)
         with supportTerminalColorsInWindows():
             try:
                 asyncio.run(aprint(colored, use_stderr=True))
             except Exception:
-                import sys
-
                 print(colored, file=sys.stderr)
     except ImportError:
-        import sys
-
         print(s, file=sys.stderr)
 
 
@@ -79,10 +77,10 @@ def init_debug() -> None:
     warnings.filterwarnings("ignore", category=RuntimeWarning, module="icecream")
     try:
         config = depends.get("config")
-        debug_args = dict(
-            outputFunction=print_debug_info,
-            argToStringFunction=lambda o: pformat(o, highlight=False),
-        )
+        debug_args = {
+            "outputFunction": print_debug_info,
+            "argToStringFunction": lambda o: pformat(o, highlight=False),
+        }
         debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
         is_production = config.deployed
         if config.debug is not None and hasattr(config.debug, "production"):
@@ -90,10 +88,10 @@ def init_debug() -> None:
         if is_production:
             debug.configureOutput(prefix="", includeContext=False, **debug_args)
     except Exception:
-        debug_args = dict(
-            outputFunction=print_debug_info,
-            argToStringFunction=lambda o: pformat(o, highlight=False),
-        )
+        debug_args = {
+            "outputFunction": print_debug_info,
+            "argToStringFunction": lambda o: pformat(o, highlight=False),
+        }
         debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
 
 

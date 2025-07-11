@@ -23,7 +23,6 @@ class MockRequestsBase(RequestsBase):
 
     async def init(self) -> None:
         self._initialized = True
-        return None
 
     async def get(self, url: str, timeout: int = 30) -> t.Any:
         return await self._get(url, timeout)

@@ -16,11 +16,13 @@ from acb.adapters.smtp.mailgun import SmtpSettings as MailgunSmtpSettings
 
 @pytest.fixture
 def mock_async_context_manager() -> Callable[
-    ..., AbstractAsyncContextManager[MagicMock]
+    ...,
+    AbstractAsyncContextManager[MagicMock],
 ]:
     @asynccontextmanager
     async def _async_context_manager(
-        *args: Any, **kwargs: Any
+        *args: Any,
+        **kwargs: Any,
     ) -> AsyncGenerator[MagicMock]:
         yield MagicMock()
 
@@ -81,7 +83,8 @@ class TestMailgunSmtp:
     def smtp(
         self,
         mock_async_context_manager: Callable[
-            ..., AbstractAsyncContextManager[MagicMock]
+            ...,
+            AbstractAsyncContextManager[MagicMock],
         ],
     ) -> MailgunSmtp:
         class TestableMailgunSmtp(MailgunSmtp):
@@ -130,7 +133,9 @@ class TestMailgunSmtp:
             AsyncMock(return_value={"message": "success"}),
         ):
             result = await smtp.get_response(
-                "get", domain="example.com", params={"limit": 10}
+                "get",
+                domain="example.com",
+                params={"limit": 10},
             )
 
             smtp.requests.get.assert_called_once()
@@ -164,7 +169,9 @@ class TestMailgunSmtp:
             mock_frame.return_value.f_back.f_code.co_name = "test_domain"
 
             result = await smtp.get_response(
-                "put", domain="example.com", data={"key": "value"}
+                "put",
+                domain="example.com",
+                data={"key": "value"},
             )
 
             smtp.requests.put.assert_called_once()
@@ -174,13 +181,14 @@ class TestMailgunSmtp:
     async def test_list_domains(self, smtp: MailgunSmtp) -> None:
         with patch.object(smtp, "get_response", AsyncMock()) as mock_get_response:
             mock_get_response.return_value = {
-                "items": [{"name": "example.com"}, {"name": "test.com"}]
+                "items": [{"name": "example.com"}, {"name": "test.com"}],
             }
 
             domains = await smtp.list_domains()
 
             mock_get_response.assert_called_once_with(
-                "get", params={"skip": 0, "limit": 1000}
+                "get",
+                params={"skip": 0, "limit": 1000},
             )
             assert domains == ["example.com", "test.com"]
 
@@ -228,10 +236,10 @@ class TestMailgunSmtp:
         ):
             mock_get_domain.return_value = {
                 "receiving_dns_records": [
-                    {"priority": "10", "value": "mx.example.com"}
+                    {"priority": "10", "value": "mx.example.com"},
                 ],
                 "sending_dns_records": [
-                    {"name": "example.com", "record_type": "TXT", "value": "v=spf1"}
+                    {"name": "example.com", "record_type": "TXT", "value": "v=spf1"},
                 ],
             }
 
@@ -250,7 +258,9 @@ class TestMailgunSmtp:
         with (
             patch.object(smtp, "create_domain", AsyncMock()) as mock_create_domain,
             patch.object(
-                smtp, "create_domain_credentials", AsyncMock()
+                smtp,
+                "create_domain_credentials",
+                AsyncMock(),
             ) as mock_create_creds,
             patch.object(smtp, "get_dns_records", AsyncMock()) as mock_get_records,
             patch.object(smtp, "delete_domain", AsyncMock()) as mock_delete_domain,

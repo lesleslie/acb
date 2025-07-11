@@ -13,7 +13,7 @@ import toml
 import yaml
 from anyio import Path as AsyncPath
 
-__all__: list[str] = ["load", "dump", "encode", "decode"]
+__all__: list[str] = ["decode", "dump", "encode", "load"]
 
 
 def yaml_encode(
@@ -27,7 +27,8 @@ def yaml_encode(
             return str(obj)
         if enc_hook is not None:
             return enc_hook(obj)
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+        msg = f"Object of type {type(obj).__name__} is not JSON serializable"
+        raise TypeError(msg)
 
     dumper_class = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
     dumper_class.add_representer(
@@ -40,17 +41,17 @@ def yaml_encode(
                 obj,
                 builtin_types=(_datetime.datetime, _datetime.date),
                 enc_hook=path_enc_hook,
-            )
+            ),
         ],
         encoding="utf-8",
-        Dumper=t.cast(t.Any, dumper_class),
+        Dumper=t.cast("t.Any", dumper_class),
         allow_unicode=True,
         sort_keys=sort_keys,
     )
     return result.encode() if isinstance(result, str) else result or b""
 
 
-msgspec.yaml.encode = t.cast(t.Any, yaml_encode)
+msgspec.yaml.encode = t.cast("t.Any", yaml_encode)
 
 
 @dataclass
@@ -102,7 +103,9 @@ class Encode:
             setattr(self, s, self._create_method(s, "encode"))
 
     def _create_method(
-        self, serializer_name: str, default_action: str
+        self,
+        serializer_name: str,
+        default_action: str,
     ) -> t.Callable[..., t.Any]:
         async def method(
             obj: t.Any,
@@ -128,11 +131,13 @@ class Encode:
                 else:
                     self.serializer = getattr(serializer, "decode", None)
                 if self.serializer is None:
+                    msg = f"No {self.action} method found for {serializer_name}"
                     raise AttributeError(
-                        f"No {self.action} method found for {serializer_name}"
+                        msg,
                     )
                 return await self.process(obj, **kwargs)
-            raise ValueError(f"Unknown serializer: {serializer_name}")
+            msg = f"Unknown serializer: {serializer_name}"
+            raise ValueError(msg)
 
         return method
 
@@ -144,14 +149,16 @@ class Encode:
 
     def _validate_decode_input(self, obj: t.Any) -> None:
         if obj is None:
-            raise ValueError("Cannot decode from None input")
+            msg = "Cannot decode from None input"
+            raise ValueError(msg)
         if isinstance(obj, str | bytes) and (not obj):
-            raise ValueError("Cannot decode from empty input")
+            msg = "Cannot decode from empty input"
+            raise ValueError(msg)
 
     async def _load_from_path(self, obj: t.Any) -> t.Any:
         if isinstance(obj, AsyncPath):
             return await self._read_async_path(obj)
-        elif isinstance(obj, Path):
+        if isinstance(obj, Path):
             return self._read_sync_path(obj)
         return obj
 
@@ -163,7 +170,8 @@ class Encode:
                 text = await path.read_text()
                 return text.encode() if text else b""
         except FileNotFoundError:
-            raise FileNotFoundError(f"File not found: {path}")
+            msg = f"File not found: {path}"
+            raise FileNotFoundError(msg)
 
     def _read_sync_path(self, path: Path) -> bytes:
         try:
@@ -173,7 +181,8 @@ class Encode:
                 text = path.read_text()
                 return text.encode() if text else b""
         except FileNotFoundError:
-            raise FileNotFoundError(f"File not found: {path}")
+            msg = f"File not found: {path}"
+            raise FileNotFoundError(msg)
 
     def _prepare_string_input(self, obj: t.Any) -> t.Any:
         if isinstance(obj, str) and self.serializer in (
@@ -186,21 +195,26 @@ class Encode:
 
     def _perform_decode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
         if self.serializer is None:
-            raise ValueError("Serializer not set")
+            msg = "Serializer not set"
+            raise ValueError(msg)
         try:
             return self.serializer(obj, **kwargs)
         except msgspec.DecodeError as e:
-            raise msgspec.DecodeError(f"Failed to decode: {e}")
+            msg = f"Failed to decode: {e}"
+            raise msgspec.DecodeError(msg)
         except toml.decoder.TomlDecodeError as e:
-            raise toml.decoder.TomlDecodeError(f"Failed to decode: {e}", "", 0)
+            msg = f"Failed to decode: {e}"
+            raise toml.decoder.TomlDecodeError(msg, "", 0)
         except Exception as e:
-            raise RuntimeError(f"Error during decoding: {e}") from e
+            msg = f"Error during decoding: {e}"
+            raise RuntimeError(msg) from e
 
     async def _encode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> bytes:
         if isinstance(obj, AsyncPath | Path):
             if self.action == "decode":
                 return await self._decode(obj, **kwargs)
-            raise TypeError(f"Cannot encode a Path object directly: {obj}")
+            msg = f"Cannot encode a Path object directly: {obj}"
+            raise TypeError(msg)
         obj = self._preprocess_data(obj, kwargs)
         data = self._serialize(obj, kwargs)
         if self.path is not None:
@@ -226,7 +240,8 @@ class Encode:
 
     def _serialize(self, obj: t.Any, kwargs: dict[str, t.Any]) -> bytes:
         if self.serializer is None:
-            raise ValueError("Serializer not set")
+            msg = "Serializer not set"
+            raise ValueError(msg)
         if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
             indent = kwargs.pop("indent")
             return json.dumps(obj, indent=indent).encode()
@@ -248,7 +263,8 @@ class Encode:
             elif isinstance(self.path, Path):
                 self.path.write_bytes(data)
         except PermissionError:
-            raise PermissionError(f"Permission denied when writing to {self.path}")
+            msg = f"Permission denied when writing to {self.path}"
+            raise PermissionError(msg)
 
     async def process(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
         if self.action in ("load", "decode"):
@@ -282,9 +298,9 @@ class Encode:
             if serializer_name in self.serializers:
                 serializer = self.serializers[serializer_name]
                 if self.action == "encode":
-                    self.serializer = getattr(serializer, "encode")
+                    self.serializer = serializer.encode
                 else:
-                    self.serializer = getattr(serializer, "decode")
+                    self.serializer = serializer.decode
                 return await self.process(obj, **kwargs)
         caller_name = frame.f_code.co_name
         if "encode" in caller_name or "dump" in caller_name:
@@ -293,9 +309,9 @@ class Encode:
             self.action = "decode"
         serializer = self.serializers["json"]
         if self.action == "encode":
-            self.serializer = getattr(serializer, "encode")
+            self.serializer = serializer.encode
         else:
-            self.serializer = getattr(serializer, "decode")
+            self.serializer = serializer.decode
         return await self.process(obj, **kwargs)
 
 

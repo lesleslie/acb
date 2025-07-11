@@ -51,7 +51,9 @@ class TestCacheSettings:
 class TestMemoryCache:
     @pytest.mark.asyncio
     async def test_init_basic(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         with patch("acb.adapters.cache.memory.SimpleMemoryCache") as mock_smc:
             mock_instance = MagicMock()
@@ -79,7 +81,9 @@ class TestMemoryCache:
 
     @pytest.mark.asyncio
     async def test_init_with_custom_kwargs(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         with patch("acb.adapters.cache.memory.SimpleMemoryCache") as mock_smc:
             mock_instance = MagicMock()
@@ -128,7 +132,9 @@ class TestMemoryCache:
 
     @pytest.mark.asyncio
     async def test_aiocache_interface_methods(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test the new aiocache interface methods implementation."""
         adapter = Cache()
@@ -204,7 +210,9 @@ class TestMemoryCache:
 
     @pytest.mark.asyncio
     async def test_aiocache_interface_with_connection_params(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test aiocache interface methods handle connection parameters correctly."""
         adapter = Cache()
@@ -232,7 +240,9 @@ class TestMemoryCache:
 
     @pytest.mark.asyncio
     async def test_get_client_method(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test the get_client method returns properly configured client."""
         adapter = Cache()
@@ -256,7 +266,9 @@ class TestMemoryCache:
 
     @pytest.mark.asyncio
     async def test_aiocache_interface_error_handling(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test error handling in aiocache interface methods."""
         adapter = Cache()
@@ -276,7 +288,9 @@ class TestMemoryCache:
 
     @pytest.mark.asyncio
     async def test_namespace_configuration(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test that cache namespace is properly configured."""
         # Test with different app names
@@ -304,7 +318,9 @@ class TestMemoryCache:
 class TestMemoryCacheBenchmarks:
     @pytest.fixture
     def benchmark_adapter(
-        self, mock_config: MagicMock, mock_logger: MagicMock
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
     ) -> Cache:
         adapter = Cache()
         adapter.config = mock_config
@@ -326,7 +342,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_set_small_data_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, small_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        small_data: str,
     ) -> None:
         await benchmark_adapter.init()
 
@@ -340,7 +359,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_set_medium_data_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, medium_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        medium_data: str,
     ) -> None:
         await benchmark_adapter.init()
 
@@ -350,7 +372,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_set_large_data_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, large_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        large_data: str,
     ) -> None:
         await benchmark_adapter.init()
 
@@ -360,7 +385,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_get_small_data_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, small_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        small_data: str,
     ) -> None:
         await benchmark_adapter.init()
         await benchmark_adapter.set("test_key", small_data)
@@ -371,7 +399,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_get_medium_data_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, medium_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        medium_data: str,
     ) -> None:
         await benchmark_adapter.init()
         await benchmark_adapter.set("test_key", medium_data)
@@ -382,7 +413,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_get_large_data_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, large_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        large_data: str,
     ) -> None:
         await benchmark_adapter.init()
         await benchmark_adapter.set("test_key", large_data)
@@ -393,7 +427,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_exists_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, medium_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        medium_data: str,
     ) -> None:
         await benchmark_adapter.init()
         await benchmark_adapter.set("test_key", medium_data)
@@ -404,7 +441,10 @@ class TestMemoryCacheBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_cache_bulk_operations_performance(
-        self, benchmark: BenchmarkFixture, benchmark_adapter: Cache, small_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        benchmark_adapter: Cache,
+        small_data: str,
     ) -> None:
         await benchmark_adapter.init()
 

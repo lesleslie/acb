@@ -5,7 +5,7 @@ import typing as t
 from collections.abc import Generator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -14,8 +14,8 @@ from _pytest.main import Session
 from _pytest.monkeypatch import MonkeyPatch
 from acb.config import Config
 
-TaskSet: t.TypeAlias = set[asyncio.Task[object]]
-MarkerTuple: t.TypeAlias = tuple[str, str]
+TaskSet: TypeAlias = set[asyncio.Task[object]]
+MarkerTuple: TypeAlias = tuple[str, str]
 
 original_exists = os.path.exists
 
@@ -58,12 +58,15 @@ original_open = open
 
 
 def mock_open(
-    file: t.Any, *args: t.Any, mock_base_path: str | None = None, **kwargs: t.Any
+    file: t.Any,
+    *args: t.Any,
+    mock_base_path: str | None = None,
+    **kwargs: t.Any,
 ) -> MagicMock:
     base = mock_base_path or str(Path(tempfile.gettempdir()) / "mock")
     if str(file).startswith(base):
         mock_file = MagicMock()
-        enter_mock = cast(MagicMock, mock_file.__enter__)
+        enter_mock = cast("MagicMock", mock_file.__enter__)
         enter_mock.return_value = mock_file
         mock_file.read.return_value = "mocked content"
         mock_file.write.return_value = None
@@ -73,7 +76,9 @@ def mock_open(
 
 class MockAsyncPath:
     def __init__(
-        self, path: str | None = None, mock_base_path: str | None = None
+        self,
+        path: str | None = None,
+        mock_base_path: str | None = None,
     ) -> None:
         base = mock_base_path or str(Path(tempfile.gettempdir()) / "mock/async/path")
         self._path_str = path or base
@@ -159,7 +164,8 @@ def mock_secrets_path() -> MagicMock:
 
 @pytest.fixture
 def mock_config(
-    mock_path_constructor: t.Callable[..., MagicMock], tmp_path: Path
+    mock_path_constructor: t.Callable[..., MagicMock],
+    tmp_path: Path,
 ) -> MagicMock:
     from acb.config import Config
 
@@ -224,16 +230,12 @@ def cleanup_async_tasks() -> Generator[None, Any, Any]:
         with suppress(RuntimeError):
             loop = asyncio.get_event_loop()
             if loop.is_running():
-                try:
+                with suppress(TimeoutError):
                     future = asyncio.wait_for(
                         asyncio.gather(*new_tasks, return_exceptions=True),
                         timeout=2.0,
                     )
                     loop.run_until_complete(future)
-                except TimeoutError:
-                    print(
-                        "Warning: Timed out waiting for tasks to complete during cleanup"
-                    )
 
 
 def _get_event_loop() -> asyncio.AbstractEventLoop | None:
@@ -261,20 +263,20 @@ def _cancel_pending_tasks(loop: asyncio.AbstractEventLoop) -> set[asyncio.Task]:
 
 
 def _wait_for_task_completion(
-    loop: asyncio.AbstractEventLoop, tasks: set[asyncio.Task], timeout: float = 3.0
+    loop: asyncio.AbstractEventLoop,
+    tasks: set[asyncio.Task],
+    timeout: float = 3.0,
 ) -> None:
     """Wait for tasks to complete with timeout."""
     if not tasks or not loop.is_running():
         return
 
-    try:
+    with suppress(TimeoutError, RuntimeError):
         future = asyncio.wait_for(
             asyncio.gather(*tasks, return_exceptions=True),
             timeout=timeout,
         )
         loop.run_until_complete(future)
-    except (TimeoutError, RuntimeError):
-        print("Warning: Some tasks did not complete during cleanup")
 
 
 def _close_event_loop(loop: asyncio.AbstractEventLoop) -> None:
@@ -291,7 +293,7 @@ def _close_event_loop(loop: asyncio.AbstractEventLoop) -> None:
         loop.close()
 
     if exc:
-        print(f"Error closing event loop: {exc.exception}")
+        pass
 
 
 def pytest_sessionfinish(session: Session, exitstatus: int | pytest.ExitCode) -> None:
@@ -314,7 +316,10 @@ def pytest_sessionfinish(session: Session, exitstatus: int | pytest.ExitCode) ->
 
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption(
-        "--run-slow", action="store_true", default=False, help="run slow tests"
+        "--run-slow",
+        action="store_true",
+        default=False,
+        help="run slow tests",
     )
 
 
@@ -335,7 +340,7 @@ def mock_tmp_path(tmp_path: Path) -> Path:
         new_path.__str__ = MagicMock(return_value=new_path_str)
         new_path.__repr__ = MagicMock(return_value=f"Path('{new_path_str}')")
         new_path.__truediv__ = MagicMock(
-            side_effect=lambda next_part: path_join(f"{other}/{next_part}")
+            side_effect=lambda next_part: path_join(f"{other}/{next_part}"),
         )
 
         new_path.exists = MagicMock(return_value=True)
@@ -361,7 +366,7 @@ def mock_tmp_path(tmp_path: Path) -> Path:
     mock_path.read_bytes = MagicMock(return_value=b"")
     mock_path.unlink = MagicMock(return_value=None)
 
-    return cast(Path, mock_path)
+    return cast("Path", mock_path)
 
 
 class SimpleFileStorage:
@@ -393,11 +398,12 @@ def mock_file_system(tmp_path: Path) -> SimpleFileStorage:
     fs = SimpleFileStorage()
 
     fs.write_text = lambda path, content, encoding=None: fs.write_bytes(
-        path, content.encode("utf-8" if encoding is None else encoding)
+        path,
+        content.encode("utf-8" if encoding is None else encoding),
     )
 
     fs.read_text = lambda path, encoding=None: fs.read_bytes(path).decode(
-        "utf-8" if encoding is None else encoding
+        "utf-8" if encoding is None else encoding,
     )
 
     fs.mkdir = lambda path, parents=False, exist_ok=False: fs.directories.add(str(path))
@@ -442,17 +448,20 @@ def mock_async_file_system(tmp_path: Path) -> SimpleAsyncFileStorage:
     fs = SimpleAsyncFileStorage()
 
     async def write_text(
-        path: t.Any, content: str, encoding: str | None = None
+        path: t.Any,
+        content: str,
+        encoding: str | None = None,
     ) -> None:
         return await fs.write_bytes(
-            path, content.encode("utf-8" if encoding is None else encoding)
+            path,
+            content.encode("utf-8" if encoding is None else encoding),
         )
 
     fs.write_text = write_text
 
     async def read_text(path: t.Any, encoding: str | None = None) -> str:
         return (await fs.read_bytes(path)).decode(
-            "utf-8" if encoding is None else encoding
+            "utf-8" if encoding is None else encoding,
         )
 
     fs.read_text = read_text
@@ -513,7 +522,9 @@ def mock_settings() -> MagicMock:
 
 @pytest.fixture(autouse=True)
 def patch_config(
-    monkeypatch: MonkeyPatch, mock_config: MagicMock, mock_settings: MagicMock
+    monkeypatch: MonkeyPatch,
+    mock_config: MagicMock,
+    mock_settings: MagicMock,
 ) -> Generator[None, Any, Any]:
     def mock_get_config() -> MagicMock:
         return mock_config
@@ -566,9 +577,9 @@ def patch_config(
 def mock_tempfile() -> MagicMock:
     mock: MagicMock = MagicMock()
     temp_dir = tempfile.mkdtemp(prefix="mock_temp_")
-    setattr(mock.mkdtemp, "return_value", temp_dir)
-    setattr(mock.mktemp, "return_value", str(Path(temp_dir) / "file"))
-    setattr(mock.gettempdir, "return_value", temp_dir)
+    mock.mkdtemp.return_value = temp_dir
+    mock.mktemp.return_value = str(Path(temp_dir) / "file")
+    mock.gettempdir.return_value = temp_dir
     return mock
 
 
@@ -583,7 +594,9 @@ class MockDns:
         self.zones: dict[str, dict[str, Any]] = {}
 
     async def get_records(
-        self, domain: str | None, record_type: str | None = None
+        self,
+        domain: str | None,
+        record_type: str | None = None,
     ) -> list[dict[str, Any]]:
         if domain is None:
             return []
@@ -643,7 +656,9 @@ class MockDns:
         return ""
 
     async def list_records(
-        self, domain: str | None, record_type: str | None = None
+        self,
+        domain: str | None,
+        record_type: str | None = None,
     ) -> list[dict[str, Any]]:
         return await self.get_records(domain, record_type)
 
@@ -669,7 +684,7 @@ class MockRequests:
             return None
         mock_response = MagicMock()
         mock_response.status_code = 200
-        setattr(mock_response.json, "return_value", {})
+        mock_response.json.return_value = {}
         return mock_response
 
     async def post(
@@ -683,7 +698,7 @@ class MockRequests:
             return None
         mock_response = MagicMock()
         mock_response.status_code = 200
-        setattr(mock_response.json, "return_value", {})
+        mock_response.json.return_value = {}
         return mock_response
 
 
@@ -738,7 +753,7 @@ def configure_mock_for_adapter_test(
     properties: dict[str, Any] | None = None,
 ) -> MagicMock:
     init_mock = MagicMock(return_value=None)
-    setattr(mock_obj, "__init__", init_mock)
+    mock_obj.__init__ = init_mock
 
     if methods:
         for method_name in methods:

@@ -42,13 +42,13 @@ class Nosql(NosqlBase):
 
     async def init(self) -> None:
         self.logger.info(
-            f"Initializing Firestore connection for project {self.config.nosql.project_id}"
+            f"Initializing Firestore connection for project {self.config.nosql.project_id}",
         )
         try:
             self.client.collection("test")
             self.logger.info("Firestore connection initialized successfully")
         except Exception as e:
-            self.logger.error(f"Failed to initialize Firestore connection: {e}")
+            self.logger.exception(f"Failed to initialize Firestore connection: {e}")
             raise
 
     def _get_collection_ref(self, collection: str) -> firestore.CollectionReference:
@@ -71,7 +71,10 @@ class Nosql(NosqlBase):
         return document
 
     async def find(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         collection_ref = self._get_collection_ref(collection)
         query = collection_ref
@@ -97,7 +100,10 @@ class Nosql(NosqlBase):
         return results
 
     async def find_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         if "_id" in filter:
             doc_ref = self._get_collection_ref(collection).document(filter["_id"])
@@ -109,7 +115,10 @@ class Nosql(NosqlBase):
         return results[0] if results else None
 
     async def insert_one(
-        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        document: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         collection_ref = self._get_collection_ref(collection)
         if "_id" in document:
@@ -122,7 +131,10 @@ class Nosql(NosqlBase):
         return doc_id
 
     async def insert_many(
-        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        documents: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[t.Any]:
         ids = []
         batch = self.client.batch()
@@ -181,7 +193,10 @@ class Nosql(NosqlBase):
         return {"modified_count": len(docs)}
 
     async def delete_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         doc = await self.find_one(collection, filter)
         if not doc:
@@ -192,7 +207,10 @@ class Nosql(NosqlBase):
         return {"deleted_count": 1}
 
     async def delete_many(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         docs = await self.find(collection, filter)
         if not docs:
@@ -207,13 +225,19 @@ class Nosql(NosqlBase):
         return {"deleted_count": len(docs)}
 
     async def count(
-        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         docs = await self.find(collection, filter or {})
         return len(docs)
 
     async def aggregate(
-        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        pipeline: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         docs = await self.find(collection, {})
         for stage in pipeline:
@@ -244,7 +268,7 @@ class Nosql(NosqlBase):
             finally:
                 transaction.__exit__(None, None, None)
         except Exception as e:
-            self.logger.error(f"Transaction failed: {e}")
+            self.logger.exception(f"Transaction failed: {e}")
             raise
         finally:
             self._transaction = None

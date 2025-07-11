@@ -14,11 +14,13 @@ from acb.adapters.smtp.gmail import SmtpSettings as GmailSmtpSettings
 
 @pytest.fixture
 def mock_async_context_manager() -> Callable[
-    ..., AbstractAsyncContextManager[MagicMock]
+    ...,
+    AbstractAsyncContextManager[MagicMock],
 ]:
     @asynccontextmanager
     async def _async_context_manager(
-        *args: Any, **kwargs: Any
+        *args: Any,
+        **kwargs: Any,
     ) -> AsyncGenerator[MagicMock]:
         yield MagicMock()
 
@@ -60,7 +62,8 @@ class TestGmailSmtpSettings:
             assert settings.default_from_name == "Example App"
             assert settings.token_uri == "https://oauth2.googleapis.com/token"
             assert "https://www.googleapis.com/auth/gmail.send" in settings.scopes
-            assert settings.mx_servers is not None and len(settings.mx_servers) == 5
+            assert settings.mx_servers is not None
+            assert len(settings.mx_servers) == 5
             assert "1 aspmx.l.google.com." in settings.mx_servers
 
         with patch("acb.depends.depends.__call__", return_value=mock_config):
@@ -96,7 +99,8 @@ class TestGmailSmtp:
     def smtp(
         self,
         mock_async_context_manager: Callable[
-            ..., AbstractAsyncContextManager[MagicMock]
+            ...,
+            AbstractAsyncContextManager[MagicMock],
         ],
     ) -> GmailSmtp:
         class TestableGmailSmtp(GmailSmtp):
@@ -144,8 +148,7 @@ class TestGmailSmtp:
                 client_secret="test-client-secret",
                 scopes=["https://www.googleapis.com/auth/gmail.send"],
             )
-            service = build("gmail", "v1", credentials=creds)
-            return service
+            return build("gmail", "v1", credentials=creds)
 
         smtp._get_gmail_service = mock_get_gmail_service
 
@@ -167,7 +170,9 @@ class TestGmailSmtp:
                 scopes=["https://www.googleapis.com/auth/gmail.send"],
             )
             mock_build.assert_called_once_with(
-                "gmail", "v1", credentials=mock_credentials.return_value
+                "gmail",
+                "v1",
+                credentials=mock_credentials.return_value,
             )
             assert service == mock_service
 
@@ -191,28 +196,20 @@ class TestGmailSmtp:
     @pytest.mark.asyncio
     async def test_get_domain(self, smtp: GmailSmtp) -> None:
         domain_info = await smtp.get_domain("example.com")
-        assert domain_info is not None and domain_info["domain"] == "example.com"
-        assert (
-            domain_info is not None and len(domain_info["receiving_dns_records"]) == 2
-        )
-        assert (
-            domain_info is not None
-            and domain_info["receiving_dns_records"][0]["priority"] == "1"
-        )
-        assert (
-            domain_info is not None
-            and domain_info["receiving_dns_records"][0]["value"]
-            == "aspmx.l.google.com."
-        )
-        assert domain_info is not None and len(domain_info["sending_dns_records"]) == 2
-        assert (
-            domain_info is not None
-            and "v=spf1" in domain_info["sending_dns_records"][0]["value"]
-        )
-        assert (
-            domain_info is not None
-            and "v=DMARC1" in domain_info["sending_dns_records"][1]["value"]
-        )
+        assert domain_info is not None
+        assert domain_info["domain"] == "example.com"
+        assert domain_info is not None
+        assert len(domain_info["receiving_dns_records"]) == 2
+        assert domain_info is not None
+        assert domain_info["receiving_dns_records"][0]["priority"] == "1"
+        assert domain_info is not None
+        assert domain_info["receiving_dns_records"][0]["value"] == "aspmx.l.google.com."
+        assert domain_info is not None
+        assert len(domain_info["sending_dns_records"]) == 2
+        assert domain_info is not None
+        assert "v=spf1" in domain_info["sending_dns_records"][0]["value"]
+        assert domain_info is not None
+        assert "v=DMARC1" in domain_info["sending_dns_records"][1]["value"]
 
     @pytest.mark.asyncio
     async def test_create_domain(self, smtp: GmailSmtp) -> None:
@@ -278,7 +275,7 @@ class TestGmailSmtp:
                 mock_list
             )
             mock_list.execute.return_value = {
-                "forwardingAddresses": [{"forwardingEmail": "admin@example.com"}]
+                "forwardingAddresses": [{"forwardingEmail": "admin@example.com"}],
             }
 
             routes = await smtp.list_routes()
@@ -305,7 +302,8 @@ class TestGmailSmtp:
             response = await smtp.delete_route(route)
 
             mock_service.users().settings().forwardingAddresses().delete.assert_called_once_with(
-                userId="me", forwardingEmail="admin@example.com"
+                userId="me",
+                forwardingEmail="admin@example.com",
             )
 
             assert response.status_code == 200
@@ -332,7 +330,8 @@ class TestGmailSmtp:
             result = await smtp.create_route("admin", "admin@example.com")
 
             mock_service.users().settings().forwardingAddresses().create.assert_called_once_with(
-                userId="me", body={"forwardingEmail": "admin@example.com"}
+                userId="me",
+                body={"forwardingEmail": "admin@example.com"},
             )
             mock_service.users().settings().updateAutoForwarding.assert_called_once()
 
@@ -378,7 +377,8 @@ class TestGmailSmtp:
             mock_message.attach.assert_called_once_with(mock_mime_text.return_value)
 
             mock_service.users().messages().send.assert_called_once_with(
-                userId="me", body={"raw": "encoded-message"}
+                userId="me",
+                body={"raw": "encoded-message"},
             )
 
             assert result["id"] == "message-id-123"

@@ -1,8 +1,8 @@
-Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/sql/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [SQL](./README.md)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [SQL](./README.md)
 
 # SQL Adapter
 
-The SQL adapter provides a standardized interface for relational database operations in ACB applications, with support for MySQL/MariaDB, PostgreSQL, and SQLite (including Turso).
+The SQL adapter provides a standardized interface for relational database operations in ACB applications, with support for MySQL/MariaDB, PostgreSQL, and SQLite (including Turso). It integrates seamlessly with ACB's universal query interface, providing both traditional database operations and modern query patterns.
 
 ## Table of Contents
 
@@ -11,14 +11,20 @@ The SQL adapter provides a standardized interface for relational database operat
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Basic Usage](#basic-usage)
-- [Advanced Usage](#advanced-usage)
+- [Universal Query Interface](#universal-query-interface)
+  - [Simple Query Style](#simple-query-style)
+  - [Repository Pattern](#repository-pattern)
+  - [Specification Pattern](#specification-pattern)
+  - [Advanced Query Builder](#advanced-query-builder)
+  - [Hybrid Query Interface](#hybrid-query-interface)
+- [Traditional SQL Operations](#traditional-sql-operations)
   - [Using SQLModel with Type Safety](#using-sqlmodel-with-type-safety)
   - [Transactions](#transactions)
   - [Raw Connection Access](#raw-connection-access)
+- [Advanced Features](#advanced-features)
   - [Working with Database Migrations](#working-with-database-migrations)
   - [Database Backup and Restore](#database-backup-and-restore)
 - [Troubleshooting](#troubleshooting)
-- [Implementation Details](#implementation-details)
 - [Performance Considerations](#performance-considerations)
 - [Related Adapters](#related-adapters)
 - [Additional Resources](#additional-resources)
@@ -27,11 +33,13 @@ The SQL adapter provides a standardized interface for relational database operat
 
 The ACB SQL adapter offers a consistent way to interact with relational databases:
 
-- Asynchronous database operations using SQLAlchemy and SQLModel
-- Support for multiple database implementations
-- Automatic schema creation and migration
-- Connection pooling for efficient resource usage
-- Session management and transaction support
+- **Universal Query Interface**: Database and model agnostic query patterns
+- **Multiple Query Styles**: Simple, Repository, Specification, and Advanced patterns
+- **Asynchronous Operations**: Built on SQLAlchemy and SQLModel
+- **Type Safety**: Full TypeScript-style type checking with Python generics
+- **Multiple Database Support**: MySQL, PostgreSQL, SQLite, and Turso
+- **Connection Management**: Automatic pooling and session management
+- **Transaction Support**: Robust transaction handling with rollback capabilities
 
 ## Available Implementations
 
@@ -48,7 +56,7 @@ The ACB SQL adapter offers a consistent way to interact with relational database
 pdm add "acb[sql]"
 
 # Or include it with other dependencies
-pdm add "acb[sql,redis,storage]"
+pdm add "acb[sql,cache,storage]"
 ```
 
 ## Configuration
@@ -75,24 +83,16 @@ The SQL adapter settings can be customized in your `settings/app.yml` file:
 ```yaml
 sql:
   # For MySQL/PostgreSQL:
-  # Database host (defaults to 127.0.0.1 for local development)
   host: "db.example.com"
-
-  # Database port
-  port: 5432  # PostgreSQL default
-
-  # Database credentials
+  port: 5432
   user: "dbuser"
   password: "dbpassword"
+  database: "myapp"
 
   # For SQLite:
-  # Local SQLite database
   database_url: "sqlite:///data/app.db"
-
   # Or Turso cloud database
-  database_url: "libsql://mydb.turso.io?authToken=your_token&secure=true"
-  auth_token: "your_turso_auth_token"  # Alternative way to provide token
-  wal_mode: true  # Enable WAL mode for SQLite (ignored for Turso)
+  # database_url: "libsql://mydb.turso.io?authToken=your_token&secure=true"
 
   # Connection pool settings
   pool_pre_ping: true
@@ -100,13 +100,9 @@ sql:
 
   # Engine-specific settings
   engine_kwargs:
-    echo: true  # Log SQL queries
+    echo: false
     pool_size: 5
     max_overflow: 10
-
-  # Backup settings
-  backup_enabled: false
-  backup_bucket: "db-backups"
 ```
 
 ## Basic Usage
@@ -121,97 +117,209 @@ SQL = import_adapter("sql")
 # Get the SQL instance via dependency injection
 sql = depends.get(SQL)
 
-# Execute a query using a context manager for the session
+# Traditional session-based usage
 async with sql.get_session() as session:
     result = await session.execute("SELECT * FROM users WHERE active = TRUE")
     users = result.fetchall()
-
-    # Work with the results
-    for user in users:
-        print(f"User: {user.name}, Email: {user.email}")
 ```
 
-## SQLite and Turso Usage
+## Universal Query Interface
 
-### Local SQLite Database
+ACB provides a universal query interface that works consistently across SQL and NoSQL databases while maintaining type safety and providing multiple query styles.
+
+### Simple Query Style
+
+The Simple Query style provides an Active Record-like interface for basic CRUD operations:
 
 ```python
-from acb.depends import depends
-from acb.adapters import import_adapter
+from acb.models._hybrid import ACBQuery
+from acb.models._query import registry
+from acb.adapters.sql._query import SQLDatabaseAdapter
+from acb.models._sqlmodel import SQLModelAdapter
+from sqlmodel import SQLModel, Field
 
-# Configure for local SQLite (in settings/app.yml)
-# sql:
-#   database_url: "sqlite:///data/app.db"
-#   wal_mode: true
+# Define your model
+class User(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    email: str
+    active: bool = True
 
-SQL = import_adapter("sql")
-sql = depends.get(SQL)
+# Register adapters
+registry.register_database_adapter("sql", SQLDatabaseAdapter(sql))
+registry.register_model_adapter("sqlmodel", SQLModelAdapter())
 
-# The adapter automatically:
-# - Creates the data directory if it doesn't exist
-# - Enables WAL mode for better concurrency
-# - Uses aiosqlite driver for async operations
+# Create query interface
+query = ACBQuery(database_adapter_name="sql", model_adapter_name="sqlmodel")
 
-async with sql.get_session() as session:
-    result = await session.execute("SELECT sqlite_version()")
-    version = result.scalar()
-    print(f"SQLite version: {version}")
+# Simple CRUD operations
+async def user_operations():
+    # Get all users
+    users = await query.for_model(User).simple.all()
+
+    # Find user by ID
+    user = await query.for_model(User).simple.find(1)
+
+    # Create new user
+    new_user = await query.for_model(User).simple.create({
+        "name": "John Doe",
+        "email": "john@example.com"
+    })
+
+    # Update user
+    updated_user = await query.for_model(User).simple.update(1, {"active": False})
+
+    # Delete user
+    await query.for_model(User).simple.delete(1)
 ```
 
-### Turso Cloud Database
+### Repository Pattern
+
+The Repository pattern provides domain-specific query methods with built-in caching, soft delete, and audit support:
 
 ```python
-from acb.depends import depends
-from acb.adapters import import_adapter
+from acb.models._repository import RepositoryOptions
 
-# Configure for Turso (in settings/app.yml)
-# sql:
-#   database_url: "libsql://mydb.turso.io?authToken=your_token&secure=true"
-#   # Or provide token separately:
-#   # auth_token: "your_turso_auth_token"
+# Configure repository options
+repo_options = RepositoryOptions(
+    cache_enabled=True,
+    cache_ttl=300,  # 5 minutes
+    enable_soft_delete=True,
+    audit_enabled=True
+)
 
-SQL = import_adapter("sql")
-sql = depends.get(SQL)
+# Create repository
+user_repo = query.for_model(User).repository(repo_options)
 
-# The adapter automatically:
-# - Detects Turso URL pattern
-# - Uses sqlalchemy-libsql driver for HTTP access
-# - Handles authentication tokens
-# - Supports secure connections
+async def repository_operations():
+    # Find active users (domain-specific method)
+    active_users = await user_repo.find_active()
 
-async with sql.get_session() as session:
-    # Works exactly the same as local SQLite!
-    result = await session.execute("SELECT COUNT(*) FROM users")
-    count = result.scalar()
-    print(f"Users in Turso database: {count}")
+    # Find recent users (last 7 days)
+    recent_users = await user_repo.find_recent(days=7)
+
+    # Batch operations
+    users_data = [
+        {"name": "User 1", "email": "user1@example.com"},
+        {"name": "User 2", "email": "user2@example.com"}
+    ]
+    created_users = await user_repo.batch_create(users_data)
+
+    # Soft delete (sets deleted_at timestamp)
+    await user_repo.delete(user_id)
+
+    # Count with caching
+    user_count = await user_repo.count()
 ```
 
-### Dual Mode Development
+### Specification Pattern
+
+The Specification pattern allows you to create composable, reusable business rules:
 
 ```python
-import os
-from acb.depends import depends
-from acb.adapters import import_adapter
+from acb.models._specification import field, range_spec, custom_spec
 
-# Switch between local and remote based on environment
-def get_database_url():
-    if os.getenv("ENVIRONMENT") == "production":
-        return "libsql://prod-db.turso.io?authToken=prod_token&secure=true"
-    else:
-        return "sqlite:///data/dev.db"
+async def specification_operations():
+    # Create specifications
+    active_spec = field("active").equals(True)
+    email_spec = field("email").like("%@company.com")
+    age_spec = range_spec("age", 18, 65, inclusive=True)
 
-# Use the same code for both local and remote!
-SQL = import_adapter("sql")
-sql = depends.get(SQL)
+    # Combine specifications
+    company_employees = active_spec & email_spec & age_spec
 
-async with sql.get_session() as session:
-    # This works identically for both SQLite and Turso
-    users = await session.execute("SELECT * FROM users LIMIT 10")
-    for user in users:
-        print(user)
+    # Use specifications in queries
+    users = await query.for_model(User).specification.with_spec(company_employees).all()
+
+    # Custom specifications
+    def high_activity_predicate(user):
+        return user.login_count > 100 and user.last_login_days_ago < 7
+
+    from acb.models._query import QuerySpec, QueryFilter
+    high_activity_spec = custom_spec(
+        predicate=high_activity_predicate,
+        query_spec=QuerySpec(filter=QueryFilter().where("login_count", ">", 100)),
+        name="HighActivityUser"
+    )
+
+    # Complex business rules
+    premium_active_users = (
+        field("subscription_type").equals("premium") &
+        field("active").equals(True) &
+        high_activity_spec
+    )
+
+    premium_users = await query.for_model(User).specification.with_spec(premium_active_users).all()
 ```
 
-## Advanced Usage
+### Advanced Query Builder
+
+The Advanced Query Builder provides full control over query construction:
+
+```python
+async def advanced_query_operations():
+    # Complex queries with joins, aggregations, and filtering
+    advanced_query = query.for_model(User).advanced
+
+    # Method chaining
+    users = await (advanced_query
+        .where("active", True)
+        .where_gt("age", 21)
+        .where_in("role", ["admin", "moderator"])
+        .order_by_desc("created_at")
+        .limit(10)
+        .offset(20)
+        .all())
+
+    # Aggregations
+    user_count = await advanced_query.where("active", True).count()
+
+    # Exists check
+    has_admins = await advanced_query.where("role", "admin").exists()
+
+    # Bulk operations
+    await advanced_query.where("active", False).update({"archived": True})
+
+    # Complex aggregation pipeline
+    pipeline = [
+        {"$match": {"active": True}},
+        {"$group": {"_id": "$role", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    role_stats = await advanced_query.aggregate(pipeline)
+```
+
+### Hybrid Query Interface
+
+The Hybrid Query Interface allows you to mix and match different query styles:
+
+```python
+async def hybrid_operations():
+    # Start with repository pattern
+    user_manager = query.for_model(User)
+
+    # Switch between styles as needed
+    async with user_manager.transaction():
+        # Use repository for domain logic
+        active_users = await user_manager.repository().find_active()
+
+        # Use specifications for complex business rules
+        premium_spec = field("subscription_type").equals("premium")
+        premium_users = await user_manager.specification.with_spec(premium_spec).all()
+
+        # Use advanced queries for complex operations
+        await user_manager.advanced.where_in("id", [u.id for u in premium_users]).update({
+            "premium_expires_at": datetime.now() + timedelta(days=30)
+        })
+
+        # Use simple queries for basic operations
+        new_user = await user_manager.simple.create({
+            "name": "New User",
+            "email": "new@example.com"
+        })
+```
+
+## Traditional SQL Operations
 
 ### Using SQLModel with Type Safety
 
@@ -227,50 +335,37 @@ class User(SQLModel, table=True):
     email: str
     active: bool = True
 
-# Import the SQL adapter
+# Traditional SQLModel usage
 SQL = import_adapter("sql")
 sql = depends.get(SQL)
 
-# Create a new user
 async with sql.get_session() as session:
+    # Create
     new_user = User(name="John Doe", email="john@example.com")
     session.add(new_user)
     await session.commit()
-    await session.refresh(new_user)
-    print(f"Created user with ID: {new_user.id}")
 
-# Query with type safety
-async with sql.get_session() as session:
+    # Query
     statement = select(User).where(User.active == True)
     result = await session.execute(statement)
     users = result.scalars().all()
-
-    for user in users:
-        print(f"User: {user.name}, Email: {user.email}")
 ```
 
 ### Transactions
 
 ```python
-from acb.depends import depends
-from acb.adapters import import_adapter
+# Using the universal query interface with transactions
+async with query.for_model(User).transaction():
+    # All operations in this block are part of the same transaction
+    await query.for_model(User).simple.update(1, {"balance": 1000})
+    await query.for_model(User).simple.update(2, {"balance": 2000})
+    # Transaction is automatically committed or rolled back
 
-SQL = import_adapter("sql")
-sql = depends.get(SQL)
-
-# Using transactions
+# Traditional transaction handling
 async with sql.get_session() as session:
-    try:
-        # Start a transaction
-        async with session.begin():
-            # All operations within this block are part of the same transaction
-            await session.execute("UPDATE accounts SET balance = balance - 100 WHERE id = 1")
-            await session.execute("UPDATE accounts SET balance = balance + 100 WHERE id = 2")
-
-            # If any operation fails, the entire transaction is rolled back
-            # If all succeed, the transaction is committed automatically
-    except Exception as e:
-        print(f"Transaction failed: {e}")
+    async with session.begin():
+        await session.execute("UPDATE accounts SET balance = balance - 100 WHERE id = 1")
+        await session.execute("UPDATE accounts SET balance = balance + 100 WHERE id = 2")
 ```
 
 ### Raw Connection Access
@@ -278,37 +373,20 @@ async with sql.get_session() as session:
 ```python
 # For operations that need direct connection access
 async with sql.get_conn() as conn:
-    # Execute a raw SQL statement
     result = await conn.execute("SHOW TABLES")
     tables = result.fetchall()
-
-    # Or execute multiple statements in a transaction
-    await conn.execute("""
-        CREATE TABLE IF NOT EXISTS logs (
-            id SERIAL PRIMARY KEY,
-            message TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
 ```
+
+## Advanced Features
 
 ### Working with Database Migrations
 
 ```python
-from acb.depends import depends
-from acb.adapters import import_adapter
+# The SQL adapter initializes and runs migrations automatically
+await sql.run_migrations()
 
-SQL = import_adapter("sql")
-sql = depends.get(SQL)
-
-# Run migrations
-async def run_migrations():
-    # The SQL adapter initializes and runs migrations automatically
-    # during application startup, but you can also trigger it manually:
-    await sql.run_migrations()
-
-    # Or run specific migrations:
-    await sql.run_migration("20230501_add_user_roles.sql")
+# Run specific migrations
+await sql.run_migration("20230501_add_user_roles.sql")
 ```
 
 ### Database Backup and Restore
@@ -316,159 +394,59 @@ async def run_migrations():
 ```python
 # Create a database backup
 backup_id = await sql.create_backup()
-print(f"Created backup with ID: {backup_id}")
 
 # Restore from a backup
 success = await sql.restore_backup(backup_id)
-if success:
-    print("Database restored successfully")
-else:
-    print("Backup restoration failed")
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Connection Error**
-   - **Problem**: `ConnectionError: Cannot connect to MySQL server`
-   - **Solution**: Check your database host, port, and credentials
-
-2. **Table Not Found**
-   - **Problem**: `TableNotFoundError: Table 'users' doesn't exist`
-   - **Solution**: Ensure your models are properly defined and migrations have run
-
-3. **Pool Exhaustion**
-   - **Problem**: `TimeoutError: Connection pool exhausted`
-   - **Solution**: Increase pool size or fix connection leaks in your code
-
-4. **Deadlock**
-   - **Problem**: `DeadlockError: Deadlock found when trying to get lock`
-   - **Solution**: Review your transaction logic and consider restructuring queries
-
-## Implementation Details
-
-The SQL adapter implements these core methods:
-
-```python
-class SqlBase:
-    @property
-    def engine(self) -> AsyncEngine: ...
-    @property
-    def session(self) -> AsyncSession: ...
-
-    @asynccontextmanager
-    async def get_session(self) -> AsyncGenerator[AsyncSession, None]: ...
-
-    @asynccontextmanager
-    async def get_conn(self) -> AsyncGenerator[AsyncConnection, None]: ...
-
-    async def init(self) -> None: ...
-    async def run_migrations(self) -> None: ...
-    async def create_backup(self) -> str: ...
-    async def restore_backup(self, backup_id: str) -> bool: ...
 ```
 
 ## Performance Considerations
 
-When working with the SQL adapter, keep these performance factors in mind:
+### Query Optimization with Universal Interface
 
-1. **Connection Pooling**: The SQL adapter uses connection pooling to efficiently manage database connections. Configure pool size based on your application's needs:
+```python
+# Use specifications for reusable business logic
+frequently_used_spec = field("status").equals("active") & field("verified").equals(True)
+
+# Repository pattern automatically handles caching
+repo = query.for_model(User).repository(RepositoryOptions(cache_enabled=True, cache_ttl=300))
+users = await repo.find_by_specification(frequently_used_spec)  # Cached result
+
+# Efficient batch operations
+await repo.batch_create([...])  # Automatically batched
+```
+
+### Connection Pool Configuration
 
 ```yaml
 sql:
   engine_kwargs:
-    pool_size: 10  # Adjust based on expected concurrent connections
-    max_overflow: 20  # Additional connections when pool is exhausted
-    pool_timeout: 30  # Seconds to wait for a connection from the pool
+    pool_size: 10
+    max_overflow: 20
+    pool_timeout: 30
 ```
 
-2. **Query Optimization**:
-   - Use specific column selection instead of `SELECT *`
-   - Add appropriate indexes for frequently queried columns
-   - Use pagination for large result sets
-   - Consider using compiled queries for frequently executed statements
+### Implementation Performance
 
-3. **Batch Operations**: For bulk inserts or updates, use batch operations:
-
-```python
-# Efficient batch insert
-async with sql.get_session() as session:
-    session.add_all([
-        User(name="User 1", email="user1@example.com"),
-        User(name="User 2", email="user2@example.com"),
-        User(name="User 3", email="user3@example.com")
-    ])
-    await session.commit()
-```
-
-4. **Implementation Performance**:
-
-| Implementation | Read Performance | Write Performance | Best For |
-|----------------|------------------|-------------------|----------|
-| **MySQL** | Fast | Very Fast | High write workloads, simpler queries |
-| **PostgreSQL** | Very Fast | Fast | Complex queries, JSONB data, full-text search |
-| **SQLite** | Very Fast | Fast | Local development, testing, single-user apps, edge deployments |
-| **Turso** | Fast | Fast | Globally distributed SQLite, serverless apps, edge computing |
-
-5. **Async Execution**: Remember that database operations are asynchronous and should be properly awaited:
-
-```python
-# Correct async usage
-async with sql.get_session() as session:
-    result = await session.execute(select(User))
-    users = result.scalars().all()
-```
+| Implementation | Universal Query | Traditional SQL | Best For |
+|----------------|----------------|-----------------|----------|
+| **MySQL** | Excellent | Excellent | High write workloads |
+| **PostgreSQL** | Excellent | Excellent | Complex queries, JSONB |
+| **SQLite** | Excellent | Excellent | Local development |
+| **Turso** | Excellent | Excellent | Edge deployments |
 
 ## Related Adapters
 
-The SQL adapter works well with these other ACB adapters:
+The SQL adapter integrates seamlessly with other ACB adapters:
 
-- [**Models Adapter**](../models/README.md): Define and work with SQLModel models
-- [**Cache Adapter**](../cache/README.md): Cache database query results to improve performance
-- [**NoSQL Adapter**](../nosql/README.md): Use alongside SQL for hybrid database architectures
-- [**Storage Adapter**](../storage/README.md): Store file metadata in SQL while storing actual files in object storage
-
-Integration example:
-
-```python
-# Using SQL and Cache adapters together for efficient data access
-from acb.depends import depends
-from acb.adapters import import_adapter
-from sqlmodel import select
-
-SQL = import_adapter("sql")
-Cache = import_adapter("cache")
-
-sql = depends.get(SQL)
-cache = depends.get(Cache)
-
-async def get_user(user_id: int):
-    # Try to get from cache first
-    cache_key = f"user:{user_id}"
-    user = await cache.get(cache_key)
-
-    if not user:
-        # Cache miss - get from database
-        async with sql.get_session() as session:
-            statement = select(User).where(User.id == user_id)
-            result = await session.execute(statement)
-            user = result.scalar_one_or_none()
-
-            if user:
-                # Store in cache for future requests
-                await cache.set(cache_key, user, ttl=300)  # Cache for 5 minutes
-
-    return user
-```
+- [**Models Adapter**](../models/README.md): Define SQLModel and Pydantic models
+- [**Cache Adapter**](../cache/README.md): Automatic query result caching
+- [**NoSQL Adapter**](../nosql/README.md): Hybrid database architectures
+- [**Storage Adapter**](../storage/README.md): File metadata storage
 
 ## Additional Resources
 
+- [Universal Query Interface Documentation](../../models/README.md)
+- [Specification Pattern Examples](../../models/_specification.py)
+- [Repository Pattern Examples](../../models/_repository.py)
 - [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
 - [SQLAlchemy Async Documentation](https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html)
-- [MySQL Documentation](https://dev.mysql.com/doc/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Database Indexing Strategies](https://use-the-index-luke.com/)
-- [ACB Models Adapter](../models/README.md)
-- [ACB NoSQL Adapter](../nosql/README.md)
-- [ACB Cache Adapter](../cache/README.md)

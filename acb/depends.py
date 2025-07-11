@@ -35,10 +35,10 @@ class Depends:
             with suppress(AttributeError, IndexError):
                 context = stack()[1][4]
                 if context:
-                    category = [
+                    category = next(
                         c.strip()
                         for c in context[0].split("=")[0].strip().lower().split(",")
-                    ][0].removeprefix("self.")
+                    ).removeprefix("self.")
         class_ = category
         if isinstance(class_, str):
             with suppress(Exception):

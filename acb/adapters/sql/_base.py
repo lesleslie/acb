@@ -70,10 +70,10 @@ class SqlBaseSettings(Settings):
         self.engine_kwargs["echo_pool"] = (
             "debug" if config.logger.verbose else getattr(config.debug, "sql", False)
         )
-        self.engine_kwargs = (
-            dict(poolclass=self.poolclass, pool_pre_ping=self.pool_pre_ping)
-            | self.engine_kwargs
-        )
+        self.engine_kwargs = {
+            "poolclass": self.poolclass,
+            "pool_pre_ping": self.pool_pre_ping,
+        } | self.engine_kwargs
 
 
 class SqlProtocol(t.Protocol):
@@ -98,7 +98,8 @@ class SqlBase(AdapterBase):
             self.logger.debug(self.config.sql._async_url)
             create_database(self.config.sql._url)
         return create_async_engine(
-            self.config.sql._async_url, **self.config.sql.engine_kwargs
+            self.config.sql._async_url,
+            **self.config.sql.engine_kwargs,
         )
 
     async def get_engine(self) -> AsyncEngine:
@@ -107,7 +108,8 @@ class SqlBase(AdapterBase):
     @property
     def engine(self) -> AsyncEngine:
         if self._engine is None:
-            raise RuntimeError("Engine not initialized. Call get_engine() first.")
+            msg = "Engine not initialized. Call get_engine() first."
+            raise RuntimeError(msg)
         return self._engine
 
     async def _ensure_session(self) -> AsyncSession:
@@ -119,7 +121,8 @@ class SqlBase(AdapterBase):
     @property
     def session(self) -> AsyncSession:
         if self._session is None:
-            raise RuntimeError("Session not initialized. Call _ensure_session() first.")
+            msg = "Session not initialized. Call _ensure_session() first."
+            raise RuntimeError(msg)
         return self._session
 
     @asynccontextmanager
@@ -139,7 +142,7 @@ class SqlBase(AdapterBase):
         async with self.get_conn() as conn:
             if getattr(self.config.debug, "sql", False):
                 ps = await conn.execute(text("SHOW FULL PROCESSLIST"))
-                show_ps = [p for p in ps]
+                show_ps = list(ps)
                 debug(show_ps)
                 ids = [
                     a[0]
@@ -154,5 +157,5 @@ class SqlBase(AdapterBase):
                 import_adapter("models")
                 await conn.run_sync(SQLModel.metadata.create_all)
             except Exception as e:
-                self.logger.error(e)
-                raise e
+                self.logger.exception(e)
+                raise

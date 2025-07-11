@@ -61,7 +61,9 @@ class Cache(CacheBase, RedisBackend):
             await self._client.close()
 
     async def _clear(
-        self, namespace: str | None = None, _conn: t.Any = None
+        self,
+        namespace: str | None = None,
+        _conn: t.Any = None,
     ) -> t.Literal[True]:
         if not namespace:
             pattern = f"{self.config.app.name}:*"

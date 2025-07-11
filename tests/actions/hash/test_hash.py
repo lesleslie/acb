@@ -3,7 +3,7 @@
 import hashlib
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final
 from unittest.mock import MagicMock, patch
 from warnings import catch_warnings
 
@@ -12,9 +12,6 @@ import pytest
 from anyio import Path as AsyncPath
 from pytest_benchmark.fixture import BenchmarkFixture
 from acb.actions.hash import hash
-
-if TYPE_CHECKING:
-    pass
 
 with catch_warnings(action="ignore", category=RuntimeWarning):
     from google_crc32c import value as crc32c
@@ -37,7 +34,7 @@ class TestHash:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "hash_func,expected_func",
+        ("hash_func", "expected_func"),
         [
             (hash.blake3, lambda data: blake3.blake3(data).hexdigest()),
             (
@@ -48,7 +45,9 @@ class TestHash:
         ],
     )
     async def test_hash_string(
-        self, hash_func: Callable[[Any], Any], expected_func: Callable[[bytes], str]
+        self,
+        hash_func: Callable[[Any], Any],
+        expected_func: Callable[[bytes], str],
     ) -> None:
         result = await hash_func(TEST_STRING)
 
@@ -59,7 +58,7 @@ class TestHash:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "hash_func,expected_func",
+        ("hash_func", "expected_func"),
         [
             (hash.blake3, lambda data: blake3.blake3(data).hexdigest()),
             (
@@ -70,7 +69,9 @@ class TestHash:
         ],
     )
     async def test_hash_bytes(
-        self, hash_func: Callable[[Any], Any], expected_func: Callable[[bytes], str]
+        self,
+        hash_func: Callable[[Any], Any],
+        expected_func: Callable[[bytes], str],
     ) -> None:
         result = await hash_func(TEST_BYTES)
 
@@ -99,7 +100,7 @@ class TestHash:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "hash_func,expected_func",
+        ("hash_func", "expected_func"),
         [
             (hash.blake3, lambda data: blake3.blake3(data).hexdigest()),
             (
@@ -187,7 +188,7 @@ class TestHash:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "hash_func,exception_type",
+        ("hash_func", "exception_type"),
         [
             (hash.blake3, TypeError),
             (hash.md5, TypeError),
@@ -195,7 +196,9 @@ class TestHash:
         ],
     )
     async def test_hash_invalid_input(
-        self, hash_func: Callable[[Any], Any], exception_type: "type[Exception]"
+        self,
+        hash_func: Callable[[Any], Any],
+        exception_type: "type[Exception]",
     ) -> None:
         with pytest.raises(exception_type):
             await hash_func(None)  # type: ignore
@@ -280,7 +283,7 @@ class TestHash:
 
         assert isinstance(result, str)
 
-        expected = blake3.blake3("".join([a for a in test_list]).encode()).hexdigest()
+        expected = blake3.blake3("".join(test_list.copy()).encode()).hexdigest()
         assert result == expected
 
     @pytest.mark.asyncio
@@ -296,13 +299,15 @@ class TestHash:
     async def test_md5_with_ascii_parameter(self) -> None:
         result1 = await hash.md5(TEST_NON_ASCII)
         expected1 = hashlib.md5(
-            TEST_NON_ASCII.encode(), usedforsecurity=False
+            TEST_NON_ASCII.encode(),
+            usedforsecurity=False,
         ).hexdigest()
         assert result1 == expected1
 
         result2 = await hash.md5(TEST_NON_ASCII.encode("ascii", errors="replace"))
         expected2 = hashlib.md5(
-            TEST_NON_ASCII.encode("ascii", errors="replace"), usedforsecurity=False
+            TEST_NON_ASCII.encode("ascii", errors="replace"),
+            usedforsecurity=False,
         ).hexdigest()
         assert result2 == expected2
 
@@ -344,7 +349,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_blake3_large_text_performance(
-        self, benchmark: BenchmarkFixture, large_text_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        large_text_data: str,
     ) -> None:
         result = await benchmark(hash.blake3, large_text_data)
         assert isinstance(result, str)
@@ -353,7 +360,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_blake3_large_binary_performance(
-        self, benchmark: BenchmarkFixture, large_binary_data: bytes
+        self,
+        benchmark: BenchmarkFixture,
+        large_binary_data: bytes,
     ) -> None:
         result = await benchmark(hash.blake3, large_binary_data)
         assert isinstance(result, str)
@@ -362,7 +371,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_blake3_large_file_performance(
-        self, benchmark: BenchmarkFixture, large_test_file: AsyncPath
+        self,
+        benchmark: BenchmarkFixture,
+        large_test_file: AsyncPath,
     ) -> None:
         result = await benchmark(hash.blake3, str(large_test_file))
         assert isinstance(result, str)
@@ -371,7 +382,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_crc32c_large_text_performance(
-        self, benchmark: BenchmarkFixture, large_text_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        large_text_data: str,
     ) -> None:
         result = await benchmark(hash.crc32c, large_text_data)
         assert isinstance(result, str)
@@ -380,7 +393,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_crc32c_large_binary_performance(
-        self, benchmark: BenchmarkFixture, large_binary_data: bytes
+        self,
+        benchmark: BenchmarkFixture,
+        large_binary_data: bytes,
     ) -> None:
         result = await benchmark(hash.crc32c, large_binary_data)
         assert isinstance(result, str)
@@ -389,7 +404,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_crc32c_large_file_performance(
-        self, benchmark: BenchmarkFixture, large_test_file: AsyncPath
+        self,
+        benchmark: BenchmarkFixture,
+        large_test_file: AsyncPath,
     ) -> None:
         result = await benchmark(hash.crc32c, str(large_test_file))
         assert isinstance(result, str)
@@ -398,7 +415,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_md5_large_text_performance(
-        self, benchmark: BenchmarkFixture, large_text_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        large_text_data: str,
     ) -> None:
         result = await benchmark(hash.md5, large_text_data)
         assert isinstance(result, str)
@@ -407,7 +426,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_md5_large_binary_performance(
-        self, benchmark: BenchmarkFixture, large_binary_data: bytes
+        self,
+        benchmark: BenchmarkFixture,
+        large_binary_data: bytes,
     ) -> None:
         result = await benchmark(hash.md5, large_binary_data)
         assert isinstance(result, str)
@@ -416,7 +437,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_md5_large_file_performance(
-        self, benchmark: BenchmarkFixture, large_test_file: AsyncPath
+        self,
+        benchmark: BenchmarkFixture,
+        large_test_file: AsyncPath,
     ) -> None:
         result = await benchmark(hash.md5, str(large_test_file))
         assert isinstance(result, str)
@@ -425,7 +448,9 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_hash_algorithms_comparison_performance(
-        self, benchmark: BenchmarkFixture, large_text_data: str
+        self,
+        benchmark: BenchmarkFixture,
+        large_text_data: str,
     ) -> None:
         async def hash_with_all_algorithms():
             blake3_result = await hash.blake3(large_text_data)
@@ -442,7 +467,8 @@ class TestHashBenchmarks:
     @pytest.mark.benchmark
     @pytest.mark.asyncio
     async def test_bulk_hash_operations_performance(
-        self, benchmark: BenchmarkFixture
+        self,
+        benchmark: BenchmarkFixture,
     ) -> None:
         test_data = [f"test_data_{i}" for i in range(10)]
 

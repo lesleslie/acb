@@ -19,9 +19,10 @@ class SmtpBaseSettings(Settings):
     tls: bool = True
     ssl: bool = False
     template_folder: AsyncPath | None = None
-    forwards: dict[str, EmailStr] = dict(
-        admin="pat@example.com", info="terry@example.com"
-    )
+    forwards: dict[str, EmailStr] = {
+        "admin": "pat@example.com",
+        "info": "terry@example.com",
+    }
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:

@@ -48,7 +48,8 @@ class Secret(SecretBase):
     @property
     def client(self) -> InfisicalSDKClient:
         if self._client is None:
-            raise RuntimeError("Client not initialized. Call get_client() first.")
+            msg = "Client not initialized. Call get_client() first."
+            raise RuntimeError(msg)
         return self._client
 
     @depends.inject
@@ -58,7 +59,7 @@ class Secret(SecretBase):
             await self.list()
             logger.info("Infisical secret adapter initialized successfully")
         except Exception as e:
-            logger.error(f"Failed to initialize Infisical secret adapter: {e}")
+            logger.exception(f"Failed to initialize Infisical secret adapter: {e}")
             raise
 
     def extract_secret_name(self, secret_path: str) -> str:
@@ -69,7 +70,8 @@ class Secret(SecretBase):
             filter_prefix = f"{self.prefix}{adapter}_" if adapter else self.prefix
             project_id = self.config.secret.project_id
             if not project_id:
-                raise ValueError("Project ID is required but not set in configuration")
+                msg = "Project ID is required but not set in configuration"
+                raise ValueError(msg)
             client = await self.get_client()
             response = await asyncio.to_thread(
                 client.secrets.list_secrets,
@@ -77,21 +79,21 @@ class Secret(SecretBase):
                 environment_slug=self.config.secret.environment,
                 secret_path=self.config.secret.secret_path,
             )
-            secret_names = [
+            return [
                 self.extract_secret_name(secret.secretKey)
                 for secret in response.secrets
                 if secret.secretKey.startswith(filter_prefix)
             ]
-            return secret_names
         except Exception as e:
-            self.logger.error(f"Failed to list secrets: {e}")
+            self.logger.exception(f"Failed to list secrets: {e}")
             raise
 
     async def get(self, name: str, version: str | None = None) -> str | None:
         try:
             project_id = self.config.secret.project_id
             if not project_id:
-                raise ValueError("Project ID is required but not set in configuration")
+                msg = "Project ID is required but not set in configuration"
+                raise ValueError(msg)
             full_name = f"{self.prefix}{name}"
             client = await self.get_client()
             response = await asyncio.to_thread(
@@ -105,14 +107,15 @@ class Secret(SecretBase):
             self.logger.info(f"Fetched secret - {name}")
             return response.secretValue
         except Exception as e:
-            self.logger.error(f"Failed to get secret {name}: {e}")
+            self.logger.exception(f"Failed to get secret {name}: {e}")
             raise
 
     async def create(self, name: str, value: str) -> None:
         try:
             project_id = self.config.secret.project_id
             if not project_id:
-                raise ValueError("Project ID is required but not set in configuration")
+                msg = "Project ID is required but not set in configuration"
+                raise ValueError(msg)
             full_name = f"{self.prefix}{name}"
             client = await self.get_client()
             await asyncio.to_thread(
@@ -125,14 +128,15 @@ class Secret(SecretBase):
             )
             self.logger.debug(f"Created secret - {name}")
         except Exception as e:
-            self.logger.error(f"Failed to create secret {name}: {e}")
+            self.logger.exception(f"Failed to create secret {name}: {e}")
             raise
 
     async def update(self, name: str, value: str) -> None:
         try:
             project_id = self.config.secret.project_id
             if not project_id:
-                raise ValueError("Project ID is required but not set in configuration")
+                msg = "Project ID is required but not set in configuration"
+                raise ValueError(msg)
             full_name = f"{self.prefix}{name}"
             client = await self.get_client()
             await asyncio.to_thread(
@@ -145,7 +149,7 @@ class Secret(SecretBase):
             )
             self.logger.debug(f"Updated secret - {name}")
         except Exception as e:
-            self.logger.error(f"Failed to update secret {name}: {e}")
+            self.logger.exception(f"Failed to update secret {name}: {e}")
             raise
 
     async def set(self, name: str, value: str) -> None:
@@ -165,7 +169,8 @@ class Secret(SecretBase):
         try:
             project_id = self.config.secret.project_id
             if not project_id:
-                raise ValueError("Project ID is required but not set in configuration")
+                msg = "Project ID is required but not set in configuration"
+                raise ValueError(msg)
             full_name = f"{self.prefix}{name}"
             client = await self.get_client()
             await asyncio.to_thread(
@@ -177,12 +182,12 @@ class Secret(SecretBase):
             )
             self.logger.debug(f"Deleted secret - {name}")
         except Exception as e:
-            self.logger.error(f"Failed to delete secret {name}: {e}")
+            self.logger.exception(f"Failed to delete secret {name}: {e}")
             raise
 
     async def list_versions(self, name: str) -> builtins.list[str]:
         self.logger.warning(
-            "Listing secret versions is not currently supported by the Infisical adapter"
+            "Listing secret versions is not currently supported by the Infisical adapter",
         )
         return []
 

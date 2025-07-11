@@ -52,34 +52,46 @@ class Nosql(NosqlBase):
 
     async def init(self) -> None:
         self.logger.info(
-            f"Initializing MongoDB connection to {self.config.nosql.connection_string}"
+            f"Initializing MongoDB connection to {self.config.nosql.connection_string}",
         )
         try:
             await init_beanie(database=self.db, document_models=[])
             self.logger.info("MongoDB connection initialized successfully")
         except Exception as e:
-            self.logger.error(f"Failed to initialize MongoDB connection: {e}")
+            self.logger.exception(f"Failed to initialize MongoDB connection: {e}")
             raise
 
     async def find(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         cursor = self.db[collection].find(filter, **kwargs)
         return await cursor.to_list(length=None)
 
     async def find_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         return await self.db[collection].find_one(filter, **kwargs)
 
     async def insert_one(
-        self, collection: str, document: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        document: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         result = await self.db[collection].insert_one(document, **kwargs)
         return result.inserted_id
 
     async def insert_many(
-        self, collection: str, documents: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        documents: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[t.Any]:
         result = await self.db[collection].insert_many(documents, **kwargs)
         return result.inserted_ids
@@ -103,22 +115,34 @@ class Nosql(NosqlBase):
         return await self.db[collection].update_many(filter, update, **kwargs)
 
     async def delete_one(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         return await self.db[collection].delete_one(filter, **kwargs)
 
     async def delete_many(
-        self, collection: str, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> t.Any:
         return await self.db[collection].delete_many(filter, **kwargs)
 
     async def count(
-        self, collection: str, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        collection: str,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         return await self.db[collection].count_documents(filter or {}, **kwargs)
 
     async def aggregate(
-        self, collection: str, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        collection: str,
+        pipeline: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         cursor = self.db[collection].aggregate(pipeline, **kwargs)
         return await cursor.to_list(length=None)
@@ -131,21 +155,23 @@ class Nosql(NosqlBase):
                 self._transaction = session
                 yield None
         except Exception as e:
-            self.logger.error(f"Transaction failed: {e}")
+            self.logger.exception(f"Transaction failed: {e}")
             try:
                 if getattr(session, "has_ended", False) is False and getattr(
-                    session, "in_transaction", False
+                    session,
+                    "in_transaction",
+                    False,
                 ):
                     await session.abort_transaction()
             except Exception as abort_error:
-                self.logger.error(f"Failed to abort transaction: {abort_error}")
+                self.logger.exception(f"Failed to abort transaction: {abort_error}")
             raise
         finally:
             self._transaction = None
             try:
                 await session.end_session()
             except Exception as close_error:
-                self.logger.error(f"Failed to close session: {close_error}")
+                self.logger.exception(f"Failed to close session: {close_error}")
 
 
 depends.set(Nosql)

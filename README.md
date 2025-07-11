@@ -51,6 +51,7 @@ If you're new to ACB, here are the key concepts to understand:
 - [Core Components](#core-components)
   - [Actions](#actions)
   - [Adapters](#adapters)
+  - [Universal Query Interface](#universal-query-interface)
   - [Configuration System](#configuration-system)
   - [Dependency Injection](#dependency-injection)
 - [Common Patterns](#common-patterns)
@@ -287,6 +288,124 @@ cache: redis
 Your application code remains exactly the same!
 
 For more detailed documentation on adapters, see the [Adapters README](./acb/adapters/README.md).
+
+### Universal Query Interface
+
+ACB provides a powerful Universal Query Interface that allows you to write database queries that work consistently across both SQL and NoSQL databases, while maintaining full type safety and supporting multiple query patterns.
+
+#### Key Benefits
+
+- **Database Agnostic**: Write queries that work with MySQL, PostgreSQL, MongoDB, Firestore, and Redis
+- **Model Agnostic**: Use the same interface with SQLModel, Pydantic, or any Python class
+- **Multiple Query Styles**: Choose between Simple, Repository, Specification, and Advanced patterns
+- **Type Safety**: Full generic type support with automatic serialization/deserialization
+- **Composable Business Logic**: Build complex rules with the Specification pattern
+
+#### Query Patterns
+
+**Simple Query Style** - Active Record-like interface for basic CRUD operations:
+
+```python
+from acb.models._hybrid import ACBQuery
+from sqlmodel import SQLModel, Field
+
+class User(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    email: str
+    active: bool = True
+
+# Setup query interface
+query = ACBQuery()
+
+# Simple CRUD operations that work with any database
+users = await query.for_model(User).simple.all()
+user = await query.for_model(User).simple.find(1)
+new_user = await query.for_model(User).simple.create({
+    "name": "John Doe",
+    "email": "john@example.com"
+})
+```
+
+**Repository Pattern** - Domain-driven design with built-in caching:
+
+```python
+from acb.models._repository import RepositoryOptions
+
+# Configure repository with caching and audit trails
+repo = query.for_model(User).repository(RepositoryOptions(
+    cache_enabled=True,
+    cache_ttl=300,
+    enable_soft_delete=True,
+    audit_enabled=True
+))
+
+# Domain-specific methods
+active_users = await repo.find_active()
+recent_users = await repo.find_recent(days=7)
+```
+
+**Specification Pattern** - Composable business rules:
+
+```python
+from acb.models._specification import field, range_spec
+
+# Create reusable specifications
+active_spec = field("active").equals(True)
+adult_spec = field("age").greater_than_or_equal(18)
+email_spec = field("email").like("%@company.com")
+
+# Combine specifications
+company_employees = active_spec & adult_spec & email_spec
+
+# Use across different query styles
+users = await query.for_model(User).specification.with_spec(company_employees).all()
+```
+
+**Advanced Query Builder** - Full control over query construction:
+
+```python
+# Complex queries with method chaining
+users = await (query.for_model(User).advanced
+    .where("active", True)
+    .where_gt("age", 21)
+    .where_in("department", ["engineering", "product"])
+    .order_by_desc("created_at")
+    .limit(10)
+    .all())
+```
+
+#### Database Switching
+
+The same query code works across different databases. Switch implementations by changing your configuration:
+
+```yaml
+# Use SQL database (PostgreSQL, MySQL, SQLite)
+adapters.yml:
+  sql: postgresql
+
+# OR use NoSQL database (MongoDB, Firestore, Redis)
+adapters.yml:
+  nosql: mongodb
+```
+
+Your query code remains identical regardless of the database backend!
+
+#### Hybrid Database Architecture
+
+Use different databases for different models in the same application:
+
+```python
+# Users in SQL database
+sql_query = ACBQuery(database_adapter_name="sql", model_adapter_name="sqlmodel")
+users = await sql_query.for_model(User).simple.all()
+
+# User activity in NoSQL database
+nosql_query = ACBQuery(database_adapter_name="nosql", model_adapter_name="pydantic")
+activity = await nosql_query.for_model(UserActivity).simple.all()
+```
+
+For comprehensive documentation and examples, see the [Universal Query Interface Documentation](./acb/models/README.md).
 
 ### Configuration System
 

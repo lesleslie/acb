@@ -40,7 +40,7 @@ class MsgPackSerializer(BaseSerializer):
         try:
             msgpack_bytes = msgpack_data.encode("latin-1")
         except AttributeError:
-            msgpack_bytes = t.cast(bytes, msgpack_data)
+            msgpack_bytes = t.cast("bytes", msgpack_data)
         return msgpack.decode(msgpack_bytes)
 
 
@@ -77,4 +77,5 @@ class CacheBase(BaseCache):
         return self._client
 
     async def _create_client(self) -> t.Any:
-        raise NotImplementedError("Subclasses must implement _create_client()")
+        msg = "Subclasses must implement _create_client()"
+        raise NotImplementedError(msg)
