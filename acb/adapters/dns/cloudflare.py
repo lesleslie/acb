@@ -2,15 +2,20 @@ import os
 import sys
 import typing as t
 from contextlib import suppress
+from uuid import UUID
 from warnings import catch_warnings, filterwarnings
 
 from cloudflare import Cloudflare as CloudflareClient
 from pydantic import SecretStr
 from validators import domain
 from validators.utils import ValidationError
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 
 from ._base import DnsBase, DnsBaseSettings, DnsRecord
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7e29bc338cd")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class DnsSettings(DnsBaseSettings):

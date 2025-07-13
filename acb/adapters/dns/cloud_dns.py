@@ -3,6 +3,7 @@ import sys
 import typing as t
 from asyncio import sleep
 from contextlib import suppress
+from uuid import UUID
 from warnings import catch_warnings, filterwarnings
 
 from google.api_core.exceptions import BadRequest, Conflict
@@ -12,9 +13,13 @@ from google.cloud.dns.resource_record_set import ResourceRecordSet
 from google.cloud.dns.zone import ManagedZone
 from validators import domain
 from validators.utils import ValidationError
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 
 from ._base import DnsBase, DnsBaseSettings, DnsRecord
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7d627bdb820")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class DnsSettings(DnsBaseSettings): ...

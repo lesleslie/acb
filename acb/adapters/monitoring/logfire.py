@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from logfire import (
     configure,
     instrument_httpx,
@@ -7,6 +9,10 @@ from logfire import (
     instrument_system_metrics,
     loguru_handler,
 )
+from acb.adapters import AdapterStatus
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b81656dc7888")
+MODULE_STATUS = AdapterStatus.STABLE
 from pydantic import SecretStr
 from acb.adapters import get_installed_adapters
 from acb.depends import depends

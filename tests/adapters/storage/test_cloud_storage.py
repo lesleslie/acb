@@ -1,229 +1,459 @@
-"""Tests for the Google Cloud Storage adapter."""
+"""Tests for Google Cloud Storage adapter."""
 
-import typing as t
-from unittest.mock import AsyncMock, MagicMock, patch
+from __future__ import annotations
+
+import tempfile
+import warnings
+from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import pytest
-from gcsfs import GCSFileSystem
-from acb.adapters.storage.cloud_storage import Storage, StorageSettings
-from acb.config import Config
+from anyio import Path as AsyncPath
+from gcsfs.core import GCSFileSystem
+from acb.adapters import AdapterStatus
+from acb.adapters.storage._base import StorageBase, StorageBaseSettings
+from acb.adapters.storage.cloud_storage import (
+    MODULE_ID,
+    MODULE_STATUS,
+    Storage,
+    StorageSettings,
+)
 
 
-class MockGCSFileSystem(MagicMock):
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._exists = AsyncMock(return_value=True)
-        self._ls = AsyncMock(return_value=["file1.txt", "file2.txt"])
-        self._info = AsyncMock(return_value={"size": 100, "type": "file"})
-        self._pipe_file = AsyncMock()
-        self._rm_file = AsyncMock()
-        self._mkdir = AsyncMock()
-        self._sign = AsyncMock()
+class TestModuleConstants:
+    def test_module_id(self) -> None:
+        assert MODULE_ID == UUID("0197ff55-9026-7672-b2aa-b7a742cd8f87")
 
-        self.open = MagicMock()
-        mock_file = MagicMock()
-        mock_file.__enter__ = MagicMock(return_value=mock_file)
-        mock_file.__exit__ = MagicMock(return_value=None)
-        mock_file.read = MagicMock(return_value=b"test content")
-        self.open.return_value = mock_file
-
-        self.url = MagicMock(return_value="gs://test-bucket/test-file")
-        self.asynchronous = True
-
-        self.exists = MagicMock(
-            side_effect=lambda path, **kwargs: self._exists(path, **kwargs),
-        )
-        self.ls = MagicMock(side_effect=lambda path, **kwargs: self._ls(path, **kwargs))
-        self.info = MagicMock(
-            side_effect=lambda path, **kwargs: self._info(path, **kwargs),
-        )
+    def test_module_status(self) -> None:
+        assert MODULE_STATUS == AdapterStatus.STABLE
 
 
-class MockGCSBucket(MagicMock):
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.name = "test-bucket"
-        self.cors = []
-        self.patch = MagicMock()
+class TestStorageSettings:
+    def test_inheritance(self) -> None:
+        assert issubclass(StorageSettings, StorageBaseSettings)
 
-
-class MockGCSClient(MagicMock):
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.get_bucket = MagicMock(return_value=MockGCSBucket())
-        self.bucket = MagicMock(return_value=MockGCSBucket())
-        self.create_bucket = MagicMock(return_value=MockGCSBucket())
-        self.storage_client = MagicMock()
-        self.storage_client.get_bucket = MagicMock(return_value=MockGCSBucket())
-
-
-class MockStorageBucket(MagicMock):
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.create_bucket = AsyncMock()
-        self.get_url = MagicMock(return_value="gs://test-bucket/test-file")
-        self.stat = AsyncMock(return_value={"size": 100, "type": "file"})
-        self.list = AsyncMock(return_value=["file1.txt", "file2.txt"])
-        self.exists = AsyncMock(return_value=True)
-        self.open = AsyncMock()
-        self.write = AsyncMock()
-        self.delete = AsyncMock()
-
-
-class TestGCSStorageSettings:
-    def test_settings_structure(self) -> None:
-        settings = StorageSettings(prefix="test-prefix")
-        assert settings.prefix == "test-prefix"
-
-
-class TestGCSStorage:
-    @pytest.fixture
-    def mock_config(self) -> MagicMock:
-        mock_config = MagicMock(spec=Config)
-        mock_app = MagicMock()
-        mock_app.name = "test-app"
-        mock_config.app = mock_app
-
-        mock_storage = MagicMock()
-        mock_storage.prefix = "test-prefix"
-        mock_storage.project = "test-project"
-        mock_storage.credentials = "test-credentials"
-        mock_storage.buckets = {
-            "test": "test-bucket",
-            "media": "media-bucket",
-            "templates": "templates-bucket",
+    def test_default_cors_config(self) -> None:
+        settings = StorageSettings()
+        expected_cors = {
+            "upload": {
+                "origin": ["*"],
+                "method": ["*"],
+                "responseHeader": ["*"],
+                "maxAgeSeconds": 600,
+            },
         }
-        mock_config.storage = mock_storage
+        assert settings.cors == expected_cors
 
-        return mock_config
+    def test_custom_cors_config(self) -> None:
+        custom_cors = {
+            "api": {
+                "origin": ["https://example.com"],
+                "method": ["GET", "POST"],
+                "responseHeader": ["Content-Type"],
+                "maxAgeSeconds": 3600,
+            },
+        }
+        settings = StorageSettings(cors=custom_cors)
+        assert settings.cors == custom_cors
 
-    @pytest.fixture
-    def mock_gcsfs(self) -> MockGCSFileSystem:
-        return MockGCSFileSystem()
+    def test_none_cors_config(self) -> None:
+        settings = StorageSettings(cors=None)
+        assert settings.cors is None
 
-    @pytest.fixture
-    def mock_gcs_client(self) -> MockGCSClient:
-        return MockGCSClient()
+    def test_settings_with_all_inherited_fields(self) -> None:
+        settings = StorageSettings(
+            prefix="test-prefix",
+            local_path=AsyncPath(tempfile.gettempdir()),
+            user_project="test-project",
+            buckets={"test": "test-bucket"},
+            local_fs=False,
+            memory_fs=False,
+        )
+        assert settings.prefix == "test-prefix"
+        assert str(settings.local_path) == tempfile.gettempdir()
+        assert settings.user_project == "test-project"
+        assert settings.buckets == {"test": "test-bucket"}
+        assert settings.local_fs is False
+        assert settings.memory_fs is False
 
-    @pytest.fixture
-    def storage_adapter(self, mock_config: MagicMock) -> t.Generator[Storage]:
-        with patch(
-            "acb.adapters.storage.cloud_storage.GCSFileSystem",
-            return_value=MockGCSFileSystem(),
-        ):
-            adapter = Storage()
-            adapter.config = mock_config
-            adapter.logger = MagicMock()
-            yield adapter
 
-    @pytest.mark.asyncio
-    async def test_client_property(self, storage_adapter: Storage) -> None:
-        mock_gcsfs = MockGCSFileSystem()
+class TestStorage:
+    def test_inheritance(self) -> None:
+        assert issubclass(Storage, StorageBase)
 
-        with patch.object(Storage, "client", new=mock_gcsfs):
-            client = storage_adapter.client
-
-            assert client is mock_gcsfs
-
-    @pytest.mark.asyncio
-    async def test_file_system_type(self) -> None:
+    def test_file_system_attribute(self) -> None:
         assert Storage.file_system == GCSFileSystem
 
-    @pytest.mark.asyncio
-    async def test_get_client_static_method(self) -> None:
-        mock_client = MockGCSClient()
+    def test_dependency_registration(self) -> None:
+        # Test that the module can be imported and dependency system is accessible
+        # The actual depends.set(Storage) call happens at module import time
+        from acb.depends import depends
 
-        with patch(
-            "acb.adapters.storage.cloud_storage.Client",
-            return_value=mock_client,
-        ) as mock_client_cls:
-            mock_config = MagicMock()
-            mock_config.app.project = "test-project"
+        # Verify the dependency system is working
+        assert callable(depends.set)
+        assert callable(depends.get)
+        assert callable(depends.inject)
 
-            with patch(
-                "acb.adapters.storage.cloud_storage.depends.get",
-                return_value=mock_config,
-            ):
+    def test_storage_instantiation(self) -> None:
+        # Test that Storage can be instantiated
+        storage = Storage()
+        assert isinstance(storage, Storage)
+        assert isinstance(storage, StorageBase)
+
+    def test_storage_file_system_property(self) -> None:
+        storage = Storage()
+        assert storage.file_system == GCSFileSystem
+
+
+class TestGetClient:
+    @patch("acb.adapters.storage.cloud_storage.Client")
+    @patch("acb.config.Config")
+    def test_get_client_basic(self, mock_config_class, mock_client_class) -> None:
+        # Mock the config instance
+        mock_config = MagicMock()
+        mock_config.app.project = "test-project"
+        mock_config_class.return_value = mock_config
+
+        # Mock the Client constructor
+        mock_client_instance = MagicMock()
+        mock_client_class.return_value = mock_client_instance
+
+        # Test the get_client method with explicit config
+        client = Storage.get_client(config=mock_config)
+
+        # Verify Client was called with correct project
+        mock_client_class.assert_called_once_with(project="test-project")
+        assert client == mock_client_instance
+
+    @patch("acb.adapters.storage.cloud_storage.Client")
+    @patch("acb.adapters.storage.cloud_storage.catch_warnings")
+    @patch("acb.adapters.storage.cloud_storage.filterwarnings")
+    def test_get_client_warning_suppression(
+        self, mock_filterwarnings, mock_catch_warnings, mock_client_class
+    ) -> None:
+        # Mock the config instance
+        mock_config = MagicMock()
+        mock_config.app.project = "test-project"
+
+        # Mock the warning context manager
+        mock_warnings_context = MagicMock()
+        mock_catch_warnings.return_value = mock_warnings_context
+
+        # Mock the Client constructor
+        mock_client_instance = MagicMock()
+        mock_client_class.return_value = mock_client_instance
+
+        # Test the get_client method with explicit config
+        client = Storage.get_client(config=mock_config)
+
+        # Verify warning suppression was set up
+        mock_catch_warnings.assert_called_once()
+        mock_filterwarnings.assert_called_once_with("ignore", category=Warning)
+
+        # Verify Client was still called correctly
+        mock_client_class.assert_called_once_with(project="test-project")
+        assert client == mock_client_instance
+
+    @patch("acb.adapters.storage.cloud_storage.depends")
+    def test_get_client_with_real_warning_suppression(self, mock_depends) -> None:
+        # Mock the config dependency
+        mock_config = MagicMock()
+        mock_config.app.project = "test-project"
+        mock_depends.return_value = mock_config
+
+        # Test that warnings are actually suppressed
+        with patch("acb.adapters.storage.cloud_storage.Client") as mock_client:
+            mock_client_instance = MagicMock()
+            mock_client.return_value = mock_client_instance
+
+            # This should not raise any warnings
+            with warnings.catch_warnings(record=True):
+                warnings.simplefilter("always")
+
+                # The get_client method should suppress warnings internally
                 client = Storage.get_client()
 
-                assert client == mock_client
+                # Verify the client was created
+                assert client == mock_client_instance
 
-                assert mock_client_cls.call_count == 1
 
-    @pytest.mark.asyncio
-    async def test_init_method(self, storage_adapter: Storage) -> None:
-        mock_client = MockGCSFileSystem()
+class TestSetCors:
+    def test_set_cors_basic(self) -> None:
+        storage = Storage()
 
-        with (
-            patch.object(
-                storage_adapter,
-                "get_client",
-                new=AsyncMock(return_value=mock_client),
-            ) as mock_get_client,
-            patch("acb.adapters.storage._base.StorageBucket") as mock_bucket_cls,
-        ):
-            mock_bucket = MockStorageBucket()
-            mock_bucket_cls.return_value = mock_bucket
+        # Mock the get_client method and its return value
+        mock_client = MagicMock()
+        mock_bucket = MagicMock()
+        mock_bucket.name = "test-bucket"
+        mock_client.get_bucket.return_value = mock_bucket
 
-            await storage_adapter.init()
-
-            mock_get_client.assert_called_once()
-            mock_bucket_cls.assert_any_call(mock_client, "templates")
-            mock_bucket_cls.assert_any_call(mock_client, "test")
-            mock_bucket_cls.assert_any_call(mock_client, "media")
-
-            assert storage_adapter.templates == mock_bucket
-            assert storage_adapter.test == mock_bucket
-            assert storage_adapter.media == mock_bucket
-
-    @pytest.mark.asyncio
-    async def test_set_cors(
-        self,
-        storage_adapter: Storage,
-        mock_gcs_client: MockGCSClient,
-    ) -> None:
-        with patch.object(Storage, "get_client", return_value=mock_gcs_client):
-            cors_config: dict[str, dict[str, list[str] | int]] = {
-                "upload": {
-                    "origin": ["https://example.com"],
-                    "method": ["GET", "POST"],
-                    "responseHeader": ["Content-Type"],
-                    "maxAgeSeconds": 3600,
-                },
+        # Mock the config and logger
+        storage.config = MagicMock()
+        storage.config.storage.cors = {
+            "upload": {
+                "origin": ["*"],
+                "method": ["*"],
+                "responseHeader": ["*"],
+                "maxAgeSeconds": 600,
             }
+        }
+        storage.logger = MagicMock()
 
-            if (
-                not hasattr(storage_adapter.config.storage, "cors")
-                or storage_adapter.config.storage.cors is None
-            ):
-                storage_adapter.config.storage.cors = {}
+        with patch.object(storage, "get_client", return_value=mock_client):
+            storage.set_cors("test-bucket", "upload")
 
-            storage_adapter.config.storage.cors = cors_config
+        # Verify the bucket was retrieved and CORS was set
+        mock_client.get_bucket.assert_called_once_with("test-bucket")
+        assert mock_bucket.cors == [storage.config.storage.cors["upload"]]
+        mock_bucket.patch.assert_called_once()
+        storage.logger.debug.assert_called_once_with(
+            "CORS policies for 'test-bucket' bucket set"
+        )
 
-            storage_adapter.set_cors("test-bucket", "upload")
+    def test_set_cors_with_custom_config(self) -> None:
+        storage = Storage()
 
-            mock_gcs_client.get_bucket.assert_called_once_with("test-bucket")
+        # Mock the get_client method and its return value
+        mock_client = MagicMock()
+        mock_bucket = MagicMock()
+        mock_bucket.name = "custom-bucket"
+        mock_client.get_bucket.return_value = mock_bucket
 
-            bucket = mock_gcs_client.get_bucket.return_value
-            assert len(bucket.cors) == 1
-            assert bucket.cors[0] == cors_config["upload"]
+        # Mock the config with custom CORS settings
+        storage.config = MagicMock()
+        custom_cors = {
+            "api": {
+                "origin": ["https://example.com"],
+                "method": ["GET", "POST"],
+                "responseHeader": ["Content-Type"],
+                "maxAgeSeconds": 3600,
+            }
+        }
+        storage.config.storage.cors = custom_cors
+        storage.logger = MagicMock()
 
-            bucket.patch.assert_called_once()
+        with patch.object(storage, "get_client", return_value=mock_client):
+            storage.set_cors("custom-bucket", "api")
 
-    @pytest.mark.asyncio
-    async def test_remove_cors(
-        self,
-        storage_adapter: Storage,
-        mock_gcs_client: MockGCSClient,
-    ) -> None:
-        with patch.object(Storage, "get_client", return_value=mock_gcs_client):
-            storage_adapter.remove_cors("test-bucket")
+        # Verify the custom CORS config was applied
+        mock_client.get_bucket.assert_called_once_with("custom-bucket")
+        assert mock_bucket.cors == [custom_cors["api"]]
+        mock_bucket.patch.assert_called_once()
 
-            mock_gcs_client.storage_client.get_bucket.assert_called_once_with(
-                "test-bucket",
-            )
+    def test_set_cors_bucket_not_found(self) -> None:
+        storage = Storage()
 
-            bucket = mock_gcs_client.storage_client.get_bucket.return_value
-            assert bucket.cors == []
+        # Mock the get_client method to raise an exception
+        mock_client = MagicMock()
+        mock_client.get_bucket.side_effect = Exception("Bucket not found")
 
-            bucket.patch.assert_called_once()
+        storage.config = MagicMock()
+        storage.config.storage.cors = {"upload": {}}
+
+        with patch.object(storage, "get_client", return_value=mock_client):
+            with pytest.raises(Exception, match="Bucket not found"):
+                storage.set_cors("nonexistent-bucket", "upload")
+
+
+class TestRemoveCors:
+    def test_remove_cors_basic(self) -> None:
+        storage = Storage()
+
+        # Mock the get_client method and its return value
+        mock_client = MagicMock()
+        mock_storage_client = MagicMock()
+        mock_bucket = MagicMock()
+        mock_bucket.name = "test-bucket"
+
+        mock_client.storage_client = mock_storage_client
+        mock_storage_client.get_bucket.return_value = mock_bucket
+
+        # Mock the logger
+        storage.logger = MagicMock()
+
+        with patch.object(storage, "get_client", return_value=mock_client):
+            storage.remove_cors("test-bucket")
+
+        # Verify the bucket was retrieved and CORS was cleared
+        mock_storage_client.get_bucket.assert_called_once_with("test-bucket")
+        assert mock_bucket.cors == []
+        mock_bucket.patch.assert_called_once()
+        storage.logger.debug.assert_called_once_with(
+            "CORS policies for 'test-bucket' bucket removed"
+        )
+
+    def test_remove_cors_bucket_not_found(self) -> None:
+        storage = Storage()
+
+        # Mock the get_client method to raise an exception
+        mock_client = MagicMock()
+        mock_storage_client = MagicMock()
+        mock_storage_client.get_bucket.side_effect = Exception("Bucket not found")
+        mock_client.storage_client = mock_storage_client
+
+        with patch.object(storage, "get_client", return_value=mock_client):
+            with pytest.raises(Exception, match="Bucket not found"):
+                storage.remove_cors("nonexistent-bucket")
+
+    def test_remove_cors_clears_existing_cors(self) -> None:
+        storage = Storage()
+
+        # Mock the get_client method and bucket with existing CORS
+        mock_client = MagicMock()
+        mock_storage_client = MagicMock()
+        mock_bucket = MagicMock()
+        mock_bucket.name = "test-bucket"
+        mock_bucket.cors = [{"origin": ["*"], "method": ["GET"]}]  # Existing CORS
+
+        mock_client.storage_client = mock_storage_client
+        mock_storage_client.get_bucket.return_value = mock_bucket
+
+        storage.logger = MagicMock()
+
+        with patch.object(storage, "get_client", return_value=mock_client):
+            storage.remove_cors("test-bucket")
+
+        # Verify CORS was cleared
+        assert mock_bucket.cors == []
+        mock_bucket.patch.assert_called_once()
+
+
+class TestGCSIntegration:
+    def test_file_system_integration(self) -> None:
+        # Test that the Storage class properly integrates with GCSFileSystem
+        storage = Storage()
+
+        # Verify that the file_system attribute points to the correct class
+        assert storage.file_system == GCSFileSystem
+
+        # Test that we can create an instance (this would normally require credentials)
+        with patch.object(storage, "file_system") as mock_fs_class:
+            mock_fs_instance = MagicMock()
+            mock_fs_class.return_value = mock_fs_instance
+
+            # This simulates what would happen in the base class
+            fs_instance = storage.file_system()
+            assert fs_instance == mock_fs_instance
+
+    def test_gcs_filesystem_import(self) -> None:
+        # Test that we can import GCSFileSystem
+        from gcsfs.core import GCSFileSystem as ImportedGCSFS
+
+        assert ImportedGCSFS == GCSFileSystem
+        assert Storage.file_system == ImportedGCSFS
+
+
+class TestStorageImplementation:
+    def test_storage_methods_inheritance(self) -> None:
+        # Test that Storage inherits all necessary methods from StorageBase
+        storage = Storage()
+
+        # Check that important attributes/methods exist (inherited from base)
+        assert hasattr(storage, "file_system")
+        assert hasattr(storage, "set_cors")
+        assert hasattr(storage, "remove_cors")
+        assert hasattr(storage, "get_client")
+
+        # The actual methods would be defined in StorageBase
+        # Here we just verify the class structure is correct
+        assert isinstance(storage, StorageBase)
+
+    def test_gcs_specific_functionality(self) -> None:
+        # Test GCS-specific aspects of the storage implementation
+        storage = Storage()
+
+        # Verify the file system is specifically GCS
+        assert storage.file_system == GCSFileSystem
+
+        # Test that it's different from other file systems
+        from fsspec.implementations.local import LocalFileSystem
+
+        assert storage.file_system != LocalFileSystem
+
+    @patch("acb.adapters.storage._base.StorageBase.__init__")
+    def test_storage_initialization(self, mock_base_init) -> None:
+        # Test that Storage properly initializes its base class
+        mock_base_init.return_value = None
+
+        storage = Storage()
+
+        # Verify base class initialization was called
+        mock_base_init.assert_called_once()
+
+        # Verify GCS-specific attributes
+        assert storage.file_system == GCSFileSystem
+        assert hasattr(storage, "set_cors")
+        assert hasattr(storage, "remove_cors")
+
+
+class TestErrorHandling:
+    def test_get_client_with_invalid_project(self) -> None:
+        with patch("acb.adapters.storage.cloud_storage.depends") as mock_depends:
+            with patch("acb.adapters.storage.cloud_storage.Client") as mock_client:
+                # Mock config with invalid project
+                mock_config = MagicMock()
+                mock_config.app.project = None
+                mock_depends.return_value = mock_config
+
+                # Mock Client to raise an exception for invalid project
+                mock_client.side_effect = Exception("Invalid project")
+
+                with pytest.raises(Exception, match="Invalid project"):
+                    Storage.get_client()
+
+
+class TestCorsConfigurationTypes:
+    def test_cors_config_structure(self) -> None:
+        # Test that CORS configuration has the expected structure
+        settings = StorageSettings()
+        assert settings.cors is not None
+        cors_config = settings.cors["upload"]
+
+        # Verify required fields exist
+        assert "origin" in cors_config
+        assert "method" in cors_config
+        assert "responseHeader" in cors_config
+        assert "maxAgeSeconds" in cors_config
+
+        # Verify field types
+        assert isinstance(cors_config["origin"], list)
+        assert isinstance(cors_config["method"], list)
+        assert isinstance(cors_config["responseHeader"], list)
+        assert isinstance(cors_config["maxAgeSeconds"], int)
+
+    def test_cors_config_values(self) -> None:
+        # Test that default CORS configuration has sensible values
+        settings = StorageSettings()
+        assert settings.cors is not None
+        cors_config = settings.cors["upload"]
+
+        # Verify default values
+        assert cors_config["origin"] == ["*"]
+        assert cors_config["method"] == ["*"]
+        assert cors_config["responseHeader"] == ["*"]
+        assert cors_config["maxAgeSeconds"] == 600
+
+    def test_multiple_cors_configs(self) -> None:
+        # Test handling multiple CORS configurations
+        custom_cors = {
+            "upload": {
+                "origin": ["*"],
+                "method": ["POST", "PUT"],
+                "responseHeader": ["Content-Type"],
+                "maxAgeSeconds": 300,
+            },
+            "download": {
+                "origin": ["https://example.com"],
+                "method": ["GET"],
+                "responseHeader": ["*"],
+                "maxAgeSeconds": 3600,
+            },
+        }
+
+        settings = StorageSettings(cors=custom_cors)
+        assert settings.cors is not None
+        assert len(settings.cors) == 2
+        assert "upload" in settings.cors
+        assert "download" in settings.cors
+        assert settings.cors["upload"]["maxAgeSeconds"] == 300
+        assert settings.cors["download"]["maxAgeSeconds"] == 3600

@@ -1,13 +1,18 @@
 import typing as t
 from contextlib import asynccontextmanager
 from functools import cached_property
+from uuid import UUID
 
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
+from acb.adapters import AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
 from ._base import NosqlBase, NosqlBaseSettings
+
+MODULE_ID = UUID("0197ff45-0a82-7e10-bb46-9d3c8f15a7e2")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class NosqlSettings(NosqlBaseSettings):

@@ -13,7 +13,7 @@ class FileInfo:
         name: str,
         size: int = 0,
         is_dir: bool = False,
-        is_file: bool = True,
+        is_file: bool | None = None,
         is_symlink: bool = False,
         permissions: str = "",
         mtime: float = 0.0,
@@ -23,7 +23,7 @@ class FileInfo:
         self.name = name
         self.size = size
         self.is_dir = is_dir
-        self.is_file = is_file
+        self.is_file = is_file if is_file is not None else not is_dir
         self.is_symlink = is_symlink
         self.permissions = permissions
         self.mtime = mtime

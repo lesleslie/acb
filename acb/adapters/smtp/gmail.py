@@ -5,19 +5,23 @@ import typing as t
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from re import search
+from uuid import UUID
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
-from acb.adapters import import_adapter
+from acb.adapters import AdapterStatus, import_adapter
 from acb.adapters.dns._base import DnsProtocol, DnsRecord
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 
 from ._base import SmtpBase, SmtpBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b8782cb6e8db")
+MODULE_STATUS = AdapterStatus.STABLE
 
 Dns, Requests = import_adapter()
 

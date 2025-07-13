@@ -2,12 +2,17 @@ import asyncio
 import builtins
 import os
 import typing as t
+from uuid import UUID
 
 from infisical_sdk import InfisicalSDKClient
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 from acb.logger import Logger
 
 from ._base import SecretBase, SecretBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b854cbd7bb5c")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class SecretSettings(SecretBaseSettings):

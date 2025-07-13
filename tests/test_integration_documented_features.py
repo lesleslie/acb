@@ -1,7 +1,6 @@
 """Integration tests for documented ACB features."""
 
 import tempfile
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -152,7 +151,7 @@ class TestActionsDetailedDocumentedExamples:
         assert len(blake3_hash) == 64
 
         # Test file hashing with temporary file
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        with tempfile.NamedTemporaryFile() as tmp:
             tmp.write(b"test file content")
             tmp.flush()
 
@@ -162,9 +161,6 @@ class TestActionsDetailedDocumentedExamples:
             file_hash = await hash.blake3(file_path)
             assert isinstance(file_hash, str)
             assert len(file_hash) == 64
-
-            # Cleanup
-            Path(tmp.name).unlink()
 
         # Get CRC32C checksum
         crc = await hash.crc32c("Checksum this")

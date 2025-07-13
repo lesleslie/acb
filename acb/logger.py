@@ -4,7 +4,10 @@ import sys
 import typing as t
 from inspect import currentframe
 
-import nest_asyncio
+try:
+    import nest_asyncio
+except ImportError:
+    nest_asyncio = None
 from aioconsole import aprint
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
@@ -12,7 +15,8 @@ from loguru._logger import Logger as _Logger
 from .config import Config, Settings, debug
 from .depends import depends
 
-nest_asyncio.apply()
+if nest_asyncio:
+    nest_asyncio.apply()
 
 
 class LoggerSettings(Settings):

@@ -1,12 +1,17 @@
 import typing as t
+from uuid import UUID
 from warnings import catch_warnings, filterwarnings
 
 from gcsfs.core import GCSFileSystem
 from google.cloud.storage import Client
+from acb.adapters import AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
 from ._base import StorageBase, StorageBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7a742cd8f87")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class StorageSettings(StorageBaseSettings):

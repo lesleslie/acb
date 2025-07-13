@@ -3,17 +3,21 @@ import sys
 import typing as t
 from pprint import pformat
 from re import search
+from uuid import UUID
 
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
 from acb.actions.encode import load
-from acb.adapters import adapter_registry, import_adapter
+from acb.adapters import AdapterStatus, adapter_registry, import_adapter
 from acb.adapters.dns._base import DnsProtocol, DnsRecord
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 
 from ._base import SmtpBase, SmtpBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b887b20a943f")
+MODULE_STATUS = AdapterStatus.STABLE
 
 Dns, Requests = import_adapter()
 

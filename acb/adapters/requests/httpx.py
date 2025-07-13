@@ -1,4 +1,5 @@
 import typing as t
+from uuid import UUID
 
 import httpx
 from hishel import AsyncCacheClient, AsyncRedisStorage, Controller
@@ -7,10 +8,13 @@ from httpcore import Request
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
 from redis.asyncio import Redis as AsyncRedis
-from acb.adapters import import_adapter
+from acb.adapters import AdapterStatus, import_adapter
 from acb.depends import depends
 
 from ._base import RequestsBase, RequestsBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b835cf3f2f3a")
+MODULE_STATUS = AdapterStatus.STABLE
 
 Cache = import_adapter()
 

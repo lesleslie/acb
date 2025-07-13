@@ -103,7 +103,8 @@ class TestMemoryStorage(StorageTestInterface):
         adapter.config.storage = storage_settings
         adapter.logger = MagicMock()
 
-        assert not hasattr(adapter, "_fs") or adapter._fs is None
+        # Check that the adapter is not yet initialized with file system
+        assert not hasattr(adapter, "_files") or not adapter._files
 
         with patch(
             "acb.adapters.storage.memory.MemoryFileSystem",

@@ -1,13 +1,18 @@
 import typing as t
 from contextlib import asynccontextmanager
 from functools import cached_property
+from uuid import UUID
 
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
+from acb.adapters import AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
 from ._base import NosqlBase, NosqlBaseSettings
+
+MODULE_ID = UUID("0197ff44-f2c7-7af0-9138-5e6a2b4d8c91")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class NosqlSettings(NosqlBaseSettings):

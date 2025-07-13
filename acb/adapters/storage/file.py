@@ -1,14 +1,19 @@
 import typing as t
 from typing import BinaryIO
+from uuid import UUID
 
 from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from fsspec.implementations.asyn_wrapper import AsyncFileSystemWrapper
 from fsspec.implementations.dirfs import DirFileSystem
 from fsspec.implementations.local import LocalFileSystem
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 
 from ._base import StorageBase, StorageBaseSettings
+
+MODULE_ID = UUID("0197ff45-2d3a-7890-a4b2-1c8f6e9d2a73")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class StorageSettings(StorageBaseSettings): ...

@@ -246,7 +246,7 @@ def _get_event_loop() -> asyncio.AbstractEventLoop | None:
         return None
 
 
-def _cancel_pending_tasks(loop: asyncio.AbstractEventLoop) -> set[asyncio.Task]:
+def _cancel_pending_tasks(loop: asyncio.AbstractEventLoop) -> set[asyncio.Task[t.Any]]:
     """Cancel all pending tasks except the current one."""
     tasks = asyncio.all_tasks(loop=loop)
     if not tasks:
@@ -264,7 +264,7 @@ def _cancel_pending_tasks(loop: asyncio.AbstractEventLoop) -> set[asyncio.Task]:
 
 def _wait_for_task_completion(
     loop: asyncio.AbstractEventLoop,
-    tasks: set[asyncio.Task],
+    tasks: set[asyncio.Task[t.Any]],
     timeout: float = 3.0,
 ) -> None:
     """Wait for tasks to complete with timeout."""
@@ -578,7 +578,7 @@ def mock_tempfile() -> MagicMock:
     mock: MagicMock = MagicMock()
     temp_dir = tempfile.mkdtemp(prefix="mock_temp_")
     mock.mkdtemp.return_value = temp_dir
-    mock.mktemp.return_value = str(Path(temp_dir) / "file")
+    mock.mkstemp.return_value = (1, str(Path(temp_dir) / "file"))
     mock.gettempdir.return_value = temp_dir
     return mock
 

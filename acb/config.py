@@ -12,7 +12,10 @@ from string import punctuation
 from typing import TypeVar
 from weakref import WeakKeyDictionary
 
-import nest_asyncio
+try:
+    import nest_asyncio
+except ImportError:
+    nest_asyncio = None
 import rich.repr
 from anyio import Path as AsyncPath
 from inflection import titleize, underscore
@@ -38,7 +41,8 @@ from .adapters import (
 from .depends import depends
 
 if not _testing:
-    nest_asyncio.apply()
+    if nest_asyncio:
+        nest_asyncio.apply()
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
@@ -53,7 +57,9 @@ def _detect_library_usage() -> bool:
         return True
     if _testing or "pytest" in sys.modules:
         return False
-    return Path.cwd().name != "acb" and "ACB_LIBRARY_MODE" not in os.environ
+    if "ACB_LIBRARY_MODE" in os.environ:
+        return os.environ["ACB_LIBRARY_MODE"].lower() == "true"
+    return Path.cwd().name != "acb"
 
 
 def _is_pytest_test_context() -> bool:
@@ -195,7 +201,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         self.init_kwargs = init_kwargs or {}
 
     @cached_property
-    def secret_manager(self):
+    def secret_manager(self) -> t.Any:
         try:
             return depends.get()
         except Exception:
@@ -557,6 +563,10 @@ class Config:
             self.ensure_initialized()
         return self._app
 
+    @app.setter
+    def app(self, value: AppSettings | None) -> None:
+        self._app = value
+
     def __getattr__(self, item: str) -> t.Any:
         if item in self.__dict__:
             return self.__dict__[item]
@@ -573,7 +583,7 @@ class Config:
 
                 adapter = get_adapter(item)
                 if adapter and hasattr(adapter, "settings"):
-                    return adapter.settings
+                    return adapter.settings  # type: ignore[misc]
         msg = f"'Config' object has no attribute '{item}'"
         raise AttributeError(msg)
 
@@ -583,7 +593,7 @@ depends.set(Config, get_singleton_instance(Config))
 if _should_initialize_eagerly():
     depends.get(Config).init()
 
-_ADAPTER_LOCKS: WeakKeyDictionary = WeakKeyDictionary()
+_ADAPTER_LOCKS: WeakKeyDictionary[t.Any, t.Any] = WeakKeyDictionary()
 
 Logger = None
 
@@ -593,7 +603,7 @@ class AdapterBase:
     config: Config = depends()
 
     @property
-    def logger(self):
+    def logger(self) -> t.Any:
         if not hasattr(self, "_logger"):
             try:
                 Logger = import_adapter("logger")

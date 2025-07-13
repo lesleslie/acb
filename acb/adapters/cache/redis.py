@@ -1,15 +1,59 @@
+"""Redis Cache Adapter for ACB.
+
+Integrates ACB with Redis for high-performance distributed caching using both
+aiocache and coredis for maximum compatibility and features.
+
+Features:
+    - Connection pooling with configurable limits
+    - Cluster support for high availability
+    - Health check monitoring
+    - Automatic reconnection on failures
+    - Tracking cache for debugging
+    - Namespace-based key organization
+
+Requirements:
+    - Redis server (standalone or cluster)
+    - aiocache[redis] for cache interface
+    - coredis for advanced Redis features
+
+Example:
+    Basic usage with Redis caching:
+
+    ```python
+    from acb.depends import depends
+    from acb.adapters import import_adapter
+
+    Cache = import_adapter("cache")
+
+
+    @depends.inject
+    async def my_function(cache: Cache = depends()):
+        await cache.set("user:123", {"name": "John"}, ttl=300)
+        user_data = await cache.get("user:123")
+        return user_data
+    ```
+
+Author: lesleslie <les@wedgwoodwebworks.com>
+Created: 2025-01-12
+"""
+
 import typing as t
+from uuid import UUID
 
 from aiocache.backends.redis import RedisBackend
 from aiocache.serializers import PickleSerializer
 from coredis.cache import TrackingCache
 from coredis.client import Redis, RedisCluster
 from pydantic import SecretStr
+from acb.adapters import AdapterStatus
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 
 from ._base import CacheBase, CacheBaseSettings
+
+MODULE_ID = UUID("0197fe78-4fc8-73f6-be8a-78fd61b63a07")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class CacheSettings(CacheBaseSettings):

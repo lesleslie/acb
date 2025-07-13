@@ -4,13 +4,18 @@ import typing as t
 from contextlib import asynccontextmanager
 from functools import cached_property
 from pathlib import Path
+from uuid import UUID
 
 from aioftp import AsyncPathIO, Client, Permission, Server, User
 from anyio import Path as AsyncPath
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 from acb.logger import Logger
 
 from ._base import FileInfo, FtpdBase, FtpdBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7f5f8443c6c")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class FtpdSettings(FtpdBaseSettings):

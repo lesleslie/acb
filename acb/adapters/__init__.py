@@ -1,24 +1,293 @@
+from __future__ import annotations
+
 import asyncio
 import os
 import sys
 import tempfile
 import typing as t
 from contextvars import ContextVar
+from datetime import datetime
+from enum import Enum
 from functools import cache
 from importlib import import_module, util
 from inspect import stack
 from pathlib import Path
+from uuid import UUID
 
-import nest_asyncio
+try:
+    import nest_asyncio
+except ImportError:
+    nest_asyncio = None
 import rich.repr
 from anyio import Path as AsyncPath
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from acb.actions.encode import yaml_encode
 from acb.depends import depends
 
-nest_asyncio.apply()
+try:
+    import uuid_utils as uuid_lib
+
+    _uuid7_available = True
+except ImportError:
+    import uuid as uuid_lib
+
+    _uuid7_available = False
+
+
+class AdapterStatus(str, Enum):
+    ALPHA = "alpha"
+    BETA = "beta"
+    STABLE = "stable"
+    DEPRECATED = "deprecated"
+    EXPERIMENTAL = "experimental"
+
+
+class AdapterCapability(str, Enum):
+    CONNECTION_POOLING = "connection_pooling"
+    RECONNECTION = "auto_reconnection"
+    HEALTH_CHECKS = "health_checks"
+
+    TRANSACTIONS = "transactions"
+    BULK_OPERATIONS = "bulk_operations"
+    STREAMING = "streaming"
+    COMPRESSION = "compression"
+    ENCRYPTION = "encryption"
+
+    CACHING = "caching"
+    ASYNC_OPERATIONS = "async_operations"
+    BATCHING = "batching"
+
+    METRICS = "metrics"
+    TRACING = "tracing"
+    LOGGING = "structured_logging"
+
+    SCHEMA_VALIDATION = "schema_validation"
+    MIGRATIONS = "migrations"
+    BACKUP_RESTORE = "backup_restore"
+
+
+class AdapterMetadata(BaseModel):
+    module_id: UUID = Field(
+        description="UUID7 identifier for this specific adapter module"
+    )
+
+    name: str = Field(description="Human-readable adapter name")
+    category: str = Field(description="Adapter category (cache, sql, storage, etc.)")
+    provider: str = Field(description="Technology provider (redis, mysql, s3, etc.)")
+
+    version: str = Field(
+        description="Semantic version of this adapter (independent of ACB version)"
+    )
+    acb_min_version: str = Field(description="Minimum ACB version required")
+    acb_max_version: str | None = Field(
+        default=None, description="Maximum ACB version supported (None = no limit)"
+    )
+
+    author: str = Field(description="Primary author/maintainer")
+    created_date: str = Field(description="ISO date when adapter was created")
+    last_modified: str = Field(description="ISO date of last significant update")
+
+    status: AdapterStatus = Field(description="Development/stability status")
+    capabilities: list[AdapterCapability] = Field(
+        default_factory=list, description="List of features this adapter supports"
+    )
+
+    required_packages: list[str] = Field(
+        default_factory=list, description="External packages required for this adapter"
+    )
+    optional_packages: dict[str, str] = Field(
+        default_factory=dict, description="Optional packages and their purpose"
+    )
+
+    description: str = Field(description="Brief description of adapter functionality")
+    documentation_url: str | None = Field(
+        default=None, description="Link to detailed documentation"
+    )
+    repository_url: str | None = Field(
+        default=None, description="Source code repository for this adapter"
+    )
+
+    settings_class: str = Field(description="Name of the settings class")
+    config_example: dict[str, t.Any] | None = Field(
+        default=None, description="Example configuration for this adapter"
+    )
+
+    custom: dict[str, t.Any] = Field(
+        default_factory=dict,
+        description="Custom metadata fields for specific requirements",
+    )
+
+    class Config:
+        use_enum_values = True
+        extra = "forbid"
+
+
+def generate_adapter_id() -> UUID:
+    if _uuid7_available:
+        uuid_obj = uuid_lib.uuid7()  # type: ignore[attr-defined]
+        return UUID(str(uuid_obj)) if not isinstance(uuid_obj, UUID) else uuid_obj
+    else:
+        uuid_obj = uuid_lib.uuid4()
+        return UUID(str(uuid_obj)) if not isinstance(uuid_obj, UUID) else uuid_obj
+
+
+def create_metadata_template(
+    name: str,
+    category: str,
+    provider: str,
+    author: str,
+    description: str,
+    **kwargs: t.Any,
+) -> AdapterMetadata:
+    now = datetime.now().isoformat()
+
+    return AdapterMetadata(
+        module_id=generate_adapter_id(),
+        name=name,
+        category=category,
+        provider=provider,
+        version="1.0.0",
+        acb_min_version="0.18.0",
+        author=author,
+        created_date=now,
+        last_modified=now,
+        status=AdapterStatus.ALPHA,
+        description=description,
+        settings_class=f"{category.title()}Settings",
+        **kwargs,
+    )
+
+
+def validate_version_compatibility(
+    adapter_metadata: AdapterMetadata, current_acb_version: str
+) -> bool:
+    try:
+        from packaging import version
+
+        current = version.parse(current_acb_version)
+        min_version = version.parse(adapter_metadata.acb_min_version)
+
+        if current < min_version:
+            return False
+
+        if adapter_metadata.acb_max_version:
+            max_version = version.parse(adapter_metadata.acb_max_version)
+            if current > max_version:
+                return False
+
+        return True
+    except ImportError:
+        return current_acb_version >= adapter_metadata.acb_min_version
+
+
+def extract_metadata_from_module(module: t.Any) -> AdapterMetadata | None:
+    if hasattr(module, "MODULE_METADATA"):
+        metadata = module.MODULE_METADATA
+        if isinstance(metadata, AdapterMetadata):
+            return metadata
+        elif isinstance(metadata, dict):
+            return AdapterMetadata(**metadata)
+    return None
+
+
+def extract_metadata_from_class(adapter_class: type) -> AdapterMetadata | None:
+    if hasattr(adapter_class, "__module_metadata__"):
+        metadata = adapter_class.__module_metadata__
+        if isinstance(metadata, AdapterMetadata):
+            return metadata
+        elif isinstance(metadata, dict):
+            return AdapterMetadata(**metadata)
+    return None
+
+
+def get_adapter_info(adapter_class: type) -> dict[str, t.Any]:
+    info: dict[str, t.Any] = {
+        "class_name": adapter_class.__name__,
+        "module_path": adapter_class.__module__,
+        "has_metadata": False,
+    }
+    metadata = extract_metadata_from_class(adapter_class)
+    if metadata:
+        info["has_metadata"] = True
+        info["module_id"] = str(metadata.module_id)
+        info["name"] = metadata.name
+        info["category"] = metadata.category
+        info["provider"] = metadata.provider
+        info["version"] = metadata.version
+        info["status"] = (
+            metadata.status.value
+            if hasattr(metadata.status, "value")
+            else metadata.status
+        )
+        info["author"] = metadata.author
+        info["capabilities"] = [
+            cap.value if hasattr(cap, "value") else cap for cap in metadata.capabilities
+        ]
+        info["required_packages"] = metadata.required_packages
+        info["description"] = metadata.description
+        info["acb_min_version"] = metadata.acb_min_version
+        info["acb_max_version"] = metadata.acb_max_version
+
+    return info
+
+
+def check_adapter_capability(
+    adapter_class: type, capability: AdapterCapability
+) -> bool:
+    metadata = extract_metadata_from_class(adapter_class)
+    if metadata:
+        return capability in metadata.capabilities
+    return False
+
+
+def list_adapter_capabilities(adapter_class: type) -> list[str]:
+    metadata = extract_metadata_from_class(adapter_class)
+    if metadata:
+        return [
+            cap.value if hasattr(cap, "value") else cap for cap in metadata.capabilities
+        ]
+    return []
+
+
+def generate_adapter_report(adapter_class: type) -> str:
+    info = get_adapter_info(adapter_class)
+    if not info["has_metadata"]:
+        return f"Adapter: {info['class_name']} (No metadata available)"
+
+    return f"""
+Adapter Report: {info["name"]}
+{"=" * (16 + len(info["name"]))}
+
+Basic Information:
+  Module ID: {info["module_id"]}
+  Category: {info["category"]}
+  Provider: {info["provider"]}
+  Version: {info["version"]}
+  Status: {info["status"]}
+  Author: {info["author"]}
+
+Compatibility:
+  ACB Min Version: {info["acb_min_version"]}
+  ACB Max Version: {info["acb_max_version"] or "No limit"}
+
+Capabilities ({len(info["capabilities"])}):
+  {chr(10).join("- " + cap for cap in info["capabilities"])}
+
+Dependencies ({len(info["required_packages"])}):
+  {chr(10).join("- " + pkg for pkg in info["required_packages"])}
+
+Description:
+  {info["description"]}
+
+Module: {info["module_path"]}
+Class: {info["class_name"]}
+""".strip()
+
+
+if nest_asyncio:
+    nest_asyncio.apply()
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 _testing: bool = os.getenv("TESTING", "False").lower() == "true"
 root_path: AsyncPath = AsyncPath(Path.cwd())
@@ -65,6 +334,7 @@ class AdapterProtocol(t.Protocol):
 @rich.repr.auto
 class Adapter(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
     class_name: str
     category: str
@@ -74,11 +344,17 @@ class Adapter(BaseModel):
     installed: bool = False
     path: AsyncPath = AsyncPath(__file__)
 
+    metadata: AdapterMetadata | None = None
+    runtime_id: str | None = None
+
     def __str__(self) -> str:
         return self.__repr__()
 
     def __hash__(self) -> int:
-        return hash((self.name, self.class_name, self.category, self.pkg, self.module))
+        base_hash = (self.name, self.class_name, self.category, self.pkg, self.module)
+        if self.metadata:
+            return hash(base_hash + (str(self.metadata.module_id),))
+        return hash(base_hash)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Adapter):
@@ -165,7 +441,15 @@ def get_adapter_class(category: str, name: str) -> type[t.Any]:
 
         class_name = camelize(category)
         module = import_module(module_path)
-        return getattr(module, class_name)
+        adapter_class = getattr(module, class_name)
+        if hasattr(module, "MODULE_METADATA"):
+            metadata = module.MODULE_METADATA
+            if isinstance(metadata, AdapterMetadata):
+                adapter_class.__module_metadata__ = metadata
+            elif isinstance(metadata, dict):
+                adapter_class.__module_metadata__ = AdapterMetadata(**metadata)
+
+        return adapter_class
     except (ImportError, AttributeError) as e:
         msg = f"Failed to import {module_path}: {e}"
         raise StaticImportError(msg)

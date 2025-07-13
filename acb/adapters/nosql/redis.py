@@ -1,14 +1,19 @@
 import typing as t
 from contextlib import asynccontextmanager, suppress
 from functools import cached_property
+from uuid import UUID
 
 import redis.asyncio as redis
 from pydantic import field_validator
 from redis_om import HashModel, Migrator, get_redis_connection
+from acb.adapters import AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
 from ._base import NosqlBase, NosqlBaseSettings
+
+MODULE_ID = UUID("0197ff45-1b4f-7c20-8f3a-6e2d9a8c4b57")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class NosqlSettings(NosqlBaseSettings):

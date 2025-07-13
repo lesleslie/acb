@@ -37,10 +37,10 @@ If you're new to ACB, here are the key concepts to understand:
 - **Modular Architecture**: Mix and match components to build your application
 - **Asynchronous First**: Built for high-performance async operations
 - **Pluggable Adapters**: Swap implementations without changing your code
-- **Static Registration**: Fast, reliable adapter loading through static mappings (0.16.17+)
+- **Dynamic Discovery**: Convention-based adapter detection and configuration-driven selection
 - **Configuration-Driven**: Change behavior through configuration rather than code
 - **Type Safety**: Built on Pydantic for validation and type safety
-- **Performance Optimized**: Streamlined initialization and reduced overhead (0.16.17+)
+- **Performance Optimized**: Streamlined initialization and reduced overhead (0.18.0+)
 
 ## Table of Contents
 
@@ -84,6 +84,7 @@ ACB supports various optional dependencies for different adapters and functional
 | Cache | Memory, Redis | `pdm add "acb[cache]"` |
 | DNS | Domain name management (Cloud DNS, Cloudflare) | `pdm add "acb[dns]"` |
 | FTPD | File transfer protocols (FTP, SFTP) | `pdm add "acb[ftpd]"` |
+| Models | Universal model support (SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, Redis-OM) | `pdm add "acb[models]"` |
 | Monitoring | Error tracking (Sentry), Logging (Logfire) | `pdm add "acb[monitoring]"` |
 | NoSQL | Database (MongoDB, Firestore, Redis) | `pdm add "acb[nosql]"` |
 | Requests | HTTP clients (HTTPX, Niquests) | `pdm add "acb[requests]"` |
@@ -93,8 +94,8 @@ ACB supports various optional dependencies for different adapters and functional
 | Storage | File storage (S3, GCS, Azure, local) | `pdm add "acb[storage]"` |
 | Demo | Demo/example utilities | `pdm add "acb[demo]"` |
 | Development | Development tools | `pdm add "acb[dev]"` |
-| Multiple Features | Combined dependencies | `pdm add "acb[cache,sql,nosql]"` |
-| Web Application | Typical web app stack | `pdm add "acb[cache,sql,storage]"` |
+| Multiple Features | Combined dependencies | `pdm add "acb[models,cache,sql,nosql]"` |
+| Web Application | Typical web app stack | `pdm add "acb[models,cache,sql,storage]"` |
 | All Features | All optional dependencies | `pdm add "acb[all]"` |
 
 ## Architecture Overview
@@ -208,14 +209,14 @@ Projects built on ACB, like FastBlocks, can extend this adapter system with doma
 
 #### Understanding the Adapter Pattern in ACB
 
-The adapter pattern in ACB works like this:
+ACB uses **dynamic discovery** with convention-based adapter loading:
 
-1. **Define a standard interface** for a specific type of service (e.g., caching)
-2. **Create multiple implementations** of that interface (e.g., memory cache, Redis cache)
-3. **Configure which implementation to use** in your settings
-4. **Use the interface in your code** without worrying about the specific implementation
+1. **Convention-Based Discovery**: Adapters are automatically detected based on directory structure (`acb/adapters/{category}/{implementation}.py`)
+2. **Configuration-Driven Selection**: Choose which implementation to use via `settings/adapters.yml`
+3. **Lazy Loading**: Adapters are loaded and initialized only when needed
+4. **Dependency Injection**: Seamlessly integrated with ACB's dependency system
 
-This means you can switch from a memory cache to Redis by changing a single line in your configuration file, without modifying any of your application code.
+This means you can switch from memory cache to Redis by changing a single line in your configuration file, without modifying any of your application code - ACB automatically discovers and loads the correct implementation.
 
 #### Key Adapter Categories
 
@@ -296,17 +297,87 @@ ACB provides a powerful Universal Query Interface that allows you to write datab
 #### Key Benefits
 
 - **Database Agnostic**: Write queries that work with MySQL, PostgreSQL, MongoDB, Firestore, and Redis
-- **Model Agnostic**: Use the same interface with SQLModel, Pydantic, or any Python class
+- **Universal Model Support**: Automatically works with SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, and Redis-OM
+- **Intelligent Auto-Detection**: Automatically detects model types - no configuration needed
 - **Multiple Query Styles**: Choose between Simple, Repository, Specification, and Advanced patterns
 - **Type Safety**: Full generic type support with automatic serialization/deserialization
 - **Composable Business Logic**: Build complex rules with the Specification pattern
+- **Multi-Framework Applications**: Use different model frameworks in the same application
+
+#### Universal Model Framework Support
+
+ACB's Models adapter automatically detects and works with multiple model frameworks seamlessly:
+
+```python
+from sqlmodel import SQLModel, Field
+from pydantic import BaseModel
+import msgspec
+import attrs
+from acb.adapters import import_adapter
+
+# Get the models adapter - auto-detects all framework types
+Models = import_adapter("models")
+models = depends.get(Models)
+
+# SQLModel for SQL databases - automatically detected
+class User(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    email: str
+
+# SQLAlchemy for traditional ORM - automatically detected
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+class Product(Base):
+    __tablename__ = 'products'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    price = Column(Integer)
+
+# Pydantic for API DTOs - automatically detected
+class UserCreateRequest(BaseModel):
+    name: str
+    email: str
+
+# msgspec for high-performance serialization - automatically detected
+class UserSession(msgspec.Struct):
+    user_id: str
+    token: str
+    expires_at: int
+
+# attrs for mature applications - automatically detected
+@attrs.define
+class UserProfile:
+    bio: str
+    avatar_url: str
+
+# All work with the same universal query interface!
+print(models.auto_detect_model_type(User))              # "sqlmodel"
+print(models.auto_detect_model_type(Product))           # "sqlalchemy"
+print(models.auto_detect_model_type(UserCreateRequest)) # "pydantic"
+print(models.auto_detect_model_type(UserSession))       # "msgspec"
+print(models.auto_detect_model_type(UserProfile))       # "attrs"
+
+# Get the right adapter automatically
+user_adapter = models.get_adapter_for_model(User)           # SQLModelAdapter
+product_adapter = models.get_adapter_for_model(Product)     # SQLAlchemyModelAdapter
+dto_adapter = models.get_adapter_for_model(UserCreateRequest) # PydanticModelAdapter
+session_adapter = models.get_adapter_for_model(UserSession)   # MsgspecModelAdapter
+profile_adapter = models.get_adapter_for_model(UserProfile)   # AttrsModelAdapter
+```
+
+**Why This Matters**: You can migrate between frameworks, use different frameworks for different purposes, or gradually adopt new frameworks without rewriting your query logic.
 
 #### Query Patterns
 
 **Simple Query Style** - Active Record-like interface for basic CRUD operations:
 
 ```python
-from acb.models._hybrid import ACBQuery
+from acb.adapters.models._hybrid import ACBQuery
 from sqlmodel import SQLModel, Field
 
 class User(SQLModel, table=True):
@@ -330,7 +401,7 @@ new_user = await query.for_model(User).simple.create({
 **Repository Pattern** - Domain-driven design with built-in caching:
 
 ```python
-from acb.models._repository import RepositoryOptions
+from acb.adapters.models._repository import RepositoryOptions
 
 # Configure repository with caching and audit trails
 repo = query.for_model(User).repository(RepositoryOptions(
@@ -348,7 +419,7 @@ recent_users = await repo.find_recent(days=7)
 **Specification Pattern** - Composable business rules:
 
 ```python
-from acb.models._specification import field, range_spec
+from acb.adapters.models._specification import field, range_spec
 
 # Create reusable specifications
 active_spec = field("active").equals(True)
@@ -405,7 +476,7 @@ nosql_query = ACBQuery(database_adapter_name="nosql", model_adapter_name="pydant
 activity = await nosql_query.for_model(UserActivity).simple.all()
 ```
 
-For comprehensive documentation and examples, see the [Universal Query Interface Documentation](./acb/models/README.md).
+For comprehensive documentation and examples, see the [Models Adapter Documentation](./acb/adapters/models/README.md).
 
 ### Configuration System
 
@@ -870,14 +941,14 @@ async def get_user_data(user_id: int, cache=depends(Cache)):
     return user_data
 ```
 
-## Performance (ACB 0.16.17+)
+## Performance (ACB 0.18.0+)
 
-ACB 0.16.17 introduces significant performance improvements:
+ACB 0.18.0 introduces significant performance improvements:
 
 ### Adapter System Performance
 
-- **Static Mappings**: Replaced dynamic discovery with hardcoded mappings for 50-70% faster adapter loading
-- **Reduced Import Overhead**: Eliminated runtime module scanning and discovery
+- **Dynamic Discovery**: Convention-based adapter detection with caching for 50-70% faster adapter loading
+- **Lazy Loading**: Adapters are loaded and initialized only when needed
 - **Lock-based Initialization**: Prevents duplicate adapter initialization in concurrent scenarios
 - **Cached Registration**: Adapter registry caching reduces repeated lookups
 
@@ -903,7 +974,7 @@ ACB 0.16.17 introduces significant performance improvements:
 
 ### Performance Comparison
 
-| Component | Pre-0.16.17 | 0.16.17+ | Improvement |
+| Component | Pre-0.18.0 | 0.18.0+ | Improvement |
 |-----------|-------------|----------|-------------|
 | Adapter Loading | ~50-100ms | ~15-30ms | 50-70% faster |
 | Memory Cache Ops | ~0.2-0.5ms | ~0.1-0.2ms | 50% faster |
@@ -1183,7 +1254,7 @@ Contributions to ACB are welcome! We follow a workflow inspired by the Crackerja
    ```
    python -m crackerjack -a <version>
    ```
-   This command cleans your code, runs linting, tests, bumps the version (micro, minor, or major), and commits changes.
+   This command cleans your code, runs linting, tests, bumps the version (patch, minor, or major), and commits changes.
 
 5. **Testing**
    All tests are written using pytest and should include coverage reporting:

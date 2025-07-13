@@ -1,7 +1,10 @@
 import typing as t
 from functools import cached_property
 
-import nest_asyncio
+try:
+    import nest_asyncio
+except ImportError:
+    nest_asyncio = None
 from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
@@ -10,7 +13,8 @@ from acb.config import AdapterBase, Config, Settings
 from acb.debug import debug
 from acb.depends import depends
 
-nest_asyncio.apply()
+if nest_asyncio:
+    nest_asyncio.apply()
 
 
 class StorageBaseSettings(Settings):

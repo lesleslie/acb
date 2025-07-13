@@ -139,7 +139,7 @@ class TestEncode:
     async def test_pickle_encode(self) -> None:
         result_bytes: bytes = await encode.pickle(TEST_DATA)
         assert isinstance(result_bytes, bytes)
-        decoded: t.Any = pickle.loads(result_bytes)
+        decoded: t.Any = pickle.loads(result_bytes)  # nosec B301
         if isinstance(decoded, dict):
             dict_result: dict[str, t.Any] = decoded
         else:
@@ -152,7 +152,7 @@ class TestEncode:
         await encode.pickle(TEST_DATA, path=output_file)
         assert output_file.exists()
         content: bytes = output_file.read_bytes()
-        decoded: t.Any = pickle.loads(content)
+        decoded: t.Any = pickle.loads(content)  # nosec B301
         if isinstance(decoded, dict):
             dict_result: dict[str, t.Any] = decoded
         else:
@@ -207,7 +207,7 @@ class TestEncode:
     async def test_nested_data_pickle_encode(self) -> None:
         result_bytes: bytes = await encode.pickle(NESTED_TEST_DATA)
         assert isinstance(result_bytes, bytes)
-        decoded: t.Any = pickle.loads(result_bytes)
+        decoded: t.Any = pickle.loads(result_bytes)  # nosec B301
         if isinstance(decoded, dict):
             dict_result: dict[str, t.Any] = decoded
         else:

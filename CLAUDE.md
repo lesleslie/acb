@@ -47,14 +47,14 @@ python -m crackerjack -t                       # Test and quality verification (
 ### Package Management
 ```bash
 # Install development dependencies
-pdm install -G dev
+uv sync --group dev
 
 # Install with specific adapter groups
-pdm add "acb[cache,sql,storage]"  # Common web app stack
-pdm add "acb[all]"                # All optional dependencies
+uv add "acb[cache,sql,storage]"  # Common web app stack
+uv add "acb[all]"                # All optional dependencies
 
 # Add development dependency
-pdm add -G dev <package>
+uv add --group dev <package>
 ```
 
 ## Architecture Overview
@@ -130,6 +130,7 @@ settings/
 ├── app.yml          # Application settings (name, version, domain)
 ├── debug.yml        # Debug configuration
 ├── adapters.yml     # Adapter implementation selection
+├── models.yml       # Models framework configuration (SQLModel, Pydantic, Redis-OM)
 └── secrets/         # Secret files (not committed)
 ```
 
@@ -139,6 +140,20 @@ Configure which implementations to use in `settings/adapters.yml`:
 cache: redis        # or: memory
 storage: s3         # or: file, gcs, azure
 sql: postgresql     # or: mysql
+models: true        # Enable models adapter (auto-detects model types)
+```
+
+### Models Framework Configuration
+Configure which model frameworks are enabled in `settings/models.yml`:
+```yaml
+# Enable SQLModel support (default: true)
+sqlmodel: true
+
+# Enable Pydantic support (default: true)
+pydantic: true
+
+# Enable Redis-OM support (default: false)
+redis_om: false
 ```
 
 ### Dependency Injection Usage
@@ -214,6 +229,7 @@ Self-contained utility functions automatically discovered and registered:
 
 ### Adapter Categories
 - **cache**: Memory, Redis (aiocache, coredis)
+- **models**: SQLModel, Pydantic, Redis-OM (auto-detection, universal query interface)
 - **sql**: MySQL, PostgreSQL (SQLAlchemy, SQLModel)
 - **nosql**: MongoDB, Firestore, Redis
 - **storage**: File, S3, GCS, Azure
@@ -225,7 +241,7 @@ Self-contained utility functions automatically discovered and registered:
 
 ## Development Workflow
 
-1. **Setup**: `pdm install -G dev`
+1. **Setup**: `uv sync --group dev`
 2. **Code**: Follow adapter patterns and async interfaces
 3. **Test**: Write tests with proper mocking
 4. **Quality**: Use ruff for formatting and pyright for type checking
@@ -236,6 +252,8 @@ Self-contained utility functions automatically discovered and registered:
 
 When generating code, AI assistants MUST follow these standards to ensure compliance with Refurb and Bandit pre-commit hooks:
 
+**IMPORTANT: Target Python 3.12+** - All code should be compatible with Python 3.12 or newer when possible. Use modern Python features and syntax.
+
 ### Refurb Standards (Modern Python Patterns)
 
 **Use modern syntax and built-ins:**
@@ -245,6 +263,27 @@ When generating code, AI assistants MUST follow these standards to ensure compli
 - Prefer `match` statements over complex `if/elif` chains
 - Use `|` for union types instead of `Union` from typing
 - Use `dict1 | dict2` for merging instead of `{**dict1, **dict2}`
+
+**Example of good patterns:**
+```python
+# Good: Modern pathlib usage
+from pathlib import Path
+config_file = Path("config") / "settings.yaml"
+if config_file.exists():
+    content = config_file.read_text(encoding="utf-8")
+
+# Good: String methods
+if name.startswith("test_"):
+    name = name.removeprefix("test_")
+
+# Good: Union types
+def process_data(data: str | bytes) -> dict[str, Any]:
+    pass
+
+# Good: Context managers
+with open(file_path, encoding="utf-8") as f:
+    data = f.read()
+```
 
 **Use efficient built-in functions:**
 - Use `any()` and `all()` instead of manual boolean loops
@@ -282,6 +321,96 @@ When generating code, AI assistants MUST follow these standards to ensure compli
 - Validate and sanitize all user inputs
 - Use prepared statements for database operations
 
+**Example of secure patterns:**
+```python
+# Good: Secure random generation
+import secrets
+token = secrets.token_urlsafe(32)
+
+# Good: Safe subprocess usage
+import subprocess
+result = subprocess.run(["ls", "-la"], capture_output=True, text=True)
+
+# Good: Secure file operations
+import tempfile
+with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as f:
+    f.write(data)
+    temp_path = f.name
+
+# Good: Environment variables for secrets
+import os
+api_key = os.environ.get("API_KEY")
+if not api_key:
+    raise ValueError("API_KEY environment variable required")
+
+# Good: Parameterized database queries
+cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+```
+
+### Pyright Type Safety Standards
+
+**Always use explicit type annotations:**
+- Function parameters must have type hints
+- Function return types must be annotated
+- Class attributes should have type annotations
+- Use `from __future__ import annotations` for forward references
+
+**Handle Optional types properly:**
+- Use `str | None` instead of `Optional[str]` when possible
+- Always check for None before using optional values
+- Use explicit `assert` statements or type guards when narrowing types
+
+**Generic types and collections:**
+- Use `list[str]` instead of `List[str]` when possible
+- Use `dict[str, Any]` instead of `Dict[str, Any]` when possible
+- Properly type generic classes with `TypeVar` when needed
+- Use `Sequence` or `Iterable` for function parameters when appropriate
+
+**Protocol and ABC usage:**
+- Prefer `typing.Protocol` over abstract base classes for duck typing
+- Use `@runtime_checkable` when protocols need runtime checks
+- Define clear interfaces with protocols
+
+**Example of proper typing:**
+```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from pathlib import Path
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+@runtime_checkable
+class Writable(Protocol):
+    def write(self, data: str) -> None: ...
+
+def process_files(
+    paths: Sequence[Path],
+    output: Writable,
+    encoding: str = "utf-8",
+) -> dict[str, int]:
+    """Process files and return statistics."""
+    stats: dict[str, int] = {}
+
+    for path in paths:
+        if path.exists():
+            content = path.read_text(encoding=encoding)
+            stats[str(path)] = len(content)
+            output.write(f"Processed {path}\n")
+
+    return stats
+
+# Good: Type narrowing with assertion
+def validate_config(config: dict[str, str | None]) -> dict[str, str]:
+    """Validate that all config values are non-None."""
+    validated: dict[str, str] = {}
+    for key, value in config.items():
+        assert value is not None, f"Config key {key} cannot be None"
+        validated[key] = value
+    return validated
+```
+
 ### Integration with Pre-commit Hooks
 
 These standards align with the project's pre-commit hooks:
@@ -289,6 +418,14 @@ These standards align with the project's pre-commit hooks:
 - **Bandit**: Scans for security vulnerabilities
 - **Pyright**: Enforces type safety
 - **Ruff**: Handles formatting and additional linting
+- **pyproject-fmt**: Validates and formats pyproject.toml files
+- **Vulture**: Detects unused code (dead code detection)
+- **Creosote**: Identifies unused dependencies
+- **Complexipy**: Analyzes code complexity
+- **Autotyping**: Automatically adds type annotations
+- **Codespell**: Fixes common spelling mistakes
+- **Detect-secrets**: Prevents credential leaks
+- **Standard hooks**: File formatting (trailing whitespace, end-of-file fixes, YAML/TOML validation)
 
 By following these guidelines during code generation, AI assistants will produce code that passes all quality checks without requiring manual fixes.
 

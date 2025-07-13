@@ -1,4 +1,4 @@
-**ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [NoSQL](./README.md)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [NoSQL](./README.md)
 
 # NoSQL Adapter
 
@@ -145,10 +145,10 @@ ACB provides a universal query interface that works consistently across NoSQL da
 The Simple Query style provides an Active Record-like interface for basic CRUD operations:
 
 ```python
-from acb.models._hybrid import ACBQuery
-from acb.models._query import registry
+from acb.adapters.models._hybrid import ACBQuery
+from acb.adapters.models._query import registry
 from acb.adapters.nosql._query import NoSQLDatabaseAdapter
-from acb.models._pydantic import PydanticModelAdapter
+from acb.adapters.models._pydantic import PydanticModelAdapter
 from pydantic import BaseModel, Field
 
 # Define your model
@@ -196,7 +196,7 @@ async def product_operations():
 The Repository pattern provides domain-specific query methods with built-in caching and business logic:
 
 ```python
-from acb.models._repository import RepositoryOptions
+from acb.adapters.models._repository import RepositoryOptions
 
 # Configure repository options
 repo_options = RepositoryOptions(
@@ -237,7 +237,7 @@ async def repository_operations():
 The Specification pattern allows you to create composable, reusable business rules:
 
 ```python
-from acb.models._specification import field, range_spec, custom_spec
+from acb.adapters.models._specification import field, range_spec, custom_spec
 
 async def specification_operations():
     # Create specifications
@@ -255,7 +255,7 @@ async def specification_operations():
     def trending_product_predicate(product):
         return product.views > 1000 and product.rating > 4.5
 
-    from acb.models._query import QuerySpec, QueryFilter
+    from acb.adapters.models._query import QuerySpec, QueryFilter
     trending_spec = custom_spec(
         predicate=trending_product_predicate,
         query_spec=QuerySpec(filter=QueryFilter()

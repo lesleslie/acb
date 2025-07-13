@@ -51,7 +51,8 @@ class Depends:
                 asyncio.get_running_loop()
                 import nest_asyncio
 
-                nest_asyncio.apply()
+                if nest_asyncio:
+                    nest_asyncio.apply()
                 class_ = asyncio.run(_import_adapter(class_))
             except RuntimeError:
                 class_ = asyncio.run(_import_adapter(class_))

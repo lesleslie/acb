@@ -4,6 +4,7 @@ import typing as t
 from contextlib import asynccontextmanager, suppress
 from functools import cached_property
 from pathlib import Path
+from uuid import UUID
 
 import asyncssh
 from asyncssh import (
@@ -14,6 +15,10 @@ from asyncssh import (
     SSHServerConnection,
     SSHServerProcess,
 )
+from acb.adapters import AdapterStatus
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b80fef01e7c2")
+MODULE_STATUS = AdapterStatus.STABLE
 from pydantic import Field
 from acb.depends import depends
 from acb.logger import Logger

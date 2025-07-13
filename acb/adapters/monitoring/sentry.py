@@ -1,13 +1,18 @@
 import typing as t
+from uuid import UUID
 
 from pydantic import SecretStr, field_validator
 from sentry_sdk import init as sentry_init
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from sentry_sdk.integrations.gcp import GcpIntegration
+from acb.adapters import AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
 from ._base import MonitoringBase, MonitoringBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b827edf29f46")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class MonitoringSettings(MonitoringBaseSettings):

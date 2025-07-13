@@ -1,6 +1,12 @@
+from uuid import UUID
+
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 
 from ._base import SqlBase, SqlBaseSettings
+
+MODULE_ID = UUID("0197ff44-d5f1-7ec0-9d2a-8f4c6b23a159")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class SqlSettings(SqlBaseSettings):

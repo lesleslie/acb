@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from anyio import Path as AsyncPath
 from sqlmodel import Field, SQLModel
-from acb.adapters.models.sqlmodel import ModelsSettings
+from acb.adapters.models._sqlmodel import ModelsSettings
 
 
 class SampleModel(SQLModel, table=True):  # type: ignore

@@ -131,3 +131,59 @@ class TestLogger:
             await Logger.async_sink("Test message")
 
             mock_aprint.assert_called_once_with("Test message", end="")
+
+    def test_logger_settings_format_none(self) -> None:
+        settings = LoggerSettings(format=None)
+        assert settings.settings is not None
+        assert settings.settings["format"] == ""
+
+    def test_logger_settings_serialize_none(self) -> None:
+        settings = LoggerSettings(serialize=None)
+        assert settings.settings is not None
+        assert settings.settings["serialize"] is None
+
+    def test_logger_settings_format_join(self) -> None:
+        custom_format = {
+            "time": "[{time}]",
+            "level": " {level}",
+            "message": " {message}",
+        }
+        settings = LoggerSettings(format=custom_format)
+        expected_format = "[{time}] {level} {message}"
+        assert settings.settings is not None
+        assert settings.settings["format"] == expected_format
+
+    def test_logger_settings_default_format_values(self) -> None:
+        settings = LoggerSettings()
+        assert settings.format is not None
+        assert "time" in settings.format
+        assert "level" in settings.format
+        assert "sep" in settings.format
+        assert "name" in settings.format
+        assert "line" in settings.format
+        assert "message" in settings.format
+
+    def test_logger_settings_enqueue_setting(self) -> None:
+        settings = LoggerSettings()
+        assert settings.settings is not None
+        assert settings.settings["enqueue"] is True
+
+    def test_logger_settings_backtrace_setting(self) -> None:
+        settings = LoggerSettings()
+        assert settings.settings is not None
+        assert settings.settings["backtrace"] is False
+
+    def test_logger_settings_catch_setting(self) -> None:
+        settings = LoggerSettings()
+        assert settings.settings is not None
+        assert settings.settings["catch"] is False
+
+    def test_logger_settings_diagnose_setting(self) -> None:
+        settings = LoggerSettings()
+        assert settings.settings is not None
+        assert settings.settings["diagnose"] is False
+
+    def test_logger_settings_colorize_setting(self) -> None:
+        settings = LoggerSettings()
+        assert settings.settings is not None
+        assert settings.settings["colorize"] is True

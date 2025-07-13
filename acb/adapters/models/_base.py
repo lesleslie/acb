@@ -1,9 +1,17 @@
+from __future__ import annotations
+
 import typing as t
 
 from acb.config import AdapterBase, Settings
 
 
-class ModelsBaseSettings(Settings): ...
+class ModelsBaseSettings(Settings):
+    sqlmodel: bool = True
+    sqlalchemy: bool = True
+    pydantic: bool = True
+    redis_om: bool = False
+    msgspec: bool = True
+    attrs: bool = False
 
 
 class ModelsProtocol(t.Protocol):

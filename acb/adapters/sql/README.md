@@ -132,10 +132,10 @@ ACB provides a universal query interface that works consistently across SQL and 
 The Simple Query style provides an Active Record-like interface for basic CRUD operations:
 
 ```python
-from acb.models._hybrid import ACBQuery
-from acb.models._query import registry
+from acb.adapters.models._hybrid import ACBQuery
+from acb.adapters.models._query import registry
 from acb.adapters.sql._query import SQLDatabaseAdapter
-from acb.models._sqlmodel import SQLModelAdapter
+from acb.adapters.models._sqlmodel import SQLModelAdapter
 from sqlmodel import SQLModel, Field
 
 # Define your model
@@ -178,7 +178,7 @@ async def user_operations():
 The Repository pattern provides domain-specific query methods with built-in caching, soft delete, and audit support:
 
 ```python
-from acb.models._repository import RepositoryOptions
+from acb.adapters.models._repository import RepositoryOptions
 
 # Configure repository options
 repo_options = RepositoryOptions(
@@ -217,7 +217,7 @@ async def repository_operations():
 The Specification pattern allows you to create composable, reusable business rules:
 
 ```python
-from acb.models._specification import field, range_spec, custom_spec
+from acb.adapters.models._specification import field, range_spec, custom_spec
 
 async def specification_operations():
     # Create specifications
@@ -235,7 +235,7 @@ async def specification_operations():
     def high_activity_predicate(user):
         return user.login_count > 100 and user.last_login_days_ago < 7
 
-    from acb.models._query import QuerySpec, QueryFilter
+    from acb.adapters.models._query import QuerySpec, QueryFilter
     high_activity_spec = custom_spec(
         predicate=high_activity_predicate,
         query_spec=QuerySpec(filter=QueryFilter().where("login_count", ">", 100)),

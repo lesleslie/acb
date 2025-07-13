@@ -1,10 +1,15 @@
 import typing as t
+from uuid import UUID
 
 from aiocache.backends.memory import SimpleMemoryCache
 from aiocache.serializers import PickleSerializer
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 
 from ._base import CacheBase, CacheBaseSettings
+
+MODULE_ID = UUID("0197ff44-8c12-7f30-af61-2d41c6c89a72")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class CacheSettings(CacheBaseSettings): ...

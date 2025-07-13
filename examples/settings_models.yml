@@ -1,0 +1,26 @@
+# models.yml - Example Models Adapter Configuration
+# Configure which model types are enabled for the models adapter
+
+# Enable SQLModel support (default: true)
+# Requires: sqlmodel
+sqlmodel: true
+
+# Enable SQLAlchemy support (default: true)
+# Requires: sqlalchemy - Traditional ORM with declarative models
+sqlalchemy: true
+
+# Enable Pydantic support (default: true)
+# Requires: pydantic
+pydantic: true
+
+# Enable Redis-OM support (default: false)
+# Requires: redis-om
+redis_om: false
+
+# Enable msgspec support (default: true)
+# Requires: msgspec - High-performance serialization
+msgspec: true
+
+# Enable attrs support (default: false)
+# Requires: attrs - Mature attribute library
+attrs: false

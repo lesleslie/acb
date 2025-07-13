@@ -3,7 +3,10 @@ import typing as t
 from contextvars import ContextVar
 from inspect import currentframe
 
-import nest_asyncio
+try:
+    import nest_asyncio
+except ImportError:
+    nest_asyncio = None
 import rich.repr
 from anyio import Path as AsyncPath
 from pydantic import BaseModel, ConfigDict
@@ -18,7 +21,8 @@ from .console import console
 if t.TYPE_CHECKING:
     from rich.console import RenderableType
 
-nest_asyncio.apply()
+if nest_asyncio:
+    nest_asyncio.apply()
 
 
 @rich.repr.auto

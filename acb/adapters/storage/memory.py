@@ -1,9 +1,14 @@
 import typing as t
+from uuid import UUID
 
 from fsspec.implementations.memory import MemoryFileSystem
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 
 from ._base import StorageBase, StorageBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7c8fab944af")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class StorageSettings(StorageBaseSettings): ...
