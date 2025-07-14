@@ -122,28 +122,28 @@ Install ACB with specific adapter dependencies:
 
 ```bash
 # Install with specific adapter dependencies
-pdm add "acb[cache,sql,storage]"
+uv add "acb[cache,sql,storage]"
 
 # Install with all adapter dependencies
-pdm add "acb[all]"
+uv add "acb[all]"
 ```
 
 The following adapter-specific dependency groups are available:
 
 | Feature Group | Components                                    | Installation Command        |
 |---------------|-----------------------------------------------|-----------------------------|
-| cache         | Redis, memory                                 | `pdm add "acb[cache]"`      |
-| dns           | Cloud DNS, Cloudflare                         | `pdm add "acb[dns]"`        |
-| ftpd          | FTP, SFTP servers                             | `pdm add "acb[ftpd]"`       |
-| monitoring    | Sentry, Logfire                              | `pdm add "acb[monitoring]"` |
-| nosql         | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `pdm add "acb[nosql]"`      |
-| requests      | HTTPX, Niquests HTTP clients                 | `pdm add "acb[requests]"`   |
-| secret        | Infisical, Secret Manager                     | `pdm add "acb[secret]"`     |
-| smtp          | Gmail, Mailgun email sending                  | `pdm add "acb[smtp]"`       |
-| sql           | MySQL, PostgreSQL, SQLite (including Turso)  | `pdm add "acb[sql]"`        |
-| storage       | S3, GCS, Azure, Local                         | `pdm add "acb[storage]"`    |
-| demo          | Demo/example utilities                        | `pdm add "acb[demo]"`       |
-| dev           | Development tools                             | `pdm add "acb[dev]"`        |
+| cache         | Redis, memory                                 | `uv add "acb[cache]"`      |
+| dns           | Cloud DNS, Cloudflare                         | `uv add "acb[dns]"`        |
+| ftpd          | FTP, SFTP servers                             | `uv add "acb[ftpd]"`       |
+| monitoring    | Sentry, Logfire                              | `uv add "acb[monitoring]"` |
+| nosql         | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `uv add "acb[nosql]"`      |
+| requests      | HTTPX, Niquests HTTP clients                 | `uv add "acb[requests]"`   |
+| secret        | Infisical, Secret Manager                     | `uv add "acb[secret]"`     |
+| smtp          | Gmail, Mailgun email sending                  | `uv add "acb[smtp]"`       |
+| sql           | MySQL, PostgreSQL, SQLite (including Turso)  | `uv add "acb[sql]"`        |
+| storage       | S3, GCS, Azure, Local                         | `uv add "acb[storage]"`    |
+| demo          | Demo/example utilities                        | `uv add "acb[demo]"`       |
+| dev           | Development tools                             | `uv add "acb[dev]"`        |
 
 ## Configuration
 

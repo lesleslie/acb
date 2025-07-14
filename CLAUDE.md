@@ -61,6 +61,14 @@ uv add --group dev <package>
 
 ACB (Asynchronous Component Base) is a modular Python framework with a component-based architecture built around **actions**, **adapters**, and **dependency injection**.
 
+### Featured Implementation
+**FastBlocks**: A high-performance web framework built on ACB showcasing enterprise-grade adapter patterns and HTMX integration. [See FastBlocks on GitHub](https://github.com/lesleslie/fastblocks) for a complete example of ACB best practices in production.
+
+### Version Compatibility
+- **Python**: 3.13+ (required)
+- **FastBlocks Integration**: ACB v0.19.0+ required for FastBlocks v0.14.0+
+- **Breaking Changes**: See MIGRATION guides for version-specific upgrade instructions
+
 ### Core Design Patterns
 
 1. **Adapter Pattern**: All external integrations use standardized interfaces with pluggable implementations
@@ -93,6 +101,10 @@ All adapters follow a consistent pattern with public/private method delegation:
 
 ```python
 class ExampleAdapter:
+    def __init__(self):
+        self._client = None
+        self._settings = None
+
     async def public_method(self, *args, **kwargs):
         # Public methods delegate to private implementation
         return await self._public_method(*args, **kwargs)
@@ -101,17 +113,187 @@ class ExampleAdapter:
         # Private method contains actual implementation
         client = await self._ensure_client()
         # Implementation logic here
+        return result
 
     async def _ensure_client(self):
-        # Lazy client initialization pattern
+        # Lazy client initialization pattern with connection pooling
         if self._client is None:
             self._client = await self._create_client()
         return self._client
+
+    async def _create_client(self):
+        # Initialize the actual client connection
+        # Use self._settings for configuration
+        return client_instance
 ```
+
+### Adapter Metadata Standard
+
+ACB uses a comprehensive metadata system for adapter identification, capability discovery, and version management. Each adapter should include a `MODULE_METADATA` constant with standardized information.
+
+#### Core Metadata Schema
+
+```python
+from acb.adapters import AdapterMetadata, AdapterStatus, AdapterCapability, generate_adapter_id
+
+# Required metadata for all adapters
+MODULE_METADATA = AdapterMetadata(
+    module_id=generate_adapter_id(),  # UUID7 identifier (persistent)
+    name="Redis Cache",               # Human-readable name
+    category="cache",                 # Adapter category
+    provider="redis",                 # Technology provider
+    version="1.0.0",                  # Semantic version (independent of ACB)
+    acb_min_version="0.18.0",        # Minimum ACB version required
+    acb_max_version="2.0.0",         # Maximum ACB version supported
+    author="Developer <dev@example.com>",  # Primary maintainer
+    created_date="2025-01-12",        # ISO date of creation
+    last_modified="2025-01-12",       # ISO date of last modification
+    status=AdapterStatus.STABLE,      # Development status
+    capabilities=[                    # Feature capabilities
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.CONNECTION_POOLING,
+        AdapterCapability.CACHING,
+    ],
+    required_packages=["redis>=4.0.0"],  # Required dependencies
+    optional_packages=["hiredis>=2.0.0"], # Optional dependencies
+    description="High-performance Redis caching adapter",
+    documentation_url="https://docs.example.com/redis-cache",
+    repository_url="https://github.com/example/redis-adapter",
+    settings_class="CacheSettings",   # Configuration class name
+    config_example={                  # Example configuration
+        "host": "localhost",
+        "port": 6379,
+        "db": 0
+    },
+    custom={"custom_field": "value"}  # Custom metadata fields
+)
+```
+
+#### Adapter Status Levels
+
+```python
+class AdapterStatus(Enum):
+    ALPHA = "alpha"           # Early development, breaking changes expected
+    BETA = "beta"             # Feature complete, may have bugs
+    STABLE = "stable"         # Production ready
+    DEPRECATED = "deprecated" # Scheduled for removal
+    EXPERIMENTAL = "experimental"  # Proof of concept
+```
+
+#### Adapter Capabilities
+
+The capability system enables runtime feature detection:
+
+```python
+# Connection Management
+AdapterCapability.CONNECTION_POOLING    # Supports connection pooling
+AdapterCapability.RECONNECTION          # Auto-reconnection support
+AdapterCapability.HEALTH_CHECKS         # Health monitoring
+
+# Data Operations
+AdapterCapability.TRANSACTIONS          # Transaction support
+AdapterCapability.BULK_OPERATIONS       # Batch operations
+AdapterCapability.STREAMING             # Streaming data support
+AdapterCapability.COMPRESSION           # Data compression
+AdapterCapability.ENCRYPTION            # Encryption support
+
+# Performance
+AdapterCapability.CACHING               # Built-in caching
+AdapterCapability.ASYNC_OPERATIONS      # Async/await support
+AdapterCapability.BATCHING              # Request batching
+
+# Observability
+AdapterCapability.METRICS               # Metrics collection
+AdapterCapability.TRACING               # Distributed tracing
+AdapterCapability.LOGGING               # Structured logging
+
+# Schema Management
+AdapterCapability.SCHEMA_VALIDATION     # Schema validation
+AdapterCapability.MIGRATIONS            # Database migrations
+AdapterCapability.BACKUP_RESTORE        # Backup/restore operations
+```
+
+#### Metadata Utility Functions
+
+```python
+from acb.adapters import (
+    generate_adapter_id,
+    create_metadata_template,
+    extract_metadata_from_module,
+    validate_version_compatibility,
+    check_adapter_capability,
+    generate_adapter_report
+)
+
+# Generate unique adapter ID
+adapter_id = generate_adapter_id()
+
+# Create template for new adapter
+template = create_metadata_template(
+    name="My Adapter",
+    category="storage",
+    provider="custom"
+)
+
+# Extract metadata from adapter module
+metadata = extract_metadata_from_module(adapter_module)
+
+# Check version compatibility
+is_compatible = validate_version_compatibility(metadata, "0.19.0")
+
+# Check for specific capability
+has_pooling = check_adapter_capability(adapter, AdapterCapability.CONNECTION_POOLING)
+
+# Generate comprehensive adapter report
+report = generate_adapter_report(adapter_class)
+```
+
+#### Usage in Adapter Development
+
+When implementing new adapters, always include metadata:
+
+```python
+# my_adapter.py
+from acb.adapters import AdapterMetadata, AdapterStatus, AdapterCapability
+
+MODULE_METADATA = AdapterMetadata(
+    module_id="01234567-89ab-cdef-0123-456789abcdef",
+    name="Custom Storage",
+    category="storage",
+    provider="custom",
+    version="0.1.0",
+    acb_min_version="0.19.0",
+    author="Your Name <your.email@example.com>",
+    created_date="2025-01-14",
+    last_modified="2025-01-14",
+    status=AdapterStatus.BETA,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.ENCRYPTION,
+    ],
+    required_packages=["custom-storage>=1.0.0"],
+    description="Custom storage adapter with encryption",
+    settings_class="CustomStorageSettings",
+)
+
+class Storage:
+    # Adapter implementation
+    pass
+```
+
+#### Benefits of Metadata System
+
+1. **Unique Identification**: Each adapter has a persistent UUID7 identifier
+2. **Version Tracking**: Independent versioning from ACB core
+3. **Capability Discovery**: Runtime feature detection and validation
+4. **Compatibility Checking**: Automatic version requirement validation
+5. **Debugging Support**: Comprehensive adapter information for troubleshooting
+6. **Template System**: Standardized adapter development workflow
+7. **Documentation**: Built-in documentation and examples
 
 ### Memory Cache Adapter (v0.16.17+ Enhancement)
 
-The memory cache adapter now implements the full aiocache BaseCache interface:
+The memory cache adapter now implements the full aiocache BaseCache interface with MsgPack serialization and brotli compression:
 
 ```python
 # New methods available in memory cache adapter
@@ -120,6 +302,11 @@ await cache.add("key", "value")             # Set only if not exists
 await cache.increment("counter", delta=1)    # Atomic increment
 await cache.expire("key", ttl=60)           # Update TTL
 await cache.multi_set({"k1": "v1", "k2": "v2"})  # Batch operations
+
+# Performance optimizations:
+# - MsgPack serialization for efficient data storage
+# - Brotli compression for reduced memory usage
+# - aiocache BaseCache interface for consistency with Redis adapter
 ```
 
 ## Configuration System
@@ -139,8 +326,10 @@ Configure which implementations to use in `settings/adapters.yml`:
 ```yaml
 cache: redis        # or: memory
 storage: s3         # or: file, gcs, azure
-sql: postgresql     # or: mysql
+sql: postgresql     # or: mysql, sqlite
 models: true        # Enable models adapter (auto-detects model types)
+nosql: mongodb      # or: firestore, redis
+ftpd: sftp          # or: ftp
 ```
 
 ### Models Framework Configuration
@@ -154,6 +343,12 @@ pydantic: true
 
 # Enable Redis-OM support (default: false)
 redis_om: false
+
+# Enable msgspec support (default: false)
+msgspec: false
+
+# Enable attrs support (default: false)
+attrs: false
 ```
 
 ### Dependency Injection Usage
@@ -176,22 +371,115 @@ async def my_function(
 ):
     # Dependencies automatically injected
     pass
+
+# FastBlocks HTTPEndpoint Pattern (from FastBlocks CLAUDE.md)
+class FastBlocksEndpoint(HTTPEndpoint):
+    config: Config = depends()
+
+    def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        super().__init__(scope, receive, send)
+        self.templates = depends.get("templates")
+```
+
+### Universal Query Interface Examples (v0.19.0+)
+
+The models adapter provides comprehensive support for multiple model frameworks with automatic detection:
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+from acb.adapters.models._hybrid import ACBQuery
+
+# Import the models adapter
+Models = import_adapter("models")
+models = depends.get(Models)
+
+# Example models using different frameworks
+from sqlmodel import SQLModel, Field
+from pydantic import BaseModel
+import msgspec
+import attrs
+
+# SQLModel for SQL databases
+class User(SQLModel, table=True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    email: str
+    active: bool = True
+
+# Pydantic for API DTOs
+class UserCreateRequest(BaseModel):
+    name: str
+    email: str
+
+# msgspec for high-performance serialization
+class UserSession(msgspec.Struct):
+    user_id: str
+    token: str
+    expires_at: int
+
+# attrs for mature applications
+@attrs.define
+class UserProfile:
+    bio: str
+    avatar_url: str
+
+# Universal query interface works with all model types
+query = ACBQuery()
+
+# Simple query style - works with any model framework
+users = await query.for_model(User).simple.all()
+user = await query.for_model(User).simple.find(1)
+new_user = await query.for_model(User).simple.create({
+    "name": "John Doe",
+    "email": "john@example.com"
+})
+
+# Repository pattern with caching
+from acb.adapters.models._repository import RepositoryOptions
+repo = query.for_model(User).repository(RepositoryOptions(
+    cache_enabled=True,
+    cache_ttl=300,
+    enable_soft_delete=True
+))
+active_users = await repo.find_active()
+
+# Specification pattern for business rules
+from acb.adapters.models._specification import field
+active_spec = field("active").equals(True)
+email_spec = field("email").like("%@company.com")
+company_users = await query.for_model(User).specification.with_spec(
+    active_spec & email_spec
+).all()
+
+# Advanced query builder
+filtered_users = await (query.for_model(User).advanced
+    .where("active", True)
+    .where_gt("id", 100)
+    .order_by_desc("id")
+    .limit(10)
+    .all())
 ```
 
 ### Configuration Library Mode Detection (v0.16.17+)
 
-ACB now automatically detects when it's being used as a library vs application:
+ACB now automatically detects when it's being used as a library vs application using sophisticated detection logic:
 
 ```python
 # ACB detects library usage in these contexts:
-# - During pip install
-# - In setup.py execution
-# - During build processes
-# - In test contexts
+# - During pip install or setup.py execution
+# - When current directory is not "acb" (working directory check)
+# - Build processes and package installation
+# - Test contexts (pytest detection)
 
 # Manual override if needed:
 import os
 os.environ["ACB_LIBRARY_MODE"] = "true"
+
+# Library mode affects:
+# - Configuration initialization (eager vs lazy)
+# - Adapter registration behavior
+# - Debug output configuration
 ```
 
 ## Testing Guidelines
@@ -205,7 +493,10 @@ os.environ["ACB_LIBRARY_MODE"] = "true"
 ### Test Organization
 - Implementation tests: `test_<implementation>.py` (specific behavior)
 - Shared functionality: `test_<category>_base.py` (when needed for common test patterns)
-- Use pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`
+- Use pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.benchmark`
+- Base test files contain common fixtures and reusable assertion utilities
+- Mock classes must implement proper public/private method delegation
+- Separate test classes for complex adapters to avoid fixture conflicts
 
 ### File System Mocking
 Tests automatically patch file operations to prevent actual file creation:
@@ -229,8 +520,8 @@ Self-contained utility functions automatically discovered and registered:
 
 ### Adapter Categories
 - **cache**: Memory, Redis (aiocache, coredis)
-- **models**: SQLModel, Pydantic, Redis-OM (auto-detection, universal query interface)
-- **sql**: MySQL, PostgreSQL (SQLAlchemy, SQLModel)
+- **models**: SQLModel, Pydantic, Redis-OM, msgspec, attrs (auto-detection, universal query interface)
+- **sql**: MySQL, PostgreSQL, SQLite (SQLAlchemy, SQLModel)
 - **nosql**: MongoDB, Firestore, Redis
 - **storage**: File, S3, GCS, Azure
 - **secret**: Infisical, GCP Secret Manager
@@ -238,6 +529,7 @@ Self-contained utility functions automatically discovered and registered:
 - **requests**: HTTPX, Niquests
 - **smtp**: Gmail, Mailgun
 - **dns**: Cloud DNS, Cloudflare
+- **ftpd**: FTP, SFTP clients
 
 ## Development Workflow
 
@@ -252,7 +544,7 @@ Self-contained utility functions automatically discovered and registered:
 
 When generating code, AI assistants MUST follow these standards to ensure compliance with Refurb and Bandit pre-commit hooks:
 
-**IMPORTANT: Target Python 3.12+** - All code should be compatible with Python 3.12 or newer when possible. Use modern Python features and syntax.
+**IMPORTANT: Target Python 3.13+** - All code should be compatible with Python 3.13 or newer when possible. Use modern Python features and syntax.
 
 ### Refurb Standards (Modern Python Patterns)
 
@@ -438,6 +730,9 @@ By following these guidelines during code generation, AI assistants will produce
 - Group dependencies by adapter type in pyproject.toml
 - Use ACB settings pattern for component configuration
 - Implement proper error handling with appropriate exception types
+- **Include MODULE_METADATA in all adapters** with proper AdapterMetadata schema
+- Use AdapterCapability enum for feature detection and runtime validation
+- Follow semantic versioning for adapter versions (independent of ACB version)
 
 ## Recent Changes and Best Practices (v0.16.17+)
 
@@ -480,3 +775,46 @@ All other adapters follow the opt-in principle and must be explicitly configured
 - Catches issues early before they become problems
 
 **Never skip crackerjack verification** - it's the project's standard quality gate.
+
+## Documentation and Testing Audit Requirements
+
+**MANDATORY: AI assistants must regularly audit documentation and tests for consistency, accuracy, and obsolete information.**
+
+### Documentation Audit Checklist
+
+When working on significant changes or upon request, AI assistants MUST:
+
+1. **Package Manager Consistency**: Ensure all installation commands use UV (not PDM)
+2. **Python Version Accuracy**: Verify all documentation reflects Python 3.13+ requirement
+3. **Cross-Project References**: Check that ACB ↔ FastBlocks links are accurate
+4. **Command Accuracy**: Verify all CLI commands and code examples work with current versions
+5. **URL Validation**: Ensure GitHub URLs point to correct organizations and repositories
+6. **Version Information**: Update any outdated version requirements or compatibility information
+7. **Workflow Currency**: Remove or update obsolete development workflows and processes
+
+### Testing Audit Checklist
+
+1. **Test Coverage**: Ensure tests cover new features and changes
+2. **Mock Accuracy**: Verify mocks match current adapter interfaces
+3. **Integration Tests**: Check that tests work with current ACB adapter system
+4. **CI/CD Commands**: Verify automated testing commands are current
+5. **Quality Gates**: Ensure all quality checks (ruff, pyright, crackerjack) pass
+
+### Regular Audit Triggers
+
+Perform comprehensive audits when:
+- Making significant architectural changes
+- Updating major dependencies
+- Changing development tooling (package managers, linters, etc.)
+- Releasing new versions
+- Upon explicit request for documentation review
+
+### Audit Documentation
+
+When completing an audit, document:
+- **Files audited**: List all documentation files reviewed
+- **Issues found**: Specific inconsistencies, inaccuracies, or obsolete information
+- **Changes made**: Summary of updates and fixes
+- **Verification**: Confirmation that examples and commands were tested
+
+This ensures ACB documentation remains current, accurate, and helpful for developers.

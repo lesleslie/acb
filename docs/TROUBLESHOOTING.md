@@ -26,15 +26,15 @@ python --version
 # Should show Python 3.13.x or higher
 ```
 
-### PDM Installation Problems
+### UV Installation Problems
 
-**Problem**: `pdm: command not found`
+**Problem**: `uv: command not found`
 
-**Solution**: Install PDM first:
+**Solution**: Install UV first:
 ```bash
-curl -sSL https://pdm-project.org/install-pdm.py | python3 -
+curl -LsSf https://astral.sh/uv/install.sh | sh
 # Or using pip
-pip install --user pdm
+pip install uv
 ```
 
 ### Optional Dependencies Not Installing
@@ -44,13 +44,13 @@ pip install --user pdm
 **Solution**: Install the correct optional dependencies:
 ```bash
 # For cache features
-pdm add "acb[cache]"
+uv add "acb[cache]"
 
 # For SQL database features
-pdm add "acb[sql]"
+uv add "acb[sql]"
 
 # For all features
-pdm add "acb[all]"
+uv add "acb[all]"
 ```
 
 ## Configuration Issues
@@ -249,7 +249,7 @@ async def test_async_function():
 
 **Cause**: ACB is not installed or not in Python path
 
-**Solution**: Install ACB: `pdm add acb`
+**Solution**: Install ACB: `uv add acb`
 
 ### `ImportError: cannot import name 'import_adapter'`
 

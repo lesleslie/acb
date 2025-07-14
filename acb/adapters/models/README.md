@@ -30,13 +30,13 @@ The ACB Models adapter offers intelligent model type detection and management:
 
 ```bash
 # Install with Models support
-pdm add "acb[models]"
+uv add "acb[models]"
 
 # Or include it with database dependencies
-pdm add "acb[models,sql,nosql]"
+uv add "acb[models,sql,nosql]"
 
 # Complete database stack
-pdm add "acb[models,sql,nosql,cache]"
+uv add "acb[models,sql,nosql,cache]"
 ```
 
 ## Configuration
@@ -512,7 +512,7 @@ print(adapter.get_field_mapping(EnterpriseUser))      # {"salary_band": "band", 
 
 2. **Framework Not Available**
    - **Problem**: `ImportError: SQLModel is required for SQLModelAdapter`
-   - **Solution**: Install the required framework: `pdm add sqlmodel` or `pdm add pydantic`
+   - **Solution**: Install the required framework: `uv add sqlmodel` or `uv add pydantic`
 
 3. **Framework Disabled**
    - **Problem**: Model framework not working despite correct base class

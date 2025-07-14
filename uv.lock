@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.19.0"
+version = "0.19.1"
 source = { editable = "." }
 dependencies = [
     { name = "adlfs" },
@@ -836,11 +836,11 @@ wheels = [
 
 [[package]]
 name = "certifi"
-version = "2025.7.9"
+version = "2025.7.14"
 source = { registry = "https://pypi.org/simple/" }
-sdist = { url = "https://files.pythonhosted.org/packages/de/8a/c729b6b60c66a38f590c4e774decc4b2ec7b0576be8f1aa984a53ffa812a/certifi-2025.7.9.tar.gz", hash = "sha256:c1d2ec05395148ee10cf672ffc28cd37ea0ab0d99f9cc74c43e588cbd111b079", size = 160386, upload-time = "2025-07-09T02:13:58.874Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/76/52c535bcebe74590f296d6c77c86dabf761c41980e1347a2422e4aa2ae41/certifi-2025.7.14.tar.gz", hash = "sha256:8ea99dbdfaaf2ba2f9bac77b9249ef62ec5218e7c2b2e903378ed5fccf765995", size = 163981, upload-time = "2025-07-14T03:29:28.449Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/f3/80a3f974c8b535d394ff960a11ac20368e06b736da395b551a49ce950cce/certifi-2025.7.9-py3-none-any.whl", hash = "sha256:d842783a14f8fdd646895ac26f719a061408834473cfc10203f6a575beb15d39", size = 159230, upload-time = "2025-07-09T02:13:57.007Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/52/34c6cf5bb9285074dc3531c437b3919e825d976fde097a7a73f79e726d03/certifi-2025.7.14-py3-none-any.whl", hash = "sha256:6b31f564a415d79ee77df69d757bb49a5bb53bd9f756cbbe24394ffd6fc1f4b2", size = 162722, upload-time = "2025-07-14T03:29:26.863Z" },
 ]
 
 [[package]]
@@ -1010,7 +1010,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.24.9"
+version = "0.24.10"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "autotyping" },
@@ -1031,9 +1031,9 @@ dependencies = [
     { name = "typer" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/ae/3c96851a13201f6ca2ac6f30a0126d35e7ec873c61186f306bbac477080c/crackerjack-0.24.9.tar.gz", hash = "sha256:91b44cb2b6e1b27835b00b002b3d5678e53c5fd7184de38c1489ffdbe93d2306", size = 105300, upload-time = "2025-07-13T07:10:56.653Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/e1/c33b47b9fda44d257c3d3c684578381c620105eef982041627cd7f15921a/crackerjack-0.24.10.tar.gz", hash = "sha256:b262846bd157a96c189cf21db7d931724952aba05ca20bc3e89b331f32fbdc59", size = 105869, upload-time = "2025-07-14T11:29:17.939Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ab/e3/46b06b1e60279da1a2bf6886427b4dc25d1b9675b56f1788cf1c8f090391/crackerjack-0.24.9-py3-none-any.whl", hash = "sha256:695b1274b0a60c6e722095cad80332ac12927649f34bc3ebea10ef1749cb1f55", size = 35820, upload-time = "2025-07-13T07:10:54.769Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/63/f72b1fd1660c3bf8b08b2d6f8def0fc4eb64702d691a3dc8c82464693eef/crackerjack-0.24.10-py3-none-any.whl", hash = "sha256:975fff593b725b9e4c3782385041db061a7ac35752f4fb8db8a144e0b9f76b8b", size = 36688, upload-time = "2025-07-14T11:29:16.284Z" },
 ]
 
 [[package]]

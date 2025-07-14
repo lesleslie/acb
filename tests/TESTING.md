@@ -175,10 +175,10 @@ To run tests with Crackerjack:
 python -m crackerjack
 ```
 
-Or if using PDM:
+Or if using UV:
 
 ```bash
-pdm run python -m crackerjack
+uv run python -m crackerjack
 ```
 
 ### Using the AI Agent

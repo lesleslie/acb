@@ -67,10 +67,10 @@ If you're new to ACB, here are the key concepts to understand:
 
 ## Installation
 
-Install ACB using [pdm](https://pdm.fming.dev):
+Install ACB using [uv](https://docs.astral.sh/uv/):
 
-```
-pdm add acb
+```bash
+uv add acb
 ```
 
 > **Note**: ACB requires Python 3.13 or later.
@@ -81,22 +81,22 @@ ACB supports various optional dependencies for different adapters and functional
 
 | Feature Group | Components | Installation Command |
 |---------|------------|----------------------|
-| Cache | Memory, Redis | `pdm add "acb[cache]"` |
-| DNS | Domain name management (Cloud DNS, Cloudflare) | `pdm add "acb[dns]"` |
-| FTPD | File transfer protocols (FTP, SFTP) | `pdm add "acb[ftpd]"` |
-| Models | Universal model support (SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, Redis-OM) | `pdm add "acb[models]"` |
-| Monitoring | Error tracking (Sentry), Logging (Logfire) | `pdm add "acb[monitoring]"` |
-| NoSQL | Database (MongoDB, Firestore, Redis) | `pdm add "acb[nosql]"` |
-| Requests | HTTP clients (HTTPX, Niquests) | `pdm add "acb[requests]"` |
-| Secret | Secret management (Infisical, Secret Manager) | `pdm add "acb[secret]"` |
-| SMTP | Email sending (Gmail, Mailgun) | `pdm add "acb[smtp]"` |
-| SQL | Database (MySQL, PostgreSQL) | `pdm add "acb[sql]"` |
-| Storage | File storage (S3, GCS, Azure, local) | `pdm add "acb[storage]"` |
-| Demo | Demo/example utilities | `pdm add "acb[demo]"` |
-| Development | Development tools | `pdm add "acb[dev]"` |
-| Multiple Features | Combined dependencies | `pdm add "acb[models,cache,sql,nosql]"` |
-| Web Application | Typical web app stack | `pdm add "acb[models,cache,sql,storage]"` |
-| All Features | All optional dependencies | `pdm add "acb[all]"` |
+| Cache | Memory, Redis | `uv add "acb[cache]"` |
+| DNS | Domain name management (Cloud DNS, Cloudflare) | `uv add "acb[dns]"` |
+| FTPD | File transfer protocols (FTP, SFTP) | `uv add "acb[ftpd]"` |
+| Models | Universal model support (SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, Redis-OM) | `uv add "acb[models]"` |
+| Monitoring | Error tracking (Sentry), Logging (Logfire) | `uv add "acb[monitoring]"` |
+| NoSQL | Database (MongoDB, Firestore, Redis) | `uv add "acb[nosql]"` |
+| Requests | HTTP clients (HTTPX, Niquests) | `uv add "acb[requests]"` |
+| Secret | Secret management (Infisical, Secret Manager) | `uv add "acb[secret]"` |
+| SMTP | Email sending (Gmail, Mailgun) | `uv add "acb[smtp]"` |
+| SQL | Database (MySQL, PostgreSQL) | `uv add "acb[sql]"` |
+| Storage | File storage (S3, GCS, Azure, local) | `uv add "acb[storage]"` |
+| Demo | Demo/example utilities | `uv add "acb[demo]"` |
+| Development | Development tools | `uv add "acb[dev]"` |
+| Multiple Features | Combined dependencies | `uv add "acb[models,cache,sql,nosql]"` |
+| Web Application | Typical web app stack | `uv add "acb[models,cache,sql,storage]"` |
+| All Features | All optional dependencies | `uv add "acb[all]"` |
 
 ## Architecture Overview
 
@@ -587,18 +587,18 @@ async def process_data(data: dict[str, t.Any],
 
 Let's walk through creating a simple ACB application step by step:
 
-1. **Create a new project with PDM:**
+1. **Create a new project with UV:**
 
 ```bash
 # Create a directory for your project
 mkdir myapp
 cd myapp
 
-# Initialize a new Python project with PDM
-pdm init
+# Initialize a new Python project with UV
+uv init
 
 # Add ACB as a dependency
-pdm add acb
+uv add acb
 ```
 
 2. **Create a basic application structure:**
@@ -1203,16 +1203,53 @@ For more detailed documentation about ACB components:
 
 ACB "blocks" logo used by permission from [Andy Coe Band](https://andycoeband.com).
 
-Special thanks to the following open-source projects for powering ACB:
-- [Pydantic](https://pydantic-docs.helpmanual.io/)
-- [pydantic-settings](https://pydantic-settings.helpmanual.io/)
-- [bevy](https://github.com/bevy-org/bevy)
-- [Loguru](https://loguru.readthedocs.io/)
-- [Typer](https://typer.tiangolo.com/)
-- [AnyIO](https://anyio.readthedocs.io/)
-- [msgspec](https://jcristharif.com/msgspec/)
-- [Logfire](https://docs.logfire.dev/)
-- [Sentry](https://docs.sentry.io/)
+Special thanks to the following open-source projects that power ACB:
+
+### Core Framework & Configuration
+- [Pydantic](https://pydantic-docs.helpmanual.io/) - Data validation and settings management
+- [pydantic-settings](https://pydantic-settings.helpmanual.io/) - Settings management with multiple sources
+- [bevy](https://github.com/bevy-org/bevy) - Dependency injection framework
+- [AnyIO](https://anyio.readthedocs.io/) - Async compatibility layer and utilities
+- [Typer](https://typer.tiangolo.com/) - Modern CLI framework
+
+### Serialization & Data Processing
+- [msgspec](https://jcristharif.com/msgspec/) - High-performance JSON/MessagePack serialization
+- [attrs](https://github.com/python-attrs/attrs) - Classes without boilerplate
+- [PyYAML](https://pyyaml.org/) - YAML parser and emitter
+- [tomlkit](https://github.com/sdispater/tomlkit) - TOML parser and writer
+
+### Async & Networking
+- [httpx](https://www.python-httpx.org/) - Modern async HTTP client
+- [aiofiles](https://github.com/Tinche/aiofiles) - Async file operations
+- [aiocache](https://github.com/aio-libs/aiocache) - Async cache interface
+
+### Database & Storage
+- [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit and ORM
+- [SQLModel](https://sqlmodel.tiangolo.com/) - Modern SQL databases with Python
+- [Redis](https://redis.io/) - In-memory data store
+- [pymongo](https://pymongo.readthedocs.io/) - MongoDB driver
+
+### Monitoring & Debugging
+- [Loguru](https://loguru.readthedocs.io/) - Enhanced logging with async support
+- [Logfire](https://docs.logfire.dev/) - Structured logging and monitoring
+- [Sentry](https://docs.sentry.io/) - Error tracking and performance monitoring
+- [icecream](https://github.com/gruns/icecream) - Enhanced debugging utilities
+
+### Cloud & Infrastructure
+- [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) - AWS SDK
+- [google-cloud-storage](https://cloud.google.com/storage/docs/reference/libraries) - Google Cloud Storage
+- [azure-storage-blob](https://docs.microsoft.com/en-us/python/api/azure-storage-blob/) - Azure Blob Storage
+
+### Compression & Hashing
+- [brotli](https://github.com/google/brotli) - Brotli compression
+- [blake3](https://github.com/BLAKE3-team/BLAKE3) - Cryptographic hash function
+- [crc32c](https://github.com/ICRAR/crc32c) - CRC32C checksum
+
+### Development Environment
+- [PyCharm](https://www.jetbrains.com/pycharm/) - The premier Python IDE that powered the development of ACB
+- [Claude Code](https://claude.ai/code) - AI-powered development assistant that accelerated development and ensured code quality
+
+We extend our gratitude to all the maintainers and contributors of these outstanding projects that make ACB's powerful component architecture possible.
 
 ## License
 
@@ -1232,9 +1269,9 @@ Contributions to ACB are welcome! We follow a workflow inspired by the Crackerja
    Fork the repository and clone it locally.
 
 2. **Set Up Your Development Environment**
-   Use [PDM](https://pdm.fming.dev/) for dependency and virtual environment management. ACB requires Python 3.13 or later. Add ACB as a development dependency:
+   Use [UV](https://docs.astral.sh/uv/) for dependency and virtual environment management. ACB requires Python 3.13 or later. Add ACB as a development dependency:
    ```
-   pdm add -G dev acb
+   uv add --dev acb
    ```
 
 3. **Code Style and Type Checking**

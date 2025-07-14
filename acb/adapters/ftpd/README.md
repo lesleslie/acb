@@ -28,10 +28,10 @@ The ACB FTPD adapter offers a consistent way to handle file transfers:
 
 ```bash
 # Install with FTPD support
-pdm add "acb[ftpd]"
+uv add "acb[ftpd]"
 
 # Or include it with other dependencies
-pdm add "acb[ftpd,storage]"
+uv add "acb[ftpd,storage]"
 ```
 
 ## Configuration

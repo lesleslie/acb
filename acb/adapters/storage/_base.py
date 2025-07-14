@@ -23,8 +23,6 @@ class StorageBaseSettings(Settings):
     user_project: str | None = None
     buckets: dict[str, str] = {
         "test": "test-bucket",
-        "media": "media-bucket",
-        "templates": "templates-bucket",
     }
     cors: dict[str, dict[str, list[str] | int]] | None = None
     local_fs: bool | None = False

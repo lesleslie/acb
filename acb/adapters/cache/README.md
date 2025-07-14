@@ -43,10 +43,10 @@ Caching is a crucial component of high-performance applications. The ACB Cache a
 
 ```bash
 # Install with Redis cache support
-pdm add "acb[redis]"
+uv add "acb[redis]"
 
 # Or include it with other dependencies
-pdm add "acb[redis,sql,storage]"
+uv add "acb[redis,sql,storage]"
 ```
 
 ## Configuration

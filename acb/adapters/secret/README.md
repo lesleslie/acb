@@ -43,14 +43,14 @@ The ACB Secret adapter offers:
 
 ```bash
 # Install with Secret support
-pdm add "acb[secret]"
+uv add "acb[secret]"
 
 # Or with specific implementation
-pdm add "acb[infisical]"
-pdm add "acb[secretmanager]"
+uv add "acb[infisical]"
+uv add "acb[secretmanager]"
 
 # Or include it with other dependencies
-pdm add "acb[secret,config]"
+uv add "acb[secret,config]"
 ```
 
 ## Configuration

@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.19.0"
+version = "0.19.1"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 license.text = "BSD-3-CLAUSE"
@@ -322,28 +322,28 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "google-api-python-client",
-    "pytest-timeout",
-    "pytest",
-    "hatchling",
-    "pytest-asyncio",
-    "nest-asyncio",
-    "uv",
     "pydantic-settings",
+    "google-api-python-client",
+    "uv",
     "autotyping",
-    "pytest-mock",
-    "tomli-w",
-    "pre-commit",
-    "pyyaml",
-    "pytest-benchmark",
-    "uuid-utils",
-    "keyring",
+    "google-crc32c",
     "inflection",
+    "uuid-utils",
+    "attrs",
+    "pytest-timeout",
+    "tomli-w",
+    "hatchling",
+    "keyring",
     "pytest-cov",
     "pyfiglet",
-    "attrs",
+    "pytest-asyncio",
+    "pytest-benchmark",
     "pytest-xdist",
-    "google-crc32c",
+    "pyyaml",
+    "pytest",
+    "pytest-mock",
+    "nest-asyncio",
+    "pre-commit",
 ]
 
 [tool.refurb]
@@ -355,17 +355,17 @@ target = [
     "acb",
 ]
 skips = [
-    "B603",
     "B607",
-    "B403",
-    "B602",
-    "B404",
     "B301",
-    "B101",
-    "B105",
+    "B602",
     "B311",
+    "B403",
     "B704",
+    "B603",
+    "B105",
+    "B101",
     "B106",
+    "B404",
 ]
 
 [tool.vulture]

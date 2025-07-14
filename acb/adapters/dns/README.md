@@ -25,10 +25,10 @@ The ACB DNS adapter offers a consistent way to manage DNS records:
 
 ```bash
 # Install with DNS support
-pdm add "acb[dns]"
+uv add "acb[dns]"
 
 # Or include it with other dependencies
-pdm add "acb[dns,storage,sql]"
+uv add "acb[dns,storage,sql]"
 ```
 
 ## Configuration
