@@ -5,6 +5,18 @@ All notable changes to ACB (Asynchronous Component Base) will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.2] - 2025-09-22
+
+### Fixed
+
+- Remove all __pycache__ directories and files from repository
+- test: Update 393 files
+- Update uv.lock version
+
+### Testing
+
+- Verify pre-commit hooks are disabled
+
 ## [Unreleased]
 
 ### Major Reorganization (v0.19.2+)
