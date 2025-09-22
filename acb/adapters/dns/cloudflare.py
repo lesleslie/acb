@@ -9,13 +9,39 @@ from cloudflare import Cloudflare as CloudflareClient
 from pydantic import SecretStr
 from validators import domain
 from validators.utils import ValidationError
-from acb.adapters import AdapterStatus
+from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
 from ._base import DnsBase, DnsBaseSettings, DnsRecord
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7e29bc338cd")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Cloudflare DNS",
+    category="dns",
+    provider="cloudflare",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.TLS_SUPPORT,
+    ],
+    required_packages=["python-cloudflare", "validators"],
+    description="Cloudflare DNS management with zone and record operations",
+    settings_class="DnsSettings",
+    config_example={
+        "api_token": "your-cloudflare-api-token",  # pragma: allowlist secret
+        "zone_name": "example.com",
+        "proxied": False,
+        "ttl": 300,
+    },
+)
 
 
 class DnsSettings(DnsBaseSettings):
@@ -37,17 +63,17 @@ class Dns(DnsBase):
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             from unittest.mock import MagicMock
 
-            self.client = MagicMock()
+            self.client = MagicMock()  # type: ignore[assignment]
             self.zone_id = "test-zone-id"
             return
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             if self.config.dns.api_token:
-                self.client = CloudflareClient(
+                self.client = CloudflareClient(  # type: ignore[assignment]
                     api_token=self.config.dns.api_token.get_secret_value(),
                 )
             else:
-                self.client = CloudflareClient(
+                self.client = CloudflareClient(  # type: ignore[assignment]
                     api_email=self.config.dns.api_email,
                     api_key=self.config.dns.api_key.get_secret_value()
                     if self.config.dns.api_key
@@ -56,6 +82,10 @@ class Dns(DnsBase):
             if self.config.dns.zone_name:
                 await self._get_zone_id()
             else:
+                if not self.config.app:
+                    raise ValueError(
+                        "App configuration is required when zone_name is not specified"
+                    )
                 self.config.dns.zone_name = self.config.app.domain
                 await self._get_zone_id()
 

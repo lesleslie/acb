@@ -20,7 +20,7 @@ from acb.adapters.sql._query import SqlDatabaseAdapter
 
 # Example models using different frameworks
 try:
-    from pydantic import BaseModel
+    from pydantic import BaseModel, ConfigDict
 
     class User(BaseModel):
         id: int | None = None
@@ -29,8 +29,11 @@ try:
         age: int
         created_at: datetime | None = None
 
-        class Config:
-            collection_name = "users"  # For NoSQL
+        model_config = ConfigDict(extra="forbid")
+
+        @classmethod
+        def get_collection_name(cls) -> str:
+            return "users"  # For NoSQL
 
     class Post(BaseModel):
         id: int | None = None
@@ -39,8 +42,11 @@ try:
         user_id: int
         created_at: datetime | None = None
 
-        class Config:
-            collection_name = "posts"
+        model_config = ConfigDict(extra="forbid")
+
+        @classmethod
+        def get_collection_name(cls) -> str:
+            return "posts"
 
     pydantic_available = True
 except ImportError:
@@ -52,7 +58,7 @@ try:
     from sqlmodel import Field, SQLModel
 
     class SQLUser(SQLModel, table=True):
-        __tablename__ = "users"  # type: ignore
+        __tablename__ = "users"
 
         id: int | None = Field(default=None, primary_key=True)
         name: str
@@ -61,7 +67,7 @@ try:
         created_at: datetime | None = None
 
     class SQLPost(SQLModel, table=True):
-        __tablename__ = "posts"  # type: ignore
+        __tablename__ = "posts"
 
         id: int | None = Field(default=None, primary_key=True)
         title: str
@@ -100,8 +106,8 @@ async def _setup_demo_adapters() -> dict[str, Any]:
     mock_sql = MockSqlAdapter()
     mock_nosql = MockNoSqlAdapter()
 
-    sql_db_adapter = SqlDatabaseAdapter(mock_sql)  # type: ignore
-    nosql_db_adapter = NoSqlDatabaseAdapter(mock_nosql)  # type: ignore
+    sql_db_adapter = SqlDatabaseAdapter(mock_sql)
+    nosql_db_adapter = NoSqlDatabaseAdapter(mock_nosql)
 
     # Create model adapters
     adapters: dict[str, Any] = {

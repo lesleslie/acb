@@ -8,6 +8,10 @@ from acb.config import AdapterBase, Settings, app_name
 class SecretBaseSettings(Settings):
     secrets_path: AsyncPath
 
+    # SSL/TLS Configuration for secret management services
+    ssl_verify_mode: str = "required"
+    tls_version: str = "TLSv1.2"
+
 
 class SecretBase(AdapterBase):
     prefix: str = f"{app_name}_"

@@ -62,7 +62,8 @@ class Compress:
             data = content.encode()
         else:
             data = content
-        return brotli.compress(data, quality=level)
+        result: bytes = brotli.compress(data, quality=level)
+        return result
 
 
 compress: Compress = Compress()
@@ -116,7 +117,8 @@ class Decompress:
             data = content.encode()
         else:
             data = content
-        return brotli.decompress(data).decode()
+        result: str = brotli.decompress(data).decode()
+        return result
 
 
 decompress: Decompress = Decompress()

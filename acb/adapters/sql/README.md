@@ -44,7 +44,7 @@ The ACB SQL adapter offers a consistent way to interact with relational database
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| -------------- | ------------------------------ | ------------------------------------------------------------------- |
 | **MySQL** | MySQL/MariaDB database adapter | Applications using MySQL/MariaDB |
 | **PostgreSQL** | PostgreSQL database adapter | Applications using PostgreSQL |
 | **SQLite** | SQLite/Turso database adapter | Local development, testing, edge deployments, Turso cloud databases |
@@ -138,6 +138,7 @@ from acb.adapters.sql._query import SQLDatabaseAdapter
 from acb.adapters.models._sqlmodel import SQLModelAdapter
 from sqlmodel import SQLModel, Field
 
+
 # Define your model
 class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -145,12 +146,14 @@ class User(SQLModel, table=True):
     email: str
     active: bool = True
 
+
 # Register adapters
 registry.register_database_adapter("sql", SQLDatabaseAdapter(sql))
 registry.register_model_adapter("sqlmodel", SQLModelAdapter())
 
 # Create query interface
 query = ACBQuery(database_adapter_name="sql", model_adapter_name="sqlmodel")
+
 
 # Simple CRUD operations
 async def user_operations():
@@ -161,10 +164,9 @@ async def user_operations():
     user = await query.for_model(User).simple.find(1)
 
     # Create new user
-    new_user = await query.for_model(User).simple.create({
-        "name": "John Doe",
-        "email": "john@example.com"
-    })
+    new_user = await query.for_model(User).simple.create(
+        {"name": "John Doe", "email": "john@example.com"}
+    )
 
     # Update user
     updated_user = await query.for_model(User).simple.update(1, {"active": False})
@@ -185,11 +187,12 @@ repo_options = RepositoryOptions(
     cache_enabled=True,
     cache_ttl=300,  # 5 minutes
     enable_soft_delete=True,
-    audit_enabled=True
+    audit_enabled=True,
 )
 
 # Create repository
 user_repo = query.for_model(User).repository(repo_options)
+
 
 async def repository_operations():
     # Find active users (domain-specific method)
@@ -201,7 +204,7 @@ async def repository_operations():
     # Batch operations
     users_data = [
         {"name": "User 1", "email": "user1@example.com"},
-        {"name": "User 2", "email": "user2@example.com"}
+        {"name": "User 2", "email": "user2@example.com"},
     ]
     created_users = await user_repo.batch_create(users_data)
 
@@ -218,6 +221,7 @@ The Specification pattern allows you to create composable, reusable business rul
 
 ```python
 from acb.adapters.models._specification import field, range_spec, custom_spec
+
 
 async def specification_operations():
     # Create specifications
@@ -236,20 +240,23 @@ async def specification_operations():
         return user.login_count > 100 and user.last_login_days_ago < 7
 
     from acb.adapters.models._query import QuerySpec, QueryFilter
+
     high_activity_spec = custom_spec(
         predicate=high_activity_predicate,
         query_spec=QuerySpec(filter=QueryFilter().where("login_count", ">", 100)),
-        name="HighActivityUser"
+        name="HighActivityUser",
     )
 
     # Complex business rules
     premium_active_users = (
-        field("subscription_type").equals("premium") &
-        field("active").equals(True) &
-        high_activity_spec
+        field("subscription_type").equals("premium")
+        & field("active").equals(True)
+        & high_activity_spec
     )
 
-    premium_users = await query.for_model(User).specification.with_spec(premium_active_users).all()
+    premium_users = (
+        await query.for_model(User).specification.with_spec(premium_active_users).all()
+    )
 ```
 
 ### Advanced Query Builder
@@ -262,14 +269,15 @@ async def advanced_query_operations():
     advanced_query = query.for_model(User).advanced
 
     # Method chaining
-    users = await (advanced_query
-        .where("active", True)
+    users = await (
+        advanced_query.where("active", True)
         .where_gt("age", 21)
         .where_in("role", ["admin", "moderator"])
         .order_by_desc("created_at")
         .limit(10)
         .offset(20)
-        .all())
+        .all()
+    )
 
     # Aggregations
     user_count = await advanced_query.where("active", True).count()
@@ -284,7 +292,7 @@ async def advanced_query_operations():
     pipeline = [
         {"$match": {"active": True}},
         {"$group": {"_id": "$role", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}
+        {"$sort": {"count": -1}},
     ]
     role_stats = await advanced_query.aggregate(pipeline)
 ```
@@ -308,15 +316,14 @@ async def hybrid_operations():
         premium_users = await user_manager.specification.with_spec(premium_spec).all()
 
         # Use advanced queries for complex operations
-        await user_manager.advanced.where_in("id", [u.id for u in premium_users]).update({
-            "premium_expires_at": datetime.now() + timedelta(days=30)
-        })
+        await user_manager.advanced.where_in(
+            "id", [u.id for u in premium_users]
+        ).update({"premium_expires_at": datetime.now() + timedelta(days=30)})
 
         # Use simple queries for basic operations
-        new_user = await user_manager.simple.create({
-            "name": "New User",
-            "email": "new@example.com"
-        })
+        new_user = await user_manager.simple.create(
+            {"name": "New User", "email": "new@example.com"}
+        )
 ```
 
 ## Traditional SQL Operations
@@ -328,12 +335,14 @@ from sqlmodel import Field, SQLModel, select
 from acb.depends import depends
 from acb.adapters import import_adapter
 
+
 # Define your models
 class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     name: str
     email: str
     active: bool = True
+
 
 # Traditional SQLModel usage
 SQL = import_adapter("sql")
@@ -364,8 +373,12 @@ async with query.for_model(User).transaction():
 # Traditional transaction handling
 async with sql.get_session() as session:
     async with session.begin():
-        await session.execute("UPDATE accounts SET balance = balance - 100 WHERE id = 1")
-        await session.execute("UPDATE accounts SET balance = balance + 100 WHERE id = 2")
+        await session.execute(
+            "UPDATE accounts SET balance = balance - 100 WHERE id = 1"
+        )
+        await session.execute(
+            "UPDATE accounts SET balance = balance + 100 WHERE id = 2"
+        )
 ```
 
 ### Raw Connection Access
@@ -408,7 +421,9 @@ success = await sql.restore_backup(backup_id)
 frequently_used_spec = field("status").equals("active") & field("verified").equals(True)
 
 # Repository pattern automatically handles caching
-repo = query.for_model(User).repository(RepositoryOptions(cache_enabled=True, cache_ttl=300))
+repo = query.for_model(User).repository(
+    RepositoryOptions(cache_enabled=True, cache_ttl=300)
+)
 users = await repo.find_by_specification(frequently_used_spec)  # Cached result
 
 # Efficient batch operations
@@ -428,7 +443,7 @@ sql:
 ### Implementation Performance
 
 | Implementation | Universal Query | Traditional SQL | Best For |
-|----------------|----------------|-----------------|----------|
+| -------------- | --------------- | --------------- | ---------------------- |
 | **MySQL** | Excellent | Excellent | High write workloads |
 | **PostgreSQL** | Excellent | Excellent | Complex queries, JSONB |
 | **SQLite** | Excellent | Excellent | Local development |

@@ -4,7 +4,13 @@ from contextlib import suppress
 from functools import cached_property
 from uuid import UUID
 
-from google.api_core.exceptions import AlreadyExists, PermissionDenied
+from google.api_core.exceptions import (
+    AlreadyExists,
+    GoogleAPIError,
+    NotFound,
+    PermissionDenied,
+    Unauthenticated,
+)
 from google.cloud.secretmanager_v1 import (
     AccessSecretVersionRequest,
     AddSecretVersionRequest,
@@ -57,7 +63,7 @@ class Secret(SecretBase):
         response = await self.client.access_secret_version(request=request)
         payload = response.payload.data.decode()
         self.logger.info(f"Fetched secret - {name}")
-        return payload
+        return t.cast(str, payload)  # type: ignore[no-any-return]
 
     async def create(self, name: str, value: str) -> None:
         with suppress(AlreadyExists):
@@ -93,6 +99,8 @@ class Secret(SecretBase):
         try:
             await self.get(name)
             return True
+        except (GoogleAPIError, NotFound, PermissionDenied, Unauthenticated):
+            return False
         except Exception:
             return False
 
@@ -112,7 +120,9 @@ class Secret(SecretBase):
     def client(self) -> SecretManagerServiceAsyncClient:
         return SecretManagerServiceAsyncClient()
 
-    async def init(self) -> t.NoReturn: ...
+    async def init(self) -> None:
+        """Initialize the secret manager."""
+        pass
 
 
 depends.set(Secret)

@@ -8,13 +8,48 @@ from httpcore import Request
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
 from redis.asyncio import Redis as AsyncRedis
-from acb.adapters import AdapterStatus, import_adapter
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    import_adapter,
+)
 from acb.depends import depends
 
 from ._base import RequestsBase, RequestsBaseSettings
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b835cf3f2f3a")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="HTTPX Requests",
+    category="requests",
+    provider="httpx",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.CONNECTION_POOLING,
+        AdapterCapability.CACHING,
+        AdapterCapability.TLS_SUPPORT,
+        AdapterCapability.RECONNECTION,
+    ],
+    required_packages=["httpx[http2]", "hishel", "redis"],
+    description="HTTPX-based HTTP client with Redis caching and connection pooling",
+    settings_class="RequestsSettings",
+    config_example={
+        "base_url": "https://api.example.com",
+        "timeout": 10,
+        "max_connections": 100,
+        "max_keepalive_connections": 20,
+        "cache_ttl": 300,
+    },
+)
 
 Cache = import_adapter()
 
@@ -31,8 +66,8 @@ class RequestsSettings(RequestsBaseSettings):
 class Requests(RequestsBase):
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
-        self._storage = None
-        self._controller = None
+        self._storage: AsyncRedisStorage | None = None
+        self._controller: Controller | None = None
         self._client_cache: dict[str, AsyncCacheClient] = {}
 
     async def _create_storage(self) -> AsyncRedisStorage:
@@ -76,7 +111,8 @@ class Requests(RequestsBase):
 
     def cache_key(self, request: Request, body: bytes) -> str:
         key = generate_key(request, body)
-        return f"{self.config.app.name}:httpx:{key}"
+        app_name = self.config.app.name if self.config.app else "default"
+        return f"{app_name}:httpx:{key}"
 
     async def _get_cached_client(self, client_key: str = "default") -> AsyncCacheClient:
         if client_key not in self._client_cache:

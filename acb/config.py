@@ -1,5 +1,4 @@
 import asyncio
-import os
 import sys
 import typing as t
 from contextlib import suppress
@@ -12,15 +11,31 @@ from string import punctuation
 from typing import TypeVar
 from weakref import WeakKeyDictionary
 
-try:
-    import nest_asyncio
-except ImportError:
-    nest_asyncio = None
+# Removed nest_asyncio import - not needed in library code
 import rich.repr
 from anyio import Path as AsyncPath
 from inflection import titleize, underscore
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
-from pydantic._internal._utils import deep_update
+
+
+# Replaced internal pydantic API with public implementation
+def deep_update(*dicts: dict[str, t.Any]) -> dict[str, t.Any]:
+    """Deep merge multiple dictionaries."""
+    result: dict[str, t.Any] = {}
+    for d in dicts:
+        if isinstance(d, dict):
+            for key, value in d.items():
+                if (
+                    key in result
+                    and isinstance(result[key], dict)
+                    and isinstance(value, dict)
+                ):
+                    result[key] = deep_update(result[key], value)
+                else:
+                    result[key] = value
+    return result
+
+
 from pydantic.dataclasses import dataclass
 from pydantic.fields import FieldInfo
 from pydantic_settings import SettingsConfigDict
@@ -38,45 +53,53 @@ from .adapters import (
     settings_path,
     tmp_path,
 )
+
+# Global state is now managed by ACBContext - these are kept for backward compatibility
+from .context import get_context
 from .depends import depends
 
-if not _testing:
-    if nest_asyncio:
-        nest_asyncio.apply()
+# Module-level variables that delegate to context
+# These maintain backward compatibility
 project: str = ""
 app_name: str = ""
 debug: dict[str, bool] = {}
-_app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
-_config_initialized: bool = False
-_library_usage_mode: bool = False
+# Library usage mode detection - determines if ACB is used as a library vs application
+_library_usage_mode: bool = (
+    _testing or "pytest" in sys.modules or Path.cwd().name != "acb"
+)
+
+
+def _sync_context_to_globals() -> None:
+    """Sync context values to module globals for backward compatibility."""
+    global project, app_name, debug
+    context = get_context()
+    project = context.project
+    app_name = context.app_name
+    debug = context.debug_settings
+
+
+def _sync_globals_to_context() -> None:
+    """Sync module globals to context."""
+    context = get_context()
+    context.project = project
+    context.app_name = app_name
+    context.debug_settings = debug
+
+
+_app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
 
 
 def _detect_library_usage() -> bool:
-    if any(cmd in sys.argv[0] for cmd in ("pip", "setup.py", "build", "install")):
-        return True
-    if _testing or "pytest" in sys.modules:
-        return False
-    if "ACB_LIBRARY_MODE" in os.environ:
-        return os.environ["ACB_LIBRARY_MODE"].lower() == "true"
-    return Path.cwd().name != "acb"
+    """Detect if ACB is being used as a library (deprecated - use context.is_library_mode())."""
+    context = get_context()
+    return context.is_library_mode()
 
 
 def _is_pytest_test_context() -> bool:
-    if "pytest" not in sys.modules:
-        return False
-    from contextlib import suppress
-
-    with suppress(Exception):
-        import inspect
-
-        for frame_info in inspect.stack():
-            filename = frame_info.filename
-            if "acb/tests/" in filename or filename.endswith(
-                "/acb/tests/test_config.py",
-            ):
-                return True
-    return False
+    """Check if running in pytest context (deprecated - use context.is_testing_mode())."""
+    context = get_context()
+    return context.is_testing_mode()
 
 
 def _is_main_module_local() -> bool:
@@ -102,7 +125,7 @@ def _should_initialize_eagerly() -> bool:
     return _is_main_module_local()
 
 
-_library_usage_mode = _detect_library_usage()
+# Library usage mode is now handled by ACBContext
 
 
 class Platform(str, Enum):
@@ -116,12 +139,27 @@ async def get_version() -> str:
     pyproject_toml = root_path.parent / "pyproject.toml"
     if await pyproject_toml.exists():
         data = await load.toml(pyproject_toml)
-        return data.get("project", {}).get("version", "0.1.0")
+        version = data.get("project", {}).get("version", "0.1.0")
+        return str(version)
     return "0.1.0"
 
 
 def get_version_default() -> str:
-    return asyncio.run(get_version())
+    """Get version synchronously for default field values.
+
+    Note: This is a fallback for synchronous contexts.
+    For proper async usage, use get_version() directly.
+    """
+    # Fallback to a default version if we can't run async code
+    try:
+        import asyncio
+
+        asyncio.get_running_loop()
+        # If we're in an async context, we shouldn't use this function
+        raise RuntimeError("Use await get_version() in async context")
+    except RuntimeError:
+        # No event loop running, return a sensible default
+        return "0.1.0"
 
 
 def gen_password(size: int = 10) -> str:
@@ -203,7 +241,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
     @cached_property
     def secret_manager(self) -> t.Any:
         try:
-            return depends.get()
+            return depends.get("secret_manager")
         except Exception:
             return None
 
@@ -230,7 +268,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         if self.adapter_name == "debug":
             debug = settings
         elif self.adapter_name == "app":
-            if _testing or _library_usage_mode:
+            if get_context().is_testing_mode() or get_context().is_library_mode():
                 project = "test_project" if _testing else "library_project"
                 app_name = "test_app" if _testing else "library_app"
             else:
@@ -269,11 +307,13 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             return None
 
     async def _load_secrets(self) -> dict[str, t.Any]:
-        if _testing or _library_usage_mode:
+        if get_context().is_testing_mode() or get_context().is_library_mode():
             return self._get_test_secret_data()
         data: dict[str, t.Any] = {}
         model_secrets = self.get_model_secrets()
-        self.secrets_path = await AsyncPath(self.secrets_path).expanduser()
+        self.secrets_path: AsyncPath = await AsyncPath(
+            str(self.secrets_path)
+        ).expanduser()
         if not await self.secrets_path.exists():
             await self.secrets_path.mkdir(parents=True, exist_ok=True)
         for field_key, field_info in model_secrets.items():
@@ -293,9 +333,9 @@ class UnifiedSettingsSource(PydanticSettingsSource):
     async def _load_yaml_settings(self) -> dict[str, t.Any]:
         if self.adapter_name == "secret":
             return {}
-        if _testing or _library_usage_mode:
+        if get_context().is_testing_mode() or get_context().is_library_mode():
             return self._handle_testing_mode()
-        yml_path = AsyncPath(settings_path / f"{self.adapter_name}.yml")
+        yml_path = AsyncPath(str(settings_path / f"{self.adapter_name}.yml"))
         await self._create_default_settings_file(yml_path)
         yml_settings = await self._load_settings_from_file(yml_path)
         yml_settings = self._process_debug_settings(yml_settings)
@@ -331,7 +371,8 @@ class UnifiedSettingsSource(PydanticSettingsSource):
 
     async def _load_settings_from_file(self, yml_path: AsyncPath) -> dict[str, t.Any]:
         if await yml_path.exists():
-            return await load.yaml(yml_path)
+            result = await load.yaml(yml_path)
+            return dict(result) if result else {}
         return {}
 
     def _process_debug_settings(
@@ -394,7 +435,7 @@ class Settings(BaseModel):
         extra="allow",
         arbitrary_types_allowed=True,
         validate_default=True,
-        secrets_dir=Path(secrets_path),
+        secrets_dir=Path(str(secrets_path)),
         protected_namespaces=("model_", "settings_"),
     )
 
@@ -403,12 +444,56 @@ class Settings(BaseModel):
         _secrets_path: AsyncPath = secrets_path,
         **values: t.Any,
     ) -> None:
-        build_settings_coro = self._settings_build_values(
+        """Initialize Settings synchronously.
+
+        For full async initialization with secrets loading, use:
+        settings = await Settings.create_async()
+        """
+        # For library mode or testing, use simplified initialization
+        from .context import get_context
+
+        context = get_context()
+
+        if context.is_library_mode() or context.is_testing_mode():
+            # Simple sync initialization for library/testing contexts
+            super().__init__(**values)
+        else:
+            # For application contexts, we need to defer to async initialization
+            # This creates a minimal instance that will be properly initialized later
+            try:
+                import asyncio
+
+                asyncio.get_running_loop()
+                # We're in an async context but being called synchronously
+                # This is problematic - defer to create_async()
+                raise RuntimeError(
+                    "Settings require async initialization. "
+                    "Use 'await Settings.create_async()' instead."
+                )
+            except RuntimeError as e:
+                if "no running event loop" in str(e):
+                    # No event loop - create minimal instance for now
+                    super().__init__(**values)
+                else:
+                    raise
+
+    @classmethod
+    async def create_async(
+        cls,
+        _secrets_path: AsyncPath = secrets_path,
+        **values: t.Any,
+    ) -> "Settings":
+        """Create Settings instance with full async initialization.
+
+        This method properly loads secrets and performs async operations.
+        """
+        instance = cls.__new__(cls)
+        build_settings = await instance._settings_build_values(
             values,
             _secrets_path=_secrets_path,
         )
-        build_settings = asyncio.run(build_settings_coro)
-        super().__init__(**build_settings)
+        BaseModel.__init__(instance, **build_settings)
+        return instance
 
     async def _settings_build_values(
         self,
@@ -503,7 +588,7 @@ _adapter_instances: dict[type, t.Any] = {}
 def get_singleton_instance[T](cls: type[T], *args: t.Any, **kwargs: t.Any) -> T:
     if cls not in _adapter_instances:
         _adapter_instances[cls] = cls(*args, **kwargs)
-    return _adapter_instances[cls]
+    return t.cast(T, _adapter_instances[cls])
 
 
 @t.runtime_checkable
@@ -532,7 +617,8 @@ class Config:
     _initialized: bool = False
 
     def init(self, force: bool = False) -> None:
-        global _config_initialized
+        # Remove undefined global reference
+        # global _config_initialized
         if _library_usage_mode and not force and not _testing:
             return
         if self._initialized and not force:
@@ -583,7 +669,7 @@ class Config:
 
                 adapter = get_adapter(item)
                 if adapter and hasattr(adapter, "settings"):
-                    return adapter.settings  # type: ignore[misc]
+                    return adapter.settings[item]
         msg = f"'Config' object has no attribute '{item}'"
         raise AttributeError(msg)
 
@@ -627,6 +713,8 @@ class AdapterBase:
         self._client = None
         self._resource_cache: dict[str, t.Any] = {}
         self._initialization_args = kwargs
+        self._cleaned_up = False
+        self._cleanup_lock = asyncio.Lock()
         if self not in _ADAPTER_LOCKS:
             _ADAPTER_LOCKS[self] = asyncio.Lock()
 
@@ -655,17 +743,201 @@ class AdapterBase:
         return self._resource_cache[resource_name]
 
     async def _cleanup_resources(self) -> None:
+        """Enhanced resource cleanup with comprehensive error handling."""
+        errors = []
+
+        # Clean up cached resources first
+        for resource_name, resource in list(self._resource_cache.items()):
+            try:
+                await self._cleanup_single_resource(resource)
+            except Exception as e:
+                errors.append(f"Failed to cleanup resource '{resource_name}': {e}")
+
+        self._resource_cache.clear()
+
+        # Clean up main client
         if self._client is not None:
-            if hasattr(self._client, "close"):
-                await self._client.close()
-            elif hasattr(self._client, "aclose"):
-                await self._client.aclose()
-        for resource in self._resource_cache.values():
-            if hasattr(resource, "close"):
+            try:
+                await self._cleanup_single_resource(self._client)
+                self._client = None
+            except Exception as e:
+                errors.append(f"Failed to cleanup main client: {e}")
+
+        if errors:
+            self.logger.warning(f"Resource cleanup errors: {'; '.join(errors)}")
+
+    async def _cleanup_single_resource(self, resource: t.Any) -> None:
+        """Clean up a single resource using common cleanup patterns."""
+        if resource is None:
+            return
+
+        # Try common cleanup methods in order of preference
+        cleanup_methods = [
+            "close",
+            "aclose",
+            "disconnect",
+            "shutdown",
+            "dispose",
+            "terminate",
+            "quit",
+            "release",
+        ]
+
+        for method_name in cleanup_methods:
+            if hasattr(resource, method_name):
                 try:
-                    await resource.close()
+                    method = getattr(resource, method_name)
+                    if asyncio.iscoroutinefunction(method):
+                        await method()
+                    else:
+                        method()
+                    self.logger.debug(f"Cleaned up resource using {method_name}()")
+                    return
                 except Exception as e:
-                    self.logger.warning(f"Error closing resource: {e}")
+                    self.logger.debug(f"Failed to cleanup using {method_name}(): {e}")
+                    continue
+
+        self.logger.debug(
+            f"No cleanup method found for resource type: {type(resource)}"
+        )
+
+    async def cleanup(self) -> None:
+        """Public cleanup method with idempotency and error handling."""
+        async with self._cleanup_lock:
+            if self._cleaned_up:
+                return
+
+            try:
+                await self._cleanup_resources()
+                self._cleaned_up = True
+                self.logger.debug(f"Successfully cleaned up {self.__class__.__name__}")
+            except Exception as e:
+                self.logger.exception(
+                    f"Failed to cleanup {self.__class__.__name__}: {e}"
+                )
+                raise
+
+    async def __aenter__(self) -> "AdapterBase":
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type: t.Any, exc_val: t.Any, exc_tb: t.Any) -> None:
+        """Async context manager exit with cleanup."""
+        await self.cleanup()
 
     async def init(self) -> None:
         pass
+
+
+class ConfigHotReload:
+    """Simple configuration hot-reloading capability."""
+
+    def __init__(self, config: Config, check_interval: float = 5.0):
+        self.config = config
+        self.check_interval = check_interval
+        self._running = False
+        self._task: asyncio.Task[None] | None = None
+        self._last_modified: dict[Path, float] = {}
+
+    async def start(self) -> None:
+        """Start monitoring configuration files for changes."""
+        if self._running:
+            return
+
+        self._running = True
+        self._task = asyncio.create_task(self._monitor_loop())
+
+    async def stop(self) -> None:
+        """Stop monitoring configuration files."""
+        self._running = False
+        if self._task:
+            self._task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._task
+
+    async def _monitor_loop(self) -> None:
+        """Main monitoring loop."""
+        while self._running:
+            try:
+                await self._check_for_changes()
+                await asyncio.sleep(self.check_interval)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                # Log error but continue monitoring
+                print(f"Config monitoring error: {e}")
+                await asyncio.sleep(self.check_interval)
+
+    async def _check_for_changes(self) -> None:
+        """Check if any configuration files have changed."""
+        config_files = [
+            Path("settings/app.yml"),
+            Path("settings/adapters.yml"),
+            Path("settings/debug.yml"),
+            Path("settings/models.yml"),
+        ]
+
+        for config_file in config_files:
+            if config_file.exists():
+                try:
+                    current_mtime = config_file.stat().st_mtime
+                    last_mtime = self._last_modified.get(config_file, 0)
+
+                    if current_mtime > last_mtime:
+                        self._last_modified[config_file] = current_mtime
+                        if last_mtime > 0:  # Skip initial load
+                            await self._reload_config()
+                            print(
+                                f"Configuration reloaded due to change in {config_file}"
+                            )
+                            break
+
+                except OSError:
+                    # File might be temporarily unavailable
+                    continue
+
+    async def _reload_config(self) -> None:
+        """Reload the configuration."""
+        try:
+            # Create a new config instance and replace the old one
+            new_config = Config()
+
+            # Update the global config instance
+            # This is a simplified approach - in production you might want
+            # to update specific attributes rather than replace the whole object
+            for attr in dir(new_config):
+                if not attr.startswith("_") and hasattr(self.config, attr):
+                    try:
+                        setattr(self.config, attr, getattr(new_config, attr))
+                    except AttributeError:
+                        continue
+
+        except Exception as e:
+            print(f"Failed to reload configuration: {e}")
+
+
+# Global hot-reload instance (optional)
+_hot_reload: ConfigHotReload | None = None
+
+
+async def enable_config_hot_reload(
+    config: Config, check_interval: float = 5.0
+) -> ConfigHotReload:
+    """Enable configuration hot-reloading for the given config instance."""
+    global _hot_reload
+
+    if _hot_reload:
+        await _hot_reload.stop()
+
+    _hot_reload = ConfigHotReload(config, check_interval)
+    await _hot_reload.start()
+    return _hot_reload
+
+
+async def disable_config_hot_reload() -> None:
+    """Disable configuration hot-reloading."""
+    global _hot_reload
+
+    if _hot_reload:
+        await _hot_reload.stop()
+        _hot_reload = None

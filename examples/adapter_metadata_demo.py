@@ -73,9 +73,9 @@ async def main() -> None:
 
     print("\n📋 All Capabilities:")
     print("-" * 18)
-    all_capabilities = list_adapter_capabilities(Cache)
-    for i, capability in enumerate(all_capabilities, 1):
-        print(f"{i:2d}. {capability}")
+    all_capabilities = list_adapter_capabilities(Cache)  # type: ignore[assignment]
+    for i, capability in enumerate(all_capabilities, 1):  # type: ignore[assignment]
+        print(f"{i:2d}. {capability}")  # type: ignore[assignment]
 
     print("\n📄 Full Adapter Report:")
     print("-" * 22)

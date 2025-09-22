@@ -27,11 +27,11 @@ class SmtpBaseSettings(Settings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        if "domain" not in values:
+        if "domain" not in values and config.app:
             self.domain = f"mail.{config.app.domain}"
-        if "default_from" not in values:
+        if "default_from" not in values and config.app:
             self.default_from = f"info@{config.app.domain}"
-        if "default_from_name" not in values:
+        if "default_from_name" not in values and config.app:
             self.default_from_name = config.app.title
 
 

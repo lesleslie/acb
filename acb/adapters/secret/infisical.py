@@ -4,7 +4,7 @@ import os
 import typing as t
 from uuid import UUID
 
-from infisical_sdk import InfisicalSDKClient
+from infisical_sdk import InfisicalError, InfisicalSDKClient
 from acb.adapters import AdapterStatus
 from acb.depends import depends
 from acb.logger import Logger
@@ -28,7 +28,7 @@ class SecretSettings(SecretBaseSettings):
 
 class Secret(SecretBase):
     def __init__(self, **kwargs: t.Any) -> None:
-        super().__init__()
+        super().__init__(**kwargs)
 
     async def _create_client(self) -> InfisicalSDKClient:
         client = InfisicalSDKClient(
@@ -47,6 +47,26 @@ class Secret(SecretBase):
             )
         return client
 
+    async def _cleanup_resources(self) -> None:
+        """Enhanced Infisical secret resource cleanup."""
+        errors = []
+
+        # Clean up Infisical client
+        if self._client is not None:
+            try:
+                # Infisical client doesn't have explicit cleanup methods
+                # but we can clear sensitive data and connections
+                self._client = None
+                self.logger.debug("Successfully cleaned up Infisical client")
+            except Exception as e:
+                errors.append(f"Failed to cleanup Infisical client: {e}")
+
+        # Clear resource cache manually (parent functionality)
+        self._resource_cache.clear()
+
+        if errors:
+            self.logger.warning(f"Infisical secret cleanup errors: {'; '.join(errors)}")
+
     async def get_client(self) -> InfisicalSDKClient:
         return await self._ensure_client()
 
@@ -62,9 +82,14 @@ class Secret(SecretBase):
         try:
             await self.get_client()
             await self.list()
-            logger.info("Infisical secret adapter initialized successfully")
+            logger.info("Infisical secret adapter initialized successfully")  # type: ignore[no-untyped-call]
+        except (InfisicalError, ConnectionError, ValueError) as e:
+            logger.exception(f"Failed to initialize Infisical secret adapter: {e}")  # type: ignore[no-untyped-call]
+            raise
         except Exception as e:
-            logger.exception(f"Failed to initialize Infisical secret adapter: {e}")
+            logger.exception(  # type: ignore[no-untyped-call]
+                f"Unexpected error initializing Infisical secret adapter: {e}"
+            )
             raise
 
     def extract_secret_name(self, secret_path: str) -> str:
@@ -89,8 +114,11 @@ class Secret(SecretBase):
                 for secret in response.secrets
                 if secret.secretKey.startswith(filter_prefix)
             ]
-        except Exception as e:
+        except (InfisicalError, ConnectionError, ValueError) as e:
             self.logger.exception(f"Failed to list secrets: {e}")
+            raise
+        except Exception as e:
+            self.logger.exception(f"Unexpected error listing secrets: {e}")
             raise
 
     async def get(self, name: str, version: str | None = None) -> str | None:
@@ -110,9 +138,12 @@ class Secret(SecretBase):
                 version=version or "",
             )
             self.logger.info(f"Fetched secret - {name}")
-            return response.secretValue
-        except Exception as e:
+            return t.cast(str, response.secretValue)  # type: ignore[no-any-return]
+        except (InfisicalError, ConnectionError, ValueError) as e:
             self.logger.exception(f"Failed to get secret {name}: {e}")
+            raise
+        except Exception as e:
+            self.logger.exception(f"Unexpected error getting secret {name}: {e}")
             raise
 
     async def create(self, name: str, value: str) -> None:
@@ -132,8 +163,11 @@ class Secret(SecretBase):
                 secret_value=value,
             )
             self.logger.debug(f"Created secret - {name}")
-        except Exception as e:
+        except (InfisicalError, ConnectionError, ValueError) as e:
             self.logger.exception(f"Failed to create secret {name}: {e}")
+            raise
+        except Exception as e:
+            self.logger.exception(f"Unexpected error creating secret {name}: {e}")
             raise
 
     async def update(self, name: str, value: str) -> None:
@@ -153,8 +187,11 @@ class Secret(SecretBase):
                 secret_value=value,
             )
             self.logger.debug(f"Updated secret - {name}")
-        except Exception as e:
+        except (InfisicalError, ConnectionError, ValueError) as e:
             self.logger.exception(f"Failed to update secret {name}: {e}")
+            raise
+        except Exception as e:
+            self.logger.exception(f"Unexpected error updating secret {name}: {e}")
             raise
 
     async def set(self, name: str, value: str) -> None:
@@ -167,6 +204,8 @@ class Secret(SecretBase):
         try:
             await self.get(name)
             return True
+        except (InfisicalError, ConnectionError, ValueError):
+            return False
         except Exception:
             return False
 
@@ -186,8 +225,11 @@ class Secret(SecretBase):
                 secret_path=self.config.secret.secret_path,
             )
             self.logger.debug(f"Deleted secret - {name}")
-        except Exception as e:
+        except (InfisicalError, ConnectionError, ValueError) as e:
             self.logger.exception(f"Failed to delete secret {name}: {e}")
+            raise
+        except Exception as e:
+            self.logger.exception(f"Unexpected error deleting secret {name}: {e}")
             raise
 
     async def list_versions(self, name: str) -> builtins.list[str]:

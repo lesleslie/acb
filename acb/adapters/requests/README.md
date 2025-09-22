@@ -37,7 +37,7 @@ The ACB Requests adapter offers a consistent way to make HTTP requests:
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| -------------- | -------------------------------- | ----------------------------------------------- |
 | **HTTPX** | Modern, async-native HTTP client | Most applications, default choice |
 | **Niquests** | Extended HTTP client | Advanced use cases (placeholder implementation) |
 
@@ -105,18 +105,12 @@ print(f"Status code: {response.status_code}")
 print(f"Response body: {response.json()}")
 
 # Make a POST request
-data = {
-    "name": "John Doe",
-    "email": "john@example.com"
-}
+data = {"name": "John Doe", "email": "john@example.com"}
 response = await requests.post("https://api.example.com/users", data=data, timeout=10)
 print(f"Created user with ID: {response.json()['id']}")
 
 # Make a PUT request
-data = {
-    "name": "John Smith",
-    "email": "john.smith@example.com"
-}
+data = {"name": "John Smith", "email": "john.smith@example.com"}
 response = await requests.put("https://api.example.com/users/123", data=data)
 
 # Make a DELETE request
@@ -173,12 +167,11 @@ different_response = await requests.get("https://api.example.com/data?filter=new
 headers = {
     "Authorization": "Bearer token123",
     "X-Custom-Header": "CustomValue",
-    "Accept-Language": "en-US"
+    "Accept-Language": "en-US",
 }
 
 response = await requests.get(
-    "https://api.example.com/protected-resource",
-    headers=headers
+    "https://api.example.com/protected-resource", headers=headers
 )
 ```
 
@@ -187,22 +180,19 @@ response = await requests.get(
 ```python
 # Basic authentication
 response = await requests.get(
-    "https://api.example.com/secure",
-    auth=("username", "password")
+    "https://api.example.com/secure", auth=("username", "password")
 )
 
 # Bearer token authentication
 token = "your_access_token"
 response = await requests.get(
-    "https://api.example.com/secure",
-    headers={"Authorization": f"Bearer {token}"}
+    "https://api.example.com/secure", headers={"Authorization": f"Bearer {token}"}
 )
 
 # API key authentication
 api_key = "your_api_key"
 response = await requests.get(
-    "https://api.example.com/secure",
-    headers={"X-API-Key": api_key}
+    "https://api.example.com/secure", headers={"X-API-Key": api_key}
 )
 ```
 
@@ -211,34 +201,39 @@ response = await requests.get(
 ### Common Issues
 
 1. **Connection Error**
+
    - **Problem**: `ConnectionError: Connection refused`
    - **Solution**:
      - Verify the URL is correct
      - Check network connectivity
      - Ensure the service is running and accessible
 
-2. **Timeout Error**
+1. **Timeout Error**
+
    - **Problem**: `TimeoutError: Request timed out`
    - **Solution**:
      - Increase the timeout value
      - Check if the service is responding slowly
      - Consider optimizing the request payload size
 
-3. **Authentication Failure**
+1. **Authentication Failure**
+
    - **Problem**: `HTTP 401 Unauthorized` or `HTTP 403 Forbidden`
    - **Solution**:
      - Verify authentication credentials
      - Check if the token has expired
      - Ensure you have the correct permissions
 
-4. **Cache-Related Issues**
+1. **Cache-Related Issues**
+
    - **Problem**: Unexpected cached responses
    - **Solution**:
      - Check Redis connection settings
      - Verify the cache TTL configuration
      - Ensure unique request parameters for different requests
 
-5. **Rate Limiting**
+1. **Rate Limiting**
+
    - **Problem**: `HTTP 429 Too Many Requests`
    - **Solution**:
      - Implement request throttling
@@ -291,8 +286,12 @@ The Requests adapter implements these core methods:
 ```python
 class RequestsBase:
     async def get(self, url: str, timeout: int = 5) -> Response: ...
-    async def post(self, url: str, data: dict[str, Any], timeout: int = 5) -> Response: ...
-    async def put(self, url: str, data: dict[str, Any], timeout: int = 5) -> Response: ...
+    async def post(
+        self, url: str, data: dict[str, Any], timeout: int = 5
+    ) -> Response: ...
+    async def put(
+        self, url: str, data: dict[str, Any], timeout: int = 5
+    ) -> Response: ...
     async def delete(self, url: str, timeout: int = 5) -> Response: ...
 ```
 
@@ -339,6 +338,7 @@ requests = depends.get(Requests)
 secret = depends.get(Secret)
 nosql = depends.get(NoSQL)
 
+
 async def fetch_and_store_weather():
     # Get API key from secrets manager
     api_key = await secret.get("weather_api_key")
@@ -352,11 +352,13 @@ async def fetch_and_store_weather():
         weather_data = response.json()
 
         # Store in database for historical analysis
-        await nosql.weather_data.insert_one({
-            "date": datetime.now().isoformat(),
-            "forecast": weather_data,
-            "location": "New York"
-        })
+        await nosql.weather_data.insert_one(
+            {
+                "date": datetime.now().isoformat(),
+                "forecast": weather_data,
+                "location": "New York",
+            }
+        )
 
         return weather_data
     else:

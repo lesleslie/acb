@@ -31,7 +31,7 @@ ACB actions provide utility functions for common operations like compression, se
 ACB comes with several built-in actions for common tasks:
 
 | Action | Description | Methods |
-|--------|-------------|---------|
+| ----------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **Compress/Decompress** | Data compression utilities | `compress.gzip()`, `compress.brotli()`, `decompress.gzip()`, `decompress.brotli()` |
 | **Encode/Decode** | Data serialization | `encode.json()`, `encode.yaml()`, `encode.toml()`, `encode.msgpack()`, `encode.pickle()` and corresponding decode methods |
 | **Hash** | Secure hashing functions | `hash.blake3()`, `hash.crc32c()`, `hash.md5()` |
@@ -43,10 +43,12 @@ Efficient data compression and decompression utilities.
 #### Available Methods:
 
 **Compress:**
+
 - `compress.gzip(content, path=None, compresslevel=6)`: Compress content using gzip
 - `compress.brotli(data, level=3)`: Compress data using brotli algorithm
 
 **Decompress:**
+
 - `decompress.gzip(content)`: Decompress gzip content
 - `decompress.brotli(data)`: Decompress brotli content
 
@@ -89,6 +91,7 @@ from acb.actions.encode import encode, decode
 from anyio import Path as AsyncPath
 import typing as t
 
+
 async def example_usage() -> dict[str, t.Any]:
     # Sample data
     data: dict[str, t.Any] = {
@@ -96,7 +99,7 @@ async def example_usage() -> dict[str, t.Any]:
         "version": "1.0.0",
         "features": ["actions", "adapters", "dependency injection"],
         "active": True,
-        "timestamp": 1632152400
+        "timestamp": 1632152400,
     }
 
     # Encode to various formats
@@ -109,7 +112,9 @@ async def example_usage() -> dict[str, t.Any]:
     # Decode from various formats
     json_decoded: dict[str, t.Any] = await decode.json(json_data)
     yaml_decoded: dict[str, t.Any] = await decode.yaml(yaml_data)
-    msgpack_decoded: dict[str, t.Any] = await decode.msgpack(msgpack_data, use_list=True)
+    msgpack_decoded: dict[str, t.Any] = await decode.msgpack(
+        msgpack_data, use_list=True
+    )
     toml_decoded: dict[str, t.Any] = await decode.toml(toml_data)
     pickle_decoded: dict[str, t.Any] = await decode.pickle(pickle_data)
 
@@ -139,6 +144,7 @@ from acb.actions.hash import hash
 from anyio import Path as AsyncPath
 import typing as t
 
+
 async def hash_examples() -> dict[str, str]:
     # Hash a string
     text = "Hash this text"
@@ -158,11 +164,7 @@ async def hash_examples() -> dict[str, str]:
     md5sum: str = await hash.md5("Legacy hash")
     print(md5sum)  # Returns a hexadecimal string
 
-    return {
-        "blake3": blake3_hash,
-        "crc32c": crc,
-        "md5": md5sum
-    }
+    return {"blake3": blake3_hash, "crc32c": crc, "md5": md5sum}
 ```
 
 ## Creating Custom Actions
@@ -175,6 +177,7 @@ A typical action module follows this structure:
 
 ```python
 from pydantic import BaseModel
+
 
 # Define your action class
 class MyAction(BaseModel):
@@ -190,6 +193,7 @@ class MyAction(BaseModel):
         # Implementation
         return result
 
+
 # Export an instance of your action
 my_action = MyAction()
 ```
@@ -203,6 +207,7 @@ Here's an example of creating a custom validation action:
 from pydantic import BaseModel
 import re
 import typing as t
+
 
 class Validate(BaseModel):
     @staticmethod
@@ -226,6 +231,7 @@ class Validate(BaseModel):
         pattern = re.compile(r"^(\+\d{1,3})?(\d{10,15})$")
         return bool(pattern.match(cleaned))
 
+
 # Export an instance
 validate = Validate()
 ```
@@ -237,9 +243,9 @@ Actions in ACB follow an **adapter-agnostic design philosophy**. This means acti
 ### Core Principles
 
 1. **Avoid Direct Adapter Imports**: Actions should not import adapters directly using `from acb.adapters import X`
-2. **Use Dynamic Adapter Access**: When adapter functionality is needed, use `depends.get()` for dynamic access
-3. **Depend on Protocol Interfaces**: When possible, depend on protocol interfaces rather than concrete adapter implementations
-4. **Keep Actions Pure**: Prefer pure utility functions that don't require external dependencies
+1. **Use Dynamic Adapter Access**: When adapter functionality is needed, use `depends.get()` for dynamic access
+1. **Depend on Protocol Interfaces**: When possible, depend on protocol interfaces rather than concrete adapter implementations
+1. **Keep Actions Pure**: Prefer pure utility functions that don't require external dependencies
 
 ### When Actions Need Adapters
 
@@ -249,6 +255,7 @@ When an action needs to interact with adapters, use dynamic imports via the depe
 from acb.depends import depends
 from pydantic import BaseModel
 import typing as t
+
 
 class FileAction(BaseModel):
     @staticmethod
@@ -271,7 +278,7 @@ class FileAction(BaseModel):
                 "filename": filename,
                 "size": len(data),
                 "cached": True,
-                "storage_path": processed_data.get("path")
+                "storage_path": processed_data.get("path"),
             }
         except Exception as e:
             # Graceful fallback when adapters aren't available
@@ -279,8 +286,9 @@ class FileAction(BaseModel):
                 "filename": filename,
                 "size": len(data),
                 "cached": False,
-                "error": str(e)
+                "error": str(e),
             }
+
 
 # Export instance
 file_action = FileAction()
@@ -294,9 +302,11 @@ When creating actions that work with multiple adapter types, define and use prot
 from typing import Protocol
 from acb.depends import depends
 
+
 class StorageProtocol(Protocol):
     async def put_file(self, filename: str, data: bytes) -> dict[str, t.Any]: ...
     async def get_file(self, filename: str) -> bytes: ...
+
 
 class CloudAction(BaseModel):
     @staticmethod
@@ -312,7 +322,7 @@ class CloudAction(BaseModel):
         return {
             "backup_created": True,
             "backup_path": result.get("path"),
-            "size": len(data)
+            "size": len(data),
         }
 ```
 
@@ -337,30 +347,30 @@ Here are recommended best practices for creating and using actions:
 ### Design Principles
 
 1. **Keep Actions Focused**: Each action should do one thing well
-2. **Prefer Pure Functions**: Create stateless utility functions when possible
-3. **Follow Adapter-Agnostic Design**: Avoid direct adapter imports; use `depends.get()` for dynamic access
-4. **Use Protocol Interfaces**: Depend on protocol interfaces rather than concrete adapter implementations
+1. **Prefer Pure Functions**: Create stateless utility functions when possible
+1. **Follow Adapter-Agnostic Design**: Avoid direct adapter imports; use `depends.get()` for dynamic access
+1. **Use Protocol Interfaces**: Depend on protocol interfaces rather than concrete adapter implementations
 
 ### Code Quality
 
 5. **Document Methods**: Include docstrings for all methods explaining parameters and return values
-6. **Provide Type Hints**: Use Python type hints to improve code clarity and editor support
-7. **Make Methods Static**: Action methods should typically be stateless and static
-8. **Handle Exceptions**: Properly handle and document potential exceptions
+1. **Provide Type Hints**: Use Python type hints to improve code clarity and editor support
+1. **Make Methods Static**: Action methods should typically be stateless and static
+1. **Handle Exceptions**: Properly handle and document potential exceptions
 
 ### Performance and Architecture
 
 9. **Consider Async**: Use async methods for I/O operations to maintain non-blocking behavior
-10. **Use Consistent Naming**: Follow naming conventions across all action modules
-11. **Add Validation**: Validate inputs to avoid unexpected behavior
-12. **Graceful Degradation**: When adapters aren't available, provide meaningful fallbacks
+1. **Use Consistent Naming**: Follow naming conventions across all action modules
+1. **Add Validation**: Validate inputs to avoid unexpected behavior
+1. **Graceful Degradation**: When adapters aren't available, provide meaningful fallbacks
 
 ### Adapter Integration
 
 13. **Dynamic Adapter Access**: Use `depends.get("adapter_name")` instead of direct imports
-14. **Error Handling for Missing Adapters**: Handle cases where required adapters aren't registered
-15. **Protocol Compliance**: Ensure adapter dependencies follow established protocol interfaces
-16. **Minimize Adapter Dependencies**: Keep actions functional even when adapters are unavailable
+01. **Error Handling for Missing Adapters**: Handle cases where required adapters aren't registered
+01. **Protocol Compliance**: Ensure adapter dependencies follow established protocol interfaces
+01. **Minimize Adapter Dependencies**: Keep actions functional even when adapters are unavailable
 
 ## Related Resources
 

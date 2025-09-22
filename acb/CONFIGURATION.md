@@ -20,9 +20,9 @@ Starting with ACB 0.16.17, the configuration system includes significant improve
 The configuration system aggregates settings from multiple sources in order of precedence:
 
 1. **Initialization Parameters**: Passed during application startup
-2. **YAML Configuration Files**: Settings from `settings/` directory
-3. **File-based Secrets**: Managed secrets from `settings/secrets/`
-4. **External Secret Managers**: Integration with cloud secret services
+1. **YAML Configuration Files**: Settings from `settings/` directory
+1. **File-based Secrets**: Managed secrets from `settings/secrets/`
+1. **External Secret Managers**: Integration with cloud secret services
 
 ## Settings Files Structure
 
@@ -44,6 +44,7 @@ Defines application-wide configuration:
 
 ```python
 from acb.config import Settings
+
 
 class AppSettings(Settings):
     name: str = "MyApp"
@@ -75,6 +76,7 @@ class DebugSettings(Settings):
 ```python
 from acb.depends import depends
 from acb.config import Config
+
 
 @depends.inject
 async def my_function(config: Config = depends()):
@@ -138,6 +140,7 @@ Create domain-specific settings:
 from acb.config import Settings
 from pydantic import SecretStr
 
+
 class DatabaseSettings(Settings):
     host: str = "localhost"
     port: int = 5432
@@ -147,6 +150,7 @@ class DatabaseSettings(Settings):
 
     class Config:
         env_prefix = "DB_"  # DB_HOST, DB_PORT, etc.
+
 
 class ApiSettings(Settings):
     base_url: str = "https://api.example.com"
@@ -159,26 +163,27 @@ class ApiSettings(Settings):
 ```python
 from pydantic import field_validator
 
+
 class MySettings(Settings):
     port: int = 8000
 
-    @field_validator('port')
+    @field_validator("port")
     @classmethod
     def validate_port(cls, v):
         if not 1 <= v <= 65535:
-            raise ValueError('Port must be between 1 and 65535')
+            raise ValueError("Port must be between 1 and 65535")
         return v
 ```
 
 ## Best Practices
 
 1. **Use SecretStr for sensitive data** to prevent accidental logging
-2. **Provide sensible defaults** for all configuration values
-3. **Use environment prefixes** to avoid variable name conflicts
-4. **Validate critical settings** with custom validators
-5. **Keep secrets out of version control** using `.gitignore`
-6. **Use environment-specific configurations** for different deployment stages
-7. **Document all configuration options** with clear descriptions
+1. **Provide sensible defaults** for all configuration values
+1. **Use environment prefixes** to avoid variable name conflicts
+1. **Validate critical settings** with custom validators
+1. **Keep secrets out of version control** using `.gitignore`
+1. **Use environment-specific configurations** for different deployment stages
+1. **Document all configuration options** with clear descriptions
 
 ## Library vs. Application Usage Modes (ACB 0.16.17+)
 
@@ -196,6 +201,7 @@ When ACB is used as a dependency in another project, it enters "library mode":
 ```
 
 **Library Mode Behavior:**
+
 - Minimal configuration loading
 - No automatic settings file creation
 - Reduced startup overhead
@@ -213,6 +219,7 @@ When ACB is used as the primary framework for an application:
 ```
 
 **Application Mode Behavior:**
+
 - Full configuration loading from settings/ directory
 - Automatic creation of default configuration files
 - Complete adapter system initialization
@@ -233,7 +240,7 @@ unset ACB_LIBRARY_MODE
 ### Configuration Loading in Different Modes
 
 | Feature | Library Mode | Application Mode |
-|---------|-------------|------------------|
+| ----------------------------- | ------------ | ---------------- |
 | Settings file auto-creation | No | Yes |
 | Adapter configuration loading | Minimal | Full |
 | Error reporting | Reduced | Comprehensive |

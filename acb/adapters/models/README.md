@@ -18,7 +18,7 @@ The ACB Models adapter offers intelligent model type detection and management:
 ## Supported Model Frameworks
 
 | Framework | Description | Auto-Detection | Status |
-|-----------|-------------|----------------|---------|
+| -------------- | ---------------------------------------------- | --------------------------------------------- | ------------ |
 | **SQLModel** | SQL database models with Pydantic integration | ✅ `SQLModel` base class | ✅ Available |
 | **SQLAlchemy** | Pure SQLAlchemy ORM models | ✅ `__table__` attribute or `DeclarativeMeta` | ✅ Available |
 | **Pydantic** | Data validation and serialization models | ✅ `BaseModel` base class | ✅ Available |
@@ -121,6 +121,7 @@ models = depends.get(Models)
 # SQLModel automatically detected
 from sqlmodel import Field, SQLModel
 
+
 class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     name: str
@@ -128,59 +129,71 @@ class User(SQLModel, table=True):
     age: int = Field(default=None)
     is_active: bool = Field(default=True)
 
+
 # SQLAlchemy automatically detected
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import DeclarativeBase
 
+
 class Base(DeclarativeBase):
     pass
 
+
 class Product(Base):
-    __tablename__ = 'products'
+    __tablename__ = "products"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     price = Column(Integer)  # stored in cents
     in_stock = Column(Boolean, default=True)
 
+
 # Pydantic automatically detected
 from pydantic import BaseModel
+
 
 class UserDTO(BaseModel):
     name: str
     email: str
     age: int
 
+
 # msgspec automatically detected
 import msgspec
+
 
 class UserSession(msgspec.Struct):
     user_id: str
     token: str
     expires_at: int
 
+
 # attrs automatically detected
 import attrs
+
 
 @attrs.define
 class UserProfile:
     bio: str
     avatar_url: str
 
+
 # Redis-OM automatically detected
 from redis_om import HashModel
+
 
 class UserCache(HashModel):
     user_id: str
     data: str
 
+
 # All models work seamlessly with the universal query interface
-print(models.auto_detect_model_type(User))        # "sqlmodel"
-print(models.auto_detect_model_type(Product))     # "sqlalchemy"
-print(models.auto_detect_model_type(UserDTO))     # "pydantic"
-print(models.auto_detect_model_type(UserSession)) # "msgspec"
-print(models.auto_detect_model_type(UserProfile)) # "attrs"
-print(models.auto_detect_model_type(UserCache))   # "redis_om"
+print(models.auto_detect_model_type(User))  # "sqlmodel"
+print(models.auto_detect_model_type(Product))  # "sqlalchemy"
+print(models.auto_detect_model_type(UserDTO))  # "pydantic"
+print(models.auto_detect_model_type(UserSession))  # "msgspec"
+print(models.auto_detect_model_type(UserProfile))  # "attrs"
+print(models.auto_detect_model_type(UserCache))  # "redis_om"
 ```
 
 ### Universal Query Interface
@@ -216,6 +229,7 @@ from sqlmodel import Field, SQLModel, select
 from acb.depends import depends
 from acb.adapters import import_adapter
 
+
 # Models automatically detected as SQLModel
 class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -223,6 +237,7 @@ class User(SQLModel, table=True):
     email: str
     age: int = Field(default=None)
     is_active: bool = Field(default=True)
+
 
 # Use with SQL adapter
 SQL = import_adapter("sql")
@@ -249,18 +264,21 @@ from sqlalchemy.orm import DeclarativeBase
 from acb.depends import depends
 from acb.adapters import import_adapter
 
+
 # Models automatically detected as SQLAlchemy
 class Base(DeclarativeBase):
     pass
 
+
 class Product(Base):
-    __tablename__ = 'products'
+    __tablename__ = "products"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     price = Column(Integer)  # stored in cents
     in_stock = Column(Boolean, default=True)
     category_id = Column(Integer)
+
 
 # Use with SQL adapter
 SQL = import_adapter("sql")
@@ -272,7 +290,7 @@ async with sql.get_session() as session:
         name="Awesome Widget",
         price=2999,  # $29.99 in cents
         in_stock=True,
-        category_id=1
+        category_id=1,
     )
     session.add(new_product)
     await session.commit()
@@ -299,6 +317,7 @@ from pydantic import BaseModel, Field
 from acb.depends import depends
 from acb.adapters import import_adapter
 
+
 # Models automatically detected as Pydantic
 class Product(BaseModel):
     id: str = Field(default=None, alias="_id")
@@ -310,16 +329,13 @@ class Product(BaseModel):
     class Config:
         collection_name = "products"
 
+
 # Use with NoSQL adapter
 NoSQL = import_adapter("nosql")
 nosql = depends.get(NoSQL)
 
 # Create a new product
-new_product = Product(
-    name="Widget Pro",
-    price=19.99,
-    tags=["electronics", "gadgets"]
-)
+new_product = Product(name="Widget Pro", price=19.99, tags=["electronics", "gadgets"])
 
 # Save to database
 product_id = await nosql.products.insert_one(new_product.model_dump())
@@ -342,6 +358,7 @@ from acb.adapters import import_adapter
 Models = import_adapter("models")
 models = depends.get(Models)
 
+
 # SQL model for persistent data
 class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -349,10 +366,12 @@ class User(SQLModel, table=True):
     email: str
     created_at: datetime = Field(default_factory=datetime.now)
 
+
 # Pydantic model for API DTOs
 class UserCreateRequest(BaseModel):
     name: str
     email: str
+
 
 class UserResponse(BaseModel):
     id: int
@@ -360,10 +379,11 @@ class UserResponse(BaseModel):
     email: str
     created_at: datetime
 
+
 # Auto-detection routes to appropriate adapters
-print(models.auto_detect_model_type(User))              # "sqlmodel"
-print(models.auto_detect_model_type(UserCreateRequest)) # "pydantic"
-print(models.auto_detect_model_type(UserResponse))      # "pydantic"
+print(models.auto_detect_model_type(User))  # "sqlmodel"
+print(models.auto_detect_model_type(UserCreateRequest))  # "pydantic"
+print(models.auto_detect_model_type(UserResponse))  # "pydantic"
 
 # Get the right adapter for each model type
 user_adapter = models.get_adapter_for_model(User)
@@ -376,6 +396,7 @@ dto_adapter = models.get_adapter_for_model(UserCreateRequest)
 from sqlmodel import Field, Relationship, SQLModel
 from typing import List, Optional
 
+
 # SQLModel relationships automatically detected
 class Author(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -384,6 +405,7 @@ class Author(SQLModel, table=True):
 
     # Relationship to books
     books: List["Book"] = Relationship(back_populates="author")
+
 
 class Book(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -396,10 +418,11 @@ class Book(SQLModel, table=True):
     # Relationship to author
     author: Author = Relationship(back_populates="books")
 
+
 # Both models automatically detected as SQLModel
 adapter = models.get_adapter_for_model(Author)
 print(adapter.is_relationship_field(Author, "books"))  # True
-print(adapter.get_nested_model_class(Author, "books")) # <class 'Book'>
+print(adapter.get_nested_model_class(Author, "books"))  # <class 'Book'>
 ```
 
 ### Custom Model Validation
@@ -407,6 +430,7 @@ print(adapter.get_nested_model_class(Author, "books")) # <class 'Book'>
 ```python
 from sqlmodel import Field, SQLModel
 from datetime import datetime
+
 
 class Order(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -423,13 +447,10 @@ class Order(SQLModel, table=True):
     def mark_as_complete(self) -> None:
         self.status = "completed"
 
+
 # Automatic detection and validation
 adapter = models.get_adapter_for_model(Order)
-order_data = {
-    "customer_id": 123,
-    "total_amount": 99.99,
-    "status": "pending"
-}
+order_data = {"customer_id": 123, "total_amount": 99.99, "status": "pending"}
 
 # Validate data using the auto-detected adapter
 validated_data = adapter.validate_data(Order, order_data)
@@ -443,6 +464,7 @@ When Redis-OM support is implemented, it will work seamlessly with auto-detectio
 # Future Redis-OM support
 from redis_om import HashModel
 
+
 class UserSession(HashModel):
     user_id: str
     token: str
@@ -450,6 +472,7 @@ class UserSession(HashModel):
 
     class Meta:
         database = redis_client
+
 
 # Will be automatically detected as "redis_om"
 adapter = models.get_adapter_for_model(UserSession)
@@ -463,12 +486,14 @@ adapter = models.get_adapter_for_model(UserSession)
 import msgspec
 from typing import Any
 
+
 class HighThroughputEvent(msgspec.Struct):
     event_id: str
     user_id: str
     event_type: str
     timestamp: int
     data: dict[str, Any]
+
 
 # Extremely fast serialization/deserialization
 adapter = models.get_adapter_for_model(HighThroughputEvent)
@@ -477,7 +502,7 @@ event_data = {
     "user_id": "usr_456",
     "event_type": "click",
     "timestamp": 1640995200,
-    "data": {"page": "/home"}
+    "data": {"page": "/home"},
 }
 validated = adapter.validate_data(HighThroughputEvent, event_data)
 ```
@@ -488,6 +513,7 @@ validated = adapter.validate_data(HighThroughputEvent, event_data)
 import attrs
 from typing import Optional
 
+
 @attrs.define
 class EnterpriseUser:
     employee_id: str = attrs.field(metadata={"primary_key": True})
@@ -496,10 +522,11 @@ class EnterpriseUser:
     manager_id: Optional[str] = None
     salary_band: str = attrs.field(metadata={"alias": "band"})
 
+
 # Rich metadata support
 adapter = models.get_adapter_for_model(EnterpriseUser)
 print(adapter.get_primary_key_field(EnterpriseUser))  # "employee_id"
-print(adapter.get_field_mapping(EnterpriseUser))      # {"salary_band": "band", ...}
+print(adapter.get_field_mapping(EnterpriseUser))  # {"salary_band": "band", ...}
 ```
 
 ## Troubleshooting
@@ -507,28 +534,34 @@ print(adapter.get_field_mapping(EnterpriseUser))      # {"salary_band": "band", 
 ### Common Issues
 
 1. **Model Type Not Detected**
+
    - **Problem**: `Models adapter defaults to 'pydantic' for unknown types`
    - **Solution**: Ensure your model inherits from the correct base class (SQLModel, BaseModel, etc.)
 
-2. **Framework Not Available**
+1. **Framework Not Available**
+
    - **Problem**: `ImportError: SQLModel is required for SQLModelAdapter`
    - **Solution**: Install the required framework: `uv add sqlmodel` or `uv add pydantic`
 
-3. **Framework Disabled**
+1. **Framework Disabled**
+
    - **Problem**: Model framework not working despite correct base class
    - **Solution**: Check `settings/models.yml` to ensure the framework is enabled
 
-4. **Auto-Detection Issues**
+1. **Auto-Detection Issues**
+
    - **Problem**: Wrong adapter selected for model
    - **Solution**: Manually specify adapter: `adapter = models._get_sqlmodel_adapter()`
 
 ### Configuration Troubleshooting
 
 1. **Settings File Not Found**
+
    - **Problem**: `FileNotFoundError: settings/models.yml`
    - **Solution**: Create the file or use default settings (all frameworks enabled)
 
-2. **Invalid Configuration**
+1. **Invalid Configuration**
+
    - **Problem**: `ValidationError in models settings`
    - **Solution**: Ensure boolean values in `models.yml`: `sqlmodel: true` not `sqlmodel: "true"`
 
@@ -545,9 +578,10 @@ class ModelsAdapter(ModelsBase):
             return "sqlmodel"
 
         # Check for pure SQLAlchemy models (before Pydantic)
-        if (hasattr(model_class, "__table__") or
-            (hasattr(model_class, "__mro__") and
-             any(isinstance(base, DeclarativeMeta) for base in model_class.__mro__))):
+        if hasattr(model_class, "__table__") or (
+            hasattr(model_class, "__mro__")
+            and any(isinstance(base, DeclarativeMeta) for base in model_class.__mro__)
+        ):
             return "sqlalchemy"
 
         # Check for Pydantic BaseModel

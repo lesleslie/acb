@@ -59,8 +59,11 @@ class TestPydanticModelAdapter:
                 age: int | None = Field(default=None)
                 is_active: bool = Field(default=True)
 
-                class Config:
-                    collection_name = "users"
+                model_config = ConfigDict(extra="forbid")
+
+                @classmethod
+                def get_collection_name(cls) -> str:
+                    return "users"
         else:
 
             class TestSampleUser(BaseModel):  # type: ignore[misc]
@@ -298,8 +301,11 @@ class TestPydanticModelAdapter:
             user_id: int
             name: str
 
-            class Config:
-                primary_key = "user_id"
+            model_config = ConfigDict(extra="forbid")
+
+            @classmethod
+            def get_primary_key(cls) -> str:
+                return "user_id"
 
         result = adapter.get_primary_key_field(ModelWithCustomPK)
         assert result == "user_id"

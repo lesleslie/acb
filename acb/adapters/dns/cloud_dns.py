@@ -13,13 +13,37 @@ from google.cloud.dns.resource_record_set import ResourceRecordSet
 from google.cloud.dns.zone import ManagedZone
 from validators import domain
 from validators.utils import ValidationError
-from acb.adapters import AdapterStatus
+from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
 from ._base import DnsBase, DnsBaseSettings, DnsRecord
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7d627bdb820")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Google Cloud DNS",
+    category="dns",
+    provider="gcp",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.TLS_SUPPORT,
+    ],
+    required_packages=["google-cloud-dns", "validators"],
+    description="Google Cloud DNS management with zone and record operations",
+    settings_class="DnsSettings",
+    config_example={
+        "project": "my-gcp-project",
+        "domain": "example.com",
+    },
+)
 
 
 class DnsSettings(DnsBaseSettings): ...
@@ -39,11 +63,15 @@ class Dns(DnsBase):
             return
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
+            if not self.config.app:
+                raise ValueError("App configuration is required for Google Cloud DNS")
             self.client = DnsClient(project=self.config.app.project)
 
     def create_zone(self) -> None:
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             return
+        if not self.config.app:
+            raise ValueError("App configuration is required for zone creation")
         self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")
         if not self.zone.exists():
             self.logger.info(f"Creating cloud_dns zone '{self.config.app.name}...")
@@ -62,6 +90,8 @@ class Dns(DnsBase):
                     rrdata=["192.0.2.1"],
                 ),
             ]
+        if not self.zone:
+            raise ValueError("Zone not initialized")
         records = self.zone.list_resource_record_sets()
         return [
             DnsRecord.model_validate(
@@ -86,11 +116,17 @@ class Dns(DnsBase):
             await self.wait_for_changes(changes)
         except (Conflict, BadRequest):
             change = changes.additions[0] if changes.additions else None
-            if change and change.name.split(".")[1] != self.config.app.project:
+            if (
+                change
+                and self.config.app
+                and change.name.split(".")[1] != self.config.app.project
+            ):
                 raise
             self.logger.info("Development domain detected - no changes made")
 
     async def delete_record_sets(self) -> None:
+        if not self.zone:
+            raise ValueError("Zone not initialized")
         changes = self.zone.changes()
         for record_set in self.current_record_sets:
             changes.delete_record_set(record_set)
@@ -98,6 +134,8 @@ class Dns(DnsBase):
         await self.apply_changes(changes)
 
     async def add_record_sets(self) -> None:
+        if not self.zone:
+            raise ValueError("Zone not initialized")
         changes = self.zone.changes()
         for record_set in self.new_record_sets:
             changes.add_record_set(record_set)
@@ -105,6 +143,8 @@ class Dns(DnsBase):
         await self.apply_changes(changes)
 
     def get_record_set(self, record: DnsRecord) -> ResourceRecordSet:
+        if not self.zone:
+            raise ValueError("Zone not initialized")
         return self.zone.resource_record_set(
             name=record.name,
             record_type=record.type,

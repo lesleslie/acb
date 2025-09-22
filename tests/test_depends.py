@@ -1,7 +1,7 @@
 """Simple tests for the depends module."""
 
 import pytest
-from acb.depends import depends
+from acb.depends import depends, fast_depends
 
 
 class SampleService:
@@ -43,6 +43,16 @@ class TestDepends:
 
         assert isinstance(result, SampleService)
         assert result.name == "async_service"
+
+    @pytest.mark.asyncio
+    async def test_set_without_instance(self) -> None:
+        """Test set method without providing an instance."""
+        # This should create a new instance of SampleService
+        depends.set(SampleService)
+
+        result = depends.get(SampleService)
+        assert result is not None
+        assert isinstance(result, SampleService)
 
     @pytest.mark.asyncio
     async def test_inject_sync(self) -> None:
@@ -127,3 +137,37 @@ class TestDepends:
         result = test_function()
 
         assert result == "service1_service2"
+
+    @pytest.mark.asyncio
+    async def test_get_async(self) -> None:
+        service = SampleService(name="async_test_service")
+        depends.set(SampleService, service)
+
+        result = await depends.get_async(SampleService)
+        assert result is not None
+        assert result is service
+        assert result.name == "async_test_service"
+
+    def test_call_method(self) -> None:
+        # Test that depends can be called as a callable
+        result = depends()
+        # The result should be a dependency marker from bevy
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_fast_depends(self) -> None:
+        service = SampleService(name="fast_depends_service")
+        depends.set(SampleService, service)
+
+        result = fast_depends(SampleService)
+        assert result is not None
+        assert result is service
+        assert result.name == "fast_depends_service"
+
+    def test_get_with_string_category_raises_runtime_error(self) -> None:
+        """Test that getting a string category raises RuntimeError."""
+        with pytest.raises(RuntimeError) as exc_info:
+            depends.get("nonexistent_category")
+
+        assert "requires async initialization" in str(exc_info.value)
+        assert "Use 'await depends.get_async" in str(exc_info.value)

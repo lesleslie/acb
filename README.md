@@ -1,4 +1,3 @@
-
 <p align="center">
 <img src="./images/acb-logo.png" alt="ACB Logo">
 </p>
@@ -9,6 +8,7 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
+![Coverage](https://img.shields.io/badge/coverage-74.2%25-yellow)
 
 ## What is ACB?
 
@@ -24,13 +24,13 @@ If you're new to ACB, here are the key concepts to understand:
 
 1. **Actions**: Self-contained utility functions that perform specific tasks like compression, encoding, or hashing. Think of these as your toolbox of helper functions.
 
-2. **Adapters**: Standardized interfaces to external systems like databases, caching, or storage. Adapters let you switch between different implementations (e.g., Redis vs. in-memory cache) without changing your code.
+1. **Adapters**: Standardized interfaces to external systems like databases, caching, or storage. Adapters let you switch between different implementations (e.g., Redis vs. in-memory cache) without changing your code.
 
-3. **Dependency Injection**: A pattern that automatically provides components to your functions when needed. This eliminates the need to manually create and pass objects around.
+1. **Dependency Injection**: A pattern that automatically provides components to your functions when needed. This eliminates the need to manually create and pass objects around.
 
-4. **Configuration System**: A way to configure your application using YAML files instead of hardcoding values in your code.
+1. **Configuration System**: A way to configure your application using YAML files instead of hardcoding values in your code.
 
-5. **Package Registration**: ACB automatically discovers and registers components in your application, reducing boilerplate code.
+1. **Package Registration**: ACB automatically discovers and registers components in your application, reducing boilerplate code.
 
 ## Key Features
 
@@ -41,6 +41,9 @@ If you're new to ACB, here are the key concepts to understand:
 - **Configuration-Driven**: Change behavior through configuration rather than code
 - **Type Safety**: Built on Pydantic for validation and type safety
 - **Performance Optimized**: Streamlined initialization and reduced overhead (0.18.0+)
+- **Simple & Reliable**: Focused on core adapter functionality without over-engineering (0.19.3+)
+- **Basic Security**: Essential SSL/TLS configuration and secure defaults
+- **Resource Cleanup**: Simple resource management patterns with automatic cleanup
 
 ## Table of Contents
 
@@ -57,6 +60,8 @@ If you're new to ACB, here are the key concepts to understand:
 - [Common Patterns](#common-patterns)
 - [Use Cases](#use-cases)
 - [Built-in Components](#built-in-components)
+- [Security Features](#security-features)
+- [Basic Monitoring](#basic-monitoring)
 - [Debugging](#debugging)
 - [Advanced Usage](#advanced-usage)
 - [Documentation](#documentation)
@@ -80,22 +85,24 @@ uv add acb
 ACB supports various optional dependencies for different adapters and functionality:
 
 | Feature Group | Components | Installation Command |
-|---------|------------|----------------------|
+| ----------------- | ---------------------------------------------------------------------------------- | ---------------------------------------- |
 | Cache | Memory, Redis | `uv add "acb[cache]"` |
 | DNS | Domain name management (Cloud DNS, Cloudflare) | `uv add "acb[dns]"` |
 | FTPD | File transfer protocols (FTP, SFTP) | `uv add "acb[ftpd]"` |
 | Models | Universal model support (SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, Redis-OM) | `uv add "acb[models]"` |
-| Monitoring | Error tracking (Sentry), Logging (Logfire) | `uv add "acb[monitoring]"` |
+| Monitoring | Basic error tracking (Sentry), Logging (Logfire) | `uv add "acb[monitoring]"` |
 | NoSQL | Database (MongoDB, Firestore, Redis) | `uv add "acb[nosql]"` |
 | Requests | HTTP clients (HTTPX, Niquests) | `uv add "acb[requests]"` |
 | Secret | Secret management (Infisical, Secret Manager) | `uv add "acb[secret]"` |
 | SMTP | Email sending (Gmail, Mailgun) | `uv add "acb[smtp]"` |
 | SQL | Database (MySQL, PostgreSQL) | `uv add "acb[sql]"` |
 | Storage | File storage (S3, GCS, Azure, local) | `uv add "acb[storage]"` |
+| Vector | Vector database (DuckDB with VSS) | `uv add "acb[vector]"` |
 | Demo | Demo/example utilities | `uv add "acb[demo]"` |
 | Development | Development tools | `uv add "acb[dev]"` |
 | Multiple Features | Combined dependencies | `uv add "acb[models,cache,sql,nosql]"` |
 | Web Application | Typical web app stack | `uv add "acb[models,cache,sql,storage]"` |
+| Web Application Plus | Web app stack with vector support | `uv add "acb[webapp-plus]"` |
 | All Features | All optional dependencies | `uv add "acb[all]"` |
 
 ## Architecture Overview
@@ -111,6 +118,7 @@ acb/
 │   ├── sql/         # Database adapters (MySQL, PostgreSQL)
 │   ├── nosql/       # NoSQL adapters (MongoDB, Firestore, Redis)
 │   ├── storage/     # Storage adapters (S3, GCS, Azure, local)
+│   ├── vector/      # Vector database adapters (DuckDB with VSS)
 │   └── ...          # Additional adapter categories
 ├── config.py        # Configuration system using Pydantic
 ├── depends.py       # Dependency injection framework
@@ -139,7 +147,7 @@ Key characteristics of actions:
 #### Available Actions
 
 | Action Category | Description | Implementations |
-|-----------------|-------------|----------------|
+| ----------------------- | -------------------------- | ------------------------- |
 | **Compress/Decompress** | Efficient data compression | gzip, brotli |
 | **Encode/Decode** | Data serialization | JSON, YAML, TOML, MsgPack |
 | **Hash** | Secure hashing functions | blake3, crc32c, md5 |
@@ -168,7 +176,7 @@ from acb.actions.encode import encode, decode
 data = {
     "name": "ACB Framework",
     "version": "1.0.0",
-    "features": ["actions", "adapters", "dependency injection"]
+    "features": ["actions", "adapters", "dependency injection"],
 }
 
 # Encode as JSON (async method)
@@ -212,16 +220,16 @@ Projects built on ACB, like FastBlocks, can extend this adapter system with doma
 ACB uses **dynamic discovery** with convention-based adapter loading:
 
 1. **Convention-Based Discovery**: Adapters are automatically detected based on directory structure (`acb/adapters/{category}/{implementation}.py`)
-2. **Configuration-Driven Selection**: Choose which implementation to use via `settings/adapters.yml`
-3. **Lazy Loading**: Adapters are loaded and initialized only when needed
-4. **Dependency Injection**: Seamlessly integrated with ACB's dependency system
+1. **Configuration-Driven Selection**: Choose which implementation to use via `settings/adapters.yml`
+1. **Lazy Loading**: Adapters are loaded and initialized only when needed
+1. **Dependency Injection**: Seamlessly integrated with ACB's dependency system
 
 This means you can switch from memory cache to Redis by changing a single line in your configuration file, without modifying any of your application code - ACB automatically discovers and loads the correct implementation.
 
 #### Key Adapter Categories
 
 | Adapter Category | Description | Implementations |
-|------------------|-------------|----------------|
+| ---------------- | ----------------------- | ---------------------------------------------------------- |
 | **Cache** | Data caching | Memory, Redis |
 | **DNS** | Domain name management | Cloud DNS |
 | **FTP/SFTP** | File transfer protocols | FTP, SFTP |
@@ -253,6 +261,7 @@ Cache, Storage, SQL = import_adapter()  # Detects all three from variable names
 
 # Get an instance of the adapter via dependency injection
 cache = depends.get(Cache)
+
 
 # Use the adapter with a consistent API
 # These methods work the same way regardless of whether you're using
@@ -319,29 +328,35 @@ from acb.adapters import import_adapter
 Models = import_adapter("models")
 models = depends.get(Models)
 
+
 # SQLModel for SQL databases - automatically detected
 class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     name: str
     email: str
 
+
 # SQLAlchemy for traditional ORM - automatically detected
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import DeclarativeBase
 
+
 class Base(DeclarativeBase):
     pass
 
+
 class Product(Base):
-    __tablename__ = 'products'
+    __tablename__ = "products"
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     price = Column(Integer)
+
 
 # Pydantic for API DTOs - automatically detected
 class UserCreateRequest(BaseModel):
     name: str
     email: str
+
 
 # msgspec for high-performance serialization - automatically detected
 class UserSession(msgspec.Struct):
@@ -349,25 +364,27 @@ class UserSession(msgspec.Struct):
     token: str
     expires_at: int
 
+
 # attrs for mature applications - automatically detected
 @attrs.define
 class UserProfile:
     bio: str
     avatar_url: str
 
+
 # All work with the same universal query interface!
-print(models.auto_detect_model_type(User))              # "sqlmodel"
-print(models.auto_detect_model_type(Product))           # "sqlalchemy"
-print(models.auto_detect_model_type(UserCreateRequest)) # "pydantic"
-print(models.auto_detect_model_type(UserSession))       # "msgspec"
-print(models.auto_detect_model_type(UserProfile))       # "attrs"
+print(models.auto_detect_model_type(User))  # "sqlmodel"
+print(models.auto_detect_model_type(Product))  # "sqlalchemy"
+print(models.auto_detect_model_type(UserCreateRequest))  # "pydantic"
+print(models.auto_detect_model_type(UserSession))  # "msgspec"
+print(models.auto_detect_model_type(UserProfile))  # "attrs"
 
 # Get the right adapter automatically
-user_adapter = models.get_adapter_for_model(User)           # SQLModelAdapter
-product_adapter = models.get_adapter_for_model(Product)     # SQLAlchemyModelAdapter
-dto_adapter = models.get_adapter_for_model(UserCreateRequest) # PydanticModelAdapter
-session_adapter = models.get_adapter_for_model(UserSession)   # MsgspecModelAdapter
-profile_adapter = models.get_adapter_for_model(UserProfile)   # AttrsModelAdapter
+user_adapter = models.get_adapter_for_model(User)  # SQLModelAdapter
+product_adapter = models.get_adapter_for_model(Product)  # SQLAlchemyModelAdapter
+dto_adapter = models.get_adapter_for_model(UserCreateRequest)  # PydanticModelAdapter
+session_adapter = models.get_adapter_for_model(UserSession)  # MsgspecModelAdapter
+profile_adapter = models.get_adapter_for_model(UserProfile)  # AttrsModelAdapter
 ```
 
 **Why This Matters**: You can migrate between frameworks, use different frameworks for different purposes, or gradually adopt new frameworks without rewriting your query logic.
@@ -380,11 +397,13 @@ profile_adapter = models.get_adapter_for_model(UserProfile)   # AttrsModelAdapte
 from acb.adapters.models._hybrid import ACBQuery
 from sqlmodel import SQLModel, Field
 
+
 class User(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     name: str
     email: str
     active: bool = True
+
 
 # Setup query interface
 query = ACBQuery()
@@ -392,10 +411,9 @@ query = ACBQuery()
 # Simple CRUD operations that work with any database
 users = await query.for_model(User).simple.all()
 user = await query.for_model(User).simple.find(1)
-new_user = await query.for_model(User).simple.create({
-    "name": "John Doe",
-    "email": "john@example.com"
-})
+new_user = await query.for_model(User).simple.create(
+    {"name": "John Doe", "email": "john@example.com"}
+)
 ```
 
 **Repository Pattern** - Domain-driven design with built-in caching:
@@ -404,12 +422,11 @@ new_user = await query.for_model(User).simple.create({
 from acb.adapters.models._repository import RepositoryOptions
 
 # Configure repository with caching and audit trails
-repo = query.for_model(User).repository(RepositoryOptions(
-    cache_enabled=True,
-    cache_ttl=300,
-    enable_soft_delete=True,
-    audit_enabled=True
-))
+repo = query.for_model(User).repository(
+    RepositoryOptions(
+        cache_enabled=True, cache_ttl=300, enable_soft_delete=True, audit_enabled=True
+    )
+)
 
 # Domain-specific methods
 active_users = await repo.find_active()
@@ -437,13 +454,15 @@ users = await query.for_model(User).specification.with_spec(company_employees).a
 
 ```python
 # Complex queries with method chaining
-users = await (query.for_model(User).advanced
-    .where("active", True)
+users = await (
+    query.for_model(User)
+    .advanced.where("active", True)
     .where_gt("age", 21)
     .where_in("department", ["engineering", "product"])
     .order_by_desc("created_at")
     .limit(10)
-    .all())
+    .all()
+)
 ```
 
 #### Database Switching
@@ -492,6 +511,7 @@ ACB's configuration system is built on Pydantic and supports multiple configurat
 from acb.config import Settings
 import typing as t
 from pydantic import SecretStr
+
 
 class MyServiceSettings(Settings):
     api_url: str = "https://api.example.com"
@@ -550,7 +570,6 @@ from acb.logger import Logger
 from ._base import MyServiceBase
 
 
-
 class MyService(MyServiceBase):
     async def process_data(self, data: dict[str, t.Any]) -> dict[str, t.Any]:
         # Process data...
@@ -559,15 +578,18 @@ class MyService(MyServiceBase):
     async def init(self):
         await super().init()
 
+
 # Register your custom component
 depends.set(MyService)  # Now MyService is available in the dependency registry
 
+
 # Inject dependencies into functions
 @depends.inject  # This decorator automatically injects the dependencies
-async def process_data(data: dict[str, t.Any],
-                      config: Config = depends(),  # Injected based on type
-                      logger: Logger = depends() # Injected by name
-                      ):
+async def process_data(
+    data: dict[str, t.Any],
+    config: Config = depends(),  # Injected based on type
+    logger: Logger = depends(),  # Injected by name
+):
     # Now you can use config and logger without manually creating them
     logger.info(f"Processing data with app: {config.app.name}")
     # Process data...
@@ -577,9 +599,9 @@ async def process_data(data: dict[str, t.Any],
 #### Benefits of Dependency Injection
 
 1. **Reduced Boilerplate**: No need to manually create and pass objects
-2. **Testability**: Easy to mock dependencies for testing
-3. **Flexibility**: Change implementations without changing your code
-4. **Decoupling**: Components don't need to know how to create their dependencies
+1. **Testability**: Easy to mock dependencies for testing
+1. **Flexibility**: Change implementations without changing your code
+1. **Decoupling**: Components don't need to know how to create their dependencies
 
 ## Getting Started
 
@@ -647,6 +669,7 @@ storage: file          # Use file system storage
 Create your initial configuration files:
 
 #### settings/app.yml
+
 ```yaml
 app:
   name: "MyApp"
@@ -656,6 +679,7 @@ app:
 ```
 
 #### settings/adapters.yml
+
 ```yaml
 # Choose your adapter implementations
 cache: memory
@@ -678,6 +702,7 @@ from acb.adapters import import_adapter
 # Import adapter classes
 Cache, Storage = import_adapter()  # This gets the configured cache and storage adapters
 
+
 # Method 1: Using depends.get() directly
 def direct_injection_example():
     # Get instances when you need them
@@ -687,13 +712,15 @@ def direct_injection_example():
     # Use the components
     print(f"App name: {config.app.name}")
 
+
 # Method 2: Using the @depends.inject decorator (recommended)
 @depends.inject
-async def process_file(filename: str,
-                     cache: Cache =depends(),       # Injected automatically
-                     storage: Storage = depends(),  # Injected automatically
-                     config: Config = depends()     # Injected automatically
-                       ):
+async def process_file(
+    filename: str,
+    cache: Cache = depends(),  # Injected automatically
+    storage: Storage = depends(),  # Injected automatically
+    config: Config = depends(),  # Injected automatically
+):
     # All dependencies are automatically provided
     print(f"Processing {filename} for app {config.app.name}")
 
@@ -775,6 +802,7 @@ ACB provides comprehensive debugging tools to help troubleshoot your application
 # Using the timeit decorator to measure performance
 from acb.debug import timeit
 
+
 @timeit
 async def slow_operation():
     # This function's execution time will be logged
@@ -825,11 +853,11 @@ Storage = import_adapter("storage")
 Cache = import_adapter("cache")
 SQL = import_adapter("sql")
 
+
 @depends.inject
-async def process_data_pipeline(data_id: str,
-                              storage=depends(Storage),
-                              cache=depends(Cache),
-                              sql=depends(SQL)):
+async def process_data_pipeline(
+    data_id: str, storage=depends(Storage), cache=depends(Cache), sql=depends(SQL)
+):
     # Step 1: Check if processed data is in cache
     processed_data = await cache.get(f"processed:{data_id}")
     if processed_data:
@@ -869,6 +897,7 @@ from acb.depends import depends
 from acb.config import Config, Settings
 from pydantic import SecretStr
 
+
 # Define custom settings models
 class DatabaseSettings(Settings):
     host: str = "localhost"
@@ -877,11 +906,13 @@ class DatabaseSettings(Settings):
     password: SecretStr = SecretStr("")
     database: str = "myapp"
 
+
 class ApiSettings(Settings):
     base_url: str = "https://api.example.com"
     version: str = "v1"
     timeout: int = 30
     api_key: SecretStr = SecretStr("")
+
 
 # Access configuration
 @depends.inject
@@ -895,7 +926,9 @@ async def initialize_services(config=depends(Config)):
     api_config = config.api
 
     print(f"Initializing {app_name} v{app_version}")
-    print(f"Connecting to database {db_config.database} at {db_config.host}:{db_config.port}")
+    print(
+        f"Connecting to database {db_config.database} at {db_config.host}:{db_config.port}"
+    )
     print(f"Using API at {api_config.base_url}/{api_config.version}")
 ```
 
@@ -912,6 +945,7 @@ import time
 import asyncio
 
 Cache = import_adapter("cache")
+
 
 @depends.inject
 async def get_user_data(user_id: int, cache=depends(Cache)):
@@ -932,7 +966,7 @@ async def get_user_data(user_id: int, cache=depends(Cache)):
         "id": user_id,
         "name": f"User {user_id}",
         "email": f"user{user_id}@example.com",
-        "created_at": time.time()
+        "created_at": time.time(),
     }
 
     # Cache the result for future requests
@@ -941,9 +975,9 @@ async def get_user_data(user_id: int, cache=depends(Cache)):
     return user_data
 ```
 
-## Performance (ACB 0.18.0+)
+## Performance (ACB 0.19.0+)
 
-ACB 0.18.0 introduces significant performance improvements:
+ACB 0.19.0+ introduces significant performance improvements and architectural simplification:
 
 ### Adapter System Performance
 
@@ -974,12 +1008,13 @@ ACB 0.18.0 introduces significant performance improvements:
 
 ### Performance Comparison
 
-| Component | Pre-0.18.0 | 0.18.0+ | Improvement |
-|-----------|-------------|----------|-------------|
-| Adapter Loading | ~50-100ms | ~15-30ms | 50-70% faster |
-| Memory Cache Ops | ~0.2-0.5ms | ~0.1-0.2ms | 50% faster |
-| Configuration Load | ~20-40ms | ~10-20ms | 50% faster |
-| Test Startup | ~200-400ms | ~100-200ms | 50% faster |
+| Component | Pre-0.18.0 | 0.19.0+ | Improvement |
+| ------------------ | ---------- | ---------- | ------------- |
+| Adapter Loading | ~50-100ms | ~10-25ms | 60-80% faster |
+| Memory Cache Ops | ~0.2-0.5ms | ~0.05-0.1ms | 70% faster |
+| Configuration Load | ~20-40ms | ~8-15ms | 60% faster |
+| Test Startup | ~200-400ms | ~80-150ms | 60% faster |
+| Basic Resource Cleanup | N/A | ~0.1-0.2ms | New feature |
 
 ### Benchmarking Your Application
 
@@ -989,11 +1024,14 @@ To measure performance improvements in your application:
 from acb.debug import timeit
 import asyncio
 
+
 @timeit
 async def benchmark_adapter_loading():
     from acb.adapters import import_adapter
+
     Cache, Storage, SQL = import_adapter()
     return "Adapters loaded"
+
 
 @timeit
 async def benchmark_cache_operations():
@@ -1008,6 +1046,7 @@ async def benchmark_cache_operations():
     result = await cache.get("test_key")
     await cache.delete("test_key")
     return result
+
 
 # Run benchmarks
 asyncio.run(benchmark_adapter_loading())
@@ -1041,8 +1080,14 @@ user_id = 123
 debug(user_id)  # Output: debug: user_id = 123
 
 # Debug complex objects with pretty formatting
-user_data = {"id": 123, "name": "John", "roles": ["admin", "editor"], "settings": {"theme": "dark", "notifications": True}}
+user_data = {
+    "id": 123,
+    "name": "John",
+    "roles": ["admin", "editor"],
+    "settings": {"theme": "dark", "notifications": True},
+}
 debug(user_data)  # Outputs a nicely formatted representation of the dictionary
+
 
 # Measure function execution time
 @timeit
@@ -1050,11 +1095,212 @@ async def fetch_data():
     await asyncio.sleep(0.5)  # Simulate network request
     return {"status": "success"}
 
+
 # The execution time will be automatically logged when the function is called
 result = await fetch_data()  # Output: fetch_data took 0.501s
 
 # Asynchronous pretty printing for complex objects
 await pprint(result)  # Prints the result with nice formatting to stderr
+```
+
+## Security Features
+
+ACB provides essential security features focused on secure defaults and SSL/TLS configuration.
+
+### Secret Management
+
+Securely manage sensitive configuration using the secret adapters:
+
+```python
+from acb.adapters import import_adapter
+from acb.depends import depends
+
+# Use Infisical for secret management
+Secret = import_adapter("secret")
+secret = depends.get(Secret)
+
+# Store and retrieve secrets securely
+await secret.create("database_password", "super_secure_password123!")
+password = await secret.get("database_password")
+
+# List available secrets
+secret_names = await secret.list()
+```
+
+### Input Validation
+
+Use Pydantic models for basic input validation and data sanitization:
+
+```python
+from pydantic import BaseModel, EmailStr, Field, validator
+from typing import Optional
+
+
+class UserInput(BaseModel):
+    username: str = Field(..., min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_]+$")
+    email: EmailStr
+    age: Optional[int] = Field(None, ge=0, le=150)
+
+    @validator("username")
+    def validate_username(cls, v):
+        if not v.replace("_", "").isalnum():
+            raise ValueError(
+                "Username must contain only letters, numbers, and underscores"
+            )
+        return v.lower()
+
+
+# Validate user input
+try:
+    user_data = UserInput(username=user_input, email=email_input, age=age_input)
+    # Data is automatically validated and sanitized
+    safe_username = user_data.username
+    safe_email = user_data.email
+except ValidationError as e:
+    logger.warning(f"Validation failed: {e}")
+```
+
+### Basic Security Practices
+
+ACB follows secure defaults and best practices:
+
+```python
+# Use environment variables for sensitive data
+import os
+from pydantic import SecretStr
+
+
+class DatabaseConfig(BaseModel):
+    host: str = "localhost"
+    port: int = 5432
+    username: str
+    password: SecretStr  # Automatically masked in logs
+
+    @classmethod
+    def from_env(cls):
+        return cls(
+            host=os.getenv("DB_HOST", "localhost"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            username=os.getenv("DB_USERNAME"),
+            password=os.getenv("DB_PASSWORD"),
+        )
+
+
+# Use secure random generation
+import secrets
+
+api_token = secrets.token_urlsafe(32)
+session_id = secrets.token_hex(16)
+
+# Use SSL/TLS connections (see next section)
+```
+
+### SSL/TLS Configuration
+
+ACB provides basic SSL/TLS configuration for adapters that support secure connections:
+
+```python
+from acb.core.ssl_config import SSLConfigMixin
+
+
+class SecureAdapter(SSLConfigMixin):
+    def __init__(self):
+        super().__init__()
+        # SSL settings are configured via environment or settings files
+
+    async def connect(self):
+        # Use SSL settings for secure connections
+        ssl_context = self._create_ssl_context()
+        connection = await create_secure_connection(ssl_context=ssl_context)
+        return connection
+
+
+# SSL settings are configured in settings/adapters.yml or environment variables
+```
+
+## Basic Monitoring
+
+ACB provides simple monitoring capabilities through logging and error tracking adapters.
+
+### Error Tracking with Sentry
+
+Set up basic error tracking for production monitoring:
+
+```python
+from acb.adapters import import_adapter
+from acb.depends import depends
+
+# Configure Sentry monitoring
+Monitoring = import_adapter("monitoring")
+monitoring = depends.get(Monitoring)
+
+# Automatic error tracking is enabled once configured
+try:
+    # Your application code
+    result = await some_operation()
+except Exception as e:
+    # Errors are automatically captured by Sentry
+    logger.error(f"Operation failed: {e}")
+    raise
+```
+
+### Structured Logging with Logfire
+
+Use Logfire for structured logging and performance insights:
+
+```python
+from acb.depends import depends
+from acb.logger import Logger
+
+logger = depends.get(Logger)
+
+# Structured logging with context
+logger.info(
+    "Cache operation started",
+    extra={"operation": "cache_get", "key": "user:123", "cache_type": "redis"},
+)
+
+# Performance timing
+import time
+
+start_time = time.time()
+result = await cache.get("user:123")
+duration = time.time() - start_time
+
+logger.info(
+    "Cache operation completed",
+    extra={
+        "operation": "cache_get",
+        "duration_ms": duration * 1000,
+        "hit": result is not None,
+    },
+)
+```
+
+### Simple Resource Cleanup
+
+ACB provides basic resource cleanup patterns:
+
+```python
+from acb.core.cleanup import CleanupMixin
+
+
+class MyAdapter(CleanupMixin):
+    def __init__(self):
+        super().__init__()
+        self._connection = None
+
+    async def _create_connection(self):
+        connection = await connect_to_service()
+        self.register_resource(connection)  # Automatic cleanup
+        return connection
+
+    async def get_data(self):
+        if self._connection is None:
+            self._connection = await self._create_connection()
+        return await self._connection.fetch_data()
+
+    # Cleanup happens automatically when the adapter is destroyed
 ```
 
 ### Debug Configuration
@@ -1113,12 +1359,14 @@ from pydantic import BaseModel
 import re
 import typing as t
 
+
 class Validate(BaseModel):
     @staticmethod
     def email(email: str) -> bool:
         """Validate an email address"""
         pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return bool(re.match(pattern, email))
+
 
 validate = Validate()
 ```
@@ -1128,6 +1376,7 @@ validate = Validate()
 Extend ACB with your own adapters to integrate with additional services:
 
 1. Create the adapter directory structure:
+
 ```
 myapp/adapters/payment/
 ├── __init__.py
@@ -1137,13 +1386,16 @@ myapp/adapters/payment/
 ```
 
 2. Define the base interface in `_base.py`:
+
 ```python
 from acb.config import AdapterBase, Settings
 from typing import Protocol
 
+
 class PaymentBaseSettings(Settings):
     currency: str = "USD"
     default_timeout: int = 30
+
 
 class PaymentBase(AdapterBase, Protocol):
     async def charge(self, amount: float, description: str) -> str:
@@ -1156,14 +1408,17 @@ class PaymentBase(AdapterBase, Protocol):
 ```
 
 3. Implement specific providers like `stripe.py`:
+
 ```python
 from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
 import stripe
 import typing as t
 
+
 class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
+
 
 class Stripe(PaymentBase):
     settings: StripeSettings | None = None
@@ -1176,7 +1431,7 @@ class Stripe(PaymentBase):
         response: t.Any = await stripe.PaymentIntent.create(
             amount=int(amount * 100),  # Convert to cents
             currency=self.settings.currency if self.settings else "USD",
-            description=description
+            description=description,
         )
         return response.id
 
@@ -1206,6 +1461,7 @@ ACB "blocks" logo used by permission from [Andy Coe Band](https://andycoeband.co
 Special thanks to the following open-source projects that power ACB:
 
 ### Core Framework & Configuration
+
 - [Pydantic](https://pydantic-docs.helpmanual.io/) - Data validation and settings management
 - [pydantic-settings](https://pydantic-settings.helpmanual.io/) - Settings management with multiple sources
 - [bevy](https://github.com/bevy-org/bevy) - Dependency injection framework
@@ -1213,39 +1469,46 @@ Special thanks to the following open-source projects that power ACB:
 - [Typer](https://typer.tiangolo.com/) - Modern CLI framework
 
 ### Serialization & Data Processing
+
 - [msgspec](https://jcristharif.com/msgspec/) - High-performance JSON/MessagePack serialization
 - [attrs](https://github.com/python-attrs/attrs) - Classes without boilerplate
 - [PyYAML](https://pyyaml.org/) - YAML parser and emitter
 - [tomlkit](https://github.com/sdispater/tomlkit) - TOML parser and writer
 
 ### Async & Networking
+
 - [httpx](https://www.python-httpx.org/) - Modern async HTTP client
 - [aiofiles](https://github.com/Tinche/aiofiles) - Async file operations
 - [aiocache](https://github.com/aio-libs/aiocache) - Async cache interface
 
 ### Database & Storage
+
 - [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit and ORM
 - [SQLModel](https://sqlmodel.tiangolo.com/) - Modern SQL databases with Python
 - [Redis](https://redis.io/) - In-memory data store
 - [pymongo](https://pymongo.readthedocs.io/) - MongoDB driver
 
 ### Monitoring & Debugging
+
 - [Loguru](https://loguru.readthedocs.io/) - Enhanced logging with async support
 - [Logfire](https://docs.logfire.dev/) - Structured logging and monitoring
 - [Sentry](https://docs.sentry.io/) - Error tracking and performance monitoring
 - [icecream](https://github.com/gruns/icecream) - Enhanced debugging utilities
 
 ### Cloud & Infrastructure
+
 - [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) - AWS SDK
 - [google-cloud-storage](https://cloud.google.com/storage/docs/reference/libraries) - Google Cloud Storage
 - [azure-storage-blob](https://docs.microsoft.com/en-us/python/api/azure-storage-blob/) - Azure Blob Storage
 
 ### Compression & Hashing
+
 - [brotli](https://github.com/google/brotli) - Brotli compression
 - [blake3](https://github.com/BLAKE3-team/BLAKE3) - Cryptographic hash function
 - [crc32c](https://github.com/ICRAR/crc32c) - CRC32C checksum
 
 ### Development Environment
+
 - [PyCharm](https://www.jetbrains.com/pycharm/) - The premier Python IDE that powered the development of ACB
 - [Claude Code](https://claude.ai/code) - AI-powered development assistant that accelerated development and ensured code quality
 
@@ -1268,42 +1531,50 @@ Contributions to ACB are welcome! We follow a workflow inspired by the Crackerja
 1. **Fork and Clone**
    Fork the repository and clone it locally.
 
-2. **Set Up Your Development Environment**
+1. **Set Up Your Development Environment**
    Use [UV](https://docs.astral.sh/uv/) for dependency and virtual environment management. ACB requires Python 3.13 or later. Add ACB as a development dependency:
+
    ```
    uv add --dev acb
    ```
 
-3. **Code Style and Type Checking**
+1. **Code Style and Type Checking**
    ACB uses modern Python typing features and follows strict type checking. We use:
+
    - Type annotations with the latest Python 3.13 syntax
    - Protocols instead of ABC for interface definitions
    - Union types with the `|` operator instead of `Union[]`
    - Type checking with pyright in strict mode
    - Ruff for linting and formatting
 
-4. **Run Pre-commit Hooks & Tests**
+1. **Run Pre-commit Hooks & Tests**
    Before submitting a pull request, ensure your changes pass all quality checks and tests. We recommend running the following command (which is inspired by Crackerjack's automated workflow):
+
    ```
    python -m crackerjack -x -t -p <version> -c
    ```
+
    *Alternatively, you can use:*
+
    ```
    python -m crackerjack -a <version>
    ```
+
    This command cleans your code, runs linting, tests, bumps the version (patch, minor, or major), and commits changes.
 
-5. **Testing**
+1. **Testing**
    All tests are written using pytest and should include coverage reporting:
+
    ```
    pytest --cov=acb
    ```
+
    Test configuration is in pyproject.toml, not in separate .coveragerc or pytest.ini files.
 
-6. **Submit a Pull Request**
+1. **Submit a Pull Request**
    If everything passes, submit a pull request describing your changes. Include details about your contribution and reference any related issues.
 
-7. **Feedback and Review**
+1. **Feedback and Review**
    Our maintainers will review your changes. Please be responsive to feedback and be prepared to update your pull request as needed.
 
 For more detailed development guidelines and the Crackerjack philosophy that influences our workflow, please refer to our internal development documentation.

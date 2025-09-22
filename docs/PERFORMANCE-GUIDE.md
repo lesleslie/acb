@@ -25,6 +25,7 @@ Avoid expensive operations during module import:
 # Slow - executed at import time
 expensive_data = compute_expensive_data()
 
+
 # Fast - computed when needed
 @cached_property
 def expensive_data(self):
@@ -37,6 +38,7 @@ Initialize expensive resources only when needed:
 
 ```python
 from acb.depends import depends
+
 
 class ExpensiveService:
     def __init__(self):
@@ -78,6 +80,7 @@ from acb.depends import depends
 expensive_service = ExpensiveService()
 depends.set(ExpensiveService, expensive_service)
 
+
 # All injections use the same instance
 @depends.inject
 async def fast_function(service: ExpensiveService = depends()):
@@ -94,6 +97,7 @@ Use type annotations for faster dependency resolution:
 @depends.inject
 async def typed_function(cache: Cache = depends()):
     pass
+
 
 # Slower - string-based lookup
 @depends.inject
@@ -113,12 +117,13 @@ from acb.depends import depends
 
 Cache = import_adapter("cache")
 
+
 @depends.inject
 async def optimized_caching(cache: Cache = depends()):
     # Use appropriate TTL values
-    short_ttl = 60      # Frequently changing data
-    medium_ttl = 3600   # Hourly updates
-    long_ttl = 86400    # Daily updates
+    short_ttl = 60  # Frequently changing data
+    medium_ttl = 3600  # Hourly updates
+    long_ttl = 86400  # Daily updates
 
     # Batch operations when possible
     data = await cache.multi_get(["key1", "key2", "key3"])
@@ -137,14 +142,13 @@ from acb.adapters import import_adapter
 
 SQL = import_adapter("sql")
 
+
 @depends.inject
 async def optimized_database(sql: SQL = depends()):
     # Use connection pooling
     async with sql.get_session() as session:
         # Batch queries when possible
-        users = await session.execute(
-            select(User).where(User.id.in_([1, 2, 3]))
-        )
+        users = await session.execute(select(User).where(User.id.in_([1, 2, 3])))
 
         # Use eager loading to avoid N+1 queries
         users_with_orders = await session.execute(
@@ -165,6 +169,7 @@ Optimize file operations:
 from acb.adapters import import_adapter
 
 Storage = import_adapter("storage")
+
 
 @depends.inject
 async def optimized_storage(storage: Storage = depends()):
@@ -220,7 +225,7 @@ high_performance_options = RepositoryOptions(
     cache_ttl=300,  # 5 minutes for frequently changing data
     batch_size=100,  # Optimize batch operations
     enable_soft_delete=False,  # Disable if not needed
-    audit_enabled=False  # Disable if not needed
+    audit_enabled=False,  # Disable if not needed
 )
 
 # Create repository with caching
@@ -246,12 +251,14 @@ active_users = await user_repo.find_active()  # Cached domain method
 premium_users = await query.for_model(User).specification.with_spec(premium_spec).all()
 
 # Advanced - for complex queries with full control
-complex_users = await (query.for_model(User).advanced
-    .where("active", True)
+complex_users = await (
+    query.for_model(User)
+    .advanced.where("active", True)
     .where_gt("last_login", threshold)
     .order_by_desc("created_at")
     .limit(100)
-    .all())
+    .all()
+)
 ```
 
 ### 4. Database-Specific Optimizations
@@ -280,7 +287,7 @@ pipeline = [
     {"$match": {"active": True}},
     {"$group": {"_id": "$category", "count": {"$sum": 1}}},
     {"$sort": {"count": -1}},
-    {"$limit": 10}
+    {"$limit": 10},
 ]
 stats = await query.for_model(Product).advanced.aggregate(pipeline)
 ```
@@ -290,7 +297,7 @@ stats = await query.for_model(Product).advanced.aggregate(pipeline)
 **Universal Query Interface performance compared to direct database access:**
 
 | Operation | Direct SQL | Universal Query | Overhead |
-|-----------|------------|----------------|----------|
+| ------------------- | ---------- | --------------- | -------- |
 | Simple Select | 1.0ms | 1.1ms | +10% |
 | Complex Query | 5.0ms | 5.2ms | +4% |
 | Repository (Cached) | 1.0ms | 0.1ms | -90% |
@@ -331,6 +338,7 @@ Remove debug overhead in production:
 from acb.depends import depends
 from acb.config import Config
 
+
 @depends.inject
 async def conditional_debug(config: Config = depends()):
     if config.debug.enabled:
@@ -349,20 +357,15 @@ Use async patterns effectively:
 import asyncio
 from acb.depends import depends
 
+
 @depends.inject
-async def concurrent_operations(
-    cache: Cache = depends(),
-    storage: Storage = depends()
-):
+async def concurrent_operations(cache: Cache = depends(), storage: Storage = depends()):
     # Run independent operations concurrently
     cache_task = cache.get("user:123")
     storage_task = storage.get_file("profile.jpg")
 
     # Await all operations together
-    user_data, profile_image = await asyncio.gather(
-        cache_task,
-        storage_task
-    )
+    user_data, profile_image = await asyncio.gather(cache_task, storage_task)
 
     return {"user": user_data, "profile": profile_image}
 ```
@@ -376,6 +379,7 @@ import asyncio
 
 # Limit concurrent database connections
 db_semaphore = asyncio.Semaphore(10)
+
 
 @depends.inject
 async def rate_limited_operation(sql: SQL = depends()):
@@ -395,11 +399,13 @@ from typing import Any
 
 background_tasks: set[asyncio.Task[Any]] = set()
 
+
 async def schedule_background_task(coro):
     """Schedule a coroutine to run in the background."""
     task = asyncio.create_task(coro)
     background_tasks.add(task)
     task.add_done_callback(background_tasks.discard)
+
 
 # Usage
 await schedule_background_task(update_cache_in_background())
@@ -413,6 +419,7 @@ Use ACB's built-in timing decorator:
 
 ```python
 from acb.debug import timeit
+
 
 @timeit
 async def performance_critical_function():
@@ -429,6 +436,7 @@ import time
 from acb.depends import depends
 from acb.logger import Logger
 
+
 @depends.inject
 async def tracked_operation(logger: Logger = depends()):
     start_time = time.time()
@@ -437,20 +445,13 @@ async def tracked_operation(logger: Logger = depends()):
         result = await some_operation()
 
         duration = time.time() - start_time
-        logger.info(
-            "Operation completed",
-            duration_ms=duration * 1000,
-            success=True
-        )
+        logger.info("Operation completed", duration_ms=duration * 1000, success=True)
         return result
 
     except Exception as e:
         duration = time.time() - start_time
         logger.error(
-            "Operation failed",
-            duration_ms=duration * 1000,
-            success=False,
-            error=str(e)
+            "Operation failed", duration_ms=duration * 1000, success=False, error=str(e)
         )
         raise
 ```
@@ -463,6 +464,7 @@ Monitor memory usage:
 import psutil
 import asyncio
 
+
 async def memory_monitor():
     """Background task to monitor memory usage."""
     while True:
@@ -470,7 +472,7 @@ async def memory_monitor():
         logger.info(
             "Memory usage",
             rss_mb=memory.rss / 1024 / 1024,
-            vms_mb=memory.vms / 1024 / 1024
+            vms_mb=memory.vms / 1024 / 1024,
         )
         await asyncio.sleep(60)  # Check every minute
 ```
@@ -498,6 +500,7 @@ import asyncio
 import signal
 from acb.depends import depends
 
+
 class Application:
     def __init__(self):
         self.running = True
@@ -518,6 +521,7 @@ class Application:
         cache = depends.get("cache")
         await cache.close()
 
+
 async def main():
     app = Application()
 
@@ -531,6 +535,7 @@ async def main():
             await asyncio.sleep(0.1)
     finally:
         await app.cleanup_connections()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -561,11 +566,9 @@ Implement health check endpoints:
 ```python
 from acb.depends import depends
 
+
 @depends.inject
-async def health_check(
-    cache: Cache = depends(),
-    sql: SQL = depends()
-):
+async def health_check(cache: Cache = depends(), sql: SQL = depends()):
     """Check health of all critical services."""
     checks = {}
 
@@ -586,10 +589,10 @@ async def health_check(
         checks["database"] = f"unhealthy: {e}"
 
     return {
-        "status": "healthy" if all(
-            status == "healthy" for status in checks.values()
-        ) else "unhealthy",
-        "checks": checks
+        "status": "healthy"
+        if all(status == "healthy" for status in checks.values())
+        else "unhealthy",
+        "checks": checks,
     }
 ```
 

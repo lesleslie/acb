@@ -35,7 +35,7 @@ Caching is a crucial component of high-performance applications. The ACB Cache a
 ## Available Implementations
 
 | Implementation | Description | Best For | Interface |
-|----------------|-------------|----------|-----------|
+| -------------- | -------------------------------------------------- | ----------------------------------------------- | --------------------------------- |
 | **Memory** | In-memory caching using aiocache SimpleMemoryCache | Development, small applications, testing | Full aiocache BaseCache interface |
 | **Redis** | Distributed caching using Redis with aiocache | Production, distributed systems, shared caching | Full aiocache BaseCache interface |
 
@@ -125,7 +125,7 @@ user_data = {
     "name": "John Doe",
     "roles": ["admin", "editor"],
     "active": True,
-    "last_login": datetime.datetime.now()
+    "last_login": datetime.datetime.now(),
 }
 
 # The cache adapter will handle serialization automatically
@@ -144,7 +144,7 @@ Both memory and Redis cache implementations support efficient multi-key operatio
 pairs = [
     ("product:1", {"name": "Widget", "price": 19.99}),
     ("product:2", {"name": "Gadget", "price": 24.99}),
-    ("product:3", {"name": "Doohickey", "price": 14.99})
+    ("product:3", {"name": "Doohickey", "price": 14.99}),
 ]
 await cache.multi_set(pairs, ttl=300)
 
@@ -173,12 +173,14 @@ from acb.adapters import import_adapter
 Cache = import_adapter("cache")
 cache = depends.get(Cache)
 
+
 # Cache the result of an expensive operation
 @cache.cached(ttl=300)  # Cache results for 5 minutes
 async def get_user_data(user_id: int):
     # This function will only be called when the cache doesn't have the result
     # The key will be based on the function name and arguments
     return await database.fetch_user(user_id)
+
 
 # Using the cached function is the same as using the original function
 user = await get_user_data(123)  # First call executes the function
@@ -208,27 +210,31 @@ await user_cache.clear()  # Removes all keys with prefix "users:"
 ### Common Issues
 
 1. **Redis Connection Error**
+
    - **Problem**: `ConnectionError: Error connecting to Redis server`
    - **Solution**:
      - Ensure Redis is running: `redis-cli ping` should return `PONG`
      - Check connection settings in your configuration
      - Verify network access if Redis is on a different server
 
-2. **Serialization Error**
+1. **Serialization Error**
+
    - **Problem**: `SerializationError: Object not serializable`
    - **Solution**:
      - Ensure all cached objects are serializable
      - Custom classes should implement `__dict__` or appropriate serialization methods
      - Consider converting complex objects to dictionaries before caching
 
-3. **Cache Miss When Expected Hit**
+1. **Cache Miss When Expected Hit**
+
    - **Problem**: Cache returns `None` when you expect a value
    - **Solution**:
      - Check TTL settings - the item may have expired
      - Verify the key being used is correct, including namespaces
      - Check for clear operations that might have removed the item
 
-4. **Memory Implementation Performance**
+1. **Memory Implementation Performance**
+
    - **Problem**: Memory cache performance degrades with large datasets
    - **Solution**:
      - Switch to Redis implementation for production workloads
@@ -261,8 +267,12 @@ class Cache(BaseCache):
     async def clear(self, namespace: str | None = None) -> bool: ...
 
     # Advanced operations
-    async def multi_get(self, keys: list[str], encoding: str = "utf-8") -> list[t.Any]: ...
-    async def multi_set(self, pairs: list[tuple[str, t.Any]], ttl: int | None = None) -> None: ...
+    async def multi_get(
+        self, keys: list[str], encoding: str = "utf-8"
+    ) -> list[t.Any]: ...
+    async def multi_set(
+        self, pairs: list[tuple[str, t.Any]], ttl: int | None = None
+    ) -> None: ...
     async def add(self, key: str, value: t.Any, ttl: int | None = None) -> bool: ...
     async def increment(self, key: str, delta: int = 1) -> int: ...
     async def expire(self, key: str, ttl: int) -> bool: ...
@@ -291,9 +301,9 @@ The Redis cache adapter leverages aiocache's Redis backend with:
 When working with the Cache adapter, keep these performance considerations in mind:
 
 1. **Key Length**: Shorter keys perform better, especially in Redis
-2. **Data Size**: Large objects (>1MB) may impact performance; consider chunking
-3. **TTL Strategy**: Use appropriate TTL values based on data volatility
-4. **Implementation Choice**:
+1. **Data Size**: Large objects (>1MB) may impact performance; consider chunking
+1. **TTL Strategy**: Use appropriate TTL values based on data volatility
+1. **Implementation Choice**:
    - **Memory**: Fastest for small applications but doesn't scale across services
    - **Redis**: Better for distributed systems but has network overhead
 
@@ -319,7 +329,7 @@ async def get_item(item_id):
 ### Performance Comparison
 
 | Implementation | Read Performance | Write Performance | Multi-Instance Support | Memory Usage |
-|----------------|------------------|-------------------|-----------------------|--------------|
+| -------------- | ----------------- | ----------------- | ---------------------- | ------------------------- |
 | **Memory** | Very Fast (0.1ms) | Very Fast (0.1ms) | No | High (all cached objects) |
 | **Redis** | Fast (1-2ms) | Fast (1-2ms) | Yes | Low (on app server) |
 
@@ -338,6 +348,7 @@ Common integration patterns:
 from acb.depends import depends
 from acb.config import Config
 
+
 # Caching database query results
 @depends.inject
 async def get_users_by_role(role: str, config: Config = depends()):
@@ -347,7 +358,9 @@ async def get_users_by_role(role: str, config: Config = depends()):
             statement = select(User).where(User.role == role)
             result = await session.execute(statement)
             return result.scalars().all()
+
     return await _get_users_by_role()
+
 
 # Caching API responses
 @depends.inject
@@ -356,6 +369,7 @@ async def get_weather(city: str, config: Config = depends()):
     async def _get_weather():
         response = await requests.get(f"https://api.weather.com/{city}")
         return response.json()
+
     return await _get_weather()
 ```
 

@@ -1,20 +1,14 @@
 import typing as t
 from functools import cached_property
 
-try:
-    import nest_asyncio
-except ImportError:
-    nest_asyncio = None
 from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
 from acb.adapters import get_adapter, tmp_path
 from acb.config import AdapterBase, Config, Settings
+from acb.core.cleanup import CleanupMixin
 from acb.debug import debug
 from acb.depends import depends
-
-if nest_asyncio:
-    nest_asyncio.apply()
 
 
 class StorageBaseSettings(Settings):
@@ -31,8 +25,10 @@ class StorageBaseSettings(Settings):
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        self.prefix = self.prefix or config.app.name or ""
-        self.user_project = self.user_project or config.app.name or ""
+        self.prefix = self.prefix or (config.app.name if config.app else "") or ""
+        self.user_project = (
+            self.user_project or (config.app.name if config.app else "") or ""
+        )
         storage_adapter = get_adapter("storage")
         if storage_adapter is not None:
             self.local_fs = storage_adapter.name in ("file", "memory")
@@ -101,10 +97,15 @@ class StorageBucket:
     def get_path(self, path: AsyncPath) -> str:
         if self.config.storage.local_fs:
             return str(path)
-        return str(self.root / path)
+        # Use joinpath with proper string conversion to avoid type issues
+        return (
+            str(self.root.joinpath(str(path)))
+            if not path.is_absolute()
+            else str(self.root.joinpath(str(path.relative_to(path.anchor))))
+        )
 
     def get_url(self, path: AsyncPath) -> str:
-        return self.client.url(self.get_path(path))
+        return self.client.url(self.get_path(path))  # type: ignore  # type: ignore[no-any-return]
 
     async def get_date_created(self, path: AsyncPath) -> t.Any:
         return (await self.stat(path))["timeCreated"]
@@ -113,7 +114,7 @@ class StorageBucket:
         return (await self.stat(path))["updated"]
 
     async def get_size(self, path: AsyncPath) -> int:
-        return (await self.stat(path))["size"]
+        return (await self.stat(path))["size"]  # type: ignore  # type: ignore[no-any-return]
 
     @staticmethod
     async def get_checksum(path: AsyncPath) -> int:
@@ -162,11 +163,14 @@ class StorageBucket:
     async def open(self, path: AsyncPath) -> t.BinaryIO:
         try:
             async with self.client.open(self.get_path(path), "rb") as f:
-                return f.read()
+                return f.read()  # type: ignore  # type: ignore[no-any-return]
         except (NotFound, FileNotFoundError, RuntimeError):
             raise FileNotFoundError
-        except Exception as e:
+        except (OSError, PermissionError) as e:
             debug(e)
+            raise
+        except Exception as e:
+            debug(f"Unexpected error in storage open: {e}")
             raise
 
     async def write(self, path: AsyncPath, data: t.Any) -> t.Any:
@@ -176,8 +180,11 @@ class StorageBucket:
                 self.client.pipe_file(stor_path, data)
             else:
                 await self.client._pipe_file(stor_path, data)
-        except Exception as e:
+        except (OSError, PermissionError) as e:
             debug(e)
+            raise
+        except Exception as e:
+            debug(f"Unexpected error in storage write: {e}")
             raise
 
     async def delete(self, path: AsyncPath) -> t.Any:
@@ -197,7 +204,7 @@ class StorageProtocol(t.Protocol):
     async def init(self) -> None: ...
 
 
-class StorageBase(AdapterBase):
+class StorageBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
     file_system: t.Any = AsyncFileSystem
     templates: StorageBucket | None = None
     media: StorageBucket | None = None
@@ -224,6 +231,42 @@ class StorageBase(AdapterBase):
         for bucket in self.config.storage.buckets:
             setattr(self, bucket, StorageBucket(client, bucket))
             self.logger.debug(f"{bucket.title()} storage bucket initialized")
+
+    # Simple storage operations without complex retry/monitoring
+    async def upload(self, bucket: str, path: str, data: t.Any) -> t.Any:
+        """Upload file to storage."""
+        bucket_obj = getattr(self, bucket, None)
+        if bucket_obj is None:
+            raise ValueError(f"Bucket '{bucket}' not found")
+        return await bucket_obj.write(AsyncPath(path), data)
+
+    async def download(self, bucket: str, path: str) -> t.Any:
+        """Download file from storage."""
+        bucket_obj = getattr(self, bucket, None)
+        if bucket_obj is None:
+            raise ValueError(f"Bucket '{bucket}' not found")
+        return await bucket_obj.open(AsyncPath(path))
+
+    async def delete(self, bucket: str, path: str) -> t.Any:
+        """Delete file from storage."""
+        bucket_obj = getattr(self, bucket, None)
+        if bucket_obj is None:
+            raise ValueError(f"Bucket '{bucket}' not found")
+        return await bucket_obj.delete(AsyncPath(path))
+
+    async def exists(self, bucket: str, path: str) -> bool:
+        """Check if file exists in storage."""
+        bucket_obj = getattr(self, bucket, None)
+        if bucket_obj is None:
+            raise ValueError(f"Bucket '{bucket}' not found")
+        return await bucket_obj.exists(AsyncPath(path))  # type: ignore  # type: ignore[no-any-return]
+
+    async def stat(self, bucket: str, path: str) -> t.Any:
+        """Get file stats from storage."""
+        bucket_obj = getattr(self, bucket, None)
+        if bucket_obj is None:
+            raise ValueError(f"Bucket '{bucket}' not found")
+        return await bucket_obj.stat(AsyncPath(path))
 
 
 class StorageMediaProtocol(t.Protocol):

@@ -12,7 +12,12 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
-from acb.adapters import AdapterStatus, import_adapter
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    import_adapter,
+)
 from acb.adapters.dns._base import DnsProtocol, DnsRecord
 from acb.config import Config
 from acb.debug import debug
@@ -23,7 +28,34 @@ from ._base import SmtpBase, SmtpBaseSettings
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b8782cb6e8db")
 MODULE_STATUS = AdapterStatus.STABLE
 
-Dns, Requests = import_adapter()
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Gmail SMTP",
+    category="smtp",
+    provider="google",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.TLS_SUPPORT,
+    ],
+    required_packages=["google-auth", "google-api-python-client", "httpx"],
+    description="Gmail SMTP adapter with OAuth2 authentication and forwarding",
+    settings_class="SmtpSettings",
+    config_example={
+        "client_id": "your-oauth-client-id",  # pragma: allowlist secret
+        "client_secret": "your-oauth-client-secret",  # pragma: allowlist secret
+        "refresh_token": "your-refresh-token",  # pragma: allowlist secret
+        "domain": "example.com",
+        "default_from": "noreply@example.com",
+    },
+)
+
+Dns, Requests = import_adapter()  # type: ignore[valid-type]
 
 
 class SmtpSettings(SmtpBaseSettings):
@@ -60,7 +92,7 @@ class SmtpSettings(SmtpBaseSettings):
 
 
 class Smtp(SmtpBase):
-    requests: Requests = depends()
+    requests: Requests = depends()  # type: ignore[valid-type]
 
     def _get_gmail_service(self) -> t.Any:
         credentials = Credentials(

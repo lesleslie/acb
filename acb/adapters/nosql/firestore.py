@@ -1,3 +1,4 @@
+import os
 import typing as t
 from contextlib import asynccontextmanager
 from functools import cached_property
@@ -5,7 +6,7 @@ from uuid import UUID
 
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
-from acb.adapters import AdapterStatus
+from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
@@ -14,17 +15,62 @@ from ._base import NosqlBase, NosqlBaseSettings
 MODULE_ID = UUID("0197ff45-0a82-7e10-bb46-9d3c8f15a7e2")
 MODULE_STATUS = AdapterStatus.STABLE
 
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Firestore",
+    category="nosql",
+    provider="firestore",
+    version="1.1.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-15",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.TRANSACTIONS,
+        AdapterCapability.TLS_SUPPORT,
+        AdapterCapability.BULK_OPERATIONS,
+        AdapterCapability.SCHEMA_VALIDATION,
+    ],
+    required_packages=["google-cloud-firestore"],
+    description="Google Firestore adapter with emulator TLS support",
+    settings_class="NosqlSettings",
+    config_example={
+        "project_id": "my-project",
+        "credentials_path": "/path/to/service-account.json",
+        "emulator_host": "localhost:8080",
+        "ssl_enabled": True,
+    },
+)
+
 
 class NosqlSettings(NosqlBaseSettings):
     project_id: str | None = None
     credentials_path: str | None = None
     emulator_host: str | None = None
 
+    def _setup_emulator_ssl_environment(self) -> None:
+        """Setup SSL environment variables for Firestore emulator."""
+        if not self.ssl_enabled:
+            os.environ["FIRESTORE_EMULATOR_SSL"] = "false"
+        else:
+            os.environ["FIRESTORE_EMULATOR_SSL"] = "true"
+            if self.ssl_cert_path:
+                os.environ["FIRESTORE_EMULATOR_SSL_CERT"] = self.ssl_cert_path
+            if self.ssl_key_path:
+                os.environ["FIRESTORE_EMULATOR_SSL_KEY"] = self.ssl_key_path
+            if self.ssl_ca_path:
+                os.environ["FIRESTORE_EMULATOR_SSL_CA"] = self.ssl_ca_path
+
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         if not self.project_id:
-            self.project_id = config.app.project
+            self.project_id = config.app.project if config.app else ""
+        if self.emulator_host:
+            os.environ["FIRESTORE_EMULATOR_HOST"] = self.emulator_host
+            self._setup_emulator_ssl_environment()
 
 
 class Nosql(NosqlBase):
@@ -38,6 +84,11 @@ class Nosql(NosqlBase):
                 kwargs["project"] = self.config.nosql.project_id
             if self.config.nosql.credentials_path:
                 kwargs["credentials"] = self.config.nosql.credentials_path
+            if self.config.nosql.emulator_host:
+                pass
+            elif self.config.nosql.ssl_enabled:
+                if self.config.nosql.connect_timeout:
+                    pass
             self._client = firestore.Client(**kwargs)
         return self._client
 
@@ -46,9 +97,17 @@ class Nosql(NosqlBase):
         return self.client
 
     async def init(self) -> None:
-        self.logger.info(
-            f"Initializing Firestore connection for project {self.config.nosql.project_id}",
-        )
+        if self.config.nosql.emulator_host:
+            ssl_status = (
+                "SSL enabled" if self.config.nosql.ssl_enabled else "SSL disabled"
+            )
+            self.logger.info(
+                f"Initializing Firestore emulator connection to {self.config.nosql.emulator_host} ({ssl_status})",
+            )
+        else:
+            self.logger.info(
+                f"Initializing Firestore connection for project {self.config.nosql.project_id}",
+            )
         try:
             self.client.collection("test")
             self.logger.info("Firestore connection initialized successfully")
@@ -63,11 +122,11 @@ class Nosql(NosqlBase):
     def _convert_to_dict(self, doc: firestore.DocumentSnapshot) -> dict[str, t.Any]:
         if not doc.exists:
             return {}
-        data = doc.to_dict()
+        data = doc.to_dict()  # type: ignore[union-attr]
         if data is None:
             data = {}
-        data["_id"] = doc.id
-        return data
+        data["_id"] = doc.id  # type: ignore[index]
+        return t.cast(dict[str, t.Any], data)  # type: ignore[return-value]
 
     def _prepare_document(self, document: dict[str, t.Any]) -> dict[str, t.Any]:
         if "_id" in document:

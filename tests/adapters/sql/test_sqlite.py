@@ -35,7 +35,17 @@ class MockSqlSession(MagicMock):
 
 class TestSqliteSettings:
     def test_default_settings(self) -> None:
-        settings = SqlSettings()
+        # Create a mock config to avoid SSLConfigMixin issues
+        mock_config = MagicMock()
+        mock_config.debug = MagicMock()
+        mock_config.debug.sql = False
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.logger = MagicMock()
+        mock_config.logger.verbose = False
+        mock_config.deployed = False
+
+        settings = SqlSettings(config=mock_config)
         assert settings.database_url == "sqlite:///data/app.db"
         assert settings._driver == "sqlite+pysqlite"
         assert settings._async_driver == "sqlite+aiosqlite"
@@ -43,25 +53,66 @@ class TestSqliteSettings:
         assert not settings.is_turso
 
     def test_local_sqlite_url(self) -> None:
-        settings = SqlSettings(database_url="sqlite:///test.db")
+        # Create a mock config to avoid SSLConfigMixin issues
+        mock_config = MagicMock()
+        mock_config.debug = MagicMock()
+        mock_config.debug.sql = False
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.logger = MagicMock()
+        mock_config.logger.verbose = False
+        mock_config.deployed = False
+
+        settings = SqlSettings(config=mock_config, database_url="sqlite:///test.db")
         assert settings._driver == "sqlite+pysqlite"
         assert settings._async_driver == "sqlite+aiosqlite"
         assert not settings.is_turso
 
     def test_turso_libsql_url(self) -> None:
-        settings = SqlSettings(database_url="libsql://mydb.turso.io")
+        # Create a mock config to avoid SSLConfigMixin issues
+        mock_config = MagicMock()
+        mock_config.debug = MagicMock()
+        mock_config.debug.sql = False
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.logger = MagicMock()
+        mock_config.logger.verbose = False
+        mock_config.deployed = False
+
+        settings = SqlSettings(config=mock_config, database_url="libsql://mydb.turso.io")
         assert settings._driver == "sqlite+libsql"
         assert settings._async_driver == "sqlite+libsql"
         assert settings.is_turso
 
     def test_turso_https_url(self) -> None:
-        settings = SqlSettings(database_url="https://mydb.turso.io")
+        # Create a mock config to avoid SSLConfigMixin issues
+        mock_config = MagicMock()
+        mock_config.debug = MagicMock()
+        mock_config.debug.sql = False
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.logger = MagicMock()
+        mock_config.logger.verbose = False
+        mock_config.deployed = False
+
+        settings = SqlSettings(config=mock_config, database_url="https://mydb.turso.io")
         assert settings._driver == "sqlite+libsql"
         assert settings._async_driver == "sqlite+libsql"
         assert settings.is_turso
 
     def test_turso_url_with_auth_token(self) -> None:
+        # Create a mock config to avoid SSLConfigMixin issues
+        mock_config = MagicMock()
+        mock_config.debug = MagicMock()
+        mock_config.debug.sql = False
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.logger = MagicMock()
+        mock_config.logger.verbose = False
+        mock_config.deployed = False
+
         settings = SqlSettings(
+            config=mock_config,
             database_url="libsql://mydb.turso.io?authToken=abc123&secure=true",
         )
         assert settings._driver == "sqlite+libsql"
@@ -69,11 +120,31 @@ class TestSqliteSettings:
         assert settings.is_turso
 
     def test_invalid_database_url(self) -> None:
+        # Create a mock config to avoid SSLConfigMixin issues
+        mock_config = MagicMock()
+        mock_config.debug = MagicMock()
+        mock_config.debug.sql = False
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.logger = MagicMock()
+        mock_config.logger.verbose = False
+        mock_config.deployed = False
+
         with pytest.raises(ValueError, match="Database URL must start with"):
-            SqlSettings(database_url="invalid://test.db")
+            SqlSettings(config=mock_config, database_url="invalid://test.db")
 
     def test_driver_properties(self) -> None:
-        settings = SqlSettings()
+        # Create a mock config to avoid SSLConfigMixin issues
+        mock_config = MagicMock()
+        mock_config.debug = MagicMock()
+        mock_config.debug.sql = False
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.logger = MagicMock()
+        mock_config.logger.verbose = False
+        mock_config.deployed = False
+
+        settings = SqlSettings(config=mock_config)
         assert settings.driver == "sqlite+pysqlite"
         assert settings.async_driver == "sqlite+aiosqlite"
 
@@ -110,6 +181,7 @@ class TestSqlite:
         )
         mock_sql.wal_mode = True
         mock_sql.is_turso = True
+        mock_sql.ssl_enabled = True
         mock_sql.engine_kwargs = {}
         mock_config.sql = mock_sql
 

@@ -6,7 +6,7 @@ from uuid import UUID
 import redis.asyncio as redis
 from pydantic import field_validator
 from redis_om import HashModel, Migrator, get_redis_connection
-from acb.adapters import AdapterStatus
+from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
@@ -14,6 +14,40 @@ from ._base import NosqlBase, NosqlBaseSettings
 
 MODULE_ID = UUID("0197ff45-1b4f-7c20-8f3a-6e2d9a8c4b57")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Redis NoSQL",
+    category="nosql",
+    provider="redis",
+    version="1.1.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-15",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.CONNECTION_POOLING,
+        AdapterCapability.TRANSACTIONS,
+        AdapterCapability.TLS_SUPPORT,
+        AdapterCapability.BULK_OPERATIONS,
+        AdapterCapability.CACHING,
+    ],
+    required_packages=["redis", "redis-om"],
+    description="Redis NoSQL adapter with TLS support and Redis-OM integration",
+    settings_class="NosqlSettings",
+    config_example={
+        "host": "localhost",
+        "port": 6379,
+        "password": "your-redis-password",  # pragma: allowlist secret
+        "db": 0,
+        "ssl_enabled": True,
+        "ssl_cert_path": "/path/to/cert.pem",
+        "ssl_key_path": "/path/to/key.pem",
+        "ssl_ca_path": "/path/to/ca.pem",
+    },
+)
 
 
 class NosqlSettings(NosqlBaseSettings):
@@ -37,9 +71,16 @@ class NosqlSettings(NosqlBaseSettings):
         if not self.connection_string:
             host = self.host.get_secret_value()
             auth_part = ""
-            if self.password:
-                auth_part = f":{self.password.get_secret_value()}"
-            self.connection_string = f"redis://{auth_part}@{host}:{self.port}/{self.db}"
+            if self.user and self.password:
+                auth_part = f"{self.user.get_secret_value()}:{self.password.get_secret_value()}@"
+            elif self.password:
+                auth_part = f":{self.password.get_secret_value()}@"
+            elif self.auth_token:
+                auth_part = f":{self.auth_token.get_secret_value()}@"
+            protocol = "rediss" if self.ssl_enabled else "redis"
+            self.connection_string = (
+                f"{protocol}://{auth_part}{host}:{self.port}/{self.db}"
+            )
 
 
 class Nosql(NosqlBase):
@@ -47,21 +88,55 @@ class Nosql(NosqlBase):
     _client: t.Any = None
     _transaction: t.Any | None = None
 
+    def _build_ssl_kwargs(self) -> dict[str, t.Any]:
+        ssl_kwargs = {}
+        if self.config.nosql.ssl_enabled:
+            ssl_kwargs["ssl"] = True
+            if self.config.nosql.ssl_cert_path:
+                ssl_kwargs["ssl_certfile"] = self.config.nosql.ssl_cert_path
+            if self.config.nosql.ssl_key_path:
+                ssl_kwargs["ssl_keyfile"] = self.config.nosql.ssl_key_path
+            if self.config.nosql.ssl_ca_path:
+                ssl_kwargs["ssl_ca_certs"] = self.config.nosql.ssl_ca_path
+            if self.config.nosql.ssl_verify_mode == "required":
+                ssl_kwargs["ssl_check_hostname"] = True  # type: ignore[assignment]
+                ssl_kwargs["ssl_cert_reqs"] = "required"  # type: ignore[assignment]
+            elif self.config.nosql.ssl_verify_mode == "optional":
+                ssl_kwargs["ssl_check_hostname"] = False  # type: ignore[assignment]
+                ssl_kwargs["ssl_cert_reqs"] = "optional"  # type: ignore[assignment]
+            else:
+                ssl_kwargs["ssl_check_hostname"] = False  # type: ignore[assignment]
+                ssl_kwargs["ssl_cert_reqs"] = "none"  # type: ignore[assignment]
+            if self.config.nosql.ssl_ciphers:
+                ssl_kwargs["ssl_ciphers"] = self.config.nosql.ssl_ciphers
+        if self.config.nosql.connect_timeout:
+            ssl_kwargs["socket_connect_timeout"] = self.config.nosql.connect_timeout
+        if self.config.nosql.socket_timeout:
+            ssl_kwargs["socket_timeout"] = self.config.nosql.socket_timeout
+        if self.config.nosql.max_pool_size:
+            ssl_kwargs["max_connections"] = self.config.nosql.max_pool_size
+
+        return ssl_kwargs
+
     @cached_property
     def client(self) -> t.Any:
         if not self._client:
+            ssl_kwargs = self._build_ssl_kwargs()
             self._client = redis.from_url(
                 self.config.nosql.connection_string,
                 decode_responses=self.config.nosql.decode_responses,
                 encoding=self.config.nosql.encoding,
+                **ssl_kwargs,
             )
         return self._client
 
     @cached_property
     def om_client(self) -> t.Any:
+        ssl_kwargs = self._build_ssl_kwargs()
         return get_redis_connection(
             url=self.config.nosql.connection_string,
             decode_responses=True,
+            **ssl_kwargs,
         )
 
     async def init(self) -> None:
@@ -252,7 +327,8 @@ class Nosql(NosqlBase):
         **kwargs: t.Any,
     ) -> int:
         if not filter:
-            return await self.client.scard(self._get_key(collection))
+            result = await self.client.scard(self._get_key(collection))
+            return int(result)  # type: ignore[no-any-return]
         docs = await self.find(collection, filter)
         return len(docs)
 

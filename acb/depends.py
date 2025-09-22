@@ -1,7 +1,6 @@
-import asyncio
 import typing as t
 from contextlib import suppress
-from inspect import stack
+from functools import lru_cache
 
 from bevy import dependency, get_repository
 from bevy import inject as inject_dependency
@@ -14,52 +13,126 @@ class DependsProtocol(t.Protocol):
     @staticmethod
     def set(class_: t.Any, instance: t.Any = None) -> t.Any: ...
     @staticmethod
-    def get(*args: t.Any) -> t.Any: ...
+    def get(category: t.Any) -> t.Any: ...
+    @staticmethod
+    async def get_async(category: t.Any) -> t.Any: ...
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any: ...
 
 
 class Depends:
+    """Dependency injection manager for ACB.
+
+    This class provides a clean interface for dependency injection without
+    relying on fragile runtime introspection or blocking async calls.
+    """
+
     @staticmethod
     def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
-        return inject_dependency(func)
+        """Decorator to inject dependencies into a function."""
+        return t.cast(t.Callable[..., t.Any], inject_dependency(func))
 
     @staticmethod
     def set(class_: t.Any, instance: t.Any = None) -> t.Any:
+        """Register a class/instance in the dependency container."""
         if instance is None:
             return get_repository().set(class_, class_())
         return get_repository().set(class_, instance)
 
     @staticmethod
-    def get(category: t.Any = None) -> t.Any:
-        if not category:
-            with suppress(AttributeError, IndexError):
-                context = stack()[1][4]
-                if context:
-                    category = next(
-                        c.strip()
-                        for c in context[0].split("=")[0].strip().lower().split(",")
-                    ).removeprefix("self.")
-        class_ = category
-        if isinstance(class_, str):
+    def get(category: t.Any) -> t.Any:
+        """Get dependency instance by category or class.
+
+        Args:
+            category: The dependency category (string) or class to retrieve
+
+        Returns:
+            The dependency instance
+
+        Note:
+            For adapter dependencies that require async initialization,
+            use get_async() instead.
+        """
+        return _get_dependency_sync(category)
+
+    @staticmethod
+    async def get_async(category: t.Any) -> t.Any:
+        """Get dependency instance asynchronously.
+
+        This is needed for adapter dependencies that require async initialization.
+
+        Args:
+            category: The dependency category (string) or class to retrieve
+
+        Returns:
+            The dependency instance
+        """
+        if isinstance(category, str):
+            # First try the repository cache
             with suppress(Exception):
-                result = get_repository().get(class_)
+                result = get_repository().get(category)
                 if result is not None:
                     return result
-            from .adapters import _import_adapter
 
-            try:
-                asyncio.get_running_loop()
-                import nest_asyncio
+            # Import adapter asynchronously
+            class_ = await _get_adapter_class_async(category)
+            return get_repository().get(class_)
 
-                if nest_asyncio:
-                    nest_asyncio.apply()
-                class_ = asyncio.run(_import_adapter(class_))
-            except RuntimeError:
-                class_ = asyncio.run(_import_adapter(class_))
-        return get_repository().get(class_)
+        return get_repository().get(category)
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """Support using depends as a callable for bevy compatibility."""
         return dependency()
 
 
+def _get_dependency_sync(category: t.Any) -> t.Any:
+    """Get dependency synchronously (for non-adapter dependencies)."""
+    if isinstance(category, str):
+        # Try the repository cache first
+        with suppress(Exception):
+            result = get_repository().get(category)
+            if result is not None:
+                return result
+
+        # For string categories that aren't cached, we need async initialization
+        # This should only happen for adapters, which should use get_async()
+        msg = (
+            f"Adapter '{category}' requires async initialization. "
+            f"Use 'await depends.get_async(\"{category}\")' instead."
+        )
+        raise RuntimeError(msg)
+
+    return get_repository().get(category)
+
+
+@lru_cache(maxsize=256)
+async def _get_adapter_class_async(category: str) -> t.Any:
+    """Get adapter class with async import."""
+    from .adapters import _import_adapter
+
+    return await _import_adapter(category)
+
+
 depends = Depends()
+
+
+def fast_depends(category: t.Any) -> t.Any:
+    """High-performance dependency injection.
+
+    This function provides direct dependency lookup without any
+    introspection or special handling.
+
+    Example:
+        cache = fast_depends("cache")
+        sql = fast_depends("sql")
+
+    Args:
+        category: The dependency category or class to retrieve
+
+    Returns:
+        The dependency instance
+
+    Note:
+        This is now just an alias for depends.get() since we've removed
+        the stack introspection overhead.
+    """
+    return depends.get(category)

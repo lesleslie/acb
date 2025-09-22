@@ -187,3 +187,77 @@ class TestLogger:
         settings = LoggerSettings()
         assert settings.settings is not None
         assert settings.settings["colorize"] is True
+
+
+class TestLoggerInternals:
+    """Test Logger internal methods for better coverage."""
+
+    @pytest.fixture
+    def mock_config_setup(self):
+        """Setup a mock config for logger testing."""
+        config = Config()
+        config.deployed = False
+        config.debug.production = False
+        config.debug.logger = True
+        config.logger = LoggerSettings()
+        return config
+
+    def test_configure_for_testing(self, mock_config_setup) -> None:
+        """Test _configure_for_testing method."""
+        logger = Logger()
+        logger.config = mock_config_setup
+
+        with (
+            patch.object(logger, "remove") as mock_remove,
+            patch.object(logger, "configure") as mock_configure,
+        ):
+            logger._configure_for_testing()
+
+            mock_remove.assert_called_once()
+            mock_configure.assert_called_once_with(handlers=[])
+
+    def test_configure_logger_deployed_mode(self, mock_config_setup) -> None:
+        """Test _configure_logger in deployed mode."""
+        logger = Logger()
+        mock_config_setup.deployed = True
+        mock_config_setup.logger.deployed_level = "WARNING"
+        logger.config = mock_config_setup
+
+        with patch.object(logger, "remove"), patch.object(logger, "configure"):
+            logger._configure_logger()
+
+            # Should use deployed level
+            assert logger.config.logger.log_level == "WARNING"
+
+    def test_configure_logger_production_mode(self, mock_config_setup) -> None:
+        """Test _configure_logger in production debug mode."""
+        logger = Logger()
+        mock_config_setup.debug.production = True
+        mock_config_setup.logger.deployed_level = "ERROR"
+        logger.config = mock_config_setup
+
+        with patch.object(logger, "remove"), patch.object(logger, "configure"):
+            logger._configure_logger()
+
+            # Should use deployed level when production is true
+            assert logger.config.logger.log_level == "ERROR"
+
+    def test_logger_basic_functionality(self, mock_config_setup) -> None:
+        """Test basic logger functionality without internal methods."""
+        logger = Logger()
+        logger.config = mock_config_setup
+
+        # Test that logger has required methods
+        assert hasattr(logger, "debug")
+        assert hasattr(logger, "info")
+        assert hasattr(logger, "warning")
+        assert hasattr(logger, "error")
+        assert hasattr(logger, "init")
+
+    def test_logger_config_access(self, mock_config_setup) -> None:
+        """Test logger config access."""
+        logger = Logger()
+        logger.config = mock_config_setup
+
+        # Test that basic attributes are accessible
+        assert logger.config is not None

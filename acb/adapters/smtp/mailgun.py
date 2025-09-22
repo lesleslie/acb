@@ -8,7 +8,13 @@ from uuid import UUID
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
 from acb.actions.encode import load
-from acb.adapters import AdapterStatus, adapter_registry, import_adapter
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    adapter_registry,
+    import_adapter,
+)
 from acb.adapters.dns._base import DnsProtocol, DnsRecord
 from acb.config import Config
 from acb.debug import debug
@@ -18,6 +24,32 @@ from ._base import SmtpBase, SmtpBaseSettings
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b887b20a943f")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Mailgun SMTP",
+    category="smtp",
+    provider="mailgun",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.TLS_SUPPORT,
+    ],
+    required_packages=["httpx"],
+    description="Mailgun SMTP adapter with domain management and DNS configuration",
+    settings_class="SmtpSettings",
+    config_example={
+        "api_key": "your-mailgun-api-key",  # pragma: allowlist secret
+        "password": "your-smtp-password",  # pragma: allowlist secret
+        "domain": "mg.example.com",
+        "api_url": "https://api.mailgun.net/v3/domains",
+    },
+)
 
 Dns, Requests = import_adapter()
 
@@ -41,7 +73,7 @@ class SmtpSettings(SmtpBaseSettings):
 
 
 class Smtp(SmtpBase):
-    requests: Requests = depends()
+    requests: Requests = depends()  # type: ignore[valid-type]  # type: ignore[valid-type]
 
     async def get_response(
         self,
@@ -50,10 +82,18 @@ class Smtp(SmtpBase):
         data: dict[str, t.Any] | None = None,
         params: dict[str, int] | None = None,
     ) -> dict[str, t.Any]:
-        calling_frame = sys._getframe().f_back.f_code.co_name
-        caller = "domain" if search(calling_frame, "domain") else "route"
+        calling_frame = sys._getframe().f_back
+        if calling_frame is not None:
+            calling_frame_name = calling_frame.f_code.co_name
+        else:
+            calling_frame_name = ""
+        caller = "domain" if search("domain", calling_frame_name) else "route"
         url = "/".join(
-            [self.config.smtp.api_url, caller, domain or self.config.app.domain or ""],
+            [
+                self.config.smtp.api_url,
+                caller,
+                domain or (self.config.app.domain if self.config.app else "") or "",
+            ],
         )
         data = {
             "auth": ("api", self.config.smtp.api_key.get_secret_value()),
@@ -73,7 +113,7 @@ class Smtp(SmtpBase):
                 resp = await self.requests.delete(url)
             case _:
                 raise ValueError
-        return await load.json(resp.json())
+        return await load.json(resp.json())  # type: ignore  # type: ignore[no-any-return]
 
     async def list_domains(self) -> list[str]:
         resp = await self.get_response("get", params={"skip": 0, "limit": 1000})
@@ -118,9 +158,9 @@ class Smtp(SmtpBase):
         )
 
     async def get_dns_records(self, domain: str) -> list[DnsRecord]:
-        records = await self.get_domain(domain)
-        mx_records = records["receiving_dns_records"]
-        sending_records = records["sending_dns_records"]
+        domain_records = await self.get_domain(domain)
+        mx_records = domain_records["receiving_dns_records"]
+        sending_records = domain_records["sending_dns_records"]
         records = []
         rrdata = []
         for r in mx_records:
@@ -166,9 +206,9 @@ class Smtp(SmtpBase):
         return domain_routes
 
     async def delete_route(self, route: dict[str, str]) -> HttpxResponse:
-        resp = await self.requests.delete("delete", domain={route["id"]})
+        resp = await self.requests.delete("delete", domain={route["id"]})  # type: ignore
         self.logger.info(f"Deleted route for {route['description']}")
-        return resp
+        return t.cast(HttpxResponse, resp)  # type: ignore[no-any-return]
 
     @staticmethod
     def get_name(address: str) -> str:

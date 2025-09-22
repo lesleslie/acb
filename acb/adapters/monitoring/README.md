@@ -18,7 +18,7 @@ The ACB Monitoring adapter offers comprehensive application visibility:
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| -------------- | -------------------------------------- | ------------------------------ |
 | **Sentry** | Error tracking and monitoring platform | Production applications |
 | **Logfire** | Logging-based monitoring | Simple applications, debugging |
 
@@ -104,17 +104,14 @@ except Exception as e:
     monitoring.capture_exception(e)
 
     # Optionally add context
-    monitoring.set_context("operation", {
-        "name": "division",
-        "input": 0
-    })
+    monitoring.set_context("operation", {"name": "division", "input": 0})
 
     # Re-raise or handle as needed
     raise
 
 # Track a custom event
-monitoring.capture_message("User login successful", level="info",
-    tags={"user_id": "12345", "source": "web"}
+monitoring.capture_message(
+    "User login successful", level="info", tags={"user_id": "12345", "source": "web"}
 )
 ```
 
@@ -148,12 +145,14 @@ with monitoring.start_transaction(name="GET /api/users", op="http.server"):
 
 ```python
 # Set user context for better error tracking
-monitoring.set_user({
-    "id": "user-123",
-    "email": "user@example.com",
-    "username": "user123",
-    "subscription": "premium"
-})
+monitoring.set_user(
+    {
+        "id": "user-123",
+        "email": "user@example.com",
+        "username": "user123",
+        "subscription": "premium",
+    }
+)
 
 # Clear user context when user logs out
 monitoring.clear_user()
@@ -166,31 +165,29 @@ monitoring.clear_user()
 monitoring.set_release("myapp@1.2.0")
 
 # Track a deployment
-monitoring.track_deployment({
-    "environment": "production",
-    "started": datetime.now().isoformat(),
-    "commits": ["a1b2c3d4e5f6"],
-    "deployer": "CI/CD Pipeline"
-})
+monitoring.track_deployment(
+    {
+        "environment": "production",
+        "started": datetime.now().isoformat(),
+        "commits": ["a1b2c3d4e5f6"],
+        "deployer": "CI/CD Pipeline",
+    }
+)
 ```
 
 ### Custom Contexts and Tags
 
 ```python
 # Add custom context
-monitoring.set_context("payment", {
-    "provider": "stripe",
-    "amount": 99.99,
-    "currency": "USD",
-    "success": True
-})
+monitoring.set_context(
+    "payment",
+    {"provider": "stripe", "amount": 99.99, "currency": "USD", "success": True},
+)
 
 # Add tags (searchable key-value pairs)
-monitoring.set_tags({
-    "feature_flag": "new_checkout",
-    "experiment_group": "A",
-    "user_tier": "premium"
-})
+monitoring.set_tags(
+    {"feature_flag": "new_checkout", "experiment_group": "A", "user_tier": "premium"}
+)
 ```
 
 ## Troubleshooting
@@ -198,18 +195,22 @@ monitoring.set_tags({
 ### Common Issues
 
 1. **DSN Configuration Error**
+
    - **Problem**: `ConfigurationError: DSN not configured`
    - **Solution**: Set a valid DSN in your settings/app.yml file
 
-2. **High Event Volume**
+1. **High Event Volume**
+
    - **Problem**: Too many events being sent, affecting performance or costs
    - **Solution**: Adjust the sampling rate or filter out noisy events
 
-3. **Missing Context**
+1. **Missing Context**
+
    - **Problem**: Events lack useful context for debugging
    - **Solution**: Add user context, tags, and additional data to events
 
-4. **Integration Issues**
+1. **Integration Issues**
+
    - **Problem**: Certain integrations not working correctly
    - **Solution**: Check that required packages are installed and integrations are properly configured
 

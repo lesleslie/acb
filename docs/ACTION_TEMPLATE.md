@@ -7,6 +7,7 @@ This document provides a comprehensive guide for creating semantic actions follo
 ACB actions follow a consistent semantic structure where actions are **verb-based** and methods are **operation-specific**. The calling convention is `action.method()` for a clean, discoverable API.
 
 ### Examples from ACB/FastBlocks
+
 ```python
 # ACB Core Actions
 from acb.actions.compress import compress, decompress
@@ -29,6 +30,7 @@ templates = await gather.templates()
 ## Action Creation Template
 
 ### 1. Directory Structure
+
 ```
 project/
 ├── actions/
@@ -42,6 +44,7 @@ project/
 ### 2. Action Implementation Pattern
 
 **File: `actions/action_name/__init__.py`**
+
 ```python
 """Action description and purpose."""
 
@@ -50,6 +53,7 @@ from pathlib import Path
 # Additional imports as needed
 
 __all__: list[str] = ["action_name"]  # Export list for auto-discovery
+
 
 class ActionName:
     """Action class following semantic naming conventions."""
@@ -92,6 +96,7 @@ class ActionName:
         # Use async for file operations, network requests, etc.
         return processed_data
 
+
 # Export an instance of the action (lowercase name)
 action_name = ActionName()
 ```
@@ -99,6 +104,7 @@ action_name = ActionName()
 ### 3. Naming Conventions
 
 #### Action Names (Verb-based)
+
 - `compress` / `decompress` - Data compression operations
 - `hash` - Hashing and checksum operations
 - `encode` / `decode` - Data encoding/decoding operations
@@ -108,6 +114,7 @@ action_name = ActionName()
 - `transform` - Data transformation operations
 
 #### Method Names (Operation-specific)
+
 - **Format/type specific**: `hash.blake3()`, `encode.json()`, `minify.css()`
 - **Algorithm specific**: `compress.gzip()`, `hash.md5()`, `encode.base64()`
 - **Component specific**: `gather.routes()`, `gather.templates()`
@@ -125,6 +132,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 
 __all__: list[str] = ["validate"]
+
 
 class Validate:
     """Data validation action with semantic method organization."""
@@ -160,15 +168,11 @@ class Validate:
             True if URL is valid, False otherwise
         """
         if schemes is None:
-            schemes = ['http', 'https']
+            schemes = ["http", "https"]
 
         try:
             parsed = urlparse(url)
-            return (
-                parsed.scheme in schemes and
-                bool(parsed.netloc) and
-                len(url) <= 2048
-            )
+            return parsed.scheme in schemes and bool(parsed.netloc) and len(url) <= 2048
         except Exception:
             return False
 
@@ -185,7 +189,7 @@ class Validate:
             True if phone number is valid, False otherwise
         """
         # Remove all non-digit characters
-        digits_only = re.sub(r'\D', '', phone)
+        digits_only = re.sub(r"\D", "", phone)
 
         if country_code == "US":
             # US phone numbers: 10 digits
@@ -207,6 +211,7 @@ class Validate:
         """
         try:
             from anyio import Path as AsyncPath
+
             async_path = AsyncPath(path)
             return await async_path.exists() and await async_path.is_file()
         except Exception:
@@ -225,10 +230,12 @@ class Validate:
         """
         try:
             import json
+
             json.loads(json_str)
             return True
         except (json.JSONDecodeError, TypeError):
             return False
+
 
 # Export instance for semantic usage
 validate = Validate()
@@ -247,6 +254,7 @@ is_valid_phone = validate.phone("555-123-4567", country_code="US")
 
 # Async methods for I/O operations
 file_exists = await validate.file_exists("/path/to/file.txt")
+
 
 # Method chaining for validation workflows
 def validate_user_data(data: dict) -> dict:
@@ -269,12 +277,15 @@ import typing as t
 from pathlib import Path
 from anyio import Path as AsyncPath
 
+
 class Action:
     """Action metadata container."""
+
     def __init__(self, name: str, path: AsyncPath):
         self.name = name
         self.path = path
         self.methods: list[str] = []
+
 
 async def register_actions(path: AsyncPath) -> list[Action]:
     """
@@ -325,10 +336,13 @@ async def register_actions(path: AsyncPath) -> list[Action]:
 
     return registered_actions
 
+
 # Global actions namespace for registration
 class Actions:
     """Global namespace for all registered actions."""
+
     pass
+
 
 actions = Actions()
 ```
@@ -341,6 +355,7 @@ actions = Actions()
 
 import pytest
 from myproject.actions.validate import validate
+
 
 class TestValidateAction:
     """Test suite for validate action."""
@@ -391,47 +406,54 @@ class TestValidateAction:
         """Test JSON string validation."""
         # Valid JSON
         assert validate.json_string('{"key": "value"}') is True
-        assert validate.json_string('[]') is True
-        assert validate.json_string('null') is True
+        assert validate.json_string("[]") is True
+        assert validate.json_string("null") is True
 
         # Invalid JSON
         assert validate.json_string('{"key": value}') is False  # Unquoted value
-        assert validate.json_string('not json') is False
+        assert validate.json_string("not json") is False
 ```
 
 ## Best Practices for ACB Semantic Actions
 
 ### 1. **Semantic Naming**
+
 - Actions should be **verbs** describing what they do
 - Methods should be **specific operations** within that action domain
 - Use clear, descriptive names that indicate purpose
 
 ### 2. **Method Organization**
+
 - Group related operations under a single action class
 - Use static methods for stateless operations
 - Use async methods only for I/O operations (file access, network requests)
 
 ### 3. **Error Handling**
+
 - Always handle exceptions gracefully
 - Provide meaningful error messages
 - Use appropriate exception types
 
 ### 4. **Type Safety**
+
 - Include comprehensive type hints for all parameters and return values
 - Use `typing` module for complex types
 - Document parameter and return types in docstrings
 
 ### 5. **Documentation**
+
 - Include docstrings for all classes and methods
 - Provide usage examples in docstrings
 - Document exceptions that may be raised
 
 ### 6. **Testing**
+
 - Create comprehensive test suites for all action methods
 - Test both success and failure cases
 - Use pytest for async test support when needed
 
 ### 7. **Export Pattern**
+
 - Always include `__all__` list for auto-discovery
 - Export action instances with lowercase names
 - Keep action classes as implementation detail

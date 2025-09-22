@@ -105,11 +105,13 @@ def gzip(
 ```
 
 **Parameters:**
+
 - `content` (str | bytes): The data to compress
 - `path` (str | Path, optional): Name of the file the compressed data came from
 - `compresslevel` (int, default=6): Compression level (1-9, where 9 is highest compression)
 
 **Returns:**
+
 - `bytes`: The compressed data
 
 #### `compress.brotli`
@@ -121,10 +123,12 @@ def brotli(data: bytes | str, level: int = 3) -> bytes
 ```
 
 **Parameters:**
+
 - `data` (bytes | str): The data to compress
 - `level` (int, default=3): Compression quality level (0-11, where 11 is highest quality)
 
 **Returns:**
+
 - `bytes`: The compressed data
 
 ### Decompress
@@ -138,9 +142,11 @@ def gzip(content: Any) -> str
 ```
 
 **Parameters:**
+
 - `content` (bytes): The compressed data
 
 **Returns:**
+
 - `str`: The decompressed content as a string
 
 #### `decompress.brotli`
@@ -152,9 +158,11 @@ def brotli(data: bytes) -> str
 ```
 
 **Parameters:**
+
 - `data` (bytes): The compressed data
 
 **Returns:**
+
 - `str`: The decompressed content as a string
 
 ## Examples
@@ -199,12 +207,16 @@ for algorithm in ["gzip", "brotli"]:
         for level in [1, 6, 9]:
             compressed = compress.gzip(large_text, compresslevel=level)
             ratio = len(compressed) / len(large_text)
-            print(f"gzip (level {level}): {len(compressed)} bytes, {ratio:.2%} of original")
+            print(
+                f"gzip (level {level}): {len(compressed)} bytes, {ratio:.2%} of original"
+            )
     else:
         for level in [1, 5, 11]:
             compressed = compress.brotli(large_text, level=level)
             ratio = len(compressed) / len(large_text)
-            print(f"brotli (level {level}): {len(compressed)} bytes, {ratio:.2%} of original")
+            print(
+                f"brotli (level {level}): {len(compressed)} bytes, {ratio:.2%} of original"
+            )
 ```
 
 ## Performance Considerations

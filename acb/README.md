@@ -42,7 +42,7 @@ The diagram below illustrates how these systems interact:
 └─────────────────┘     └─────────────────┘
 ```
 
----
+______________________________________________________________________
 
 ## 1. Configuration and Settings
 
@@ -52,6 +52,7 @@ ACB uses a robust configuration system based on [Pydantic](https://pydantic-docs
 
 - **Dynamic Settings Sources**
   The configuration system aggregates settings from multiple sources:
+
   - **Initialization Parameters:** Passed in at startup.
   - **YAML Configuration Files:** Settings are read from YAML files (e.g., `app.yml` for application settings, or other adapter-specific YAML files).
   - **File-based Secrets:** Manages secrets stored in files within a designated secrets directory.
@@ -59,11 +60,13 @@ ACB uses a robust configuration system based on [Pydantic](https://pydantic-docs
 
 - **Settings Models**
   Two main settings models extend from a common Base Settings class:
+
   - **`AppSettings`:** Defines application-wide settings including the app name, secret key, secure salt, title, domain, platform, and version.
   - **`DebugSettings`:** Provides configuration options for debugging, such as whether production mode is active or if secrets/logging should be enabled.
 
 - **Initialization Routine**
   On startup, ACB performs initial setup tasks:
+
   - Registers the package via `register_pkg()`.
   - Ensures all required temporary and secrets directories are created.
   - Reads and aggregates settings from the various sources using custom classes: `InitSettingsSource`, `YamlSettingsSource`, `FileSecretSource`, and `ManagerSecretSource`.
@@ -83,7 +86,7 @@ uv add "acb[secret,config]"
 
 For more detailed configuration information, refer to [Configuration Documentation](./CONFIGURATION.md).
 
----
+______________________________________________________________________
 
 ## 2. Dependency Injection
 
@@ -114,11 +117,11 @@ import typing as t
 Cache = import_adapter("cache")
 Storage = import_adapter("storage")
 
+
 @depends.inject
-async def process_file(file_id: str,
-                 cache=depends(Cache),
-                 storage=depends(Storage),
-                 config=depends(Config)) -> bytes | None:
+async def process_file(
+    file_id: str, cache=depends(Cache), storage=depends(Storage), config=depends(Config)
+) -> bytes | None:
     # Use multiple injected dependencies together
     cached_data: bytes | None = await cache.get(f"file:{file_id}")
     if not cached_data:
@@ -131,7 +134,7 @@ async def process_file(file_id: str,
 
 For more information on dependency injection, please see the [Dependency Injection Documentation](./DEPENDENCY-INJECTION.md).
 
----
+______________________________________________________________________
 
 ## 3. Debugging Tools
 
@@ -202,11 +205,13 @@ from acb.debug import timeit
 import asyncio
 import typing as t
 
+
 @timeit
 async def expensive_operation(data: dict[str, t.Any]) -> dict[str, t.Any]:
     # Your code here
     await asyncio.sleep(0.5)  # Simulate processing
     return {"result": "processed", "input_size": len(data)}
+
 
 # When called, the execution time will be logged:
 # expensive_operation took 0.501s
@@ -220,24 +225,23 @@ For complex objects, the asynchronous pretty printing function provides better r
 from acb.debug import pprint
 import asyncio
 
+
 async def main():
     complex_data = {
         "users": [
             {"id": 1, "name": "Alice", "roles": ["admin", "user"]},
-            {"id": 2, "name": "Bob", "roles": ["user"]}
+            {"id": 2, "name": "Bob", "roles": ["user"]},
         ],
         "settings": {
             "theme": "dark",
             "notifications": True,
-            "preferences": {
-                "language": "en",
-                "timezone": "UTC"
-            }
-        }
+            "preferences": {"language": "en", "timezone": "UTC"},
+        },
     }
 
     # Pretty print the complex data structure
     await pprint(complex_data)
+
 
 asyncio.run(main())
 ```
@@ -260,6 +264,7 @@ patch_record(module, "Debug message with module context")
 
 # Initialize debug configuration
 from acb.debug import init_debug
+
 init_debug()  # Configures debug output based on environment
 ```
 
@@ -267,17 +272,17 @@ init_debug()  # Configures debug output based on environment
 
 1. **Enable Module-Specific Debugging**: If you're having issues with a specific component, enable debugging just for that module in your debug settings.
 
-2. **Check Environment Variables**: The `DEPLOYED` environment variable affects debug behavior. Set it to "False" during development for more verbose output.
+1. **Check Environment Variables**: The `DEPLOYED` environment variable affects debug behavior. Set it to "False" during development for more verbose output.
 
-3. **Use Colorized Output**: In development environments, colorized output makes it easier to spot important information. This is enabled by default in non-production environments.
+1. **Use Colorized Output**: In development environments, colorized output makes it easier to spot important information. This is enabled by default in non-production environments.
 
-4. **Combine with Logging**: For persistent debugging information, use the logging system alongside the debug utilities.
+1. **Combine with Logging**: For persistent debugging information, use the logging system alongside the debug utilities.
 
-5. **Performance Considerations**: In production environments, be selective about what you debug to avoid performance impacts.
+1. **Performance Considerations**: In production environments, be selective about what you debug to avoid performance impacts.
 
 For detailed examples and further instructions, refer to the [Debug Documentation](./DEBUG.md).
 
----
+______________________________________________________________________
 
 ## 4. Logging
 
@@ -316,7 +321,7 @@ uv add "acb[loguru,structlog]"
 
 For more details on logging configuration and customization, see the [Logging Documentation](./LOGGING.md).
 
----
+______________________________________________________________________
 
 ## Related Projects
 
@@ -324,7 +329,7 @@ ACB is used in several projects including:
 
 - [**FastBlocks**](https://github.com/lesleslie/fastblocks): A web application framework built on Starlette that leverages ACB's component architecture to create a powerful platform for server-side rendered HTMX applications. FastBlocks extends ACB with web-specific adapters for templates, routing, authentication, and admin interfaces.
 
----
+______________________________________________________________________
 
 ## Further Reading
 

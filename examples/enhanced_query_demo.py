@@ -9,6 +9,7 @@ This example demonstrates the enhanced query interface with:
 
 import asyncio
 import contextlib
+import typing as t
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -48,13 +49,13 @@ class Order:
 
 
 # Custom Specifications
-class ActiveUserSpec(Specification[User]):
+class ActiveUserSpec(Specification[User]):  # type: ignore[misc]
     """Specification for active users."""
 
     def is_satisfied_by(self, candidate: User) -> bool:
         return candidate.status == "active"
 
-    def to_query_spec(self) -> QuerySpec:
+    def to_query_spec(self) -> QuerySpec:  # type: ignore[name-defined]
         from acb.adapters.models._query import QueryCondition, QuerySpec
 
         spec = QuerySpec()
@@ -64,13 +65,13 @@ class ActiveUserSpec(Specification[User]):
         return spec
 
 
-class PremiumUserSpec(Specification[User]):
+class PremiumUserSpec(Specification[User]):  # type: ignore[misc]
     """Specification for premium users."""
 
     def is_satisfied_by(self, candidate: User) -> bool:
         return candidate.is_premium or candidate.subscription_type == "premium"
 
-    def to_query_spec(self) -> QuerySpec:
+    def to_query_spec(self) -> QuerySpec:  # type: ignore[name-defined]
         from acb.adapters.models._query import QueryCondition, QuerySpec
 
         spec = QuerySpec()
@@ -81,7 +82,7 @@ class PremiumUserSpec(Specification[User]):
         return spec
 
 
-class RecentUserSpec(Specification[User]):
+class RecentUserSpec(Specification[User]):  # type: ignore[misc]
     """Specification for recently created users."""
 
     def __init__(self, days: int = 7) -> None:
@@ -93,7 +94,7 @@ class RecentUserSpec(Specification[User]):
         cutoff = datetime.now() - timedelta(days=self.days)
         return candidate.created_at >= cutoff
 
-    def to_query_spec(self) -> QuerySpec:
+    def to_query_spec(self) -> QuerySpec:  # type: ignore[name-defined]
         from acb.adapters.models._query import QueryCondition, QuerySpec
 
         spec = QuerySpec()
@@ -105,43 +106,50 @@ class RecentUserSpec(Specification[User]):
 
 
 # Custom Repository
-class UserRepository(Repository[User]):
+class UserRepository(Repository[User]):  # type: ignore[misc]
     """Custom repository with domain-specific query methods."""
 
     async def find_active(self) -> list[User]:
         """Find active users."""
-        return await self.find_by_specification(ActiveUserSpec())
+        result = await self.find_by_specification(ActiveUserSpec())
+        return t.cast(list[User], result)  # type: ignore[no-any-return]
 
     async def find_premium(self) -> list[User]:
         """Find premium users."""
-        return await self.find_by_specification(PremiumUserSpec())
+        result = await self.find_by_specification(PremiumUserSpec())
+        return t.cast(list[User], result)  # type: ignore[no-any-return]
 
     async def find_active_premium(self) -> list[User]:
         """Find active premium users."""
         spec = ActiveUserSpec().and_(PremiumUserSpec())
-        return await self.find_by_specification(spec)
+        result = await self.find_by_specification(spec)
+        return t.cast(list[User], result)  # type: ignore[no-any-return]
 
     async def find_recent(self, days: int = 7) -> list[User]:
         """Find recently created users."""
-        return await self.find_by_specification(RecentUserSpec(days))
+        result = await self.find_by_specification(RecentUserSpec(days))
+        return t.cast(list[User], result)  # type: ignore[no-any-return]
 
     async def find_by_age_range(self, min_age: int, max_age: int) -> list[User]:
         """Find users within age range."""
         spec = range_spec("age", min_age, max_age)
-        return await self.find_by_specification(spec)
+        result = await self.find_by_specification(spec)
+        return t.cast(list[User], result)  # type: ignore[no-any-return]
 
     async def find_by_email_domain(self, domain: str) -> list[User]:
         """Find users with specific email domain."""
         spec = field("email").like(f"%@{domain}")
-        return await self.find_by_specification(spec)
+        result = await self.find_by_specification(spec)
+        return t.cast(list[User], result)  # type: ignore[no-any-return]
 
     async def find_inactive_users(self, days: int = 30) -> list[User]:
         """Find users who haven't logged in recently."""
         cutoff = datetime.now() - timedelta(days=days)
         spec = field("last_login").less_than(cutoff).or_(field("last_login").is_null())
-        return await self.find_by_specification(spec)
+        result = await self.find_by_specification(spec)
+        return t.cast(list[User], result)  # type: ignore[no-any-return]
 
-    async def get_user_statistics(self) -> dict:
+    async def get_user_statistics(self) -> dict[str, t.Any]:
         """Get user statistics."""
         total_users = await self.count()
         active_users = await self.count(ActiveUserSpec())

@@ -41,8 +41,8 @@ class SFTPHandler(SFTPServer):
 
 
 class Ftpd(FtpdBase):
-    _server: asyncssh.SSHServer | None = None
-    _client: SSHClientConnection | None = None
+    _server: t.Any = None  # type: ignore[assignment]
+    _client: SSHClientConnection | None = None  # type: ignore[assignment]
     _sftp_client: SFTPClient | None = None
     _server_task: asyncio.Task[t.Any] | None = None
     _server_acceptor: asyncssh.SSHAcceptor | None = None
@@ -65,11 +65,11 @@ class Ftpd(FtpdBase):
                 process_factory=self._process_factory,
                 encoding=None,
             )
-            logger.info(
+            logger.info(  # type: ignore[no-untyped-call]
                 f"SFTP server started on {self.config.ftpd.host}:{self.config.ftpd.port}",
             )
         except (OSError, Error) as exc:
-            logger.exception(f"Error starting SFTP server: {exc}")
+            logger.exception(f"Error starting SFTP server: {exc}")  # type: ignore[no-untyped-call]
             raise
 
     def _create_server_connection(self) -> asyncssh.SSHServer:
@@ -99,13 +99,13 @@ class Ftpd(FtpdBase):
     @depends.inject
     async def stop(self, logger: Logger = depends()) -> None:
         try:
-            if self._server:
+            if self._server and self._server_acceptor:
                 self._server_acceptor.close()
                 await self._server_acceptor.wait_closed()
                 self._server_acceptor = None
-            logger.info("SFTP server stopped")
+            logger.info("SFTP server stopped")  # type: ignore[no-untyped-call]
         except Exception as exc:
-            logger.exception(f"Error stopping SFTP server: {exc}")
+            logger.exception(f"Error stopping SFTP server: {exc}")  # type: ignore[no-untyped-call]
             raise
 
     async def _ensure_client(self) -> SFTPClient:

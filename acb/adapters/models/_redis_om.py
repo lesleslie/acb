@@ -9,23 +9,25 @@ from __future__ import annotations
 import inspect
 from typing import Any, TypeVar, get_args, get_origin
 
-from acb.adapters.models._query import ModelAdapter
+from acb.adapters.models._attrs import ModelAdapter
 
 try:
-    from redis_om import HashModel as RedisOMHashModel
+    from redis_om import HashModel
 
-    HashModel = RedisOMHashModel  # type: ignore[misc]
     _redis_om_available = True
 except ImportError:
     _redis_om_available = False
 
-    class HashModel:  # type: ignore[misc]
+    class _FallbackHashModel:
         pass
+
+
+HashModel = HashModel if _redis_om_available else _FallbackHashModel
 
 
 REDIS_OM_AVAILABLE = _redis_om_available
 
-T = TypeVar("T", bound=HashModel)
+T = TypeVar("T", bound="HashModel")
 
 
 class RedisOMModelAdapter(ModelAdapter[T]):
@@ -38,9 +40,9 @@ class RedisOMModelAdapter(ModelAdapter[T]):
         if hasattr(instance, "model_dump") and callable(
             getattr(instance, "model_dump")
         ):
-            return getattr(instance, "model_dump")()
+            return getattr(instance, "model_dump")()  # type: ignore  # type: ignore[no-any-return]
         elif hasattr(instance, "dict") and callable(getattr(instance, "dict")):
-            return getattr(instance, "dict")()
+            return getattr(instance, "dict")()  # type: ignore  # type: ignore[no-any-return]
         return self._manual_serialize(instance)
 
     def _manual_serialize(self, instance: T) -> dict[str, Any]:
@@ -72,7 +74,7 @@ class RedisOMModelAdapter(ModelAdapter[T]):
 
     def _serialize_value(self, value: Any) -> Any:
         if isinstance(value, HashModel):
-            return self.serialize(value)  # type: ignore[arg-type]
+            return self.serialize(value)
         if isinstance(value, list):
             return [self._serialize_value(item) for item in value]
         if isinstance(value, dict):
@@ -96,9 +98,9 @@ class RedisOMModelAdapter(ModelAdapter[T]):
         data: dict[str, Any],
     ) -> dict[str, Any]:
         if hasattr(model_class, "__fields__"):
-            model_fields = set(model_class.__fields__.keys())  # type: ignore[attr-defined]
+            model_fields = set(model_class.__fields__.keys())
         elif hasattr(model_class, "model_fields"):
-            model_fields = set(model_class.model_fields.keys())  # type: ignore[attr-defined]
+            model_fields = set(model_class.model_fields.keys())
         else:
             return data
 
@@ -108,23 +110,23 @@ class RedisOMModelAdapter(ModelAdapter[T]):
         if hasattr(model_class, "Meta"):
             meta = model_class.Meta  # type: ignore[attr-defined]
             if hasattr(meta, "model_key_prefix"):
-                return meta.model_key_prefix
+                return meta.model_key_prefix  # type: ignore  # type: ignore[no-any-return]
             if hasattr(meta, "global_key_prefix"):
-                return meta.global_key_prefix
+                return meta.global_key_prefix  # type: ignore  # type: ignore[no-any-return]
         if hasattr(model_class, "__collection_name__"):
-            return model_class.__collection_name__  # type: ignore[attr-defined]
-        return model_class.__name__.lower()
+            return model_class.__collection_name__  # type: ignore[attr-defined, no-any-return]
+        return model_class.__name__.lower()  # type: ignore  # type: ignore[no-any-return]
 
     def get_field_mapping(self, model_class: type[T]) -> dict[str, str]:
         field_mapping = {}
         if hasattr(model_class, "model_fields"):
-            for field_name, field_info in model_class.model_fields.items():  # type: ignore[attr-defined]
+            for field_name, field_info in model_class.model_fields.items():  # type: ignore  # type: ignore[attr-defined]
                 alias = field_name
                 if hasattr(field_info, "alias") and field_info.alias:
                     alias = field_info.alias
                 field_mapping[field_name] = alias
         elif hasattr(model_class, "__fields__"):
-            for field_name, field_info in model_class.__fields__.items():  # type: ignore[attr-defined]
+            for field_name, field_info in model_class.__fields__.items():  # type: ignore  # type: ignore[attr-defined]
                 alias = field_name
                 if hasattr(field_info, "alias") and field_info.alias:
                     alias = field_info.alias
@@ -154,25 +156,25 @@ class RedisOMModelAdapter(ModelAdapter[T]):
         if fields:
             for field_name, field_info in fields.items():
                 if hasattr(field_info, "primary_key") and field_info.primary_key:
-                    return field_name
+                    return field_name  # type: ignore  # type: ignore[no-any-return]
             common_pk_names = ["pk", "id", "primary_key", "_id"]
             for field_name in fields:
                 if field_name in common_pk_names:
-                    return field_name
+                    return field_name  # type: ignore  # type: ignore[no-any-return]
 
-        return "pk"
+        return "pk"  # type: ignore  # type: ignore[no-any-return]
 
     def get_field_type(self, model_class: type[T], field_name: str) -> type:
         if hasattr(model_class, "model_fields"):
             field_info = model_class.model_fields.get(field_name)  # type: ignore[attr-defined]
             if field_info:
-                return field_info.annotation
+                return field_info.annotation  # type: ignore  # type: ignore[no-any-return]
         elif hasattr(model_class, "__fields__"):
             field_info = model_class.__fields__.get(field_name)  # type: ignore[attr-defined]
             if field_info:
-                return getattr(field_info, "type_", Any)  # type: ignore[return-value]
+                return getattr(field_info, "type_", Any)  # type: ignore[no-any-return,arg-type]
         elif hasattr(model_class, "__annotations__"):
-            return model_class.__annotations__.get(field_name, Any)  # type: ignore[return-value]
+            return model_class.__annotations__.get(field_name, Any)  # type: ignore  # type: ignore[no-any-return]
 
         return Any  # type: ignore[return-value]
 

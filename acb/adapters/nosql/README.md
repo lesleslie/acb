@@ -45,7 +45,7 @@ The ACB NoSQL adapter offers:
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| -------------- | --------------------------------------------- | ------------------------------------------------ |
 | **MongoDB** | Document-oriented database using Beanie | Complex document storage, queries, aggregations |
 | **Firestore** | Google Cloud Firestore | Google Cloud deployments, real-time applications |
 | **Redis** | In-memory data structure store using Redis-OM | Caching, pub/sub, simple data structures |
@@ -124,12 +124,7 @@ NoSQL = import_adapter("nosql")
 nosql = depends.get(NoSQL)
 
 # Traditional usage - insert a document
-user = {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "age": 30,
-    "active": True
-}
+user = {"name": "John Doe", "email": "john@example.com", "age": 30, "active": True}
 user_id = await nosql.users.insert_one(user)
 
 # Find documents
@@ -151,6 +146,7 @@ from acb.adapters.nosql._query import NoSQLDatabaseAdapter
 from acb.adapters.models._pydantic import PydanticModelAdapter
 from pydantic import BaseModel, Field
 
+
 # Define your model
 class Product(BaseModel):
     id: str = Field(default=None, alias="_id")
@@ -159,12 +155,14 @@ class Product(BaseModel):
     category: str
     active: bool = True
 
+
 # Register adapters
 registry.register_database_adapter("nosql", NoSQLDatabaseAdapter(nosql))
 registry.register_model_adapter("pydantic", PydanticModelAdapter())
 
 # Create query interface
 query = ACBQuery(database_adapter_name="nosql", model_adapter_name="pydantic")
+
 
 # Simple CRUD operations
 async def product_operations():
@@ -175,17 +173,14 @@ async def product_operations():
     product = await query.for_model(Product).simple.find("12345")
 
     # Create new product
-    new_product = await query.for_model(Product).simple.create({
-        "name": "Smart Watch",
-        "price": 299.99,
-        "category": "electronics"
-    })
+    new_product = await query.for_model(Product).simple.create(
+        {"name": "Smart Watch", "price": 299.99, "category": "electronics"}
+    )
 
     # Update product
-    updated_product = await query.for_model(Product).simple.update("12345", {
-        "price": 249.99,
-        "on_sale": True
-    })
+    updated_product = await query.for_model(Product).simple.update(
+        "12345", {"price": 249.99, "on_sale": True}
+    )
 
     # Delete product
     await query.for_model(Product).simple.delete("12345")
@@ -203,11 +198,12 @@ repo_options = RepositoryOptions(
     cache_enabled=True,
     cache_ttl=300,  # 5 minutes
     enable_soft_delete=True,
-    audit_enabled=True
+    audit_enabled=True,
 )
 
 # Create repository
 product_repo = query.for_model(Product).repository(repo_options)
+
 
 async def repository_operations():
     # Find active products (domain-specific method)
@@ -219,7 +215,7 @@ async def repository_operations():
     # Batch operations
     products_data = [
         {"name": "Product 1", "price": 19.99, "category": "books"},
-        {"name": "Product 2", "price": 29.99, "category": "electronics"}
+        {"name": "Product 2", "price": 29.99, "category": "electronics"},
     ]
     created_products = await product_repo.batch_create(products_data)
 
@@ -227,9 +223,7 @@ async def repository_operations():
     product_count = await product_repo.count()
 
     # Exists check
-    has_electronics = await product_repo.exists(
-        field("category").equals("electronics")
-    )
+    has_electronics = await product_repo.exists(field("category").equals("electronics"))
 ```
 
 ### Specification Pattern
@@ -238,6 +232,7 @@ The Specification pattern allows you to create composable, reusable business rul
 
 ```python
 from acb.adapters.models._specification import field, range_spec, custom_spec
+
 
 async def specification_operations():
     # Create specifications
@@ -249,30 +244,36 @@ async def specification_operations():
     affordable_electronics = active_spec & electronics_spec & price_range_spec
 
     # Use specifications in queries
-    products = await query.for_model(Product).specification.with_spec(affordable_electronics).all()
+    products = (
+        await query.for_model(Product)
+        .specification.with_spec(affordable_electronics)
+        .all()
+    )
 
     # Custom specifications with NoSQL-specific logic
     def trending_product_predicate(product):
         return product.views > 1000 and product.rating > 4.5
 
     from acb.adapters.models._query import QuerySpec, QueryFilter
+
     trending_spec = custom_spec(
         predicate=trending_product_predicate,
-        query_spec=QuerySpec(filter=QueryFilter()
-            .where("views", ">", 1000)
-            .where("rating", ">", 4.5)
+        query_spec=QuerySpec(
+            filter=QueryFilter().where("views", ">", 1000).where("rating", ">", 4.5)
         ),
-        name="TrendingProduct"
+        name="TrendingProduct",
     )
 
     # Complex business rules
     premium_trending = (
-        field("price").greater_than(100.0) &
-        field("category").in_list(["electronics", "jewelry"]) &
-        trending_spec
+        field("price").greater_than(100.0)
+        & field("category").in_list(["electronics", "jewelry"])
+        & trending_spec
     )
 
-    premium_products = await query.for_model(Product).specification.with_spec(premium_trending).all()
+    premium_products = (
+        await query.for_model(Product).specification.with_spec(premium_trending).all()
+    )
 ```
 
 ### Advanced Query Builder
@@ -285,15 +286,16 @@ async def advanced_nosql_operations():
     advanced_query = query.for_model(Product).advanced
 
     # Method chaining for complex filters
-    products = await (advanced_query
-        .where("active", True)
+    products = await (
+        advanced_query.where("active", True)
         .where_gt("price", 50.0)
         .where_in("category", ["electronics", "books", "toys"])
         .where_like("name", "%smart%")
         .order_by_desc("created_at")
         .limit(20)
         .offset(10)
-        .all())
+        .all()
+    )
 
     # Aggregations
     product_count = await advanced_query.where("category", "electronics").count()
@@ -304,14 +306,16 @@ async def advanced_nosql_operations():
     # Complex aggregation pipeline (MongoDB-style, works across implementations)
     pipeline = [
         {"$match": {"active": True}},
-        {"$group": {
-            "_id": "$category",
-            "count": {"$sum": 1},
-            "avg_price": {"$avg": "$price"},
-            "max_price": {"$max": "$price"}
-        }},
+        {
+            "$group": {
+                "_id": "$category",
+                "count": {"$sum": 1},
+                "avg_price": {"$avg": "$price"},
+                "max_price": {"$max": "$price"},
+            }
+        },
         {"$sort": {"count": -1}},
-        {"$limit": 10}
+        {"$limit": 10},
     ]
     category_stats = await advanced_query.aggregate(pipeline)
 ```
@@ -332,20 +336,21 @@ async def hybrid_nosql_operations():
 
         # Use specifications for complex business rules
         discount_spec = field("discount_percent").greater_than(20)
-        discounted_products = await product_manager.specification.with_spec(discount_spec).all()
+        discounted_products = await product_manager.specification.with_spec(
+            discount_spec
+        ).all()
 
         # Use advanced queries for bulk operations
-        await product_manager.advanced.where_in("id", [p.id for p in discounted_products]).update({
-            "featured": True,
-            "promotion_end": datetime.now() + timedelta(days=7)
-        })
+        await product_manager.advanced.where_in(
+            "id", [p.id for p in discounted_products]
+        ).update(
+            {"featured": True, "promotion_end": datetime.now() + timedelta(days=7)}
+        )
 
         # Use simple queries for basic operations
-        new_product = await product_manager.simple.create({
-            "name": "Limited Edition Item",
-            "price": 99.99,
-            "category": "special"
-        })
+        new_product = await product_manager.simple.create(
+            {"name": "Limited Edition Item", "price": 99.99, "category": "special"}
+        )
 ```
 
 ## Traditional NoSQL Operations
@@ -361,12 +366,7 @@ NoSQL = import_adapter("nosql")
 nosql = depends.get(NoSQL)
 
 # Insert a document
-user = {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "age": 30,
-    "active": True
-}
+user = {"name": "John Doe", "email": "john@example.com", "age": 30, "active": True}
 user_id = await nosql.users.insert_one(user)
 
 # Find documents
@@ -375,10 +375,7 @@ for user in active_users:
     print(f"User: {user['name']}, Email: {user['email']}")
 
 # Update a document
-await nosql.users.update_one(
-    {"_id": user_id},
-    {"$set": {"last_login": datetime.now()}}
-)
+await nosql.users.update_one({"_id": user_id}, {"$set": {"last_login": datetime.now()}})
 
 # Delete a document
 await nosql.users.delete_one({"email": "john@example.com"})
@@ -392,7 +389,7 @@ product = {
     "name": "Smartphone",
     "price": 699.99,
     "category": "electronics",
-    "in_stock": True
+    "in_stock": True,
 }
 product_id = await nosql.products.insert_one(product)
 
@@ -406,19 +403,12 @@ for item in electronics:
 
 ```python
 # Redis works with the same interface
-user = {
-    "name": "Jane Smith",
-    "email": "jane@example.com",
-    "score": 95
-}
+user = {"name": "Jane Smith", "email": "jane@example.com", "score": 95}
 user_id = await nosql.users.insert_one(user)
 
 # Find and update
 user = await nosql.users.find_one({"_id": user_id})
-await nosql.users.update_one(
-    {"_id": user_id},
-    {"$set": {"score": 98}}
-)
+await nosql.users.update_one({"_id": user_id}, {"$set": {"score": 98}})
 ```
 
 ## Advanced Features
@@ -435,14 +425,8 @@ async with query.for_model(Product).transaction():
 
 # Traditional transaction handling
 async with nosql.transaction():
-    await nosql.accounts.update_one(
-        {"_id": "account1"},
-        {"$set": {"balance": 900}}
-    )
-    await nosql.accounts.update_one(
-        {"_id": "account2"},
-        {"$set": {"balance": 1100}}
-    )
+    await nosql.accounts.update_one({"_id": "account1"}, {"$set": {"balance": 900}})
+    await nosql.accounts.update_one({"_id": "account2"}, {"$set": {"balance": 1100}})
 ```
 
 ### Aggregation Pipelines
@@ -451,12 +435,14 @@ async with nosql.transaction():
 # MongoDB-style aggregation that works across implementations
 pipeline = [
     {"$match": {"status": "active"}},
-    {"$group": {
-        "_id": "$category",
-        "count": {"$sum": 1},
-        "avg_price": {"$avg": "$price"}
-    }},
-    {"$sort": {"count": -1}}
+    {
+        "$group": {
+            "_id": "$category",
+            "count": {"$sum": 1},
+            "avg_price": {"$avg": "$price"},
+        }
+    },
+    {"$sort": {"count": -1}},
 ]
 
 # Works with universal query interface
@@ -472,6 +458,7 @@ categories = await nosql.products.aggregate(pipeline)
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
+
 # Define a model
 class Product(BaseModel):
     id: Optional[str] = Field(default=None, alias="_id")
@@ -480,6 +467,7 @@ class Product(BaseModel):
     category: str
     tags: List[str] = []
     in_stock: bool = True
+
 
 # Use with universal query interface (automatic serialization/deserialization)
 products = await query.for_model(Product).simple.all()
@@ -508,7 +496,7 @@ pipeline = [
     {"$match": {"category": "electronics"}},
     {"$group": {"_id": "$brand", "total_sales": {"$sum": "$sales"}}},
     {"$sort": {"total_sales": -1}},
-    {"$limit": 10}
+    {"$limit": 10},
 ]
 top_brands = await query.for_model(Product).advanced.aggregate(pipeline)
 ```
@@ -516,7 +504,7 @@ top_brands = await query.for_model(Product).advanced.aggregate(pipeline)
 ### Implementation Performance
 
 | Implementation | Universal Query | Traditional NoSQL | Query Flexibility | Best For |
-|----------------|----------------|-------------------|-------------------|----------|
+| -------------- | --------------- | ----------------- | ----------------- | ----------------------------------- |
 | **MongoDB** | Excellent | Excellent | Very High | Complex documents, flexible schemas |
 | **Firestore** | Excellent | Good | High | Real-time applications, mobile/web |
 | **Redis** | Good | Excellent | Limited | Caching, simple structures |

@@ -16,6 +16,7 @@ ACB's logging system is built for async applications:
 from acb.depends import depends
 from acb.logger import Logger
 
+
 @depends.inject
 async def async_operation(logger: Logger = depends()):
     logger.info("Starting async operation")
@@ -39,7 +40,7 @@ async def structured_logging_example(logger: Logger = depends()):
         user_id=123,
         ip_address="192.168.1.1",
         success=True,
-        duration_ms=150
+        duration_ms=150,
     )
 
     # Log with context
@@ -48,7 +49,7 @@ async def structured_logging_example(logger: Logger = depends()):
         database="postgresql",
         host="db.example.com",
         port=5432,
-        retry_count=3
+        retry_count=3,
     )
 ```
 
@@ -139,6 +140,7 @@ from acb.depends import depends
 from acb.logger import Logger
 import time
 
+
 @depends.inject
 async def operation_with_logging_context(logger: Logger = depends()):
     start_time = time.time()
@@ -150,10 +152,7 @@ async def operation_with_logging_context(logger: Logger = depends()):
         await complex_async_operation()
 
         duration = time.time() - start_time
-        logger.info(
-            "Operation completed successfully",
-            duration_seconds=duration
-        )
+        logger.info("Operation completed successfully", duration_seconds=duration)
 
     except Exception as e:
         duration = time.time() - start_time
@@ -161,7 +160,7 @@ async def operation_with_logging_context(logger: Logger = depends()):
             "Operation failed",
             error=str(e),
             duration_seconds=duration,
-            exc_info=True  # Include full traceback
+            exc_info=True,  # Include full traceback
         )
         raise
 ```
@@ -171,6 +170,7 @@ async def operation_with_logging_context(logger: Logger = depends()):
 ```python
 from acb.depends import depends
 from acb.logger import Logger
+
 
 @depends.inject
 async def custom_formatting_example(logger: Logger = depends()):
@@ -192,12 +192,10 @@ from acb.debug import debug, timeit
 from acb.depends import depends
 from acb.logger import Logger
 
+
 @timeit
 @depends.inject
-async def debug_and_log_example(
-    data: dict,
-    logger: Logger = depends()
-):
+async def debug_and_log_example(data: dict, logger: Logger = depends()):
     # Quick debug output (development only)
     debug(f"Processing {len(data)} items")
 
@@ -208,18 +206,13 @@ async def debug_and_log_example(
         result = await process_data(data)
 
         logger.info(
-            "Data processing completed",
-            item_count=len(data),
-            result_count=len(result)
+            "Data processing completed", item_count=len(data), result_count=len(result)
         )
         return result
 
     except Exception as e:
         logger.error(
-            "Data processing failed",
-            item_count=len(data),
-            error=str(e),
-            exc_info=True
+            "Data processing failed", item_count=len(data), error=str(e), exc_info=True
         )
         raise
 ```
@@ -249,15 +242,11 @@ logger.add(
     level="ERROR",
     format="{time} | {level} | {message}",
     rotation="1 day",
-    retention="1 week"
+    retention="1 week",
 )
 
 # Add JSON sink for structured data
-logger.add(
-    "logs/structured.json",
-    serialize=True,
-    level="INFO"
-)
+logger.add("logs/structured.json", serialize=True, level="INFO")
 ```
 
 ## Performance Considerations
@@ -269,24 +258,23 @@ from acb.depends import depends
 from acb.logger import Logger
 import asyncio
 
+
 @depends.inject
 async def high_performance_logging(logger: Logger = depends()):
     # Batch log operations when possible
     events = []
 
     for i in range(1000):
-        events.append({
-            "event": "data_processed",
-            "item_id": i,
-            "timestamp": time.time()
-        })
+        events.append(
+            {"event": "data_processed", "item_id": i, "timestamp": time.time()}
+        )
 
     # Log batch summary instead of individual items
     logger.info(
         "Batch processing completed",
         batch_size=len(events),
         first_item=events[0]["item_id"],
-        last_item=events[-1]["item_id"]
+        last_item=events[-1]["item_id"],
     )
 ```
 
@@ -297,11 +285,10 @@ from acb.depends import depends
 from acb.config import Config
 from acb.logger import Logger
 
+
 @depends.inject
 async def conditional_logging(
-    data: dict,
-    config: Config = depends(),
-    logger: Logger = depends()
+    data: dict, config: Config = depends(), logger: Logger = depends()
 ):
     # Only log verbose information in debug mode
     if config.debug.enabled:
@@ -319,6 +306,7 @@ async def conditional_logging(
 from acb.depends import depends
 from acb.logger import Logger
 
+
 @depends.inject
 async def error_handling_example(logger: Logger = depends()):
     try:
@@ -326,11 +314,7 @@ async def error_handling_example(logger: Logger = depends()):
         return result
 
     except ValueError as e:
-        logger.warning(
-            "Invalid input data",
-            error=str(e),
-            error_type="ValueError"
-        )
+        logger.warning("Invalid input data", error=str(e), error_type="ValueError")
         raise
 
     except ConnectionError as e:
@@ -338,7 +322,7 @@ async def error_handling_example(logger: Logger = depends()):
             "External service unavailable",
             error=str(e),
             error_type="ConnectionError",
-            service="external_api"
+            service="external_api",
         )
         raise
 
@@ -347,7 +331,7 @@ async def error_handling_example(logger: Logger = depends()):
             "Unexpected error occurred",
             error=str(e),
             error_type=type(e).__name__,
-            exc_info=True  # Include full traceback
+            exc_info=True,  # Include full traceback
         )
         raise
 ```
@@ -359,11 +343,10 @@ import asyncio
 from acb.depends import depends
 from acb.logger import Logger
 
+
 @depends.inject
 async def retry_with_logging(
-    operation_name: str,
-    max_retries: int = 3,
-    logger: Logger = depends()
+    operation_name: str, max_retries: int = 3, logger: Logger = depends()
 ):
     for attempt in range(max_retries + 1):
         try:
@@ -371,15 +354,13 @@ async def retry_with_logging(
                 "Attempting operation",
                 operation=operation_name,
                 attempt=attempt + 1,
-                max_retries=max_retries
+                max_retries=max_retries,
             )
 
             result = await some_operation()
 
             logger.info(
-                "Operation succeeded",
-                operation=operation_name,
-                attempt=attempt + 1
+                "Operation succeeded", operation=operation_name, attempt=attempt + 1
             )
             return result
 
@@ -389,7 +370,7 @@ async def retry_with_logging(
                     "Operation failed after all retries",
                     operation=operation_name,
                     attempts=max_retries + 1,
-                    final_error=str(e)
+                    final_error=str(e),
                 )
                 raise
             else:
@@ -398,9 +379,9 @@ async def retry_with_logging(
                     operation=operation_name,
                     attempt=attempt + 1,
                     error=str(e),
-                    retry_in_seconds=2 ** attempt
+                    retry_in_seconds=2**attempt,
                 )
-                await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                await asyncio.sleep(2**attempt)  # Exponential backoff
 ```
 
 ## Integration Examples
@@ -415,11 +396,10 @@ import time
 
 app = FastAPI()
 
+
 @depends.inject
 async def log_request_middleware(
-    request: Request,
-    call_next,
-    logger: Logger = depends()
+    request: Request, call_next, logger: Logger = depends()
 ):
     start_time = time.time()
 
@@ -427,7 +407,7 @@ async def log_request_middleware(
         "Request started",
         method=request.method,
         path=request.url.path,
-        client_ip=request.client.host
+        client_ip=request.client.host,
     )
 
     response = await call_next(request)
@@ -439,7 +419,7 @@ async def log_request_middleware(
         method=request.method,
         path=request.url.path,
         status_code=response.status_code,
-        duration_seconds=duration
+        duration_seconds=duration,
     )
 
     return response
@@ -452,18 +432,14 @@ from acb.depends import depends
 from acb.logger import Logger
 from acb.debug import timeit
 
+
 @timeit
 @depends.inject
-async def data_pipeline_with_logging(
-    input_data: list,
-    logger: Logger = depends()
-):
+async def data_pipeline_with_logging(input_data: list, logger: Logger = depends()):
     pipeline_id = f"pipeline-{int(time.time())}"
 
     logger.info(
-        "Pipeline started",
-        pipeline_id=pipeline_id,
-        input_count=len(input_data)
+        "Pipeline started", pipeline_id=pipeline_id, input_count=len(input_data)
     )
 
     # Stage 1: Validation
@@ -473,7 +449,7 @@ async def data_pipeline_with_logging(
         "Validation completed",
         pipeline_id=pipeline_id,
         valid_count=len(validated_data),
-        rejected_count=len(input_data) - len(validated_data)
+        rejected_count=len(input_data) - len(validated_data),
     )
 
     # Stage 2: Processing
@@ -482,13 +458,13 @@ async def data_pipeline_with_logging(
     logger.info(
         "Processing completed",
         pipeline_id=pipeline_id,
-        processed_count=len(processed_data)
+        processed_count=len(processed_data),
     )
 
     logger.info(
         "Pipeline completed successfully",
         pipeline_id=pipeline_id,
-        final_count=len(processed_data)
+        final_count=len(processed_data),
     )
 
     return processed_data
@@ -497,12 +473,12 @@ async def data_pipeline_with_logging(
 ## Best Practices
 
 1. **Use Structured Logging**: Include relevant context in log messages
-2. **Appropriate Log Levels**: Use the right level for each message type
-3. **Performance Awareness**: Avoid logging in tight loops or high-frequency operations
-4. **Sensitive Data**: Never log passwords, API keys, or personal information
-5. **Context Binding**: Use logger binding for request/operation tracking
-6. **Error Context**: Include relevant error context and stack traces
-7. **Async Considerations**: Use async-compatible logging practices
+1. **Appropriate Log Levels**: Use the right level for each message type
+1. **Performance Awareness**: Avoid logging in tight loops or high-frequency operations
+1. **Sensitive Data**: Never log passwords, API keys, or personal information
+1. **Context Binding**: Use logger binding for request/operation tracking
+1. **Error Context**: Include relevant error context and stack traces
+1. **Async Considerations**: Use async-compatible logging practices
 
 ## Troubleshooting
 

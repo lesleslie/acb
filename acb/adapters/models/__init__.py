@@ -1,18 +1,18 @@
 """Models Adapter Package.
 
-This package provides model adapters for different frameworks:
-- pydantic: Pydantic model adapter for universal query interface
-- sqlmodel: SQLModel adapter for universal query interface
+This package provides simple model adapters for different frameworks:
+- pydantic: Pydantic model adapter
+- sqlmodel: SQLModel adapter
+- sqlalchemy: SQLAlchemy adapter
+- attrs: Attrs model adapter
+- msgspec: Msgspec model adapter
+- redis_om: Redis OM adapter
 
-Internal modules (prefixed with _):
-- _query: Core query interface protocols and classes
-- _hybrid: Hybrid query interface supporting multiple styles
-- _repository: Repository pattern implementation
-- _specification: Specification pattern implementation
-- _base: Base classes and protocols
+Simplified architecture focusing on basic model operations.
 """
 
 from contextlib import suppress
+from functools import lru_cache
 from typing import Any
 
 from acb.adapters.models._attrs import AttrsModelAdapter
@@ -47,35 +47,43 @@ class ModelsAdapter(ModelsBase):
 
     def _get_pydantic_adapter(self) -> PydanticModelAdapter[Any]:
         if self._pydantic_adapter is None:
-            self._pydantic_adapter = PydanticModelAdapter[Any]()
+            self._pydantic_adapter = PydanticModelAdapter[Any]()  # type: ignore[no-untyped-call]
         return self._pydantic_adapter
 
     def _get_sqlmodel_adapter(self) -> SQLModelAdapter[Any]:
         if self._sqlmodel_adapter is None:
-            self._sqlmodel_adapter = SQLModelAdapter[Any]()
+            self._sqlmodel_adapter = SQLModelAdapter[Any]()  # type: ignore[no-untyped-call]
         return self._sqlmodel_adapter
 
     def _get_sqlalchemy_adapter(self) -> SQLAlchemyModelAdapter[Any]:
         if self._sqlalchemy_adapter is None:
-            self._sqlalchemy_adapter = SQLAlchemyModelAdapter[Any]()
+            self._sqlalchemy_adapter = SQLAlchemyModelAdapter[Any]()  # type: ignore[no-untyped-call]
         return self._sqlalchemy_adapter
 
     def _get_msgspec_adapter(self) -> MsgspecModelAdapter[Any]:
         if self._msgspec_adapter is None:
-            self._msgspec_adapter = MsgspecModelAdapter[Any]()
+            self._msgspec_adapter = MsgspecModelAdapter[Any]()  # type: ignore[no-untyped-call]
         return self._msgspec_adapter
 
     def _get_attrs_adapter(self) -> AttrsModelAdapter[Any]:
         if self._attrs_adapter is None:
-            self._attrs_adapter = AttrsModelAdapter[Any]()
+            self._attrs_adapter = AttrsModelAdapter[Any]()  # type: ignore[no-untyped-call]
         return self._attrs_adapter
 
     def _get_redis_om_adapter(self) -> RedisOMModelAdapter[Any]:
         if self._redis_om_adapter is None:
-            self._redis_om_adapter = RedisOMModelAdapter[Any]()
+            self._redis_om_adapter = RedisOMModelAdapter[Any]()  # type: ignore[no-untyped-call]
         return self._redis_om_adapter
 
     def auto_detect_model_type(self, model_class: type[Any]) -> str:
+        """Auto-detect model type with performance optimization.
+
+        Uses cached detection to avoid repeated imports and type checking.
+        """
+        return _cached_auto_detect_model_type(model_class)
+
+    def _detect_model_type_uncached(self, model_class: type[Any]) -> str:
+        """Uncached model type detection for internal use."""
         with suppress(ImportError):
             from sqlmodel import SQLModel
 
@@ -140,3 +148,24 @@ class ModelsAdapter(ModelsBase):
             return self._get_attrs_adapter()
 
         return self._get_pydantic_adapter()
+
+
+# Cache for model type detection using model class ID as key
+@lru_cache(maxsize=512)
+def _cached_auto_detect_model_type(model_class: type[Any]) -> str:
+    """Cached model type detection to avoid repeated imports.
+
+    This function caches the result of model type detection to avoid
+    repeated expensive imports and subclass checks.
+
+    Args:
+        model_class: The model class to detect type for
+
+    Returns:
+        The detected model type as string
+    """
+    # Create a temporary instance to access the detection method
+    # Note: This is a performance optimization that trades a small
+    # instantiation cost for much faster subsequent lookups
+    temp_adapter = ModelsAdapter()  # type: ignore[no-untyped-call]
+    return temp_adapter._detect_model_type_uncached(model_class)

@@ -8,7 +8,7 @@ from uuid import UUID
 
 from aioftp import AsyncPathIO, Client, Permission, Server, User
 from anyio import Path as AsyncPath
-from acb.adapters import AdapterStatus
+from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 from acb.logger import Logger
 
@@ -16,6 +16,36 @@ from ._base import FileInfo, FtpdBase, FtpdBaseSettings
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b7f5f8443c6c")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="FTP Server",
+    category="ftpd",
+    provider="aioftp",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.CONNECTION_POOLING,
+    ],
+    required_packages=["aioftp", "anyio"],
+    description="FTP server and client adapter with async support",
+    settings_class="FtpdSettings",
+    config_example={
+        "host": "127.0.0.1",
+        "port": 8021,
+        "username": "ftpuser",
+        "password": "ftppass",  # pragma: allowlist secret
+        "root_dir": "/tmp/ftp",  # nosec B108
+        "anonymous": False,
+        "passive_ports_min": 50000,
+        "passive_ports_max": 50100,
+    },
+)
 
 
 class FtpdSettings(FtpdBaseSettings):
@@ -26,7 +56,7 @@ class FtpdSettings(FtpdBaseSettings):
 
 
 class Ftpd(FtpdBase):
-    _client: Client | None = None
+    _client: Client | None = None  # type: ignore[assignment]
     _path_io: AsyncPathIO | None = None
 
     @cached_property
@@ -42,7 +72,7 @@ class Ftpd(FtpdBase):
         if self.config.ftpd.anonymous:
             anonymous_user = User(
                 login="anonymous",
-                password="",
+                password="",  # nosec B106
                 base_path=self.config.ftpd.root_dir,
                 permissions=[Permission(writable=False)],
             )
@@ -74,21 +104,21 @@ class Ftpd(FtpdBase):
     async def start(self, logger: Logger = depends()) -> None:
         try:
             await self.server.start()
-            logger.info(
+            logger.info(  # type: ignore[no-untyped-call]
                 f"FTP server started on {self.config.ftpd.host}:{self.config.ftpd.port}",
             )
         except Exception as exc:
             await self.server.close()
-            logger.exception(f"Error starting FTP server: {exc}")
+            logger.exception(f"Error starting FTP server: {exc}")  # type: ignore[no-untyped-call]
             raise
 
     @depends.inject
     async def stop(self, logger: Logger = depends()) -> None:
         try:
             await self.server.close()
-            logger.info("FTP server stopped")
+            logger.info("FTP server stopped")  # type: ignore[no-untyped-call]
         except Exception as exc:
-            logger.exception(f"Error stopping FTP server: {exc}")
+            logger.exception(f"Error stopping FTP server: {exc}")  # type: ignore[no-untyped-call]
             raise
 
     async def _ensure_client(self) -> Client:
@@ -179,10 +209,10 @@ class Ftpd(FtpdBase):
             size=int(file_info.get("size", 0)),
             is_dir=file_info["type"] == "dir",
             is_file=file_info["type"] == "file",
-            permissions=file_info.get("permissions", ""),
+            permissions=str(file_info.get("permissions", "")),
             mtime=float(file_info.get("modify", 0.0)),
-            owner=file_info.get("owner", ""),
-            group=file_info.get("group", ""),
+            owner=str(file_info.get("owner", "")),
+            group=str(file_info.get("group", "")),
         )
 
     async def read_text(self, path: str) -> str:

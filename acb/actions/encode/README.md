@@ -44,6 +44,7 @@ Import the encoding and decoding utilities from the Encode action:
 
 ```python
 from acb.actions.encode import encode, decode
+
 # - or -
 from acb.actions.encode import dump, load  # Aliases for encode/decode
 ```
@@ -59,7 +60,7 @@ data = {
     "version": "1.0.0",
     "features": ["actions", "adapters", "dependency injection"],
     "active": True,
-    "timestamp": 1632152400
+    "timestamp": 1632152400,
 }
 
 # Encode to different formats
@@ -103,7 +104,7 @@ loaded_config = await decode.yaml(config_path)
 ### Supported Formats
 
 | Format | Encoding Method | Decoding Method | Library Used |
-|--------|----------------|-----------------|--------------|
+| ------- | ------------------ | ------------------ | --------------------------------------- |
 | JSON | `encode.json()` | `decode.json()` | msgspec.json |
 | YAML | `encode.yaml()` | `decode.yaml()` | msgspec.yaml with enhanced yaml support |
 | TOML | `encode.toml()` | `decode.toml()` | msgspec.toml |
@@ -124,12 +125,14 @@ async def encode.format(
 ```
 
 **Parameters:**
+
 - `obj` (Any): Python object to encode
 - `path` (AsyncPath, optional): File path to write encoded data to
 - `sort_keys` (bool, default=False): Whether to sort dictionary keys (YAML only)
 - `**kwargs`: Format-specific parameters passed to the underlying encoder
 
 **Returns:**
+
 - `bytes`: Encoded data (if path is not provided)
 
 #### Decoding Methods
@@ -143,11 +146,13 @@ async def decode.format(
 ```
 
 **Parameters:**
+
 - `obj` (bytes/str/AsyncPath): Data to decode or path to read from
 - `use_list` (bool, default=False): Use lists instead of tuples for arrays (MsgPack only)
 - `**kwargs`: Format-specific parameters passed to the underlying decoder
 
 **Returns:**
+
 - `Any`: Decoded Python object
 
 ## Examples
@@ -162,18 +167,12 @@ import datetime
 # Complex data with various types
 data = {
     "name": "Example Project",
-    "config": {
-        "debug": True,
-        "max_connections": 100,
-        "timeout": 30.5
-    },
+    "config": {"debug": True, "max_connections": 100, "timeout": 30.5},
     "tags": ["web", "api", "async"],
     "created_at": datetime.datetime.now(),
-    "metadata": {
-        "author": "ACB User",
-        "version": "1.2.3"
-    }
+    "metadata": {"author": "ACB User", "version": "1.2.3"},
 }
+
 
 # Serialize to different formats
 async def serialize_example():
@@ -218,6 +217,7 @@ async def serialize_example():
 from acb.actions.encode import load, dump
 from anyio import Path as AsyncPath
 
+
 async def update_config(config_path: AsyncPath, updates: dict):
     # Load existing config
     config = await load.yaml(config_path)
@@ -233,18 +233,13 @@ async def update_config(config_path: AsyncPath, updates: dict):
     await dump.yaml(config, config_path, sort_keys=True)
     return config
 
+
 # Usage
 async def main():
     config_path = AsyncPath("settings.yaml")
     updates = {
-        "app": {
-            "debug": True,
-            "log_level": "DEBUG"
-        },
-        "server": {
-            "port": 8080,
-            "workers": 4
-        }
+        "app": {"debug": True, "log_level": "DEBUG"},
+        "server": {"port": 8080, "workers": 4},
     }
 
     updated_config = await update_config(config_path, updates)
@@ -254,6 +249,7 @@ async def main():
 ## Best Practices
 
 - **Choose the right format for your use case**:
+
   - JSON: For APIs and data interchange
   - YAML: For configuration files and human readability
   - TOML: For structured configuration files
@@ -261,15 +257,18 @@ async def main():
   - Pickle: For Python-specific object serialization (use cautiously)
 
 - **Security considerations**:
+
   - Never use `decode.pickle()` with untrusted data as it can execute arbitrary code
   - Prefer JSON or YAML for data from external sources
 
 - **Performance tips**:
+
   - MsgPack is typically faster and produces smaller output than JSON
   - Set `sort_keys=True` only when needed for YAML human readability
   - For large files, read/write directly to paths rather than loading into memory
 
 - **Error handling**:
+
   - Always handle potential encoding/decoding errors with try/except blocks
   - Validate data after decoding when working with external sources
 

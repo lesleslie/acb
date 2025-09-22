@@ -5,8 +5,11 @@ import typing as t
 from contextlib import suppress
 from pathlib import Path
 
+# Import devtools.pformat without direct import
+import devtools
+
+_pformat = getattr(devtools, "pformat")
 from aioconsole import aprint
-from devtools import pformat
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
 
@@ -24,23 +27,36 @@ _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 
 
 def get_calling_module() -> Path | None:
-    with suppress(AttributeError, TypeError):
-        config = depends.get("config")
-        mod = logging.currentframe().f_back.f_back.f_back.f_code.co_filename
-        mod = Path(mod).parent
-        if config.debug is not None:
-            debug_mod = getattr(config.debug, mod.stem, None)
-            return mod if debug_mod else None
+    with suppress(AttributeError, TypeError, RuntimeError):
+        try:
+            config = depends.get("config")
+        except RuntimeError:
+            # Config requires async initialization, use a fallback
+            return None
+
+        frame = logging.currentframe()
+        if (
+            frame
+            and frame.f_back
+            and frame.f_back.f_back
+            and frame.f_back.f_back.f_back
+        ):
+            mod_path = frame.f_back.f_back.f_back.f_code.co_filename
+            mod = Path(mod_path).parent
+            if config.debug is not None:
+                debug_mod = getattr(config.debug, mod.stem, None)
+                return mod if debug_mod else None
         return None
+    return None
 
 
 @depends.inject
 def patch_record(mod: Path | None, msg: str, logger: Logger = depends()) -> None:
     with suppress(Exception):
         if mod is not None:
-            logger.patch(lambda record: record.update(name=mod.name)).debug(msg)
+            logger.patch(lambda record: record.update(name=mod.name)).debug(msg)  # type: ignore[no-untyped-call]
         else:
-            logger.debug(msg)
+            logger.debug(msg)  # type: ignore[no-untyped-call]
 
 
 def colorized_stderr_print(s: str) -> None:
@@ -68,7 +84,7 @@ def print_debug_info(msg: str) -> t.Any:
 
 
 async def pprint(obj: t.Any) -> None:
-    await aprint(pformat(obj), use_stderr=True)
+    await aprint(_pformat(obj), use_stderr=True)
 
 
 def init_debug() -> None:
@@ -76,23 +92,53 @@ def init_debug() -> None:
 
     warnings.filterwarnings("ignore", category=RuntimeWarning, module="icecream")
     try:
-        config = depends.get("config")
+        try:
+            config = depends.get("config")
+        except RuntimeError:
+            # Config requires async initialization, use default settings
+            debug_args = {
+                "outputFunction": print_debug_info,
+                "argToStringFunction": lambda o: _pformat(o, highlight=False),
+            }
+            debug.configureOutput(  # type: ignore[no-untyped-call]
+                prefix="    debug:  ",
+                includeContext=True,
+                outputFunction=debug_args["outputFunction"],
+                argToStringFunction=debug_args["argToStringFunction"],
+            )
+            return
+
         debug_args = {
             "outputFunction": print_debug_info,
-            "argToStringFunction": lambda o: pformat(o, highlight=False),
+            "argToStringFunction": lambda o: _pformat(o, highlight=False),
         }
-        debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
+        debug.configureOutput(  # type: ignore[no-untyped-call]
+            prefix="    debug:  ",
+            includeContext=True,
+            outputFunction=debug_args["outputFunction"],
+            argToStringFunction=debug_args["argToStringFunction"],
+        )
         is_production = config.deployed
         if config.debug is not None and hasattr(config.debug, "production"):
             is_production = is_production or config.debug.production
         if is_production:
-            debug.configureOutput(prefix="", includeContext=False, **debug_args)
+            debug.configureOutput(  # type: ignore[no-untyped-call]
+                prefix="",
+                includeContext=False,
+                outputFunction=debug_args["outputFunction"],
+                argToStringFunction=debug_args["argToStringFunction"],
+            )
     except Exception:
         debug_args = {
             "outputFunction": print_debug_info,
-            "argToStringFunction": lambda o: pformat(o, highlight=False),
+            "argToStringFunction": lambda o: _pformat(o, highlight=False),
         }
-        debug.configureOutput(prefix="    debug:  ", includeContext=True, **debug_args)
+        debug.configureOutput(  # type: ignore[no-untyped-call]
+            prefix="    debug:  ",
+            includeContext=True,
+            outputFunction=debug_args["outputFunction"],
+            argToStringFunction=debug_args["argToStringFunction"],
+        )
 
 
 init_debug()

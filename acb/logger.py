@@ -4,10 +4,7 @@ import sys
 import typing as t
 from inspect import currentframe
 
-try:
-    import nest_asyncio
-except ImportError:
-    nest_asyncio = None
+# Removed nest_asyncio import - not needed in library code
 from aioconsole import aprint
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
@@ -15,8 +12,7 @@ from loguru._logger import Logger as _Logger
 from .config import Config, Settings, debug
 from .depends import depends
 
-if nest_asyncio:
-    nest_asyncio.apply()
+# Removed nest_asyncio.apply() - not needed in library code
 
 
 class LoggerSettings(Settings):
@@ -68,7 +64,7 @@ class LoggerBase(LoggerProtocol):
 class Logger(_Logger, LoggerBase):
     @depends.inject
     def __init__(self) -> None:
-        super().__init__(
+        super().__init__(  # type: ignore[no-untyped-call]
             core=_Core(),
             exception=None,
             depth=0,
@@ -100,19 +96,20 @@ class Logger(_Logger, LoggerBase):
         )
 
     def _configure_for_testing(self) -> None:
-        self.remove()
-        self.configure(handlers=[])
+        self.remove()  # type: ignore[no-untyped-call]
+        self.configure(handlers=[])  # type: ignore[no-untyped-call]
 
     def _configure_logger(self) -> None:
-        self.remove()
-        self.configure(
+        self.remove()  # type: ignore[no-untyped-call]
+        self.configure(  # type: ignore[no-untyped-call]
             patcher=lambda record: record["extra"].update(
                 mod_name=self._patch_name(record),
             ),
         )
         self.config.logger.log_level = (
             self.config.logger.deployed_level.upper()
-            if self.config.deployed or self.config.debug.production
+            if self.config.deployed
+            or (self.config.debug and self.config.debug.production)
             else self.config.logger.log_level
         )
         self.config.logger.level_per_module = {
@@ -136,7 +133,7 @@ class Logger(_Logger, LoggerBase):
         if name in self.config.logger.level_per_module:
             level_ = self.config.logger.level_per_module[name]
         try:
-            levelno_ = self.level(level_).no
+            levelno_ = self.level(level_).no  # type: ignore[no-untyped-call]
         except ValueError:
             msg = f"The filter dict contains a module '{name}' associated to a level  name which does not exist: '{level_}'"
             raise ValueError(
@@ -144,11 +141,11 @@ class Logger(_Logger, LoggerBase):
             )
         if level_ is False:
             return False
-        return record["level"].no >= levelno_
+        return bool(record["level"].no >= levelno_)
 
     def _add_logger_sink(self) -> None:
         try:
-            self.add(
+            self.add(  # type: ignore[no-untyped-call]
                 self.async_sink,
                 filter=t.cast("t.Any", self._filter_by_module),
                 **self.config.logger.settings,
@@ -160,7 +157,7 @@ class Logger(_Logger, LoggerBase):
                 raise
 
     def _add_sync_sink(self) -> None:
-        self.add(
+        self.add(  # type: ignore[no-untyped-call]
             lambda msg: print(msg, end=""),
             filter=t.cast("t.Any", self._filter_by_module),
             **{k: v for k, v in self.config.logger.settings.items() if k != "enqueue"},
@@ -168,19 +165,19 @@ class Logger(_Logger, LoggerBase):
 
     def _setup_level_colors(self) -> None:
         for level, color in self.config.logger.level_colors.items():
-            self.level(level.upper(), color=f"[{color}]")
+            self.level(level.upper(), color=f"[{color}]")  # type: ignore[no-untyped-call]
 
     def _log_debug_levels(self) -> None:
-        if self.config.debug.logger:
-            self.debug("debug")
-            self.info("info")
-            self.warning("warning")
-            self.error("error")
-            self.critical("critical")
+        if self.config.debug and self.config.debug.logger:
+            self.debug("debug")  # type: ignore[no-untyped-call]
+            self.info("info")  # type: ignore[no-untyped-call]
+            self.warning("warning")  # type: ignore[no-untyped-call]
+            self.error("error")  # type: ignore[no-untyped-call]
+            self.critical("critical")  # type: ignore[no-untyped-call]
 
     def _log_app_info(self) -> None:
-        self.info(f"App path: {self.config.root_path}")
-        self.info(f"App deployed: {self.config.deployed}")
+        self.info(f"App path: {self.config.root_path}")  # type: ignore[no-untyped-call]
+        self.info(f"App deployed: {self.config.deployed}")  # type: ignore[no-untyped-call]
 
 
 depends.set(Logger)
@@ -191,14 +188,14 @@ class InterceptHandler(logging.Handler):
     @depends.inject
     def emit(self, record: logging.LogRecord, logger: Logger = depends()) -> None:
         try:
-            level = logger.level(record.levelname).name
+            level = logger.level(record.levelname).name  # type: ignore[no-untyped-call]
         except ValueError:
             level = record.levelno
         frame, depth = (currentframe(), 0)
         while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
             frame = frame.f_back
             depth += 1
-        logger.opt(depth=depth, exception=record.exc_info).log(
+        logger.opt(depth=depth, exception=record.exc_info).log(  # type: ignore[no-untyped-call]
             level,
             record.getMessage(),
         )

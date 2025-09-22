@@ -29,7 +29,7 @@ user_data = {
     "id": 123,
     "name": "Alice",
     "roles": ["admin", "user"],
-    "settings": {"theme": "dark", "notifications": True}
+    "settings": {"theme": "dark", "notifications": True},
 }
 debug(user_data)  # Outputs nicely formatted representation
 ```
@@ -43,11 +43,13 @@ from acb.debug import timeit
 import asyncio
 import typing as t
 
+
 @timeit
 async def slow_operation(data: dict[str, t.Any]) -> dict[str, t.Any]:
     """This function's execution time will be logged."""
     await asyncio.sleep(0.5)  # Simulate slow operation
     return {"processed": True, "input_size": len(data)}
+
 
 # When called, outputs: slow_operation took 0.501s
 result = await slow_operation({"key": "value"})
@@ -61,21 +63,23 @@ For complex data structures, use the async pretty print function:
 from acb.debug import pprint
 import asyncio
 
+
 async def main():
     complex_data = {
         "users": [
             {"id": 1, "name": "Alice", "roles": ["admin"]},
-            {"id": 2, "name": "Bob", "roles": ["user"]}
+            {"id": 2, "name": "Bob", "roles": ["user"]},
         ],
         "metadata": {
             "version": "1.0",
             "created": "2024-01-01",
-            "settings": {"debug": True, "verbose": False}
-        }
+            "settings": {"debug": True, "verbose": False},
+        },
     }
 
     # Pretty print with enhanced formatting
     await pprint(complex_data)
+
 
 asyncio.run(main())
 ```
@@ -126,6 +130,7 @@ from acb.debug import get_calling_module, patch_record
 from acb.depends import depends
 from acb.logger import Logger
 
+
 def debug_with_context():
     # Get the module that called this function
     module = get_calling_module()
@@ -146,11 +151,9 @@ from acb.debug import debug
 from acb.depends import depends
 from acb.config import Config
 
+
 @depends.inject
-async def conditional_debug(
-    data: dict,
-    config: Config = depends()
-):
+async def conditional_debug(data: dict, config: Config = depends()):
     if config.debug.enabled and config.debug.cache:
         debug(f"Cache operation: {data}")
 
@@ -165,6 +168,7 @@ Combine timing with detailed analysis:
 ```python
 from acb.debug import timeit, debug
 import time
+
 
 @timeit
 async def profile_operation():
@@ -182,6 +186,7 @@ async def profile_operation():
 
     return "Operation complete"
 
+
 # Output includes both overall timing and internal breakdowns
 ```
 
@@ -196,11 +201,9 @@ from acb.debug import debug
 from acb.depends import depends
 from acb.logger import Logger
 
+
 @depends.inject
-async def debug_with_logging(
-    data: dict,
-    logger: Logger = depends()
-):
+async def debug_with_logging(data: dict, logger: Logger = depends()):
     # Debug output in development goes to stderr
     # In production, it's routed to the logger
     debug(f"Processing data: {len(data)} items")
@@ -218,12 +221,9 @@ from acb.debug import debug, pprint
 from acb.depends import depends
 from acb.logger import Logger
 
+
 @depends.inject
-async def structured_debugging(
-    operation: str,
-    data: dict,
-    logger: Logger = depends()
-):
+async def structured_debugging(operation: str, data: dict, logger: Logger = depends()):
     # Quick debug for development
     debug(f"Operation: {operation}")
 
@@ -232,7 +232,7 @@ async def structured_debugging(
         "Operation started",
         operation=operation,
         data_size=len(data),
-        timestamp=time.time()
+        timestamp=time.time(),
     )
 
     # Pretty print complex data
@@ -248,10 +248,9 @@ from acb.debug import debug
 from acb.depends import depends
 from acb.config import Config
 
+
 @depends.inject
-async def environment_aware_debug(
-    config: Config = depends()
-):
+async def environment_aware_debug(config: Config = depends()):
     if not config.debug.production:
         # Verbose debugging in development
         debug("Detailed development information")
@@ -268,6 +267,7 @@ from acb.debug import debug, timeit
 from acb.depends import depends
 from acb.config import Config
 
+
 # Only apply timing decorator in debug mode
 @depends.inject
 def maybe_time_function(func):
@@ -275,6 +275,7 @@ def maybe_time_function(func):
     if config.debug.enabled:
         return timeit(func)
     return func
+
 
 @maybe_time_function
 async def potentially_slow_function():
@@ -287,6 +288,7 @@ async def potentially_slow_function():
 ```python
 from acb.debug import debug, timeit
 import typing as t
+
 
 class DebugContext:
     def __init__(self, operation: str):
@@ -305,6 +307,7 @@ class DebugContext:
         else:
             debug(f"{self.operation} completed in {duration:.3f}s")
 
+
 # Usage
 async def complex_operation():
     async with DebugContext("User data processing"):
@@ -319,16 +322,19 @@ async def complex_operation():
 ### Common Problems
 
 **Debug Output Not Appearing**:
+
 - Check that `debug.enabled` is `true` in configuration
 - Verify that the module-specific debug flag is enabled
 - Ensure you're not in production mode when expecting verbose output
 
 **Performance Impact**:
+
 - Use conditional debugging in production
 - Disable debug output for high-frequency operations
 - Consider using module-specific debug flags
 
 **Type Errors with Debug Functions**:
+
 - Ensure proper async/await usage with `pprint`
 - Check that debug functions are imported correctly
 
@@ -365,12 +371,10 @@ from acb.depends import depends as acb_depends
 
 app = FastAPI()
 
+
 @timeit
 @app.get("/users/{user_id}")
-async def get_user(
-    user_id: str,
-    cache=Depends(lambda: acb_depends.get("cache"))
-):
+async def get_user(user_id: str, cache=Depends(lambda: acb_depends.get("cache"))):
     debug(f"Fetching user: {user_id}")
 
     user = await cache.get(f"user:{user_id}")
@@ -385,6 +389,7 @@ async def get_user(
 
 ```python
 from acb.debug import debug, timeit, pprint
+
 
 @timeit
 async def process_data_pipeline(data: list[dict]):

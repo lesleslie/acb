@@ -27,7 +27,7 @@ class ActionProtocol(t.Protocol):
 
 
 class Actions:
-    def __getattr__(self, item: str) -> Action:
+    def __getattr__(self, item: str) -> t.Any:
         if item in self.__dict__:
             return self.__dict__[item]
         msg = f"Action {item} not found"
@@ -69,12 +69,12 @@ async def register_actions(path: AsyncPath) -> list[Action]:
         try:
             module = import_module(_action.module)
         except ModuleNotFoundError:
-            spec = util.spec_from_file_location(_action.path.stem, _action.path)
+            spec = util.spec_from_file_location(_action.path.stem, str(_action.path))
             if spec and spec.loader:
                 module = util.module_from_spec(spec)
                 spec.loader.exec_module(module)
             else:
-                continue
+                continue  # type: ignore[unreachable]
         if hasattr(module, "__all__"):
             _action.methods = module.__all__
             for attr in [a for a in dir(module) if a in module.__all__]:

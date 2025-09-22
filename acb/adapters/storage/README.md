@@ -38,7 +38,7 @@ The ACB Storage adapter offers a consistent way to interact with various storage
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| ----------------- | ---------------------------------- | -------------------------------- |
 | **File** | Local filesystem storage | Development, simple applications |
 | **Memory** | In-memory storage | Testing, ephemeral storage needs |
 | **S3** | Amazon S3 or S3-compatible storage | Production, cloud deployments |
@@ -182,7 +182,7 @@ print(f"Direct URL: {url}")
 # Generate a signed URL with expiration
 signed_url = await storage.media.get_signed_url(
     AsyncPath("private/report.pdf"),
-    expires=3600  # URL valid for 1 hour
+    expires=3600,  # URL valid for 1 hour
 )
 print(f"Signed URL (expires in 1 hour): {signed_url}")
 ```
@@ -198,8 +198,11 @@ for file_info in files:
     print(f"File: {file_info['name']}, Size: {file_info['size']}")
 
 # Recursively list files with a specific extension
-pdf_files = [f for f in await storage.documents.list(AsyncPath("reports/"), recursive=True)
-             if f['name'].endswith('.pdf')]
+pdf_files = [
+    f
+    for f in await storage.documents.list(AsyncPath("reports/"), recursive=True)
+    if f["name"].endswith(".pdf")
+]
 print(f"Found {len(pdf_files)} PDF files")
 ```
 
@@ -209,10 +212,7 @@ print(f"Found {len(pdf_files)} PDF files")
 from acb.adapters.storage import StorageFile
 
 # Create a StorageFile object
-file = StorageFile(
-    name="images/profile.jpg",
-    storage=storage.media
-)
+file = StorageFile(name="images/profile.jpg", storage=storage.media)
 
 # Work with the file
 print(f"File name: {file.name}")
@@ -255,21 +255,24 @@ Storage = import_adapter("storage")
 
 storage = depends.get(Storage)
 
+
 async def migrate_files(source_path: str, destination_path: str) -> None:
     """Migrate files from S3 to Google Cloud Storage"""
     # List all files in the source path
-    files: list[dict[str, t.Any]] = await s3_storage.documents.list(AsyncPath(source_path), recursive=True)
+    files: list[dict[str, t.Any]] = await s3_storage.documents.list(
+        AsyncPath(source_path), recursive=True
+    )
 
     # Migrate each file
     for file_info in files:
         # Get the relative path
-        relative_path = file_info['name'].replace(source_path, '', 1).lstrip('/')
+        relative_path = file_info["name"].replace(source_path, "", 1).lstrip("/")
 
         # Create the destination path
         dest_file_path = AsyncPath(f"{destination_path}/{relative_path}")
 
         # Read from source
-        content = await s3_storage.documents.open(AsyncPath(file_info['name']))
+        content = await s3_storage.documents.open(AsyncPath(file_info["name"]))
 
         # Write to destination
         await gcs_storage.documents.write(dest_file_path, content)
@@ -284,24 +287,27 @@ async def migrate_files(source_path: str, destination_path: str) -> None:
 When working with the Storage adapter, follow these security best practices:
 
 1. **Use Signed URLs** for controlled temporary access to private files
+
    ```python
    # Generate a short-lived signed URL for download
    signed_url = await storage.documents.get_signed_url(
        AsyncPath("confidential/report.pdf"),
-       expires=300  # 5 minutes only
+       expires=300,  # 5 minutes only
    )
    ```
 
-2. **Validate File Types** before storing user uploads
+1. **Validate File Types** before storing user uploads
+
    ```python
    import magic
+
 
    async def save_user_upload(file_data, filename):
        # Check file type using magic numbers
        mime_type = magic.from_buffer(file_data[:2048], mime=True)
 
        # Allow only specific file types
-       allowed_types = ['application/pdf', 'image/jpeg', 'image/png']
+       allowed_types = ["application/pdf", "image/jpeg", "image/png"]
        if mime_type not in allowed_types:
            raise ValueError(f"Unsupported file type: {mime_type}")
 
@@ -309,7 +315,8 @@ When working with the Storage adapter, follow these security best practices:
        await storage.documents.write(AsyncPath(f"uploads/{filename}"), file_data)
    ```
 
-3. **Implement Access Control** for sensitive files
+1. **Implement Access Control** for sensitive files
+
    ```python
    async def get_document(document_id, user):
        # Check if user has permission to access this document
@@ -319,11 +326,12 @@ When working with the Storage adapter, follow these security best practices:
        # Generate a short-lived URL for authorized access
        return await storage.documents.get_signed_url(
            AsyncPath(f"documents/{document_id}.pdf"),
-           expires=60  # 1 minute only
+           expires=60,  # 1 minute only
        )
    ```
 
-4. **Use Server-Side Encryption** for sensitive data
+1. **Use Server-Side Encryption** for sensitive data
+
    ```python
    # Configure encryption in your app.yml
    # storage:
@@ -337,27 +345,31 @@ When working with the Storage adapter, follow these security best practices:
 ### Common Issues
 
 1. **Authentication Failure with Cloud Storage**
+
    - **Problem**: `AuthenticationError: Could not authenticate with cloud provider`
    - **Solution**:
      - Check your authentication credentials
      - Ensure the service account has appropriate permissions
      - Verify your environment variables (AWS_ACCESS_KEY_ID, GOOGLE_APPLICATION_CREDENTIALS, etc.)
 
-2. **File Not Found**
+1. **File Not Found**
+
    - **Problem**: `FileNotFoundError: File does not exist`
    - **Solution**:
      - Verify the file path and bucket name are correct
      - Check case sensitivity (especially important for S3)
      - Ensure the file hasn't been deleted or moved
 
-3. **Permission Denied**
+1. **Permission Denied**
+
    - **Problem**: `PermissionError: Not authorized to access this resource`
    - **Solution**:
      - Check your IAM permissions for the storage bucket
      - Verify bucket policies and ACLs
      - Ensure your service account has the correct roles
 
-4. **Bucket Does Not Exist**
+1. **Bucket Does Not Exist**
+
    - **Problem**: `BucketNotFoundError: The specified bucket does not exist`
    - **Solution**:
      - Verify the bucket name in your configuration
@@ -369,25 +381,27 @@ When working with the Storage adapter, follow these security best practices:
 When working with storage systems, keep these performance factors in mind:
 
 1. **Implementation Performance**:
+
    | Implementation | Read Speed | Write Speed | Listing Speed | Best For |
-   |----------------|------------|------------|---------------|----------|
+   | ----------------- | ---------- | ----------- | ------------- | ------------------------ |
    | **File** | Fast | Fast | Medium | Local files, development |
    | **Memory** | Very fast | Very fast | Very fast | Testing, small files |
    | **S3** | Medium | Medium | Slow | Production, scalability |
    | **Cloud Storage** | Medium | Medium | Slow | GCP integration |
    | **Azure** | Medium | Medium | Slow | Azure integration |
 
-2. **Optimization Techniques**:
+1. **Optimization Techniques**:
+
    - **File Chunking**: Break large files into smaller chunks for parallel upload/download
    - **Caching Metadata**: Cache file metadata to avoid repeated stat calls
    - **Bulk Operations**: Use multi-file operations when possible
    - **Compression**: Compress files before storage when appropriate
 
-3. **Implementation Examples**:
+1. **Implementation Examples**:
 
 ```python
 # Example: Chunked file upload for large files
-async def upload_large_file(local_path, remote_path, chunk_size=8*1024*1024):
+async def upload_large_file(local_path, remote_path, chunk_size=8 * 1024 * 1024):
     """Upload a large file in chunks for better performance"""
     from aiofile import async_open
 
@@ -398,7 +412,7 @@ async def upload_large_file(local_path, remote_path, chunk_size=8*1024*1024):
     # Prepare upload
     chunks = total_size // chunk_size + (1 if total_size % chunk_size else 0)
 
-    async with async_open(local_path, 'rb') as f:
+    async with async_open(local_path, "rb") as f:
         for i in range(chunks):
             # Read a chunk
             await f.seek(i * chunk_size)
@@ -408,7 +422,7 @@ async def upload_large_file(local_path, remote_path, chunk_size=8*1024*1024):
             chunk_path = f"{remote_path}.part{i}"
             await storage.documents.write(AsyncPath(chunk_path), chunk)
 
-            print(f"Uploaded chunk {i+1}/{chunks} ({len(chunk)} bytes)")
+            print(f"Uploaded chunk {i + 1}/{chunks} ({len(chunk)} bytes)")
 
     # Implement provider-specific multipart completion
     # (This is simplified - actual implementation depends on the provider)

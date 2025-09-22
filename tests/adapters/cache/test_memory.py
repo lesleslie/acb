@@ -313,6 +313,116 @@ class TestMemoryCache:
                 call_kwargs = mock_smc.call_args[1]
                 assert call_kwargs["namespace"] == f"{app_name}:"
 
+    @pytest.mark.asyncio
+    async def test_cleanup_resources_with_multi_tier_cache(
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
+    ) -> None:
+        """Test _cleanup_resources with multi-tier cache."""
+        adapter = Cache()
+        adapter.config = mock_config
+        adapter.logger = mock_logger
+
+        # Create a mock multi-tier cache
+        mock_multi_tier_cache = MagicMock()
+        mock_multi_tier_cache.cleanup = AsyncMock()
+        adapter._multi_tier_cache = mock_multi_tier_cache
+
+        # Create a mock client
+        mock_client = MagicMock()
+        mock_client.clear = AsyncMock()
+        mock_client.close = AsyncMock()
+        adapter._client = mock_client
+
+        # Test cleanup
+        await adapter._cleanup_resources()
+
+        # Verify multi-tier cache cleanup was called
+        mock_multi_tier_cache.cleanup.assert_awaited_once()
+
+        # Verify client cleanup was called
+        mock_client.clear.assert_awaited_once()
+        mock_client.close.assert_awaited_once()
+        assert adapter._client is None
+
+    @pytest.mark.asyncio
+    async def test_cleanup_resources_multi_tier_cache_error(
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
+    ) -> None:
+        """Test _cleanup_resources when multi-tier cache cleanup fails."""
+        adapter = Cache()
+        adapter.config = mock_config
+        adapter.logger = mock_logger
+
+        # Create a mock multi-tier cache that raises an exception
+        mock_multi_tier_cache = MagicMock()
+        mock_multi_tier_cache.cleanup = AsyncMock(side_effect=Exception("Multi-tier cleanup failed"))
+        adapter._multi_tier_cache = mock_multi_tier_cache
+
+        # Create a mock client
+        mock_client = MagicMock()
+        mock_client.clear = AsyncMock()
+        mock_client.close = AsyncMock()
+        adapter._client = mock_client
+
+        # Test cleanup - should not raise exception
+        await adapter._cleanup_resources()
+
+        # Verify client cleanup was still called despite multi-tier error
+        mock_client.clear.assert_awaited_once()
+        mock_client.close.assert_awaited_once()
+        assert adapter._client is None
+
+    @pytest.mark.asyncio
+    async def test_cleanup_resources_client_error(
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
+    ) -> None:
+        """Test _cleanup_resources when client cleanup fails."""
+        adapter = Cache()
+        adapter.config = mock_config
+        adapter.logger = mock_logger
+
+        # Create a mock client that raises an exception
+        mock_client = MagicMock()
+        mock_client.clear = AsyncMock(side_effect=Exception("Client cleanup failed"))
+        mock_client.close = AsyncMock()
+        adapter._client = mock_client
+
+        # Test cleanup - should not raise exception
+        await adapter._cleanup_resources()
+
+        # Verify client was set to None despite error
+        assert adapter._client is None
+
+    @pytest.mark.asyncio
+    async def test_cleanup_resources_client_close_method_missing(
+        self,
+        mock_config: MagicMock,
+        mock_logger: MagicMock,
+    ) -> None:
+        """Test _cleanup_resources when client doesn't have close method."""
+        adapter = Cache()
+        adapter.config = mock_config
+        adapter.logger = mock_logger
+
+        # Create a mock client without close method
+        mock_client = MagicMock()
+        del mock_client.close  # Remove the close method
+        mock_client.clear = AsyncMock()
+        adapter._client = mock_client
+
+        # Test cleanup
+        await adapter._cleanup_resources()
+
+        # Verify client was cleaned up (clear called, but not close)
+        mock_client.clear.assert_awaited_once()
+        assert adapter._client is None
+
 
 @pytest.mark.skip(reason="Cache benchmark tests need adapter method implementation")
 class TestMemoryCacheBenchmarks:

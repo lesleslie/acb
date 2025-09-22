@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from re import search
 
-import dill
+import dill  # nosec B403
 import msgspec
 import toml
 import yaml
@@ -37,18 +37,19 @@ def yaml_encode(
     )
     result = yaml.dump_all(
         [
-            msgspec.yaml._to_builtins(
+            msgspec.yaml._to_builtins(  # type: ignore[attr-defined]
                 obj,
                 builtin_types=(_datetime.datetime, _datetime.date),
                 enc_hook=path_enc_hook,
             ),
         ],
-        encoding="utf-8",
         Dumper=t.cast("t.Any", dumper_class),
         allow_unicode=True,
         sort_keys=sort_keys,
     )
-    return result.encode() if isinstance(result, str) else result or b""
+    if isinstance(result, str):
+        return result.encode()
+    return t.cast(bytes, result)  # type: ignore[return-value]
 
 
 msgspec.yaml.encode = t.cast("t.Any", yaml_encode)
@@ -212,7 +213,7 @@ class Encode:
     async def _encode(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> bytes:
         if isinstance(obj, AsyncPath | Path):
             if self.action == "decode":
-                return await self._decode(obj, **kwargs)
+                return await self._decode(obj, **kwargs)  # type: ignore  # type: ignore[no-any-return]
             msg = f"Cannot encode a Path object directly: {obj}"
             raise TypeError(msg)
         obj = self._preprocess_data(obj, kwargs)
@@ -244,16 +245,19 @@ class Encode:
             raise ValueError(msg)
         if self.serializer is msgspec.json.encode and kwargs.get("indent") is not None:
             indent = kwargs.pop("indent")
-            return json.dumps(obj, indent=indent).encode()
+            result: bytes = json.dumps(obj, indent=indent).encode()
+            return result
         try:
-            return self.serializer(obj, **kwargs)
+            result_bytes: bytes = self.serializer(obj, **kwargs)
+            return result_bytes
         except TypeError as e:
             if (
                 "Extra keyword arguments provided" in str(e)
                 and self.serializer is msgspec.json.encode
             ):
                 filtered_kwargs = {k: v for k, v in kwargs.items() if k != "indent"}
-                return self.serializer(obj, **filtered_kwargs)
+                result_filtered: bytes = self.serializer(obj, **filtered_kwargs)
+                return result_filtered
             raise
 
     async def _write_to_path(self, data: bytes) -> None:

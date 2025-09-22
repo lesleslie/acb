@@ -5,7 +5,7 @@ from pydantic import SecretStr, field_validator
 from sentry_sdk import init as sentry_init
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from sentry_sdk.integrations.gcp import GcpIntegration
-from acb.adapters import AdapterStatus
+from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
 from acb.depends import depends
 
@@ -13,6 +13,34 @@ from ._base import MonitoringBase, MonitoringBaseSettings
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b827edf29f46")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Sentry Monitoring",
+    category="monitoring",
+    provider="sentry",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.METRICS,
+        AdapterCapability.TRACING,
+        AdapterCapability.LOGGING,
+    ],
+    required_packages=["sentry-sdk[loguru]"],
+    description="Sentry error tracking and performance monitoring",
+    settings_class="MonitoringSettings",
+    config_example={
+        "sentry_dsn": "https://key@sentry.io/project",  # pragma: allowlist secret
+        "sample_rate": 1.0,
+        "debug": False,
+        "profiles_sample_rate": 0.1,
+    },
+)
 
 
 class MonitoringSettings(MonitoringBaseSettings):
@@ -40,8 +68,8 @@ class Monitoring(MonitoringBase):
     async def init(self) -> None:
         sentry_init(
             dsn=self.config.monitoring.sentry_dsn.get_secret_value(),
-            server_name=self.config.app.name,
-            release=self.config.app.version,
+            server_name=self.config.app.name if self.config.app else "unknown",
+            release=self.config.app.version if self.config.app else "unknown",
             environment="development" if not self.config.deployed else "production",
             sample_rate=self.config.monitoring.sample_rate,
             debug=self.config.monitoring.debug,

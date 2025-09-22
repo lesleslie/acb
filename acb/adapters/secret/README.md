@@ -35,9 +35,11 @@ The ACB Secret adapter offers:
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| ------------------- | ------------------------------------------- | -------------------------------------- |
+| **Azure Key Vault** | Microsoft Azure Key Vault secret management | Azure deployments, enterprise security |
+| **Cloudflare** | Cloudflare Workers KV secret storage | Edge computing, global distribution |
 | **Infisical** | Open-source secret management platform | Team-based development |
-| **Secret Manager** | Cloud provider secret managers (GCP, AWS, Azure) | Cloud-based applications |
+| **Secret Manager** | Cloud provider secret managers (GCP, AWS) | Cloud-based applications |
 
 ## Installation
 
@@ -46,6 +48,8 @@ The ACB Secret adapter offers:
 uv add "acb[secret]"
 
 # Or with specific implementation
+uv add "acb[azure]"
+uv add "acb[cloudflare]"
 uv add "acb[infisical]"
 uv add "acb[secretmanager]"
 
@@ -60,6 +64,12 @@ uv add "acb[secret,config]"
 Configure the Secret adapter in your `settings/adapters.yml` file:
 
 ```yaml
+# Use Azure Key Vault implementation
+secret: azure
+
+# Use Cloudflare KV implementation
+secret: cloudflare
+
 # Use Infisical implementation
 secret: infisical
 
@@ -78,6 +88,20 @@ The Secret adapter settings can be customized in your `settings/app.yml` file:
 secret:
   # Required adapters (will ensure these are loaded first)
   requires: ["logger"]
+
+  # Azure Key Vault settings
+  vault_url: "https://your-vault.vault.azure.net/"  # Azure Key Vault URL
+  tenant_id: "your-tenant-id"  # Optional: Azure tenant ID (can use DefaultAzureCredential)
+  client_id: "your-client-id"  # Optional: Service principal client ID
+  client_secret: "your-client-secret"  # Optional: Service principal secret
+  secret_prefix: "acb-secrets-"  # Prefix for secret names
+
+  # Cloudflare KV settings
+  api_token: "your-cloudflare-api-token"  # Cloudflare API token
+  account_id: "your-account-id"  # Cloudflare account ID
+  namespace_id: "your-kv-namespace-id"  # KV namespace ID for secrets
+  key_prefix: "acb_secrets_"  # Prefix for secret keys
+  ttl: 3600  # Optional: TTL for secrets in seconds
 
   # Infisical settings
   host: "https://app.infisical.com"  # Infisical host URL
@@ -130,6 +154,131 @@ await secret.delete("old_api_key")
 ```
 
 ## Advanced Usage
+
+### Azure Key Vault-Specific Features
+
+The Azure Key Vault adapter provides integration with Microsoft Azure Key Vault for enterprise-grade secret management:
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+# Import the Secret adapter (configured to use Azure Key Vault)
+Secret = import_adapter("secret")
+secret = depends.get(Secret)
+
+# Azure Key Vault organizes secrets by vault with versioning support
+# These are configured in your settings/app.yml file
+
+# Get a secret from the configured Key Vault
+api_key = await secret.get("api_key")
+
+# Get a specific version of a secret
+api_key_v1 = await secret.get("api_key", version="v1")
+
+# Create a secret with automatic versioning
+await secret.create("new_secret", "secret-value")
+
+# Update a secret (creates a new version)
+await secret.update("existing_secret", "updated-value")
+
+# List all versions of a secret
+versions = await secret.list_versions("api_key")
+for version in versions:
+    print(f"Version: {version}")
+
+# List secrets with a specific prefix (e.g., all SQL-related secrets)
+sql_secrets = await secret.list("sql")
+```
+
+The Azure Key Vault adapter supports multiple authentication methods through DefaultAzureCredential:
+
+```yaml
+# Environment variables authentication (recommended for production)
+# Set these environment variables:
+# AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID
+secret:
+  vault_url: "https://your-vault.vault.azure.net/"
+  secret_prefix: "myapp-secrets-"
+
+# OR explicit service principal authentication
+secret:
+  vault_url: "https://your-vault.vault.azure.net/"
+  tenant_id: "your-tenant-id"
+  client_id: "your-client-id"
+  client_secret: "your-client-secret"
+  secret_prefix: "myapp-secrets-"
+```
+
+**Benefits of Azure Key Vault for secrets:**
+
+- Enterprise-grade security with HSM backing
+- Comprehensive audit logging and monitoring
+- Full secret versioning with history
+- Integration with Azure RBAC and policies
+- Soft delete and purge protection
+- Global availability with regional deployment
+
+**Limitations:**
+
+- Requires Azure subscription and authentication
+- Secret names limited to alphanumeric and dashes only
+- Costs associated with operations and storage
+
+### Cloudflare KV-Specific Features
+
+The Cloudflare KV adapter provides integration with Cloudflare Workers KV storage for globally distributed secret management:
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+# Import the Secret adapter (configured to use Cloudflare KV)
+Secret = import_adapter("secret")
+secret = depends.get(Secret)
+
+# Cloudflare KV organizes secrets by namespace with optional TTL
+# These are configured in your settings/app.yml file
+
+# Get a secret from the configured KV namespace
+api_key = await secret.get("api_key")
+
+# Create a secret with optional TTL (configured globally)
+await secret.create("new_secret", "secret-value")
+
+# Create a secret that expires (if TTL is configured)
+# TTL is set globally in configuration, not per-secret
+await secret.create("temp_token", "temporary-value")
+
+# List secrets with a specific prefix (e.g., all SQL-related secrets)
+sql_secrets = await secret.list("sql")
+```
+
+The Cloudflare KV adapter supports API token authentication and global distribution:
+
+```yaml
+# API token authentication (recommended)
+secret:
+  api_token: "your-cloudflare-api-token"
+  account_id: "your-account-id"
+  namespace_id: "your-kv-namespace-id"
+  key_prefix: "myapp_secrets_"  # Custom prefix for organizing secrets
+  ttl: 86400  # Optional: 24-hour TTL for all secrets
+```
+
+**Benefits of Cloudflare KV for secrets:**
+
+- Global edge distribution for low-latency access
+- Automatic encryption at rest
+- High availability and redundancy
+- Integration with Cloudflare Workers ecosystem
+- Cost-effective for read-heavy workloads
+
+**Limitations:**
+
+- No versioning support (KV stores only the latest value)
+- Limited to key-value storage (no complex data structures)
+- Eventual consistency model
 
 ### Infisical-Specific Features
 
@@ -213,7 +362,7 @@ secrets = {
     "db_host": "localhost",
     "db_port": "5432",
     "db_user": "postgres",
-    "db_password": "secure-password"
+    "db_password": "secure-password",
 }
 
 for key, value in secrets.items():
@@ -251,18 +400,22 @@ db_password = config.sql.password.get_secret_value()
 ### Common Issues
 
 1. **Authentication Errors**
+
    - **Problem**: `AuthenticationError: Failed to authenticate with secret manager`
    - **Solution**: Verify your credentials and token validity
 
-2. **Secret Not Found**
+1. **Secret Not Found**
+
    - **Problem**: `SecretNotFoundError: Secret 'api_key' not found`
    - **Solution**: Check that the secret exists and the name is correct
 
-3. **Permission Denied**
+1. **Permission Denied**
+
    - **Problem**: `PermissionError: Not authorized to access this secret`
    - **Solution**: Verify that your service account or user has appropriate permissions
 
-4. **Secret Provider Unavailable**
+1. **Secret Provider Unavailable**
+
    - **Problem**: `ConnectionError: Cannot connect to secret provider`
    - **Solution**: Check network connectivity and service status
 
@@ -298,22 +451,26 @@ secret:
 2. **Implementation Performance**:
 
 | Implementation | Read Latency | Write Latency | Versioning Support | Best For |
-|----------------|--------------|---------------|-------------------|----------|
+| ------------------------ | ------------ | ------------- | ------------------ | -------------------------------------- |
+| **Azure Key Vault** | Medium | Medium | Yes | Azure deployments, enterprise security |
+| **Cloudflare KV** | Very Low | Low | No | Edge computing, global distribution |
 | **Infisical** | Low | Low | Yes | Team development, self-hosted |
 | **Secret Manager (GCP)** | Medium | Medium | Yes | GCP deployments, high security |
 | **Secret Manager (AWS)** | Medium | Medium | Yes | AWS deployments, high security |
-| **Secret Manager (Azure)** | Medium | Medium | Yes | Azure deployments, high security |
 
 3. **Batch Operations**:
+
    - Group related secrets to minimize API calls
    - Use naming conventions to organize secrets by adapter or function
 
-4. **Secret Size Considerations**:
+1. **Secret Size Considerations**:
+
    - Keep secrets small for better performance
    - For large secrets (e.g., certificates), consider storing references instead
    - Use the Storage adapter for larger sensitive files
 
-5. **Access Patterns**:
+1. **Access Patterns**:
+
    - Load secrets at startup when possible
    - Cache frequently used secrets in memory
    - Implement retry logic for cloud provider rate limits
@@ -349,6 +506,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 Secret = import_adapter("secret")
 secret = depends.get(Secret)
 
+
 async def get_database_connection():
     # Get database credentials from secret manager
     db_user = await secret.get("sql.username")
@@ -363,9 +521,11 @@ async def get_database_connection():
     engine = create_async_engine(conn_str)
     return engine
 
+
 # Using Secret and Requests adapters together
 Requests = import_adapter("requests")
 requests = depends.get(Requests)
+
 
 async def call_external_api():
     # Get API key from secret manager
@@ -373,10 +533,7 @@ async def call_external_api():
 
     # Use API key in request
     headers = {"Authorization": f"Bearer {api_key}"}
-    response = await requests.get(
-        "https://api.example.com/data",
-        headers=headers
-    )
+    response = await requests.get("https://api.example.com/data", headers=headers)
 
     return response.json()
 ```

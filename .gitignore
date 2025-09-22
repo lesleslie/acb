@@ -14,3 +14,10 @@
 
 # ACB settings directory (should only be created by consuming applications)
 /settings/
+/.benchmarks/
+/.claude/
+/.crackerjack/
+/htmlcov/
+/.coverage
+/complexipy.json
+/coverage.json

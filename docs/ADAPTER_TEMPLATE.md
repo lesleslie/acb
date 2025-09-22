@@ -6,7 +6,7 @@ This template provides the standard structure for ACB adapter modules with hard-
 
 Copy this template when creating new adapter modules:
 
-```python
+````python
 """[Adapter Name] Adapter for ACB.
 
 [Brief description of what this adapter does and what technology it integrates with.]
@@ -19,6 +19,7 @@ Example:
     from acb.adapters import import_adapter
 
     Cache = import_adapter("cache")
+
 
     @depends.inject
     async def my_function(cache: Cache = depends()):
@@ -56,22 +57,18 @@ from acb.adapters import (
 MODULE_METADATA = AdapterMetadata(
     # Unique identification (GENERATE NEW UUID7 FOR EACH ADAPTER)
     module_id=generate_adapter_id(),  # Generates UUID7 automatically
-
     # Basic information
     name="Example Adapter",
     category="example",  # cache, sql, storage, etc.
     provider="example-tech",  # redis, mysql, s3, etc.
-
     # Version information
     version="1.0.0",
     acb_min_version="0.18.0",
     acb_max_version=None,  # None = no upper limit
-
     # Development information
     author="Your Name <your.email@domain.com>",
     created_date="2025-01-12",  # ISO date
     last_modified="2025-01-12",  # Update when making significant changes
-
     # Status and capabilities
     status=AdapterStatus.ALPHA,  # alpha, beta, stable, deprecated, experimental
     capabilities=[
@@ -79,7 +76,6 @@ MODULE_METADATA = AdapterMetadata(
         AdapterCapability.CONNECTION_POOLING,
         # Add relevant capabilities
     ],
-
     # Dependencies
     required_packages=[
         "example-sdk>=1.0.0",
@@ -87,12 +83,10 @@ MODULE_METADATA = AdapterMetadata(
     optional_packages={
         "example-extras": "Enhanced features and performance optimizations",
     },
-
     # Documentation
     description="Integrates ACB with ExampleTech for [specific use case]",
     documentation_url="https://docs.acb.dev/adapters/example",
     repository_url="https://github.com/your-org/acb-example-adapter",
-
     # Configuration
     settings_class="ExampleSettings",
     config_example={
@@ -100,13 +94,12 @@ MODULE_METADATA = AdapterMetadata(
         "port": 1234,
         "timeout": 30,
     },
-
     # Custom metadata for specific needs
     custom={
         "performance_tier": "high",
         "encryption_support": True,
         "cloud_native": True,
-    }
+    },
 )
 
 # =============================================================================
@@ -114,14 +107,14 @@ MODULE_METADATA = AdapterMetadata(
 # =============================================================================
 
 # ... rest of your adapter implementation
-```
+````
 
 ## Metadata Field Guidelines
 
 ### Required Fields
 
 | Field | Description | Example |
-|-------|-------------|---------|
+| -------------- | ------------------------------ | ------------------------- |
 | `module_id` | **NEW UUID7 for each adapter** | `generate_adapter_id()` |
 | `name` | Human-readable name | `"Redis Cache"` |
 | `category` | ACB adapter category | `"cache"` |
@@ -142,11 +135,13 @@ MODULE_METADATA = AdapterMetadata(
 ### Capability Categories
 
 **Connection Management:**
+
 - `CONNECTION_POOLING`
 - `AUTO_RECONNECTION`
 - `HEALTH_CHECKS`
 
 **Data Operations:**
+
 - `TRANSACTIONS`
 - `BULK_OPERATIONS`
 - `STREAMING`
@@ -154,11 +149,13 @@ MODULE_METADATA = AdapterMetadata(
 - `ENCRYPTION`
 
 **Performance:**
+
 - `CACHING`
 - `ASYNC_OPERATIONS`
 - `BATCHING`
 
 **Observability:**
+
 - `METRICS`
 - `TRACING`
 - `STRUCTURED_LOGGING`
@@ -168,17 +165,18 @@ MODULE_METADATA = AdapterMetadata(
 When updating an adapter:
 
 1. **Update `last_modified`** to current ISO date
-2. **Increment `version`** following semver:
+1. **Increment `version`** following semver:
    - Patch: `1.0.0` → `1.0.1` (bug fixes)
    - Minor: `1.0.0` → `1.1.0` (new features)
    - Major: `1.0.0` → `2.0.0` (breaking changes)
-3. **Update `acb_min_version`** if using new ACB features
-4. **Add/remove capabilities** as features change
-5. **Update dependencies** in `required_packages`
+1. **Update `acb_min_version`** if using new ACB features
+1. **Add/remove capabilities** as features change
+1. **Update dependencies** in `required_packages`
 
 ## Metadata Usage Examples
 
 ### Checking Compatibility
+
 ```python
 from acb.adapters import validate_version_compatibility
 from acb.adapters.cache.redis import MODULE_METADATA
@@ -187,6 +185,7 @@ is_compatible = validate_version_compatibility(MODULE_METADATA, "0.18.0")
 ```
 
 ### Feature Detection
+
 ```python
 from acb.adapters import AdapterCapability
 
@@ -195,6 +194,7 @@ if AdapterCapability.CONNECTION_POOLING in MODULE_METADATA.capabilities:
 ```
 
 ### Runtime Information
+
 ```python
 print(f"Adapter ID: {MODULE_METADATA.module_id}")
 print(f"Version: {MODULE_METADATA.version}")

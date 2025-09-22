@@ -3,13 +3,39 @@ from uuid import UUID
 
 import niquests
 from pydantic import SecretStr
-from acb.adapters import AdapterStatus
+from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
 from ._base import RequestsBase, RequestsBaseSettings
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b843381c6604")
 MODULE_STATUS = AdapterStatus.STABLE
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=MODULE_ID,
+    name="Niquests HTTP Client",
+    category="requests",
+    provider="niquests",
+    version="1.0.0",
+    acb_min_version="0.18.0",
+    author="lesleslie <les@wedgwoodwebworks.com>",
+    created_date="2025-01-12",
+    last_modified="2025-01-20",
+    status=MODULE_STATUS,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.TLS_SUPPORT,
+        AdapterCapability.CONNECTION_POOLING,
+    ],
+    required_packages=["niquests"],
+    description="Niquests-based HTTP client with async session support",
+    settings_class="RequestsSettings",
+    config_example={
+        "base_url": "https://api.example.com",
+        "timeout": 10,
+        "auth": ("username", "password"),  # pragma: allowlist secret
+    },
+)
 
 
 class RequestsSettings(RequestsBaseSettings):
@@ -29,7 +55,7 @@ class Requests(RequestsBase):
         return session
 
     async def get_client(self) -> "niquests.AsyncSession":
-        return await self._ensure_client()
+        return await self._ensure_client()  # type: ignore  # type: ignore[no-any-return]
 
     @property
     def client(self) -> "niquests.AsyncSession":

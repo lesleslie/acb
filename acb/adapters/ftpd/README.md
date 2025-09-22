@@ -20,7 +20,7 @@ The ACB FTPD adapter offers a consistent way to handle file transfers:
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| -------------- | -------------------------------------------- | ------------------------------------------------------- |
 | **FTP** | Standard File Transfer Protocol using aioftp | Basic file transfers, compatibility with legacy systems |
 | **SFTP** | SSH File Transfer Protocol using asyncssh | Secure file transfers, modern applications |
 
@@ -209,6 +209,7 @@ async def copy_directory(ftpd, source_dir, target_dir):
             content = await ftpd.read_bytes(source_path)
             await ftpd.write_bytes(target_path, content)
 
+
 # Usage
 await copy_directory(ftpd, "/remote/source", "/remote/target")
 ```
@@ -218,18 +219,22 @@ await copy_directory(ftpd, "/remote/source", "/remote/target")
 ### Common Issues
 
 1. **Connection Refused**
+
    - **Problem**: `ConnectionRefusedError: Connection refused`
    - **Solution**: Verify server is running and firewall allows connections
 
-2. **Authentication Failed**
+1. **Authentication Failed**
+
    - **Problem**: `AuthenticationError: Login incorrect`
    - **Solution**: Check username and password in configuration
 
-3. **Permission Denied**
+1. **Permission Denied**
+
    - **Problem**: `PermissionError: Permission denied`
    - **Solution**: Verify user has appropriate permissions on the server
 
-4. **File Not Found**
+1. **File Not Found**
+
    - **Problem**: `FileNotFoundError: Remote file not found`
    - **Solution**: Check that the file path is correct and the file exists
 

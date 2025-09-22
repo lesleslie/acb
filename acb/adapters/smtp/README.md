@@ -18,7 +18,7 @@ The ACB SMTP adapter offers:
 ## Available Implementations
 
 | Implementation | Description | Best For |
-|----------------|-------------|----------|
+| -------------- | ----------------------------------------- | ------------------------------------------------ |
 | **Gmail** | Send emails through Gmail API with OAuth2 | Google Workspace users, personal Gmail accounts |
 | **Mailgun** | Send emails through Mailgun API | High-volume email delivery, transactional emails |
 
@@ -111,7 +111,7 @@ smtp = depends.get(SMTP)
 await smtp.send_email(
     to="recipient@example.com",
     subject="Hello from ACB",
-    body="This is a test email sent from the ACB framework."
+    body="This is a test email sent from the ACB framework.",
 )
 
 # Send an HTML email
@@ -125,10 +125,7 @@ html_content = """
 """
 
 await smtp.send_email(
-    to="recipient@example.com",
-    subject="HTML Email Test",
-    body=html_content,
-    html=True
+    to="recipient@example.com", subject="HTML Email Test", body=html_content, html=True
 )
 ```
 
@@ -139,10 +136,10 @@ await smtp.send_email(
 To use the Gmail adapter, you need to set up OAuth2 credentials:
 
 1. Create a Google Cloud project at [console.cloud.google.com](https://console.cloud.google.com/)
-2. Enable the Gmail API for your project
-3. Create OAuth2 credentials (client ID and client secret)
-4. Generate a refresh token using the OAuth2 flow
-5. Configure your ACB application with these credentials
+1. Enable the Gmail API for your project
+1. Create OAuth2 credentials (client ID and client secret)
+1. Generate a refresh token using the OAuth2 flow
+1. Configure your ACB application with these credentials
 
 ```yaml
 smtp:
@@ -166,7 +163,7 @@ smtp = depends.get(SMTP)
 await smtp.send_email(
     to=["user1@example.com", "user2@example.com", "user3@example.com"],
     subject="Team Update",
-    body="This is a message for the entire team."
+    body="This is a message for the entire team.",
 )
 
 # Using CC and BCC
@@ -175,7 +172,7 @@ await smtp.send_email(
     cc=["manager1@example.com", "manager2@example.com"],
     bcc=["archive@example.com"],
     subject="Project Status Update",
-    body="Here's the latest project status report."
+    body="Here's the latest project status report.",
 )
 ```
 
@@ -193,14 +190,14 @@ await smtp.send_email(
         {
             "filename": "report.pdf",
             "path": AsyncPath("./reports/monthly_report.pdf"),
-            "mime_type": "application/pdf"
+            "mime_type": "application/pdf",
         },
         {
             "filename": "data.xlsx",
             "path": AsyncPath("./reports/data.xlsx"),
-            "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        }
-    ]
+            "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+    ],
 )
 ```
 
@@ -218,10 +215,10 @@ await smtp.send_template(
         "order_date": "2023-05-15",
         "items": [
             {"name": "Product A", "quantity": 2, "price": 29.99},
-            {"name": "Product B", "quantity": 1, "price": 49.99}
+            {"name": "Product B", "quantity": 1, "price": 49.99},
         ],
-        "total": 109.97
-    }
+        "total": 109.97,
+    },
 )
 ```
 
@@ -234,7 +231,7 @@ await smtp.send_email(
     subject="Sales Inquiry",
     body="Thank you for your sales inquiry...",
     from_email="sales@example.com",
-    from_name="Sales Department"
+    from_name="Sales Department",
 )
 ```
 
@@ -246,13 +243,11 @@ original_email = {
     "from": "customer@external.com",
     "subject": "Help needed",
     "body": "I'm having trouble with my account...",
-    "received_at": "2023-05-16T14:32:45Z"
+    "received_at": "2023-05-16T14:32:45Z",
 }
 
 await smtp.forward_email(
-    email=original_email,
-    to="support@example.com",
-    prefix="[CUSTOMER INQUIRY]"
+    email=original_email, to="support@example.com", prefix="[CUSTOMER INQUIRY]"
 )
 ```
 
@@ -261,18 +256,22 @@ await smtp.forward_email(
 ### Common Issues
 
 1. **Authentication Failures**
+
    - **Problem**: `SMTPAuthenticationError: Authentication failed`
    - **Solution**: Check your email credentials and ensure they're correctly configured
 
-2. **Connection Issues**
+1. **Connection Issues**
+
    - **Problem**: `SMTPConnectError: Failed to connect to SMTP server`
    - **Solution**: Verify the SMTP server address and port; check if TLS/SSL settings are correct
 
-3. **Rate Limiting**
+1. **Rate Limiting**
+
    - **Problem**: `SMTPRateLimitError: Too many emails sent`
    - **Solution**: Implement throttling or use a service with higher sending limits
 
-4. **Email Delivery Failures**
+1. **Email Delivery Failures**
+
    - **Problem**: Emails not being delivered
    - **Solution**: Check spam filters, verify recipient addresses, and ensure sender domain has proper SPF/DKIM setup
 
@@ -292,7 +291,7 @@ class EmailBase:
         cc: Optional[list[str]] = None,
         bcc: Optional[list[str]] = None,
         html: bool = False,
-        attachments: Optional[list[dict]] = None
+        attachments: Optional[list[dict]] = None,
     ) -> bool: ...
 
     async def send_template(
@@ -301,14 +300,11 @@ class EmailBase:
         subject: str,
         template_name: str,
         template_data: dict,
-        **kwargs
+        **kwargs,
     ) -> bool: ...
 
     async def forward_email(
-        self,
-        email: dict,
-        to: str | list[str],
-        prefix: Optional[str] = None
+        self, email: dict, to: str | list[str], prefix: Optional[str] = None
     ) -> bool: ...
 ```
 

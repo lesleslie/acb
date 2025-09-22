@@ -3,7 +3,7 @@
 from unittest.mock import Mock
 
 import pytest
-from acb.adapters.models import ModelsAdapter
+from acb.adapters.models import ModelsAdapter, _cached_auto_detect_model_type
 
 
 class ModelClass:
@@ -49,6 +49,10 @@ class MockSQLAlchemyModel:
 
 
 class TestModelsAdapter:
+    def setup_method(self) -> None:
+        """Clear the cache before each test to ensure isolation."""
+        _cached_auto_detect_model_type.cache_clear()
+
     def test_init(self) -> None:
         adapter = ModelsAdapter()
         assert adapter is not None

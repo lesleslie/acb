@@ -8,16 +8,13 @@ import typing as t
 from contextvars import ContextVar
 from datetime import datetime
 from enum import Enum
-from functools import cache
+from functools import lru_cache
 from importlib import import_module, util
 from inspect import stack
 from pathlib import Path
 from uuid import UUID
 
-try:
-    import nest_asyncio
-except ImportError:
-    nest_asyncio = None
+# Removed nest_asyncio import - not needed in library code
 import rich.repr
 from anyio import Path as AsyncPath
 from inflection import camelize
@@ -27,13 +24,15 @@ from acb.actions.encode import yaml_encode
 from acb.depends import depends
 
 try:
-    import uuid_utils as uuid_lib
+    import uuid_utils
 
     _uuid7_available = True
+    uuid_lib: t.Any = uuid_utils  # type: ignore[no-redef]
 except ImportError:
-    import uuid as uuid_lib
+    import uuid
 
     _uuid7_available = False
+    uuid_lib: t.Any = uuid  # type: ignore[no-redef]
 
 
 class AdapterStatus(str, Enum):
@@ -48,6 +47,7 @@ class AdapterCapability(str, Enum):
     CONNECTION_POOLING = "connection_pooling"
     RECONNECTION = "auto_reconnection"
     HEALTH_CHECKS = "health_checks"
+    TLS_SUPPORT = "tls_support"
 
     TRANSACTIONS = "transactions"
     BULK_OPERATIONS = "bulk_operations"
@@ -119,18 +119,21 @@ class AdapterMetadata(BaseModel):
         description="Custom metadata fields for specific requirements",
     )
 
-    class Config:
-        use_enum_values = True
-        extra = "forbid"
+    model_config = ConfigDict(use_enum_values=True, extra="forbid")
 
 
 def generate_adapter_id() -> UUID:
     if _uuid7_available:
         uuid_obj = uuid_lib.uuid7()  # type: ignore[attr-defined]
-        return UUID(str(uuid_obj)) if not isinstance(uuid_obj, UUID) else uuid_obj
+        return (
+            UUID(str(uuid_obj))
+            if not isinstance(uuid_obj, UUID)
+            else UUID(str(uuid_obj))
+        )
     else:
         uuid_obj = uuid_lib.uuid4()
-        return UUID(str(uuid_obj)) if not isinstance(uuid_obj, UUID) else uuid_obj
+        # Explicitly cast to UUID to satisfy type checker
+        return UUID(str(uuid_obj))
 
 
 def create_metadata_template(
@@ -286,8 +289,7 @@ Class: {info["class_name"]}
 """.strip()
 
 
-if nest_asyncio:
-    nest_asyncio.apply()
+# Removed nest_asyncio.apply() - not needed in library code
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 _testing: bool = os.getenv("TESTING", "False").lower() == "true"
 root_path: AsyncPath = AsyncPath(Path.cwd())
@@ -431,17 +433,72 @@ def get_installed_adapters() -> list[Adapter]:
     return list(_installed_adapters_cache.get().values())
 
 
-@cache
+# Static adapter mappings for improved performance
+# This eliminates the need for dynamic string construction and reduces import overhead
+STATIC_ADAPTER_MAPPINGS = {
+    "cache.memory": ("acb.adapters.cache.memory", "Cache"),
+    "cache.redis": ("acb.adapters.cache.redis", "Cache"),
+    "sql.mysql": ("acb.adapters.sql.mysql", "Sql"),
+    "sql.pgsql": ("acb.adapters.sql.pgsql", "Sql"),
+    "sql.sqlite": ("acb.adapters.sql.sqlite", "Sql"),
+    "nosql.mongodb": ("acb.adapters.nosql.mongodb", "Nosql"),
+    "nosql.firestore": ("acb.adapters.nosql.firestore", "Nosql"),
+    "nosql.redis": ("acb.adapters.nosql.redis", "Nosql"),
+    "storage.file": ("acb.adapters.storage.file", "Storage"),
+    "storage.s3": ("acb.adapters.storage.s3", "Storage"),
+    "storage.azure": ("acb.adapters.storage.azure", "Storage"),
+    "storage.cloud_storage": ("acb.adapters.storage.cloud_storage", "Storage"),
+    "storage.memory": ("acb.adapters.storage.memory", "Storage"),
+    "secret.infisical": ("acb.adapters.secret.infisical", "Secret"),
+    "secret.secret_manager": ("acb.adapters.secret.secret_manager", "Secret"),
+    "secret.azure": ("acb.adapters.secret.azure", "Secret"),
+    "secret.cloudflare": ("acb.adapters.secret.cloudflare", "Secret"),
+    "monitoring.sentry": ("acb.adapters.monitoring.sentry", "Monitoring"),
+    "monitoring.logfire": ("acb.adapters.monitoring.logfire", "Monitoring"),
+    "requests.httpx": ("acb.adapters.requests.httpx", "Requests"),
+    "requests.niquests": ("acb.adapters.requests.niquests", "Requests"),
+    "smtp.gmail": ("acb.adapters.smtp.gmail", "Smtp"),
+    "smtp.mailgun": ("acb.adapters.smtp.mailgun", "Smtp"),
+    "dns.cloud_dns": ("acb.adapters.dns.cloud_dns", "Dns"),
+    "dns.cloudflare": ("acb.adapters.dns.cloudflare", "Dns"),
+    "dns.route53": ("acb.adapters.dns.route53", "Dns"),
+    "ftpd.ftp": ("acb.adapters.ftpd.ftp", "Ftpd"),
+    "ftpd.sftp": ("acb.adapters.ftpd.sftp", "Ftpd"),
+    "models": ("acb.adapters.models", "Models"),
+    "vector.duckdb": ("acb.adapters.vector.duckdb", "Vector"),
+    "vector.opensearch": ("acb.adapters.vector.opensearch", "Vector"),
+    "vector.qdrant": ("acb.adapters.vector.qdrant", "Vector"),
+    "vector.weaviate": ("acb.adapters.vector.weaviate", "Vector"),
+}
+
+
+@lru_cache(maxsize=256)
 def get_adapter_class(category: str, name: str) -> type[t.Any]:
+    """Get adapter class with optimized static mappings and caching.
+
+    This function uses pre-computed static mappings for better performance
+    and falls back to dynamic import for custom adapters.
+    """
+    # Try static mapping first for maximum performance
+    mapping_key = f"{category}.{name}" if name != category else category
+    if mapping_key in STATIC_ADAPTER_MAPPINGS:
+        module_path, class_name = STATIC_ADAPTER_MAPPINGS[mapping_key]
+        return _import_adapter_class_cached(module_path, class_name)
+
+    # Fallback to dynamic import for custom adapters
     module_path = f"acb.adapters.{category}.{name}"
+    class_name = camelize(category)
+    return _import_adapter_class_cached(module_path, class_name)
+
+
+@lru_cache(maxsize=512)
+def _import_adapter_class_cached(module_path: str, class_name: str) -> type:
+    """Cached adapter class import to avoid repeated module loading."""
     try:
-        from importlib import import_module
-
-        from inflection import camelize
-
-        class_name = camelize(category)
         module = import_module(module_path)
         adapter_class = getattr(module, class_name)
+
+        # Attach metadata if available
         if hasattr(module, "MODULE_METADATA"):
             metadata = module.MODULE_METADATA
             if isinstance(metadata, AdapterMetadata):
@@ -449,9 +506,9 @@ def get_adapter_class(category: str, name: str) -> type[t.Any]:
             elif isinstance(metadata, dict):
                 adapter_class.__module_metadata__ = AdapterMetadata(**metadata)
 
-        return adapter_class
+        return adapter_class  # type: ignore[no-any-return]
     except (ImportError, AttributeError) as e:
-        msg = f"Failed to import {module_path}: {e}"
+        msg = f"Failed to import {module_path}.{class_name}: {e}"
         raise StaticImportError(msg)
 
 
@@ -662,7 +719,7 @@ async def _load_module(adapter: Adapter) -> t.Any:
     try:
         module = import_module(adapter.module)
     except ModuleNotFoundError:
-        spec = util.spec_from_file_location(adapter.path.stem, adapter.path)
+        spec = util.spec_from_file_location(adapter.path.stem, str(adapter.path))
         if spec is None:
             msg = f"Failed to create module spec for {adapter.module}"
             raise AdapterNotFound(msg)
@@ -816,7 +873,24 @@ def import_adapter_with_context(
     normalized_categories = _normalize_adapter_categories(adapter_categories)
 
     try:
-        imported_adapters = asyncio.run(gather_imports(normalized_categories))
+        # Check if we're in an async context
+        try:
+            import asyncio
+
+            asyncio.get_running_loop()
+            # We're in an async context - this function shouldn't be called here
+            msg = (
+                f"import_adapter_with_context() cannot be called from async context. "
+                f"Use 'await gather_imports({normalized_categories})' directly."
+            )
+            raise RuntimeError(msg)
+        except RuntimeError as e:
+            if "no running event loop" in str(e):
+                # No event loop - we need to start one for adapter imports
+                # This should only happen in application initialization
+                imported_adapters = asyncio.run(gather_imports(normalized_categories))
+            else:
+                raise
     except Exception as e:
         msg = f"Failed to install adapters {normalized_categories}: {e}"
         raise AdapterNotInstalled(

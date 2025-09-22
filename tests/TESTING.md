@@ -52,9 +52,9 @@ The test suite includes automatic patching for adapter imports and configuration
 These fixtures are applied automatically for all tests, so you don't need to explicitly import or use them. They ensure that:
 
 1. No actual files or directories are created during tests
-2. No actual configuration files are read
-3. Adapter imports work without requiring actual adapter files
-4. Modules that import other adapters (like SMTP and FTPD) can be tested without dependencies
+1. No actual configuration files are read
+1. Adapter imports work without requiring actual adapter files
+1. Modules that import other adapters (like SMTP and FTPD) can be tested without dependencies
 
 ### Mock Class Method Delegation
 
@@ -80,9 +80,9 @@ When creating mock classes for testing adapters, it's important to implement pro
            # Mock implementation
    ```
 
-2. **Separate Test Classes for Complex Mocks**: For adapters with complex dependencies (like Redis, SQLModel), create separate test classes with their own fixtures to avoid conflicts with base classes.
+1. **Separate Test Classes for Complex Mocks**: For adapters with complex dependencies (like Redis, SQLModel), create separate test classes with their own fixtures to avoid conflicts with base classes.
 
-3. **Patching External Dependencies**: Use `unittest.mock.patch` to mock external dependencies like file system operations:
+1. **Patching External Dependencies**: Use `unittest.mock.patch` to mock external dependencies like file system operations:
 
    ```python
    @pytest.mark.asyncio
@@ -92,7 +92,7 @@ When creating mock classes for testing adapters, it's important to implement pro
        # Test implementation
    ```
 
-4. **Exception Handling in Mocks**: Ensure that mock objects properly handle exceptions that would occur in the real implementation, such as `FileNotFoundError` for file operations.
+1. **Exception Handling in Mocks**: Ensure that mock objects properly handle exceptions that would occur in the real implementation, such as `FileNotFoundError` for file operations.
 
 ### Example: Proper Mock Implementation
 
@@ -126,7 +126,9 @@ class TestRedisCache:
 
 ```python
 @pytest.mark.asyncio
-async def test_async_file_operations(self, mock_async_file_system, patch_async_file_operations):
+async def test_async_file_operations(
+    self, mock_async_file_system, patch_async_file_operations
+):
     from anyio import Path as AsyncPath
 
     file_path = AsyncPath("/mock/path/test_file.txt")
@@ -144,16 +146,18 @@ async def test_async_file_operations(self, mock_async_file_system, patch_async_f
 For adapter tests, the project follows a structured approach:
 
 1. **Base Test Files**: Each adapter category has a base test file (e.g., `test_cache_base.py`, `test_sql_base.py`) that contains:
+
    - Common test fixtures
    - Base class tests
    - Shared assertion utilities
 
-2. **Implementation-Specific Tests**: Each adapter implementation has its own test file (e.g., `test_redis.py`, `test_infisical.py`) that:
+1. **Implementation-Specific Tests**: Each adapter implementation has its own test file (e.g., `test_redis.py`, `test_infisical.py`) that:
+
    - Focuses on implementation-specific behavior
    - Uses fixtures and utilities from the base test file
    - Implements proper mock objects with method delegation
 
-3. **Reusable Test Functions**: Where possible, test functions are designed to be reusable across different adapter implementations, like the `assert_cache_operations` function.
+1. **Reusable Test Functions**: Where possible, test functions are designed to be reusable across different adapter implementations, like the `assert_cache_operations` function.
 
 This organization allows for thorough testing of both the base adapter functionality and the specific implementation details of each adapter variant.
 
@@ -236,7 +240,7 @@ pytest tests/adapters/cache/test_redis.py -s
 ### Benefits of Using Crackerjack
 
 1. **AI-Assisted Debugging**: The AI agent can analyze test failures and suggest fixes
-2. **Detailed Output**: Using the `-s` flag provides visibility into what's happening during test execution
-3. **Compatible with ACB's Test Suite**: The test suite has been configured to work properly with Crackerjack
+1. **Detailed Output**: Using the `-s` flag provides visibility into what's happening during test execution
+1. **Compatible with ACB's Test Suite**: The test suite has been configured to work properly with Crackerjack
 
 Remember that when using Crackerjack, the `pytest_sessionfinish` function in our test configuration will automatically detect it and adjust behavior accordingly.

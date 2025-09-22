@@ -21,6 +21,7 @@ This guide helps you troubleshoot common issues when working with ACB.
 **Problem**: `ERROR: Package requires a different Python version`
 
 **Solution**: ACB requires Python 3.13 or later. Check your Python version:
+
 ```bash
 python --version
 # Should show Python 3.13.x or higher
@@ -31,6 +32,7 @@ python --version
 **Problem**: `uv: command not found`
 
 **Solution**: Install UV first:
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 # Or using pip
@@ -42,6 +44,7 @@ pip install uv
 **Problem**: Import errors for specific adapters
 
 **Solution**: Install the correct optional dependencies:
+
 ```bash
 # For cache features
 uv add "acb[cache]"
@@ -60,6 +63,7 @@ uv add "acb[all]"
 **Problem**: `FileNotFoundError: No such file or directory: 'settings/app.yml'`
 
 **Solution**: Create the required configuration structure:
+
 ```bash
 mkdir -p settings
 touch settings/app.yml
@@ -72,6 +76,7 @@ touch settings/debug.yml
 **Problem**: `yaml.scanner.ScannerError: mapping values are not allowed here`
 
 **Solution**: Check your YAML syntax. Common issues:
+
 - Inconsistent indentation (use spaces, not tabs)
 - Missing spaces after colons
 - Special characters in strings (use quotes)
@@ -93,9 +98,10 @@ domain:example.com  # Missing space after colon
 **Problem**: `SecretError: Unable to load secrets`
 
 **Solution**:
+
 1. Check that secret files exist in `settings/secrets/`
-2. Verify file permissions allow reading
-3. Ensure YAML syntax is correct in secret files
+1. Verify file permissions allow reading
+1. Ensure YAML syntax is correct in secret files
 
 ## Dependency Injection Issues
 
@@ -104,23 +110,26 @@ domain:example.com  # Missing space after colon
 **Problem**: `KeyError: 'cache'` or similar adapter not found errors
 
 **Solution**:
+
 1. Ensure the adapter is configured in `settings/adapters.yml`:
    ```yaml
    cache: redis  # or memory
    ```
-2. Check that optional dependencies are installed
-3. Verify the adapter name matches exactly
+1. Check that optional dependencies are installed
+1. Verify the adapter name matches exactly
 
 ### Type Annotation Errors
 
 **Problem**: IDE shows type errors with `depends()` calls
 
 **Solution**: Import and use adapter types correctly:
+
 ```python
 from acb.adapters import import_adapter
 
 # Get the adapter class (not instance)
 Cache = import_adapter("cache")
+
 
 # Use in function signature
 @depends.inject
@@ -133,6 +142,7 @@ async def my_function(cache: Cache = depends()):
 **Problem**: `RecursionError: maximum recursion depth exceeded`
 
 **Solution**: Restructure your dependencies to avoid circles:
+
 - Use interfaces/protocols instead of concrete classes
 - Consider using factory patterns
 - Break circular references with lazy loading
@@ -144,30 +154,33 @@ async def my_function(cache: Cache = depends()):
 **Problem**: `ConnectionError: Error connecting to Redis`
 
 **Solution**:
+
 1. Ensure Redis server is running: `redis-cli ping`
-2. Check connection settings in configuration
-3. Verify network connectivity
-4. Check Redis logs for specific errors
+1. Check connection settings in configuration
+1. Verify network connectivity
+1. Check Redis logs for specific errors
 
 ### Database Connection Issues
 
 **Problem**: `sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) could not connect to server`
 
 **Solution**:
+
 1. Verify database server is running
-2. Check connection credentials
-3. Ensure database exists
-4. Check network connectivity and firewall settings
+1. Check connection credentials
+1. Ensure database exists
+1. Check network connectivity and firewall settings
 
 ### Storage Access Issues
 
 **Problem**: `PermissionError: [Errno 13] Permission denied`
 
 **Solution**:
+
 1. Check file/directory permissions
-2. Verify the application has write access
-3. For cloud storage, check authentication credentials
-4. Ensure storage buckets/containers exist
+1. Verify the application has write access
+1. For cloud storage, check authentication credentials
+1. Ensure storage buckets/containers exist
 
 ## Testing Issues
 
@@ -176,6 +189,7 @@ async def my_function(cache: Cache = depends()):
 **Problem**: Tests still use real dependencies instead of mocks
 
 **Solution**: Ensure proper mock setup in conftest.py:
+
 ```python
 @pytest.fixture(autouse=True)
 def mock_dependencies():
@@ -191,6 +205,7 @@ def mock_dependencies():
 **Problem**: Tests create actual files or fail due to missing files
 
 **Solution**: Use the provided mock file system fixtures:
+
 ```python
 def test_file_operation(mock_async_file_system, patch_async_file_operations):
     # Your test code here - files will be mocked
@@ -202,8 +217,10 @@ def test_file_operation(mock_async_file_system, patch_async_file_operations):
 **Problem**: `RuntimeError: cannot be called from a running event loop`
 
 **Solution**: Use proper async test decorators:
+
 ```python
 import pytest
+
 
 @pytest.mark.asyncio
 async def test_async_function():
@@ -218,30 +235,33 @@ async def test_async_function():
 **Problem**: Application takes a long time to start
 
 **Solution**:
+
 1. Check for blocking I/O in initialization code
-2. Use lazy loading for expensive resources
-3. Profile startup to identify bottlenecks
-4. Consider async initialization patterns
+1. Use lazy loading for expensive resources
+1. Profile startup to identify bottlenecks
+1. Consider async initialization patterns
 
 ### Memory Usage Issues
 
 **Problem**: High memory consumption
 
 **Solution**:
+
 1. Check cache TTL settings - lower values reduce memory usage
-2. Review object lifecycle management
-3. Use connection pooling for database adapters
-4. Monitor for memory leaks in long-running processes
+1. Review object lifecycle management
+1. Use connection pooling for database adapters
+1. Monitor for memory leaks in long-running processes
 
 ### Slow Database Queries
 
 **Problem**: Database operations are slow
 
 **Solution**:
+
 1. Enable query caching where appropriate
-2. Add database indexes for frequently queried columns
-3. Use connection pooling
-4. Consider read replicas for read-heavy workloads
+1. Add database indexes for frequently queried columns
+1. Use connection pooling
+1. Consider read replicas for read-heavy workloads
 
 ## Common Error Messages
 
@@ -262,27 +282,30 @@ async def test_async_function():
 **Cause**: Adapter not properly initialized or registered
 
 **Solution**:
+
 1. Check adapter configuration
-2. Ensure proper dependency injection setup
-3. Verify adapter registration
+1. Ensure proper dependency injection setup
+1. Verify adapter registration
 
 ### `pydantic.ValidationError: validation error for AppSettings`
 
 **Cause**: Invalid configuration values
 
 **Solution**:
+
 1. Check configuration file syntax
-2. Verify all required fields are provided
-3. Check data types match field definitions
+1. Verify all required fields are provided
+1. Check data types match field definitions
 
 ### `RuntimeError: Event loop is closed`
 
 **Cause**: Async operations after event loop shutdown
 
 **Solution**:
+
 1. Ensure proper async context management
-2. Use `asyncio.run()` for main application entry
-3. Avoid async operations in destructors
+1. Use `asyncio.run()` for main application entry
+1. Avoid async operations in destructors
 
 ## Debug Mode
 
@@ -306,7 +329,7 @@ debug:
 If you continue to experience issues:
 
 1. Check the [ACB documentation](../README.md)
-2. Review adapter-specific documentation
-3. Enable debug logging for more details
-4. Create a minimal reproduction case
-5. Report issues on the [GitHub repository](https://github.com/lesleslie/acb/issues)
+1. Review adapter-specific documentation
+1. Enable debug logging for more details
+1. Create a minimal reproduction case
+1. Report issues on the [GitHub repository](https://github.com/lesleslie/acb/issues)

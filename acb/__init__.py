@@ -1,85 +1,61 @@
-import asyncio
 import typing as t
-from contextvars import ContextVar
 from inspect import currentframe
 
-try:
-    import nest_asyncio
-except ImportError:
-    nest_asyncio = None
-import rich.repr
+# Rich.repr import removed - not used in refactored code
 from anyio import Path as AsyncPath
-from pydantic import BaseModel, ConfigDict
 from rich import box
 from rich.padding import Padding
 from rich.table import Table
 
-from .actions import Action, action_registry, register_actions
-from .adapters import Adapter, _deployed, get_adapters, register_adapters
+# Re-exports for backward compatibility
+from .actions import Action as Action
+from .actions import action_registry
+from .adapters import Adapter as Adapter
+from .adapters import get_adapters
 from .console import console
+from .context import Pkg as Pkg
+from .context import get_context
 
 if t.TYPE_CHECKING:
     from rich.console import RenderableType
 
-if nest_asyncio:
-    nest_asyncio.apply()
+
+def register_pkg(name: str | None = None, path: AsyncPath | None = None) -> None:
+    """Register a package with ACB.
+
+    Args:
+        name: Package name (optional, will be inferred from caller if not provided)
+        path: Package path (optional, will be inferred from caller if not provided)
+    """
+    context = get_context()
+
+    if name is None or path is None:
+        # Fallback to frame inspection only if arguments not provided
+        frame = currentframe()
+        if frame is not None and frame.f_back is not None:
+            inferred_path = AsyncPath(frame.f_back.f_code.co_filename).parent
+            inferred_name = inferred_path.stem
+        else:
+            msg = "Could not determine caller frame and no explicit name/path provided"
+            raise RuntimeError(msg)
+
+        name = name or inferred_name
+        path = path or inferred_path
+
+    # Use async-safe context method - register immediately to queue
+    context._lazy_registration_queue.append((name, path))
 
 
-@rich.repr.auto
-class Pkg(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    name: str
-    path: AsyncPath
-    actions: list[Action] = []
-    adapters: list[Adapter] = []
+async def ensure_registration() -> None:
+    """Ensure all packages are registered."""
+    context = get_context()
+    await context.ensure_registration()
 
 
-pkg_registry: ContextVar[list[Pkg]] = ContextVar("pkg_registry", default=[])
-_lazy_registration_queue: list[tuple[str, AsyncPath]] = []
-_registration_completed: bool = False
-
-
-def register_pkg() -> None:
-    frame = currentframe()
-    if frame is not None and frame.f_back is not None:
-        path = AsyncPath(frame.f_back.f_code.co_filename).parent
-    else:
-        msg = "Could not determine caller frame"
-        raise RuntimeError(msg)
-    name = path.stem
-    if name not in [item[0] for item in _lazy_registration_queue]:
-        _lazy_registration_queue.append((name, path))
-
-
-async def _process_registration_queue() -> None:
-    global _registration_completed
-    if _registration_completed or not _lazy_registration_queue:
-        return
-    registry = pkg_registry.get()
-    existing_names = {p.name for p in registry}
-    for name, path in _lazy_registration_queue:
-        if name not in existing_names:
-            actions = await register_actions(path)
-            adapters = await register_adapters(path)
-            pkg = Pkg(name=name, path=path, actions=actions, adapters=adapters)
-            registry.append(pkg)
-            existing_names.add(name)
-    _lazy_registration_queue.clear()
-    _registration_completed = True
-
-
-def ensure_registration() -> None:
-    if _lazy_registration_queue and not _registration_completed:
-        try:
-            asyncio.get_running_loop()
-            asyncio.create_task(_process_registration_queue())
-        except RuntimeError:
-            asyncio.run(_process_registration_queue())
-
-
+# Backward compatibility alias
 async def ensure_registration_async() -> None:
-    if _lazy_registration_queue and not _registration_completed:
-        await _process_registration_queue()
+    """Backward compatibility alias for ensure_registration."""
+    await ensure_registration()
 
 
 table_args: dict[str, t.Any] = {
@@ -90,16 +66,19 @@ table_args: dict[str, t.Any] = {
 }
 
 
-def display_components() -> None:
-    ensure_registration()
-    if not _deployed:
+async def display_components() -> None:
+    """Display registered components in a formatted table."""
+    context = get_context()
+    await ensure_registration()
+
+    if not context.is_deployed():
         pkgs = Table(
             title="[b][u bright_white]A[/u bright_white][bright_green]synchronous [u bright_white]C[/u bright_white][bright_green]omponent [u bright_white]B[/u bright_white][bright_green]ase[/b]",
             **table_args,
         )
         for prop in ("Pkg", "Path"):
             pkgs.add_column(prop)
-        for i, pkg in enumerate(pkg_registry.get()):
+        for i, pkg in enumerate(context.pkg_registry.get()):
             pkgs.add_row(
                 pkg.name,
                 str(pkg.path),

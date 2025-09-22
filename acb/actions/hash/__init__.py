@@ -44,7 +44,7 @@ class Hash:
         if isinstance(obj, Path | AsyncPath) or (
             isinstance(obj, str) and (os.path.sep in obj or obj.startswith("."))
         ):
-            path = AsyncPath(obj)
+            path = AsyncPath(str(obj))
             if not await path.exists():
                 msg = f"File not found: {obj}"
                 raise FileNotFoundError(msg)

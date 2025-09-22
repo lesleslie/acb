@@ -106,9 +106,11 @@ async def blake3(obj: Union[str, bytes, dict, AsyncPath]) -> str
 ```
 
 **Parameters:**
+
 - `obj` (str | bytes | dict | AsyncPath): The object to hash
 
 **Returns:**
+
 - `str`: Hexadecimal string representation of the hash
 
 ### crc32c
@@ -120,9 +122,11 @@ async def crc32c(obj: Union[str, bytes, dict, AsyncPath]) -> int
 ```
 
 **Parameters:**
+
 - `obj` (str | bytes | dict | AsyncPath): The object to hash
 
 **Returns:**
+
 - `int`: Integer representation of the CRC32C checksum
 
 ### md5
@@ -134,9 +138,11 @@ async def md5(obj: Union[str, bytes, dict, AsyncPath]) -> str
 ```
 
 **Parameters:**
+
 - `obj` (str | bytes | dict | AsyncPath): The object to hash
 
 **Returns:**
+
 - `str`: Hexadecimal string representation of the hash
 
 ## Examples
@@ -145,6 +151,7 @@ async def md5(obj: Union[str, bytes, dict, AsyncPath]) -> str
 
 ```python
 from acb.actions.hash import hash
+
 
 async def hash_examples():
     # String hashing
@@ -162,7 +169,7 @@ async def hash_examples():
         "id": 12345,
         "name": "John Doe",
         "email": "john@example.com",
-        "roles": ["admin", "user"]
+        "roles": ["admin", "user"],
     }
 
     data_hash = await hash.blake3(user_data)
@@ -174,6 +181,7 @@ async def hash_examples():
 ```python
 from acb.actions.hash import hash
 from anyio import Path as AsyncPath
+
 
 async def verify_file_integrity(file_path: str, expected_hash: str) -> bool:
     """Verify file integrity using BLAKE3 hash."""
@@ -200,6 +208,7 @@ async def verify_file_integrity(file_path: str, expected_hash: str) -> bool:
 from acb.actions.hash import hash
 from anyio import Path as AsyncPath
 import asyncio
+
 
 async def batch_hash_files(directory: str, algorithm: str = "blake3") -> dict:
     """Generate hashes for all files in a directory."""
@@ -229,21 +238,24 @@ async def batch_hash_files(directory: str, algorithm: str = "blake3") -> dict:
 ## Security Considerations
 
 - **Algorithm Selection**:
+
   - BLAKE3: Recommended for security-critical applications
   - CRC32C: Suitable for checksums but not for cryptographic security
   - MD5: Not recommended for security purposes due to known vulnerabilities
 
 - **Use Cases**:
+
   - File integrity verification: BLAKE3
   - Cloud storage checksums: CRC32C (compatible with Google Cloud Storage)
   - Legacy system compatibility: MD5
 
 - **Security Levels**:
+
   | Algorithm | Security Level | Collision Resistance | Performance |
-  |-----------|---------------|---------------------|-------------|
-  | BLAKE3    | High          | Strong              | Very Fast   |
-  | CRC32C    | Low           | Weak                | Fastest     |
-  | MD5       | Very Low      | Broken              | Fast        |
+  | --------- | -------------- | -------------------- | ----------- |
+  | BLAKE3 | High | Strong | Very Fast |
+  | CRC32C | Low | Weak | Fastest |
+  | MD5 | Very Low | Broken | Fast |
 
 ## Performance Comparison
 
@@ -256,10 +268,10 @@ The Hash action's algorithms have different performance characteristics:
 Approximate performance for 1GB of data on modern hardware:
 
 | Algorithm | Processing Speed | Relative Speed |
-|-----------|-----------------|---------------|
-| BLAKE3    | ~5-10 GB/s      | Very Fast     |
-| CRC32C    | ~20 GB/s        | Fastest       |
-| MD5       | ~1-2 GB/s       | Fast          |
+| --------- | ---------------- | -------------- |
+| BLAKE3 | ~5-10 GB/s | Very Fast |
+| CRC32C | ~20 GB/s | Fastest |
+| MD5 | ~1-2 GB/s | Fast |
 
 ## Related Actions
 

@@ -7,25 +7,29 @@ allowing the universal query interface to work with msgspec Struct classes.
 from __future__ import annotations
 
 import inspect
+import typing as t
 from typing import Any, TypeVar, get_args, get_origin
 
-from acb.adapters.models._query import ModelAdapter
+from acb.adapters.models._attrs import ModelAdapter
 
 try:
-    import msgspec  # type: ignore[assignment]
+    import msgspec as _msgspec_module
 
     _msgspec_available = True
 except ImportError:
     _msgspec_available = False
 
-    class msgspec:  # type: ignore[misc]
-        class Struct:  # type: ignore[misc]
+    class _FallbackMsgspec:
+        class Struct:
             pass
+
+
+msgspec = _msgspec_module if _msgspec_available else _FallbackMsgspec
 
 
 MSGSPEC_AVAILABLE = _msgspec_available
 
-T = TypeVar("T", bound=msgspec.Struct)
+T = TypeVar("T", bound="_msgspec_module.Struct")
 
 
 class MsgspecModelAdapter(ModelAdapter[T]):
@@ -36,13 +40,13 @@ class MsgspecModelAdapter(ModelAdapter[T]):
 
     def serialize(self, instance: T) -> dict[str, Any]:
         if MSGSPEC_AVAILABLE:
-            return msgspec.to_builtins(instance)  # type: ignore[attr-defined]
+            return msgspec.to_builtins(instance)  # type: ignore[attr-defined, no-any-return, union-attr]
         return self._manual_serialize(instance)
 
     def _manual_serialize(self, instance: T) -> dict[str, Any]:
         result = {}
         if hasattr(instance, "__struct_fields__"):
-            for field_name in instance.__struct_fields__:  # type: ignore[attr-defined]
+            for field_name in instance.__struct_fields__:  # type: ignore  # type: ignore[attr-defined]
                 if hasattr(instance, field_name):
                     value = getattr(instance, field_name)
                     result[field_name] = self._serialize_value(value)
@@ -57,7 +61,7 @@ class MsgspecModelAdapter(ModelAdapter[T]):
 
     def _serialize_value(self, value: Any) -> Any:
         if isinstance(value, msgspec.Struct):
-            return self.serialize(value)  # type: ignore[arg-type]
+            return self.serialize(value)
         if isinstance(value, list):
             return [self._serialize_value(item) for item in value]
         if isinstance(value, dict):
@@ -69,9 +73,9 @@ class MsgspecModelAdapter(ModelAdapter[T]):
         raise NotImplementedError(msg)
 
     def deserialize_to_class(self, model_class: type[T], data: dict[str, Any]) -> T:
-        if MSGSPEC_AVAILABLE:
+        if MSGSPEC_AVAILABLE and msgspec is not None:
             try:
-                return msgspec.convert(data, model_class)  # type: ignore[attr-defined]
+                return msgspec.convert(data, model_class)  # type: ignore[attr-defined, union-attr, redundant-cast]
             except Exception:
                 filtered_data = self._filter_data_for_model(model_class, data)
                 return model_class(**filtered_data)
@@ -91,15 +95,15 @@ class MsgspecModelAdapter(ModelAdapter[T]):
 
     def get_entity_name(self, model_class: type[T]) -> str:
         if hasattr(model_class, "__tablename__"):
-            return model_class.__tablename__  # type: ignore[attr-defined]
+            return model_class.__tablename__  # type: ignore  # type: ignore[attr-defined]
         if hasattr(model_class, "__collection_name__"):
-            return model_class.__collection_name__  # type: ignore[attr-defined]
+            return model_class.__collection_name__  # type: ignore  # type: ignore[attr-defined]
         return model_class.__name__.lower()
 
     def get_field_mapping(self, model_class: type[T]) -> dict[str, str]:
-        field_mapping = {}
+        field_mapping: dict[str, str] = {}
         if hasattr(model_class, "__struct_fields__"):
-            field_mapping = {name: name for name in model_class.__struct_fields__}  # type: ignore[attr-defined]
+            field_mapping = {name: name for name in model_class.__struct_fields__}
         elif hasattr(model_class, "__annotations__"):
             field_mapping = {name: name for name in model_class.__annotations__}
         return field_mapping
@@ -120,7 +124,7 @@ class MsgspecModelAdapter(ModelAdapter[T]):
     def get_primary_key_field(self, model_class: type[T]) -> str:
         common_pk_names = ["id", "pk", "primary_key", "_id"]
         if hasattr(model_class, "__struct_fields__"):
-            for field_name in model_class.__struct_fields__:  # type: ignore[attr-defined]
+            for field_name in model_class.__struct_fields__:  # type: ignore  # type: ignore[attr-defined]
                 if field_name in common_pk_names:
                     return field_name
         elif hasattr(model_class, "__annotations__"):
@@ -131,15 +135,16 @@ class MsgspecModelAdapter(ModelAdapter[T]):
 
     def get_field_type(self, model_class: type[T], field_name: str) -> type:
         if hasattr(model_class, "__annotations__"):
-            return model_class.__annotations__.get(field_name, Any)  # type: ignore[return-value]
+            annotation = model_class.__annotations__.get(field_name, Any)
+            return t.cast(type, annotation)  # type: ignore[no-any-return]
         return Any  # type: ignore[return-value]
 
     def is_relationship_field(self, model_class: type[T], field_name: str) -> bool:
         field_type = self.get_field_type(model_class, field_name)
         if hasattr(field_type, "__origin__"):
-            origin = get_origin(field_type)
+            origin = get_origin(t.cast(t.Any, field_type))
             if origin is list:
-                args = get_args(field_type)
+                args = get_args(t.cast(t.Any, field_type))
                 if (
                     args
                     and inspect.isclass(args[0])
@@ -154,7 +159,7 @@ class MsgspecModelAdapter(ModelAdapter[T]):
         self,
         model_class: type[T],
         field_name: str,
-    ) -> type[msgspec.Struct] | None:
+    ) -> type[t.Any] | None:  # type: ignore[valid-type]
         field_type = self.get_field_type(model_class, field_name)
 
         if hasattr(field_type, "__origin__"):
