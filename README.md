@@ -86,24 +86,17 @@ ACB supports various optional dependencies for different adapters and functional
 
 | Feature Group | Components | Installation Command |
 | ----------------- | ---------------------------------------------------------------------------------- | ---------------------------------------- |
-| Cache | Memory, Redis | `uv add "acb[cache]"` |
-| DNS | Domain name management (Cloud DNS, Cloudflare) | `uv add "acb[dns]"` |
-| FTPD | File transfer protocols (FTP, SFTP) | `uv add "acb[ftpd]"` |
-| Models | Universal model support (SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, Redis-OM) | `uv add "acb[models]"` |
-| Monitoring | Basic error tracking (Sentry), Logging (Logfire) | `uv add "acb[monitoring]"` |
-| NoSQL | Database (MongoDB, Firestore, Redis) | `uv add "acb[nosql]"` |
-| Requests | HTTP clients (HTTPX, Niquests) | `uv add "acb[requests]"` |
-| Secret | Secret management (Infisical, Secret Manager) | `uv add "acb[secret]"` |
-| SMTP | Email sending (Gmail, Mailgun) | `uv add "acb[smtp]"` |
-| SQL | Database (MySQL, PostgreSQL) | `uv add "acb[sql]"` |
-| Storage | File storage (S3, GCS, Azure, local) | `uv add "acb[storage]"` |
-| Vector | Vector database (DuckDB with VSS) | `uv add "acb[vector]"` |
-| Demo | Demo/example utilities | `uv add "acb[demo]"` |
-| Development | Development tools | `uv add "acb[dev]"` |
-| Multiple Features | Combined dependencies | `uv add "acb[models,cache,sql,nosql]"` |
-| Web Application | Typical web app stack | `uv add "acb[models,cache,sql,storage]"` |
-| Web Application Plus | Web app stack with vector support | `uv add "acb[webapp-plus]"` |
-| All Features | All optional dependencies | `uv add "acb[all]"` |
+| Secret | Secret management (Infisical, Secret Manager) | `uv add "acb[secret]` |
+| SMTP | Email sending (Gmail, Mailgun) | `uv add "acb[smtp]` |
+| SQL | Database (MySQL, PostgreSQL) | `uv add "acb[sql]` |
+| Storage | File storage (S3, GCS, Azure, local) | `uv add "acb[storage]` |
+| Vector | Vector database (DuckDB with VSS, with Weaviate, OpenSearch, Qdrant planned) | `uv add "acb[vector]` |
+| Demo | Demo/example utilities | `uv add "acb[demo]` |
+| Development | Development tools | `uv add "acb[dev]` |
+| Multiple Features | Combined dependencies | `uv add "acb[models,cache,sql,nosql]` |
+| Web Application | Typical web app stack | `uv add "acb[models,cache,sql,storage]` |
+| Web Application Plus | Web app stack with vector support | `uv add "acb[webapp-plus]` |
+| All Features | All optional dependencies | `uv add "acb[all]` |
 
 ## Architecture Overview
 
@@ -497,6 +490,66 @@ activity = await nosql_query.for_model(UserActivity).simple.all()
 
 For comprehensive documentation and examples, see the [Models Adapter Documentation](./acb/adapters/models/README.md).
 
+### MCP Server
+
+ACB includes a comprehensive Model Context Protocol (MCP) server that provides a standardized interface for AI applications to interact with the entire ACB ecosystem. The MCP server acts as a central orchestration layer that exposes all of ACB's capabilities through the Model Context Protocol, enabling AI assistants like Claude to discover, interact with, and orchestrate ACB components.
+
+#### Key Features
+
+- **Universal Component Discovery**: List all available actions, adapters, services, and other components in a single interface
+- **Action Execution**: Execute any registered action with parameter validation across all action categories
+- **Adapter Management**: Enable, disable, or configure adapters dynamically with real-time status monitoring
+- **Workflow Orchestration**: Define and execute complex multi-step workflows that span across different component types
+- **Health Monitoring**: Check the health status of all system components with detailed diagnostic information
+- **Resource Access**: Access component registry information, system metrics, and real-time event streams
+- **AI/ML Integration**: Seamlessly integrate with AI/ML adapters for LLM interactions, embedding generation, and model serving
+
+#### Architecture
+
+The MCP server is built on top of ACB's existing architecture and provides a unified interface for:
+
+- **Actions**: Business logic components that perform specific tasks (compression, encoding, hashing, etc.)
+- **Adapters**: Interface components that connect to external systems (databases, caches, storage, etc.)
+- **Services**: Background services that provide ongoing functionality (when implemented)
+- **Events**: Event-driven communication between components
+- **AI/ML Components**: Integration with LLMs, embedding models, and ML serving platforms
+- **Configuration**: Centralized configuration management
+- **Logging**: Structured logging and monitoring
+
+#### Example Usage with AI Assistants
+
+The MCP server can be easily integrated with AI assistants like Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "acb": {
+      "command": "uv",
+      "args": [
+        "run",
+        "python",
+        "-m",
+        "acb.mcp.server"
+      ],
+      "env": {
+        "ACB_MCP_HOST": "127.0.0.1",
+        "ACB_MCP_PORT": "8000"
+      }
+    }
+  }
+}
+```
+
+Once configured, AI assistants can:
+
+1. Discover all available ACB components through a single endpoint
+2. Execute actions like compressing data or generating hashes
+3. Interact with adapters to access databases, storage, or caching systems
+4. Orchestrate complex workflows that combine multiple operations
+5. Monitor system health and access real-time metrics
+
+For more details on the MCP server implementation, see the [MCP Server Documentation](./acb/mcp/README.md) and [example configurations](./examples/claude_desktop_config.json).
+
 ### Configuration System
 
 ACB's configuration system is built on Pydantic and supports multiple configuration sources:
@@ -602,6 +655,7 @@ async def process_data(
 1. **Testability**: Easy to mock dependencies for testing
 1. **Flexibility**: Change implementations without changing your code
 1. **Decoupling**: Components don't need to know how to create their dependencies
+```
 
 ## Getting Started
 

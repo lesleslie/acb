@@ -16,6 +16,13 @@ from .console import console
 from .context import Pkg as Pkg
 from .context import get_context
 
+# MCP Server imports
+try:
+    from .mcp import create_mcp_server, ACMCPServer
+    HAS_MCP = True
+except ImportError:
+    HAS_MCP = False
+
 if t.TYPE_CHECKING:
     from rich.console import RenderableType
 

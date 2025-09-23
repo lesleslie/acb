@@ -168,6 +168,14 @@ ACB includes the following adapter categories:
   - **PostgreSQL**: PostgreSQL database adapter
   - **SQLite**: SQLite database adapter (local files and Turso cloud databases)
 
+### Vector Database Adapters
+
+- [**Vector**](./vector/README.md): Vector databases for similarity search and AI applications
+  - **DuckDB**: Local vector database with VSS extension (Stable)
+  - **Weaviate**: Weaviate vector database with hybrid search capabilities (Planned)
+  - **OpenSearch**: OpenSearch vector database with k-NN capabilities (Planned)
+  - **Qdrant**: Qdrant vector database for production deployments (Planned)
+
 ### Storage Adapters
 
 - [**Storage**](./storage/README.md): File and object storage
@@ -203,6 +211,7 @@ The following adapter-specific dependency groups are available:
 | smtp | Gmail, Mailgun email sending | `uv add "acb[smtp]"` |
 | sql | MySQL, PostgreSQL, SQLite (including Turso) | `uv add "acb[sql]"` |
 | storage | S3, GCS, Azure, Local | `uv add "acb[storage]"` |
+| vector | DuckDB, Weaviate, OpenSearch, Qdrant | `uv add "acb[vector]"` |
 | demo | Demo/example utilities | `uv add "acb[demo]"` |
 | dev | Development tools | `uv add "acb[dev]"` |
 

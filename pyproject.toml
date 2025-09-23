@@ -36,6 +36,7 @@ dependencies = [
     "brotli>=1.1",
     "devtools>=0.12.2",
     "dill>=0.4",
+    "fastapi>=0.115.0",
     "google-api-python-client>=2.176",
     "google-crc32c>=1.7.1",
     "icecream>=2.1.5",
@@ -54,6 +55,7 @@ dependencies = [
     "toml>=0.10.2",
     "tomli-w>=1.2",
     "uuid-utils>=0.11",
+    "uvicorn>=0.30.0",
 ]
 
 [project.license]
@@ -61,7 +63,7 @@ text = "BSD-3-CLAUSE"
 
 [project.optional-dependencies]
 all = [
-    "acb[cache,dns,ftpd,models,monitoring,nosql,requests,secret,smtp,sql,storage,vector]",
+    "acb[cache,dns,ftpd,models,monitoring,nosql,requests,secret,smtp,sql,storage,vector,mcp]",
 ]
 api = [
     "acb[cache,nosql,requests,monitoring,secret]",
@@ -92,6 +94,10 @@ ftpd = [
 ]
 gcp = [
     "acb[dns,secret,nosql,storage]",
+]
+mcp = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
 ]
 microservice = [
     "acb[cache,requests,monitoring,secret]",

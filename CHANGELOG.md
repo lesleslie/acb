@@ -5,6 +5,24 @@ All notable changes to ACB (Asynchronous Component Base) will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **NEW**: Model Context Protocol (MCP) server implementation for AI application integration
+- **NEW**: Centralized orchestration layer for managing ACB components through MCP interface
+- **NEW**: Component discovery tools for listing actions, adapters, and services
+- **NEW**: Action execution capabilities through MCP tools
+- **NEW**: Adapter management tools for enabling, disabling, and configuring adapters
+- **NEW**: Workflow orchestration system for complex multi-step operations
+- **NEW**: Health monitoring tools for checking component status
+- **NEW**: Resource access for component registry, system metrics, and event streams
+- **NEW**: Example implementations and documentation for MCP server usage
+
+### Changed
+
+- Updated dependencies to include FastAPI and Uvicorn for MCP server implementation
+
 ## [0.21.2] - 2025-09-22
 
 ### Fixed
