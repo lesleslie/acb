@@ -160,10 +160,10 @@ class TestFTP:
         ):
             # Access the server property to trigger the mkdir call
             _ = ftp_adapter.server
-            
+
             mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
             mock_server_class.assert_called_once()
-            
+
             # Check the arguments passed to Server constructor
             call_args = mock_server_class.call_args
             assert call_args is not None

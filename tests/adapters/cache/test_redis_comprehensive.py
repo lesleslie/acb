@@ -517,7 +517,7 @@ class TestRedisCache:
         ):
             # Set the mock serializer directly
             redis_cache._serializer = mock_serializer
-            
+
             await redis_cache.init()
 
             mock_client.ping.assert_called_once()

@@ -166,12 +166,15 @@ from acb.adapters import AdapterMetadata, AdapterStatus, AdapterCapability
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
-    name="Redis Cache", category="cache", provider="redis",
-    version="1.0.0", acb_min_version="0.18.0",
+    name="Redis Cache",
+    category="cache",
+    provider="redis",
+    version="1.0.0",
+    acb_min_version="0.18.0",
     status=AdapterStatus.STABLE,
     capabilities=[AdapterCapability.ASYNC_OPERATIONS, AdapterCapability.CACHING],
     required_packages=["redis>=4.0.0"],
-    description="High-performance Redis caching adapter"
+    description="High-performance Redis caching adapter",
 )
 ```
 
@@ -539,16 +542,19 @@ Self-contained utility functions automatically discovered and registered:
 **Target Python 3.13+** with modern syntax and security practices:
 
 **Modern Python patterns:**
+
 - Use `pathlib.Path`, `str.removeprefix()`, `|` union types, `dict1 | dict2` merging
 - Use `any()/all()`, comprehensions, `enumerate()`, context managers
 - Prefer `match` statements, type annotations on all functions
 
 **Security requirements:**
+
 - Never use `eval()`, `exec()`, `subprocess.shell=True`, `pickle` with untrusted data
 - Use `secrets` module (not `random`), environment variables for secrets
 - Parameterized queries only, validate all inputs, specify file encoding
 
 **Type safety:**
+
 - Explicit type hints on parameters/returns, handle `Optional` properly
 - Use `str | None`, `list[str]`, `dict[str, Any]` modern syntax
 - Type narrowing with assertions, `Protocol` for duck typing
@@ -705,7 +711,6 @@ Each adapter category has its own detailed README with usage examples and config
 - **[SQL](./acb/adapters/sql/README.md)**: Relational databases (MySQL, PostgreSQL, SQLite)
 - **[Storage](./acb/adapters/storage/README.md)**: File storage (S3, GCS, Azure, local)
 
-
 ## Common Issues and Solutions
 
 **Secret detection**: Add `# pragma: allowlist secret` to config examples
@@ -713,6 +718,7 @@ Each adapter category has its own detailed README with usage examples and config
 **Test mocks**: Include all required attributes (e.g., `mock_sql.ssl_enabled = True`)
 
 **Quick fixes:**
+
 - Adapter not loading → Check `settings/adapters.yml`, install with `uv add "acb[adapter_name]"`
 - Import errors → Install ACB with `uv add acb`, check Python 3.13+ requirement
 - Config errors → Verify YAML syntax, create `settings/` structure
