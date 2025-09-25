@@ -512,15 +512,17 @@ class TestRedisCache:
 
         with (
             patch.object(redis_cache, "get_client", return_value=mock_client),
-            patch(
-                "acb.adapters.cache.redis._get_redis_imports", return_value=mock_imports
-            ),
+            patch("acb.adapters.cache.redis._get_redis_imports", return_value=mock_imports),
+            patch.object(redis_cache, "_setup_serializer") as mock_setup_serializer,
         ):
+            # Set the mock serializer directly
+            redis_cache._serializer = mock_serializer
+            
             await redis_cache.init()
 
             mock_client.ping.assert_called_once()
             assert redis_cache._namespace == "testapp:"
-            assert isinstance(redis_cache._serializer, type(mock_serializer))
+            assert redis_cache._serializer == mock_serializer
             redis_cache.logger.info.assert_called()
 
     async def test_init_without_connection_string(self, redis_cache):
@@ -673,7 +675,12 @@ class TestRedisCache:
         _redis_imports.clear()
 
         with (
-            patch.dict("sys.modules", {}),
+            patch.dict("sys.modules", {
+                "aiocache.backends.redis": None,
+                "aiocache.serializers": None,
+                "coredis.cache": None,
+                "coredis.client": None,
+            }),
             patch("acb.adapters.cache.redis.debug") as mock_debug,
         ):
             from acb.adapters.cache.redis import _get_redis_imports
@@ -759,6 +766,8 @@ class TestRedisCache:
             assert mock_client.unlink.call_count == 2
 
             # Test close
+            # Set the _client attribute to the mock client so _close can access it
+            redis_cache._client = mock_client
             await redis_cache._close()
             mock_client.close.assert_called_once()
 

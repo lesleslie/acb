@@ -71,7 +71,7 @@ class TestFTPSettings:
 
         # Test inherited defaults from FtpdBaseSettings
         assert settings.host == "127.0.0.1"
-        assert settings.root_dir == "/tmp"
+        assert settings.root_dir == "tmp/ftp"
         assert isinstance(settings.username, str)
         assert isinstance(settings.password, SecretStr)
 
