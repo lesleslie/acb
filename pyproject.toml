@@ -347,6 +347,7 @@ exclude-deps = [
     "hatchling",
     "pyfiglet",
     "autotyping",
+    "uvicorn",
 ]
 
 [tool.refurb]

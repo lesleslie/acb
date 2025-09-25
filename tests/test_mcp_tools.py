@@ -13,15 +13,15 @@ def test_mcp_tools_imports():
     """Test that MCP tools can be imported."""
     try:
         from acb.mcp.tools import ComponentDiscoveryTool, ActionExecutionTool, AdapterManagementTool, HealthCheckTool
-        
+
         # Just test that we can import the classes
         assert ComponentDiscoveryTool is not None
         assert ActionExecutionTool is not None
         assert AdapterManagementTool is not None
         assert HealthCheckTool is not None
-        
+
         print("✓ All MCP tools imported successfully")
-        
+
     except Exception as e:
         print(f"✗ Error importing MCP tools: {e}")
         raise

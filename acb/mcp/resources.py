@@ -1,32 +1,35 @@
 """MCP resources implementation for ACB."""
 
 import asyncio
-from typing import Any, Dict, List, Optional, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Any
+
 from acb.depends import depends
 from acb.logger import Logger
+
 from .registry import ComponentRegistry
 
 
 class ACBMCPResources:
     """MCP resources implementation for ACB."""
-    
+
     def __init__(self, component_registry: ComponentRegistry):
         """Initialize the MCP resources."""
         self.component_registry = component_registry
         self.logger: Logger = depends.get(Logger)
         self._initialized = False
-    
+
     async def initialize(self) -> None:
         """Initialize the MCP resources."""
         if self._initialized:
             return
-            
+
         self.logger.info("Initializing ACB MCP Resources")
         # Resource initialization logic would go here
         self._initialized = True
         self.logger.info("ACB MCP Resources initialized")
-    
-    async def get_component_registry(self) -> Dict[str, Any]:
+
+    async def get_component_registry(self) -> dict[str, Any]:
         """Get the component registry as a resource."""
         registry = {
             "actions": list(self.component_registry.get_actions().keys()),
@@ -35,8 +38,8 @@ class ACBMCPResources:
             "events": list(self.component_registry.get_events().keys()),
         }
         return registry
-    
-    async def get_system_metrics(self) -> Dict[str, Any]:
+
+    async def get_system_metrics(self) -> dict[str, Any]:
         """Get system metrics as a resource."""
         # This is a placeholder implementation
         # In a real implementation, this would gather actual system metrics
@@ -47,11 +50,11 @@ class ACBMCPResources:
                 "adapters": len(self.component_registry.get_adapters()),
                 "services": len(self.component_registry.get_services()),
                 "events": len(self.component_registry.get_events()),
-            }
+            },
         }
         return metrics
-    
-    async def get_event_stream(self) -> AsyncGenerator[Dict[str, Any], None]:
+
+    async def get_event_stream(self) -> AsyncGenerator[dict[str, Any]]:
         """Get a stream of system events."""
         # This is a placeholder implementation
         # In a real implementation, this would stream actual system events
@@ -62,14 +65,14 @@ class ACBMCPResources:
                     "event_id": counter,
                     "timestamp": asyncio.get_event_loop().time(),
                     "type": "heartbeat",
-                    "data": {"counter": counter}
+                    "data": {"counter": counter},
                 }
                 counter += 1
                 await asyncio.sleep(10)  # Send heartbeat every 10 seconds
         except asyncio.CancelledError:
             self.logger.info("Event stream cancelled")
             raise
-    
+
     async def cleanup(self) -> None:
         """Clean up the MCP resources."""
         self._initialized = False

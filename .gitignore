@@ -10,7 +10,7 @@
 /tmp/
 /__pycache__/
 /*.pyc
-/.zencoder/
+
 
 # ACB settings directory (should only be created by consuming applications)
 /settings/
@@ -21,3 +21,4 @@
 /.coverage
 /complexipy.json
 /coverage.json
+/ACB_*.md

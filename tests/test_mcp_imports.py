@@ -13,7 +13,7 @@ def test_mcp_module_imports():
         "acb.mcp.registry",
         "acb.mcp.utils",
     ]
-    
+
     for module_name in modules_to_test:
         try:
             __import__(module_name)

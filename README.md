@@ -8,7 +8,7 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-74.2%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-72.1%25-yellow)
 
 ## What is ACB?
 
@@ -543,10 +543,10 @@ The MCP server can be easily integrated with AI assistants like Claude Desktop:
 Once configured, AI assistants can:
 
 1. Discover all available ACB components through a single endpoint
-2. Execute actions like compressing data or generating hashes
-3. Interact with adapters to access databases, storage, or caching systems
-4. Orchestrate complex workflows that combine multiple operations
-5. Monitor system health and access real-time metrics
+1. Execute actions like compressing data or generating hashes
+1. Interact with adapters to access databases, storage, or caching systems
+1. Orchestrate complex workflows that combine multiple operations
+1. Monitor system health and access real-time metrics
 
 For more details on the MCP server implementation, see the [MCP Server Documentation](./acb/mcp/README.md) and [example configurations](./examples/claude_desktop_config.json).
 
@@ -655,7 +655,8 @@ async def process_data(
 1. **Testability**: Easy to mock dependencies for testing
 1. **Flexibility**: Change implementations without changing your code
 1. **Decoupling**: Components don't need to know how to create their dependencies
-```
+
+````
 
 ## Getting Started
 
@@ -675,7 +676,7 @@ uv init
 
 # Add ACB as a dependency
 uv add acb
-```
+````
 
 2. **Create a basic application structure:**
 

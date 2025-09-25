@@ -25,6 +25,7 @@ dependencies = [
     { name = "coredis" },
     { name = "devtools" },
     { name = "dill" },
+    { name = "fastapi" },
     { name = "fsspec" },
     { name = "gcsfs" },
     { name = "google-api-python-client" },
@@ -58,6 +59,7 @@ dependencies = [
     { name = "toml" },
     { name = "tomli-w" },
     { name = "uuid-utils" },
+    { name = "uvicorn" },
     { name = "validators" },
 ]
 
@@ -78,6 +80,7 @@ all = [
     { name = "cloudflare" },
     { name = "coredis" },
     { name = "duckdb" },
+    { name = "fastapi" },
     { name = "fsspec" },
     { name = "gcsfs" },
     { name = "google-cloud-dns" },
@@ -101,6 +104,7 @@ all = [
     { name = "sqlalchemy-libsql" },
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
+    { name = "uvicorn" },
     { name = "validators" },
 ]
 api = [
@@ -206,6 +210,10 @@ gcp = [
     { name = "redis-om" },
     { name = "s3fs" },
     { name = "validators" },
+]
+mcp = [
+    { name = "fastapi" },
+    { name = "uvicorn" },
 ]
 microservice = [
     { name = "aiocache", extra = ["redis"] },
@@ -354,7 +362,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "acb", extras = ["cache", "dns", "ftpd", "models", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage", "vector"], marker = "extra == 'all'" },
+    { name = "acb", extras = ["cache", "dns", "ftpd", "models", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage", "vector", "mcp"], marker = "extra == 'all'" },
     { name = "acb", extras = ["cache", "dns", "ftpd", "monitoring", "nosql", "requests", "secret", "smtp", "storage"] },
     { name = "acb", extras = ["cache", "nosql", "requests", "monitoring", "secret"], marker = "extra == 'api'" },
     { name = "acb", extras = ["cache", "requests"], marker = "extra == 'minimal'" },
@@ -388,6 +396,8 @@ requires-dist = [
     { name = "dill", specifier = ">=0.4" },
     { name = "duckdb", marker = "extra == 'vector'", specifier = ">=0.10.2" },
     { name = "faker", marker = "extra == 'demo'", specifier = ">=37.4" },
+    { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "fastapi", marker = "extra == 'mcp'", specifier = ">=0.115.0" },
     { name = "fsspec", marker = "extra == 'storage'", specifier = ">=2025.1" },
     { name = "gcsfs", marker = "extra == 'storage'", specifier = ">=2025.5.1" },
     { name = "google-api-python-client", specifier = ">=2.176" },
@@ -437,9 +447,11 @@ requires-dist = [
     { name = "toml", specifier = ">=0.10.2" },
     { name = "tomli-w", specifier = ">=1.2" },
     { name = "uuid-utils", specifier = ">=0.11" },
+    { name = "uvicorn", specifier = ">=0.30.0" },
+    { name = "uvicorn", marker = "extra == 'mcp'", specifier = ">=0.30.0" },
     { name = "validators", marker = "extra == 'dns'", specifier = ">=0.35" },
 ]
-provides-extras = ["all", "api", "cache", "cloud-native", "dataplatform", "demo", "dns", "ftpd", "gcp", "microservice", "minimal", "models", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage", "vector", "webapp", "webapp-plus"]
+provides-extras = ["all", "api", "cache", "cloud-native", "dataplatform", "demo", "dns", "ftpd", "gcp", "mcp", "microservice", "minimal", "models", "monitoring", "nosql", "requests", "secret", "smtp", "sql", "storage", "vector", "webapp", "webapp-plus"]
 
 [package.metadata.requires-dev]
 dev = [

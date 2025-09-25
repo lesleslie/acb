@@ -18,10 +18,14 @@ from .context import get_context
 
 # MCP Server imports
 try:
-    from .mcp import create_mcp_server, ACMCPServer
+    from .mcp import ACMCPServer as ACMCPServer  # noqa: F401
+    from .mcp import create_mcp_server as create_mcp_server  # noqa: F401
+
     HAS_MCP = True
 except ImportError:
     HAS_MCP = False
+    ACMCPServer = None  # type: ignore
+    create_mcp_server = None  # type: ignore
 
 if t.TYPE_CHECKING:
     from rich.console import RenderableType

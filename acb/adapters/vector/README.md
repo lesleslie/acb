@@ -121,12 +121,15 @@ The DuckDB vector adapter provides a local vector database implementation using 
 All major vector databases can be run locally for development and testing purposes:
 
 ### Weaviate
+
 Weaviate can be run locally on macOS (both Intel and Apple Silicon) using Docker. The official Weaviate Docker images include ARM64 support for native performance on Apple Silicon Macs. For local development, allocate 4-6 GB of RAM to Docker Desktop for optimal performance.
 
 ### OpenSearch
+
 OpenSearch can be run locally on macOS using Docker, which is the most popular installation method. Official OpenSearch Docker images are compatible with ARM64 architecture, providing good performance on Apple Silicon Macs. For local development, allocate at least 4GB of RAM to Docker Desktop.
 
 ### Qdrant
+
 Qdrant can be run locally on macOS using Docker with native ARM64 support. Docker Desktop's Apple Silicon version works well with Qdrant for local development.
 
 These vector databases can be used with ACB once their respective adapters are implemented. The framework is designed to support all these systems through its adapter pattern.

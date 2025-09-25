@@ -48,10 +48,10 @@ server = create_mcp_server()
 The MCP server provides several tools for interacting with ACB components:
 
 1. **Component Discovery**: List available actions, adapters, and services
-2. **Action Execution**: Execute actions with parameters
-3. **Adapter Management**: Interact with configured adapters
-4. **Health Monitoring**: Check system component health
-5. **Workflow Orchestration**: Execute complex multi-step workflows
+1. **Action Execution**: Execute actions with parameters
+1. **Adapter Management**: Interact with configured adapters
+1. **Health Monitoring**: Check system component health
+1. **Workflow Orchestration**: Execute complex multi-step workflows
 
 ### Example: Component Discovery
 
@@ -80,10 +80,7 @@ tools = server.tools
 
 # Execute a compression action
 result = await tools.execute_action(
-    action_category="compress",
-    action_name="brotli",
-    data="Hello, World!",
-    level=4
+    action_category="compress", action_name="brotli", data="Hello, World!", level=4
 )
 print(result)
 ```
@@ -103,15 +100,15 @@ workflow_steps = [
         "type": "action",
         "component": "compress",
         "action": "brotli",
-        "parameters": {"data": "Hello, World!", "level": 4}
+        "parameters": {"data": "Hello, World!", "level": 4},
     },
     {
         "name": "encode_result",
         "type": "action",
         "component": "encode",
         "action": "base64",
-        "parameters": {"data": "compressed_data_here"}
-    }
+        "parameters": {"data": "compressed_data_here"},
+    },
 ]
 
 # Execute the workflow
@@ -124,6 +121,7 @@ print(result)
 The MCP server can be integrated with AI assistants like Claude Desktop by configuring the assistant to connect to the MCP server endpoint.
 
 Example configuration for Claude Desktop:
+
 ```json
 {
   "mcpServers": {
@@ -144,16 +142,19 @@ Example configuration for Claude Desktop:
 To add custom tools or resources to the MCP server:
 
 1. Create a new tool class that implements the required functionality
-2. Register the tool with the MCP server
-3. Implement any necessary resource endpoints
+1. Register the tool with the MCP server
+1. Implement any necessary resource endpoints
 
 Example of adding a custom tool:
+
 ```python
 from acb.mcp import create_mcp_server
+
 
 class CustomTool:
     async def custom_action(self, parameter: str) -> str:
         return f"Processed: {parameter}"
+
 
 # Create server and add custom tool
 server = create_mcp_server()
@@ -165,42 +166,51 @@ server.custom_tool = CustomTool()
 When running the MCP server in production:
 
 1. Use authentication and authorization mechanisms
-2. Limit network access to trusted sources
-3. Encrypt data in transit using HTTPS
-4. Regularly update dependencies
-5. Monitor server logs for suspicious activity
+1. Limit network access to trusted sources
+1. Encrypt data in transit using HTTPS
+1. Regularly update dependencies
+1. Monitor server logs for suspicious activity
 
 ## API Reference
 
 ### Tools
 
 #### `list_components(component_type: Optional[str] = None)`
+
 List available components of a specific type or all components.
 
 #### `execute_action(action_category: str, action_name: str, **kwargs)`
+
 Execute a specific action with the given parameters.
 
 #### `get_adapter_info(adapter_name: str)`
+
 Get information about a specific adapter.
 
 ### Resources
 
 #### `get_component_registry()`
+
 Get the component registry as a resource.
 
 #### `get_system_metrics()`
+
 Get system metrics as a resource.
 
 #### `get_event_stream()`
+
 Get a stream of system events.
 
 ### Orchestrator
 
 #### `execute_workflow(workflow_name: str, steps: List[Dict[str, Any]])`
+
 Execute a complex workflow consisting of multiple steps.
 
 #### `start_background_workflow(workflow_id: str, steps: List[Dict[str, Any]])`
+
 Start a workflow in the background.
 
 #### `get_workflow_status(workflow_id: str)`
+
 Get the status of a background workflow.
