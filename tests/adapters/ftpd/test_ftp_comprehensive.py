@@ -158,11 +158,23 @@ class TestFTP:
             patch("pathlib.Path.mkdir") as mock_mkdir,
             patch("acb.adapters.ftpd.ftp.Server", MockServer) as mock_server_class,
         ):
+            # Access the server property to trigger the mkdir call
+            _ = ftp_adapter.server
+            
             mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
             mock_server_class.assert_called_once()
-
-            # Verify server was configured with correct settings
-            call_kwargs = mock_server_class.call_args[1]
+            
+            # Check the arguments passed to Server constructor
+            call_args = mock_server_class.call_args
+            assert call_args is not None
+            # The call_args is a tuple of (args, kwargs)
+            args, kwargs = call_args
+            # Check that users parameter is present
+            assert "users" in kwargs
+            # Check that there's one user (no anonymous)
+            assert len(kwargs["users"]) == 1
+            # Check maximum_connections parameter
+            assert kwargs["maximum_connections"] == 10
             assert "users" in call_kwargs
             assert len(call_kwargs["users"]) == 1  # No anonymous user
             assert call_kwargs["maximum_connections"] == 10
