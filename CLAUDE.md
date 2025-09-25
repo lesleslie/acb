@@ -159,167 +159,24 @@ class ExampleAdapter:
 
 ### Adapter Metadata Standard
 
-ACB uses a comprehensive metadata system for adapter identification, capability discovery, and version management. Each adapter should include a `MODULE_METADATA` constant with standardized information.
-
-#### Core Metadata Schema
+Each adapter includes `MODULE_METADATA` for identification and capability discovery:
 
 ```python
-from acb.adapters import (
-    AdapterMetadata,
-    AdapterStatus,
-    AdapterCapability,
-    generate_adapter_id,
-)
-
-# Required metadata for all adapters
-MODULE_METADATA = AdapterMetadata(
-    module_id=generate_adapter_id(),  # UUID7 identifier (persistent)
-    name="Redis Cache",  # Human-readable name
-    category="cache",  # Adapter category
-    provider="redis",  # Technology provider
-    version="1.0.0",  # Semantic version (independent of ACB)
-    acb_min_version="0.18.0",  # Minimum ACB version required
-    acb_max_version="2.0.0",  # Maximum ACB version supported
-    author="Developer <dev@example.com>",  # Primary maintainer
-    created_date="2025-01-12",  # ISO date of creation
-    last_modified="2025-01-12",  # ISO date of last modification
-    status=AdapterStatus.STABLE,  # Development status
-    capabilities=[  # Feature capabilities
-        AdapterCapability.ASYNC_OPERATIONS,
-        AdapterCapability.CONNECTION_POOLING,
-        AdapterCapability.CACHING,
-    ],
-    required_packages=["redis>=4.0.0"],  # Required dependencies
-    optional_packages=["hiredis>=2.0.0"],  # Optional dependencies
-    description="High-performance Redis caching adapter",
-    documentation_url="https://docs.example.com/redis-cache",
-    repository_url="https://github.com/example/redis-adapter",
-    settings_class="CacheSettings",  # Configuration class name
-    config_example={  # Example configuration
-        "host": "localhost",
-        "port": 6379,
-        "db": 0,
-    },
-    custom={"custom_field": "value"},  # Custom metadata fields
-)
-```
-
-#### Adapter Status Levels
-
-```python
-class AdapterStatus(Enum):
-    ALPHA = "alpha"  # Early development, breaking changes expected
-    BETA = "beta"  # Feature complete, may have bugs
-    STABLE = "stable"  # Production ready
-    DEPRECATED = "deprecated"  # Scheduled for removal
-    EXPERIMENTAL = "experimental"  # Proof of concept
-```
-
-#### Adapter Capabilities
-
-The capability system enables runtime feature detection:
-
-```python
-# Connection Management
-AdapterCapability.CONNECTION_POOLING  # Supports connection pooling
-AdapterCapability.RECONNECTION  # Auto-reconnection support
-
-# Data Operations
-AdapterCapability.TRANSACTIONS  # Transaction support
-AdapterCapability.BULK_OPERATIONS  # Batch operations
-AdapterCapability.STREAMING  # Streaming data support
-AdapterCapability.COMPRESSION  # Data compression
-AdapterCapability.ENCRYPTION  # Encryption support
-
-# Performance
-AdapterCapability.CACHING  # Built-in caching
-AdapterCapability.ASYNC_OPERATIONS  # Async/await support
-AdapterCapability.BATCHING  # Request batching
-
-AdapterCapability.LOGGING  # Structured logging
-
-# Schema Management
-AdapterCapability.SCHEMA_VALIDATION  # Schema validation
-AdapterCapability.MIGRATIONS  # Database migrations
-AdapterCapability.BACKUP_RESTORE  # Backup/restore operations
-```
-
-#### Metadata Utility Functions
-
-```python
-from acb.adapters import (
-    generate_adapter_id,
-    create_metadata_template,
-    extract_metadata_from_module,
-    validate_version_compatibility,
-    check_adapter_capability,
-    generate_adapter_report,
-)
-
-# Generate unique adapter ID
-adapter_id = generate_adapter_id()
-
-# Create template for new adapter
-template = create_metadata_template(
-    name="My Adapter", category="storage", provider="custom"
-)
-
-# Extract metadata from adapter module
-metadata = extract_metadata_from_module(adapter_module)
-
-# Check version compatibility
-is_compatible = validate_version_compatibility(metadata, "0.19.0")
-
-# Check for specific capability
-has_pooling = check_adapter_capability(adapter, AdapterCapability.CONNECTION_POOLING)
-
-# Generate comprehensive adapter report
-report = generate_adapter_report(adapter_class)
-```
-
-#### Usage in Adapter Development
-
-When implementing new adapters, always include metadata:
-
-```python
-# my_adapter.py
 from acb.adapters import AdapterMetadata, AdapterStatus, AdapterCapability
 
 MODULE_METADATA = AdapterMetadata(
-    module_id="01234567-89ab-cdef-0123-456789abcdef",
-    name="Custom Storage",
-    category="storage",
-    provider="custom",
-    version="0.1.0",
-    acb_min_version="0.19.0",
-    author="Your Name <your.email@example.com>",
-    created_date="2025-01-14",
-    last_modified="2025-01-14",
-    status=AdapterStatus.BETA,
-    capabilities=[
-        AdapterCapability.ASYNC_OPERATIONS,
-        AdapterCapability.ENCRYPTION,
-    ],
-    required_packages=["custom-storage>=1.0.0"],
-    description="Custom storage adapter with encryption",
-    settings_class="CustomStorageSettings",
+    module_id=generate_adapter_id(),
+    name="Redis Cache", category="cache", provider="redis",
+    version="1.0.0", acb_min_version="0.18.0",
+    status=AdapterStatus.STABLE,
+    capabilities=[AdapterCapability.ASYNC_OPERATIONS, AdapterCapability.CACHING],
+    required_packages=["redis>=4.0.0"],
+    description="High-performance Redis caching adapter"
 )
-
-
-class Storage:
-    # Adapter implementation
-    pass
 ```
 
-#### Benefits of Metadata System
-
-1. **Unique Identification**: Each adapter has a persistent UUID7 identifier
-1. **Version Tracking**: Independent versioning from ACB core
-1. **Capability Discovery**: Runtime feature detection and validation
-1. **Compatibility Checking**: Automatic version requirement validation
-1. **Debugging Support**: Comprehensive adapter information for troubleshooting
-1. **Template System**: Standardized adapter development workflow
-1. **Documentation**: Built-in documentation and examples
+**Key capabilities**: CONNECTION_POOLING, TRANSACTIONS, ASYNC_OPERATIONS, CACHING, ENCRYPTION
+**Status levels**: ALPHA, BETA, STABLE, DEPRECATED, EXPERIMENTAL
 
 ### Simplified Architecture (v0.19.1+)
 
@@ -679,262 +536,30 @@ Self-contained utility functions automatically discovered and registered:
 
 ## Code Quality Compliance
 
-When generating code, AI assistants MUST follow these standards to ensure compliance with Refurb and Bandit pre-commit hooks:
+**Target Python 3.13+** with modern syntax and security practices:
 
-**IMPORTANT: Target Python 3.13+** - All code should be compatible with Python 3.13 or newer when possible. Use modern Python features and syntax.
+**Modern Python patterns:**
+- Use `pathlib.Path`, `str.removeprefix()`, `|` union types, `dict1 | dict2` merging
+- Use `any()/all()`, comprehensions, `enumerate()`, context managers
+- Prefer `match` statements, type annotations on all functions
 
-### Refurb Standards (Modern Python Patterns)
+**Security requirements:**
+- Never use `eval()`, `exec()`, `subprocess.shell=True`, `pickle` with untrusted data
+- Use `secrets` module (not `random`), environment variables for secrets
+- Parameterized queries only, validate all inputs, specify file encoding
 
-**Use modern syntax and built-ins:**
+**Type safety:**
+- Explicit type hints on parameters/returns, handle `Optional` properly
+- Use `str | None`, `list[str]`, `dict[str, Any]` modern syntax
+- Type narrowing with assertions, `Protocol` for duck typing
 
-- Use `pathlib.Path` instead of `os.path` operations
-- Use `str.removeprefix()` and `str.removesuffix()` instead of string slicing
-- Use `itertools.batched()` for chunking sequences (Python 3.12+)
-- Prefer `match` statements over complex `if/elif` chains
-- Use `|` for union types instead of `Union` from typing
-- Use `dict1 | dict2` for merging instead of `{**dict1, **dict2}`
+**Pre-commit hooks**: Refurb, Bandit, Pyright, Ruff, pyproject-fmt, Vulture, Creosote, Complexipy, Codespell, detect-secrets
 
-**Example of good patterns:**
+## Project Structure
 
-```python
-# Good: Modern pathlib usage
-from pathlib import Path
-
-config_file = Path("config") / "settings.yaml"
-if config_file.exists():
-    content = config_file.read_text(encoding="utf-8")
-
-# Good: String methods
-if name.startswith("test_"):
-    name = name.removeprefix("test_")
-
-
-# Good: Union types
-def process_data(data: str | bytes) -> dict[str, Any]:
-    pass
-
-
-# Good: Context managers
-with open(file_path, encoding="utf-8") as f:
-    data = f.read()
-```
-
-**Use efficient built-in functions:**
-
-- Use `any()` and `all()` instead of manual boolean loops
-- Use list/dict comprehensions over manual loops when appropriate
-- Use `enumerate()` instead of manual indexing with `range(len())`
-- Use `zip()` for parallel iteration instead of manual indexing
-
-**Resource management:**
-
-- Always use context managers (`with` statements) for file operations
-- Use `tempfile` module for temporary files instead of manual paths
-- Prefer `subprocess.run()` over `subprocess.Popen()` when possible
-
-### Bandit Code Security Standards
-
-**Never use dangerous functions:**
-
-- Avoid `eval()`, `exec()`, or `compile()` with any user input
-- Never use `subprocess.shell=True` or `os.system()`
-- Don't use `pickle` with untrusted data
-- Avoid `yaml.load()` - use `yaml.safe_load()` instead
-
-**Cryptography and secrets:**
-
-- Use `secrets` module for cryptographic operations, never `random`
-- Never hardcode passwords, API keys, or secrets in source code
-- Use environment variables or secure configuration for sensitive data
-- Use `hashlib` with explicit algorithms, avoid MD5/SHA1 for security
-
-**File and path security:**
-
-- Always validate file paths to prevent directory traversal
-- Use `tempfile.mkstemp()` instead of predictable temporary file names
-- Always specify encoding when opening files
-- Validate all external inputs before processing
-
-**Database and injection prevention:**
-
-- Use parameterized queries, never string concatenation for SQL
-- Validate and sanitize all user inputs
-- Use prepared statements for database operations
-
-**Example of secure patterns:**
-
-```python
-# Good: Secure random generation
-import secrets
-
-token = secrets.token_urlsafe(32)
-
-# Good: Safe subprocess usage
-import subprocess
-
-result = subprocess.run(["ls", "-la"], capture_output=True, text=True)
-
-# Good: Secure file operations
-import tempfile
-
-with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as f:
-    f.write(data)
-    temp_path = f.name
-
-# Good: Environment variables for secrets
-import os
-
-api_key = os.environ.get("API_KEY")
-if not api_key:
-    raise ValueError("API_KEY environment variable required")
-
-# Good: Parameterized database queries
-cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-```
-
-### Pyright Type Safety Standards
-
-**Always use explicit type annotations:**
-
-- Function parameters must have type hints
-- Function return types must be annotated
-- Class attributes should have type annotations
-- Use `from __future__ import annotations` for forward references
-
-**Handle Optional types properly:**
-
-- Use `str | None` instead of `Optional[str]` when possible
-- Always check for None before using optional values
-- Use explicit `assert` statements or type guards when narrowing types
-
-**Generic types and collections:**
-
-- Use `list[str]` instead of `List[str]` when possible
-- Use `dict[str, Any]` instead of `Dict[str, Any]` when possible
-- Properly type generic classes with `TypeVar` when needed
-- Use `Sequence` or `Iterable` for function parameters when appropriate
-
-**Protocol and ABC usage:**
-
-- Prefer `typing.Protocol` over abstract base classes for duck typing
-- Use `@runtime_checkable` when protocols need runtime checks
-- Define clear interfaces with protocols
-
-**Example of proper typing:**
-
-```python
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
-from pathlib import Path
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-
-@runtime_checkable
-class Writable(Protocol):
-    def write(self, data: str) -> None: ...
-
-
-def process_files(
-    paths: Sequence[Path],
-    output: Writable,
-    encoding: str = "utf-8",
-) -> dict[str, int]:
-    """Process files and return statistics."""
-    stats: dict[str, int] = {}
-
-    for path in paths:
-        if path.exists():
-            content = path.read_text(encoding=encoding)
-            stats[str(path)] = len(content)
-            output.write(f"Processed {path}\n")
-
-    return stats
-
-
-# Good: Type narrowing with assertion
-def validate_config(config: dict[str, str | None]) -> dict[str, str]:
-    """Validate that all config values are non-None."""
-    validated: dict[str, str] = {}
-    for key, value in config.items():
-        assert value is not None, f"Config key {key} cannot be None"
-        validated[key] = value
-    return validated
-```
-
-### Integration with Pre-commit Hooks
-
-These standards align with the project's pre-commit hooks:
-
-- **Refurb**: Automatically suggests modern Python patterns
-- **Bandit**: Scans for security vulnerabilities
-- **Pyright**: Enforces type safety
-- **Ruff**: Handles formatting and additional linting
-- **pyproject-fmt**: Validates and formats pyproject.toml files
-- **Vulture**: Detects unused code (dead code detection)
-- **Creosote**: Identifies unused dependencies
-- **Complexipy**: Analyzes code complexity
-- **Autotyping**: Automatically adds type annotations
-- **Codespell**: Fixes common spelling mistakes
-- **Detect-secrets**: Prevents credential leaks
-- **Standard hooks**: File formatting (trailing whitespace, end-of-file fixes, YAML/TOML validation)
-
-By following these guidelines during code generation, AI assistants will produce code that passes all quality checks without requiring manual fixes.
-
-### Tool Configuration in pyproject.toml
-
-Key tool configurations:
-
-- **Ruff**: Target Python 3.13, line length 88, auto-fix enabled
-- **Pytest**: Auto-discover tests, 300s timeout, coverage fail under 42%
-- **Pyright**: Strict mode with some relaxed settings for practicality
-- **Coverage**: Branch coverage disabled, exclude test files
-- **Bandit**: Security scanning with some practical skips
-- **Vulture**: Dead code detection with 86% confidence threshold
-
-## Project Structure Details
-
-### Directory Layout
-
-```
-acb/
-├── __init__.py            # Package initialization and registration
-├── actions/               # Self-contained utility functions
-│   ├── compress/          # Compression utilities (gzip, brotli)
-│   ├── encode/            # Encoding/decoding (JSON, YAML, TOML, MsgPack)
-│   └── hash/              # Hashing utilities (blake3, crc32c, md5)
-├── adapters/              # External system integrations
-│   ├── cache/             # Caching adapters (memory, redis)
-│   ├── dns/               # DNS management (Cloud DNS, Cloudflare, Route53)
-│   ├── ftpd/              # File transfer (FTP, SFTP)
-│   ├── models/            # Model framework support (SQLModel, Pydantic, etc.)
-│   ├── monitoring/        # Monitoring (Sentry, Logfire)
-│   ├── nosql/             # NoSQL databases (MongoDB, Firestore, Redis)
-│   ├── requests/          # HTTP clients (HTTPX, Niquests)
-│   ├── secret/            # Secret management (Infisical, GCP, Azure, Cloudflare)
-│   ├── smtp/              # Email sending (Gmail, Mailgun)
-│   ├── sql/               # SQL databases (MySQL, PostgreSQL, SQLite)
-│   └── storage/           # File storage (S3, GCS, Azure, file, memory)
-├── config.py              # Configuration system using Pydantic
-├── depends.py             # Dependency injection framework
-├── logger.py              # Logging system
-└── debug.py               # Debugging utilities
-```
-
-### Settings Directory Structure
-
-```
-settings/
-├── app.yml                # Application settings (name, version, domain)
-├── debug.yml              # Debug configuration
-├── adapters.yml           # Adapter implementation selection
-├── models.yml             # Models framework configuration
-└── secrets/               # Secret files (not committed to version control)
-```
-
-**Note**: The `/settings/` directory is gitignored in ACB itself and should only be created by consuming applications. When developing ACB itself, test configurations should use mocked settings.
+**Core directories**: `actions/` (utilities), `adapters/` (external systems), `core/` (infrastructure)
+**Key files**: `config.py`, `depends.py`, `logger.py`, `debug.py`, `context.py`
+**Settings structure**: `app.yml`, `debug.yml`, `adapters.yml`, `models.yml`, `secrets/`
 
 ## Important Rules from .windsurfrules
 
@@ -1080,122 +705,18 @@ Each adapter category has its own detailed README with usage examples and config
 - **[SQL](./acb/adapters/sql/README.md)**: Relational databases (MySQL, PostgreSQL, SQLite)
 - **[Storage](./acb/adapters/storage/README.md)**: File storage (S3, GCS, Azure, local)
 
-## Documentation and Testing Audit Requirements
-
-**MANDATORY: AI assistants must regularly audit documentation and tests for consistency, accuracy, and obsolete information.**
-
-### Documentation Audit Checklist
-
-When working on significant changes or upon request, AI assistants MUST:
-
-1. **Package Manager Consistency**: Ensure all installation commands use UV (not PDM)
-1. **Python Version Accuracy**: Verify all documentation reflects Python 3.13+ requirement
-1. **Cross-Project References**: Check that ACB ↔ FastBlocks links are accurate
-1. **Command Accuracy**: Verify all CLI commands and code examples work with current versions
-1. **URL Validation**: Ensure GitHub URLs point to correct organizations and repositories
-1. **Version Information**: Update any outdated version requirements or compatibility information
-1. **Workflow Currency**: Remove or update obsolete development workflows and processes
-
-### Testing Audit Checklist
-
-1. **Test Coverage**: Ensure tests cover new features and changes
-1. **Mock Accuracy**: Verify mocks match current adapter interfaces
-1. **Integration Tests**: Check that tests work with current ACB adapter system
-1. **CI/CD Commands**: Verify automated testing commands are current
-1. **Quality Gates**: Ensure all quality checks (ruff, pyright, crackerjack) pass
-
-### Regular Audit Triggers
-
-Perform comprehensive audits when:
-
-- Making significant architectural changes
-- Updating major dependencies
-- Changing development tooling (package managers, linters, etc.)
-- Releasing new versions
-- Upon explicit request for documentation review
-
-### Audit Documentation
-
-When completing an audit, document:
-
-- **Files audited**: List all documentation files reviewed
-- **Issues found**: Specific inconsistencies, inaccuracies, or obsolete information
-- **Changes made**: Summary of updates and fixes
-- **Verification**: Confirmation that examples and commands were tested
-
-This ensures ACB documentation remains current, accurate, and helpful for developers.
 
 ## Common Issues and Solutions
 
-### Secret Detection False Positives
+**Secret detection**: Add `# pragma: allowlist secret` to config examples
+**Adapter field types**: Return `Any` (not `type(Any)`) for missing fields
+**Test mocks**: Include all required attributes (e.g., `mock_sql.ssl_enabled = True`)
 
-When working with config examples containing placeholder passwords, add the pragma comment to prevent detect-secrets hook failures:
-
-```python
-config_example = {
-    "host": "localhost",
-    "password": "your-db-password",  # pragma: allowlist secret
-}
-```
-
-### Adapter Field Type Methods
-
-Always return `Any` (not `type(Any)`) from adapter field type methods for missing fields:
-
-```python
-def get_field_type(self, model_class: type[T], field_name: str) -> type:
-    # Wrong: return type(Any)
-    # Correct: return Any
-    return Any
-```
-
-### Mock Configuration in Tests
-
-Ensure test mocks include all required attributes. For SQLite Turso adapter tests, include:
-
-```python
-mock_sql.ssl_enabled = True  # Required for SSL status logging
-```
-
-### Quick Troubleshooting
-
-**Adapter not loading**: Check `settings/adapters.yml` configuration
-**Import errors**: Ensure optional dependencies installed with `uv add "acb[adapter_name]"`
-**Test failures**: Use provided test fixtures and mock patterns
-**Configuration issues**: Verify YAML syntax and environment variables
-**Performance issues**: Enable connection pooling and lazy loading patterns
-
-1. **ModuleNotFoundError: No module named 'acb'**
-
-   - Solution: Install ACB with `uv add acb`
-
-1. **Adapter not found errors (e.g., KeyError: 'cache')**
-
-   - Ensure adapter is configured in `settings/adapters.yml`
-   - Install optional dependencies: `uv add "acb[cache]"`
-
-1. **Python version errors**
-
-   - ACB requires Python 3.13+
-   - Check with `python --version`
-
-1. **Configuration file errors**
-
-   - Create required structure: `mkdir -p settings`
-   - Check YAML syntax (use spaces not tabs, space after colons)
-
-1. **Async test issues**
-
-   - Use `@pytest.mark.asyncio` decorator
-   - Use proper async fixtures from conftest.py
-
-1. **Performance issues**
-
-   - Enable debug mode in `settings/debug.yml`
-   - Use connection pooling for database adapters
-   - Check cache TTL settings
-
-For detailed troubleshooting, see `docs/TROUBLESHOOTING.md`.
+**Quick fixes:**
+- Adapter not loading → Check `settings/adapters.yml`, install with `uv add "acb[adapter_name]"`
+- Import errors → Install ACB with `uv add acb`, check Python 3.13+ requirement
+- Config errors → Verify YAML syntax, create `settings/` structure
+- Test failures → Use proper async fixtures, `@pytest.mark.asyncio` decorator
 
 ## Critical Development Rules
 
