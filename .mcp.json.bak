@@ -1,0 +1,165 @@
+{
+  "mcpServers": {
+    "session-mgmt": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/les/Projects/session-mgmt",
+        "python",
+        "session_mgmt/server.py"
+      ]
+    },
+    "ast-grep": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/ast-grep/ast-grep-mcp",
+        "ast-grep-server"
+      ]
+    },
+    "crackerjack": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "/Users/les/Projects/crackerjack",
+        "crackerjack",
+        "--start-mcp-server"
+      ],
+      "env": {
+        "UV_KEYRING_PROVIDER": "subprocess",
+        "EDITOR": "code --wait"
+      }
+    },
+    "macos_automator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/macos-automator-mcp@latest"
+      ]
+    },
+    "peekaboo": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/peekaboo-mcp@beta"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@cyanheads/git-mcp-server"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ]
+    },
+    "obsidian": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://localhost:27123/sse"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "filesystem": {
+      "command": "rust-mcp-filesystem",
+      "args": [
+        "~/Projects"
+      ]
+    },
+    "jetbrains": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@jetbrains/mcp-proxy"
+      ]
+    },
+    "gemini-cli": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "gemini-mcp-tool"
+      ]
+    },
+    "motherduck": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-motherduck"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "raindrop": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "raindrop-mcp"
+      ]
+    },
+    "cloud-run": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "https://github.com/GoogleCloudPlatform/cloud-run-mcp"
+      ]
+    },
+    "logfire": {
+      "command": "uvx",
+      "args": [
+        "logfire-mcp@latest"
+      ]
+    },
+    "turso-cloud": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-turso-cloud"
+      ]
+    },
+    "upstash": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/mcp-server",
+        "run"
+      ]
+    },
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp"
+    }
+  }
+}
