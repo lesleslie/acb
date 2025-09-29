@@ -12,18 +12,18 @@ from dataclasses import dataclass, field
 from statistics import mean, median
 
 from pydantic import BaseModel, Field
-
 from acb.config import Config
 from acb.depends import depends
+
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 try:
     from ..discovery import (
+        ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
-        ServiceCapability,
-        generate_service_id
+        generate_service_id,
     )
 
     SERVICE_METADATA = ServiceMetadata(
@@ -40,7 +40,7 @@ try:
         capabilities=[
             ServiceCapability.METRICS_COLLECTION,
             ServiceCapability.ASYNC_OPERATIONS,
-            ServiceCapability.LIFECYCLE_MANAGEMENT
+            ServiceCapability.LIFECYCLE_MANAGEMENT,
         ],
         description="Performance metrics collection and analysis service",
         settings_class="MetricsCollectorSettings",
@@ -48,8 +48,8 @@ try:
             "collection_interval": 10.0,
             "max_metrics_history": 1000,
             "enable_background_collection": True,
-            "metrics_retention_seconds": 3600
-        }
+            "metrics_retention_seconds": 3600,
+        },
     )
 except ImportError:
     # Discovery system not available
@@ -119,14 +119,14 @@ class MetricsCollector(ServiceBase):
     def __init__(
         self,
         service_config: ServiceConfig | None = None,
-        settings: MetricsCollectorSettings | None = None
+        settings: MetricsCollectorSettings | None = None,
     ) -> None:
         if service_config is None:
             service_config = ServiceConfig(
                 service_id="metrics_collector",
                 name="Metrics Collector",
                 description="Performance metrics collection and analysis service",
-                priority=10  # High priority - start early
+                priority=10,  # High priority - start early
             )
 
         super().__init__(service_config, settings or MetricsCollectorSettings())
@@ -163,7 +163,7 @@ class MetricsCollector(ServiceBase):
             "collection_running": (
                 self._collection_task is not None and not self._collection_task.done()
             ),
-            "uptime_seconds": time.time() - self._start_time
+            "uptime_seconds": time.time() - self._start_time,
         }
 
     async def record_metric(
@@ -171,7 +171,7 @@ class MetricsCollector(ServiceBase):
         name: str,
         value: float,
         tags: dict[str, str] | None = None,
-        metadata: dict[str, t.Any] | None = None
+        metadata: dict[str, t.Any] | None = None,
     ) -> None:
         """Record a performance metric.
 
@@ -186,13 +186,15 @@ class MetricsCollector(ServiceBase):
             value=value,
             timestamp=time.time(),
             tags=tags or {},
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         self._metrics_data[name].append(metric)
         self.increment_requests()
 
-    async def record_response_time(self, duration_ms: float, endpoint: str | None = None) -> None:
+    async def record_response_time(
+        self, duration_ms: float, endpoint: str | None = None
+    ) -> None:
         """Record HTTP response time metric.
 
         Args:
@@ -202,7 +204,9 @@ class MetricsCollector(ServiceBase):
         tags = {"endpoint": endpoint} if endpoint else {}
         await self.record_metric("response_time", duration_ms, tags)
 
-    async def record_database_query_time(self, duration_ms: float, query_type: str | None = None) -> None:
+    async def record_database_query_time(
+        self, duration_ms: float, query_type: str | None = None
+    ) -> None:
         """Record database query time metric.
 
         Args:
@@ -212,7 +216,9 @@ class MetricsCollector(ServiceBase):
         tags = {"query_type": query_type} if query_type else {}
         await self.record_metric("db_query_time", duration_ms, tags)
 
-    async def record_cache_operation(self, hit: bool, duration_ms: float | None = None) -> None:
+    async def record_cache_operation(
+        self, hit: bool, duration_ms: float | None = None
+    ) -> None:
         """Record cache operation metric.
 
         Args:
@@ -238,7 +244,9 @@ class MetricsCollector(ServiceBase):
 
         await self.record_metric("error", 1.0, tags)
 
-    def get_metrics_summary(self, metric_name: str, time_window_seconds: int | None = None) -> MetricsSummary | None:
+    def get_metrics_summary(
+        self, metric_name: str, time_window_seconds: int | None = None
+    ) -> MetricsSummary | None:
         """Get statistical summary for a metric.
 
         Args:
@@ -275,7 +283,7 @@ class MetricsCollector(ServiceBase):
             min=min(values),
             max=max(values),
             p95=self._percentile(sorted_values, 95),
-            p99=self._percentile(sorted_values, 99)
+            p99=self._percentile(sorted_values, 99),
         )
 
     def get_current_performance_metrics(self) -> PerformanceMetrics:
@@ -293,21 +301,24 @@ class MetricsCollector(ServiceBase):
         # Response times
         if "response_time" in self._metrics_data:
             metrics.response_times = [
-                m.value for m in self._metrics_data["response_time"]
+                m.value
+                for m in self._metrics_data["response_time"]
                 if m.timestamp >= cutoff_time
             ]
 
         # Database query times
         if "db_query_time" in self._metrics_data:
             metrics.database_query_times = [
-                m.value for m in self._metrics_data["db_query_time"]
+                m.value
+                for m in self._metrics_data["db_query_time"]
                 if m.timestamp >= cutoff_time
             ]
 
         # Cache hit rates (calculate from cache operations)
         if "cache_operation" in self._metrics_data:
             cache_ops = [
-                m for m in self._metrics_data["cache_operation"]
+                m
+                for m in self._metrics_data["cache_operation"]
                 if m.timestamp >= cutoff_time
             ]
             if cache_ops:
@@ -316,24 +327,30 @@ class MetricsCollector(ServiceBase):
 
         # Error rates (calculate from error and response metrics)
         if "error" in self._metrics_data and "response_time" in self._metrics_data:
-            error_count = len([
-                m for m in self._metrics_data["error"]
-                if m.timestamp >= cutoff_time
-            ])
-            response_count = len([
-                m for m in self._metrics_data["response_time"]
-                if m.timestamp >= cutoff_time
-            ])
+            error_count = len(
+                [m for m in self._metrics_data["error"] if m.timestamp >= cutoff_time]
+            )
+            response_count = len(
+                [
+                    m
+                    for m in self._metrics_data["response_time"]
+                    if m.timestamp >= cutoff_time
+                ]
+            )
             if response_count > 0:
                 error_rate = (error_count / response_count) * 100
                 metrics.error_rates = [error_rate]
 
         # Custom metrics
         for metric_name, metric_queue in self._metrics_data.items():
-            if metric_name not in {"response_time", "db_query_time", "cache_operation", "error"}:
+            if metric_name not in {
+                "response_time",
+                "db_query_time",
+                "cache_operation",
+                "error",
+            }:
                 recent_values = [
-                    m.value for m in metric_queue
-                    if m.timestamp >= cutoff_time
+                    m.value for m in metric_queue if m.timestamp >= cutoff_time
                 ]
                 if recent_values:
                     metrics.custom_metrics[metric_name] = recent_values
@@ -354,7 +371,10 @@ class MetricsCollector(ServiceBase):
 
         # Linear interpolation
         weight = index - lower_index
-        return sorted_values[lower_index] * (1 - weight) + sorted_values[upper_index] * weight
+        return (
+            sorted_values[lower_index] * (1 - weight)
+            + sorted_values[upper_index] * weight
+        )
 
     async def _collection_loop(self) -> None:
         """Main metrics collection loop."""

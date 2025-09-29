@@ -12,16 +12,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel
 from acb.config import Settings
 
 
 class ValidationLevel(Enum):
     """Validation strictness levels."""
 
-    STRICT = "strict"      # Fail on any validation error
-    LENIENT = "lenient"    # Allow warnings, fail on errors
+    STRICT = "strict"  # Fail on any validation error
+    LENIENT = "lenient"  # Allow warnings, fail on errors
     PERMISSIVE = "permissive"  # Only fail on critical errors
 
 
@@ -112,11 +111,7 @@ class ValidationSettings(Settings):
 class ValidationSchema(ABC):
     """Abstract base class for validation schemas."""
 
-    def __init__(
-        self,
-        name: str,
-        config: ValidationConfig | None = None
-    ) -> None:
+    def __init__(self, name: str, config: ValidationConfig | None = None) -> None:
         self.name = name
         self.config = config or ValidationConfig()
         self._compiled = False
@@ -124,9 +119,7 @@ class ValidationSchema(ABC):
 
     @abstractmethod
     async def validate(
-        self,
-        data: t.Any,
-        field_name: str | None = None
+        self, data: t.Any, field_name: str | None = None
     ) -> ValidationResult:
         """Validate data against this schema.
 
@@ -216,7 +209,7 @@ class ValidationProtocol(t.Protocol):
         self,
         data: t.Any,
         schema: ValidationSchema | None = None,
-        config: ValidationConfig | None = None
+        config: ValidationConfig | None = None,
     ) -> ValidationResult:
         """Validate data using optional schema and configuration."""
         ...
@@ -225,7 +218,7 @@ class ValidationProtocol(t.Protocol):
         self,
         data_list: list[t.Any],
         schema: ValidationSchema | None = None,
-        config: ValidationConfig | None = None
+        config: ValidationConfig | None = None,
     ) -> list[ValidationResult]:
         """Validate multiple data items."""
         ...
@@ -245,10 +238,7 @@ class ValidationMetrics:
         self.schema_cache_misses: int = 0
 
     def record_validation(
-        self,
-        success: bool,
-        validation_time_ms: float,
-        cache_hit: bool = False
+        self, success: bool, validation_time_ms: float, cache_hit: bool = False
     ) -> None:
         """Record a validation operation."""
         self.total_validations += 1

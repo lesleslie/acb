@@ -11,20 +11,20 @@ from dataclasses import dataclass
 from enum import Enum
 from operator import itemgetter
 
-from pydantic import BaseModel, Field
-
+from pydantic import Field
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
+
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 try:
     from ..discovery import (
+        ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
-        ServiceCapability,
-        generate_service_id
+        generate_service_id,
     )
 
     SERVICE_METADATA = ServiceMetadata(
@@ -42,7 +42,7 @@ try:
             ServiceCapability.CACHING,
             ServiceCapability.OPTIMIZATION,
             ServiceCapability.ASYNC_OPERATIONS,
-            ServiceCapability.METRICS_COLLECTION
+            ServiceCapability.METRICS_COLLECTION,
         ],
         description="Intelligent cache optimization and management service",
         settings_class="CacheOptimizerSettings",
@@ -50,8 +50,8 @@ try:
             "default_strategy": "adaptive",
             "optimization_interval": 300.0,
             "enable_background_optimization": True,
-            "cache_hit_threshold": 0.8
-        }
+            "cache_hit_threshold": 0.8,
+        },
     )
 except ImportError:
     # Discovery system not available
@@ -112,7 +112,7 @@ class CacheOptimizer(ServiceBase):
     def __init__(
         self,
         service_config: ServiceConfig | None = None,
-        settings: CacheOptimizerSettings | None = None
+        settings: CacheOptimizerSettings | None = None,
     ) -> None:
         if service_config is None:
             service_config = ServiceConfig(
@@ -120,7 +120,7 @@ class CacheOptimizer(ServiceBase):
                 name="Cache Optimizer",
                 description="Intelligent cache optimization and management service",
                 dependencies=["cache"],
-                priority=20  # Start after cache adapter
+                priority=20,  # Start after cache adapter
             )
 
         super().__init__(service_config, settings or CacheOptimizerSettings())
@@ -162,9 +162,10 @@ class CacheOptimizer(ServiceBase):
             "hit_rate": self._stats.hit_rate,
             "total_operations": self._stats.hits + self._stats.misses,
             "optimization_running": (
-                self._optimization_task is not None and not self._optimization_task.done()
+                self._optimization_task is not None
+                and not self._optimization_task.done()
             ),
-            "patterns_tracked": len(self._usage_patterns)
+            "patterns_tracked": len(self._usage_patterns),
         }
 
     async def get_optimized(
@@ -172,7 +173,7 @@ class CacheOptimizer(ServiceBase):
         key: str,
         fetch_function: t.Callable[[], t.Awaitable[t.Any]],
         ttl: int | None = None,
-        tags: list[str] | None = None
+        tags: list[str] | None = None,
     ) -> t.Any:
         """Get value with intelligent optimization.
 
@@ -262,7 +263,7 @@ class CacheOptimizer(ServiceBase):
             # The actual implementation depends on cache adapter capabilities
             cleared_count = 0
 
-            if hasattr(self._cache_adapter, 'clear_expired'):
+            if hasattr(self._cache_adapter, "clear_expired"):
                 cleared_count = await self._cache_adapter.clear_expired()
             else:
                 self.logger.debug("Cache adapter does not support expired key cleanup")
@@ -285,7 +286,7 @@ class CacheOptimizer(ServiceBase):
                 "strategy_used": self._settings.strategy.value,
                 "keys_evicted": 0,
                 "memory_freed_bytes": 0,
-                "optimization_time_ms": 0
+                "optimization_time_ms": 0,
             }
 
             start_time = time.perf_counter()
@@ -341,7 +342,7 @@ class CacheOptimizer(ServiceBase):
         if requested_ttl is not None:
             return max(
                 self._settings.min_ttl_seconds,
-                min(requested_ttl, self._settings.max_ttl_seconds)
+                min(requested_ttl, self._settings.max_ttl_seconds),
             )
 
         # Use usage patterns for adaptive TTL
@@ -359,10 +360,7 @@ class CacheOptimizer(ServiceBase):
         return self._settings.default_ttl_seconds
 
     def _update_usage_pattern(
-        self,
-        key: str,
-        operation: str,
-        tags: list[str] | None = None
+        self, key: str, operation: str, tags: list[str] | None = None
     ) -> None:
         """Update usage patterns for a cache key.
 
@@ -377,7 +375,7 @@ class CacheOptimizer(ServiceBase):
                 "hit_count": 0,
                 "miss_count": 0,
                 "last_accessed": time.time(),
-                "tags": tags or []
+                "tags": tags or [],
             }
 
         pattern = self._usage_patterns[key]
@@ -401,8 +399,8 @@ class CacheOptimizer(ServiceBase):
             self._stats.average_response_time = response_time_ms
         else:
             self._stats.average_response_time = (
-                alpha * response_time_ms +
-                (1 - alpha) * self._stats.average_response_time
+                alpha * response_time_ms
+                + (1 - alpha) * self._stats.average_response_time
             )
 
     async def _adaptive_eviction(self) -> int:
@@ -450,8 +448,7 @@ class CacheOptimizer(ServiceBase):
         """
         # Sort by last accessed time
         sorted_patterns = sorted(
-            self._usage_patterns.items(),
-            key=lambda x: x[1]["last_accessed"]
+            self._usage_patterns.items(), key=lambda x: x[1]["last_accessed"]
         )
 
         # Evict oldest 20%

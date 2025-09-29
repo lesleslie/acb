@@ -7,15 +7,14 @@ Provides foundational repository pattern implementation with:
 - Integration with ACB dependency injection
 """
 
+import builtins
 import typing as t
 from abc import ABC, abstractmethod
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, TypeVar, Generic, Union
+from typing import Any, TypeVar
 
 from pydantic import Field, field_validator
-
 from acb.config import Settings
 from acb.core.cleanup import CleanupMixin
 from acb.depends import depends
@@ -28,7 +27,9 @@ IDType = TypeVar("IDType")
 class RepositoryError(Exception):
     """Base exception for repository operations."""
 
-    def __init__(self, message: str, entity_type: str | None = None, operation: str | None = None):
+    def __init__(
+        self, message: str, entity_type: str | None = None, operation: str | None = None
+    ):
         self.entity_type = entity_type
         self.operation = operation
         super().__init__(message)
@@ -41,7 +42,7 @@ class EntityNotFoundError(RepositoryError):
         super().__init__(
             f"{entity_type} with ID {entity_id} not found",
             entity_type=entity_type,
-            operation="find"
+            operation="find",
         )
         self.entity_id = entity_id
 
@@ -53,7 +54,7 @@ class DuplicateEntityError(RepositoryError):
         super().__init__(
             f"{entity_type} with {conflict_field}={value} already exists",
             entity_type=entity_type,
-            operation="create"
+            operation="create",
         )
         self.conflict_field = conflict_field
         self.value = value
@@ -61,6 +62,7 @@ class DuplicateEntityError(RepositoryError):
 
 class SortDirection(Enum):
     """Sort direction enumeration."""
+
     ASC = "asc"
     DESC = "desc"
 
@@ -68,6 +70,7 @@ class SortDirection(Enum):
 @dataclass
 class SortCriteria:
     """Sort criteria specification."""
+
     field: str
     direction: SortDirection = SortDirection.ASC
 
@@ -75,6 +78,7 @@ class SortCriteria:
 @dataclass
 class PaginationInfo:
     """Pagination information."""
+
     page: int = 1
     page_size: int = 50
     total_items: int | None = None
@@ -114,8 +118,12 @@ class RepositorySettings(Settings):
     query_timeout: float = Field(default=30.0, description="Query timeout in seconds")
 
     # Transaction settings
-    transaction_timeout: float = Field(default=60.0, description="Transaction timeout in seconds")
-    isolation_level: str = Field(default="READ_COMMITTED", description="Default isolation level")
+    transaction_timeout: float = Field(
+        default=60.0, description="Transaction timeout in seconds"
+    )
+    isolation_level: str = Field(
+        default="READ_COMMITTED", description="Default isolation level"
+    )
 
     # Performance settings
     batch_size: int = Field(default=100, ge=1, le=10000)
@@ -124,7 +132,7 @@ class RepositorySettings(Settings):
     @field_validator("default_page_size")
     @classmethod
     def validate_page_size(cls, v, info):
-        values = info.data if hasattr(info, 'data') else {}
+        values = info.data if hasattr(info, "data") else {}
         if "max_page_size" in values and v > values["max_page_size"]:
             raise ValueError("default_page_size cannot exceed max_page_size")
         return v
@@ -151,14 +159,14 @@ class RepositoryProtocol(t.Protocol[EntityType, IDType]):
 
     async def list(
         self,
-        filters: Dict[str, Any] | None = None,
-        sort: List[SortCriteria] | None = None,
-        pagination: PaginationInfo | None = None
-    ) -> List[EntityType]:
+        filters: dict[str, Any] | None = None,
+        sort: list[SortCriteria] | None = None,
+        pagination: PaginationInfo | None = None,
+    ) -> list[EntityType]:
         """List entities with filtering, sorting, and pagination."""
         ...
 
-    async def count(self, filters: Dict[str, Any] | None = None) -> int:
+    async def count(self, filters: dict[str, Any] | None = None) -> int:
         """Count entities matching filters."""
         ...
 
@@ -167,7 +175,7 @@ class RepositoryProtocol(t.Protocol[EntityType, IDType]):
         ...
 
 
-class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
+class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
     """Abstract base class for repositories.
 
     Provides common functionality for all repository implementations:
@@ -178,7 +186,9 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
     - Resource cleanup
     """
 
-    def __init__(self, entity_type: type[EntityType], settings: RepositorySettings | None = None):
+    def __init__(
+        self, entity_type: type[EntityType], settings: RepositorySettings | None = None
+    ):
         super().__init__()
         self.entity_type = entity_type
         self.entity_name = entity_type.__name__
@@ -200,6 +210,7 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
         if self.settings.cache_enabled and self._cache is None:
             try:
                 from acb.adapters import import_adapter
+
                 Cache = import_adapter("cache")
                 self._cache = depends.get(Cache)
             except ImportError:
@@ -222,7 +233,7 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
         raise RepositoryError(
             f"Repository operation failed: {error}",
             entity_type=self.entity_name,
-            operation=operation
+            operation=operation,
         ) from error
 
     @abstractmethod
@@ -314,10 +325,10 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
     @abstractmethod
     async def list(
         self,
-        filters: Dict[str, Any] | None = None,
-        sort: List[SortCriteria] | None = None,
-        pagination: PaginationInfo | None = None
-    ) -> List[EntityType]:
+        filters: dict[str, Any] | None = None,
+        sort: list[SortCriteria] | None = None,
+        pagination: PaginationInfo | None = None,
+    ) -> list[EntityType]:
         """List entities with filtering, sorting, and pagination.
 
         Args:
@@ -331,7 +342,7 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
         pass
 
     @abstractmethod
-    async def count(self, filters: Dict[str, Any] | None = None) -> int:
+    async def count(self, filters: dict[str, Any] | None = None) -> int:
         """Count entities matching filters.
 
         Args:
@@ -356,11 +367,11 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
 
     async def list_paginated(
         self,
-        filters: Dict[str, Any] | None = None,
-        sort: List[SortCriteria] | None = None,
+        filters: dict[str, Any] | None = None,
+        sort: builtins.list[SortCriteria] | None = None,
         page: int = 1,
-        page_size: int | None = None
-    ) -> tuple[List[EntityType], PaginationInfo]:
+        page_size: int | None = None,
+    ) -> tuple[builtins.list[EntityType], PaginationInfo]:
         """List entities with pagination information.
 
         Args:
@@ -382,9 +393,7 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
 
         # Create pagination info
         pagination = PaginationInfo(
-            page=page,
-            page_size=page_size,
-            total_items=total_items
+            page=page, page_size=page_size, total_items=total_items
         )
 
         # Get entities for current page
@@ -392,7 +401,9 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
 
         return entities, pagination
 
-    async def batch_create(self, entities: List[EntityType]) -> List[EntityType]:
+    async def batch_create(
+        self, entities: builtins.list[EntityType]
+    ) -> builtins.list[EntityType]:
         """Create multiple entities in batch.
 
         Args:
@@ -406,7 +417,9 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
             created.append(await self.create(entity))
         return created
 
-    async def batch_update(self, entities: List[EntityType]) -> List[EntityType]:
+    async def batch_update(
+        self, entities: builtins.list[EntityType]
+    ) -> builtins.list[EntityType]:
         """Update multiple entities in batch.
 
         Args:
@@ -420,7 +433,7 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
             updated.append(await self.update(entity))
         return updated
 
-    async def batch_delete(self, entity_ids: List[IDType]) -> int:
+    async def batch_delete(self, entity_ids: builtins.list[IDType]) -> int:
         """Delete multiple entities by ID.
 
         Args:
@@ -435,7 +448,7 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
                 deleted_count += 1
         return deleted_count
 
-    async def get_metrics(self) -> Dict[str, Any]:
+    async def get_metrics(self) -> dict[str, Any]:
         """Get repository performance metrics.
 
         Returns:
@@ -449,7 +462,7 @@ class RepositoryBase(Generic[EntityType, IDType], CleanupMixin, ABC):
                 "default_page_size": self.settings.default_page_size,
                 "max_page_size": self.settings.max_page_size,
                 "cache_ttl": self.settings.cache_ttl,
-            }
+            },
         }
 
     async def _cleanup_resources(self) -> None:

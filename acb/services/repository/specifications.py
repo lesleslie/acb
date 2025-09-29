@@ -8,16 +8,16 @@ Provides composable query specifications for complex database queries:
 - Integration with repository query methods
 """
 
-import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
-from datetime import datetime, date
+from typing import Any
 
 
 class ComparisonOperator(Enum):
     """Comparison operators for specifications."""
+
     EQUALS = "eq"
     NOT_EQUALS = "ne"
     GREATER_THAN = "gt"
@@ -39,10 +39,13 @@ class ComparisonOperator(Enum):
 @dataclass
 class SpecificationContext:
     """Context for specification evaluation."""
+
     entity_type: type
-    field_mappings: Dict[str, str] = None  # Map logical field names to actual field names
+    field_mappings: dict[str, str] = (
+        None  # Map logical field names to actual field names
+    )
     table_alias: str = None
-    join_conditions: List[str] = None
+    join_conditions: list[str] = None
 
     def __post_init__(self):
         if self.field_mappings is None:
@@ -63,7 +66,7 @@ class Specification(ABC):
     """
 
     @abstractmethod
-    def to_sql_where(self, context: SpecificationContext) -> tuple[str, Dict[str, Any]]:
+    def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:
         """Convert specification to SQL WHERE clause.
 
         Args:
@@ -75,7 +78,7 @@ class Specification(ABC):
         pass
 
     @abstractmethod
-    def to_nosql_filter(self, context: SpecificationContext) -> Dict[str, Any]:
+    def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:
         """Convert specification to NoSQL filter.
 
         Args:
@@ -87,7 +90,7 @@ class Specification(ABC):
         pass
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert specification to dictionary representation.
 
         Returns:
@@ -116,13 +119,15 @@ class FieldSpecification(Specification):
         self.operator = operator
         self.value = value
 
-    def to_sql_where(self, context: SpecificationContext) -> tuple[str, Dict[str, Any]]:
+    def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:  # noqa: C901
         """Convert to SQL WHERE clause."""
         field_name = context.get_field_name(self.field)
         table_prefix = f"{context.table_alias}." if context.table_alias else ""
         full_field = f"{table_prefix}{field_name}"
 
-        param_key = f"param_{abs(hash(f'{self.field}_{self.operator.value}_{self.value}'))}"
+        param_key = (
+            f"param_{abs(hash(f'{self.field}_{self.operator.value}_{self.value}'))}"
+        )
 
         if self.operator == ComparisonOperator.EQUALS:
             return f"{full_field} = :{param_key}", {param_key: self.value}
@@ -137,15 +142,19 @@ class FieldSpecification(Specification):
         elif self.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
             return f"{full_field} <= :{param_key}", {param_key: self.value}
         elif self.operator == ComparisonOperator.IN:
-            if isinstance(self.value, (list, tuple)):
-                placeholders = ",".join(f":{param_key}_{i}" for i in range(len(self.value)))
+            if isinstance(self.value, list | tuple):
+                placeholders = ",".join(
+                    f":{param_key}_{i}" for i in range(len(self.value))
+                )
                 params = {f"{param_key}_{i}": v for i, v in enumerate(self.value)}
                 return f"{full_field} IN ({placeholders})", params
             else:
                 return f"{full_field} IN (:{param_key})", {param_key: self.value}
         elif self.operator == ComparisonOperator.NOT_IN:
-            if isinstance(self.value, (list, tuple)):
-                placeholders = ",".join(f":{param_key}_{i}" for i in range(len(self.value)))
+            if isinstance(self.value, list | tuple):
+                placeholders = ",".join(
+                    f":{param_key}_{i}" for i in range(len(self.value))
+                )
                 params = {f"{param_key}_{i}": v for i, v in enumerate(self.value)}
                 return f"{full_field} NOT IN ({placeholders})", params
             else:
@@ -153,7 +162,9 @@ class FieldSpecification(Specification):
         elif self.operator == ComparisonOperator.LIKE:
             return f"{full_field} LIKE :{param_key}", {param_key: self.value}
         elif self.operator == ComparisonOperator.ILIKE:
-            return f"UPPER({full_field}) LIKE UPPER(:{param_key})", {param_key: self.value}
+            return f"UPPER({full_field}) LIKE UPPER(:{param_key})", {
+                param_key: self.value
+            }
         elif self.operator == ComparisonOperator.CONTAINS:
             return f"{full_field} LIKE :{param_key}", {param_key: f"%{self.value}%"}
         elif self.operator == ComparisonOperator.STARTS_WITH:
@@ -165,17 +176,20 @@ class FieldSpecification(Specification):
         elif self.operator == ComparisonOperator.IS_NOT_NULL:
             return f"{full_field} IS NOT NULL", {}
         elif self.operator == ComparisonOperator.BETWEEN:
-            if isinstance(self.value, (list, tuple)) and len(self.value) == 2:
+            if isinstance(self.value, list | tuple) and len(self.value) == 2:
                 return (
                     f"{full_field} BETWEEN :{param_key}_start AND :{param_key}_end",
-                    {f"{param_key}_start": self.value[0], f"{param_key}_end": self.value[1]}
+                    {
+                        f"{param_key}_start": self.value[0],
+                        f"{param_key}_end": self.value[1],
+                    },
                 )
             else:
                 raise ValueError("BETWEEN operator requires a list/tuple of 2 values")
         else:
             raise ValueError(f"Unsupported operator: {self.operator}")
 
-    def to_nosql_filter(self, context: SpecificationContext) -> Dict[str, Any]:
+    def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:  # noqa: C901
         """Convert to NoSQL filter."""
         field_name = context.get_field_name(self.field)
 
@@ -213,30 +227,30 @@ class FieldSpecification(Specification):
         elif self.operator == ComparisonOperator.IS_NOT_NULL:
             return {field_name: {"$exists": True}}
         elif self.operator == ComparisonOperator.BETWEEN:
-            if isinstance(self.value, (list, tuple)) and len(self.value) == 2:
+            if isinstance(self.value, list | tuple) and len(self.value) == 2:
                 return {field_name: {"$gte": self.value[0], "$lte": self.value[1]}}
             else:
                 raise ValueError("BETWEEN operator requires a list/tuple of 2 values")
         else:
             raise ValueError(f"Unsupported operator for NoSQL: {self.operator}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "type": "field",
             "field": self.field,
             "operator": self.operator.value,
-            "value": self.value
+            "value": self.value,
         }
 
 
 class AndSpecification(Specification):
     """Specification for AND operations."""
 
-    def __init__(self, specifications: List[Specification]):
+    def __init__(self, specifications: list[Specification]):
         self.specifications = specifications
 
-    def to_sql_where(self, context: SpecificationContext) -> tuple[str, Dict[str, Any]]:
+    def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:
         """Convert to SQL WHERE clause."""
         clauses = []
         all_params = {}
@@ -248,26 +262,26 @@ class AndSpecification(Specification):
 
         return " AND ".join(clauses), all_params
 
-    def to_nosql_filter(self, context: SpecificationContext) -> Dict[str, Any]:
+    def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:
         """Convert to NoSQL filter."""
         filters = [spec.to_nosql_filter(context) for spec in self.specifications]
         return {"$and": filters}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "type": "and",
-            "specifications": [spec.to_dict() for spec in self.specifications]
+            "specifications": [spec.to_dict() for spec in self.specifications],
         }
 
 
 class OrSpecification(Specification):
     """Specification for OR operations."""
 
-    def __init__(self, specifications: List[Specification]):
+    def __init__(self, specifications: list[Specification]):
         self.specifications = specifications
 
-    def to_sql_where(self, context: SpecificationContext) -> tuple[str, Dict[str, Any]]:
+    def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:
         """Convert to SQL WHERE clause."""
         clauses = []
         all_params = {}
@@ -279,16 +293,16 @@ class OrSpecification(Specification):
 
         return " OR ".join(clauses), all_params
 
-    def to_nosql_filter(self, context: SpecificationContext) -> Dict[str, Any]:
+    def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:
         """Convert to NoSQL filter."""
         filters = [spec.to_nosql_filter(context) for spec in self.specifications]
         return {"$or": filters}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "type": "or",
-            "specifications": [spec.to_dict() for spec in self.specifications]
+            "specifications": [spec.to_dict() for spec in self.specifications],
         }
 
 
@@ -298,22 +312,19 @@ class NotSpecification(Specification):
     def __init__(self, specification: Specification):
         self.specification = specification
 
-    def to_sql_where(self, context: SpecificationContext) -> tuple[str, Dict[str, Any]]:
+    def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:
         """Convert to SQL WHERE clause."""
         clause, params = self.specification.to_sql_where(context)
         return f"NOT ({clause})", params
 
-    def to_nosql_filter(self, context: SpecificationContext) -> Dict[str, Any]:
+    def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:
         """Convert to NoSQL filter."""
         filter_dict = self.specification.to_nosql_filter(context)
         return {"$not": filter_dict}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
-        return {
-            "type": "not",
-            "specification": self.specification.to_dict()
-        }
+        return {"type": "not", "specification": self.specification.to_dict()}
 
 
 # Convenience functions for creating specifications
@@ -347,12 +358,12 @@ def less_than_or_equal(field: str, value: Any) -> FieldSpecification:
     return FieldSpecification(field, ComparisonOperator.LESS_THAN_OR_EQUAL, value)
 
 
-def in_values(field: str, values: List[Any]) -> FieldSpecification:
+def in_values(field: str, values: list[Any]) -> FieldSpecification:
     """Create IN specification."""
     return FieldSpecification(field, ComparisonOperator.IN, values)
 
 
-def not_in_values(field: str, values: List[Any]) -> FieldSpecification:
+def not_in_values(field: str, values: list[Any]) -> FieldSpecification:
     """Create NOT IN specification."""
     return FieldSpecification(field, ComparisonOperator.NOT_IN, values)
 
@@ -402,7 +413,9 @@ def date_range(field: str, start_date: date, end_date: date) -> FieldSpecificati
     return between(field, start_date, end_date)
 
 
-def datetime_range(field: str, start_datetime: datetime, end_datetime: datetime) -> FieldSpecification:
+def datetime_range(
+    field: str, start_datetime: datetime, end_datetime: datetime
+) -> FieldSpecification:
     """Create datetime range specification."""
     return between(field, start_datetime, end_datetime)
 

@@ -9,24 +9,22 @@ import hashlib
 import re
 import time
 import typing as t
-from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-
-from pydantic import BaseModel, Field
 
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
+
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 try:
     from ..discovery import (
+        ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
-        ServiceCapability,
-        generate_service_id
+        generate_service_id,
     )
 
     SERVICE_METADATA = ServiceMetadata(
@@ -44,7 +42,7 @@ try:
             ServiceCapability.OPTIMIZATION,
             ServiceCapability.ASYNC_OPERATIONS,
             ServiceCapability.METRICS_COLLECTION,
-            ServiceCapability.BATCHING
+            ServiceCapability.BATCHING,
         ],
         description="SQL query optimization and performance analysis service",
         settings_class="QueryOptimizerSettings",
@@ -52,8 +50,8 @@ try:
             "enable_query_analysis": True,
             "cache_query_plans": True,
             "optimization_interval": 600.0,
-            "slow_query_threshold_ms": 1000.0
-        }
+            "slow_query_threshold_ms": 1000.0,
+        },
     )
 except ImportError:
     # Discovery system not available
@@ -83,7 +81,7 @@ class QueryPattern:
     execution_count: int = 0
     total_execution_time: float = 0.0
     average_execution_time: float = 0.0
-    min_execution_time: float = float('inf')
+    min_execution_time: float = float("inf")
     max_execution_time: float = 0.0
     last_executed: float = 0.0
     optimization_applied: bool = False
@@ -132,7 +130,7 @@ class QueryOptimizer(ServiceBase):
     def __init__(
         self,
         service_config: ServiceConfig | None = None,
-        settings: QueryOptimizerSettings | None = None
+        settings: QueryOptimizerSettings | None = None,
     ) -> None:
         if service_config is None:
             service_config = ServiceConfig(
@@ -140,7 +138,7 @@ class QueryOptimizer(ServiceBase):
                 name="Query Optimizer",
                 description="SQL query optimization and performance analysis service",
                 dependencies=["sql"],
-                priority=30  # Start after SQL adapter
+                priority=30,  # Start after SQL adapter
             )
 
         super().__init__(service_config, settings or QueryOptimizerSettings())
@@ -180,7 +178,8 @@ class QueryOptimizer(ServiceBase):
         """Health check for query optimizer."""
         total_queries = sum(p.execution_count for p in self._query_patterns.values())
         slow_queries = sum(
-            1 for p in self._query_patterns.values()
+            1
+            for p in self._query_patterns.values()
             if p.average_execution_time > self._settings.slow_query_threshold_ms
         )
 
@@ -192,14 +191,14 @@ class QueryOptimizer(ServiceBase):
             "optimization_suggestions": len(self._optimization_suggestions),
             "analysis_running": (
                 self._analysis_task is not None and not self._analysis_task.done()
-            )
+            ),
         }
 
     async def execute_optimized_query(
         self,
         query: str,
         parameters: dict[str, t.Any] | None = None,
-        enable_caching: bool | None = None
+        enable_caching: bool | None = None,
     ) -> t.Any:
         """Execute query with optimization tracking and suggestions.
 
@@ -238,9 +237,7 @@ class QueryOptimizer(ServiceBase):
             raise
 
     async def execute_batch_optimized(
-        self,
-        queries: list[str],
-        parameters_list: list[dict[str, t.Any]] | None = None
+        self, queries: list[str], parameters_list: list[dict[str, t.Any]] | None = None
     ) -> list[t.Any]:
         """Execute multiple queries with batch optimization.
 
@@ -292,9 +289,7 @@ class QueryOptimizer(ServiceBase):
             List of query patterns
         """
         patterns = sorted(
-            self._query_patterns.values(),
-            key=lambda p: p.execution_count,
-            reverse=True
+            self._query_patterns.values(), key=lambda p: p.execution_count, reverse=True
         )
         return patterns[:limit]
 
@@ -310,11 +305,14 @@ class QueryOptimizer(ServiceBase):
         threshold = threshold_ms or self._settings.slow_query_threshold_ms
 
         slow_patterns = [
-            pattern for pattern in self._query_patterns.values()
+            pattern
+            for pattern in self._query_patterns.values()
             if pattern.average_execution_time > threshold
         ]
 
-        return sorted(slow_patterns, key=lambda p: p.average_execution_time, reverse=True)
+        return sorted(
+            slow_patterns, key=lambda p: p.average_execution_time, reverse=True
+        )
 
     def get_optimization_suggestions(self) -> list[QueryOptimizationSuggestion]:
         """Get current optimization suggestions.
@@ -334,10 +332,16 @@ class QueryOptimizer(ServiceBase):
             Query hash string
         """
         # Normalize query for pattern matching
-        normalized = re.sub(r'\s+', ' ', query.strip().upper())
+        normalized = re.sub(
+            r"\s+", " ", query.strip().upper()
+        )  # REGEX OK: Query normalization
         # Remove parameter values for pattern matching
-        normalized = re.sub(r"'[^']*'", "'?'", normalized)
-        normalized = re.sub(r'\b\d+\b', '?', normalized)
+        normalized = re.sub(
+            r"'[^']*'", "'?'", normalized
+        )  # REGEX OK: Query normalization
+        normalized = re.sub(
+            r"\b\d+\b", "?", normalized
+        )  # REGEX OK: Query normalization
 
         return hashlib.md5(normalized.encode()).hexdigest()
 
@@ -352,19 +356,19 @@ class QueryOptimizer(ServiceBase):
         """
         query_upper = query.strip().upper()
 
-        if query_upper.startswith('SELECT'):
+        if query_upper.startswith("SELECT"):
             return QueryType.SELECT
-        elif query_upper.startswith('INSERT'):
+        elif query_upper.startswith("INSERT"):
             return QueryType.INSERT
-        elif query_upper.startswith('UPDATE'):
+        elif query_upper.startswith("UPDATE"):
             return QueryType.UPDATE
-        elif query_upper.startswith('DELETE'):
+        elif query_upper.startswith("DELETE"):
             return QueryType.DELETE
-        elif query_upper.startswith('CREATE'):
+        elif query_upper.startswith("CREATE"):
             return QueryType.CREATE
-        elif query_upper.startswith('ALTER'):
+        elif query_upper.startswith("ALTER"):
             return QueryType.ALTER
-        elif query_upper.startswith('DROP'):
+        elif query_upper.startswith("DROP"):
             return QueryType.DROP
 
         return QueryType.UNKNOWN
@@ -381,17 +385,17 @@ class QueryOptimizer(ServiceBase):
         # Simple regex-based table name extraction
         # This could be enhanced with a proper SQL parser
         table_patterns = [
-            r'FROM\s+(\w+)',
-            r'JOIN\s+(\w+)',
-            r'UPDATE\s+(\w+)',
-            r'INTO\s+(\w+)',
+            r"FROM\s+(\w+)",
+            r"JOIN\s+(\w+)",
+            r"UPDATE\s+(\w+)",
+            r"INTO\s+(\w+)",
         ]
 
         tables = []
         query_upper = query.upper()
 
         for pattern in table_patterns:
-            matches = re.findall(pattern, query_upper)
+            matches = re.findall(pattern, query_upper)  # REGEX OK: Table extraction
             tables.extend(matches)
 
         return list(set(tables))  # Remove duplicates
@@ -411,12 +415,16 @@ class QueryOptimizer(ServiceBase):
         # These are conservative optimizations that shouldn't break functionality
 
         # Remove unnecessary whitespace
-        optimized = re.sub(r'\s+', ' ', optimized.strip())
+        optimized = re.sub(
+            r"\s+", " ", optimized.strip()
+        )  # REGEX OK: Query optimization
 
         # Add LIMIT if missing on potentially large SELECT queries
-        if (optimized.upper().startswith('SELECT') and
-            'LIMIT' not in optimized.upper() and
-            'COUNT(' not in optimized.upper()):
+        if (
+            optimized.upper().startswith("SELECT")
+            and "LIMIT" not in optimized.upper()
+            and "COUNT(" not in optimized.upper()
+        ):
             # This is commented out as it could change query semantics
             # optimized += ' LIMIT 1000'
             pass
@@ -424,9 +432,7 @@ class QueryOptimizer(ServiceBase):
         return optimized
 
     def _group_similar_queries(
-        self,
-        queries: list[str],
-        parameters_list: list[dict[str, t.Any]] | None = None
+        self, queries: list[str], parameters_list: list[dict[str, t.Any]] | None = None
     ) -> list[dict[str, t.Any]]:
         """Group similar queries for batch execution.
 
@@ -445,16 +451,14 @@ class QueryOptimizer(ServiceBase):
 
             if query_hash not in groups:
                 groups[query_hash] = {
-                    'template_query': query,
-                    'query_hash': query_hash,
-                    'executions': []
+                    "template_query": query,
+                    "query_hash": query_hash,
+                    "executions": [],
                 }
 
-            groups[query_hash]['executions'].append({
-                'query': query,
-                'parameters': params,
-                'index': i
-            })
+            groups[query_hash]["executions"].append(
+                {"query": query, "parameters": params, "index": i}
+            )
 
         return list(groups.values())
 
@@ -471,9 +475,9 @@ class QueryOptimizer(ServiceBase):
 
         # For now, execute each query individually
         # This could be enhanced with actual batch execution for supported databases
-        for execution in query_group['executions']:
-            query = execution['query']
-            parameters = execution['parameters']
+        for execution in query_group["executions"]:
+            query = execution["query"]
+            parameters = execution["parameters"]
 
             if parameters:
                 result = await self._sql_adapter.execute(query, parameters)
@@ -485,11 +489,7 @@ class QueryOptimizer(ServiceBase):
         return results
 
     async def _record_query_execution(
-        self,
-        query: str,
-        query_hash: str,
-        execution_time: float,
-        success: bool
+        self, query: str, query_hash: str, execution_time: float, success: bool
     ) -> None:
         """Record query execution metrics.
 
@@ -503,13 +503,15 @@ class QueryOptimizer(ServiceBase):
             self._query_patterns[query_hash] = QueryPattern(
                 query_hash=query_hash,
                 query_type=self._classify_query(query),
-                table_names=self._extract_table_names(query)
+                table_names=self._extract_table_names(query),
             )
 
         pattern = self._query_patterns[query_hash]
         pattern.execution_count += 1
         pattern.total_execution_time += execution_time
-        pattern.average_execution_time = pattern.total_execution_time / pattern.execution_count
+        pattern.average_execution_time = (
+            pattern.total_execution_time / pattern.execution_count
+        )
         pattern.min_execution_time = min(pattern.min_execution_time, execution_time)
         pattern.max_execution_time = max(pattern.max_execution_time, execution_time)
         pattern.last_executed = time.time()
@@ -518,8 +520,7 @@ class QueryOptimizer(ServiceBase):
         if len(self._query_patterns) > self._settings.max_patterns_tracked:
             # Remove least frequently used patterns
             sorted_patterns = sorted(
-                self._query_patterns.items(),
-                key=lambda x: x[1].execution_count
+                self._query_patterns.items(), key=lambda x: x[1].execution_count
             )
             # Remove bottom 10%
             remove_count = len(sorted_patterns) // 10
@@ -567,19 +568,24 @@ class QueryOptimizer(ServiceBase):
         new_suggestions = []
 
         for pattern in self._query_patterns.values():
-            if (pattern.execution_count < self._settings.minimum_executions_for_analysis or
-                pattern.optimization_applied):
+            if (
+                pattern.execution_count < self._settings.minimum_executions_for_analysis
+                or pattern.optimization_applied
+            ):
                 continue
 
             # Generate suggestions based on pattern analysis
             if pattern.query_type == QueryType.SELECT:
-                if pattern.average_execution_time > self._settings.slow_query_threshold_ms:
+                if (
+                    pattern.average_execution_time
+                    > self._settings.slow_query_threshold_ms
+                ):
                     suggestion = QueryOptimizationSuggestion(
                         query_hash=pattern.query_hash,
                         suggestion_type="index_recommendation",
                         description=f"Consider adding indexes for tables: {', '.join(pattern.table_names)}",
                         estimated_improvement_percent=30.0,
-                        confidence=0.8
+                        confidence=0.8,
                     )
                     new_suggestions.append(suggestion)
 
@@ -590,16 +596,21 @@ class QueryOptimizer(ServiceBase):
                         suggestion_type="batch_processing",
                         description="Consider batching these operations for better performance",
                         estimated_improvement_percent=40.0,
-                        confidence=0.9
+                        confidence=0.9,
                     )
                     new_suggestions.append(suggestion)
 
         # Filter suggestions by confidence threshold
         self._optimization_suggestions = [
-            s for s in new_suggestions
+            s
+            for s in new_suggestions
             if s.confidence >= self._settings.optimization_confidence_threshold
         ]
 
         if new_suggestions:
-            self.logger.info(f"Generated {len(new_suggestions)} optimization suggestions")
-            self.set_custom_metric("optimization_suggestions_generated", len(new_suggestions))
+            self.logger.info(
+                f"Generated {len(new_suggestions)} optimization suggestions"
+            )
+            self.set_custom_metric(
+                "optimization_suggestions_generated", len(new_suggestions)
+            )

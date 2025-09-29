@@ -7,22 +7,20 @@ Provides fluent query building interface:
 - Performance optimization hints
 """
 
-import typing as t
-from typing import Any, Dict, List, Optional, TypeVar, Type, Union
 from dataclasses import dataclass
-from enum import Enum
-import asyncio
 from datetime import datetime
+from enum import Enum
+from typing import Any, TypeVar
 
-from ._base import RepositoryBase, PaginationInfo, SortCriteria, SortDirection
-from .specifications import Specification, FieldSpecification, ComparisonOperator, SpecificationContext
-
+from ._base import PaginationInfo, RepositoryBase, SortCriteria, SortDirection
+from .specifications import ComparisonOperator, FieldSpecification, Specification
 
 EntityType = TypeVar("EntityType")
 
 
 class QueryType(Enum):
     """Query type enumeration."""
+
     SELECT = "select"
     COUNT = "count"
     EXISTS = "exists"
@@ -31,6 +29,7 @@ class QueryType(Enum):
 
 class AggregateFunction(Enum):
     """Aggregate function enumeration."""
+
     SUM = "sum"
     AVG = "avg"
     MIN = "min"
@@ -42,12 +41,13 @@ class AggregateFunction(Enum):
 @dataclass
 class QueryResult:
     """Query execution result."""
+
     data: Any
     total_count: int | None = None
     execution_time: float | None = None
     query_type: QueryType = QueryType.SELECT
     cache_hit: bool = False
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
 
     def __post_init__(self):
         if self.metadata is None:
@@ -57,6 +57,7 @@ class QueryResult:
 @dataclass
 class AggregateSpec:
     """Aggregate specification."""
+
     function: AggregateFunction
     field: str
     alias: str | None = None
@@ -76,17 +77,17 @@ class QueryBuilder:
 
     def __init__(self, repository: RepositoryBase[EntityType, Any]):
         self.repository = repository
-        self._specifications: List[Specification] = []
-        self._sort_criteria: List[SortCriteria] = []
+        self._specifications: list[Specification] = []
+        self._sort_criteria: list[SortCriteria] = []
         self._pagination: PaginationInfo | None = None
-        self._selected_fields: List[str] = []
-        self._group_by_fields: List[str] = []
-        self._having_specs: List[Specification] = []
-        self._aggregates: List[AggregateSpec] = []
+        self._selected_fields: list[str] = []
+        self._group_by_fields: list[str] = []
+        self._having_specs: list[Specification] = []
+        self._aggregates: list[AggregateSpec] = []
         self._distinct = False
         self._limit: int | None = None
         self._offset: int | None = None
-        self._query_hints: Dict[str, Any] = {}
+        self._query_hints: dict[str, Any] = {}
 
     def where(self, specification: Specification) -> "QueryBuilder":
         """Add WHERE clause specification.
@@ -100,7 +101,9 @@ class QueryBuilder:
         self._specifications.append(specification)
         return self
 
-    def where_field(self, field: str, operator: ComparisonOperator, value: Any) -> "QueryBuilder":
+    def where_field(
+        self, field: str, operator: ComparisonOperator, value: Any
+    ) -> "QueryBuilder":
         """Add field-based WHERE clause.
 
         Args:
@@ -126,7 +129,7 @@ class QueryBuilder:
         """
         return self.where_field(field, ComparisonOperator.EQUALS, value)
 
-    def where_in(self, field: str, values: List[Any]) -> "QueryBuilder":
+    def where_in(self, field: str, values: list[Any]) -> "QueryBuilder":
         """Add IN WHERE clause.
 
         Args:
@@ -185,7 +188,9 @@ class QueryBuilder:
         """
         return self.where_field(field, ComparisonOperator.IS_NOT_NULL, None)
 
-    def order_by(self, field: str, direction: SortDirection = SortDirection.ASC) -> "QueryBuilder":
+    def order_by(
+        self, field: str, direction: SortDirection = SortDirection.ASC
+    ) -> "QueryBuilder":
         """Add ORDER BY clause.
 
         Args:
@@ -303,10 +308,7 @@ class QueryBuilder:
         return self
 
     def aggregate(
-        self,
-        function: AggregateFunction,
-        field: str,
-        alias: str | None = None
+        self, function: AggregateFunction, field: str, alias: str | None = None
     ) -> "QueryBuilder":
         """Add aggregate function.
 
@@ -451,12 +453,14 @@ class QueryBuilder:
                 data=result_data,
                 execution_time=execution_time,
                 query_type=query_type,
-                metadata=self._query_hints.copy()
+                metadata=self._query_hints.copy(),
             )
 
         except Exception as e:
             execution_time = (datetime.now() - start_time).total_seconds()
-            raise RuntimeError(f"Query execution failed after {execution_time:.3f}s: {e}") from e
+            raise RuntimeError(
+                f"Query execution failed after {execution_time:.3f}s: {e}"
+            ) from e
 
     async def first(self) -> EntityType | None:
         """Execute query and return first result.
@@ -495,7 +499,7 @@ class QueryBuilder:
         count = await self.count_only()
         return count > 0
 
-    async def to_list(self) -> List[EntityType]:
+    async def to_list(self) -> list[EntityType]:
         """Execute query and return list of entities.
 
         Returns:
@@ -506,7 +510,7 @@ class QueryBuilder:
             return result.data
         return [result.data] if result.data else []
 
-    async def _execute_select(self) -> List[EntityType]:
+    async def _execute_select(self) -> list[EntityType]:
         """Execute SELECT query."""
         filters = self._build_filters()
         sort_criteria = self._sort_criteria if self._sort_criteria else None
@@ -514,13 +518,15 @@ class QueryBuilder:
 
         # Handle limit/offset if no pagination
         if not pagination and (self._limit or self._offset):
-            page = (self._offset // self._limit) + 1 if self._limit and self._offset else 1
+            page = (
+                (self._offset // self._limit) + 1 if self._limit and self._offset else 1
+            )
             page_size = self._limit or 50
             pagination = PaginationInfo(page=page, page_size=page_size)
 
         return await self.repository.list(filters, sort_criteria, pagination)
 
-    async def _execute_aggregate(self) -> Dict[str, Any]:
+    async def _execute_aggregate(self) -> dict[str, Any]:
         """Execute aggregate query."""
         # For now, implement basic aggregates using repository methods
         # In a full implementation, this would generate appropriate SQL/NoSQL queries
@@ -529,7 +535,9 @@ class QueryBuilder:
         results = {}
 
         # Get count for COUNT aggregates
-        count_aggregates = [agg for agg in self._aggregates if agg.function == AggregateFunction.COUNT]
+        count_aggregates = [
+            agg for agg in self._aggregates if agg.function == AggregateFunction.COUNT
+        ]
         if count_aggregates:
             total_count = await self.repository.count(filters)
             for agg in count_aggregates:
@@ -543,7 +551,7 @@ class QueryBuilder:
 
         return results
 
-    def _build_filters(self) -> Dict[str, Any] | None:
+    def _build_filters(self) -> dict[str, Any] | None:
         """Build filters dictionary from specifications."""
         if not self._specifications:
             return None

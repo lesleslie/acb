@@ -19,7 +19,7 @@ class ValidationError(Exception):
         self,
         message: str,
         field_name: str | None = None,
-        validation_result: ValidationResult | None = None
+        validation_result: ValidationResult | None = None,
     ) -> None:
         super().__init__(message)
         self.field_name = field_name
@@ -29,11 +29,7 @@ class ValidationError(Exception):
 class ValidationWarning(UserWarning):
     """Warning raised for non-critical validation issues."""
 
-    def __init__(
-        self,
-        message: str,
-        field_name: str | None = None
-    ) -> None:
+    def __init__(self, message: str, field_name: str | None = None) -> None:
         super().__init__(message)
         self.field_name = field_name
 
@@ -86,7 +82,9 @@ class ValidationReport:
         """Get average validation time across all results."""
         if not self.results:
             return 0.0
-        return sum(result.validation_time_ms for result in self.results) / len(self.results)
+        return sum(result.validation_time_ms for result in self.results) / len(
+            self.results
+        )
 
     @property
     def max_validation_time_ms(self) -> float:
@@ -100,7 +98,9 @@ class ValidationReport:
         errors = []
         for result in self.results:
             for error in result.errors:
-                field_info = f" (field: {result.field_name})" if result.field_name else ""
+                field_info = (
+                    f" (field: {result.field_name})" if result.field_name else ""
+                )
                 errors.append(f"{error}{field_info}")
         return errors
 
@@ -109,7 +109,9 @@ class ValidationReport:
         warnings = []
         for result in self.results:
             for warning in result.warnings:
-                field_info = f" (field: {result.field_name})" if result.field_name else ""
+                field_info = (
+                    f" (field: {result.field_name})" if result.field_name else ""
+                )
                 warnings.append(f"{warning}{field_info}")
         return warnings
 
@@ -182,8 +184,10 @@ class ValidationReport:
             if self.warning_count > 3:
                 lines.append(f"  ... and {self.warning_count - 3} more warnings")
 
-        lines.append(f"Performance: {self.average_validation_time_ms:.2f}ms avg, "
-                    f"{self.max_validation_time_ms:.2f}ms max")
+        lines.append(
+            f"Performance: {self.average_validation_time_ms:.2f}ms avg, "
+            f"{self.max_validation_time_ms:.2f}ms max"
+        )
 
         return "\n".join(lines)
 
@@ -223,7 +227,7 @@ class ValidationResultBuilder:
         return ValidationReport(
             results=self._results.copy(),
             total_time_ms=self._total_time_ms,
-            metadata=self._metadata.copy()
+            metadata=self._metadata.copy(),
         )
 
     def build_and_raise_on_error(self) -> ValidationReport:
@@ -232,7 +236,9 @@ class ValidationResultBuilder:
 
         if not report.is_valid:
             errors = report.get_all_errors()
-            error_message = f"Validation failed with {len(errors)} errors: " + "; ".join(errors[:3])
+            error_message = (
+                f"Validation failed with {len(errors)} errors: " + "; ".join(errors[:3])
+            )
             if len(errors) > 3:
                 error_message += f" ... and {len(errors) - 3} more errors"
 

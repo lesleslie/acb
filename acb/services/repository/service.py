@@ -7,29 +7,23 @@ Provides centralized repository management service:
 - Configuration and dependency injection
 """
 
-import typing as t
-from typing import Any, Dict, List, Optional, Type, TypeVar
-from dataclasses import dataclass
-from enum import Enum
 import asyncio
-from datetime import datetime, timezone
+from dataclasses import dataclass
+from typing import Any, TypeVar
 
 from acb.depends import depends
+
 from .._base import ServiceBase, ServiceStatus
 from ..health import HealthCheckMixin
-from ._base import RepositoryBase, RepositorySettings, RepositoryError
-from .registry import RepositoryRegistry, RepositoryScope, get_registry
-from .unit_of_work import UnitOfWork, UnitOfWorkManager
-from .coordinator import MultiDatabaseCoordinator, DatabaseType, CoordinationStrategy
+from ._base import RepositoryBase, RepositoryError, RepositorySettings
 from .cache import RepositoryCacheSettings
+from .coordinator import CoordinationStrategy, DatabaseType, MultiDatabaseCoordinator
+from .registry import RepositoryScope, get_registry
+from .unit_of_work import UnitOfWork, UnitOfWorkManager
 
 # Service metadata for discovery system
 try:
-    from ..discovery import (
-        ServiceMetadata,
-        ServiceCapability,
-        generate_service_id
-    )
+    from ..discovery import ServiceCapability, ServiceMetadata, generate_service_id
 
     SERVICE_METADATA = ServiceMetadata(
         service_id=generate_service_id(),
@@ -46,7 +40,7 @@ try:
             ServiceCapability.ASYNC_OPERATIONS,
             ServiceCapability.LIFECYCLE_MANAGEMENT,
             ServiceCapability.METRICS_COLLECTION,
-            ServiceCapability.DEPENDENCY_INJECTION
+            ServiceCapability.DEPENDENCY_INJECTION,
         ],
         description="Repository pattern service with Unit of Work transaction management",
         settings_class="RepositoryServiceSettings",
@@ -54,8 +48,8 @@ try:
             "enable_unit_of_work": True,
             "default_transaction_timeout": 30.0,
             "enable_repository_registry": True,
-            "enable_query_caching": False
-        }
+            "enable_query_caching": False,
+        },
     )
 except ImportError:
     # Discovery system not available
@@ -68,6 +62,7 @@ EntityType = TypeVar("EntityType")
 @dataclass
 class RepositoryServiceMetrics:
     """Repository service metrics."""
+
     total_repositories: int = 0
     active_repositories: int = 0
     cache_hit_rate: float = 0.0
@@ -86,7 +81,9 @@ class RepositoryServiceSettings(RepositorySettings):
 
     # Multi-database settings
     enable_coordination: bool = False
-    default_coordination_strategy: CoordinationStrategy = CoordinationStrategy.BEST_EFFORT
+    default_coordination_strategy: CoordinationStrategy = (
+        CoordinationStrategy.BEST_EFFORT
+    )
 
     # Cache settings integration
     cache_settings: RepositoryCacheSettings = RepositoryCacheSettings()
@@ -108,9 +105,11 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         self.settings = depends.get(RepositoryServiceSettings)
         self.registry = get_registry()
         self.uow_manager = UnitOfWorkManager()
-        self.coordinator = MultiDatabaseCoordinator(
-            self.settings.default_coordination_strategy
-        ) if self.settings.enable_coordination else None
+        self.coordinator = (
+            MultiDatabaseCoordinator(self.settings.default_coordination_strategy)
+            if self.settings.enable_coordination
+            else None
+        )
         self._metrics = RepositoryServiceMetrics()
         self._health_check_task: asyncio.Task | None = None
         self._metrics_task: asyncio.Task | None = None
@@ -136,7 +135,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
 
         except Exception as e:
             self._status = ServiceStatus.ERROR
-            raise RepositoryError(f"Failed to initialize repository service: {e}") from e
+            raise RepositoryError(
+                f"Failed to initialize repository service: {e}"
+            ) from e
 
     async def shutdown(self) -> None:
         """Shutdown the repository service."""
@@ -164,9 +165,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
 
     def register_repository(
         self,
-        entity_type: Type[EntityType],
-        repository_type: Type[RepositoryBase[EntityType, Any]],
-        scope: RepositoryScope = RepositoryScope.SINGLETON
+        entity_type: type[EntityType],
+        repository_type: type[RepositoryBase[EntityType, Any]],
+        scope: RepositoryScope = RepositoryScope.SINGLETON,
     ) -> None:
         """Register a repository for an entity type.
 
@@ -176,12 +177,14 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             scope: Repository scope
         """
         self.registry.register(entity_type, repository_type, scope)
-        self.logger.debug(f"Registered repository {repository_type.__name__} for {entity_type.__name__}")
+        self.logger.debug(
+            f"Registered repository {repository_type.__name__} for {entity_type.__name__}"
+        )
 
     def register_repository_instance(
         self,
-        entity_type: Type[EntityType],
-        repository_instance: RepositoryBase[EntityType, Any]
+        entity_type: type[EntityType],
+        repository_instance: RepositoryBase[EntityType, Any],
     ) -> None:
         """Register a pre-created repository instance.
 
@@ -192,7 +195,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         self.registry.register_instance(entity_type, repository_instance)
         self.logger.debug(f"Registered repository instance for {entity_type.__name__}")
 
-    def get_repository(self, entity_type: Type[EntityType]) -> RepositoryBase[EntityType, Any]:
+    def get_repository(
+        self, entity_type: type[EntityType]
+    ) -> RepositoryBase[EntityType, Any]:
         """Get repository for entity type.
 
         Args:
@@ -203,7 +208,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         """
         return self.registry.get(entity_type)
 
-    def try_get_repository(self, entity_type: Type[EntityType]) -> RepositoryBase[EntityType, Any] | None:
+    def try_get_repository(
+        self, entity_type: type[EntityType]
+    ) -> RepositoryBase[EntityType, Any] | None:
         """Try to get repository for entity type.
 
         Args:
@@ -215,9 +222,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         return self.registry.try_get(entity_type)
 
     async def create_unit_of_work(
-        self,
-        isolation_level: str | None = None,
-        timeout: float | None = None
+        self, isolation_level: str | None = None, timeout: float | None = None
     ) -> UnitOfWork:
         """Create a new Unit of Work.
 
@@ -231,9 +236,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         return await self.uow_manager.create_unit_of_work(isolation_level, timeout)
 
     def transaction_context(
-        self,
-        isolation_level: str | None = None,
-        timeout: float | None = None
+        self, isolation_level: str | None = None, timeout: float | None = None
     ):
         """Get transaction context manager.
 
@@ -252,7 +255,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         db_type: DatabaseType,
         adapter: Any,
         priority: int = 0,
-        read_only: bool = False
+        read_only: bool = False,
     ) -> None:
         """Register a database for coordination.
 
@@ -270,10 +273,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         self.logger.debug(f"Registered database {name} ({db_type.value})")
 
     def register_coordinated_repository(
-        self,
-        database_name: str,
-        entity_name: str,
-        repository: RepositoryBase
+        self, database_name: str, entity_name: str, repository: RepositoryBase
     ) -> None:
         """Register a repository for coordinated operations.
 
@@ -291,10 +291,10 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         self,
         operation: str,
         entity_type: str,
-        data: Dict[str, Any],
-        target_databases: List[str] | None = None,
-        strategy: CoordinationStrategy | None = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any],
+        target_databases: list[str] | None = None,
+        strategy: CoordinationStrategy | None = None,
+    ) -> dict[str, Any]:
         """Execute coordinated operation across databases.
 
         Args:
@@ -327,7 +327,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         else:
             raise RepositoryError(f"Unsupported coordinated operation: {operation}")
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Check repository service health.
 
         Returns:
@@ -336,14 +336,16 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         health_status = {
             "service_status": self._status.value,
             "repositories_registered": len(self.registry.list_registrations()),
-            "active_transactions": len(await self.uow_manager.get_active_transactions()),
+            "active_transactions": len(
+                await self.uow_manager.get_active_transactions()
+            ),
             "metrics": {
                 "total_repositories": self._metrics.total_repositories,
                 "active_repositories": self._metrics.active_repositories,
                 "cache_hit_rate": self._metrics.cache_hit_rate,
                 "coordination_success_rate": self._metrics.coordination_success_rate,
-                "health_check_failures": self._metrics.health_check_failures
-            }
+                "health_check_failures": self._metrics.health_check_failures,
+            },
         }
 
         # Add coordinator health if enabled
@@ -357,7 +359,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
 
         return health_status
 
-    async def get_service_metrics(self) -> Dict[str, Any]:
+    async def get_service_metrics(self) -> dict[str, Any]:
         """Get comprehensive service metrics.
 
         Returns:
@@ -373,18 +375,17 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
                 "active_repositories": self._metrics.active_repositories,
                 "cache_hit_rate": self._metrics.cache_hit_rate,
                 "coordination_success_rate": self._metrics.coordination_success_rate,
-                "health_check_failures": self._metrics.health_check_failures
-            }
+                "health_check_failures": self._metrics.health_check_failures,
+            },
         }
 
         # Add coordinator stats if enabled
         if self.coordinator:
-            repository_metrics["coordination_stats"] = await self.coordinator.get_coordination_stats()
+            repository_metrics[
+                "coordination_stats"
+            ] = await self.coordinator.get_coordination_stats()
 
-        return {
-            **base_metrics,
-            "repository_metrics": repository_metrics
-        }
+        return {**base_metrics, "repository_metrics": repository_metrics}
 
     async def _auto_register_repositories(self) -> None:
         """Auto-register repositories from common locations."""
@@ -393,15 +394,17 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             adapter_packages = [
                 "acb.adapters.sql",
                 "acb.adapters.nosql",
-                "acb.adapters.cache"
+                "acb.adapters.cache",
             ]
 
             for package_name in adapter_packages:
                 try:
-                    package = __import__(package_name, fromlist=[''])
+                    package = __import__(package_name, fromlist=[""])
                     registered = self.registry.auto_register_repositories(package)
                     if registered:
-                        self.logger.debug(f"Auto-registered {registered} repositories from {package_name}")
+                        self.logger.debug(
+                            f"Auto-registered {registered} repositories from {package_name}"
+                        )
                 except ImportError:
                     continue
 
@@ -422,10 +425,13 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         try:
             # Try to register SQL adapter
             from acb.adapters import import_adapter
+
             try:
                 Sql = import_adapter("sql")
                 sql_adapter = depends.get(Sql)
-                self.coordinator.register_database("sql_primary", DatabaseType.SQL, sql_adapter, priority=100)
+                self.coordinator.register_database(
+                    "sql_primary", DatabaseType.SQL, sql_adapter, priority=100
+                )
             except ImportError:
                 pass
 
@@ -433,7 +439,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             try:
                 Nosql = import_adapter("nosql")
                 nosql_adapter = depends.get(Nosql)
-                self.coordinator.register_database("nosql_primary", DatabaseType.NOSQL, nosql_adapter, priority=90)
+                self.coordinator.register_database(
+                    "nosql_primary", DatabaseType.NOSQL, nosql_adapter, priority=90
+                )
             except ImportError:
                 pass
 
@@ -441,7 +449,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             try:
                 Cache = import_adapter("cache")
                 cache_adapter = depends.get(Cache)
-                self.coordinator.register_database("cache_primary", DatabaseType.CACHE, cache_adapter, priority=80)
+                self.coordinator.register_database(
+                    "cache_primary", DatabaseType.CACHE, cache_adapter, priority=80
+                )
             except ImportError:
                 pass
 
@@ -500,7 +510,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             active_transactions = await self.uow_manager.get_active_transactions()
             # Log if too many active transactions
             if len(active_transactions) > 100:
-                self.logger.warning(f"High number of active transactions: {len(active_transactions)}")
+                self.logger.warning(
+                    f"High number of active transactions: {len(active_transactions)}"
+                )
         except Exception as e:
             self.logger.warning(f"UoW health check failed: {e}")
 
@@ -523,8 +535,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             registrations = self.registry.list_registrations()
             self._metrics.total_repositories = len(registrations)
             self._metrics.active_repositories = sum(
-                1 for reg in registrations.values()
-                if reg.get("initialized", False)
+                1 for reg in registrations.values() if reg.get("initialized", False)
             )
 
             # Update transaction metrics
@@ -534,7 +545,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             # Update coordination metrics if enabled
             if self.coordinator:
                 coord_stats = await self.coordinator.get_coordination_stats()
-                self._metrics.coordination_success_rate = coord_stats.get("success_rate", 0.0)
+                self._metrics.coordination_success_rate = coord_stats.get(
+                    "success_rate", 0.0
+                )
 
             # Calculate aggregate cache hit rate
             # This would need to be implemented by querying individual repositories

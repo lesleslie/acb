@@ -11,20 +11,19 @@ from dataclasses import dataclass, field
 from functools import wraps
 
 from pydantic import BaseModel, Field
-
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
+
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 try:
     from ..discovery import (
+        ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
-        ServiceCapability,
-        generate_service_id
+        generate_service_id,
     )
 
     SERVICE_METADATA = ServiceMetadata(
@@ -43,7 +42,7 @@ try:
             ServiceCapability.CACHING,
             ServiceCapability.ASYNC_OPERATIONS,
             ServiceCapability.METRICS_COLLECTION,
-            ServiceCapability.BATCHING
+            ServiceCapability.BATCHING,
         ],
         description="High-performance optimization service with comprehensive caching and monitoring",
         settings_class="OptimizationConfig",
@@ -52,8 +51,8 @@ try:
             "cache_ttl_seconds": 3600,
             "cache_max_size": 1000,
             "query_timeout_seconds": 30.0,
-            "response_compression": True
-        }
+            "response_compression": True,
+        },
     )
 except ImportError:
     # Discovery system not available
@@ -122,7 +121,7 @@ class PerformanceOptimizer(ServiceBase):
     def __init__(
         self,
         service_config: ServiceConfig | None = None,
-        settings: PerformanceOptimizerSettings | None = None
+        settings: PerformanceOptimizerSettings | None = None,
     ) -> None:
         if service_config is None:
             service_config = ServiceConfig(
@@ -130,7 +129,7 @@ class PerformanceOptimizer(ServiceBase):
                 name="Performance Optimizer",
                 description="Comprehensive performance optimization service",
                 dependencies=["cache", "sql"],  # Common dependencies
-                priority=50  # Mid-priority service
+                priority=50,  # Mid-priority service
             )
 
         super().__init__(service_config, settings or PerformanceOptimizerSettings())
@@ -156,7 +155,9 @@ class PerformanceOptimizer(ServiceBase):
 
         # Start background optimization if enabled
         if self._settings.background_optimization:
-            self._optimization_task = asyncio.create_task(self._background_optimization_loop())
+            self._optimization_task = asyncio.create_task(
+                self._background_optimization_loop()
+            )
 
         self.logger.info("Performance optimizer initialized")
 
@@ -175,16 +176,17 @@ class PerformanceOptimizer(ServiceBase):
             "cache_available": self._cache_adapter is not None,
             "sql_available": self._sql_adapter is not None,
             "background_optimization_running": (
-                self._optimization_task is not None and not self._optimization_task.done()
+                self._optimization_task is not None
+                and not self._optimization_task.done()
             ),
-            "optimizations_applied": self.get_custom_metric("optimizations_applied", 0)
+            "optimizations_applied": self.get_custom_metric("optimizations_applied", 0),
         }
 
     async def optimize_cache_operation(
         self,
         key: str,
         operation: t.Callable[[], t.Awaitable[t.Any]],
-        ttl: int | None = None
+        ttl: int | None = None,
     ) -> OptimizationResult:
         """Optimize a cache operation with intelligent caching.
 
@@ -199,7 +201,10 @@ class PerformanceOptimizer(ServiceBase):
         start_time = time.perf_counter()
 
         try:
-            if not self._cache_adapter or not self._settings.optimization_config.cache_enabled:
+            if (
+                not self._cache_adapter
+                or not self._settings.optimization_config.cache_enabled
+            ):
                 # No cache available, run operation directly
                 result = await operation()
                 duration = (time.perf_counter() - start_time) * 1000
@@ -207,20 +212,22 @@ class PerformanceOptimizer(ServiceBase):
                     operation="cache_operation_direct",
                     duration_ms=duration,
                     success=True,
-                    metadata={"cache_hit": False, "reason": "cache_disabled"}
+                    metadata={"cache_hit": False, "reason": "cache_disabled"},
                 )
 
             # Try to get from cache first
             cached_result = await self._cache_adapter.get(key)
             if cached_result is not None:
                 duration = (time.perf_counter() - start_time) * 1000
-                self.set_custom_metric("cache_hits", self.get_custom_metric("cache_hits", 0) + 1)
+                self.set_custom_metric(
+                    "cache_hits", self.get_custom_metric("cache_hits", 0) + 1
+                )
                 return OptimizationResult(
                     operation="cache_operation_hit",
                     duration_ms=duration,
                     success=True,
                     improvement_percent=75.0,  # Assume cache hit is 75% faster
-                    metadata={"cache_hit": True, "result": cached_result}
+                    metadata={"cache_hit": True, "result": cached_result},
                 )
 
             # Cache miss - run operation and cache result
@@ -233,7 +240,9 @@ class PerformanceOptimizer(ServiceBase):
             await self._cache_adapter.set(key, result, ttl=cache_ttl)
 
             total_duration = (time.perf_counter() - start_time) * 1000
-            self.set_custom_metric("cache_misses", self.get_custom_metric("cache_misses", 0) + 1)
+            self.set_custom_metric(
+                "cache_misses", self.get_custom_metric("cache_misses", 0) + 1
+            )
 
             return OptimizationResult(
                 operation="cache_operation_miss",
@@ -243,8 +252,8 @@ class PerformanceOptimizer(ServiceBase):
                     "cache_hit": False,
                     "operation_duration_ms": operation_duration,
                     "result": result,
-                    "cached_with_ttl": cache_ttl
-                }
+                    "cached_with_ttl": cache_ttl,
+                },
             )
 
         except Exception as e:
@@ -254,13 +263,11 @@ class PerformanceOptimizer(ServiceBase):
                 operation="cache_operation_error",
                 duration_ms=duration,
                 success=False,
-                error=str(e)
+                error=str(e),
             )
 
     async def optimize_query_batch(
-        self,
-        queries: list[str],
-        parameters: list[dict[str, t.Any]] | None = None
+        self, queries: list[str], parameters: list[dict[str, t.Any]] | None = None
     ) -> OptimizationResult:
         """Optimize batch query execution.
 
@@ -280,7 +287,7 @@ class PerformanceOptimizer(ServiceBase):
                     operation="query_batch_error",
                     duration_ms=duration,
                     success=False,
-                    error="SQL adapter not available"
+                    error="SQL adapter not available",
                 )
 
             config = self._settings.optimization_config
@@ -291,9 +298,11 @@ class PerformanceOptimizer(ServiceBase):
 
             # Process queries in batches
             for i in range(0, len(queries), batch_size):
-                batch_queries = queries[i:i + batch_size]
+                batch_queries = queries[i : i + batch_size]
                 batch_params = (
-                    parameters[i:i + batch_size] if parameters else [{}] * len(batch_queries)
+                    parameters[i : i + batch_size]
+                    if parameters
+                    else [{}] * len(batch_queries)
                 )
 
                 # Execute batch
@@ -306,8 +315,10 @@ class PerformanceOptimizer(ServiceBase):
             duration = (time.perf_counter() - start_time) * 1000
             improvement = min(30.0, batches_processed * 5.0)  # Estimate improvement
 
-            self.set_custom_metric("queries_optimized",
-                                  self.get_custom_metric("queries_optimized", 0) + len(queries))
+            self.set_custom_metric(
+                "queries_optimized",
+                self.get_custom_metric("queries_optimized", 0) + len(queries),
+            )
 
             return OptimizationResult(
                 operation="query_batch_optimized",
@@ -317,8 +328,8 @@ class PerformanceOptimizer(ServiceBase):
                 metadata={
                     "queries_count": len(queries),
                     "batches_processed": batches_processed,
-                    "results": results
-                }
+                    "results": results,
+                },
             )
 
         except Exception as e:
@@ -328,14 +339,14 @@ class PerformanceOptimizer(ServiceBase):
                 operation="query_batch_error",
                 duration_ms=duration,
                 success=False,
-                error=str(e)
+                error=str(e),
             )
 
     def optimize_function(
-        self,
-        cache_key_template: str | None = None,
-        ttl: int | None = None
-    ) -> t.Callable[[t.Callable[..., t.Awaitable[t.Any]]], t.Callable[..., t.Awaitable[t.Any]]]:
+        self, cache_key_template: str | None = None, ttl: int | None = None
+    ) -> t.Callable[
+        [t.Callable[..., t.Awaitable[t.Any]]], t.Callable[..., t.Awaitable[t.Any]]
+    ]:
         """Decorator to optimize async functions with caching.
 
         Args:
@@ -345,7 +356,10 @@ class PerformanceOptimizer(ServiceBase):
         Returns:
             Decorator function
         """
-        def decorator(func: t.Callable[..., t.Awaitable[t.Any]]) -> t.Callable[..., t.Awaitable[t.Any]]:
+
+        def decorator(
+            func: t.Callable[..., t.Awaitable[t.Any]],
+        ) -> t.Callable[..., t.Awaitable[t.Any]]:
             @wraps(func)
             async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
                 # Generate cache key
@@ -353,6 +367,7 @@ class PerformanceOptimizer(ServiceBase):
                 if args or kwargs:
                     # Create a simple hash from arguments for cache key uniqueness
                     import hashlib
+
                     arg_str = str((args, sorted(kwargs.items())))
                     arg_hash = hashlib.md5(arg_str.encode()).hexdigest()[:8]
                     cache_key = f"{cache_key}:{arg_hash}"
@@ -371,6 +386,7 @@ class PerformanceOptimizer(ServiceBase):
                     raise RuntimeError(f"Function optimization failed: {result.error}")
 
             return wrapper
+
         return decorator
 
     async def _background_optimization_loop(self) -> None:
@@ -407,8 +423,11 @@ class PerformanceOptimizer(ServiceBase):
                 self.logger.debug("Analyzing query patterns for optimization")
                 optimizations_performed += 1
 
-            self.set_custom_metric("optimizations_applied",
-                                  self.get_custom_metric("optimizations_applied", 0) + optimizations_performed)
+            self.set_custom_metric(
+                "optimizations_applied",
+                self.get_custom_metric("optimizations_applied", 0)
+                + optimizations_performed,
+            )
 
         except Exception as e:
             self.logger.error(f"Error in background optimizations: {e}")

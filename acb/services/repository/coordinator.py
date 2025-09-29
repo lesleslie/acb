@@ -7,25 +7,25 @@ Provides coordination across multiple database types:
 - Cross-database consistency management
 """
 
-import typing as t
-from typing import Any, Dict, List, Optional, Set, TypeVar, Callable
-from dataclasses import dataclass, field
-from enum import Enum
 import asyncio
-from datetime import datetime, timezone
 import uuid
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from enum import Enum
+from typing import Any, TypeVar
 
 from acb.core.cleanup import CleanupMixin
-from acb.depends import depends
-from ._base import RepositoryBase, RepositoryError
-from .unit_of_work import UnitOfWork, UnitOfWorkManager
 
+from ._base import RepositoryBase, RepositoryError
+from .unit_of_work import UnitOfWorkManager
 
 EntityType = TypeVar("EntityType")
 
 
 class DatabaseType(Enum):
     """Database type enumeration."""
+
     SQL = "sql"
     NOSQL = "nosql"
     CACHE = "cache"
@@ -35,15 +35,17 @@ class DatabaseType(Enum):
 
 class CoordinationStrategy(Enum):
     """Coordination strategy enumeration."""
-    TWO_PHASE_COMMIT = "2pc"         # Two-phase commit
-    SAGA_PATTERN = "saga"            # Saga pattern for distributed transactions
-    EVENT_SOURCING = "event_sourcing" # Event sourcing with eventual consistency
-    BEST_EFFORT = "best_effort"      # Best effort with compensation
+
+    TWO_PHASE_COMMIT = "2pc"  # Two-phase commit
+    SAGA_PATTERN = "saga"  # Saga pattern for distributed transactions
+    EVENT_SOURCING = "event_sourcing"  # Event sourcing with eventual consistency
+    BEST_EFFORT = "best_effort"  # Best effort with compensation
 
 
 @dataclass
 class DatabaseConnection:
     """Database connection information."""
+
     name: str
     db_type: DatabaseType
     adapter: Any
@@ -56,16 +58,17 @@ class DatabaseConnection:
 @dataclass
 class CoordinationTask:
     """Task for multi-database coordination."""
+
     task_id: str
     operation: str
-    databases: Set[str]
+    databases: set[str]
     entity_type: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     strategy: CoordinationStrategy
     created_at: datetime
     status: str = "pending"
     error_message: str | None = None
-    compensation_actions: List[Callable] = field(default_factory=list)
+    compensation_actions: list[Callable] = field(default_factory=list)
 
 
 class MultiDatabaseCoordinator(CleanupMixin):
@@ -75,14 +78,16 @@ class MultiDatabaseCoordinator(CleanupMixin):
     consistency management across different database types and instances.
     """
 
-    def __init__(self, default_strategy: CoordinationStrategy = CoordinationStrategy.BEST_EFFORT):
+    def __init__(
+        self, default_strategy: CoordinationStrategy = CoordinationStrategy.BEST_EFFORT
+    ):
         super().__init__()
         self.default_strategy = default_strategy
-        self._connections: Dict[str, DatabaseConnection] = {}
-        self._repositories: Dict[str, Dict[str, RepositoryBase]] = {}
-        self._active_tasks: Dict[str, CoordinationTask] = {}
-        self._completed_tasks: List[CoordinationTask] = []
-        self._event_handlers: Dict[str, List[Callable]] = {}
+        self._connections: dict[str, DatabaseConnection] = {}
+        self._repositories: dict[str, dict[str, RepositoryBase]] = {}
+        self._active_tasks: dict[str, CoordinationTask] = {}
+        self._completed_tasks: list[CoordinationTask] = []
+        self._event_handlers: dict[str, list[Callable]] = {}
         self._uow_manager = UnitOfWorkManager()
 
     def register_database(
@@ -91,7 +96,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         db_type: DatabaseType,
         adapter: Any,
         priority: int = 0,
-        read_only: bool = False
+        read_only: bool = False,
     ) -> None:
         """Register a database connection.
 
@@ -109,17 +114,14 @@ class MultiDatabaseCoordinator(CleanupMixin):
             priority=priority,
             read_only=read_only,
             health_status="registered",
-            last_health_check=datetime.now(timezone.utc)
+            last_health_check=datetime.now(UTC),
         )
 
         self._connections[name] = connection
         self._repositories[name] = {}
 
     def register_repository(
-        self,
-        database_name: str,
-        entity_name: str,
-        repository: RepositoryBase
+        self, database_name: str, entity_name: str, repository: RepositoryBase
     ) -> None:
         """Register a repository for a specific database.
 
@@ -136,7 +138,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         self._repositories[database_name][entity_name] = repository
 
-    def get_repository(self, database_name: str, entity_name: str) -> RepositoryBase | None:
+    def get_repository(
+        self, database_name: str, entity_name: str
+    ) -> RepositoryBase | None:
         """Get repository for database and entity.
 
         Args:
@@ -150,7 +154,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
             return self._repositories[database_name].get(entity_name)
         return None
 
-    def get_preferred_read_database(self, db_type: DatabaseType | None = None) -> DatabaseConnection | None:
+    def get_preferred_read_database(
+        self, db_type: DatabaseType | None = None
+    ) -> DatabaseConnection | None:
         """Get preferred database for read operations.
 
         Args:
@@ -173,7 +179,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
         candidates.sort(key=lambda c: c.priority, reverse=True)
         return candidates[0]
 
-    def get_write_databases(self, db_type: DatabaseType | None = None) -> List[DatabaseConnection]:
+    def get_write_databases(
+        self, db_type: DatabaseType | None = None
+    ) -> list[DatabaseConnection]:
         """Get databases available for write operations.
 
         Args:
@@ -195,10 +203,10 @@ class MultiDatabaseCoordinator(CleanupMixin):
     async def execute_coordinated_create(
         self,
         entity_type: str,
-        entity_data: Dict[str, Any],
-        target_databases: List[str] | None = None,
-        strategy: CoordinationStrategy | None = None
-    ) -> Dict[str, Any]:
+        entity_data: dict[str, Any],
+        target_databases: list[str] | None = None,
+        strategy: CoordinationStrategy | None = None,
+    ) -> dict[str, Any]:
         """Execute coordinated create operation across databases.
 
         Args:
@@ -215,8 +223,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         if target_databases is None:
             target_databases = [
-                name for name, conn in self._connections.items()
-                if not conn.read_only
+                name for name, conn in self._connections.items() if not conn.read_only
             ]
 
         task = CoordinationTask(
@@ -226,7 +233,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             entity_type=entity_type,
             data=entity_data,
             strategy=strategy,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
         )
 
         self._active_tasks[task_id] = task
@@ -258,10 +265,10 @@ class MultiDatabaseCoordinator(CleanupMixin):
         self,
         entity_type: str,
         entity_id: Any,
-        entity_data: Dict[str, Any],
-        target_databases: List[str] | None = None,
-        strategy: CoordinationStrategy | None = None
-    ) -> Dict[str, Any]:
+        entity_data: dict[str, Any],
+        target_databases: list[str] | None = None,
+        strategy: CoordinationStrategy | None = None,
+    ) -> dict[str, Any]:
         """Execute coordinated update operation across databases.
 
         Args:
@@ -279,8 +286,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         if target_databases is None:
             target_databases = [
-                name for name, conn in self._connections.items()
-                if not conn.read_only
+                name for name, conn in self._connections.items() if not conn.read_only
             ]
 
         task = CoordinationTask(
@@ -290,7 +296,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             entity_type=entity_type,
             data={"id": entity_id, **entity_data},
             strategy=strategy,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
         )
 
         self._active_tasks[task_id] = task
@@ -320,9 +326,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
         self,
         entity_type: str,
         entity_id: Any,
-        target_databases: List[str] | None = None,
-        strategy: CoordinationStrategy | None = None
-    ) -> Dict[str, Any]:
+        target_databases: list[str] | None = None,
+        strategy: CoordinationStrategy | None = None,
+    ) -> dict[str, Any]:
         """Execute coordinated delete operation across databases.
 
         Args:
@@ -339,8 +345,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         if target_databases is None:
             target_databases = [
-                name for name, conn in self._connections.items()
-                if not conn.read_only
+                name for name, conn in self._connections.items() if not conn.read_only
             ]
 
         task = CoordinationTask(
@@ -350,7 +355,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             entity_type=entity_type,
             data={"id": entity_id},
             strategy=strategy,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC),
         )
 
         self._active_tasks[task_id] = task
@@ -369,7 +374,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             self._active_tasks.pop(task_id, None)
             self._completed_tasks.append(task)
 
-    async def _execute_2pc_create(self, task: CoordinationTask) -> Dict[str, Any]:
+    async def _execute_2pc_create(self, task: CoordinationTask) -> dict[str, Any]:
         """Execute two-phase commit create operation."""
         results = {}
         prepared_databases = set()
@@ -399,7 +404,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         return results
 
-    async def _execute_saga_create(self, task: CoordinationTask) -> Dict[str, Any]:
+    async def _execute_saga_create(self, task: CoordinationTask) -> dict[str, Any]:
         """Execute saga pattern create operation."""
         results = {}
         completed_steps = []
@@ -419,18 +424,21 @@ class MultiDatabaseCoordinator(CleanupMixin):
                             # Delete created entity
                             if "id" in task.data:
                                 await repo.delete(task.data["id"])
+
                         return _compensate
 
                     task.compensation_actions.append(compensate())
 
-        except Exception as e:
+        except Exception:
             # Execute compensation actions for completed steps
             await self._execute_compensation(task)
             raise
 
         return results
 
-    async def _execute_best_effort_create(self, task: CoordinationTask) -> Dict[str, Any]:
+    async def _execute_best_effort_create(
+        self, task: CoordinationTask
+    ) -> dict[str, Any]:
         """Execute best effort create operation."""
         results = {}
         tasks = []
@@ -439,6 +447,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         for db_name in task.databases:
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
+
                 async def create_in_db(db=db_name, repo=repository):
                     try:
                         # In a real implementation, we'd create actual entities
@@ -462,7 +471,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         return results
 
-    async def _execute_best_effort_update(self, task: CoordinationTask) -> Dict[str, Any]:
+    async def _execute_best_effort_update(
+        self, task: CoordinationTask
+    ) -> dict[str, Any]:
         """Execute best effort update operation."""
         results = {}
         tasks = []
@@ -470,6 +481,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         for db_name in task.databases:
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
+
                 async def update_in_db(db=db_name, repo=repository):
                     try:
                         await asyncio.sleep(0.01)  # Simulate work
@@ -489,7 +501,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         return results
 
-    async def _execute_best_effort_delete(self, task: CoordinationTask) -> Dict[str, Any]:
+    async def _execute_best_effort_delete(
+        self, task: CoordinationTask
+    ) -> dict[str, Any]:
         """Execute best effort delete operation."""
         results = {}
         tasks = []
@@ -497,6 +511,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         for db_name in task.databases:
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
+
                 async def delete_in_db(db=db_name, repo=repository):
                     try:
                         await asyncio.sleep(0.01)  # Simulate work
@@ -525,7 +540,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
                 # Log compensation failure but continue
                 print(f"Compensation failed for task {task.task_id}: {e}")
 
-    async def check_database_health(self) -> Dict[str, Dict[str, Any]]:
+    async def check_database_health(self) -> dict[str, dict[str, Any]]:
         """Check health of all registered databases.
 
         Returns:
@@ -542,7 +557,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
                 response_time = (datetime.now() - start_time).total_seconds()
 
                 connection.health_status = "healthy"
-                connection.last_health_check = datetime.now(timezone.utc)
+                connection.last_health_check = datetime.now(UTC)
 
                 health_results[name] = {
                     "status": "healthy",
@@ -550,12 +565,12 @@ class MultiDatabaseCoordinator(CleanupMixin):
                     "last_check": connection.last_health_check.isoformat(),
                     "type": connection.db_type.value,
                     "read_only": connection.read_only,
-                    "priority": connection.priority
+                    "priority": connection.priority,
                 }
 
             except Exception as e:
                 connection.health_status = "unhealthy"
-                connection.last_health_check = datetime.now(timezone.utc)
+                connection.last_health_check = datetime.now(UTC)
 
                 health_results[name] = {
                     "status": "unhealthy",
@@ -563,12 +578,12 @@ class MultiDatabaseCoordinator(CleanupMixin):
                     "last_check": connection.last_health_check.isoformat(),
                     "type": connection.db_type.value,
                     "read_only": connection.read_only,
-                    "priority": connection.priority
+                    "priority": connection.priority,
                 }
 
         return health_results
 
-    async def get_coordination_stats(self) -> Dict[str, Any]:
+    async def get_coordination_stats(self) -> dict[str, Any]:
         """Get coordination statistics.
 
         Returns:
@@ -597,9 +612,11 @@ class MultiDatabaseCoordinator(CleanupMixin):
             "completed_tasks": completed_count,
             "success_rate": success_rate,
             "registered_databases": len(self._connections),
-            "registered_repositories": sum(len(repos) for repos in self._repositories.values()),
+            "registered_repositories": sum(
+                len(repos) for repos in self._repositories.values()
+            ),
             "strategy_stats": strategy_stats,
-            "default_strategy": self.default_strategy.value
+            "default_strategy": self.default_strategy.value,
         }
 
     async def _cleanup_resources(self) -> None:

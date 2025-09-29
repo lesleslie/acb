@@ -26,9 +26,7 @@ class InputSanitizer:
         self._url_sanitizer = URLSanitizer(config)
 
     async def sanitize(
-        self,
-        data: t.Any,
-        sanitization_type: str = "auto"
+        self, data: t.Any, sanitization_type: str = "auto"
     ) -> ValidationResult:
         """Sanitize data based on type and configuration.
 
@@ -105,23 +103,65 @@ class HTMLSanitizer:
 
         # Dangerous HTML tags that should be removed
         self.dangerous_tags = {
-            'script', 'iframe', 'object', 'embed', 'form', 'input',
-            'button', 'textarea', 'select', 'option', 'meta', 'link',
-            'style', 'base', 'frame', 'frameset', 'applet'
+            "script",
+            "iframe",
+            "object",
+            "embed",
+            "form",
+            "input",
+            "button",
+            "textarea",
+            "select",
+            "option",
+            "meta",
+            "link",
+            "style",
+            "base",
+            "frame",
+            "frameset",
+            "applet",
         }
 
         # Allowed tags for basic formatting (if allowing some HTML)
         self.allowed_tags = {
-            'p', 'br', 'strong', 'em', 'b', 'i', 'u', 'span',
-            'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-            'ul', 'ol', 'li', 'blockquote'
+            "p",
+            "br",
+            "strong",
+            "em",
+            "b",
+            "i",
+            "u",
+            "span",
+            "div",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "ul",
+            "ol",
+            "li",
+            "blockquote",
         }
 
         # Dangerous attributes
         self.dangerous_attributes = {
-            'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus',
-            'onblur', 'onchange', 'onsubmit', 'onerror', 'onkeydown',
-            'onkeyup', 'onkeypress', 'javascript:', 'vbscript:', 'data:'
+            "onload",
+            "onclick",
+            "onmouseover",
+            "onmouseout",
+            "onfocus",
+            "onblur",
+            "onchange",
+            "onsubmit",
+            "onerror",
+            "onkeydown",
+            "onkeyup",
+            "onkeypress",
+            "javascript:",
+            "vbscript:",
+            "data:",
         }
 
     async def sanitize(self, data: str) -> ValidationResult:
@@ -155,17 +195,27 @@ class HTMLSanitizer:
         original = data
 
         # Remove script tags and content
-        data = re.sub(r'<script[^>]*>.*?</script>', '', data, flags=re.IGNORECASE | re.DOTALL)
+        data = re.sub(  # REGEX OK: XSS prevention
+            r"<script[^>]*>.*?</script>", "", data, flags=re.IGNORECASE | re.DOTALL
+        )
 
         # Remove javascript: and vbscript: URLs
-        data = re.sub(r'javascript:[^"\']*', '', data, flags=re.IGNORECASE)
-        data = re.sub(r'vbscript:[^"\']*', '', data, flags=re.IGNORECASE)
+        data = re.sub(
+            r'javascript:[^"\']*', "", data, flags=re.IGNORECASE
+        )  # REGEX OK: XSS prevention
+        data = re.sub(
+            r'vbscript:[^"\']*', "", data, flags=re.IGNORECASE
+        )  # REGEX OK: XSS prevention
 
         # Remove data: URLs (can contain scripts)
-        data = re.sub(r'data:[^"\']*', '', data, flags=re.IGNORECASE)
+        data = re.sub(
+            r'data:[^"\']*', "", data, flags=re.IGNORECASE
+        )  # REGEX OK: XSS prevention
 
         # Remove event handlers
-        data = re.sub(r'on\w+\s*=\s*["\'][^"\']*["\']', '', data, flags=re.IGNORECASE)
+        data = re.sub(
+            r'on\w+\s*=\s*["\'][^"\']*["\']', "", data, flags=re.IGNORECASE
+        )  # REGEX OK: XSS prevention
 
         if data != original:
             result.add_warning("Dangerous script patterns removed")
@@ -177,32 +227,40 @@ class HTMLSanitizer:
         original = data
 
         # For strict sanitization, remove all HTML tags
-        if not hasattr(self.config, 'allow_html') or not self.config.allow_html:
-            data = re.sub(r'<[^>]+>', '', data)
+        if not hasattr(self.config, "allow_html") or not self.config.allow_html:
+            data = re.sub(r"<[^>]+>", "", data)  # REGEX OK: HTML tag removal
             if data != original:
                 result.add_warning("HTML tags removed")
             return data
 
         # For permissive sanitization, remove only dangerous tags
         for tag in self.dangerous_tags:
-            pattern = rf'<{tag}[^>]*>.*?</{tag}>'
-            data = re.sub(pattern, '', data, flags=re.IGNORECASE | re.DOTALL)
-            pattern = rf'<{tag}[^>]*/?>'
-            data = re.sub(pattern, '', data, flags=re.IGNORECASE)
+            pattern = rf"<{tag}[^>]*>.*?</{tag}>"
+            data = re.sub(
+                pattern, "", data, flags=re.IGNORECASE | re.DOTALL
+            )  # REGEX OK: HTML sanitization
+            pattern = rf"<{tag}[^>]*/?>"
+            data = re.sub(
+                pattern, "", data, flags=re.IGNORECASE
+            )  # REGEX OK: HTML sanitization
 
         if data != original:
             result.add_warning("Dangerous HTML tags removed")
 
         return data
 
-    async def _remove_dangerous_attributes(self, data: str, result: ValidationResult) -> str:
+    async def _remove_dangerous_attributes(
+        self, data: str, result: ValidationResult
+    ) -> str:
         """Remove dangerous HTML attributes."""
         original = data
 
         for attr in self.dangerous_attributes:
             # Remove attributes with values
             pattern = rf'{attr}\s*=\s*["\'][^"\']*["\']'
-            data = re.sub(pattern, '', data, flags=re.IGNORECASE)
+            data = re.sub(
+                pattern, "", data, flags=re.IGNORECASE
+            )  # REGEX OK: XSS prevention
 
         if data != original:
             result.add_warning("Dangerous attributes removed")
@@ -218,27 +276,52 @@ class SQLSanitizer:
 
         # Dangerous SQL keywords and patterns
         self.sql_keywords = {
-            'union', 'select', 'insert', 'update', 'delete', 'drop', 'create',
-            'alter', 'exec', 'execute', 'sp_', 'xp_', 'declare', 'cast',
-            'convert', 'char', 'nchar', 'varchar', 'nvarchar', 'ascii',
-            'substring', 'right', 'left', 'openrowset', 'openquery',
-            'opendatasource', 'bulk', 'grant', 'revoke', 'shutdown'
+            "union",
+            "select",
+            "insert",
+            "update",
+            "delete",
+            "drop",
+            "create",
+            "alter",
+            "exec",
+            "execute",
+            "sp_",
+            "xp_",
+            "declare",
+            "cast",
+            "convert",
+            "char",
+            "nchar",
+            "varchar",
+            "nvarchar",
+            "ascii",
+            "substring",
+            "right",
+            "left",
+            "openrowset",
+            "openquery",
+            "opendatasource",
+            "bulk",
+            "grant",
+            "revoke",
+            "shutdown",
         }
 
         self.sql_comment_patterns = [
-            r'--',           # SQL line comment
-            r'/\*.*?\*/',    # SQL block comment
-            r'#',            # MySQL comment
+            r"--",  # SQL line comment  # REGEX OK: SQL injection prevention
+            r"/\*.*?\*/",  # SQL block comment  # REGEX OK: SQL injection prevention
+            r"#",  # MySQL comment  # REGEX OK: SQL injection prevention
         ]
 
         self.sql_injection_patterns = [
-            r'\b(union|select|insert|update|delete|drop|create|alter)\s+',
-            r'[\'";]',                    # Quote characters
-            r'\s+(or|and)\s+[\d\w\'"]',  # OR/AND conditions
-            r'=\s*[\'"]?[\'"]?',         # Empty equals
-            r'\b1\s*=\s*1\b',           # Always true condition
-            r'\b0\s*=\s*0\b',           # Always true condition
-            r'[\'"]\s*;\s*',            # Statement termination
+            r"\b(union|select|insert|update|delete|drop|create|alter)\s+",  # REGEX OK: SQL injection prevention
+            r'[\'";]',  # Quote characters  # REGEX OK: SQL injection prevention
+            r'\s+(or|and)\s+[\d\w\'"]',  # OR/AND conditions  # REGEX OK: SQL injection prevention
+            r'=\s*[\'"]?[\'"]?',  # Empty equals  # REGEX OK: SQL injection prevention
+            r"\b1\s*=\s*1\b",  # Always true condition  # REGEX OK: SQL injection prevention
+            r"\b0\s*=\s*0\b",  # Always true condition  # REGEX OK: SQL injection prevention
+            r'[\'"]\s*;\s*',  # Statement termination  # REGEX OK: SQL injection prevention
         ]
 
     async def sanitize(self, data: str) -> ValidationResult:
@@ -269,12 +352,16 @@ class SQLSanitizer:
         original = data
 
         for pattern in self.sql_comment_patterns:
-            if pattern == r'/\*.*?\*/':
+            if pattern == r"/\*.*?\*/":
                 # Block comments
-                data = re.sub(pattern, '', data, flags=re.DOTALL)
+                data = re.sub(
+                    pattern, "", data, flags=re.DOTALL
+                )  # REGEX OK: SQL injection prevention
             else:
                 # Line comments
-                data = re.sub(pattern + r'.*$', '', data, flags=re.MULTILINE)
+                data = re.sub(
+                    pattern + r".*$", "", data, flags=re.MULTILINE
+                )  # REGEX OK: SQL injection prevention
 
         if data != original:
             result.add_warning("SQL comment patterns removed")
@@ -283,12 +370,12 @@ class SQLSanitizer:
 
     async def _handle_sql_patterns(self, data: str, result: ValidationResult) -> str:
         """Handle dangerous SQL injection patterns."""
-        original = data
-
         # Check for dangerous patterns
         dangerous_found = False
         for pattern in self.sql_injection_patterns:
-            if re.search(pattern, data, re.IGNORECASE):
+            if re.search(
+                pattern, data, re.IGNORECASE
+            ):  # REGEX OK: SQL injection prevention
                 dangerous_found = True
                 break
 
@@ -314,14 +401,14 @@ class PathSanitizer:
         self.config = config or ValidationConfig()
 
         self.dangerous_path_patterns = [
-            r'\.\./',           # Parent directory traversal
-            r'\.\.\.',          # Directory traversal
-            r'~/',              # Home directory
-            r'/etc/',           # System directories
-            r'/proc/',          # Process directories
-            r'/sys/',           # System directories
-            r'\\',              # Windows path separators
-            r'\x00',            # Null bytes
+            r"\.\./",  # Parent directory traversal  # REGEX OK: Path traversal prevention
+            r"\.\.\.",  # Directory traversal  # REGEX OK: Path traversal prevention
+            r"~/",  # Home directory  # REGEX OK: Path traversal prevention
+            r"/etc/",  # System directories  # REGEX OK: Path traversal prevention
+            r"/proc/",  # Process directories  # REGEX OK: Path traversal prevention
+            r"/sys/",  # System directories  # REGEX OK: Path traversal prevention
+            r"\\",  # Windows path separators  # REGEX OK: Path traversal prevention
+            r"\x00",  # Null bytes  # REGEX OK: Path traversal prevention
         ]
 
     async def sanitize(self, data: str) -> ValidationResult:
@@ -333,9 +420,13 @@ class PathSanitizer:
 
             # Remove dangerous path patterns
             for pattern in self.dangerous_path_patterns:
-                if re.search(pattern, sanitized, re.IGNORECASE):
+                if re.search(
+                    pattern, sanitized, re.IGNORECASE
+                ):  # REGEX OK: Path traversal prevention
                     result.add_warning(f"Dangerous path pattern detected: {pattern}")
-                    sanitized = re.sub(pattern, '', sanitized, flags=re.IGNORECASE)
+                    sanitized = re.sub(
+                        pattern, "", sanitized, flags=re.IGNORECASE
+                    )  # REGEX OK: Path traversal prevention
 
             # Normalize path using pathlib (safer than os.path)
             try:
@@ -344,7 +435,7 @@ class PathSanitizer:
                 normalized = str(path.resolve())
 
                 # Basic check: ensure path doesn't contain parent traversal
-                if '..' in normalized or normalized.startswith('/'):
+                if ".." in normalized or normalized.startswith("/"):
                     result.add_warning("Path normalized for security")
                     # Keep just the filename
                     sanitized = path.name
@@ -373,8 +464,8 @@ class URLSanitizer:
     def __init__(self, config: ValidationConfig | None = None) -> None:
         self.config = config or ValidationConfig()
 
-        self.allowed_schemes = {'http', 'https', 'ftp', 'ftps', 'mailto'}
-        self.dangerous_schemes = {'javascript', 'vbscript', 'data', 'file'}
+        self.allowed_schemes = {"http", "https", "ftp", "ftps", "mailto"}
+        self.dangerous_schemes = {"javascript", "vbscript", "data", "file"}
 
     async def sanitize(self, data: str) -> ValidationResult:
         """Sanitize URLs to prevent malicious redirects and XSS."""
@@ -393,16 +484,18 @@ class URLSanitizer:
                 result.add_warning(f"Unusual URL scheme: {parsed.scheme}")
 
             # URL encode the URL to prevent injection
-            sanitized = urllib.parse.quote(data, safe=':/?#[]@!$&\'()*+,;=')
+            sanitized = urllib.parse.quote(data, safe=":/?#[]@!$&'()*+,;=")
 
             # Remove potential XSS in URL parameters
-            if '?' in sanitized:
-                url_parts = sanitized.split('?', 1)
+            if "?" in sanitized:
+                url_parts = sanitized.split("?", 1)
                 base_url = url_parts[0]
                 query_string = url_parts[1]
 
                 # Basic sanitization of query parameters
-                query_string = re.sub(r'<[^>]*>', '', query_string)  # Remove HTML tags
+                query_string = re.sub(
+                    r"<[^>]*>", "", query_string
+                )  # Remove HTML tags  # REGEX OK: XSS prevention
                 query_string = html.escape(query_string)  # Escape HTML entities
 
                 sanitized = f"{base_url}?{query_string}"
@@ -425,9 +518,7 @@ class DataSanitizer:
         self.config = config or ValidationConfig()
 
     async def sanitize_string_length(
-        self,
-        data: str,
-        max_length: int | None = None
+        self, data: str, max_length: int | None = None
     ) -> ValidationResult:
         """Sanitize string length to prevent DoS attacks."""
         result = ValidationResult(value=data, original_value=data)
@@ -445,10 +536,14 @@ class DataSanitizer:
         result = ValidationResult(value=data, original_value=data)
 
         # Remove null bytes and other control characters
-        sanitized = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', data)
+        sanitized = re.sub(
+            r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", data
+        )  # REGEX OK: Control character sanitization
 
         # Normalize whitespace
-        sanitized = re.sub(r'\s+', ' ', sanitized).strip()
+        sanitized = re.sub(
+            r"\s+", " ", sanitized
+        ).strip()  # REGEX OK: Whitespace normalization
 
         result.value = sanitized
 
@@ -463,7 +558,7 @@ class DataSanitizer:
 
         try:
             # Ensure proper UTF-8 encoding
-            sanitized = data.encode('utf-8', errors='replace').decode('utf-8')
+            sanitized = data.encode("utf-8", errors="replace").decode("utf-8")
 
             result.value = sanitized
 

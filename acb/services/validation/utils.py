@@ -46,7 +46,7 @@ class ValidationTimer:
         return (end_time - self._start_time) * 1000
 
     @asynccontextmanager
-    async def time_operation(self) -> t.AsyncGenerator[ValidationTimer, None]:
+    async def time_operation(self) -> t.AsyncGenerator[ValidationTimer]:
         """Async context manager for timing operations."""
         self.start()
         try:
@@ -62,7 +62,7 @@ def create_validation_result(
     errors: list[str] | None = None,
     warnings: list[str] | None = None,
     validation_time_ms: float = 0.0,
-    metadata: dict[str, t.Any] | None = None
+    metadata: dict[str, t.Any] | None = None,
 ) -> ValidationResult:
     """Create a ValidationResult with provided parameters."""
     result = ValidationResult(
@@ -73,14 +73,13 @@ def create_validation_result(
         errors=errors or [],
         warnings=warnings or [],
         validation_time_ms=validation_time_ms,
-        metadata=metadata or {}
+        metadata=metadata or {},
     )
     return result
 
 
 def combine_validation_results(
-    results: list[ValidationResult],
-    field_name: str | None = None
+    results: list[ValidationResult], field_name: str | None = None
 ) -> ValidationResult:
     """Combine multiple validation results into a single result."""
     if not results:
@@ -90,7 +89,7 @@ def combine_validation_results(
         field_name=field_name or "combined",
         value=[r.value for r in results],
         original_value=[r.original_value for r in results],
-        validation_time_ms=sum(r.validation_time_ms for r in results)
+        validation_time_ms=sum(r.validation_time_ms for r in results),
     )
 
     # Combine errors and warnings
@@ -105,8 +104,7 @@ def combine_validation_results(
 
 
 def is_validation_result_successful(
-    result: ValidationResult,
-    level: ValidationLevel = ValidationLevel.STRICT
+    result: ValidationResult, level: ValidationLevel = ValidationLevel.STRICT
 ) -> bool:
     """Check if validation result is successful based on validation level."""
     if level == ValidationLevel.STRICT:
@@ -128,7 +126,7 @@ def get_validation_summary(results: list[ValidationResult]) -> dict[str, t.Any]:
             "total_errors": 0,
             "total_warnings": 0,
             "total_time_ms": 0.0,
-            "average_time_ms": 0.0
+            "average_time_ms": 0.0,
         }
 
     successful = [r for r in results if r.is_valid]
@@ -145,7 +143,7 @@ def get_validation_summary(results: list[ValidationResult]) -> dict[str, t.Any]:
         "total_warnings": total_warnings,
         "total_time_ms": total_time_ms,
         "average_time_ms": total_time_ms / len(results) if results else 0.0,
-        "success_rate": len(successful) / len(results) if results else 0.0
+        "success_rate": len(successful) / len(results) if results else 0.0,
     }
 
 
@@ -157,33 +155,35 @@ class ValidationHelper:
         """Check if a value is considered empty."""
         if value is None:
             return True
-        if isinstance(value, (str, list, dict, tuple, set)):
+        if isinstance(value, str | list | dict | tuple | set):
             return len(value) == 0
         return False
 
     @staticmethod
     def is_numeric(value: t.Any) -> bool:
         """Check if a value is numeric."""
-        return isinstance(value, (int, float, complex))
+        return isinstance(value, int | float | complex)
 
     @staticmethod
     def is_string_like(value: t.Any) -> bool:
         """Check if a value is string-like."""
-        return isinstance(value, (str, bytes))
+        return isinstance(value, str | bytes)
 
     @staticmethod
     def is_iterable(value: t.Any) -> bool:
         """Check if a value is iterable (but not string)."""
         try:
             iter(value)
-            return not isinstance(value, (str, bytes))
+            return not isinstance(value, str | bytes)
         except TypeError:
             return False
 
     @staticmethod
-    def get_nested_value(data: dict[str, t.Any], path: str, default: t.Any = None) -> t.Any:
+    def get_nested_value(
+        data: dict[str, t.Any], path: str, default: t.Any = None
+    ) -> t.Any:
         """Get nested value from dictionary using dot notation."""
-        keys = path.split('.')
+        keys = path.split(".")
         current = data
 
         for key in keys:
@@ -197,7 +197,7 @@ class ValidationHelper:
     @staticmethod
     def set_nested_value(data: dict[str, t.Any], path: str, value: t.Any) -> None:
         """Set nested value in dictionary using dot notation."""
-        keys = path.split('.')
+        keys = path.split(".")
         current = data
 
         for key in keys[:-1]:
@@ -209,9 +209,7 @@ class ValidationHelper:
 
     @staticmethod
     def flatten_dict(
-        data: dict[str, t.Any],
-        parent_key: str = '',
-        separator: str = '.'
+        data: dict[str, t.Any], parent_key: str = "", separator: str = "."
     ) -> dict[str, t.Any]:
         """Flatten a nested dictionary."""
         items = []
@@ -236,7 +234,7 @@ class SchemaValidator:
         self,
         data: t.Any,
         schemas: list[ValidationSchema],
-        require_all_pass: bool = True
+        require_all_pass: bool = True,
     ) -> list[ValidationResult]:
         """Validate data against multiple schemas."""
         results = []
@@ -252,9 +250,7 @@ class SchemaValidator:
         return results
 
     async def find_best_matching_schema(
-        self,
-        data: t.Any,
-        schemas: list[ValidationSchema]
+        self, data: t.Any, schemas: list[ValidationSchema]
     ) -> tuple[ValidationSchema | None, ValidationResult | None]:
         """Find the schema that best matches the data."""
         best_schema = None
@@ -290,10 +286,13 @@ class ValidationCache:
     def _generate_key(self, data: t.Any, schema_name: str | None = None) -> str:
         """Generate cache key for data and schema."""
         import hashlib
+
         data_str = str(data) + str(type(data)) + (schema_name or "")
         return hashlib.md5(data_str.encode()).hexdigest()
 
-    def get(self, data: t.Any, schema_name: str | None = None) -> ValidationResult | None:
+    def get(
+        self, data: t.Any, schema_name: str | None = None
+    ) -> ValidationResult | None:
         """Get cached validation result."""
         key = self._generate_key(data, schema_name)
 
@@ -310,10 +309,7 @@ class ValidationCache:
         return None
 
     def set(
-        self,
-        data: t.Any,
-        result: ValidationResult,
-        schema_name: str | None = None
+        self, data: t.Any, result: ValidationResult, schema_name: str | None = None
     ) -> None:
         """Cache validation result."""
         key = self._generate_key(data, schema_name)
@@ -322,10 +318,9 @@ class ValidationCache:
         if len(self._cache) >= self._max_size:
             # Remove 10% of oldest entries
             entries_to_remove = max(1, self._max_size // 10)
-            oldest_keys = sorted(
-                self._cache.keys(),
-                key=lambda k: self._cache[k][1]
-            )[:entries_to_remove]
+            oldest_keys = sorted(self._cache.keys(), key=lambda k: self._cache[k][1])[
+                :entries_to_remove
+            ]
 
             for old_key in oldest_keys:
                 del self._cache[old_key]
@@ -350,20 +345,24 @@ def inspect_function_parameters(func: t.Callable[..., t.Any]) -> dict[str, t.Any
         param_info = {
             "name": name,
             "annotation": param.annotation,
-            "default": param.default if param.default != inspect.Parameter.empty else None,
+            "default": param.default
+            if param.default != inspect.Parameter.empty
+            else None,
             "has_default": param.default != inspect.Parameter.empty,
-            "kind": param.kind.name
+            "kind": param.kind.name,
         }
         parameters[name] = param_info
 
     return {
         "parameters": parameters,
         "return_annotation": sig.return_annotation,
-        "is_async": inspect.iscoroutinefunction(func)
+        "is_async": inspect.iscoroutinefunction(func),
     }
 
 
-def create_validation_config_from_dict(config_dict: dict[str, t.Any]) -> ValidationConfig:
+def create_validation_config_from_dict(
+    config_dict: dict[str, t.Any],
+) -> ValidationConfig:
     """Create ValidationConfig from dictionary."""
     # Map string level to enum
     if "level" in config_dict and isinstance(config_dict["level"], str):
@@ -380,7 +379,7 @@ def create_validation_config_from_dict(config_dict: dict[str, t.Any]) -> Validat
 async def benchmark_validation(
     validation_func: t.Callable[..., t.Awaitable[ValidationResult]],
     test_data: list[t.Any],
-    iterations: int = 100
+    iterations: int = 100,
 ) -> dict[str, float]:
     """Benchmark validation function performance."""
     times = []
@@ -402,5 +401,5 @@ async def benchmark_validation(
         "median_time_ms": times[len(times) // 2],
         "p95_time_ms": times[int(len(times) * 0.95)],
         "p99_time_ms": times[int(len(times) * 0.99)],
-        "total_validations": len(times)
+        "total_validations": len(times),
     }

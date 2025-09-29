@@ -48,17 +48,15 @@ class ServiceRegistry:
     logger: Logger = depends()
 
     def __init__(self) -> None:
-        self._services: dict[str, "ServiceBase"] = {}
-        self._service_configs: dict[str, "ServiceConfig"] = {}
+        self._services: dict[str, ServiceBase] = {}
+        self._service_configs: dict[str, ServiceConfig] = {}
         self._initialization_order: list[str] = []
         self._shutdown_order: list[str] = []
         self._registry_lock = asyncio.Lock()
         self._initialized = False
 
     async def register_service(
-        self,
-        service: "ServiceBase",
-        config: "ServiceConfig | None" = None
+        self, service: "ServiceBase", config: "ServiceConfig | None" = None
     ) -> None:
         """Register a service with the registry.
 
@@ -71,7 +69,9 @@ class ServiceRegistry:
             service_id = service_config.service_id
 
             if service_id in self._services:
-                self.logger.warning(f"Service '{service_id}' already registered, replacing")
+                self.logger.warning(
+                    f"Service '{service_id}' already registered, replacing"
+                )
 
             self._services[service_id] = service
             self._service_configs[service_id] = service_config
@@ -89,7 +89,9 @@ class ServiceRegistry:
         """
         async with self._registry_lock:
             if service_id not in self._services:
-                self.logger.warning(f"Service '{service_id}' not found for unregistration")
+                self.logger.warning(
+                    f"Service '{service_id}' not found for unregistration"
+                )
                 return
 
             service = self._services.pop(service_id)
@@ -166,7 +168,8 @@ class ServiceRegistry:
             return []
 
         return [
-            service for service in self._services.values()
+            service
+            for service in self._services.values()
             if service.status == status_enum
         ]
 
@@ -187,7 +190,9 @@ class ServiceRegistry:
                     await service.initialize()
                     self.logger.info(f"Initialized service: {service_id}")
                 except Exception as e:
-                    self.logger.error(f"Failed to initialize service '{service_id}': {e}")
+                    self.logger.error(
+                        f"Failed to initialize service '{service_id}': {e}"
+                    )
                     # Continue with other services but log the failure
                     continue
 
@@ -209,7 +214,9 @@ class ServiceRegistry:
                         await service.shutdown()
                         self.logger.info(f"Shut down service: {service_id}")
                     except Exception as e:
-                        self.logger.error(f"Error shutting down service '{service_id}': {e}")
+                        self.logger.error(
+                            f"Error shutting down service '{service_id}': {e}"
+                        )
                         # Continue with other services
 
             self._initialized = False
@@ -233,11 +240,13 @@ class ServiceRegistry:
                 health_results[service_id] = {
                     "service_id": service_id,
                     "healthy": False,
-                    "error": str(e)
+                    "error": str(e),
                 }
 
         # Calculate overall health
-        healthy_services = sum(1 for health in health_results.values() if health.get("healthy", False))
+        healthy_services = sum(
+            1 for health in health_results.values() if health.get("healthy", False)
+        )
         total_services = len(health_results)
 
         return {
@@ -245,7 +254,7 @@ class ServiceRegistry:
             "healthy_services": healthy_services,
             "total_services": total_services,
             "services": health_results,
-            "errors": errors
+            "errors": errors,
         }
 
     def _calculate_initialization_order(self) -> None:
@@ -260,7 +269,9 @@ class ServiceRegistry:
         services_with_priority.sort(key=itemgetter(0))
 
         # Resolve dependencies using topological sort
-        ordered_services = self._topological_sort([s[1] for s in services_with_priority])
+        ordered_services = self._topological_sort(
+            [s[1] for s in services_with_priority]
+        )
 
         self._initialization_order = ordered_services
         self._shutdown_order = ordered_services.copy()
@@ -305,7 +316,9 @@ class ServiceRegistry:
         # Check for circular dependencies
         if len(result) != len(service_ids):
             remaining = [s for s in service_ids if s not in result]
-            self.logger.error(f"Circular dependency detected among services: {remaining}")
+            self.logger.error(
+                f"Circular dependency detected among services: {remaining}"
+            )
             # Add remaining services anyway to prevent complete failure
             result.extend(remaining)
 
@@ -333,7 +346,9 @@ def get_registry() -> ServiceRegistry:
     return _registry
 
 
-async def register_service(service: "ServiceBase", config: "ServiceConfig | None" = None) -> None:
+async def register_service(
+    service: "ServiceBase", config: "ServiceConfig | None" = None
+) -> None:
     """Register a service with the global registry."""
     registry = get_registry()
     await registry.register_service(service, config)

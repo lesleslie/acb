@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 import time
 import typing as t
-from contextlib import suppress
 
 from acb.services.validation._base import (
     ValidationConfig,
@@ -27,7 +26,7 @@ class BasicValidationSchema(ValidationSchema):
         data_type: type[t.Any] | None = None,
         required: bool = True,
         allow_none: bool = False,
-        config: ValidationConfig | None = None
+        config: ValidationConfig | None = None,
     ) -> None:
         super().__init__(name, config)
         self.data_type = data_type
@@ -40,17 +39,13 @@ class BasicValidationSchema(ValidationSchema):
         pass
 
     async def validate(
-        self,
-        data: t.Any,
-        field_name: str | None = None
+        self, data: t.Any, field_name: str | None = None
     ) -> ValidationResult:
         """Validate data against basic schema rules."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name,
-            value=data,
-            original_value=data
+            field_name=field_name or self.name, value=data, original_value=data
         )
 
         # Check if value is None
@@ -70,11 +65,17 @@ class BasicValidationSchema(ValidationSchema):
                 # Attempt type coercion if enabled
                 if self.config.enable_coercion:
                     result.value = self.data_type(data)
-                    result.add_warning(f"Value coerced from {type(data).__name__} to {self.data_type.__name__}")
+                    result.add_warning(
+                        f"Value coerced from {type(data).__name__} to {self.data_type.__name__}"
+                    )
                 else:
-                    result.add_error(f"Expected {self.data_type.__name__}, got {type(data).__name__}")
+                    result.add_error(
+                        f"Expected {self.data_type.__name__}, got {type(data).__name__}"
+                    )
             except (ValueError, TypeError):
-                result.add_error(f"Cannot convert {type(data).__name__} to {self.data_type.__name__}")
+                result.add_error(
+                    f"Cannot convert {type(data).__name__} to {self.data_type.__name__}"
+                )
 
         result.validation_time_ms = (time.perf_counter() - start_time) * 1000
         return result
@@ -90,7 +91,7 @@ class StringValidationSchema(ValidationSchema):
         max_length: int | None = None,
         pattern: str | None = None,
         strip_whitespace: bool = True,
-        config: ValidationConfig | None = None
+        config: ValidationConfig | None = None,
     ) -> None:
         super().__init__(name, config)
         self.min_length = min_length
@@ -102,20 +103,18 @@ class StringValidationSchema(ValidationSchema):
     async def compile(self) -> None:
         """Compile regex pattern for performance."""
         if self.pattern:
-            self._compiled_pattern = re.compile(self.pattern)
+            self._compiled_pattern = re.compile(
+                self.pattern
+            )  # REGEX OK: User-provided pattern validation
 
     async def validate(
-        self,
-        data: t.Any,
-        field_name: str | None = None
+        self, data: t.Any, field_name: str | None = None
     ) -> ValidationResult:
         """Validate string data."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name,
-            value=data,
-            original_value=data
+            field_name=field_name or self.name, value=data, original_value=data
         )
 
         # Convert to string if possible
@@ -123,7 +122,9 @@ class StringValidationSchema(ValidationSchema):
             if self.config.enable_coercion:
                 try:
                     result.value = str(data)
-                    result.add_warning(f"Value coerced from {type(data).__name__} to str")
+                    result.add_warning(
+                        f"Value coerced from {type(data).__name__} to str"
+                    )
                 except Exception:
                     result.add_error("Cannot convert to string")
                     return result
@@ -148,9 +149,11 @@ class StringValidationSchema(ValidationSchema):
             result.add_error(f"String too long: {value_length} > {self.max_length}")
 
         # Pattern validation
-        if (self._compiled_pattern is not None and
-            isinstance(result.value, str) and
-            not self._compiled_pattern.match(result.value)):
+        if (
+            self._compiled_pattern is not None
+            and isinstance(result.value, str)
+            and not self._compiled_pattern.match(result.value)
+        ):
             result.add_error(f"String does not match pattern: {self.pattern}")
 
         result.validation_time_ms = (time.perf_counter() - start_time) * 1000
@@ -160,11 +163,13 @@ class StringValidationSchema(ValidationSchema):
 class EmailValidationSchema(ValidationSchema):
     """Schema for email validation."""
 
-    def __init__(self, name: str = "email", config: ValidationConfig | None = None) -> None:
+    def __init__(
+        self, name: str = "email", config: ValidationConfig | None = None
+    ) -> None:
         super().__init__(name, config)
         # RFC 5322 compliant email regex (simplified)
         self._email_pattern = re.compile(
-            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"  # REGEX OK: Email format validation
         )
 
     async def compile(self) -> None:
@@ -172,17 +177,13 @@ class EmailValidationSchema(ValidationSchema):
         pass
 
     async def validate(
-        self,
-        data: t.Any,
-        field_name: str | None = None
+        self, data: t.Any, field_name: str | None = None
     ) -> ValidationResult:
         """Validate email address."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name,
-            value=data,
-            original_value=data
+            field_name=field_name or self.name, value=data, original_value=data
         )
 
         # Must be string
@@ -216,7 +217,7 @@ class ModelValidationSchema(ValidationSchema):
         name: str,
         model_class: type[t.Any],
         models_adapter: t.Any | None = None,
-        config: ValidationConfig | None = None
+        config: ValidationConfig | None = None,
     ) -> None:
         super().__init__(name, config)
         self.model_class = model_class
@@ -226,20 +227,18 @@ class ModelValidationSchema(ValidationSchema):
     async def compile(self) -> None:
         """Compile model schema by preparing adapter instance."""
         if self.models_adapter is not None:
-            self._adapter_instance = self.models_adapter.get_adapter_for_model(self.model_class)
+            self._adapter_instance = self.models_adapter.get_adapter_for_model(
+                self.model_class
+            )
 
     async def validate(
-        self,
-        data: t.Any,
-        field_name: str | None = None
+        self, data: t.Any, field_name: str | None = None
     ) -> ValidationResult:
         """Validate data against model class."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name,
-            value=data,
-            original_value=data
+            field_name=field_name or self.name, value=data, original_value=data
         )
 
         if self._adapter_instance is None:
@@ -249,10 +248,14 @@ class ModelValidationSchema(ValidationSchema):
         try:
             # Try to create instance using the adapter
             if isinstance(data, dict):
-                instance = self._adapter_instance.create_instance(self.model_class, **data)
+                instance = self._adapter_instance.create_instance(
+                    self.model_class, **data
+                )
             else:
                 # For non-dict data, try direct instantiation
-                instance = self.model_class(data) if data is not None else self.model_class()
+                instance = (
+                    self.model_class(data) if data is not None else self.model_class()
+                )
 
             result.value = instance
 
@@ -273,7 +276,7 @@ class ListValidationSchema(ValidationSchema):
         min_items: int = 0,
         max_items: int | None = None,
         unique_items: bool = False,
-        config: ValidationConfig | None = None
+        config: ValidationConfig | None = None,
     ) -> None:
         super().__init__(name, config)
         self.item_schema = item_schema
@@ -287,25 +290,23 @@ class ListValidationSchema(ValidationSchema):
             await self.item_schema._ensure_compiled()
 
     async def validate(
-        self,
-        data: t.Any,
-        field_name: str | None = None
+        self, data: t.Any, field_name: str | None = None
     ) -> ValidationResult:
         """Validate list data."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name,
-            value=data,
-            original_value=data
+            field_name=field_name or self.name, value=data, original_value=data
         )
 
         # Convert to list if possible
-        if not isinstance(data, (list, tuple)):
+        if not isinstance(data, list | tuple):
             if self.config.enable_coercion:
                 try:
-                    result.value = list(data) if hasattr(data, '__iter__') else [data]
-                    result.add_warning(f"Value coerced from {type(data).__name__} to list")
+                    result.value = list(data) if hasattr(data, "__iter__") else [data]
+                    result.add_warning(
+                        f"Value coerced from {type(data).__name__} to list"
+                    )
                 except Exception:
                     result.add_error("Cannot convert to list")
                     return result
@@ -314,7 +315,9 @@ class ListValidationSchema(ValidationSchema):
                 return result
 
         # Ensure we're working with a list
-        items = list(result.value) if not isinstance(result.value, list) else result.value
+        items = (
+            list(result.value) if not isinstance(result.value, list) else result.value
+        )
 
         # Length validation
         if len(items) < self.min_items:
@@ -331,7 +334,9 @@ class ListValidationSchema(ValidationSchema):
         if self.item_schema and result.is_valid:
             validated_items = []
             for i, item in enumerate(items):
-                item_result = await self.item_schema.validate(item, f"{field_name or self.name}[{i}]")
+                item_result = await self.item_schema.validate(
+                    item, f"{field_name or self.name}[{i}]"
+                )
                 if not item_result.is_valid:
                     for error in item_result.errors:
                         result.add_error(f"Item {i}: {error}")
@@ -356,7 +361,7 @@ class DictValidationSchema(ValidationSchema):
         field_schemas: dict[str, ValidationSchema] | None = None,
         required_fields: list[str] | None = None,
         allow_extra_fields: bool = True,
-        config: ValidationConfig | None = None
+        config: ValidationConfig | None = None,
     ) -> None:
         super().__init__(name, config)
         self.field_schemas = field_schemas or {}
@@ -369,17 +374,13 @@ class DictValidationSchema(ValidationSchema):
             await schema._ensure_compiled()
 
     async def validate(
-        self,
-        data: t.Any,
-        field_name: str | None = None
+        self, data: t.Any, field_name: str | None = None
     ) -> ValidationResult:
         """Validate dictionary data."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name,
-            value=data,
-            original_value=data
+            field_name=field_name or self.name, value=data, original_value=data
         )
 
         # Must be dict-like
@@ -430,14 +431,11 @@ class SchemaBuilder:
         name: str,
         data_type: type[t.Any] | None = None,
         required: bool = True,
-        allow_none: bool = False
+        allow_none: bool = False,
     ) -> SchemaBuilder:
         """Add a basic validation schema."""
         self._schemas[name] = BasicValidationSchema(
-            name=name,
-            data_type=data_type,
-            required=required,
-            allow_none=allow_none
+            name=name, data_type=data_type, required=required, allow_none=allow_none
         )
         return self
 
@@ -446,14 +444,11 @@ class SchemaBuilder:
         name: str,
         min_length: int = 0,
         max_length: int | None = None,
-        pattern: str | None = None
+        pattern: str | None = None,
     ) -> SchemaBuilder:
         """Add a string validation schema."""
         self._schemas[name] = StringValidationSchema(
-            name=name,
-            min_length=min_length,
-            max_length=max_length,
-            pattern=pattern
+            name=name, min_length=min_length, max_length=max_length, pattern=pattern
         )
         return self
 
@@ -467,14 +462,11 @@ class SchemaBuilder:
         name: str,
         item_schema: ValidationSchema | None = None,
         min_items: int = 0,
-        max_items: int | None = None
+        max_items: int | None = None,
     ) -> SchemaBuilder:
         """Add a list validation schema."""
         self._schemas[name] = ListValidationSchema(
-            name=name,
-            item_schema=item_schema,
-            min_items=min_items,
-            max_items=max_items
+            name=name, item_schema=item_schema, min_items=min_items, max_items=max_items
         )
         return self
 
@@ -482,13 +474,11 @@ class SchemaBuilder:
         self,
         name: str,
         field_schemas: dict[str, ValidationSchema] | None = None,
-        required_fields: list[str] | None = None
+        required_fields: list[str] | None = None,
     ) -> SchemaBuilder:
         """Add a dictionary validation schema."""
         self._schemas[name] = DictValidationSchema(
-            name=name,
-            field_schemas=field_schemas,
-            required_fields=required_fields
+            name=name, field_schemas=field_schemas, required_fields=required_fields
         )
         return self
 

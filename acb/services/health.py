@@ -13,21 +13,20 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
-
 from acb.config import Config, Settings
 from acb.core.cleanup import CleanupMixin
 from acb.depends import depends
 from acb.logger import Logger
+
 from ._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 try:
     from .discovery import (
+        ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
-        ServiceCapability,
-        generate_service_id
+        generate_service_id,
     )
 
     SERVICE_METADATA = ServiceMetadata(
@@ -45,7 +44,7 @@ try:
             ServiceCapability.HEALTH_MONITORING,
             ServiceCapability.METRICS_COLLECTION,
             ServiceCapability.ASYNC_OPERATIONS,
-            ServiceCapability.LIFECYCLE_MANAGEMENT
+            ServiceCapability.LIFECYCLE_MANAGEMENT,
         ],
         description="Comprehensive health monitoring and alerting service for ACB components",
         settings_class="HealthServiceSettings",
@@ -53,8 +52,8 @@ try:
             "reporter_check_interval": 30.0,
             "auto_register_services": True,
             "enable_adapter_monitoring": True,
-            "expose_health_endpoint": True
-        }
+            "expose_health_endpoint": True,
+        },
     )
 except ImportError:
     # Discovery system not available
@@ -80,11 +79,11 @@ class HealthStatus(Enum):
 class HealthCheckType(Enum):
     """Types of health checks that can be performed."""
 
-    LIVENESS = "liveness"      # Is the component alive?
-    READINESS = "readiness"    # Is the component ready to serve?
-    STARTUP = "startup"        # Has the component started successfully?
+    LIVENESS = "liveness"  # Is the component alive?
+    READINESS = "readiness"  # Is the component ready to serve?
+    STARTUP = "startup"  # Has the component started successfully?
     DEPENDENCY = "dependency"  # Are dependencies healthy?
-    RESOURCE = "resource"      # Are resources available?
+    RESOURCE = "resource"  # Are resources available?
 
 
 @dataclass
@@ -118,7 +117,7 @@ class HealthCheckResult:
             "timestamp": self.timestamp,
             "duration_ms": self.duration_ms,
             "error": self.error,
-            "is_healthy": self.is_healthy
+            "is_healthy": self.is_healthy,
         }
 
 
@@ -137,17 +136,17 @@ class HealthCheckMixin(ABC):
     @property
     def component_id(self) -> str:
         """Get unique identifier for this component."""
-        return getattr(self, 'service_id', None) or self.__class__.__name__.lower()
+        return getattr(self, "service_id", None) or self.__class__.__name__.lower()
 
     @property
     def component_name(self) -> str:
         """Get human-readable name for this component."""
-        return getattr(self, 'name', None) or self.__class__.__name__
+        return getattr(self, "name", None) or self.__class__.__name__
 
     async def perform_health_check(
         self,
         check_type: HealthCheckType = HealthCheckType.LIVENESS,
-        timeout: float = 10.0
+        timeout: float = 10.0,
     ) -> HealthCheckResult:
         """Perform a health check with proper error handling and timing."""
         async with self._health_check_lock:
@@ -156,8 +155,7 @@ class HealthCheckMixin(ABC):
             try:
                 # Run the health check with timeout
                 result = await asyncio.wait_for(
-                    self._perform_health_check(check_type),
-                    timeout=timeout
+                    self._perform_health_check(check_type), timeout=timeout
                 )
 
                 # Calculate duration and update result
@@ -168,7 +166,7 @@ class HealthCheckMixin(ABC):
                 self._last_health_check = result
                 return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 return HealthCheckResult(
                     component_id=self.component_id,
                     component_name=self.component_name,
@@ -176,7 +174,7 @@ class HealthCheckMixin(ABC):
                     check_type=check_type,
                     message=f"Health check timed out after {timeout}s",
                     error="Timeout",
-                    duration_ms=(time.time() - start_time) * 1000
+                    duration_ms=(time.time() - start_time) * 1000,
                 )
 
             except Exception as e:
@@ -187,11 +185,13 @@ class HealthCheckMixin(ABC):
                     check_type=check_type,
                     message=f"Health check failed: {e}",
                     error=str(e),
-                    duration_ms=(time.time() - start_time) * 1000
+                    duration_ms=(time.time() - start_time) * 1000,
                 )
 
     @abstractmethod
-    async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+    async def _perform_health_check(
+        self, check_type: HealthCheckType
+    ) -> HealthCheckResult:
         """Implement component-specific health check logic.
 
         Args:
@@ -251,15 +251,18 @@ class HealthReporter(CleanupMixin):
 
     def unregister_component(self, component: HealthCheckMixin | str) -> None:
         """Unregister a component from health monitoring."""
-        component_id = component if isinstance(component, str) else component.component_id
+        component_id = (
+            component if isinstance(component, str) else component.component_id
+        )
         if component_id in self._components:
             del self._components[component_id]
             # Keep history for analysis
-            self.logger.info(f"Unregistered component from health monitoring: {component_id}")
+            self.logger.info(
+                f"Unregistered component from health monitoring: {component_id}"
+            )
 
     async def check_all_components(
-        self,
-        check_type: HealthCheckType = HealthCheckType.LIVENESS
+        self, check_type: HealthCheckType = HealthCheckType.LIVENESS
     ) -> dict[str, HealthCheckResult]:
         """Check health of all registered components."""
         if not self._components:
@@ -284,7 +287,7 @@ class HealthReporter(CleanupMixin):
                     status=HealthStatus.CRITICAL,
                     check_type=check_type,
                     error=str(result),
-                    message="Health check execution failed"
+                    message="Health check execution failed",
                 )
 
             component_results[component_id] = result
@@ -295,12 +298,20 @@ class HealthReporter(CleanupMixin):
 
         return component_results
 
-    def get_system_health(self, fresh_results: dict[str, HealthCheckResult] | None = None) -> dict[str, t.Any]:
+    def get_system_health(
+        self, fresh_results: dict[str, HealthCheckResult] | None = None
+    ) -> dict[str, t.Any]:
         """Get overall system health status and summary."""
         component_count = len(self._components)
 
         # Count components by detailed status
-        status_counts = {"healthy": 0, "degraded": 0, "unhealthy": 0, "critical": 0, "unknown": 0}
+        status_counts = {
+            "healthy": 0,
+            "degraded": 0,
+            "unhealthy": 0,
+            "critical": 0,
+            "unknown": 0,
+        }
 
         if fresh_results:
             # Use fresh results if provided
@@ -358,21 +369,19 @@ class HealthReporter(CleanupMixin):
                 "degraded": status_counts["degraded"],
                 "unhealthy": status_counts["unhealthy"],
                 "critical": status_counts["critical"],
-                "unknown": status_counts["unknown"]
+                "unknown": status_counts["unknown"],
             },
             "component_details": {
                 component_id: {
                     "status": self._get_component_status(component_id).value,
-                    "last_check": self._get_last_check_time(component_id)
+                    "last_check": self._get_last_check_time(component_id),
                 }
                 for component_id in self._components.keys()
-            }
+            },
         }
 
     def get_component_history(
-        self,
-        component_id: str,
-        limit: int = 10
+        self, component_id: str, limit: int = 10
     ) -> list[HealthCheckResult]:
         """Get health check history for a specific component."""
         history = self._history.get(component_id, [])
@@ -411,10 +420,10 @@ class HealthReporter(CleanupMixin):
                 try:
                     await asyncio.wait_for(
                         self._shutdown_event.wait(),
-                        timeout=self._settings.check_interval
+                        timeout=self._settings.check_interval,
                     )
                     break  # Shutdown requested
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue  # Time for next check
 
             except Exception as e:
@@ -466,9 +475,15 @@ class HealthReporter(CleanupMixin):
             self._system_status = HealthStatus.UNKNOWN
             return
 
-        critical_count = sum(1 for r in results.values() if r.status == HealthStatus.CRITICAL)
-        unhealthy_count = sum(1 for r in results.values() if r.status == HealthStatus.UNHEALTHY)
-        degraded_count = sum(1 for r in results.values() if r.status == HealthStatus.DEGRADED)
+        critical_count = sum(
+            1 for r in results.values() if r.status == HealthStatus.CRITICAL
+        )
+        unhealthy_count = sum(
+            1 for r in results.values() if r.status == HealthStatus.UNHEALTHY
+        )
+        degraded_count = sum(
+            1 for r in results.values() if r.status == HealthStatus.DEGRADED
+        )
 
         if critical_count > 0:
             self._system_status = HealthStatus.CRITICAL
@@ -517,7 +532,7 @@ class HealthService(ServiceBase, HealthCheckMixin):
     def __init__(
         self,
         service_config: ServiceConfig | None = None,
-        settings: HealthServiceSettings | None = None
+        settings: HealthServiceSettings | None = None,
     ) -> None:
         # Initialize service config
         if service_config is None:
@@ -525,7 +540,7 @@ class HealthService(ServiceBase, HealthCheckMixin):
                 service_id="health_service",
                 name="Health Service",
                 description="Central health monitoring and reporting service",
-                priority=10  # Start early
+                priority=10,  # Start early
             )
 
         super().__init__(service_config, settings or HealthServiceSettings())
@@ -551,10 +566,15 @@ class HealthService(ServiceBase, HealthCheckMixin):
         await self._reporter.cleanup()
         self.logger.info("Health service shut down successfully")
 
-    async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+    async def _perform_health_check(
+        self, check_type: HealthCheckType
+    ) -> HealthCheckResult:
         """Health check for the health service itself."""
         # Check if reporter is running
-        is_monitoring = self._reporter._check_task is not None and not self._reporter._check_task.done()
+        is_monitoring = (
+            self._reporter._check_task is not None
+            and not self._reporter._check_task.done()
+        )
 
         if is_monitoring:
             status = HealthStatus.HEALTHY
@@ -572,8 +592,8 @@ class HealthService(ServiceBase, HealthCheckMixin):
             details={
                 "monitoring_active": is_monitoring,
                 "registered_components": len(self._reporter._components),
-                "system_status": self._reporter._system_status.value
-            }
+                "system_status": self._reporter._system_status.value,
+            },
         )
 
     async def _auto_register_services(self) -> None:
@@ -603,20 +623,23 @@ class HealthService(ServiceBase, HealthCheckMixin):
     async def check_system_health(self) -> dict[str, t.Any]:
         """Get comprehensive system health status."""
         # Perform dependency health checks on all components for comprehensive status
-        component_results = await self._reporter.check_all_components(HealthCheckType.DEPENDENCY)
+        component_results = await self._reporter.check_all_components(
+            HealthCheckType.DEPENDENCY
+        )
 
         # Get system summary using fresh results
         system_health = self._reporter.get_system_health(component_results)
 
         # Add detailed component results
         system_health["component_results"] = {
-            comp_id: result.to_dict()
-            for comp_id, result in component_results.items()
+            comp_id: result.to_dict() for comp_id, result in component_results.items()
         }
 
         return system_health
 
-    async def check_component_health(self, component_id: str) -> HealthCheckResult | None:
+    async def check_component_health(
+        self, component_id: str
+    ) -> HealthCheckResult | None:
         """Check health of a specific component."""
         if component_id in self._reporter._components:
             component = self._reporter._components[component_id]
@@ -626,7 +649,9 @@ class HealthService(ServiceBase, HealthCheckMixin):
             return result
         return None
 
-    def get_component_history(self, component_id: str, limit: int = 10) -> list[dict[str, t.Any]]:
+    def get_component_history(
+        self, component_id: str, limit: int = 10
+    ) -> list[dict[str, t.Any]]:
         """Get health history for a component."""
         history = self._reporter.get_component_history(component_id, limit)
         return [result.to_dict() for result in history]

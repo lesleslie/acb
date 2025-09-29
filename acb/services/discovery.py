@@ -2,7 +2,7 @@
 
 Provides service discovery, registration, and dynamic import capabilities
 that mirror the adapter pattern in ACB. This enables services to be
-discoverable, registerable, and overrideable through configuration.
+discoverable, registerable, and overridable through configuration.
 
 Features:
 - Dynamic service loading via import_service()
@@ -19,21 +19,25 @@ from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field
 
 # Service discovery system imports
 try:
     import uuid_utils
+
     _uuid7_available = True
     uuid_lib: t.Any = uuid_utils
 except ImportError:
     import uuid
+
     _uuid7_available = False
     uuid_lib: t.Any = uuid
 
 
 class ServiceStatus(Enum):
     """Service development/stability status."""
+
     ALPHA = "alpha"
     BETA = "beta"
     STABLE = "stable"
@@ -43,6 +47,7 @@ class ServiceStatus(Enum):
 
 class ServiceCapability(Enum):
     """Service capability enumeration."""
+
     # Core capabilities
     LIFECYCLE_MANAGEMENT = "lifecycle_management"
     HEALTH_MONITORING = "health_monitoring"
@@ -54,12 +59,17 @@ class ServiceCapability(Enum):
     OPTIMIZATION = "optimization"
     ASYNC_OPERATIONS = "async_operations"
     BATCHING = "batching"
+    COLD_START_OPTIMIZATION = "cold_start_optimization"
+    LAZY_LOADING = "lazy_loading"
+    RESOURCE_MANAGEMENT = "resource_management"
 
     # Monitoring capabilities
     TRACING = "tracing"
     LOGGING = "structured_logging"
     ERROR_HANDLING = "error_handling"
     CIRCUIT_BREAKER = "circuit_breaker"
+    MONITORING = "monitoring"
+    RESILIENCE_PATTERNS = "resilience_patterns"
 
     # Validation capabilities
     SCHEMA_VALIDATION = "schema_validation"
@@ -67,18 +77,31 @@ class ServiceCapability(Enum):
     OUTPUT_VALIDATION = "output_validation"
     CONTRACT_VALIDATION = "contract_validation"
 
+    # State management capabilities
+    STATE_MANAGEMENT = "state_management"
+    PERSISTENT_STORAGE = "persistent_storage"
+    STATE_SYNCHRONIZATION = "state_synchronization"
+    STATE_CLEANUP = "state_cleanup"
+
 
 class ServiceMetadata(BaseModel):
     """Service metadata for discovery and registration."""
+
     service_id: UUID = Field(description="UUID7 identifier for this service")
 
     name: str = Field(description="Human-readable service name")
-    category: str = Field(description="Service category (performance, health, validation, etc.)")
-    service_type: str = Field(description="Service type (optimizer, monitor, validator, etc.)")
+    category: str = Field(
+        description="Service category (performance, health, validation, etc.)"
+    )
+    service_type: str = Field(
+        description="Service type (optimizer, monitor, validator, etc.)"
+    )
 
     version: str = Field(description="Semantic version of this service")
     acb_min_version: str = Field(description="Minimum ACB version required")
-    acb_max_version: str | None = Field(default=None, description="Maximum ACB version supported")
+    acb_max_version: str | None = Field(
+        default=None, description="Maximum ACB version supported"
+    )
 
     author: str = Field(description="Primary author/maintainer")
     created_date: str = Field(description="ISO date when service was created")
@@ -97,8 +120,12 @@ class ServiceMetadata(BaseModel):
     )
 
     description: str = Field(description="Brief description of service functionality")
-    documentation_url: str | None = Field(default=None, description="Link to detailed documentation")
-    repository_url: str | None = Field(default=None, description="Source code repository")
+    documentation_url: str | None = Field(
+        default=None, description="Link to detailed documentation"
+    )
+    repository_url: str | None = Field(
+        default=None, description="Source code repository"
+    )
 
     settings_class: str = Field(description="Name of the settings class")
     config_example: dict[str, t.Any] | None = Field(
@@ -146,24 +173,29 @@ def create_service_metadata_template(
         status=kwargs.get("status", ServiceStatus.STABLE),
         description=description,
         settings_class=kwargs.get("settings_class", f"{name}Settings"),
-        **{k: v for k, v in kwargs.items() if k not in {
-            "version", "acb_min_version", "status", "settings_class"
-        }}
+        **{
+            k: v
+            for k, v in kwargs.items()
+            if k not in {"version", "acb_min_version", "status", "settings_class"}
+        },
     )
 
 
 class ServiceNotFound(Exception):
     """Raised when a service cannot be found."""
+
     pass
 
 
 class ServiceNotInstalled(Exception):
     """Raised when a service is not installed."""
+
     pass
 
 
 class Service(BaseModel):
     """Service descriptor for discovery and registration."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str
@@ -260,6 +292,22 @@ core_services = [
         enabled=False,
         installed=True,
     ),
+    Service(
+        name="error_handling_service",
+        module="acb.services.error_handling",
+        class_name="ErrorHandlingService",
+        category="error_handling",
+        enabled=False,
+        installed=True,
+    ),
+    Service(
+        name="state_manager_service",
+        module="acb.services.state",
+        class_name="StateManagerService",
+        category="state",
+        enabled=False,
+        installed=True,
+    ),
 ]
 
 
@@ -310,7 +358,9 @@ def get_service_class(category: str, name: str | None = None) -> type[t.Any]:
         module = import_module(service.module)
         return getattr(module, service.class_name)
     except (ImportError, AttributeError) as e:
-        raise ServiceNotInstalled(f"Service not available: {service.module}.{service.class_name}") from e
+        raise ServiceNotInstalled(
+            f"Service not available: {service.module}.{service.class_name}"
+        ) from e
 
 
 def try_import_service(category: str, name: str | None = None) -> type[t.Any] | None:
@@ -351,6 +401,7 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
     if service_categories is None:
         # Try to auto-detect from calling context
         import inspect
+
         frame = inspect.currentframe()
         if frame and frame.f_back:
             code = frame.f_back.f_code
@@ -358,15 +409,18 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
             try:
                 line = frame.f_back.f_lineno
                 filename = code.co_filename
-                with open(filename, 'r') as f:
+                with open(filename) as f:
                     lines = f.readlines()
                     if line <= len(lines):
                         current_line = lines[line - 1].strip()
-                        if '=' in current_line:
-                            var_name = current_line.split('=')[0].strip().lower()
+                        if "=" in current_line:
+                            var_name = current_line.split("=")[0].strip().lower()
                             # Try to match variable name to service category
                             for service in service_registry.get():
-                                if service.category in var_name or service.name in var_name:
+                                if (
+                                    service.category in var_name
+                                    or service.name in var_name
+                                ):
                                     return try_import_service(service.category)
             except (OSError, IndexError):
                 pass
@@ -401,8 +455,8 @@ def get_service_info(service_class: type) -> dict[str, t.Any]:
     }
 
     # Check for metadata
-    if hasattr(service_class, 'SERVICE_METADATA'):
-        metadata = getattr(service_class, 'SERVICE_METADATA')
+    if hasattr(service_class, "SERVICE_METADATA"):
+        metadata = getattr(service_class, "SERVICE_METADATA")
         if isinstance(metadata, ServiceMetadata):
             info["metadata"] = metadata.model_dump()
 
@@ -463,7 +517,7 @@ def _load_service_settings() -> dict[str, t.Any]:
             Path("settings/services.yml"),
             Path("services.yml"),
             Path.cwd() / "settings" / "services.yml",
-            Path.cwd() / "services.yml"
+            Path.cwd() / "services.yml",
         ]
 
         for settings_path in settings_paths:

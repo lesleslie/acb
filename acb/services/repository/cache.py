@@ -7,20 +7,19 @@ Provides caching capabilities for repositories:
 - Integration with ACB cache adapters
 """
 
-import typing as t
-from typing import Any, Dict, List, Optional, TypeVar, cast
-from dataclasses import dataclass
-from enum import Enum
+import builtins
 import hashlib
 import json
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any, TypeVar
 
 from pydantic import Field
-
 from acb.config import Settings
 from acb.depends import depends
-from ._base import RepositoryBase, RepositorySettings, PaginationInfo, SortCriteria
 
+from ._base import PaginationInfo, RepositoryBase, SortCriteria
 
 EntityType = TypeVar("EntityType")
 IDType = TypeVar("IDType")
@@ -28,23 +27,26 @@ IDType = TypeVar("IDType")
 
 class CacheStrategy(Enum):
     """Cache strategy enumeration."""
-    CACHE_ASIDE = "cache_aside"        # Read from cache, write to DB first
-    WRITE_THROUGH = "write_through"    # Write to cache and DB simultaneously
-    WRITE_BEHIND = "write_behind"      # Write to cache immediately, DB later
-    REFRESH_AHEAD = "refresh_ahead"    # Proactively refresh before expiration
+
+    CACHE_ASIDE = "cache_aside"  # Read from cache, write to DB first
+    WRITE_THROUGH = "write_through"  # Write to cache and DB simultaneously
+    WRITE_BEHIND = "write_behind"  # Write to cache immediately, DB later
+    REFRESH_AHEAD = "refresh_ahead"  # Proactively refresh before expiration
 
 
 class InvalidationStrategy(Enum):
     """Cache invalidation strategy."""
-    TTL_ONLY = "ttl_only"             # Only TTL-based expiration
+
+    TTL_ONLY = "ttl_only"  # Only TTL-based expiration
     WRITE_INVALIDATE = "write_invalidate"  # Invalidate on write operations
-    TAG_BASED = "tag_based"           # Tag-based invalidation
-    EVENT_DRIVEN = "event_driven"     # Event-driven invalidation
+    TAG_BASED = "tag_based"  # Tag-based invalidation
+    EVENT_DRIVEN = "event_driven"  # Event-driven invalidation
 
 
 @dataclass
 class CacheMetrics:
     """Cache performance metrics."""
+
     hits: int = 0
     misses: int = 0
     writes: int = 0
@@ -77,16 +79,28 @@ class RepositoryCacheSettings(Settings):
 
     # Cache key settings
     key_prefix: str = Field(default="repo_cache", description="Cache key prefix")
-    include_entity_version: bool = Field(default=True, description="Include entity version in keys")
+    include_entity_version: bool = Field(
+        default=True, description="Include entity version in keys"
+    )
 
     # Performance settings
-    max_query_cache_size: int = Field(default=1000, description="Max cached query results")
-    batch_invalidation: bool = Field(default=True, description="Enable batch invalidation")
-    async_invalidation: bool = Field(default=False, description="Enable async invalidation")
+    max_query_cache_size: int = Field(
+        default=1000, description="Max cached query results"
+    )
+    batch_invalidation: bool = Field(
+        default=True, description="Enable batch invalidation"
+    )
+    async_invalidation: bool = Field(
+        default=False, description="Enable async invalidation"
+    )
 
     # Serialization settings
-    compress_large_objects: bool = Field(default=True, description="Compress objects > 1KB")
-    compression_threshold: int = Field(default=1024, description="Compression threshold in bytes")
+    compress_large_objects: bool = Field(
+        default=True, description="Compress objects > 1KB"
+    )
+    compression_threshold: int = Field(
+        default=1024, description="Compression threshold in bytes"
+    )
 
 
 class CachedRepository(RepositoryBase[EntityType, IDType]):
@@ -99,23 +113,21 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
     def __init__(
         self,
         wrapped_repository: RepositoryBase[EntityType, IDType],
-        cache_settings: RepositoryCacheSettings | None = None
+        cache_settings: RepositoryCacheSettings | None = None,
     ):
-        super().__init__(
-            wrapped_repository.entity_type,
-            wrapped_repository.settings
-        )
+        super().__init__(wrapped_repository.entity_type, wrapped_repository.settings)
         self.wrapped = wrapped_repository
         self.cache_settings = cache_settings or depends.get(RepositoryCacheSettings)
         self._cache = None
         self._metrics = CacheMetrics()
-        self._query_cache: Dict[str, tuple[Any, datetime]] = {}
+        self._query_cache: dict[str, tuple[Any, datetime]] = {}
 
     async def _ensure_cache(self):
         """Ensure cache adapter is available."""
         if self._cache is None:
             try:
                 from acb.adapters import import_adapter
+
                 Cache = import_adapter("cache")
                 self._cache = depends.get(Cache)
             except ImportError:
@@ -134,7 +146,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         key_data = {
             "operation": operation,
             "entity": self.entity_name.lower(),
-            **kwargs
+            **kwargs,
         }
 
         # Sort for consistency
@@ -143,13 +155,17 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
 
         return f"{self.cache_settings.key_prefix}:query:{self.entity_name.lower()}:{operation}:{hash_suffix}"
 
-    def _build_count_key(self, filters: Dict[str, Any] | None = None) -> str:
+    def _build_count_key(self, filters: dict[str, Any] | None = None) -> str:
         """Build cache key for count operation."""
         if filters:
-            filter_hash = hashlib.md5(json.dumps(filters, sort_keys=True).encode()).hexdigest()[:8]
+            filter_hash = hashlib.md5(
+                json.dumps(filters, sort_keys=True).encode()
+            ).hexdigest()[:8]
             return f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:{filter_hash}"
         else:
-            return f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:all"
+            return (
+                f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:all"
+            )
 
     async def _get_from_cache(self, key: str) -> tuple[Any, bool]:
         """Get value from cache.
@@ -228,7 +244,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
             return
 
         # Pattern-based invalidation for query keys
-        pattern = f"{self.cache_settings.key_prefix}:query:{self.entity_name.lower()}:*"
+        f"{self.cache_settings.key_prefix}:query:{self.entity_name.lower()}:*"
 
         # Note: Not all cache backends support pattern deletion
         # For now, we'll clear the in-memory query cache
@@ -242,20 +258,25 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
             await self._increment_metric("create", True)
 
             # Handle caching based on strategy
-            if self.cache_settings.strategy in (CacheStrategy.WRITE_THROUGH, CacheStrategy.WRITE_BEHIND):
+            if self.cache_settings.strategy in (
+                CacheStrategy.WRITE_THROUGH,
+                CacheStrategy.WRITE_BEHIND,
+            ):
                 # Cache the created entity
-                entity_id = getattr(created_entity, 'id', None)
+                entity_id = getattr(created_entity, "id", None)
                 if entity_id:
                     entity_key = self._build_entity_key(entity_id)
-                    await self._set_in_cache(entity_key, created_entity, self.cache_settings.entity_ttl)
+                    await self._set_in_cache(
+                        entity_key, created_entity, self.cache_settings.entity_ttl
+                    )
 
             # Invalidate related caches
-            if hasattr(created_entity, 'id'):
-                await self._invalidate_entity_cache(getattr(created_entity, 'id'))
+            if hasattr(created_entity, "id"):
+                await self._invalidate_entity_cache(getattr(created_entity, "id"))
 
             return created_entity
 
-        except Exception as e:
+        except Exception:
             await self._increment_metric("create", False)
             raise
 
@@ -276,11 +297,13 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
 
             # Cache the result if found
             if entity and self.cache_settings.strategy != CacheStrategy.WRITE_BEHIND:
-                await self._set_in_cache(entity_key, entity, self.cache_settings.entity_ttl)
+                await self._set_in_cache(
+                    entity_key, entity, self.cache_settings.entity_ttl
+                )
 
             return entity
 
-        except Exception as e:
+        except Exception:
             await self._increment_metric("get_by_id", False)
             raise
 
@@ -292,19 +315,21 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
             await self._increment_metric("update", True)
 
             # Handle caching based on strategy
-            entity_id = getattr(updated_entity, 'id', None)
+            entity_id = getattr(updated_entity, "id", None)
             if entity_id:
                 if self.cache_settings.strategy == CacheStrategy.WRITE_THROUGH:
                     # Update cache immediately
                     entity_key = self._build_entity_key(entity_id)
-                    await self._set_in_cache(entity_key, updated_entity, self.cache_settings.entity_ttl)
+                    await self._set_in_cache(
+                        entity_key, updated_entity, self.cache_settings.entity_ttl
+                    )
                 else:
                     # Invalidate cache
                     await self._invalidate_entity_cache(entity_id)
 
             return updated_entity
 
-        except Exception as e:
+        except Exception:
             await self._increment_metric("update", False)
             raise
 
@@ -321,23 +346,27 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
 
             return deleted
 
-        except Exception as e:
+        except Exception:
             await self._increment_metric("delete", False)
             raise
 
     async def list(
         self,
-        filters: Dict[str, Any] | None = None,
-        sort: List[SortCriteria] | None = None,
-        pagination: PaginationInfo | None = None
-    ) -> List[EntityType]:
+        filters: dict[str, Any] | None = None,
+        sort: list[SortCriteria] | None = None,
+        pagination: PaginationInfo | None = None,
+    ) -> list[EntityType]:
         """List entities with query caching."""
         try:
             query_key = self._build_query_key(
                 "list",
                 filters=filters,
-                sort=[{"field": s.field, "direction": s.direction.value} for s in sort] if sort else None,
-                pagination={"page": pagination.page, "page_size": pagination.page_size} if pagination else None
+                sort=[{"field": s.field, "direction": s.direction.value} for s in sort]
+                if sort
+                else None,
+                pagination={"page": pagination.page, "page_size": pagination.page_size}
+                if pagination
+                else None,
             )
 
             # Try cache first
@@ -354,11 +383,11 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
 
             return entities
 
-        except Exception as e:
+        except Exception:
             await self._increment_metric("list", False)
             raise
 
-    async def count(self, filters: Dict[str, Any] | None = None) -> int:
+    async def count(self, filters: dict[str, Any] | None = None) -> int:
         """Count entities with caching."""
         try:
             count_key = self._build_count_key(filters)
@@ -377,7 +406,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
 
             return count
 
-        except Exception as e:
+        except Exception:
             await self._increment_metric("count", False)
             raise
 
@@ -387,7 +416,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         entity = await self.get_by_id(entity_id)
         return entity is not None
 
-    async def warm_cache(self, entity_ids: List[IDType]) -> int:
+    async def warm_cache(self, entity_ids: builtins.list[IDType]) -> int:
         """Warm cache with entities.
 
         Args:
@@ -419,7 +448,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         patterns = [
             f"{self.cache_settings.key_prefix}:entity:{self.entity_name.lower()}:*",
             f"{self.cache_settings.key_prefix}:query:{self.entity_name.lower()}:*",
-            f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:*"
+            f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:*",
         ]
 
         for pattern in patterns:
@@ -427,7 +456,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
             # This would need to be implemented per cache type
             pass
 
-    async def get_cache_metrics(self) -> Dict[str, Any]:
+    async def get_cache_metrics(self) -> dict[str, Any]:
         """Get cache performance metrics.
 
         Returns:
@@ -435,7 +464,9 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         """
         return {
             "entity_type": self.entity_name,
-            "strategy": self.cache_settings.strategy.value if self.cache_settings.strategy else None,
+            "strategy": self.cache_settings.strategy.value
+            if self.cache_settings.strategy
+            else None,
             "invalidation": self.cache_settings.invalidation.value,
             "metrics": {
                 "hits": self._metrics.hits,
@@ -444,13 +475,13 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
                 "invalidations": self._metrics.invalidations,
                 "errors": self._metrics.errors,
                 "hit_rate": self._metrics.hit_rate,
-                "total_operations": self._metrics.total_operations
+                "total_operations": self._metrics.total_operations,
             },
             "settings": {
                 "entity_ttl": self.cache_settings.entity_ttl,
                 "query_ttl": self.cache_settings.query_ttl,
-                "count_ttl": self.cache_settings.count_ttl
-            }
+                "count_ttl": self.cache_settings.count_ttl,
+            },
         }
 
     async def _cleanup_resources(self) -> None:

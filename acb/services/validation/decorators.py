@@ -9,7 +9,6 @@ from __future__ import annotations
 import functools
 import inspect
 import typing as t
-from contextlib import suppress
 
 from acb.depends import depends
 from acb.services.validation._base import ValidationConfig, ValidationSchema
@@ -20,7 +19,7 @@ from acb.services.validation.service import ValidationService
 def validate_input(
     schema: ValidationSchema | dict[str, ValidationSchema] | None = None,
     config: ValidationConfig | None = None,
-    raise_on_error: bool = True
+    raise_on_error: bool = True,
 ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
     """Decorator to validate function input parameters.
 
@@ -34,6 +33,7 @@ def validate_input(
         async def create_user(name: str, email: str) -> User:
             ...
     """
+
     def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -56,7 +56,7 @@ def validate_input(
                             bound_args.arguments[param_name],
                             param_schema,
                             config,
-                            param_name
+                            param_name,
                         )
                         validation_results.append(result)
             elif schema is not None:
@@ -64,9 +64,7 @@ def validate_input(
                 if bound_args.arguments:
                     first_param = next(iter(bound_args.arguments.values()))
                     result = await validation_service.validate(
-                        first_param,
-                        schema,
-                        config
+                        first_param, schema, config
                     )
                     validation_results.append(result)
 
@@ -90,6 +88,7 @@ def validate_input(
         @functools.wraps(func)
         def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             import asyncio
+
             return asyncio.run(async_wrapper(*args, **kwargs))
 
         # Return appropriate wrapper based on function type
@@ -104,7 +103,7 @@ def validate_input(
 def validate_output(
     schema: ValidationSchema | None = None,
     config: ValidationConfig | None = None,
-    raise_on_error: bool = True
+    raise_on_error: bool = True,
 ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
     """Decorator to validate function output.
 
@@ -118,6 +117,7 @@ def validate_output(
         async def get_user(user_id: int) -> User:
             ...
     """
+
     def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -130,10 +130,7 @@ def validate_output(
 
                 # Validate output
                 validation_result = await validation_service.validate(
-                    result,
-                    schema,
-                    config,
-                    "output"
+                    result, schema, config, "output"
                 )
 
                 if raise_on_error and not validation_result.is_valid:
@@ -149,6 +146,7 @@ def validate_output(
         @functools.wraps(func)
         def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             import asyncio
+
             return asyncio.run(async_wrapper(*args, **kwargs))
 
         # Return appropriate wrapper based on function type
@@ -164,7 +162,7 @@ def sanitize_input(
     fields: list[str] | None = None,
     enable_xss_protection: bool = True,
     enable_sql_protection: bool = True,
-    config: ValidationConfig | None = None
+    config: ValidationConfig | None = None,
 ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
     """Decorator to sanitize input parameters for security.
 
@@ -179,6 +177,7 @@ def sanitize_input(
         async def create_post(title: str, content: str) -> Post:
             ...
     """
+
     def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -204,7 +203,7 @@ def sanitize_input(
                             value,
                             None,  # Use basic validation
                             sanitize_config,
-                            param_name
+                            param_name,
                         )
                         bound_args.arguments[param_name] = result.value
 
@@ -213,6 +212,7 @@ def sanitize_input(
         @functools.wraps(func)
         def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             import asyncio
+
             return asyncio.run(async_wrapper(*args, **kwargs))
 
         # Return appropriate wrapper based on function type
@@ -227,7 +227,7 @@ def sanitize_input(
 def validate_schema(
     schema_name: str,
     config: ValidationConfig | None = None,
-    raise_on_error: bool = True
+    raise_on_error: bool = True,
 ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
     """Decorator to validate using a registered schema.
 
@@ -241,6 +241,7 @@ def validate_schema(
         async def create_user(**user_data) -> User:
             ...
     """
+
     def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -259,9 +260,7 @@ def validate_schema(
 
             if data_to_validate is not None:
                 result = await validation_service.validate(
-                    data_to_validate,
-                    schema,
-                    config
+                    data_to_validate, schema, config
                 )
 
                 if raise_on_error and not result.is_valid:
@@ -271,7 +270,9 @@ def validate_schema(
 
                 # Update data with validated values
                 if kwargs:
-                    kwargs.update(result.value if isinstance(result.value, dict) else kwargs)
+                    kwargs.update(
+                        result.value if isinstance(result.value, dict) else kwargs
+                    )
                 elif args:
                     args = (result.value,) + args[1:]
 
@@ -280,6 +281,7 @@ def validate_schema(
         @functools.wraps(func)
         def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             import asyncio
+
             return asyncio.run(async_wrapper(*args, **kwargs))
 
         # Return appropriate wrapper based on function type
@@ -294,7 +296,7 @@ def validate_schema(
 def validate_contracts(
     input_contract: dict[str, t.Any] | None = None,
     output_contract: dict[str, t.Any] | None = None,
-    config: ValidationConfig | None = None
+    config: ValidationConfig | None = None,
 ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
     """Decorator to validate API contracts for input and output.
 
@@ -311,10 +313,11 @@ def validate_contracts(
         async def create_user(name: str, email: str) -> dict:
             ...
     """
+
     def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            validation_service = depends.get(ValidationService)
+            depends.get(ValidationService)
 
             # Validate input contract
             if input_contract is not None:
@@ -351,6 +354,7 @@ def validate_contracts(
         @functools.wraps(func)
         def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             import asyncio
+
             return asyncio.run(async_wrapper(*args, **kwargs))
 
         # Return appropriate wrapper based on function type
@@ -378,7 +382,7 @@ class ValidationDecorators:
     def method_validator(
         self,
         input_schemas: dict[str, ValidationSchema] | None = None,
-        output_schema: ValidationSchema | None = None
+        output_schema: ValidationSchema | None = None,
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         """Decorator for class method validation.
 
@@ -391,9 +395,12 @@ class ValidationDecorators:
                 async def create_user(self, name: str) -> User:
                     ...
         """
+
         def decorator(method: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             @functools.wraps(method)
-            async def async_wrapper(instance: t.Any, *args: t.Any, **kwargs: t.Any) -> t.Any:
+            async def async_wrapper(
+                instance: t.Any, *args: t.Any, **kwargs: t.Any
+            ) -> t.Any:
                 # Input validation
                 if input_schemas:
                     sig = inspect.signature(method)
@@ -402,15 +409,12 @@ class ValidationDecorators:
 
                     # Skip 'self' parameter
                     params = dict(bound_args.arguments)
-                    params.pop('self', None)
+                    params.pop("self", None)
 
                     for param_name, schema in input_schemas.items():
                         if param_name in params:
                             result = await self.validation_service.validate(
-                                params[param_name],
-                                schema,
-                                None,
-                                param_name
+                                params[param_name], schema, None, param_name
                             )
                             if not result.is_valid:
                                 raise ValidationError(
@@ -428,10 +432,7 @@ class ValidationDecorators:
                 # Output validation
                 if output_schema:
                     validation_result = await self.validation_service.validate(
-                        result,
-                        output_schema,
-                        None,
-                        "output"
+                        result, output_schema, None, "output"
                     )
                     if not validation_result.is_valid:
                         raise ValidationError(
@@ -445,6 +446,7 @@ class ValidationDecorators:
             @functools.wraps(method)
             def sync_wrapper(instance: t.Any, *args: t.Any, **kwargs: t.Any) -> t.Any:
                 import asyncio
+
                 return asyncio.run(async_wrapper(instance, *args, **kwargs))
 
             # Return appropriate wrapper based on method type

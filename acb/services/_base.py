@@ -67,8 +67,12 @@ class ServiceConfig(BaseModel):
     name: str = Field(description="Human-readable service name")
     version: str = Field(default="1.0.0", description="Service version")
     description: str | None = Field(default=None, description="Service description")
-    dependencies: list[str] = Field(default_factory=list, description="Required service dependencies")
-    priority: int = Field(default=100, description="Service initialization priority (lower = earlier)")
+    dependencies: list[str] = Field(
+        default_factory=list, description="Required service dependencies"
+    )
+    priority: int = Field(
+        default=100, description="Service initialization priority (lower = earlier)"
+    )
 
     class Config:
         extra = "forbid"
@@ -87,14 +91,13 @@ class ServiceBase(ABC, CleanupMixin):
     def __init__(
         self,
         service_config: ServiceConfig | None = None,
-        settings: ServiceSettings | None = None
+        settings: ServiceSettings | None = None,
     ) -> None:
         super().__init__()
         CleanupMixin.__init__(self)
 
         self._service_config = service_config or ServiceConfig(
-            service_id=self.__class__.__name__.lower(),
-            name=self.__class__.__name__
+            service_id=self.__class__.__name__.lower(), name=self.__class__.__name__
         )
         self._settings = settings or ServiceSettings()
         self._status = ServiceStatus.INACTIVE
@@ -142,6 +145,7 @@ class ServiceBase(ABC, CleanupMixin):
 
             try:
                 import time
+
                 self._start_time = time.time()
                 self._metrics.initialized_at = self._start_time
 
@@ -211,8 +215,9 @@ class ServiceBase(ABC, CleanupMixin):
                     "requests_handled": self._metrics.requests_handled,
                     "errors_count": self._metrics.errors_count,
                     "last_error": self._metrics.last_error,
-                } | self._metrics.custom_metrics,
-                "service_specific": service_health
+                }
+                | self._metrics.custom_metrics,
+                "service_specific": service_health,
             }
 
         except Exception as e:
@@ -225,7 +230,7 @@ class ServiceBase(ABC, CleanupMixin):
                 "name": self.name,
                 "status": ServiceStatus.ERROR.value,
                 "healthy": False,
-                "error": str(e)
+                "error": str(e),
             }
 
     def _get_uptime(self) -> float | None:
@@ -233,6 +238,7 @@ class ServiceBase(ABC, CleanupMixin):
         if self._start_time is None:
             return None
         import time
+
         return time.time() - self._start_time
 
     async def _start_health_check(self) -> None:
@@ -249,12 +255,16 @@ class ServiceBase(ABC, CleanupMixin):
 
                 health = await self.health_check()
                 if not health.get("healthy", False):
-                    self.logger.warning(f"Service {self.name} health check failed: {health}")
+                    self.logger.warning(
+                        f"Service {self.name} health check failed: {health}"
+                    )
 
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Health check loop error for service {self.name}: {e}")
+                self.logger.error(
+                    f"Health check loop error for service {self.name}: {e}"
+                )
                 await asyncio.sleep(self._settings.health_check_interval)
 
     @abstractmethod

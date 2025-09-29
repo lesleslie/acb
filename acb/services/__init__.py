@@ -16,76 +16,102 @@ Features service discovery and dynamic import system similar to adapters:
 from ._base import (
     ServiceBase,
     ServiceConfig,
+    ServiceMetrics,
     ServiceSettings,
     ServiceStatus,
-    ServiceMetrics
-)
-from .registry import (
-    ServiceRegistry,
-    ServiceNotFoundError,
-    ServiceDependencyError,
-    get_registry,
-    register_service,
-    get_service,
-    initialize_services,
-    shutdown_services
-)
-from .performance import (
-    PerformanceOptimizer,
-    OptimizationConfig,
-    MetricsCollector,
-    PerformanceMetrics,
-    CacheOptimizer,
-    QueryOptimizer
-)
-from .health import (
-    HealthStatus,
-    HealthCheckType,
-    HealthCheckResult,
-    HealthCheckMixin,
-    HealthReporter,
-    HealthReporterSettings,
-    HealthService,
-    HealthServiceSettings
-)
-from .validation import (
-    ValidationService,
-    ValidationConfig,
-    ValidationSettings,
-    ValidationLevel,
-    ValidationResult,
-    ValidationReport,
-    ValidationError,
-    ValidationWarning,
-    validate_input,
-    validate_output,
-    sanitize_input,
-    validate_schema,
-    validate_contracts,
 )
 
 # Service discovery system
 from .discovery import (
-    ServiceMetadata,
-    ServiceCapability,
     Service,
+    ServiceCapability,
+    ServiceMetadata,
     ServiceNotFound,
     ServiceNotInstalled,
-    generate_service_id,
+    apply_service_overrides,
     create_service_metadata_template,
-    import_service,
-    try_import_service,
+    disable_service,
+    enable_service,
+    generate_service_id,
     get_service_class,
-    register_services,
-    list_services,
+    get_service_descriptor,
+    get_service_info,
+    get_service_override,
+    import_service,
     list_available_services,
     list_enabled_services,
-    get_service_info,
-    enable_service,
-    disable_service,
-    get_service_descriptor,
-    get_service_override,
-    apply_service_overrides,
+    list_services,
+    register_services,
+    try_import_service,
+)
+from .health import (
+    HealthCheckMixin,
+    HealthCheckResult,
+    HealthCheckType,
+    HealthReporter,
+    HealthReporterSettings,
+    HealthService,
+    HealthServiceSettings,
+    HealthStatus,
+)
+from .performance import (
+    AdapterPreInitializer,
+    CacheOptimizer,
+    ColdStartMetrics,
+    FastDependencies,
+    LazyInitializer,
+    MetricsCollector,
+    OptimizationConfig,
+    PerformanceMetrics,
+    PerformanceOptimizer,
+    QueryOptimizer,
+    ServerlessOptimizer,
+    ServerlessOptimizerSettings,
+    ServerlessResourceCleanup,
+    lazy_resource,
+    optimize_cold_start,
+)
+from .registry import (
+    ServiceDependencyError,
+    ServiceNotFoundError,
+    ServiceRegistry,
+    get_registry,
+    get_service,
+    initialize_services,
+    register_service,
+    shutdown_services,
+)
+from .state import (
+    InMemoryStateManager,
+    PersistentStateManager,
+    StateEntry,
+    StateManager,
+    StateManagerConfig,
+    StateManagerMetrics,
+    StateManagerService,
+    StateManagerSettings,
+    StateStatus,
+    StateType,
+    delete_state,
+    get_state,
+    get_state_service,
+    managed_state,
+    set_state,
+)
+from .validation import (
+    ValidationConfig,
+    ValidationError,
+    ValidationLevel,
+    ValidationReport,
+    ValidationResult,
+    ValidationService,
+    ValidationSettings,
+    ValidationWarning,
+    sanitize_input,
+    validate_contracts,
+    validate_input,
+    validate_output,
+    validate_schema,
 )
 
 __all__ = [
@@ -95,7 +121,6 @@ __all__ = [
     "ServiceSettings",
     "ServiceStatus",
     "ServiceMetrics",
-
     # Service registry
     "ServiceRegistry",
     "ServiceNotFoundError",
@@ -108,7 +133,6 @@ __all__ = [
     "setup_services",
     "shutdown_services_layer",
     "setup_fastblocks_services",
-
     # Performance optimization
     "PerformanceOptimizer",
     "OptimizationConfig",
@@ -116,7 +140,16 @@ __all__ = [
     "PerformanceMetrics",
     "CacheOptimizer",
     "QueryOptimizer",
-
+    # Serverless optimization
+    "ServerlessOptimizer",
+    "ServerlessOptimizerSettings",
+    "ColdStartMetrics",
+    "LazyInitializer",
+    "AdapterPreInitializer",
+    "FastDependencies",
+    "ServerlessResourceCleanup",
+    "lazy_resource",
+    "optimize_cold_start",
     # Health monitoring
     "HealthStatus",
     "HealthCheckType",
@@ -126,7 +159,6 @@ __all__ = [
     "HealthReporterSettings",
     "HealthService",
     "HealthServiceSettings",
-
     # Validation services
     "ValidationService",
     "ValidationConfig",
@@ -141,7 +173,22 @@ __all__ = [
     "sanitize_input",
     "validate_schema",
     "validate_contracts",
-
+    # State management services
+    "StateManagerService",
+    "StateManagerSettings",
+    "StateManagerConfig",
+    "StateManagerMetrics",
+    "StateManager",
+    "InMemoryStateManager",
+    "PersistentStateManager",
+    "StateEntry",
+    "StateType",
+    "StateStatus",
+    "get_state_service",
+    "get_state",
+    "set_state",
+    "delete_state",
+    "managed_state",
     # Service discovery system
     "ServiceMetadata",
     "ServiceCapability",
@@ -169,6 +216,7 @@ __all__ = [
 # Service layer metadata following ACB patterns
 SERVICE_LAYER_VERSION = "1.0.0"
 ACB_MIN_VERSION = "0.19.1"
+
 
 # Integration helpers for ACB applications
 async def setup_services(enable_health_monitoring: bool = True) -> ServiceRegistry:
@@ -201,7 +249,12 @@ async def setup_services(enable_health_monitoring: bool = True) -> ServiceRegist
     # Register services using discovery system
     try:
         # Register performance services using discovery
-        performance_services = ["performance_optimizer", "metrics_collector", "cache_optimizer", "query_optimizer"]
+        performance_services = [
+            "performance_optimizer",
+            "metrics_collector",
+            "cache_optimizer",
+            "query_optimizer",
+        ]
         for service_name in performance_services:
             try:
                 service_cls = get_service_class("performance", service_name)
@@ -272,7 +325,7 @@ def create_fastblocks_service_config() -> dict[str, bool]:
         "health_monitoring": True,
         "htmx_optimization": True,
         "template_caching": True,
-        "response_compression": True
+        "response_compression": True,
     }
 
 
@@ -285,8 +338,6 @@ async def setup_fastblocks_services() -> ServiceRegistry:
     Returns:
         Configured service registry for FastBlocks
     """
-    from acb.depends import depends
-
     registry = await setup_services(enable_health_monitoring=True)
 
     # Get the health service for FastBlocks-specific configuration
@@ -295,7 +346,7 @@ async def setup_fastblocks_services() -> ServiceRegistry:
     with suppress(Exception):
         health_service = await registry.get_service("health_service")
         # FastBlocks applications typically want health endpoints enabled
-        if hasattr(health_service, '_settings'):
+        if hasattr(health_service, "_settings"):
             health_service._settings.expose_health_endpoint = True
 
     return registry
