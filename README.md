@@ -8,7 +8,7 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-77.9%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-71.1%25-yellow)
 
 ## What is ACB?
 

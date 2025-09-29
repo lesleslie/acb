@@ -16,6 +16,33 @@ from .console import console
 from .context import Pkg as Pkg
 from .context import get_context
 
+# Services layer imports
+try:
+    from .services import (
+        PerformanceOptimizer as PerformanceOptimizer,  # noqa: F401
+    )
+    from .services import (
+        ServiceBase as ServiceBase,  # noqa: F401
+    )
+    from .services import (
+        ServiceRegistry as ServiceRegistry,  # noqa: F401
+    )
+    from .services import (
+        setup_services as setup_services,  # noqa: F401
+    )
+    from .services import (
+        shutdown_services_layer as shutdown_services_layer,  # noqa: F401
+    )
+
+    HAS_SERVICES = True
+except ImportError:
+    HAS_SERVICES = False
+    ServiceBase = None  # type: ignore
+    ServiceRegistry = None  # type: ignore
+    PerformanceOptimizer = None  # type: ignore
+    setup_services = None  # type: ignore
+    shutdown_services_layer = None  # type: ignore
+
 # MCP Server imports
 try:
     from .mcp import ACMCPServer as ACMCPServer  # noqa: F401
@@ -127,3 +154,38 @@ async def display_components() -> None:
             )
         adptrs_padded: RenderableType = Padding(adptrs, (0, 4, 1, 4))
         console.print(adptrs_padded)
+
+        # Display services if available
+        if HAS_SERVICES:
+            with suppress(Exception):
+                from .services import get_registry
+
+                registry = get_registry()
+                service_ids = registry.list_services()
+
+                srvcs = Table(
+                    title="[b][u bright_white]S[/u bright_white][bright_green]ervices",  # codespell:ignore
+                    **table_args,
+                )
+                for prop in ("Service ID", "Name", "Status"):
+                    srvcs.add_column(prop)
+
+                for i, service_id in enumerate(service_ids):
+                    try:
+                        service = registry.get_service(service_id)
+                        srvcs.add_row(
+                            service_id,
+                            service.name,
+                            service.status.value,
+                            style="bold white" if i % 2 else "bold white on blue",
+                        )
+                    except Exception:
+                        srvcs.add_row(
+                            service_id,
+                            "Unknown",
+                            "error",
+                            style="bold white" if i % 2 else "bold white on blue",
+                        )
+
+                srvcs_padded: RenderableType = Padding(srvcs, (0, 4, 1, 4))
+                console.print(srvcs_padded)

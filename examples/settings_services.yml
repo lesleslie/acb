@@ -1,0 +1,25 @@
+# services.yml - Example Service Configuration
+# Configure which service implementations are enabled
+# This mirrors the adapter configuration pattern in ACB
+
+# Performance services
+performance: performance_optimizer  # Main performance optimization service
+
+# Health monitoring
+health: health_service  # Health check and monitoring service
+
+# Validation services
+validation: validation_service  # Input/output validation service
+
+# Repository services (if using Repository Layer)
+repository: repository_service  # Repository pattern service with UoW
+
+# Monitoring and observability
+monitoring: health_service  # Can override to use different monitoring implementations
+
+# Example of advanced configuration
+# performance:
+#   service: performance_optimizer
+#   settings:
+#     enable_caching: true
+#     optimization_level: high
