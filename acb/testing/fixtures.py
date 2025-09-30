@@ -391,7 +391,6 @@ def acb_test_environment():
         },
     }
 
-
     # Session cleanup is minimal since each test cleans up
 
 
@@ -405,6 +404,7 @@ def async_test_timeout() -> float:
 @pytest.fixture
 async def async_context_manager():
     """Provide async context manager for testing."""
+
     class TestAsyncContext:
         async def __aenter__(self):
             return self

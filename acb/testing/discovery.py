@@ -25,16 +25,19 @@ from pydantic import BaseModel, ConfigDict, Field
 # Test provider discovery system imports
 try:
     import uuid_utils
+
     _uuid7_available = True
     uuid_lib: t.Any = uuid_utils
 except ImportError:
     import uuid
+
     _uuid7_available = False
     uuid_lib: t.Any = uuid
 
 
 class TestProviderStatus(Enum):
     """Test provider development/stability status."""
+
     ALPHA = "alpha"
     BETA = "beta"
     STABLE = "stable"
@@ -44,6 +47,7 @@ class TestProviderStatus(Enum):
 
 class TestProviderCapability(Enum):
     """Test provider capability enumeration."""
+
     # Core testing capabilities
     UNIT_TESTING = "unit_testing"
     INTEGRATION_TESTING = "integration_testing"
@@ -81,15 +85,22 @@ class TestProviderCapability(Enum):
 
 class TestProviderMetadata(BaseModel):
     """Test provider metadata for discovery and registration."""
+
     provider_id: UUID = Field(description="UUID7 identifier for this test provider")
 
     name: str = Field(description="Human-readable test provider name")
-    category: str = Field(description="Test provider category (unit, integration, performance, etc.)")
-    provider_type: str = Field(description="Provider type (mock, fixture, runner, etc.)")
+    category: str = Field(
+        description="Test provider category (unit, integration, performance, etc.)"
+    )
+    provider_type: str = Field(
+        description="Provider type (mock, fixture, runner, etc.)"
+    )
 
     version: str = Field(description="Semantic version of this test provider")
     acb_min_version: str = Field(description="Minimum ACB version required")
-    acb_max_version: str | None = Field(default=None, description="Maximum ACB version supported")
+    acb_max_version: str | None = Field(
+        default=None, description="Maximum ACB version supported"
+    )
 
     author: str = Field(description="Primary author/maintainer")
     created_date: str = Field(description="ISO date when provider was created")
@@ -97,27 +108,36 @@ class TestProviderMetadata(BaseModel):
 
     status: TestProviderStatus = Field(description="Development/stability status")
     capabilities: list[TestProviderCapability] = Field(
-        default_factory=list, description="List of features this provider supports",
+        default_factory=list,
+        description="List of features this provider supports",
     )
 
     required_packages: list[str] = Field(
-        default_factory=list, description="External packages required for this provider",
+        default_factory=list,
+        description="External packages required for this provider",
     )
     optional_packages: dict[str, str] = Field(
-        default_factory=dict, description="Optional packages and their purpose",
+        default_factory=dict,
+        description="Optional packages and their purpose",
     )
 
     description: str = Field(description="Brief description of provider functionality")
-    documentation_url: str | None = Field(default=None, description="Link to detailed documentation")
-    repository_url: str | None = Field(default=None, description="Source code repository")
+    documentation_url: str | None = Field(
+        default=None, description="Link to detailed documentation"
+    )
+    repository_url: str | None = Field(
+        default=None, description="Source code repository"
+    )
 
     settings_class: str = Field(description="Name of the settings class")
     config_example: dict[str, t.Any] | None = Field(
-        default=None, description="Example configuration for this provider",
+        default=None,
+        description="Example configuration for this provider",
     )
 
     custom: dict[str, t.Any] = Field(
-        default_factory=dict, description="Custom metadata fields",
+        default_factory=dict,
+        description="Custom metadata fields",
     )
 
     model_config = ConfigDict(use_enum_values=True, extra="forbid")
@@ -156,9 +176,17 @@ def create_test_provider_metadata_template(
         status=kwargs.get("status", TestProviderStatus.STABLE),
         description=description,
         settings_class=kwargs.get("settings_class", f"{name}Settings"),
-        **{k: v for k, v in kwargs.items() if k not in {
-            "version", "acb_min_version", "status", "settings_class",
-        }},
+        **{
+            k: v
+            for k, v in kwargs.items()
+            if k
+            not in {
+                "version",
+                "acb_min_version",
+                "status",
+                "settings_class",
+            }
+        },
     )
 
 
@@ -172,6 +200,7 @@ class TestNotInstalled(Exception):
 
 class TestProvider(BaseModel):
     """Test provider descriptor for discovery and registration."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str
@@ -202,12 +231,16 @@ class TestProvider(BaseModel):
 
 
 # Test provider registry using ContextVar for thread safety
-test_provider_registry: ContextVar[list[TestProvider]] = ContextVar("test_provider_registry", default=[])
+test_provider_registry: ContextVar[list[TestProvider]] = ContextVar(
+    "test_provider_registry", default=[]
+)
 _enabled_test_providers_cache: ContextVar[dict[str, TestProvider]] = ContextVar(
-    "_enabled_test_providers_cache", default={},
+    "_enabled_test_providers_cache",
+    default={},
 )
 _installed_test_providers_cache: ContextVar[dict[str, TestProvider]] = ContextVar(
-    "_installed_test_providers_cache", default={},
+    "_installed_test_providers_cache",
+    default={},
 )
 
 # Core test providers registry - static mappings like adapters
@@ -324,7 +357,9 @@ def get_test_provider_class(category: str, name: str | None = None) -> type[t.An
         raise TestNotInstalled(msg) from e
 
 
-def try_import_test_provider(category: str, name: str | None = None) -> type[t.Any] | None:
+def try_import_test_provider(
+    category: str, name: str | None = None
+) -> type[t.Any] | None:
     """Try to import a test provider class, return None if not available."""
     try:
         return get_test_provider_class(category, name)
@@ -363,6 +398,7 @@ def import_test_provider(provider_categories: str | list[str] | None = None) -> 
     if provider_categories is None:
         # Try to auto-detect from calling context
         import inspect
+
         frame = inspect.currentframe()
         if frame and frame.f_back:
             code = frame.f_back.f_code
@@ -378,7 +414,10 @@ def import_test_provider(provider_categories: str | list[str] | None = None) -> 
                             var_name = current_line.split("=")[0].strip().lower()
                             # Try to match variable name to provider category
                             for provider in test_provider_registry.get():
-                                if provider.category in var_name or provider.name in var_name:
+                                if (
+                                    provider.category in var_name
+                                    or provider.name in var_name
+                                ):
                                     return try_import_test_provider(provider.category)
             except (OSError, IndexError):
                 pass

@@ -18,6 +18,8 @@ from acb.depends import depends
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
+SERVICE_METADATA: t.Any = None
+
 try:
     from ..discovery import (
         ServiceCapability,
@@ -369,7 +371,9 @@ class PerformanceOptimizer(ServiceBase):
                     import hashlib
 
                     arg_str = str((args, sorted(kwargs.items())))
-                    arg_hash = hashlib.md5(arg_str.encode()).hexdigest()[:8]
+                    arg_hash = hashlib.md5(
+                        arg_str.encode(), usedforsecurity=False
+                    ).hexdigest()[:8]
                     cache_key = f"{cache_key}:{arg_hash}"
 
                 # Create operation wrapper

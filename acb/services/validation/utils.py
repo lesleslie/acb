@@ -288,7 +288,7 @@ class ValidationCache:
         import hashlib
 
         data_str = str(data) + str(type(data)) + (schema_name or "")
-        return hashlib.md5(data_str.encode()).hexdigest()
+        return hashlib.md5(data_str.encode(), usedforsecurity=False).hexdigest()
 
     def get(
         self, data: t.Any, schema_name: str | None = None

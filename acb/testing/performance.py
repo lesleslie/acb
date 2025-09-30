@@ -25,6 +25,7 @@ import psutil
 @dataclass
 class PerformanceMetrics:
     """Container for performance metrics."""
+
     execution_time: float
     memory_before: int
     memory_after: int
@@ -79,7 +80,9 @@ class PerformanceTimer:
 class BenchmarkRunner:
     """Run benchmark tests with statistical analysis."""
 
-    def __init__(self, warmup_rounds: int = 3, test_rounds: int = 10, collect_memory: bool = True) -> None:
+    def __init__(
+        self, warmup_rounds: int = 3, test_rounds: int = 10, collect_memory: bool = True
+    ) -> None:
         self.warmup_rounds = warmup_rounds
         self.test_rounds = test_rounds
         self.collect_memory = collect_memory
@@ -157,10 +160,14 @@ class BenchmarkRunner:
         self.results.append(result)
         return result
 
-    def compare_benchmarks(self, baseline_name: str, comparison_name: str) -> dict[str, t.Any]:
+    def compare_benchmarks(
+        self, baseline_name: str, comparison_name: str
+    ) -> dict[str, t.Any]:
         """Compare two benchmark results."""
         baseline = next((r for r in self.results if r["name"] == baseline_name), None)
-        comparison = next((r for r in self.results if r["name"] == comparison_name), None)
+        comparison = next(
+            (r for r in self.results if r["name"] == comparison_name), None
+        )
 
         if not baseline or not comparison:
             msg = "Benchmark results not found for comparison"
@@ -246,8 +253,12 @@ class LoadTestRunner:
             "total_requests": total_requests,
             "completed_requests": completed_requests,
             "failed_requests": failed_requests,
-            "failure_rate": failed_requests / total_requests if total_requests > 0 else 0,
-            "throughput": completed_requests / actual_duration if actual_duration > 0 else 0,
+            "failure_rate": failed_requests / total_requests
+            if total_requests > 0
+            else 0,
+            "throughput": completed_requests / actual_duration
+            if actual_duration > 0
+            else 0,
             "response_time_stats": {
                 "mean": mean(response_times) if response_times else 0,
                 "median": median(response_times) if response_times else 0,
@@ -276,11 +287,13 @@ class MetricsCollector:
             self.metrics[name] = []
 
         timestamp = time.perf_counter() - self.start_time
-        self.metrics[name].append({
-            "value": value,
-            "timestamp": timestamp,
-            "tags": tags or {},
-        })
+        self.metrics[name].append(
+            {
+                "value": value,
+                "timestamp": timestamp,
+                "tags": tags or {},
+            }
+        )
 
     def get_metric_summary(self, name: str) -> dict[str, t.Any] | None:
         """Get summary statistics for a metric."""
@@ -303,7 +316,11 @@ class MetricsCollector:
 
     def get_all_metrics(self) -> dict[str, dict]:
         """Get all metrics summaries."""
-        return {name: self.get_metric_summary(name) for name in self.metrics if self.get_metric_summary(name)}
+        return {
+            name: self.get_metric_summary(name)
+            for name in self.metrics
+            if self.get_metric_summary(name)
+        }
 
     @contextmanager
     def measure_operation(self, operation_name: str):
@@ -343,18 +360,23 @@ def assert_performance_threshold(
 def measure_execution_time(func: t.Callable) -> t.Callable:
     """Decorator to measure function execution time."""
     if asyncio.iscoroutinefunction(func):
+
         async def async_wrapper(*args, **kwargs):
             async with PerformanceTimer():
                 return await func(*args, **kwargs)
+
         return async_wrapper
+
     def sync_wrapper(*args, **kwargs):
         with PerformanceTimer():
             return func(*args, **kwargs)
+
     return sync_wrapper
 
 
 def profile_memory_usage(func: t.Callable) -> t.Callable:
     """Decorator to profile memory usage."""
+
     def wrapper(*args, **kwargs):
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
@@ -413,4 +435,3 @@ async def performance_monitor(name: str, thresholds: dict | None = None):
                 assert memory_delta_mb <= thresholds["max_memory_mb"], (
                     f"Memory usage {memory_delta_mb:.2f}MB exceeds threshold {thresholds['max_memory_mb']:.2f}MB"
                 )
-

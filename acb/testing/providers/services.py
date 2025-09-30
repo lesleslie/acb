@@ -46,7 +46,9 @@ class MockServiceProvider:
         self._mock_instances = {}
         self._metrics = {}
 
-    def create_performance_service_mock(self, behavior: dict[str, t.Any] | None = None) -> AsyncMock:
+    def create_performance_service_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> AsyncMock:
         """Create a realistic performance service mock."""
         perf_mock = AsyncMock()
         perf_mock._metrics = {
@@ -57,8 +59,8 @@ class MockServiceProvider:
         }
 
         default_behavior = {
-            "optimization_delay": 0.1,   # 100ms optimization time
-            "metrics_delay": 0.01,       # 10ms metrics collection
+            "optimization_delay": 0.1,  # 100ms optimization time
+            "metrics_delay": 0.01,  # 10ms metrics collection
             "optimization_success_rate": 0.95,  # 95% success rate
         }
 
@@ -67,9 +69,11 @@ class MockServiceProvider:
 
         async def mock_optimize(target: str, parameters: dict | None = None):
             import asyncio
+
             await asyncio.sleep(default_behavior["optimization_delay"])
 
             import random
+
             if random.random() > default_behavior["optimization_success_rate"]:
                 msg = f"Optimization failed for {target}"
                 raise RuntimeError(msg)
@@ -85,6 +89,7 @@ class MockServiceProvider:
 
         async def mock_get_metrics(category: str | None = None):
             import asyncio
+
             await asyncio.sleep(default_behavior["metrics_delay"])
 
             if category:
@@ -119,16 +124,18 @@ class MockServiceProvider:
         self._mock_instances["performance"] = perf_mock
         return perf_mock
 
-    def create_health_service_mock(self, behavior: dict[str, t.Any] | None = None) -> AsyncMock:
+    def create_health_service_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> AsyncMock:
         """Create a realistic health service mock."""
         health_mock = AsyncMock()
         health_mock._status = "healthy"
         health_mock._uptime = 3600  # 1 hour
 
         default_behavior = {
-            "check_delay": 0.005,    # 5ms health check
-            "failure_rate": 0.02,    # 2% failure rate
-            "degraded_rate": 0.05,   # 5% degraded rate
+            "check_delay": 0.005,  # 5ms health check
+            "failure_rate": 0.02,  # 2% failure rate
+            "degraded_rate": 0.05,  # 5% degraded rate
         }
 
         if behavior:
@@ -136,15 +143,20 @@ class MockServiceProvider:
 
         async def mock_check_health(component: str | None = None):
             import asyncio
+
             await asyncio.sleep(default_behavior["check_delay"])
 
             import random
+
             rand = random.random()
 
             if rand < default_behavior["failure_rate"]:
                 status = "unhealthy"
                 details = {"error": "Component failure detected"}
-            elif rand < default_behavior["failure_rate"] + default_behavior["degraded_rate"]:
+            elif (
+                rand
+                < default_behavior["failure_rate"] + default_behavior["degraded_rate"]
+            ):
                 status = "degraded"
                 details = {"warning": "Performance degradation detected"}
             else:
@@ -177,13 +189,15 @@ class MockServiceProvider:
         self._mock_instances["health"] = health_mock
         return health_mock
 
-    def create_validation_service_mock(self, behavior: dict[str, t.Any] | None = None) -> AsyncMock:
+    def create_validation_service_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> AsyncMock:
         """Create a realistic validation service mock."""
         validation_mock = AsyncMock()
 
         default_behavior = {
             "validation_delay": 0.002,  # 2ms validation time
-            "error_rate": 0.1,          # 10% validation errors
+            "error_rate": 0.1,  # 10% validation errors
             "sanitization_enabled": True,
         }
 
@@ -192,18 +206,22 @@ class MockServiceProvider:
 
         async def mock_validate(data: t.Any, schema: dict | None = None):
             import asyncio
+
             await asyncio.sleep(default_behavior["validation_delay"])
 
             import random
+
             errors = []
 
             # Simulate validation errors
             if random.random() < default_behavior["error_rate"]:
-                errors.append({
-                    "field": "test_field",
-                    "message": "Validation failed",
-                    "code": "INVALID_FORMAT",
-                })
+                errors.append(
+                    {
+                        "field": "test_field",
+                        "message": "Validation failed",
+                        "code": "INVALID_FORMAT",
+                    }
+                )
 
             return {
                 "valid": len(errors) == 0,
@@ -217,6 +235,7 @@ class MockServiceProvider:
                 return data
 
             import asyncio
+
             await asyncio.sleep(default_behavior["validation_delay"] / 2)
 
             # Simple sanitization simulation
@@ -224,9 +243,9 @@ class MockServiceProvider:
             sanitized = sanitized.replace("javascript:", "")
             return sanitized.strip()
 
-
         async def mock_validate_schema(data: dict, schema_name: str):
             import asyncio
+
             await asyncio.sleep(default_behavior["validation_delay"])
 
             # Mock schema validation
@@ -245,15 +264,17 @@ class MockServiceProvider:
         self._mock_instances["validation"] = validation_mock
         return validation_mock
 
-    def create_repository_service_mock(self, behavior: dict[str, t.Any] | None = None) -> AsyncMock:
+    def create_repository_service_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> AsyncMock:
         """Create a realistic repository service mock."""
         repo_mock = AsyncMock()
         repo_mock._repositories = {}
 
         default_behavior = {
-            "operation_delay": 0.005,   # 5ms operation time
-            "transaction_delay": 0.010, # 10ms transaction time
-            "rollback_rate": 0.01,      # 1% rollback rate
+            "operation_delay": 0.005,  # 5ms operation time
+            "transaction_delay": 0.010,  # 10ms transaction time
+            "rollback_rate": 0.01,  # 1% rollback rate
         }
 
         if behavior:
@@ -261,6 +282,7 @@ class MockServiceProvider:
 
         async def mock_get_repository(entity_type: str):
             import asyncio
+
             await asyncio.sleep(default_behavior["operation_delay"])
 
             if entity_type not in repo_mock._repositories:
@@ -292,6 +314,7 @@ class MockServiceProvider:
 
         async def mock_begin_transaction():
             import asyncio
+
             await asyncio.sleep(default_behavior["transaction_delay"])
 
             transaction_mock = AsyncMock()
@@ -300,6 +323,7 @@ class MockServiceProvider:
 
             async def commit() -> None:
                 import random
+
                 if random.random() < default_behavior["rollback_rate"]:
                     msg = "Transaction failed to commit"
                     raise RuntimeError(msg)
@@ -337,7 +361,9 @@ class MockServiceProvider:
                 mock._metrics.update(metrics)
 
     @asynccontextmanager
-    async def mock_service_context(self, service_type: str, behavior: dict[str, t.Any] | None = None):
+    async def mock_service_context(
+        self, service_type: str, behavior: dict[str, t.Any] | None = None
+    ):
         """Context manager for temporary mock service."""
         # Create mock based on type
         if service_type == "performance":

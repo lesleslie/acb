@@ -49,7 +49,9 @@ class IntegrationTestProvider:
         self._external_services = {}
         self._integration_results = {}
 
-    async def setup_test_environment(self, environment_name: str, config: dict) -> dict[str, t.Any]:
+    async def setup_test_environment(
+        self, environment_name: str, config: dict
+    ) -> dict[str, t.Any]:
         """Setup an isolated test environment."""
         test_env = {
             "name": environment_name,
@@ -76,7 +78,9 @@ class IntegrationTestProvider:
         # Initialize external services
         if "external_apis" in config:
             for api_name in config["external_apis"]:
-                test_env["services"][api_name] = self._create_mock_external_api(api_name)
+                test_env["services"][api_name] = self._create_mock_external_api(
+                    api_name
+                )
 
         test_env["status"] = "ready"
         self._test_environments[environment_name] = test_env
@@ -172,12 +176,20 @@ class IntegrationTestProvider:
                 if method == "GET":
                     return {"users": [{"id": 1, "name": "Test User"}]}
                 if method == "POST":
-                    return {"id": 2, "name": data.get("name", "New User"), "created": True}
+                    return {
+                        "id": 2,
+                        "name": data.get("name", "New User"),
+                        "created": True,
+                    }
             elif endpoint.startswith("/api/error"):
                 msg = "Simulated API error"
                 raise Exception(msg)
             else:
-                return {"message": "Mock response", "endpoint": endpoint, "method": method}
+                return {
+                    "message": "Mock response",
+                    "endpoint": endpoint,
+                    "method": method,
+                }
             return None
 
         api_mock.request.side_effect = make_request
@@ -202,6 +214,7 @@ class IntegrationTestProvider:
         try:
             # Inject environment into test function if it accepts it
             import inspect
+
             sig = inspect.signature(test_function)
             if "test_env" in sig.parameters:
                 kwargs["test_env"] = env
@@ -241,7 +254,9 @@ class IntegrationTestProvider:
         self._integration_results[test_name] = test_result
         return test_result
 
-    async def test_adapter_integration(self, adapter_type: str, environment_name: str) -> dict[str, t.Any]:
+    async def test_adapter_integration(
+        self, adapter_type: str, environment_name: str
+    ) -> dict[str, t.Any]:
         """Test adapter integration with external systems."""
         if environment_name not in self._test_environments:
             msg = f"Test environment not found: {environment_name}"
@@ -267,7 +282,9 @@ class IntegrationTestProvider:
                 value = await adapter.get("test_key")
                 assert value == "test_value"
                 await adapter.delete("test_key")
-                test_results.append({"operation": "cache_operations", "status": "passed"})
+                test_results.append(
+                    {"operation": "cache_operations", "status": "passed"}
+                )
 
             elif adapter_type == "database":
                 # Test database operations
@@ -275,7 +292,9 @@ class IntegrationTestProvider:
                 assert result.rowcount >= 0
                 row = await adapter.fetch_one("SELECT 1 as test")
                 assert row is not None
-                test_results.append({"operation": "database_operations", "status": "passed"})
+                test_results.append(
+                    {"operation": "database_operations", "status": "passed"}
+                )
 
             elif adapter_type == "storage":
                 # Test storage operations
@@ -285,7 +304,9 @@ class IntegrationTestProvider:
                 assert exists
                 read_data = await adapter.read("/test/file.txt")
                 assert read_data == test_data
-                test_results.append({"operation": "storage_operations", "status": "passed"})
+                test_results.append(
+                    {"operation": "storage_operations", "status": "passed"}
+                )
 
             return {
                 "adapter_type": adapter_type,
@@ -306,7 +327,9 @@ class IntegrationTestProvider:
                 "timestamp": "2024-01-01T12:00:00Z",
             }
 
-    async def test_api_integration(self, api_name: str, environment_name: str) -> dict[str, t.Any]:
+    async def test_api_integration(
+        self, api_name: str, environment_name: str
+    ) -> dict[str, t.Any]:
         """Test external API integration."""
         if environment_name not in self._test_environments:
             msg = f"Test environment not found: {environment_name}"
@@ -328,17 +351,25 @@ class IntegrationTestProvider:
             # Test health check
             health_response = await api.request("GET", "/health")
             assert health_response["status"] == "ok"
-            test_results.append({"endpoint": "/health", "method": "GET", "status": "passed"})
+            test_results.append(
+                {"endpoint": "/health", "method": "GET", "status": "passed"}
+            )
 
             # Test data retrieval
             users_response = await api.request("GET", "/api/users")
             assert "users" in users_response
-            test_results.append({"endpoint": "/api/users", "method": "GET", "status": "passed"})
+            test_results.append(
+                {"endpoint": "/api/users", "method": "GET", "status": "passed"}
+            )
 
             # Test data creation
-            create_response = await api.request("POST", "/api/users", {"name": "Integration Test User"})
+            create_response = await api.request(
+                "POST", "/api/users", {"name": "Integration Test User"}
+            )
             assert create_response.get("created") is True
-            test_results.append({"endpoint": "/api/users", "method": "POST", "status": "passed"})
+            test_results.append(
+                {"endpoint": "/api/users", "method": "POST", "status": "passed"}
+            )
 
             return {
                 "api_name": api_name,

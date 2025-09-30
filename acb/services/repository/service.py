@@ -13,7 +13,7 @@ from typing import Any, TypeVar
 
 from acb.depends import depends
 
-from .._base import ServiceBase, ServiceStatus
+from .._base import ServiceBase
 from ..health import HealthCheckMixin
 from ._base import RepositoryBase, RepositoryError, RepositorySettings
 from .cache import RepositoryCacheSettings
@@ -23,7 +23,12 @@ from .unit_of_work import UnitOfWork, UnitOfWorkManager
 
 # Service metadata for discovery system
 try:
-    from ..discovery import ServiceCapability, ServiceMetadata, generate_service_id
+    from ..discovery import (
+        ServiceCapability,
+        ServiceMetadata,
+        ServiceStatus,
+        generate_service_id,
+    )
 
     SERVICE_METADATA = ServiceMetadata(
         service_id=generate_service_id(),

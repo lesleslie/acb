@@ -9,10 +9,10 @@ import pytest
 from acb.logger import (
     InterceptHandler,
     Logger,
-    LoggerBase,
-    LoggerProtocol,
     LoggerSettings,
 )
+from acb.adapters.logger import LoggerProtocol
+from acb.adapters.logger._base import LoggerBase
 
 
 class TestLoggerSettings:

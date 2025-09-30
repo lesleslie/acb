@@ -83,7 +83,9 @@ class PerformanceTestProvider:
             self.test_rounds = test_rounds
             self.results = []
 
-        async def run_benchmark(self, func: t.Callable, *args, **kwargs) -> dict[str, t.Any]:
+        async def run_benchmark(
+            self, func: t.Callable, *args, **kwargs
+        ) -> dict[str, t.Any]:
             """Run a benchmark test."""
             # Warmup rounds
             for _ in range(self.warmup_rounds):
@@ -131,7 +133,9 @@ class PerformanceTestProvider:
             self.duration = duration
             self.results = []
 
-        async def run_load_test(self, func: t.Callable, *args, **kwargs) -> dict[str, t.Any]:
+        async def run_load_test(
+            self, func: t.Callable, *args, **kwargs
+        ) -> dict[str, t.Any]:
             """Run a load test."""
             start_time = time.perf_counter()
             end_time = start_time + self.duration
@@ -169,8 +173,12 @@ class PerformanceTestProvider:
             total_requests = completed_requests + failed_requests
 
             # Calculate statistics
-            avg_response_time = sum(response_times) / len(response_times) if response_times else 0
-            throughput = completed_requests / actual_duration if actual_duration > 0 else 0
+            avg_response_time = (
+                sum(response_times) / len(response_times) if response_times else 0
+            )
+            throughput = (
+                completed_requests / actual_duration if actual_duration > 0 else 0
+            )
 
             result = {
                 "concurrent_users": self.concurrent_users,
@@ -178,7 +186,9 @@ class PerformanceTestProvider:
                 "total_requests": total_requests,
                 "completed_requests": completed_requests,
                 "failed_requests": failed_requests,
-                "failure_rate": failed_requests / total_requests if total_requests > 0 else 0,
+                "failure_rate": failed_requests / total_requests
+                if total_requests > 0
+                else 0,
                 "throughput": throughput,
                 "avg_response_time": avg_response_time,
                 "min_response_time": min(response_times) if response_times else 0,
@@ -195,18 +205,22 @@ class PerformanceTestProvider:
             self.metrics = {}
             self.start_time = time.perf_counter()
 
-        def record_metric(self, name: str, value: float, tags: dict | None = None) -> None:
+        def record_metric(
+            self, name: str, value: float, tags: dict | None = None
+        ) -> None:
             """Record a performance metric."""
             timestamp = time.perf_counter() - self.start_time
 
             if name not in self.metrics:
                 self.metrics[name] = []
 
-            self.metrics[name].append({
-                "value": value,
-                "timestamp": timestamp,
-                "tags": tags or {},
-            })
+            self.metrics[name].append(
+                {
+                    "value": value,
+                    "timestamp": timestamp,
+                    "tags": tags or {},
+                }
+            )
 
         def get_metric_summary(self, name: str) -> dict[str, t.Any] | None:
             """Get summary statistics for a metric."""
@@ -229,17 +243,22 @@ class PerformanceTestProvider:
     def measure_execution_time(self, func: t.Callable) -> t.Callable:
         """Decorator to measure function execution time."""
         if asyncio.iscoroutinefunction(func):
+
             async def async_wrapper(*args, **kwargs):
                 async with self.PerformanceTimer():
                     return await func(*args, **kwargs)
+
             return async_wrapper
+
         def sync_wrapper(*args, **kwargs):
             with self.PerformanceTimer():
                 return func(*args, **kwargs)
+
         return sync_wrapper
 
     def profile_memory_usage(self, func: t.Callable) -> t.Callable:
         """Decorator to profile memory usage (simplified for testing)."""
+
         def wrapper(*args, **kwargs):
             # Simplified memory profiling simulation
             import os
@@ -266,10 +285,14 @@ class PerformanceTestProvider:
         max_memory: int | None = None,
     ) -> None:
         """Assert that performance is within acceptable thresholds."""
-        assert execution_time <= max_time, f"Execution time {execution_time:.4f}s exceeds threshold {max_time:.4f}s"
+        assert execution_time <= max_time, (
+            f"Execution time {execution_time:.4f}s exceeds threshold {max_time:.4f}s"
+        )
 
         if memory_usage is not None and max_memory is not None:
-            assert memory_usage <= max_memory, f"Memory usage {memory_usage} exceeds threshold {max_memory}"
+            assert memory_usage <= max_memory, (
+                f"Memory usage {memory_usage} exceeds threshold {max_memory}"
+            )
 
     @asynccontextmanager
     async def performance_test_context(self, test_name: str):

@@ -43,8 +43,8 @@ class MockAdapterProvider:
     PROVIDER_METADATA = PROVIDER_METADATA
 
     def __init__(self) -> None:
-        self._mock_instances = {}
-        self._call_history = {}
+        self._mock_instances: dict[str, t.Any] = {}
+        self._call_history: dict[str, list[t.Any]] = {}
 
     def create_cache_mock(self, behavior: dict[str, t.Any] | None = None) -> AsyncMock:
         """Create a realistic cache adapter mock."""
@@ -55,26 +55,29 @@ class MockAdapterProvider:
         default_behavior = {
             "get_delay": 0.001,  # 1ms delay
             "set_delay": 0.002,  # 2ms delay
-            "miss_rate": 0.1,    # 10% cache miss rate
-            "error_rate": 0.0,   # No errors by default
+            "miss_rate": 0.1,  # 10% cache miss rate
+            "error_rate": 0.0,  # No errors by default
         }
 
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_get(key: str):
+        async def mock_get(key: str) -> t.Any:
             if default_behavior["error_rate"] > 0:
                 import random
+
                 if random.random() < default_behavior["error_rate"]:
                     msg = "Mock cache connection error"
                     raise ConnectionError(msg)
 
             # Simulate delay
             import asyncio
+
             await asyncio.sleep(default_behavior["get_delay"])
 
             # Simulate cache misses
             import random
+
             if random.random() < default_behavior["miss_rate"]:
                 return None
 
@@ -82,6 +85,7 @@ class MockAdapterProvider:
 
         async def mock_set(key: str, value: t.Any, ttl: int | None = None) -> bool:
             import asyncio
+
             await asyncio.sleep(default_behavior["set_delay"])
             cache_mock._storage[key] = value
             return True
@@ -104,15 +108,17 @@ class MockAdapterProvider:
         self._mock_instances["cache"] = cache_mock
         return cache_mock
 
-    def create_storage_mock(self, behavior: dict[str, t.Any] | None = None) -> AsyncMock:
+    def create_storage_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> AsyncMock:
         """Create a realistic storage adapter mock."""
         storage_mock = AsyncMock()
         storage_mock._files = {}
 
         default_behavior = {
-            "read_delay": 0.005,   # 5ms delay
+            "read_delay": 0.005,  # 5ms delay
             "write_delay": 0.010,  # 10ms delay
-            "error_rate": 0.0,     # No errors by default
+            "error_rate": 0.0,  # No errors by default
             "max_file_size": 1024 * 1024 * 10,  # 10MB limit
         }
 
@@ -121,13 +127,14 @@ class MockAdapterProvider:
 
         async def mock_read(path: str) -> bytes:
             import asyncio
+
             await asyncio.sleep(default_behavior["read_delay"])
 
             if path not in storage_mock._files:
                 msg = f"File not found: {path}"
                 raise FileNotFoundError(msg)
 
-            return storage_mock._files[path]
+            return t.cast(bytes, storage_mock._files[path])
 
         async def mock_write(path: str, data: bytes) -> bool:
             if len(data) > default_behavior["max_file_size"]:
@@ -135,6 +142,7 @@ class MockAdapterProvider:
                 raise ValueError(msg)
 
             import asyncio
+
             await asyncio.sleep(default_behavior["write_delay"])
             storage_mock._files[path] = data
             return True
@@ -163,15 +171,18 @@ class MockAdapterProvider:
 
         default_behavior = {
             "query_delay": 0.002,  # 2ms delay
-            "error_rate": 0.0,     # No errors by default
-            "max_rows": 1000,      # Query result limit
+            "error_rate": 0.0,  # No errors by default
+            "max_rows": 1000,  # Query result limit
         }
 
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_execute(query: str, params: tuple | None = None):
+        async def mock_execute(
+            query: str, params: tuple[t.Any, ...] | None = None
+        ) -> t.Any:
             import asyncio
+
             await asyncio.sleep(default_behavior["query_delay"])
 
             # Simple query simulation
@@ -181,27 +192,35 @@ class MockAdapterProvider:
                 result_mock.rowcount = 1
                 result_mock.lastrowid = sql_mock._next_id
                 sql_mock._next_id += 1
-            elif query.strip().upper().startswith("UPDATE") or query.strip().upper().startswith("DELETE"):
+            elif query.strip().upper().startswith(
+                "UPDATE"
+            ) or query.strip().upper().startswith("DELETE"):
                 result_mock.rowcount = 1
             else:
                 result_mock.rowcount = 0
 
             return result_mock
 
-        async def mock_fetch_one(query: str, params: tuple | None = None):
+        async def mock_fetch_one(
+            query: str, params: tuple[t.Any, ...] | None = None
+        ) -> dict[str, t.Any] | None:
             import asyncio
+
             await asyncio.sleep(default_behavior["query_delay"])
 
             # Return mock row
             return {"id": 1, "name": "test_record", "active": True}
 
-        async def mock_fetch_all(query: str, params: tuple | None = None):
+        async def mock_fetch_all(
+            query: str, params: tuple[t.Any, ...] | None = None
+        ) -> list[dict[str, t.Any]]:
             import asyncio
+
             await asyncio.sleep(default_behavior["query_delay"])
 
             # Return mock rows (limited by max_rows)
             rows = []
-            for i in range(min(5, default_behavior["max_rows"])):
+            for i in range(min(5, int(default_behavior["max_rows"]))):
                 rows.append({"id": i + 1, "name": f"test_record_{i}", "active": True})
             return rows
 
@@ -220,15 +239,18 @@ class MockAdapterProvider:
 
         default_behavior = {
             "query_delay": 0.003,  # 3ms delay
-            "error_rate": 0.0,     # No errors by default
-            "max_docs": 100,       # Document limit
+            "error_rate": 0.0,  # No errors by default
+            "max_docs": 100,  # Document limit
         }
 
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_find_one(collection: str, query: dict):
+        async def mock_find_one(
+            collection: str, query: dict[str, t.Any]
+        ) -> dict[str, t.Any] | None:
             import asyncio
+
             await asyncio.sleep(default_behavior["query_delay"])
 
             if collection not in nosql_mock._collections:
@@ -237,28 +259,38 @@ class MockAdapterProvider:
             # Simple mock document
             return {"_id": "507f1f77bcf86cd799439011", "name": "test", "active": True}
 
-        async def mock_find_many(collection: str, query: dict):
+        async def mock_find_many(
+            collection: str, query: dict[str, t.Any]
+        ) -> list[dict[str, t.Any]]:
             import asyncio
+
             await asyncio.sleep(default_behavior["query_delay"])
 
             # Return mock documents
             docs = []
-            for i in range(min(3, default_behavior["max_docs"])):
-                docs.append({
-                    "_id": f"507f1f77bcf86cd79943901{i}",
-                    "name": f"test_{i}",
-                    "active": True,
-                })
+            for i in range(min(3, int(default_behavior["max_docs"]))):
+                docs.append(
+                    {
+                        "_id": f"507f1f77bcf86cd79943901{i}",
+                        "name": f"test_{i}",
+                        "active": True,
+                    }
+                )
             return docs
 
-        async def mock_insert_one(collection: str, document: dict):
+        async def mock_insert_one(
+            collection: str, document: dict[str, t.Any]
+        ) -> dict[str, t.Any]:
             import asyncio
+
             await asyncio.sleep(default_behavior["query_delay"])
 
             if collection not in nosql_mock._collections:
                 nosql_mock._collections[collection] = []
 
-            doc_id = f"507f1f77bcf86cd799439{len(nosql_mock._collections[collection]):03d}"
+            doc_id = (
+                f"507f1f77bcf86cd799439{len(nosql_mock._collections[collection]):03d}"
+            )
             document["_id"] = doc_id
             nosql_mock._collections[collection].append(document)
 
@@ -283,24 +315,26 @@ class MockAdapterProvider:
 
         default_behavior = {
             "fetch_delay": 0.010,  # 10ms delay (secrets are slower)
-            "error_rate": 0.0,     # No errors by default
+            "error_rate": 0.0,  # No errors by default
         }
 
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_get_secret(name: str):
+        async def mock_get_secret(name: str) -> str | None:
             import asyncio
+
             await asyncio.sleep(default_behavior["fetch_delay"])
 
             if name not in secret_mock._secrets:
                 msg = f"Secret not found: {name}"
                 raise ValueError(msg)
 
-            return secret_mock._secrets[name]
+            return t.cast(str, secret_mock._secrets[name])
 
         async def mock_set_secret(name: str, value: str) -> bool:
             import asyncio
+
             await asyncio.sleep(default_behavior["fetch_delay"])
             secret_mock._secrets[name] = value
             return True
@@ -327,7 +361,9 @@ class MockAdapterProvider:
         return self._call_history.get(adapter_type, [])
 
     @asynccontextmanager
-    async def mock_adapter_context(self, adapter_type: str, behavior: dict[str, t.Any] | None = None):
+    async def mock_adapter_context(
+        self, adapter_type: str, behavior: dict[str, t.Any] | None = None
+    ) -> t.AsyncGenerator[AsyncMock]:
         """Context manager for temporary mock adapter."""
         # Create mock based on type
         if adapter_type == "cache":

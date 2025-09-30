@@ -26,7 +26,7 @@ class AsyncTestCase(TestCase):
         super().setUp()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        self._async_resources = []
+        self._async_resources: list[t.Any] = []
 
     def tearDown(self) -> None:
         """Cleanup async test environment."""
@@ -47,11 +47,11 @@ class AsyncTestCase(TestCase):
 
         super().tearDown()
 
-    def run_async(self, coro):
+    def run_async(self, coro: t.Awaitable[t.Any]) -> t.Any:
         """Run an async coroutine in the test loop."""
         return self.loop.run_until_complete(coro)
 
-    def register_async_resource(self, resource):
+    def register_async_resource(self, resource: t.Any) -> t.Any:
         """Register an async resource for cleanup."""
         self._async_resources.append(resource)
         return resource
@@ -62,7 +62,7 @@ class AsyncTestCase(TestCase):
     async def async_teardown(self) -> None:
         """Override this method for async teardown logic."""
 
-    def run(self, result=None) -> None:
+    def run(self, result: t.Any = None) -> None:
         """Override run to handle async setup/teardown."""
         # Run async setup
         if hasattr(self, "async_setup"):
@@ -77,7 +77,14 @@ class AsyncTestCase(TestCase):
 
 
 @asynccontextmanager
-async def async_test_fixture(setup_func: t.Callable | None = None, teardown_func: t.Callable | None = None):
+async def async_test_fixture(
+    setup_func: t.Callable[[], t.Any]
+    | t.Callable[[], t.Awaitable[t.Any]]
+    | None = None,
+    teardown_func: t.Callable[[t.Any], t.Any]
+    | t.Callable[[t.Any], t.Awaitable[t.Any]]
+    | None = None,
+) -> t.AsyncGenerator[t.Any]:
     """Async context manager for test fixtures."""
     resource = None
 
@@ -116,7 +123,9 @@ async def cleanup_async_tasks(timeout: float = 5.0) -> None:
 
         # Wait for tasks to complete or timeout
         try:
-            await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=timeout)
+            await asyncio.wait_for(
+                asyncio.gather(*tasks, return_exceptions=True), timeout=timeout
+            )
         except TimeoutError:
             # Force cleanup if timeout exceeded
             for task in tasks:
@@ -165,7 +174,9 @@ async def timeout_async_call(
 
 
 @asynccontextmanager
-async def mock_async_context(mock_class: type = AsyncMock, **mock_kwargs):
+async def mock_async_context(
+    mock_class: type = AsyncMock, **mock_kwargs: t.Any
+) -> t.AsyncGenerator[AsyncMock]:
     """Create a mock async context manager."""
     mock = mock_class(**mock_kwargs)
 
@@ -182,13 +193,19 @@ async def mock_async_context(mock_class: type = AsyncMock, **mock_kwargs):
 class AsyncMockContextManager:
     """Helper class for creating async context manager mocks."""
 
-    def __init__(self, return_value=None, side_effect=None) -> None:
+    def __init__(
+        self,
+        return_value: t.Any = None,
+        side_effect: t.Callable[[], t.Any]
+        | t.Callable[[], t.Awaitable[t.Any]]
+        | None = None,
+    ) -> None:
         self.return_value = return_value
         self.side_effect = side_effect
         self.enter_count = 0
         self.exit_count = 0
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> t.Any:
         self.enter_count += 1
         if self.side_effect:
             if asyncio.iscoroutinefunction(self.side_effect):
@@ -196,11 +213,21 @@ class AsyncMockContextManager:
             return self.side_effect()
         return self.return_value or self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: t.Any,
+    ) -> None:
         self.exit_count += 1
 
 
-def create_async_mock_with_context(return_value=None, side_effect=None) -> AsyncMock:
+def create_async_mock_with_context(
+    return_value: t.Any = None,
+    side_effect: t.Callable[[], t.Any]
+    | t.Callable[[], t.Awaitable[t.Any]]
+    | None = None,
+) -> AsyncMock:
     """Create an AsyncMock that can be used as an async context manager."""
     mock = AsyncMock()
 
@@ -228,7 +255,7 @@ async def run_with_retry(
         except exceptions as e:
             last_exception = e
             if attempt < max_retries:
-                await asyncio.sleep(delay * (backoff_factor ** attempt))
+                await asyncio.sleep(delay * (backoff_factor**attempt))
             else:
                 raise last_exception
     return None
@@ -238,8 +265,8 @@ class AsyncEventWaiter:
     """Helper for waiting on async events."""
 
     def __init__(self) -> None:
-        self._events = {}
-        self._event_data = {}
+        self._events: dict[str, asyncio.Event] = {}
+        self._event_data: dict[str, t.Any] = {}
 
     def create_event(self, name: str) -> asyncio.Event:
         """Create a named event."""
@@ -275,9 +302,12 @@ class AsyncEventWaiter:
             self._event_data.pop(name, None)
 
 
-def async_test(coro_func: t.Callable) -> t.Callable:
+def async_test(
+    coro_func: t.Callable[..., t.Awaitable[t.Any]],
+) -> t.Callable[..., t.Any]:
     """Decorator to run async test functions."""
-    def wrapper(*args, **kwargs):
+
+    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -289,9 +319,11 @@ def async_test(coro_func: t.Callable) -> t.Callable:
 
 
 @asynccontextmanager
-async def temporary_async_task(coro: t.Awaitable[t.Any], name: str | None = None):
+async def temporary_async_task(
+    coro: t.Coroutine[t.Any, t.Any, t.Any], name: str | None = None
+) -> t.AsyncGenerator[asyncio.Task[t.Any]]:
     """Context manager for temporary async tasks."""
-    task = asyncio.create_task(coro, name=name)
+    task: asyncio.Task[t.Any] = asyncio.create_task(coro, name=name)
 
     try:
         yield task
@@ -306,9 +338,9 @@ class AsyncResourceManager:
     """Manager for async resources with automatic cleanup."""
 
     def __init__(self) -> None:
-        self._resources = []
+        self._resources: list[t.Any] = []
 
-    def register(self, resource):
+    def register(self, resource: t.Any) -> t.Any:
         """Register a resource for cleanup."""
         self._resources.append(resource)
         return resource
@@ -326,16 +358,22 @@ class AsyncResourceManager:
 
         self._resources.clear()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AsyncResourceManager":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: t.Any,
+    ) -> None:
         await self.cleanup_all()
 
 
 def create_async_generator_mock(items: list[t.Any]) -> AsyncMock:
     """Create a mock async generator."""
-    async def async_generator():
+
+    async def async_generator() -> t.AsyncGenerator[t.Any]:
         for item in items:
             yield item
 
@@ -366,7 +404,9 @@ async def assert_async_raises(
 
 
 @asynccontextmanager
-async def async_timeout_context(timeout: float, message: str | None = None):
+async def async_timeout_context(
+    timeout: float, message: str | None = None
+) -> t.AsyncGenerator[None]:
     """Context manager that raises TimeoutError if operations take too long."""
     try:
         async with asyncio.timeout(timeout):

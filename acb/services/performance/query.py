@@ -19,6 +19,8 @@ from acb.depends import depends
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
+SERVICE_METADATA: t.Any = None
+
 try:
     from ..discovery import (
         ServiceCapability,
@@ -343,7 +345,7 @@ class QueryOptimizer(ServiceBase):
             r"\b\d+\b", "?", normalized
         )  # REGEX OK: Query normalization
 
-        return hashlib.md5(normalized.encode()).hexdigest()
+        return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()
 
     def _classify_query(self, query: str) -> QueryType:
         """Classify query type.

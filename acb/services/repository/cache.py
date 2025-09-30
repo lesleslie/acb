@@ -151,7 +151,9 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
 
         # Sort for consistency
         sorted_data = json.dumps(key_data, sort_keys=True)
-        hash_suffix = hashlib.md5(sorted_data.encode()).hexdigest()[:8]
+        hash_suffix = hashlib.md5(
+            sorted_data.encode(), usedforsecurity=False
+        ).hexdigest()[:8]
 
         return f"{self.cache_settings.key_prefix}:query:{self.entity_name.lower()}:{operation}:{hash_suffix}"
 
@@ -159,7 +161,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         """Build cache key for count operation."""
         if filters:
             filter_hash = hashlib.md5(
-                json.dumps(filters, sort_keys=True).encode()
+                json.dumps(filters, sort_keys=True).encode(), usedforsecurity=False
             ).hexdigest()[:8]
             return f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:{filter_hash}"
         else:

@@ -18,6 +18,8 @@ from acb.depends import depends
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
+SERVICE_METADATA: t.Any = None
+
 try:
     from ..discovery import (
         ServiceCapability,
@@ -133,8 +135,11 @@ class MetricsCollector(ServiceBase):
         self._settings: MetricsCollectorSettings = self._settings  # type: ignore
 
         # Metrics storage with bounded queues
+        def _create_deque() -> deque[PerformanceMetric]:
+            return deque(maxlen=self._settings.max_data_points)
+
         self._metrics_data: dict[str, deque[PerformanceMetric]] = defaultdict(
-            lambda: deque(maxlen=self._settings.max_data_points)
+            _create_deque
         )
         self._collection_task: asyncio.Task[t.Any] | None = None
         self._start_time = time.time()
@@ -163,7 +168,9 @@ class MetricsCollector(ServiceBase):
             "collection_running": (
                 self._collection_task is not None and not self._collection_task.done()
             ),
-            "uptime_seconds": time.time() - self._start_time,
+            "uptime_seconds": time.time() - self._start_time
+            if self._start_time is not None
+            else 0.0,
         }
 
     async def record_metric(
@@ -231,7 +238,9 @@ class MetricsCollector(ServiceBase):
         if duration_ms is not None:
             await self.record_metric("cache_duration", duration_ms, tags)
 
-    async def record_error(self, error_type: str, endpoint: str | None = None) -> None:
+    async def record_error_metric(
+        self, error_type: str, endpoint: str | None = None
+    ) -> None:
         """Record error metric.
 
         Args:

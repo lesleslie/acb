@@ -46,14 +46,16 @@ class MockActionProvider:
         self._mock_instances = {}
         self._call_history = {}
 
-    def create_compress_action_mock(self, behavior: dict[str, t.Any] | None = None) -> MagicMock:
+    def create_compress_action_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> MagicMock:
         """Create a realistic compress action mock."""
         compress_mock = MagicMock()
 
         default_behavior = {
-            "compression_ratio": 0.6,    # 60% compression ratio
-            "processing_delay": 0.001,   # 1ms processing time
-            "error_rate": 0.0,           # No errors by default
+            "compression_ratio": 0.6,  # 60% compression ratio
+            "processing_delay": 0.001,  # 1ms processing time
+            "error_rate": 0.0,  # No errors by default
         }
 
         if behavior:
@@ -61,9 +63,11 @@ class MockActionProvider:
 
         def mock_gzip_compress(data: bytes) -> bytes:
             import time
+
             time.sleep(default_behavior["processing_delay"])
 
             import random
+
             if random.random() < default_behavior["error_rate"]:
                 msg = "Compression failed"
                 raise RuntimeError(msg)
@@ -74,6 +78,7 @@ class MockActionProvider:
 
         def mock_gzip_decompress(data: bytes) -> bytes:
             import time
+
             time.sleep(default_behavior["processing_delay"])
 
             # Simple decompression simulation
@@ -83,6 +88,7 @@ class MockActionProvider:
 
         def mock_brotli_compress(data: bytes) -> bytes:
             import time
+
             time.sleep(default_behavior["processing_delay"])
 
             # Better compression ratio for brotli
@@ -92,6 +98,7 @@ class MockActionProvider:
 
         def mock_brotli_decompress(data: bytes) -> bytes:
             import time
+
             time.sleep(default_behavior["processing_delay"])
 
             if data.startswith(b"brotli_"):
@@ -107,27 +114,43 @@ class MockActionProvider:
         self._mock_instances["compress"] = compress_mock
         return compress_mock
 
-    def create_encode_action_mock(self, behavior: dict[str, t.Any] | None = None) -> MagicMock:
+    def create_encode_action_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> MagicMock:
         """Create a realistic encode action mock."""
         encode_mock = MagicMock()
 
         default_behavior = {
-            "encoding_delay": 0.0005,    # 0.5ms encoding time
-            "error_rate": 0.0,           # No errors by default
-            "validate_json": True,       # Validate JSON structure
+            "encoding_delay": 0.0005,  # 0.5ms encoding time
+            "error_rate": 0.0,  # No errors by default
+            "validate_json": True,  # Validate JSON structure
         }
 
         if behavior:
             default_behavior.update(behavior)
 
         # Assign behaviors using helper methods
-        encode_mock.json_encode.side_effect = lambda data: self._mock_json_encode(data, default_behavior)
-        encode_mock.json_decode.side_effect = lambda data: self._mock_json_decode(data, default_behavior)
-        encode_mock.yaml_encode.side_effect = lambda data: self._mock_yaml_encode(data, default_behavior)
-        encode_mock.yaml_decode.side_effect = lambda data: self._mock_yaml_decode(data, default_behavior)
-        encode_mock.toml_encode.side_effect = lambda data: self._mock_toml_encode(data, default_behavior)
-        encode_mock.msgpack_encode.side_effect = lambda data: self._mock_msgpack_encode(data, default_behavior)
-        encode_mock.msgpack_decode.side_effect = lambda data: self._mock_msgpack_decode(data, default_behavior)
+        encode_mock.json_encode.side_effect = lambda data: self._mock_json_encode(
+            data, default_behavior
+        )
+        encode_mock.json_decode.side_effect = lambda data: self._mock_json_decode(
+            data, default_behavior
+        )
+        encode_mock.yaml_encode.side_effect = lambda data: self._mock_yaml_encode(
+            data, default_behavior
+        )
+        encode_mock.yaml_decode.side_effect = lambda data: self._mock_yaml_decode(
+            data, default_behavior
+        )
+        encode_mock.toml_encode.side_effect = lambda data: self._mock_toml_encode(
+            data, default_behavior
+        )
+        encode_mock.msgpack_encode.side_effect = lambda data: self._mock_msgpack_encode(
+            data, default_behavior
+        )
+        encode_mock.msgpack_decode.side_effect = lambda data: self._mock_msgpack_decode(
+            data, default_behavior
+        )
 
         self._mock_instances["encode"] = encode_mock
         return encode_mock
@@ -174,6 +197,7 @@ class MockActionProvider:
     def _mock_yaml_encode(self, data: t.Any, behavior: dict) -> str:
         """Helper for YAML encoding mock."""
         import time
+
         time.sleep(behavior["encoding_delay"])
 
         # Simple YAML simulation
@@ -187,6 +211,7 @@ class MockActionProvider:
     def _mock_yaml_decode(self, data: str, behavior: dict) -> t.Any:
         """Helper for YAML decoding mock."""
         import time
+
         time.sleep(behavior["encoding_delay"])
 
         # Simple YAML parsing simulation
@@ -200,6 +225,7 @@ class MockActionProvider:
     def _mock_toml_encode(self, data: dict, behavior: dict) -> str:
         """Helper for TOML encoding mock."""
         import time
+
         time.sleep(behavior["encoding_delay"])
 
         # Simple TOML simulation
@@ -214,6 +240,7 @@ class MockActionProvider:
     def _mock_msgpack_encode(self, data: t.Any, behavior: dict) -> bytes:
         """Helper for msgpack encoding mock."""
         import time
+
         time.sleep(behavior["encoding_delay"])
 
         # Simple msgpack simulation (just use string representation)
@@ -222,6 +249,7 @@ class MockActionProvider:
     def _mock_msgpack_decode(self, data: bytes, behavior: dict) -> t.Any:
         """Helper for msgpack decoding mock."""
         import time
+
         time.sleep(behavior["encoding_delay"])
 
         # Simple msgpack decoding simulation
@@ -231,13 +259,15 @@ class MockActionProvider:
             return text[8:]
         return text
 
-    def create_hash_action_mock(self, behavior: dict[str, t.Any] | None = None) -> MagicMock:
+    def create_hash_action_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> MagicMock:
         """Create a realistic hash action mock."""
         hash_mock = MagicMock()
 
         default_behavior = {
-            "hash_delay": 0.0001,        # 0.1ms hashing time
-            "hash_length": 32,           # Default hash length
+            "hash_delay": 0.0001,  # 0.1ms hashing time
+            "hash_length": 32,  # Default hash length
             "use_random_hashes": False,  # Use deterministic hashes for testing
         }
 
@@ -252,6 +282,7 @@ class MockActionProvider:
 
             if default_behavior["use_random_hashes"]:
                 import random
+
                 return "".join(random.choices("0123456789abcdef", k=64))
             # Use SHA256 as blake3 substitute for testing
             return hashlib.sha256(data).hexdigest()
@@ -264,8 +295,9 @@ class MockActionProvider:
 
             if default_behavior["use_random_hashes"]:
                 import random
+
                 return "".join(random.choices("0123456789abcdef", k=32))
-            return hashlib.md5(data).hexdigest()
+            return hashlib.md5(data, usedforsecurity=False).hexdigest()
 
         def mock_crc32c_hash(data: bytes) -> str:
             import binascii
@@ -275,9 +307,10 @@ class MockActionProvider:
 
             if default_behavior["use_random_hashes"]:
                 import random
-                return f"{random.randint(0, 2**32-1):08x}"
+
+                return f"{random.randint(0, 2**32 - 1):08x}"
             # Use standard CRC32 as crc32c substitute
-            return f"{binascii.crc32(data) & 0xffffffff:08x}"
+            return f"{binascii.crc32(data) & 0xFFFFFFFF:08x}"
 
         def mock_sha256_hash(data: bytes) -> str:
             import hashlib
@@ -287,6 +320,7 @@ class MockActionProvider:
 
             if default_behavior["use_random_hashes"]:
                 import random
+
                 return "".join(random.choices("0123456789abcdef", k=64))
             return hashlib.sha256(data).hexdigest()
 
@@ -313,20 +347,26 @@ class MockActionProvider:
         """Get call history for a specific action type."""
         return self._call_history.get(action_type, [])
 
-    def record_call(self, action_type: str, method: str, args: tuple, kwargs: dict) -> None:
+    def record_call(
+        self, action_type: str, method: str, args: tuple, kwargs: dict
+    ) -> None:
         """Record a method call for analysis."""
         if action_type not in self._call_history:
             self._call_history[action_type] = []
 
-        self._call_history[action_type].append({
-            "method": method,
-            "args": args,
-            "kwargs": kwargs,
-            "timestamp": "2024-01-01T12:00:00Z",  # Mock timestamp
-        })
+        self._call_history[action_type].append(
+            {
+                "method": method,
+                "args": args,
+                "kwargs": kwargs,
+                "timestamp": "2024-01-01T12:00:00Z",  # Mock timestamp
+            }
+        )
 
     @contextmanager
-    def mock_action_context(self, action_type: str, behavior: dict[str, t.Any] | None = None):
+    def mock_action_context(
+        self, action_type: str, behavior: dict[str, t.Any] | None = None
+    ):
         """Context manager for temporary mock action."""
         # Create mock based on type
         if action_type == "compress":

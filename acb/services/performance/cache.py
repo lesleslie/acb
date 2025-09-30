@@ -19,6 +19,8 @@ from acb.depends import depends
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
+SERVICE_METADATA: t.Any = None
+
 try:
     from ..discovery import (
         ServiceCapability,

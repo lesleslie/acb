@@ -22,6 +22,8 @@ from acb.depends import depends
 from .._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
+SERVERLESS_OPTIMIZER_METADATA: t.Any = None
+
 try:
     from ..discovery import (
         ServiceCapability,
@@ -189,13 +191,15 @@ class ServerlessOptimizer(ServiceBase):
                 adapter_instance = depends.get(adapter_class)
 
                 # Initialize adapter if it has async initialization
-                if hasattr(adapter_instance, 'initialize'):
+                if hasattr(adapter_instance, "initialize"):
                     await adapter_instance.initialize()
 
                 self._preloaded_adapters[adapter_name] = adapter_instance
                 duration = (time.perf_counter() - start_time) * 1000
 
-                self.logger.debug(f"Preloaded {adapter_name} adapter in {duration:.2f}ms")
+                self.logger.debug(
+                    f"Preloaded {adapter_name} adapter in {duration:.2f}ms"
+                )
                 self._cold_start_metrics.resources_preloaded += 1
 
             except Exception as e:
@@ -211,8 +215,8 @@ class ServerlessOptimizer(ServiceBase):
         count = self._cold_start_metrics.cold_starts_count
         current_avg = self._cold_start_metrics.average_cold_start_time_ms
         self._cold_start_metrics.average_cold_start_time_ms = (
-            (current_avg * (count - 1) + duration) / count
-        )
+            current_avg * (count - 1) + duration
+        ) / count
 
     async def _resource_cleanup_loop(self) -> None:
         """Background resource cleanup loop."""
@@ -240,13 +244,13 @@ class ServerlessOptimizer(ServiceBase):
             # Cleanup idle adapters (basic implementation)
             idle_adapters = []
             for name, adapter in self._preloaded_adapters.items():
-                if hasattr(adapter, '_last_used_time'):
-                    last_used = getattr(adapter, '_last_used_time', time.perf_counter())
+                if hasattr(adapter, "_last_used_time"):
+                    last_used = getattr(adapter, "_last_used_time", time.perf_counter())
                     if time.perf_counter() - last_used > self._settings.max_idle_time:
                         idle_adapters.append(name)
 
             for name in idle_adapters:
-                if hasattr(self._preloaded_adapters[name], 'cleanup'):
+                if hasattr(self._preloaded_adapters[name], "cleanup"):
                     await self._preloaded_adapters[name].cleanup()
                 del self._preloaded_adapters[name]
                 self.logger.debug(f"Cleaned up idle adapter: {name}")
@@ -258,6 +262,7 @@ class ServerlessOptimizer(ServiceBase):
         """Monitor and report memory usage."""
         try:
             import psutil
+
             process = psutil.Process()
             memory_mb = process.memory_info().rss / 1024 / 1024
             self._cold_start_metrics.memory_usage_mb = memory_mb
@@ -308,13 +313,15 @@ class LazyInitializer(CleanupMixin):
                 self._initialized = True
 
                 # Register for cleanup if the instance supports it
-                if hasattr(self._instance, 'cleanup'):
+                if hasattr(self._instance, "cleanup"):
                     self.register_resource(self._instance)
 
                 return self._instance
 
             except TimeoutError:
-                raise RuntimeError(f"Lazy initialization timed out after {self._timeout}s")
+                raise RuntimeError(
+                    f"Lazy initialization timed out after {self._timeout}s"
+                )
 
     @property
     def is_initialized(self) -> bool:
@@ -324,7 +331,7 @@ class LazyInitializer(CleanupMixin):
     async def reset(self) -> None:
         """Reset the lazy initializer, clearing the cached instance."""
         async with self._initialization_lock:
-            if self._instance and hasattr(self._instance, 'cleanup'):
+            if self._instance and hasattr(self._instance, "cleanup"):
                 await self._instance.cleanup()
             self._instance = None
             self._initialized = False
@@ -349,7 +356,7 @@ class AdapterPreInitializer:
                 adapter_class = import_adapter(adapter_name)
                 adapter_instance = depends.get(adapter_class)
 
-                if hasattr(adapter_instance, 'initialize'):
+                if hasattr(adapter_instance, "initialize"):
                     await adapter_instance.initialize()
 
                 self._preinitialized[adapter_name] = adapter_instance
@@ -360,7 +367,7 @@ class AdapterPreInitializer:
                     adapter_class = import_adapter(adapter_name)
                     adapter_instance = depends.get(adapter_class)
 
-                    if hasattr(adapter_instance, 'initialize'):
+                    if hasattr(adapter_instance, "initialize"):
                         await adapter_instance.initialize()
 
                     return adapter_instance
@@ -462,6 +469,7 @@ class ServerlessResourceCleanup(CleanupMixin):
             except Exception as e:
                 # Log error but continue cleanup loop
                 import logging
+
                 logging.getLogger(__name__).error(f"Cleanup loop error: {e}")
 
     async def _perform_cleanup(self) -> None:
@@ -471,27 +479,33 @@ class ServerlessResourceCleanup(CleanupMixin):
         # Use list() to avoid set changing during iteration
         for resource in list(self._tracked_resources):
             try:
-                if hasattr(resource, 'cleanup'):
+                if hasattr(resource, "cleanup"):
                     await resource.cleanup()
                     cleanup_count += 1
 
             except Exception as e:
                 import logging
+
                 logging.getLogger(__name__).error(f"Error cleaning up resource: {e}")
 
         if cleanup_count > 0:
             import logging
+
             logging.getLogger(__name__).info(f"Cleaned up {cleanup_count} resources")
 
 
 # Convenience functions for optimization
 
+
 def optimize_cold_start(
     preload_adapters: list[str] | None = None,
-) -> t.Callable[[t.Callable[..., t.Awaitable[t.Any]]], t.Callable[..., t.Awaitable[t.Any]]]:
+) -> t.Callable[
+    [t.Callable[..., t.Awaitable[t.Any]]], t.Callable[..., t.Awaitable[t.Any]]
+]:
     """Decorator to optimize function cold starts."""
+
     def decorator(
-        func: t.Callable[..., t.Awaitable[t.Any]]
+        func: t.Callable[..., t.Awaitable[t.Any]],
     ) -> t.Callable[..., t.Awaitable[t.Any]]:
         @wraps(func)
         async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -500,16 +514,22 @@ def optimize_cold_start(
 
             try:
                 result = await func(*args, **kwargs)
-                (time.perf_counter() - start_time) * 1000
+                duration_ms = (time.perf_counter() - start_time) * 1000
 
                 # Could track warm start metrics here
+                # self._track_warm_start(duration_ms) if needed
+                _ = duration_ms  # Placeholder for future metrics tracking
                 return result
 
             except Exception:
-                (time.perf_counter() - start_time) * 1000
+                duration_ms = (time.perf_counter() - start_time) * 1000
+                # Could track failed execution metrics here
+                # self._track_failed_execution(duration_ms) if needed
+                _ = duration_ms  # Placeholder for future metrics tracking
                 raise
 
         return wrapper
+
     return decorator
 
 
@@ -554,7 +574,9 @@ class AdaptiveConnectionPool:
         self._last_scale_time = time.time()
         self._creation_lock = asyncio.Lock()
 
-    async def acquire(self, connection_factory: t.Callable[[], t.Awaitable[t.Any]]) -> t.Any:
+    async def acquire(
+        self, connection_factory: t.Callable[[], t.Awaitable[t.Any]]
+    ) -> t.Any:
         """Acquire a connection from the pool."""
         # Try to get an existing connection
         if self._pool:
@@ -597,9 +619,12 @@ class AdaptiveConnectionPool:
             return
 
         total_connections = len(self._pool) + len(self._active_connections)
-        if total_connections > self._min_connections and len(self._active_connections) == 0:
+        if (
+            total_connections > self._min_connections
+            and len(self._active_connections) == 0
+        ):
             # Close idle connections
-            connections_to_close = list(self._pool)[:-self._min_connections]
+            connections_to_close = list(self._pool)[: -self._min_connections]
             for conn in connections_to_close:
                 self._pool.remove(conn)
                 await self._close_connection(conn)
@@ -610,16 +635,16 @@ class AdaptiveConnectionPool:
         """Check if a connection is still healthy."""
         try:
             # Basic health check - override in subclasses for specific protocols
-            return hasattr(connection, 'is_closed') and not connection.is_closed
+            return hasattr(connection, "is_closed") and not connection.is_closed
         except Exception:
             return False
 
     async def _close_connection(self, connection: t.Any) -> None:
         """Close a connection safely."""
         try:
-            if hasattr(connection, 'close'):
+            if hasattr(connection, "close"):
                 await connection.close()
-            elif hasattr(connection, 'disconnect'):
+            elif hasattr(connection, "disconnect"):
                 await connection.disconnect()
         except Exception:
             pass  # Ignore close errors
@@ -724,9 +749,13 @@ class ServerlessTieredCache:
         estimated_size = len(str(value)) / 1024 / 1024  # Convert to MB
 
         # Evict if necessary
-        while self._memory_usage_mb + estimated_size > self._memory_limit_mb and self._memory_cache:
-            oldest_key = min(self._memory_cache.keys(),
-                           key=lambda k: self._memory_cache[k][1])
+        while (
+            self._memory_usage_mb + estimated_size > self._memory_limit_mb
+            and self._memory_cache
+        ):
+            oldest_key = min(
+                self._memory_cache.keys(), key=lambda k: self._memory_cache[k][1]
+            )
             del self._memory_cache[oldest_key]
             self._memory_usage_mb *= 0.9  # Rough adjustment
 
@@ -758,9 +787,12 @@ class ServerlessTieredCache:
         """Get cache statistics."""
         total_requests = sum(self._cache_stats.values())
         hit_rate = (
-            (self._cache_stats["memory_hits"] +
-             self._cache_stats["redis_hits"] +
-             self._cache_stats["storage_hits"]) / max(total_requests, 1)
+            (
+                self._cache_stats["memory_hits"]
+                + self._cache_stats["redis_hits"]
+                + self._cache_stats["storage_hits"]
+            )
+            / max(total_requests, 1)
         ) * 100
 
         return {
@@ -778,7 +810,9 @@ class DeferredInitializer:
     """
 
     def __init__(self) -> None:
-        self._initializers: dict[str, tuple[t.Callable[[], t.Awaitable[t.Any]], int]] = {}
+        self._initializers: dict[
+            str, tuple[t.Callable[[], t.Awaitable[t.Any]], int]
+        ] = {}
         self._initialized: dict[str, t.Any] = {}
         self._initialization_order: list[str] = []
         self._locks: dict[str, asyncio.Lock] = {}
@@ -787,7 +821,7 @@ class DeferredInitializer:
         self,
         name: str,
         factory: t.Callable[[], t.Awaitable[t.Any]],
-        priority: int = 100
+        priority: int = 100,
     ) -> None:
         """Register a deferred initializer."""
         self._initializers[name] = (factory, priority)
@@ -815,17 +849,13 @@ class DeferredInitializer:
     async def initialize_by_priority(self, max_concurrent: int = 3) -> None:
         """Initialize resources by priority order."""
         # Sort by priority (lower numbers = higher priority)
-        sorted_items = sorted(
-            self._initializers.items(),
-            key=lambda x: x[1][1]
-        )
+        sorted_items = sorted(self._initializers.items(), key=lambda x: x[1][1])
 
         # Initialize in batches to avoid overwhelming the system
         for i in range(0, len(sorted_items), max_concurrent):
-            batch = sorted_items[i:i + max_concurrent]
+            batch = sorted_items[i : i + max_concurrent]
             await asyncio.gather(
-                *[self.get(name) for name, _ in batch],
-                return_exceptions=True
+                *[self.get(name) for name, _ in batch], return_exceptions=True
             )
 
     def is_initialized(self, name: str) -> bool:
@@ -839,8 +869,7 @@ class DeferredInitializer:
             "initialized_count": len(self._initialized),
             "initialization_order": self._initialization_order.copy(),
             "pending": [
-                name for name in self._initializers
-                if name not in self._initialized
+                name for name in self._initializers if name not in self._initialized
             ],
         }
 
@@ -874,7 +903,9 @@ class MemoryEfficientProcessor:
         processor: t.Callable[[list[t.Any]], t.Awaitable[list[t.Any]]],
     ) -> t.AsyncGenerator[t.Any]:
         """Process items efficiently based on memory constraints."""
-        items_count = len(items) if hasattr(items, '__len__') else None
+        from collections.abc import Sized
+
+        items_count = len(items) if isinstance(items, Sized) else None
 
         # Use streaming for large datasets
         if items_count and items_count > self._stream_threshold:
@@ -953,6 +984,7 @@ class MemoryEfficientProcessor:
         """Monitor memory usage and warn if approaching limits."""
         try:
             import psutil
+
             process = psutil.Process()
             memory_mb = process.memory_info().rss / 1024 / 1024
             self._current_memory_mb = memory_mb
@@ -960,6 +992,7 @@ class MemoryEfficientProcessor:
             if memory_mb > self._max_memory_mb * 0.8:  # 80% threshold
                 self._processing_stats["memory_warnings"] += 1
                 import logging
+
                 logging.getLogger(__name__).warning(
                     f"High memory usage: {memory_mb:.1f}MB / {self._max_memory_mb}MB"
                 )
@@ -974,6 +1007,7 @@ class MemoryEfficientProcessor:
             "memory_limit_mb": self._max_memory_mb,
             "memory_utilization_percent": (
                 self._current_memory_mb / self._max_memory_mb * 100
-                if self._max_memory_mb > 0 else 0
+                if self._max_memory_mb > 0
+                else 0
             ),
         }

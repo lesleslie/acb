@@ -20,7 +20,9 @@ from acb.config import Config
 from acb.depends import depends
 
 
-def assert_adapter_interface(adapter_class: type, expected_methods: list[str] | None = None) -> None:
+def assert_adapter_interface(
+    adapter_class: type, expected_methods: list[str] | None = None
+) -> None:
     """Assert that an adapter implements the expected interface."""
     if expected_methods is None:
         # Common adapter methods
@@ -30,17 +32,23 @@ def assert_adapter_interface(adapter_class: type, expected_methods: list[str] | 
         ]
 
     for method_name in expected_methods:
-        assert hasattr(adapter_class, method_name), f"Adapter missing method: {method_name}"
+        assert hasattr(adapter_class, method_name), (
+            f"Adapter missing method: {method_name}"
+        )
 
         method = getattr(adapter_class, method_name)
         assert callable(method), f"Adapter method {method_name} is not callable"
 
         # Check if async method
         if method_name.startswith("_") or asyncio.iscoroutinefunction(method):
-            assert asyncio.iscoroutinefunction(method), f"Method {method_name} should be async"
+            assert asyncio.iscoroutinefunction(method), (
+                f"Method {method_name} should be async"
+            )
 
 
-def assert_service_interface(service_class: type, expected_methods: list[str] | None = None) -> None:
+def assert_service_interface(
+    service_class: type, expected_methods: list[str] | None = None
+) -> None:
     """Assert that a service implements the expected interface."""
     if expected_methods is None:
         # Common service methods vary by type, but check basic structure
@@ -54,20 +62,26 @@ def assert_service_interface(service_class: type, expected_methods: list[str] | 
         assert hasattr(metadata, "category"), "Service metadata should have category"
 
     for method_name in expected_methods:
-        assert hasattr(service_class, method_name), f"Service missing method: {method_name}"
+        assert hasattr(service_class, method_name), (
+            f"Service missing method: {method_name}"
+        )
 
         method = getattr(service_class, method_name)
         assert callable(method), f"Service method {method_name} is not callable"
 
 
-def assert_action_interface(action_module: t.Any, expected_functions: list[str] | None = None) -> None:
+def assert_action_interface(
+    action_module: t.Any, expected_functions: list[str] | None = None
+) -> None:
     """Assert that an action module implements the expected interface."""
     if expected_functions is None:
         # Actions typically have these patterns
         expected_functions = []
 
     for function_name in expected_functions:
-        assert hasattr(action_module, function_name), f"Action missing function: {function_name}"
+        assert hasattr(action_module, function_name), (
+            f"Action missing function: {function_name}"
+        )
 
         function = getattr(action_module, function_name)
         assert callable(function), f"Action function {function_name} is not callable"
@@ -102,7 +116,11 @@ def create_test_config(overrides: dict[str, t.Any] | None = None) -> Config:
         def deep_merge(base: dict, override: dict) -> dict:
             result = base.copy()
             for key, value in override.items():
-                if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                if (
+                    key in result
+                    and isinstance(result[key], dict)
+                    and isinstance(value, dict)
+                ):
                     result[key] = deep_merge(result[key], value)
                 else:
                     result[key] = value
@@ -196,7 +214,9 @@ async def create_test_service(service_type: str, config: dict | None = None) -> 
             mock_service.get_status = AsyncMock(return_value="healthy")
 
         elif service_type == "validation":
-            mock_service.validate = AsyncMock(return_value={"valid": True, "errors": []})
+            mock_service.validate = AsyncMock(
+                return_value={"valid": True, "errors": []}
+            )
             mock_service.sanitize = AsyncMock(return_value="clean data")
 
         return mock_service
@@ -231,7 +251,6 @@ async def setup_test_environment(config: dict | None = None) -> dict[str, t.Any]
         "status": "ready",
         "created_at": "2024-01-01T12:00:00Z",
     }
-
 
 
 async def teardown_test_environment(environment: dict[str, t.Any]) -> None:
@@ -279,24 +298,29 @@ async def run_acb_test_suite(
                     # Wrap sync function in async
                     async def async_wrapper():
                         return test_func()
+
                     tasks.append(async_wrapper())
 
             test_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for i, result in enumerate(test_results):
                 if isinstance(result, Exception):
-                    results.append({
-                        "test": test_functions[i].__name__,
-                        "status": "failed",
-                        "error": str(result),
-                        "error_type": type(result).__name__,
-                    })
+                    results.append(
+                        {
+                            "test": test_functions[i].__name__,
+                            "status": "failed",
+                            "error": str(result),
+                            "error_type": type(result).__name__,
+                        }
+                    )
                 else:
-                    results.append({
-                        "test": test_functions[i].__name__,
-                        "status": "passed",
-                        "result": result,
-                    })
+                    results.append(
+                        {
+                            "test": test_functions[i].__name__,
+                            "status": "passed",
+                            "result": result,
+                        }
+                    )
 
         else:
             # Run tests sequentially
@@ -307,19 +331,23 @@ async def run_acb_test_suite(
                     else:
                         result = test_func()
 
-                    results.append({
-                        "test": test_func.__name__,
-                        "status": "passed",
-                        "result": result,
-                    })
+                    results.append(
+                        {
+                            "test": test_func.__name__,
+                            "status": "passed",
+                            "result": result,
+                        }
+                    )
 
                 except Exception as e:
-                    results.append({
-                        "test": test_func.__name__,
-                        "status": "failed",
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                    })
+                    results.append(
+                        {
+                            "test": test_func.__name__,
+                            "status": "failed",
+                            "error": str(e),
+                            "error_type": type(e).__name__,
+                        }
+                    )
 
     finally:
         # Always cleanup
@@ -336,7 +364,9 @@ async def run_acb_test_suite(
         "total_tests": len(test_functions),
         "passed": len(passed_tests),
         "failed": len(failed_tests),
-        "success_rate": len(passed_tests) / len(test_functions) if test_functions else 1.0,
+        "success_rate": len(passed_tests) / len(test_functions)
+        if test_functions
+        else 1.0,
         "execution_time": execution_time,
         "parallel": parallel,
         "results": results,
@@ -345,19 +375,26 @@ async def run_acb_test_suite(
     }
 
 
-
-def validate_test_result(result: dict[str, t.Any], expected_status: str = "passed") -> None:
+def validate_test_result(
+    result: dict[str, t.Any], expected_status: str = "passed"
+) -> None:
     """Validate that a test result meets expectations."""
     assert "status" in result, "Test result missing status"
-    assert result["status"] == expected_status, f"Expected {expected_status}, got {result['status']}"
+    assert result["status"] == expected_status, (
+        f"Expected {expected_status}, got {result['status']}"
+    )
 
     if expected_status == "passed":
-        assert "error" not in result or result["error"] is None, "Passed test should not have errors"
+        assert "error" not in result or result["error"] is None, (
+            "Passed test should not have errors"
+        )
     elif expected_status == "failed":
         assert "error" in result, "Failed test should have error information"
 
 
-def create_mock_dependency(interface_type: type, behavior: dict | None = None) -> MagicMock:
+def create_mock_dependency(
+    interface_type: type, behavior: dict | None = None
+) -> MagicMock:
     """Create a mock dependency that implements a specific interface."""
     mock = MagicMock(spec=interface_type)
 

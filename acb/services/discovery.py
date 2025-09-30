@@ -308,6 +308,14 @@ core_services = [
         enabled=False,
         installed=True,
     ),
+    Service(
+        name="events_service",
+        module="acb.events",
+        class_name="EventsService",
+        category="events",
+        enabled=False,
+        installed=True,
+    ),
 ]
 
 

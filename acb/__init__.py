@@ -1,4 +1,5 @@
 import typing as t
+from contextlib import suppress
 from inspect import currentframe
 
 # Rich.repr import removed - not used in refactored code

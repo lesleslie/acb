@@ -82,13 +82,19 @@ class SecurityTestProvider:
 
         for vuln_type, patterns in self._vulnerability_patterns.items():
             for pattern in patterns:
-                if re.search(pattern, input_data):  # REGEX OK: security vulnerability scanning
-                    vulnerabilities.append({
-                        "type": vuln_type,
-                        "pattern": pattern,
-                        "severity": self._get_severity(vuln_type),
-                        "description": self._get_vulnerability_description(vuln_type),
-                    })
+                if re.search(
+                    pattern, input_data
+                ):  # REGEX OK: security vulnerability scanning
+                    vulnerabilities.append(
+                        {
+                            "type": vuln_type,
+                            "pattern": pattern,
+                            "severity": self._get_severity(vuln_type),
+                            "description": self._get_vulnerability_description(
+                                vuln_type
+                            ),
+                        }
+                    )
 
         return {
             "input": input_data,
@@ -97,7 +103,6 @@ class SecurityTestProvider:
             "risk_level": self._calculate_risk_level(vulnerabilities),
             "scan_timestamp": "2024-01-01T12:00:00Z",
         }
-
 
     def _get_severity(self, vuln_type: str) -> str:
         """Get severity level for vulnerability type."""
@@ -125,7 +130,9 @@ class SecurityTestProvider:
             return "LOW"
 
         severity_scores = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
-        max_severity = max((severity_scores.get(v["severity"], 1) for v in vulnerabilities), default=1)
+        max_severity = max(
+            (severity_scores.get(v["severity"], 1) for v in vulnerabilities), default=1
+        )
 
         if max_severity >= 4:
             return "CRITICAL"
@@ -135,7 +142,9 @@ class SecurityTestProvider:
             return "MEDIUM"
         return "LOW"
 
-    def validate_input_sanitization(self, original: str, sanitized: str) -> dict[str, t.Any]:
+    def validate_input_sanitization(
+        self, original: str, sanitized: str
+    ) -> dict[str, t.Any]:
         """Validate that input sanitization was effective."""
         original_vulns = self.scan_for_vulnerabilities(original)
         sanitized_vulns = self.scan_for_vulnerabilities(sanitized)
@@ -144,12 +153,15 @@ class SecurityTestProvider:
             "original_vulnerabilities": original_vulns["vulnerabilities_found"],
             "sanitized_vulnerabilities": sanitized_vulns["vulnerabilities_found"],
             "sanitization_effective": sanitized_vulns["vulnerabilities_found"] == 0,
-            "risk_reduction": original_vulns["risk_level"] != sanitized_vulns["risk_level"],
+            "risk_reduction": original_vulns["risk_level"]
+            != sanitized_vulns["risk_level"],
             "original_risk": original_vulns["risk_level"],
             "sanitized_risk": sanitized_vulns["risk_level"],
         }
 
-    def create_auth_test_mock(self, behavior: dict[str, t.Any] | None = None) -> AsyncMock:
+    def create_auth_test_mock(
+        self, behavior: dict[str, t.Any] | None = None
+    ) -> AsyncMock:
         """Create a mock for authentication testing."""
         auth_mock = AsyncMock()
 
@@ -165,6 +177,7 @@ class SecurityTestProvider:
 
         async def mock_validate_token(token: str):
             import asyncio
+
             await asyncio.sleep(default_behavior["auth_delay"])
 
             if token in default_behavior["valid_tokens"]:
@@ -204,13 +217,28 @@ class SecurityTestProvider:
         """Test password strength."""
         checks = {
             "length": len(password) >= 8,
-            "uppercase": bool(re.search(r"[A-Z]", password)),  # REGEX OK: password strength validation
-            "lowercase": bool(re.search(r"[a-z]", password)),  # REGEX OK: password strength validation
-            "digits": bool(re.search(r"\d", password)),  # REGEX OK: password strength validation
-            "special_chars": bool(re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password)),  # REGEX OK: password strength validation
-            "no_common_patterns": not any(pattern in password.lower() for pattern in [
-                "password", "123456", "qwerty", "admin", "letmein",
-            ]),
+            "uppercase": bool(
+                re.search(r"[A-Z]", password)
+            ),  # REGEX OK: password strength validation
+            "lowercase": bool(
+                re.search(r"[a-z]", password)
+            ),  # REGEX OK: password strength validation
+            "digits": bool(
+                re.search(r"\d", password)
+            ),  # REGEX OK: password strength validation
+            "special_chars": bool(
+                re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password)
+            ),  # REGEX OK: password strength validation
+            "no_common_patterns": not any(
+                pattern in password.lower()
+                for pattern in [
+                    "password",
+                    "123456",
+                    "qwerty",
+                    "admin",
+                    "letmein",
+                ]
+            ),
         }
 
         score = sum(checks.values())
@@ -274,7 +302,9 @@ class SecurityTestProvider:
             f"Vulnerabilities found: {scan_result['vulnerabilities']}"
         )
 
-    def assert_vulnerability_detected(self, scan_result: dict[str, t.Any], vuln_type: str) -> None:
+    def assert_vulnerability_detected(
+        self, scan_result: dict[str, t.Any], vuln_type: str
+    ) -> None:
         """Assert that a specific vulnerability type was detected."""
         found_types = [v["type"] for v in scan_result["vulnerabilities"]]
         assert vuln_type in found_types, f"Vulnerability type {vuln_type} not detected"
@@ -294,7 +324,9 @@ class SecurityTestProvider:
             self._scan_results[test_name] = {
                 "scans": scan_results,
                 "total_scans": len(scan_results),
-                "vulnerabilities_found": sum(s["vulnerabilities_found"] for s in scan_results),
+                "vulnerabilities_found": sum(
+                    s["vulnerabilities_found"] for s in scan_results
+                ),
                 "timestamp": "2024-01-01T12:00:00Z",
             }
 

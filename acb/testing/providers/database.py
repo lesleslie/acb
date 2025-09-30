@@ -48,7 +48,9 @@ class DatabaseTestProvider:
         self._fixtures = {}
         self._migrations = []
 
-    async def create_test_database(self, db_type: str = "sqlite", config: dict | None = None) -> AsyncMock:
+    async def create_test_database(
+        self, db_type: str = "sqlite", config: dict | None = None
+    ) -> AsyncMock:
         """Create an in-memory test database."""
         db_mock = AsyncMock()
         db_mock._tables = {}
@@ -95,12 +97,24 @@ class DatabaseTestProvider:
             return result_mock
 
         async def mock_fetch_one(query: str, params: tuple | None = None):
-            return {"id": 1, "name": "test_record", "created_at": "2024-01-01T12:00:00Z"}
+            return {
+                "id": 1,
+                "name": "test_record",
+                "created_at": "2024-01-01T12:00:00Z",
+            }
 
         async def mock_fetch_all(query: str, params: tuple | None = None):
             return [
-                {"id": 1, "name": "test_record_1", "created_at": "2024-01-01T12:00:00Z"},
-                {"id": 2, "name": "test_record_2", "created_at": "2024-01-01T12:01:00Z"},
+                {
+                    "id": 1,
+                    "name": "test_record_1",
+                    "created_at": "2024-01-01T12:00:00Z",
+                },
+                {
+                    "id": 2,
+                    "name": "test_record_2",
+                    "created_at": "2024-01-01T12:01:00Z",
+                },
             ]
 
         async def mock_begin_transaction():
@@ -148,10 +162,15 @@ class DatabaseTestProvider:
                 table_name = fixture["table"]
                 data = fixture["data"]
 
+                # Validate table name (alphanumeric and underscore only for safety)
+                if not table_name.replace("_", "").isalnum():
+                    continue
+
                 for record in data:
-                    # Simulate insert
+                    # Simulate insert with parameterized query
+                    query = f"INSERT INTO {table_name} (name, value) VALUES (?, ?)"  # nosec B608
                     await db.execute(
-                        f"INSERT INTO {table_name} (name, value) VALUES (?, ?)",
+                        query,
                         (record.get("name", "test"), record.get("value", "data")),
                     )
 
@@ -163,25 +182,31 @@ class DatabaseTestProvider:
         """Run a database migration."""
         try:
             # Split migration into statements
-            statements = [stmt.strip() for stmt in migration_sql.split(";") if stmt.strip()]
+            statements = [
+                stmt.strip() for stmt in migration_sql.split(";") if stmt.strip()
+            ]
 
             for statement in statements:
                 await db.execute(statement)
 
-            self._migrations.append({
-                "sql": migration_sql,
-                "executed_at": "2024-01-01T12:00:00Z",
-                "success": True,
-            })
+            self._migrations.append(
+                {
+                    "sql": migration_sql,
+                    "executed_at": "2024-01-01T12:00:00Z",
+                    "success": True,
+                }
+            )
 
             return True
         except Exception as e:
-            self._migrations.append({
-                "sql": migration_sql,
-                "executed_at": "2024-01-01T12:00:00Z",
-                "success": False,
-                "error": str(e),
-            })
+            self._migrations.append(
+                {
+                    "sql": migration_sql,
+                    "executed_at": "2024-01-01T12:00:00Z",
+                    "success": False,
+                    "error": str(e),
+                }
+            )
             return False
 
     def get_migration_history(self) -> list[dict]:
@@ -238,12 +263,16 @@ class DatabaseTestProvider:
     def assert_transaction_rolled_back(self, transaction: AsyncMock) -> None:
         """Assert that a transaction was rolled back."""
         assert transaction._rolled_back, "Transaction was not rolled back"
-        assert not transaction._committed, "Transaction was committed when it should have been rolled back"
+        assert not transaction._committed, (
+            "Transaction was committed when it should have been rolled back"
+        )
 
     def assert_transaction_committed(self, transaction: AsyncMock) -> None:
         """Assert that a transaction was committed."""
         assert transaction._committed, "Transaction was not committed"
-        assert not transaction._rolled_back, "Transaction was rolled back when it should have been committed"
+        assert not transaction._rolled_back, (
+            "Transaction was rolled back when it should have been committed"
+        )
 
     def get_test_database(self, db_type: str) -> AsyncMock | None:
         """Get a previously created test database."""

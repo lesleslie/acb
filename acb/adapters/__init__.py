@@ -67,6 +67,16 @@ class AdapterCapability(str, Enum):
     MIGRATIONS = "migrations"
     BACKUP_RESTORE = "backup_restore"
 
+    # Logger-specific capabilities
+    STRUCTURED_OUTPUT = "structured_output"
+    ASYNC_LOGGING = "async_logging"
+    CONTEXTUAL = "contextual"
+    ROTATION = "rotation"
+    REMOTE_LOGGING = "remote_logging"
+    JSON_OUTPUT = "json_output"
+    FILE_LOGGING = "file_logging"
+    CORRELATION_ID = "correlation_id"
+
 
 class AdapterMetadata(BaseModel):
     module_id: UUID = Field(
@@ -391,12 +401,12 @@ core_adapters = [
     ),
     Adapter(
         name="loguru",
-        module="acb.logger",
+        module="acb.adapters.logger.loguru",
         class_name="Logger",
         category="logger",
         enabled=True,
         installed=True,
-        path=AsyncPath(__file__).parent / "logger.py",
+        path=AsyncPath(__file__).parent / "logger" / "loguru.py",
     ),
 ]
 
@@ -438,6 +448,8 @@ def get_installed_adapters() -> list[Adapter]:
 STATIC_ADAPTER_MAPPINGS = {
     "cache.memory": ("acb.adapters.cache.memory", "Cache"),
     "cache.redis": ("acb.adapters.cache.redis", "Cache"),
+    "logger.loguru": ("acb.adapters.logger.loguru", "Logger"),
+    "logger.structlog": ("acb.adapters.logger.structlog", "Logger"),
     "sql.mysql": ("acb.adapters.sql.mysql", "Sql"),
     "sql.pgsql": ("acb.adapters.sql.pgsql", "Sql"),
     "sql.sqlite": ("acb.adapters.sql.sqlite", "Sql"),
