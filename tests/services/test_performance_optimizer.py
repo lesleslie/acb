@@ -260,5 +260,4 @@ class TestPerformanceOptimizer:
         assert config.cache_ttl_seconds == 3600
         assert config.query_timeout_seconds == 30.0
         assert config.response_compression is True
-        assert config.fastblocks_integration is True
-        assert config.htmx_optimization is True
+        assert config.web_framework_integration is False

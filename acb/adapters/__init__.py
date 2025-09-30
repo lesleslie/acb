@@ -77,6 +77,95 @@ class AdapterCapability(str, Enum):
     FILE_LOGGING = "file_logging"
     CORRELATION_ID = "correlation_id"
 
+    # Graph-specific capabilities
+    GRAPH_TRAVERSAL = "graph_traversal"
+    CYPHER_QUERIES = "cypher_queries"
+    GREMLIN_QUERIES = "gremlin_queries"
+    AQL_QUERIES = "aql_queries"
+    GRAPH_ANALYTICS = "graph_analytics"
+    PATHFINDING = "pathfinding"
+    SUBGRAPH_OPERATIONS = "subgraph_operations"
+    GRAPH_SCHEMA_VALIDATION = "graph_schema_validation"
+
+    # AI/ML-specific capabilities
+    HYBRID_DEPLOYMENT = "hybrid_deployment"
+    EDGE_INFERENCE = "edge_inference"
+    MULTIMODAL_PROCESSING = "multimodal_processing"
+    PROMPT_TEMPLATING = "prompt_templating"
+    MODEL_CACHING = "model_caching"
+    ADAPTIVE_ROUTING = "adaptive_routing"
+    FALLBACK_MECHANISMS = "fallback_mechanisms"
+    TEXT_GENERATION = "text_generation"
+    VISION_PROCESSING = "vision_processing"
+    AUDIO_PROCESSING = "audio_processing"
+    MODEL_QUANTIZATION = "model_quantization"
+    COLD_START_OPTIMIZATION = "cold_start_optimization"
+
+    # Embedding-specific capabilities
+    BATCH_EMBEDDING = "batch_embedding"
+    EDGE_OPTIMIZED = "edge_optimized"
+    TEXT_PREPROCESSING = "text_preprocessing"
+    VECTOR_NORMALIZATION = "vector_normalization"
+    DIMENSION_SCALING = "dimension_scaling"
+    SEMANTIC_SEARCH = "semantic_search"
+    SIMILARITY_COMPUTATION = "similarity_computation"
+    DOCUMENT_CHUNKING = "document_chunking"
+    POOLING_STRATEGIES = "pooling_strategies"
+    MEMORY_EFFICIENT_PROCESSING = "memory_efficient_processing"
+
+    # ML Model-specific capabilities
+    MODEL_SERVING = "model_serving"
+    BATCH_INFERENCE = "batch_inference"
+    REAL_TIME_INFERENCE = "real_time_inference"
+    MODEL_VERSIONING = "model_versioning"
+    A_B_TESTING = "a_b_testing"
+    CANARY_DEPLOYMENT = "canary_deployment"
+    MODEL_MONITORING = "model_monitoring"
+    DRIFT_DETECTION = "drift_detection"
+    AUTO_SCALING = "auto_scaling"
+    FEATURE_ENGINEERING = "feature_engineering"
+    OUTPUT_POSTPROCESSING = "output_postprocessing"
+    MODEL_REGISTRY = "model_registry"
+    ARTIFACT_MANAGEMENT = "artifact_management"
+    METADATA_TRACKING = "metadata_tracking"
+    DEPLOYMENT_TRACKING = "deployment_tracking"
+    PERFORMANCE_BENCHMARKING = "performance_benchmarking"
+    RESOURCE_MANAGEMENT = "resource_management"
+    GRPC_SERVING = "grpc_serving"
+    REST_SERVING = "rest_serving"
+    KUBERNETES_NATIVE = "kubernetes_native"
+
+    # Feature Store-specific capabilities
+    FEATURE_SERVING = "feature_serving"
+    FEATURE_MONITORING = "feature_monitoring"
+    ONLINE_OFFLINE_STORE = "online_offline_store"
+    FEATURE_DISCOVERY = "feature_discovery"
+    FEATURE_LINEAGE = "feature_lineage"
+    TIME_TRAVEL = "time_travel"
+    FEATURE_VALIDATION = "feature_validation"
+    PERFORMANCE_MONITORING = "performance_monitoring"
+    FEATURE_SHARING = "feature_sharing"
+
+    # Experiment Tracking-specific capabilities
+    EXPERIMENT_TRACKING = "experiment_tracking"
+    METRICS_LOGGING = "metrics_logging"
+    PARAMETER_TRACKING = "parameter_tracking"
+    ARTIFACT_STORAGE = "artifact_storage"
+    RUN_MANAGEMENT = "run_management"
+    EXPERIMENT_SEARCH = "experiment_search"
+
+    # NLP-specific capabilities
+    TEXT_ANALYSIS = "text_analysis"
+    SENTIMENT_ANALYSIS = "sentiment_analysis"
+    NAMED_ENTITY_RECOGNITION = "named_entity_recognition"
+    LANGUAGE_TRANSLATION = "language_translation"
+    TEXT_CLASSIFICATION = "text_classification"
+    QUESTION_ANSWERING = "question_answering"
+    TEXT_SUMMARIZATION = "text_summarization"
+    KEYWORD_EXTRACTION = "keyword_extraction"
+    LANGUAGE_DETECTION = "language_detection"
+    TEXT_SIMILARITY = "text_similarity"
+
 
 class AdapterMetadata(BaseModel):
     module_id: UUID = Field(
@@ -478,9 +567,45 @@ STATIC_ADAPTER_MAPPINGS = {
     "ftpd.sftp": ("acb.adapters.ftpd.sftp", "Ftpd"),
     "models": ("acb.adapters.models", "Models"),
     "vector.duckdb": ("acb.adapters.vector.duckdb", "Vector"),
-    "vector.opensearch": ("acb.adapters.vector.opensearch", "Vector"),
+    "vector.pinecone": ("acb.adapters.vector.pinecone", "Vector"),
     "vector.qdrant": ("acb.adapters.vector.qdrant", "Vector"),
     "vector.weaviate": ("acb.adapters.vector.weaviate", "Vector"),
+    "graph.neo4j": ("acb.adapters.graph.neo4j", "Graph"),
+    "graph.neptune": ("acb.adapters.graph.neptune", "Graph"),
+    "graph.arangodb": ("acb.adapters.graph.arangodb", "Graph"),
+    "ai.cloud": ("acb.adapters.ai.cloud", "CloudAI"),
+    "ai.edge": ("acb.adapters.ai.edge", "EdgeAI"),
+    "ai.hybrid": ("acb.adapters.ai.hybrid", "HybridAI"),
+    "embedding.openai": ("acb.adapters.embedding.openai", "Embedding"),
+    "embedding.huggingface": ("acb.adapters.embedding.huggingface", "Embedding"),
+    "embedding.sentence_transformers": (
+        "acb.adapters.embedding.sentence_transformers",
+        "Embedding",
+    ),
+    "embedding.onnx": ("acb.adapters.embedding.onnx", "Embedding"),
+    "embedding.lfm": ("acb.adapters.embedding.lfm", "Embedding"),
+    "reasoning.langchain": ("acb.adapters.reasoning.langchain", "Reasoning"),
+    "reasoning.llamaindex": ("acb.adapters.reasoning.llamaindex", "Reasoning"),
+    "reasoning.custom": ("acb.adapters.reasoning.custom", "Reasoning"),
+    "reasoning.openai_functions": (
+        "acb.adapters.reasoning.openai_functions",
+        "Reasoning",
+    ),
+    "mlmodel.tensorflow": ("acb.adapters.mlmodel.tensorflow", "MLModel"),
+    "mlmodel.torchserve": ("acb.adapters.mlmodel.torchserve", "MLModel"),
+    "mlmodel.mlflow": ("acb.adapters.mlmodel.mlflow", "MLModel"),
+    "mlmodel.kserve": ("acb.adapters.mlmodel.kserve", "MLModel"),
+    "mlmodel.bentoml": ("acb.adapters.mlmodel.bentoml", "MLModel"),
+    "feature_store.feast": ("acb.adapters.feature_store.feast", "FeatureStore"),
+    "feature_store.tecton": ("acb.adapters.feature_store.tecton", "FeatureStore"),
+    "feature_store.aws": ("acb.adapters.feature_store.aws", "FeatureStore"),
+    "feature_store.vertex": ("acb.adapters.feature_store.vertex", "FeatureStore"),
+    "feature_store.custom": ("acb.adapters.feature_store.custom", "FeatureStore"),
+    "experiment.mlflow": ("acb.adapters.experiment.mlflow", "Experiment"),
+    "experiment.wandb": ("acb.adapters.experiment.wandb", "Experiment"),
+    "experiment.tensorboard": ("acb.adapters.experiment.tensorboard", "Experiment"),
+    "nlp.spacy": ("acb.adapters.nlp.spacy", "NLP"),
+    "nlp.transformers": ("acb.adapters.nlp.transformers", "NLP"),
 }
 
 

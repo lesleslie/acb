@@ -9,6 +9,7 @@ name = "acb"
 version = "0.22.0"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
+license.text = "BSD-3-CLAUSE"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -35,8 +36,8 @@ dependencies = [
     "blake3>=1.0.5",
     "brotli>=1.1",
     "devtools>=0.12.2",
-    "dill>=0.4",
-    "fastapi>=0.115.0",
+    "dill>=0.3,<0.4.dev0",
+    "fastapi>=0.115",
     "google-api-python-client>=2.176",
     "google-crc32c>=1.7.1",
     "icecream>=2.1.5",
@@ -55,91 +56,150 @@ dependencies = [
     "toml>=0.10.2",
     "tomli-w>=1.2",
     "uuid-utils>=0.11",
-    "uvicorn>=0.30.0",
+    "uvicorn>=0.30",
 ]
 
-[project.license]
-text = "BSD-3-CLAUSE"
-
-[project.optional-dependencies]
-all = [
-    "acb[cache,dns,ftpd,models,monitoring,nosql,requests,secret,smtp,sql,storage,vector,mcp]",
+optional-dependencies.ai = [
+    "aiohttp>=3.9",
+    "anthropic>=0.5",
+    "boto3>=1.35",
+    "google-cloud-aiplatform>=1.40",
+    "httpx[http2]>=0.27.2,<0.28",
+    "ollama>=0.1",
+    "onnx>=1.14",
+    "onnxruntime>=1.16",
+    "openai>=1",
+    "psutil>=5.9.6,<6",
+    "torch>=2",
+    "transformers>=4.30",
 ]
-api = [
+optional-dependencies.all = [
+    "acb[ai,cache,dns,embedding,feature-store,ftpd,mlmodel,models,monitoring,nosql,reasoning,requests,secret,smtp,sql,storage,vector,mcp]",
+]
+optional-dependencies.api = [
     "acb[cache,nosql,requests,monitoring,secret]",
 ]
-cache = [
+optional-dependencies.cache = [
     "aiocache[redis]>=0.12.3",
     "coredis>=4.24",
     "logfire[redis]>=3.24",
 ]
-cloud-native = [
+optional-dependencies.cloud-native = [
     "acb[cache,sql,storage,secret,monitoring,dns]",
 ]
-dataplatform = [
+optional-dependencies.dataplatform = [
     "acb[sql,nosql,storage,monitoring]",
 ]
-demo = [
+optional-dependencies.demo = [
     "faker>=37.4",
 ]
-dns = [
+optional-dependencies.dns = [
     "boto3>=1.35",
     "google-cloud-dns>=0.35.1",
     "python-cloudflare>=1.0.1",
     "validators>=0.35",
 ]
-ftpd = [
+optional-dependencies.embedding = [
+    "numpy>=1.24",
+    "onnx>=1.14",
+    "onnxruntime>=1.16",
+    "openai>=1",
+    "sentence-transformers>=2",
+    "torch>=2",
+    "transformers>=4",
+]
+optional-dependencies.feature_store = [
+    "boto3>=1.26",
+    "feast>=0.34",
+    "google-cloud-aiplatform>=1.25",
+    "numpy>=1.24",
+    "pandas>=2",
+    "pyarrow>=12",
+    "scikit-learn>=1.3",
+]
+optional-dependencies.ftpd = [
     "aioftp>=0.26.2",
     "asyncssh>=2.21",
 ]
-gcp = [
+optional-dependencies.gcp = [
     "acb[dns,secret,nosql,storage]",
 ]
-mcp = [
-    "fastapi>=0.115.0",
-    "uvicorn>=0.30.0",
+optional-dependencies.graph = [
+    "boto3>=1.26",
+    "neo4j>=5",
+    "py2neo>=2021",
+    "python-arango>=7",
 ]
-microservice = [
+optional-dependencies.mcp = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
+optional-dependencies.microservice = [
     "acb[cache,requests,monitoring,secret]",
 ]
-minimal = [
+optional-dependencies.minimal = [
     "acb[cache,requests]",
 ]
-models = [
+optional-dependencies.mlmodel = [
+    "aiohttp>=3.9",
+    "bentoml>=1",
+    "grpcio>=1.50",
+    "grpcio-tools>=1.50",
+    "httpx>=0.27.2,<0.28",
+    "kserve>=0.15; python_version<'3.12'",
+    "kubernetes>=25",
+    "mlflow>=2",
+    "numpy>=1.24",
+    "pandas>=2",
+    "prometheus-client>=0.17",
+    "scikit-learn>=1.3",
+    "tensorflow-serving-api>=2.11; python_version<'3.12'",
+    "torchserve>=0.8",
+]
+optional-dependencies.models = [
     "attrs>=25.3",
     "msgspec>=0.19",
     "redis-om>=0.3.5",
     "sqlalchemy>=2.0.41",
     "sqlmodel>=0.0.24",
 ]
-monitoring = [
+optional-dependencies.monitoring = [
     "logfire[system-metrics]>=3.24",
     "sentry-sdk[loguru]>=2.32",
 ]
-nosql = [
+optional-dependencies.nosql = [
     "beanie>=1.30",
     "google-cloud-firestore>=2.21",
     "motor>=3.7.1",
     "redis-om>=0.3.5",
 ]
-requests = [
-    "hishel>=0.1.3",
-    "httpx[http2]>=0.28.1",
+optional-dependencies.reasoning = [
+    "langchain>=0.1",
+    "langchain-community>=0.0.20",
+    "langchain-openai>=0.1",
+    "llama-index>=0.9",
+    "llama-index-llms-openai>=0.1",
+    "openai>=1",
+    "pydantic>=2",
+    "tiktoken>=0.5",
+]
+optional-dependencies.requests = [
+    "httpx[http2]>=0.27.2,<0.28",
     "logfire[httpx]>=3.24",
     "niquests>=3.14.1",
     "sentry-sdk[httpx]>=2.32",
 ]
-secret = [
+optional-dependencies.secret = [
     "azure-identity>=1.15",
     "azure-keyvault-secrets>=4.8",
     "cloudflare>=3",
     "google-cloud-secret-manager>=2.24",
     "infisicalsdk>=1.0.9",
 ]
-smtp = [
+optional-dependencies.smtp = [
     "mailgun>=1.1",
 ]
-sql = [
+optional-dependencies.sql = [
     "aiomysql>=0.2",
     "aiosqlite>=0.21",
     "babel>=2.17",
@@ -152,33 +212,33 @@ sql = [
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
 ]
-storage = [
+optional-dependencies.storage = [
     "adlfs>=2024.12",
     "fsspec>=2025.1",
     "gcsfs>=2025.5.1",
     "s3fs>=2025.5.1",
 ]
-vector = [
+optional-dependencies.vector = [
     "duckdb>=0.10.2",
+    "pinecone-client>=3",
+    "qdrant-client>=1.7",
+    "weaviate-client>=4",
 ]
-webapp = [
+optional-dependencies.webapp = [
     "acb[cache,sql,storage,requests,monitoring]",
 ]
-webapp-plus = [
+optional-dependencies.webapp-plus = [
     "acb[cache,sql,storage,requests,monitoring,vector]",
 ]
-
-[project.urls]
-Documentation = "https://github.com/lesleslie/acb"
-Homepage = "https://github.com/lesleslie/acb"
-Repository = "https://github.com/lesleslie/acb"
+urls.Documentation = "https://github.com/lesleslie/acb"
+urls.Homepage = "https://github.com/lesleslie/acb"
+urls.Repository = "https://github.com/lesleslie/acb"
 
 [dependency-groups]
 dev = [
     "complexipy>=3.2",
     "crackerjack>=0.22.8",
     "detect-secrets>=1.5",
-    "excalidraw-mcp>=0.34.0",
     "pre-commit>=4.2",
     "pyproject-fmt>=2.6",
     "pytest>=8.4.1",
@@ -190,34 +250,30 @@ dev = [
     "pyyaml>=6.0.2",
     "refurb>=2.1",
     "ruff>=0.12.3",
-    "session-mgmt-mcp>=0.3.13",
 ]
 
 [tool.ruff]
 target-version = "py313"
 line-length = 88
+exclude = [
+    "*_test.py",
+    "test_*.py",
+    "tests/",
+]
 fix = true
 unsafe-fixes = true
 show-fixes = true
 output-format = "full"
-exclude = [
-    "tests/",
-    "test_*.py",
-    "*_test.py",
-]
 
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-extend-select = [
+format.docstring-code-format = true
+lint.extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-ignore = [
+lint.ignore = [
     "D100",
     "D101",
     "D102",
@@ -230,26 +286,24 @@ ignore = [
     "F821",
     "UP040",
 ]
-fixable = [
+lint.fixable = [
     "ALL",
 ]
-unfixable = []
-
-[tool.ruff.lint.isort]
-no-lines-before = [
+lint.unfixable = [  ]
+lint.isort.no-lines-before = [
     "first-party",
 ]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 15
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+lint.mccabe.max-complexity = 15
+lint.pydocstyle.convention = "google"
 
 [tool.codespell]
 skip = "*/data/*,tests/*,.git/*,.mypy_cache/*,htmlcov/*,test_*.py,*_test.py"
 quiet-level = 3
 ignore-words-list = "crate,uptodate,nd,nin,anull"
+
+[tool.pyproject-fmt]
+column_width = 120
+indent = 4
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -260,6 +314,7 @@ python_files = [
 ]
 testpaths = [
     "tests",
+    "acb",
 ]
 python_classes = [
     "Test*",
@@ -274,7 +329,7 @@ markers = [
 ]
 timeout = 300
 timeout_method = "thread"
-addopts = "--cov=acb --cov-report=term"
+addopts = "--cov=acb --cov-report=term --cov-fail-under=42"
 filterwarnings = [
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
 ]
@@ -318,36 +373,67 @@ exclude_also = [
 ]
 ignore_errors = false
 
+[tool.pyright]
+verboseOutput = true
+include = [
+    "tests",
+    "acb",
+]
+exclude = [
+    "dist",
+    "build",
+    ".venv",
+    "scratch",
+]
+extraPaths = [
+    ".venv/lib/python3.13/site-packages/",
+]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportOptionalMemberAccess = "warning"
+reportOptionalCall = "warning"
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = false
+reportUnknownArgumentType = "warning"
+reportInvalidTypeForm = "warning"
+reportUnknownLambdaType = "warning"
+reportUnknownParameterType = "warning"
+reportPrivateUsage = "warning"
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportUnnecessaryComparison = "warning"
+reportConstantRedefinition = "warning"
+pythonVersion = "3.13"
+
 [tool.creosote]
 paths = [
     "acb",
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyyaml",
     "nest-asyncio",
-    "google-api-python-client",
-    "pytest-mock",
-    "pyleak",
-    "pytest-benchmark",
-    "uv",
-    "attrs",
-    "pytest-timeout",
     "pytest-xdist",
-    "pytest",
-    "tomli-w",
-    "pre-commit",
-    "pytest-asyncio",
-    "google-crc32c",
-    "uuid-utils",
-    "pydantic-settings",
-    "keyring",
-    "inflection",
-    "pytest-cov",
-    "hatchling",
-    "pyfiglet",
     "autotyping",
+    "pytest",
+    "pyyaml",
     "uvicorn",
+    "google-api-python-client",
+    "pydantic-settings",
+    "pytest-asyncio",
+    "pytest-benchmark",
+    "pytest-timeout",
+    "pytest-mock",
+    "uv",
+    "inflection",
+    "hatchling",
+    "keyring",
+    "attrs",
+    "tomli-w",
+    "pytest-cov",
+    "uuid-utils",
+    "pyleak",
+    "google-crc32c",
+    "pre-commit",
+    "pyfiglet",
 ]
 
 [tool.refurb]
@@ -361,19 +447,20 @@ ignore = [
 
 [tool.bandit]
 target = [
+    "tests",
     "acb",
 ]
 skips = [
-    "B403",
-    "B602",
-    "B603",
-    "B311",
     "B105",
-    "B101",
-    "B704",
-    "B607",
     "B106",
+    "B101",
+    "B603",
+    "B602",
+    "B607",
+    "B311",
+    "B704",
     "B301",
+    "B403",
     "B404",
 ]
 exclude_dirs = [
@@ -401,6 +488,7 @@ keyring-provider = "subprocess"
 index-url = "https://pypi.org/simple/"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
+prerelease = "allow"
 
 [tool.complexipy]
 default_pattern = "**/*.py"
@@ -410,3 +498,11 @@ exclude_patterns = [
     "acb/adapters/vector/**",
 ]
 max_complexity = 15
+
+[tool.autotyping]
+exclude = [
+    "*/conftest.py",
+    "tests/data/*",
+]
+safe = true
+aggressive = true

@@ -1,0 +1,427 @@
+"""Base Experiment Tracking Adapter.
+
+This module provides the foundation for experiment tracking adapters, including
+interfaces for logging metrics, parameters, artifacts, and managing experiment
+lifecycle across different platforms like MLflow, W&B, and TensorBoard.
+"""
+
+from __future__ import annotations
+
+import json
+from abc import ABC, abstractmethod
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ExperimentStatus(str, Enum):
+    """Experiment status enum."""
+    RUNNING = "running"
+    FINISHED = "finished"
+    FAILED = "failed"
+    KILLED = "killed"
+
+
+class MetricType(str, Enum):
+    """Metric type enum."""
+    SCALAR = "scalar"
+    HISTOGRAM = "histogram"
+    IMAGE = "image"
+    TEXT = "text"
+
+
+class ArtifactType(str, Enum):
+    """Artifact type enum."""
+    MODEL = "model"
+    DATASET = "dataset"
+    IMAGE = "image"
+    TEXT = "text"
+    CODE = "code"
+    OTHER = "other"
+
+
+class ExperimentInfo(BaseModel):
+    """Experiment information model."""
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
+
+    experiment_id: str
+    experiment_name: str
+    status: ExperimentStatus
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    tags: Dict[str, str] = Field(default_factory=dict)
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    metrics: Dict[str, float] = Field(default_factory=dict)
+    artifacts: List[str] = Field(default_factory=list)
+
+
+class MetricEntry(BaseModel):
+    """Metric entry model."""
+    model_config = ConfigDict(extra="allow")
+
+    name: str
+    value: Union[float, int, str]
+    step: Optional[int] = None
+    timestamp: Optional[datetime] = None
+    metric_type: MetricType = MetricType.SCALAR
+
+
+class ArtifactInfo(BaseModel):
+    """Artifact information model."""
+    model_config = ConfigDict(extra="allow")
+
+    name: str
+    path: str
+    artifact_type: ArtifactType
+    size_bytes: Optional[int] = None
+    created_at: Optional[datetime] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ExperimentSettings(BaseModel):
+    """Base experiment tracking adapter settings."""
+    model_config = ConfigDict(extra="allow")
+
+    # Connection settings
+    tracking_uri: Optional[str] = None
+    registry_uri: Optional[str] = None
+
+    # Authentication
+    username: Optional[str] = None
+    password: Optional[str] = None
+    token: Optional[str] = None
+
+    # Default experiment settings
+    default_experiment_name: str = "default"
+    auto_create_experiments: bool = True
+
+    # Logging settings
+    log_models: bool = True
+    log_artifacts: bool = True
+    log_system_metrics: bool = False
+
+    # Performance settings
+    batch_size: int = 100
+    flush_interval: int = 10  # seconds
+    max_retries: int = 3
+    timeout: int = 30  # seconds
+
+
+class BaseExperimentAdapter(ABC):
+    """Base class for experiment tracking adapters."""
+
+    def __init__(self, settings: Optional[ExperimentSettings] = None) -> None:
+        """Initialize the experiment adapter.
+
+        Args:
+            settings: Adapter configuration settings
+        """
+        self._settings = settings or ExperimentSettings()
+        self._client = None
+        self._current_experiment_id: Optional[str] = None
+
+    @property
+    def settings(self) -> ExperimentSettings:
+        """Get adapter settings."""
+        return self._settings
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.disconnect()
+
+    # Connection Management
+    @abstractmethod
+    async def connect(self) -> None:
+        """Connect to experiment tracking service."""
+        pass
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        """Disconnect from experiment tracking service."""
+        pass
+
+    @abstractmethod
+    async def health_check(self) -> bool:
+        """Check if the experiment tracking service is healthy."""
+        pass
+
+    # Experiment Management
+    @abstractmethod
+    async def create_experiment(
+        self,
+        name: str,
+        tags: Optional[Dict[str, str]] = None,
+        description: Optional[str] = None,
+    ) -> str:
+        """Create a new experiment.
+
+        Args:
+            name: Experiment name
+            tags: Optional experiment tags
+            description: Optional experiment description
+
+        Returns:
+            Experiment ID
+        """
+        pass
+
+    @abstractmethod
+    async def get_experiment(self, experiment_id: str) -> ExperimentInfo:
+        """Get experiment information.
+
+        Args:
+            experiment_id: Experiment ID
+
+        Returns:
+            Experiment information
+        """
+        pass
+
+    @abstractmethod
+    async def list_experiments(
+        self,
+        max_results: int = 100,
+        view_type: str = "ACTIVE_ONLY",
+    ) -> List[ExperimentInfo]:
+        """List experiments.
+
+        Args:
+            max_results: Maximum number of experiments to return
+            view_type: View type (ACTIVE_ONLY, DELETED_ONLY, ALL)
+
+        Returns:
+            List of experiment information
+        """
+        pass
+
+    @abstractmethod
+    async def delete_experiment(self, experiment_id: str) -> None:
+        """Delete an experiment.
+
+        Args:
+            experiment_id: Experiment ID
+        """
+        pass
+
+    # Run Management
+    @abstractmethod
+    async def start_run(
+        self,
+        experiment_id: Optional[str] = None,
+        run_name: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> str:
+        """Start a new experiment run.
+
+        Args:
+            experiment_id: Experiment ID (uses current if None)
+            run_name: Optional run name
+            tags: Optional run tags
+
+        Returns:
+            Run ID
+        """
+        pass
+
+    @abstractmethod
+    async def end_run(self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED) -> None:
+        """End an experiment run.
+
+        Args:
+            run_id: Run ID
+            status: Final run status
+        """
+        pass
+
+    @abstractmethod
+    async def get_run(self, run_id: str) -> Dict[str, Any]:
+        """Get run information.
+
+        Args:
+            run_id: Run ID
+
+        Returns:
+            Run information
+        """
+        pass
+
+    # Parameter and Metric Logging
+    @abstractmethod
+    async def log_param(self, run_id: str, key: str, value: Any) -> None:
+        """Log a parameter.
+
+        Args:
+            run_id: Run ID
+            key: Parameter name
+            value: Parameter value
+        """
+        pass
+
+    @abstractmethod
+    async def log_params(self, run_id: str, params: Dict[str, Any]) -> None:
+        """Log multiple parameters.
+
+        Args:
+            run_id: Run ID
+            params: Parameters dictionary
+        """
+        pass
+
+    @abstractmethod
+    async def log_metric(
+        self,
+        run_id: str,
+        key: str,
+        value: Union[float, int],
+        step: Optional[int] = None,
+        timestamp: Optional[datetime] = None,
+    ) -> None:
+        """Log a metric.
+
+        Args:
+            run_id: Run ID
+            key: Metric name
+            value: Metric value
+            step: Optional step number
+            timestamp: Optional timestamp
+        """
+        pass
+
+    @abstractmethod
+    async def log_metrics(
+        self,
+        run_id: str,
+        metrics: Dict[str, Union[float, int]],
+        step: Optional[int] = None,
+        timestamp: Optional[datetime] = None,
+    ) -> None:
+        """Log multiple metrics.
+
+        Args:
+            run_id: Run ID
+            metrics: Metrics dictionary
+            step: Optional step number
+            timestamp: Optional timestamp
+        """
+        pass
+
+    # Artifact Management
+    @abstractmethod
+    async def log_artifact(
+        self,
+        run_id: str,
+        local_path: Union[str, Path],
+        artifact_path: Optional[str] = None,
+        artifact_type: ArtifactType = ArtifactType.OTHER,
+    ) -> None:
+        """Log an artifact.
+
+        Args:
+            run_id: Run ID
+            local_path: Local path to artifact
+            artifact_path: Remote artifact path
+            artifact_type: Artifact type
+        """
+        pass
+
+    @abstractmethod
+    async def log_artifacts(
+        self,
+        run_id: str,
+        local_dir: Union[str, Path],
+        artifact_path: Optional[str] = None,
+    ) -> None:
+        """Log multiple artifacts from directory.
+
+        Args:
+            run_id: Run ID
+            local_dir: Local directory path
+            artifact_path: Remote artifact path prefix
+        """
+        pass
+
+    @abstractmethod
+    async def download_artifact(
+        self,
+        run_id: str,
+        artifact_path: str,
+        local_path: Union[str, Path],
+    ) -> None:
+        """Download an artifact.
+
+        Args:
+            run_id: Run ID
+            artifact_path: Remote artifact path
+            local_path: Local download path
+        """
+        pass
+
+    @abstractmethod
+    async def list_artifacts(self, run_id: str, path: Optional[str] = None) -> List[ArtifactInfo]:
+        """List artifacts for a run.
+
+        Args:
+            run_id: Run ID
+            path: Optional artifact path filter
+
+        Returns:
+            List of artifact information
+        """
+        pass
+
+    # Search and Query
+    @abstractmethod
+    async def search_runs(
+        self,
+        experiment_ids: Optional[List[str]] = None,
+        filter_string: Optional[str] = None,
+        order_by: Optional[List[str]] = None,
+        max_results: int = 1000,
+        page_token: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Search experiment runs.
+
+        Args:
+            experiment_ids: Optional experiment ID filter
+            filter_string: Optional filter expression
+            order_by: Optional ordering
+            max_results: Maximum results to return
+            page_token: Optional pagination token
+
+        Returns:
+            List of run information
+        """
+        pass
+
+    # Convenience Methods
+    async def set_experiment(self, experiment_id: str) -> None:
+        """Set the current experiment.
+
+        Args:
+            experiment_id: Experiment ID
+        """
+        self._current_experiment_id = experiment_id
+
+    async def get_or_create_experiment(self, name: str) -> str:
+        """Get or create an experiment by name.
+
+        Args:
+            name: Experiment name
+
+        Returns:
+            Experiment ID
+        """
+        experiments = await self.list_experiments()
+        for exp in experiments:
+            if exp.experiment_name == name:
+                return exp.experiment_id
+
+        return await self.create_experiment(name)

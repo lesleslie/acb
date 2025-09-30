@@ -1,7 +1,7 @@
 """Vector database adapters for ACB."""
 
 # Import implementations for registration
-from . import duckdb
+from . import duckdb, pinecone, qdrant, weaviate
 from ._base import (
     VectorBase,
     VectorBaseSettings,
@@ -19,4 +19,7 @@ __all__ = [
     "VectorProtocol",
     "VectorSearchResult",
     "duckdb",
+    "pinecone",
+    "qdrant",
+    "weaviate",
 ]

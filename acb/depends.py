@@ -2,8 +2,7 @@ import typing as t
 from contextlib import suppress
 from functools import lru_cache
 
-from bevy import dependency, get_repository
-from bevy import inject as inject_dependency
+from bevy import get_registry, get_container, injectable, auto_inject
 
 
 @t.runtime_checkable
@@ -29,14 +28,14 @@ class Depends:
     @staticmethod
     def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         """Decorator to inject dependencies into a function."""
-        return t.cast(t.Callable[..., t.Any], inject_dependency(func))
+        return t.cast(t.Callable[..., t.Any], auto_inject(func))
 
     @staticmethod
     def set(class_: t.Any, instance: t.Any = None) -> t.Any:
         """Register a class/instance in the dependency container."""
         if instance is None:
-            return get_repository().set(class_, class_())
-        return get_repository().set(class_, instance)
+            return get_container().add(class_, class_())
+        return get_container().add(class_, instance)
 
     @staticmethod
     def get(category: t.Any) -> t.Any:
@@ -67,29 +66,29 @@ class Depends:
             The dependency instance
         """
         if isinstance(category, str):
-            # First try the repository cache
+            # First try the container cache
             with suppress(Exception):
-                result = get_repository().get(category)
+                result = get_container().get(category)
                 if result is not None:
                     return result
 
             # Import adapter asynchronously
             class_ = await _get_adapter_class_async(category)
-            return get_repository().get(class_)
+            return get_container().get(class_)
 
-        return get_repository().get(category)
+        return get_container().get(category)
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Support using depends as a callable for bevy compatibility."""
-        return dependency()
+        return injectable()
 
 
 def _get_dependency_sync(category: t.Any) -> t.Any:
     """Get dependency synchronously (for non-adapter dependencies)."""
     if isinstance(category, str):
-        # Try the repository cache first
+        # Try the container cache first
         with suppress(Exception):
-            result = get_repository().get(category)
+            result = get_container().get(category)
             if result is not None:
                 return result
 
@@ -101,7 +100,7 @@ def _get_dependency_sync(category: t.Any) -> t.Any:
         )
         raise RuntimeError(msg)
 
-    return get_repository().get(category)
+    return get_container().get(category)
 
 
 @lru_cache(maxsize=256)

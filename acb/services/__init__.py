@@ -4,7 +4,7 @@ Provides service-oriented architecture patterns with lifecycle management,
 dependency injection, and performance optimization capabilities.
 
 This module integrates with ACB's simplified architecture (v0.19.1+) and
-provides seamless integration with FastBlocks web framework.
+can be extended by web frameworks for additional functionality.
 
 Features service discovery and dynamic import system similar to adapters:
 - Dynamic service loading via import_service()
@@ -132,7 +132,6 @@ __all__ = [
     "shutdown_services",
     "setup_services",
     "shutdown_services_layer",
-    "setup_fastblocks_services",
     # Performance optimization
     "PerformanceOptimizer",
     "OptimizationConfig",
@@ -310,43 +309,6 @@ async def shutdown_services_layer() -> None:
     await registry.shutdown_all()
 
 
-# FastBlocks integration helpers
-def create_fastblocks_service_config() -> dict[str, bool]:
-    """Create service configuration optimized for FastBlocks.
-
-    Returns:
-        Configuration dictionary for FastBlocks applications
-    """
-    return {
-        "performance_optimizer": True,
-        "metrics_collector": True,
-        "cache_optimizer": True,
-        "query_optimizer": True,
-        "health_monitoring": True,
-        "htmx_optimization": True,
-        "template_caching": True,
-        "response_compression": True,
-    }
-
-
-async def setup_fastblocks_services() -> ServiceRegistry:
-    """Setup services layer optimized for FastBlocks applications.
-
-    This includes performance optimization and health monitoring
-    configured for typical FastBlocks usage patterns.
-
-    Returns:
-        Configured service registry for FastBlocks
-    """
-    registry = await setup_services(enable_health_monitoring=True)
-
-    # Get the health service for FastBlocks-specific configuration
-    from contextlib import suppress
-
-    with suppress(Exception):
-        health_service = await registry.get_service("health_service")
-        # FastBlocks applications typically want health endpoints enabled
-        if hasattr(health_service, "_settings"):
-            health_service._settings.expose_health_endpoint = True
-
-    return registry
+# Web framework integration helpers
+# Note: FastBlocks-specific integration has been moved to the FastBlocks project
+# at fastblocks.acb_integration for cleaner architectural separation

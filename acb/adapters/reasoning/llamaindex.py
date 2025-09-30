@@ -1,0 +1,681 @@
+"""LlamaIndex reasoning adapter for RAG-focused reasoning workflows."""
+
+import asyncio
+import time
+import typing as t
+from datetime import datetime
+
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
+from acb.adapters.reasoning._base import (
+    ReasoningBase,
+    ReasoningBaseSettings,
+    ReasoningProvider,
+    ReasoningRequest,
+    ReasoningResponse,
+    ReasoningStep,
+    ReasoningStrategy,
+    calculate_confidence_score,
+)
+from acb.depends import depends
+from acb.logger import Logger
+
+# Conditional imports for LlamaIndex
+try:
+    from llama_index.core import (
+        Document,
+        PromptTemplate,
+        Settings,
+        VectorStoreIndex,
+        get_response_synthesizer,
+    )
+    from llama_index.core.agent import ReActAgent
+    from llama_index.core.chat_engine import SimpleChatEngine
+    from llama_index.core.indices.query.base import BaseQueryEngine
+    from llama_index.core.memory import ChatMemoryBuffer
+    from llama_index.core.query_engine import RetrieverQueryEngine
+    from llama_index.core.retrievers import VectorIndexRetriever
+    from llama_index.core.schema import NodeWithScore
+    from llama_index.core.tools import FunctionTool
+    from llama_index.llms.openai import OpenAI
+
+    LLAMAINDEX_AVAILABLE = True
+except ImportError:
+    LLAMAINDEX_AVAILABLE = False
+
+    # Mock classes for type hints
+    class VectorStoreIndex:
+        pass
+
+    class BaseQueryEngine:
+        pass
+
+    class ReActAgent:
+        pass
+
+    class OpenAI:
+        pass
+
+    class NodeWithScore:
+        pass
+
+    class Document:
+        pass
+
+    class PromptTemplate:
+        pass
+
+    class SimpleChatEngine:
+        pass
+
+
+MODULE_METADATA = AdapterMetadata(
+    module_id=generate_adapter_id(),
+    name="LlamaIndex Reasoning",
+    category="reasoning",
+    provider="llamaindex",
+    version="1.0.0",
+    acb_min_version="0.19.0",
+    author="ACB Team",
+    created_date=datetime.now().isoformat(),
+    last_modified=datetime.now().isoformat(),
+    status=AdapterStatus.STABLE,
+    capabilities=[
+        AdapterCapability.ASYNC_OPERATIONS,
+        AdapterCapability.STREAMING,
+        AdapterCapability.METRICS,
+        AdapterCapability.LOGGING,
+        AdapterCapability.CACHING,
+        AdapterCapability.SCHEMA_VALIDATION,
+    ],
+    required_packages=[
+        "llama-index>=0.9.0",
+        "llama-index-llms-openai>=0.1.0",
+        "openai>=1.0.0",
+    ],
+    description="Advanced RAG-focused reasoning using LlamaIndex framework with knowledge base querying and citation tracking",
+    settings_class="LlamaIndexReasoningSettings",
+    config_example={
+        "api_key": "your-openai-api-key",
+        "model": "gpt-4",
+        "temperature": 0.7,
+        "chunk_size": 512,
+        "chunk_overlap": 50,
+        "similarity_top_k": 5,
+        "enable_citation_tracking": True,
+    },
+)
+
+
+class LlamaIndexReasoningSettings(ReasoningBaseSettings):
+    """Settings for LlamaIndex reasoning adapter."""
+
+    # Document processing settings
+    chunk_size: int = 512
+    chunk_overlap: int = 50
+
+    # Retrieval settings
+    similarity_top_k: int = 5
+    similarity_threshold: float = 0.7
+
+    # Response synthesis settings
+    response_mode: str = "compact"  # compact, tree_summarize, simple_summarize
+    streaming: bool = False
+
+    # Memory settings
+    chat_memory_token_limit: int = 3000
+
+    # Agent settings
+    max_function_calls: int = 10
+
+    # Index settings
+    enable_citation_tracking: bool = True
+    persist_index: bool = True
+    index_cache_dir: str = "./index_cache"
+
+
+class LlamaIndexCallback:
+    """Callback handler for LlamaIndex operations."""
+
+    def __init__(self, logger: Logger):
+        self.logger = logger
+        self.steps: list[ReasoningStep] = []
+        self.step_counter = 0
+        self.retrieval_info: list[dict[str, t.Any]] = []
+
+    def on_retrieve_start(self, query: str) -> None:
+        """Called when retrieval starts."""
+        self.step_counter += 1
+        step = ReasoningStep(
+            step_id=f"retrieve_{self.step_counter}",
+            description="Document retrieval",
+            input_data={"query": query},
+        )
+        self.steps.append(step)
+        self.logger.debug(f"Starting retrieval for query: {query[:100]}...")
+
+    def on_retrieve_end(self, nodes: list[NodeWithScore]) -> None:
+        """Called when retrieval ends."""
+        if self.steps:
+            last_step = self.steps[-1]
+            last_step.output_data = {
+                "retrieved_nodes": len(nodes),
+                "scores": [node.score for node in nodes if node.score is not None],
+            }
+
+            # Store retrieval info for citation tracking
+            self.retrieval_info = [
+                {
+                    "content": node.node.text[:200],
+                    "score": node.score,
+                    "metadata": node.node.metadata,
+                }
+                for node in nodes
+            ]
+
+        self.logger.debug(f"Retrieved {len(nodes)} nodes")
+
+    def on_synthesis_start(self, query: str) -> None:
+        """Called when response synthesis starts."""
+        self.step_counter += 1
+        step = ReasoningStep(
+            step_id=f"synthesis_{self.step_counter}",
+            description="Response synthesis",
+            input_data={"query": query},
+        )
+        self.steps.append(step)
+        self.logger.debug("Starting response synthesis")
+
+    def on_synthesis_end(self, response: str) -> None:
+        """Called when response synthesis ends."""
+        if self.steps:
+            last_step = self.steps[-1]
+            last_step.output_data = {"response": response[:200]}
+        self.logger.debug("Response synthesis completed")
+
+
+class Reasoning(ReasoningBase):
+    """LlamaIndex-based reasoning adapter focused on RAG workflows."""
+
+    def __init__(
+        self, settings: LlamaIndexReasoningSettings | None = None, **kwargs: t.Any
+    ) -> None:
+        super().__init__(**kwargs)
+        self._settings = settings or LlamaIndexReasoningSettings()
+        self._llm: OpenAI | None = None
+        self._indices: dict[str, VectorStoreIndex] = {}
+        self._query_engines: dict[str, BaseQueryEngine] = {}
+        self._agents: dict[str, ReActAgent] = {}
+        self._chat_engines: dict[str, SimpleChatEngine] = {}
+
+        if not LLAMAINDEX_AVAILABLE:
+            raise ImportError(
+                "LlamaIndex is not installed. Please install with: "
+                "pip install 'acb[reasoning]' or pip install llama-index"
+            )
+
+    async def _create_client(self) -> OpenAI:
+        """Create LlamaIndex OpenAI LLM client."""
+        if self._settings.api_key:
+            api_key = self._settings.api_key.get_secret_value()
+        else:
+            import os
+
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise ValueError(
+                    "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
+                )
+
+        # Create OpenAI LLM
+        llm = OpenAI(
+            model=self._settings.model,
+            temperature=self._settings.temperature,
+            max_tokens=self._settings.max_tokens_per_step,
+            api_key=api_key,
+            api_base=self._settings.base_url,
+            timeout=self._settings.timeout_seconds,
+        )
+
+        # Configure global settings
+        Settings.llm = llm
+        Settings.chunk_size = self._settings.chunk_size
+        Settings.chunk_overlap = self._settings.chunk_overlap
+
+        return llm
+
+    async def _reason(self, request: ReasoningRequest) -> ReasoningResponse:
+        """Perform reasoning using LlamaIndex."""
+        start_time = time.time()
+        callback = LlamaIndexCallback(self.logger)
+
+        try:
+            await self._ensure_client()
+
+            if request.strategy == ReasoningStrategy.RAG_WORKFLOW:
+                response = await self._rag_workflow_reasoning(request, callback)
+            elif request.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
+                response = await self._chain_of_thought_reasoning(request, callback)
+            elif request.strategy == ReasoningStrategy.REACT:
+                response = await self._react_reasoning(request, callback)
+            else:
+                # Default to RAG workflow (LlamaIndex's strength)
+                response = await self._rag_workflow_reasoning(request, callback)
+
+            # Calculate metrics
+            total_duration = int((time.time() - start_time) * 1000)
+            response.total_duration_ms = total_duration
+            response.reasoning_chain.extend(callback.steps)
+
+            if not response.confidence_score:
+                response.confidence_score = await calculate_confidence_score(
+                    response.reasoning_chain
+                )
+
+            # Add citation information
+            if self._settings.enable_citation_tracking and callback.retrieval_info:
+                response.sources_cited = callback.retrieval_info
+
+            return response
+
+        except Exception as e:
+            self.logger.error(f"LlamaIndex reasoning failed: {e}")
+            return ReasoningResponse(
+                final_answer="",
+                reasoning_chain=callback.steps,
+                strategy_used=request.strategy,
+                provider=ReasoningProvider.LLAMAINDEX,
+                total_duration_ms=int((time.time() - start_time) * 1000),
+                error=str(e),
+            )
+
+    async def _rag_workflow_reasoning(
+        self, request: ReasoningRequest, callback: LlamaIndexCallback
+    ) -> ReasoningResponse:
+        """Perform RAG workflow reasoning using LlamaIndex."""
+        try:
+            # Get or create index for knowledge base
+            if request.context and request.context.knowledge_base:
+                index = await self._get_or_create_index(request.context.knowledge_base)
+                query_engine = await self._get_or_create_query_engine(
+                    request.context.knowledge_base, index
+                )
+            else:
+                # Create a simple query engine for general reasoning
+                llm = await self._ensure_client()
+                query_engine = self._create_simple_query_engine(llm)
+
+            # Perform retrieval and reasoning
+            callback.on_retrieve_start(request.query)
+
+            # Execute query
+            response = query_engine.query(request.query)
+
+            # Extract retrieval information
+            if hasattr(response, "source_nodes") and response.source_nodes:
+                callback.on_retrieve_end(response.source_nodes)
+
+            callback.on_synthesis_start(request.query)
+            final_answer = str(response)
+            callback.on_synthesis_end(final_answer)
+
+            return ReasoningResponse(
+                final_answer=final_answer,
+                reasoning_chain=[],  # Will be populated by callback
+                strategy_used=ReasoningStrategy.RAG_WORKFLOW,
+                provider=ReasoningProvider.LLAMAINDEX,
+                confidence_score=0.9,  # High confidence for RAG
+            )
+
+        except Exception as e:
+            self.logger.error(f"RAG workflow failed: {e}")
+            raise
+
+    async def _chain_of_thought_reasoning(
+        self, request: ReasoningRequest, callback: LlamaIndexCallback
+    ) -> ReasoningResponse:
+        """Perform chain-of-thought reasoning using LlamaIndex."""
+        llm = await self._ensure_client()
+
+        # Create a step-by-step reasoning prompt
+        cot_template = PromptTemplate(
+            template="""
+You are an expert reasoning assistant. Think through this problem step by step.
+
+Question: {query_str}
+
+Please follow this structured approach:
+
+1. **Problem Understanding**: Clearly state what is being asked
+2. **Information Analysis**: Identify key information and constraints
+3. **Strategy Selection**: Choose the best approach to solve this problem
+4. **Step-by-Step Reasoning**: Work through the problem systematically
+5. **Verification**: Check your reasoning for errors
+6. **Final Answer**: Provide a clear, concise conclusion
+
+Let's work through this:
+"""
+        )
+
+        # Create a simple query engine with the custom template
+        query_engine = self._create_simple_query_engine(llm, cot_template)
+
+        callback.on_synthesis_start(request.query)
+        response = query_engine.query(request.query)
+        final_answer = str(response)
+        callback.on_synthesis_end(final_answer)
+
+        return ReasoningResponse(
+            final_answer=final_answer,
+            reasoning_chain=[],
+            strategy_used=ReasoningStrategy.CHAIN_OF_THOUGHT,
+            provider=ReasoningProvider.LLAMAINDEX,
+            confidence_score=0.8,
+        )
+
+    async def _react_reasoning(
+        self, request: ReasoningRequest, callback: LlamaIndexCallback
+    ) -> ReasoningResponse:
+        """Perform ReAct reasoning with tools using LlamaIndex."""
+        if not request.tools:
+            # Fall back to chain of thought if no tools
+            return await self._chain_of_thought_reasoning(request, callback)
+
+        llm = await self._ensure_client()
+
+        # Convert tools to LlamaIndex format
+        tools = []
+        for tool_def in request.tools:
+
+            def tool_func(input_str: str, tool_def=tool_def) -> str:
+                # Placeholder tool execution
+                return f"Tool {tool_def.name} executed with: {input_str}"
+
+            llamaindex_tool = FunctionTool.from_defaults(
+                fn=tool_func,
+                name=tool_def.name,
+                description=tool_def.description,
+            )
+            tools.append(llamaindex_tool)
+
+        # Create ReAct agent
+        agent = ReActAgent.from_tools(
+            tools=tools,
+            llm=llm,
+            verbose=self._settings.verbose,
+            max_function_calls=self._settings.max_function_calls,
+        )
+
+        # Execute agent
+        response = agent.chat(request.query)
+
+        return ReasoningResponse(
+            final_answer=str(response),
+            reasoning_chain=[],
+            strategy_used=ReasoningStrategy.REACT,
+            provider=ReasoningProvider.LLAMAINDEX,
+            confidence_score=0.85,
+        )
+
+    async def _get_or_create_index(self, knowledge_base_name: str) -> VectorStoreIndex:
+        """Get existing index or create new one for knowledge base."""
+        if knowledge_base_name in self._indices:
+            return self._indices[knowledge_base_name]
+
+        try:
+            # Try to integrate with vector database adapter
+            from acb.adapters import import_adapter
+
+            Vector = import_adapter("vector")
+            vector_adapter = depends.get(Vector)
+
+            # Get documents from vector database
+            # This is a simplified integration - in practice, you'd want
+            # to properly convert vector DB results to LlamaIndex documents
+            docs = await self._get_documents_from_vector_db(
+                knowledge_base_name, vector_adapter
+            )
+
+            if docs:
+                # Create index from documents
+                index = VectorStoreIndex.from_documents(docs)
+
+                # Persist index if enabled
+                if self._settings.persist_index:
+                    index.storage_context.persist(
+                        persist_dir=f"{self._settings.index_cache_dir}/{knowledge_base_name}"
+                    )
+
+                self._indices[knowledge_base_name] = index
+                return index
+
+        except Exception as e:
+            self.logger.warning(f"Failed to integrate with vector DB: {e}")
+
+        # Fallback: create empty index
+        index = VectorStoreIndex.from_documents([])
+        self._indices[knowledge_base_name] = index
+        return index
+
+    async def _get_documents_from_vector_db(
+        self, collection_name: str, vector_adapter: t.Any
+    ) -> list[Document]:
+        """Get documents from vector database and convert to LlamaIndex format."""
+        try:
+            # Get all documents from collection (simplified)
+            results = await vector_adapter.get_all(
+                collection=collection_name, limit=1000
+            )
+
+            documents = []
+            for result in results:
+                doc = Document(
+                    text=result.get("text", ""),
+                    metadata=result.get("metadata", {}),
+                )
+                documents.append(doc)
+
+            return documents
+
+        except Exception as e:
+            self.logger.error(f"Failed to get documents from vector DB: {e}")
+            return []
+
+    async def _get_or_create_query_engine(
+        self, knowledge_base_name: str, index: VectorStoreIndex
+    ) -> BaseQueryEngine:
+        """Get existing query engine or create new one."""
+        if knowledge_base_name in self._query_engines:
+            return self._query_engines[knowledge_base_name]
+
+        # Create retriever
+        retriever = VectorIndexRetriever(
+            index=index,
+            similarity_top_k=self._settings.similarity_top_k,
+        )
+
+        # Create response synthesizer
+        response_synthesizer = get_response_synthesizer(
+            response_mode=self._settings.response_mode,
+            streaming=self._settings.streaming,
+        )
+
+        # Create query engine
+        query_engine = RetrieverQueryEngine(
+            retriever=retriever,
+            response_synthesizer=response_synthesizer,
+        )
+
+        self._query_engines[knowledge_base_name] = query_engine
+        return query_engine
+
+    def _create_simple_query_engine(
+        self, llm: OpenAI, template: PromptTemplate | None = None
+    ) -> BaseQueryEngine:
+        """Create a simple query engine for general reasoning."""
+        # Create empty index for simple querying
+        index = VectorStoreIndex.from_documents([])
+
+        # Create query engine
+        query_engine = index.as_query_engine(
+            llm=llm,
+            response_mode=self._settings.response_mode,
+            streaming=self._settings.streaming,
+        )
+
+        if template:
+            query_engine.update_prompts(
+                {"response_synthesizer:text_qa_template": template}
+            )
+
+        return query_engine
+
+    async def create_chat_engine(
+        self, session_id: str, knowledge_base: str | None = None
+    ) -> SimpleChatEngine:
+        """Create a chat engine for conversational reasoning."""
+        if session_id in self._chat_engines:
+            return self._chat_engines[session_id]
+
+        llm = await self._ensure_client()
+
+        if knowledge_base:
+            # Create chat engine with knowledge base
+            index = await self._get_or_create_index(knowledge_base)
+            chat_engine = index.as_chat_engine(
+                llm=llm,
+                memory=ChatMemoryBuffer.from_defaults(
+                    token_limit=self._settings.chat_memory_token_limit
+                ),
+                streaming=self._settings.streaming,
+            )
+        else:
+            # Create simple chat engine
+            chat_engine = SimpleChatEngine.from_defaults(
+                llm=llm,
+                memory=ChatMemoryBuffer.from_defaults(
+                    token_limit=self._settings.chat_memory_token_limit
+                ),
+            )
+
+        self._chat_engines[session_id] = chat_engine
+        return chat_engine
+
+    async def chat(
+        self, session_id: str, message: str, knowledge_base: str | None = None
+    ) -> str:
+        """Perform conversational reasoning."""
+        chat_engine = await self.create_chat_engine(session_id, knowledge_base)
+        response = chat_engine.chat(message)
+        return str(response)
+
+    async def add_documents_to_index(
+        self,
+        knowledge_base_name: str,
+        documents: list[str],
+        metadata: list[dict[str, t.Any]] | None = None,
+    ) -> None:
+        """Add documents to a knowledge base index."""
+        # Convert to LlamaIndex documents
+        docs = []
+        for i, doc_text in enumerate(documents):
+            doc_metadata = metadata[i] if metadata and i < len(metadata) else {}
+            doc = Document(text=doc_text, metadata=doc_metadata)
+            docs.append(doc)
+
+        # Get or create index
+        index = await self._get_or_create_index(knowledge_base_name)
+
+        # Add documents to index
+        for doc in docs:
+            index.insert(doc)
+
+        # Invalidate cached query engine to reflect new documents
+        if knowledge_base_name in self._query_engines:
+            del self._query_engines[knowledge_base_name]
+
+    async def _tree_of_thoughts(
+        self, request: ReasoningRequest, num_paths: int
+    ) -> ReasoningResponse:
+        """Enhanced tree-of-thoughts using LlamaIndex."""
+        await self._ensure_client()
+
+        # Create different reasoning perspectives
+        perspectives = [
+            "Analyze this systematically using first principles",
+            "Consider this from a practical, implementation-focused view",
+            "Examine this through a theoretical and abstract lens",
+            "Approach this with creative and innovative thinking",
+            "Focus on potential risks and failure modes",
+        ]
+
+        tasks = []
+        for i in range(min(num_paths, len(perspectives))):
+            enhanced_query = f"{perspectives[i]}: {request.query}"
+            path_request = ReasoningRequest(
+                query=enhanced_query,
+                strategy=ReasoningStrategy.CHAIN_OF_THOUGHT,
+                context=request.context,
+                max_steps=request.max_steps,
+                temperature=request.temperature + (i * 0.1),
+                model=request.model,
+            )
+            tasks.append(self._reason(path_request))
+
+        # Execute paths in parallel
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Synthesize results
+        valid_results = [
+            r for r in results if isinstance(r, ReasoningResponse) and not r.error
+        ]
+        if not valid_results:
+            return ReasoningResponse(
+                final_answer="Failed to generate valid reasoning paths",
+                reasoning_chain=[],
+                strategy_used=ReasoningStrategy.TREE_OF_THOUGHTS,
+                provider=ReasoningProvider.LLAMAINDEX,
+                error="All reasoning paths failed",
+            )
+
+        # Use LlamaIndex to synthesize the final answer
+        synthesis_docs = [
+            Document(
+                text=f"Reasoning Path {i + 1}: {result.final_answer}",
+                metadata={"path": i + 1, "confidence": result.confidence_score or 0.0},
+            )
+            for i, result in enumerate(valid_results)
+        ]
+
+        synthesis_index = VectorStoreIndex.from_documents(synthesis_docs)
+        synthesis_engine = synthesis_index.as_query_engine(
+            response_mode="tree_summarize"
+        )
+
+        synthesis_query = f"Based on multiple reasoning paths, provide the best answer to: {request.query}"
+        final_response = synthesis_engine.query(synthesis_query)
+
+        # Combine reasoning chains
+        combined_chain = []
+        for result in valid_results:
+            combined_chain.extend(result.reasoning_chain)
+
+        best_confidence = max(
+            result.confidence_score or 0.0 for result in valid_results
+        )
+
+        return ReasoningResponse(
+            final_answer=str(final_response),
+            reasoning_chain=combined_chain,
+            strategy_used=ReasoningStrategy.TREE_OF_THOUGHTS,
+            provider=ReasoningProvider.LLAMAINDEX,
+            confidence_score=min(best_confidence + 0.1, 1.0),
+        )
+
+
+# Export the adapter class
+__all__ = ["Reasoning", "LlamaIndexReasoningSettings", "MODULE_METADATA"]

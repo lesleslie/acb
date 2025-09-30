@@ -91,10 +91,8 @@ class OptimizationConfig(BaseModel):
     response_etag_enabled: bool = True
     response_cache_control: str = "public, max-age=3600"
 
-    # FastBlocks integration
-    fastblocks_integration: bool = True
-    htmx_optimization: bool = True
-    template_caching: bool = True
+    # Web framework integration (can be extended by web frameworks)
+    web_framework_integration: bool = False
 
     class Config:
         extra = "forbid"

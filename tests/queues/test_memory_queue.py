@@ -31,13 +31,13 @@ class SimpleTaskHandler(TaskHandler):
     async def handle(self, task: TaskData) -> TaskResult:
         """Handle a task."""
         self.processed_tasks.append(task)
-        
+
         if self.delay > 0:
             await asyncio.sleep(self.delay)
-        
+
         if self.should_fail:
             raise ValueError("Handler failure")
-        
+
         return TaskResult(
             task_id=task.task_id,
             status=TaskStatus.COMPLETED,
@@ -83,7 +83,7 @@ class TestPriorityTaskItem:
         """Test creating PriorityTaskItem."""
         scheduled_time = datetime.utcnow().timestamp()
         item = PriorityTaskItem(sample_task, scheduled_time)
-        
+
         assert item.task == sample_task
         assert item.scheduled_time == scheduled_time
         assert item.priority == -TaskPriority.NORMAL.value
@@ -91,7 +91,7 @@ class TestPriorityTaskItem:
     def test_priority_ordering(self, sample_task):
         """Test priority-based ordering."""
         current_time = datetime.utcnow().timestamp()
-        
+
         # Create tasks with different priorities
         low_task = TaskData(
             task_type="low",
@@ -103,10 +103,10 @@ class TestPriorityTaskItem:
             queue_name="test",
             priority=TaskPriority.HIGH
         )
-        
+
         low_item = PriorityTaskItem(low_task, current_time)
         high_item = PriorityTaskItem(high_task, current_time)
-        
+
         # High priority should come before low priority
         assert high_item < low_item
 
@@ -114,10 +114,10 @@ class TestPriorityTaskItem:
         """Test time-based ordering."""
         current_time = datetime.utcnow().timestamp()
         future_time = current_time + 60
-        
+
         current_item = PriorityTaskItem(sample_task, current_time)
         future_item = PriorityTaskItem(sample_task, future_time)
-        
+
         # Earlier time should come before later time
         assert current_item < future_item
 
@@ -128,7 +128,7 @@ class TestMemoryQueueSettings:
     def test_default_settings(self):
         """Test default memory queue settings."""
         settings = MemoryQueueSettings()
-        
+
         assert settings.max_memory_usage == 100_000_000
         assert settings.max_tasks_per_queue == 10_000
         assert settings.enable_task_persistence is False
@@ -141,7 +141,7 @@ class TestMemoryQueueSettings:
             enable_rate_limiting=True,
             rate_limit_per_second=50,
         )
-        
+
         assert settings.max_memory_usage == 50_000_000
         assert settings.max_tasks_per_queue == 5_000
         assert settings.enable_rate_limiting is True
@@ -162,7 +162,7 @@ class TestMemoryQueue:
     async def test_queue_lifecycle(self, memory_queue):
         """Test queue start/stop lifecycle."""
         assert memory_queue.is_running
-        
+
         await memory_queue.stop()
         assert not memory_queue.is_running
 
@@ -173,7 +173,7 @@ class TestMemoryQueue:
         task_id = await memory_queue.enqueue(sample_task)
         assert task_id == str(sample_task.task_id)
         assert memory_queue._metrics.pending_tasks == 1
-        
+
         # Dequeue task
         dequeued_task = await memory_queue.dequeue()
         assert dequeued_task.task_id == sample_task.task_id
@@ -202,17 +202,17 @@ class TestMemoryQueue:
             priority=TaskPriority.NORMAL,
             payload={"order": 2}
         )
-        
+
         # Enqueue in random order
         await memory_queue.enqueue(low_task)
         await memory_queue.enqueue(high_task)
         await memory_queue.enqueue(normal_task)
-        
+
         # Dequeue should return in priority order
         first = await memory_queue.dequeue()
         second = await memory_queue.dequeue()
         third = await memory_queue.dequeue()
-        
+
         assert first.payload["order"] == 1  # High priority
         assert second.payload["order"] == 2  # Normal priority
         assert third.payload["order"] == 3   # Low priority
@@ -227,17 +227,17 @@ class TestMemoryQueue:
             delay=0.1,  # 100ms delay
             payload={"delayed": True}
         )
-        
+
         # Enqueue delayed task
         await memory_queue.enqueue(delayed_task)
-        
+
         # Should not be immediately available
         immediate_task = await memory_queue.dequeue()
         assert immediate_task is None
-        
+
         # Wait for delay to pass
         await asyncio.sleep(0.2)
-        
+
         # Now should be available
         dequeued_task = await memory_queue.dequeue()
         assert dequeued_task is not None
@@ -254,17 +254,17 @@ class TestMemoryQueue:
             scheduled_at=scheduled_time,
             payload={"scheduled": True}
         )
-        
+
         # Enqueue scheduled task
         await memory_queue.enqueue(scheduled_task)
-        
+
         # Should not be immediately available
         immediate_task = await memory_queue.dequeue()
         assert immediate_task is None
-        
+
         # Wait for scheduled time
         await asyncio.sleep(0.2)
-        
+
         # Now should be available
         dequeued_task = await memory_queue.dequeue()
         assert dequeued_task is not None
@@ -276,12 +276,12 @@ class TestMemoryQueue:
         # Initially no status
         status = await memory_queue.get_task_status(sample_task.task_id)
         assert status is None
-        
+
         # Enqueue task - should show pending
         await memory_queue.enqueue(sample_task)
         status = await memory_queue.get_task_status(sample_task.task_id)
         assert status.status == TaskStatus.PENDING
-        
+
         # Dequeue task - should show processing
         await memory_queue.dequeue()
         status = await memory_queue.get_task_status(sample_task.task_id)
@@ -293,12 +293,12 @@ class TestMemoryQueue:
         # Enqueue task
         await memory_queue.enqueue(sample_task)
         assert memory_queue._metrics.pending_tasks == 1
-        
+
         # Cancel task
         cancelled = await memory_queue.cancel_task(sample_task.task_id)
         assert cancelled is True
         assert memory_queue._metrics.pending_tasks == 0
-        
+
         # Task should be marked as cancelled
         status = await memory_queue.get_task_status(sample_task.task_id)
         assert status.status == TaskStatus.CANCELLED
@@ -310,7 +310,7 @@ class TestMemoryQueue:
         info = await memory_queue.get_queue_info("test_queue")
         assert info["name"] == "test_queue"
         assert info["pending_tasks"] == 0
-        
+
         # Add task and check info
         await memory_queue.enqueue(sample_task)
         info = await memory_queue.get_queue_info("test_queue")
@@ -327,9 +327,9 @@ class TestMemoryQueue:
                 payload={"index": i}
             )
             await memory_queue.enqueue(task)
-        
+
         assert memory_queue._metrics.pending_tasks == 5
-        
+
         # Purge queue
         purged_count = await memory_queue.purge_queue("test_queue")
         assert purged_count == 5
@@ -341,10 +341,10 @@ class TestMemoryQueue:
         # Add tasks to different queues
         task1 = TaskData(task_type="test", queue_name="queue1")
         task2 = TaskData(task_type="test", queue_name="queue2")
-        
+
         await memory_queue.enqueue(task1)
         await memory_queue.enqueue(task2)
-        
+
         queues = await memory_queue.list_queues()
         assert "queue1" in queues
         assert "queue2" in queues
@@ -356,7 +356,7 @@ class TestMemoryQueue:
         memory_settings.max_memory_usage = 1000  # 1KB
         queue = MemoryQueue(memory_settings)
         await queue.start()
-        
+
         try:
             # Create large task that should exceed limit
             large_task = TaskData(
@@ -364,14 +364,14 @@ class TestMemoryQueue:
                 queue_name="test",
                 payload={"data": "x" * 10000}  # 10KB payload
             )
-            
+
             # First task might fit
             await queue.enqueue(large_task)
-            
+
             # Second task should fail due to memory limit
             with pytest.raises(RuntimeError, match="Memory limit exceeded"):
                 await queue.enqueue(large_task)
-        
+
         finally:
             await queue.stop()
 
@@ -382,7 +382,7 @@ class TestMemoryQueue:
         memory_settings.max_tasks_per_queue = 2
         queue = MemoryQueue(memory_settings)
         await queue.start()
-        
+
         try:
             # Add tasks up to limit
             for i in range(2):
@@ -392,17 +392,17 @@ class TestMemoryQueue:
                     payload={"index": i}
                 )
                 await queue.enqueue(task)
-            
+
             # Third task should fail
             task = TaskData(
                 task_type="test",
                 queue_name="limited_queue",
                 payload={"index": 3}
             )
-            
+
             with pytest.raises(RuntimeError, match="Queue limited_queue is full"):
                 await queue.enqueue(task)
-        
+
         finally:
             await queue.stop()
 
@@ -412,10 +412,10 @@ class TestMemoryQueue:
         # Enable rate limiting
         memory_settings.enable_rate_limiting = True
         memory_settings.rate_limit_per_second = 2
-        
+
         queue = MemoryQueue(memory_settings)
         await queue.start()
-        
+
         try:
             # First two tasks should succeed
             for i in range(2):
@@ -425,17 +425,17 @@ class TestMemoryQueue:
                     payload={"index": i}
                 )
                 await queue.enqueue(task)
-            
+
             # Third task should fail due to rate limit
             task = TaskData(
                 task_type="test",
                 queue_name="rate_limited",
                 payload={"index": 3}
             )
-            
+
             with pytest.raises(RuntimeError, match="Rate limit exceeded"):
                 await queue.enqueue(task)
-        
+
         finally:
             await queue.stop()
 
@@ -445,7 +445,7 @@ class TestMemoryQueue:
         # Create failing handler
         handler = SimpleTaskHandler(should_fail=True)
         memory_queue.register_handler("failing_task", handler)
-        
+
         # Create task with max retries
         failing_task = TaskData(
             task_type="failing_task",
@@ -453,10 +453,10 @@ class TestMemoryQueue:
             max_retries=0,  # No retries
             payload={"should_fail": True}
         )
-        
+
         # Process task (should fail and go to DLQ)
         await memory_queue._process_task(failing_task, "test_worker")
-        
+
         # Check dead letter queue
         dead_letter_tasks = await memory_queue.get_dead_letter_tasks()
         assert len(dead_letter_tasks) == 1
@@ -473,13 +473,13 @@ class TestMemoryQueue:
             error="Test failure",
             queue_name=task.queue_name,
         )
-        
+
         await memory_queue._store_dead_letter_task(task, result)
-        
+
         # Retry dead letter task
         retried = await memory_queue.retry_dead_letter_task(task.task_id)
         assert retried is True
-        
+
         # Task should be back in queue
         assert memory_queue._metrics.pending_tasks == 1
 
@@ -494,9 +494,9 @@ class TestMemoryQueue:
             completed_at=datetime.utcnow() - timedelta(hours=2),
             queue_name=sample_task.queue_name,
         )
-        
+
         memory_queue._completed_tasks[sample_task.task_id] = result
-        
+
         # Clean up old completed tasks
         cleaned = await memory_queue.clear_completed_tasks(
             older_than=timedelta(hours=1)
@@ -508,10 +508,10 @@ class TestMemoryQueue:
     async def test_health_check(self, memory_queue):
         """Test memory queue health check."""
         health = await memory_queue.health_check()
-        
+
         assert health["healthy"] is True
         assert "memory_queue" in health
-        
+
         memory_info = health["memory_queue"]
         assert "memory_usage" in memory_info
         assert "memory_limit" in memory_info
@@ -522,16 +522,16 @@ class TestMemoryQueue:
         """Test metrics updates during operation."""
         handler = SimpleTaskHandler()
         memory_queue.register_handler(sample_task.task_type, handler)
-        
+
         # Initial metrics
         assert memory_queue._metrics.pending_tasks == 0
         assert memory_queue._metrics.processing_tasks == 0
         assert memory_queue._metrics.completed_tasks == 0
-        
+
         # Enqueue task
         await memory_queue.enqueue(sample_task)
         assert memory_queue._metrics.pending_tasks == 1
-        
+
         # Process task
         await memory_queue._process_task(sample_task, "test_worker")
         assert memory_queue._metrics.completed_tasks == 1
@@ -546,13 +546,13 @@ class TestMemoryQueueIntegration:
         # Create queue with workers
         memory_settings.max_workers = 2
         queue = MemoryQueue(memory_settings)
-        
+
         # Create handler
         handler = SimpleTaskHandler(delay=0.01)  # Small delay
         queue.register_handler("integration_task", handler)
-        
+
         await queue.start()
-        
+
         try:
             # Add multiple tasks
             task_ids = []
@@ -564,18 +564,18 @@ class TestMemoryQueueIntegration:
                 )
                 task_id = await queue.enqueue(task)
                 task_ids.append(task_id)
-            
+
             # Wait for processing
             await asyncio.sleep(0.2)
-            
+
             # Check that tasks were processed
             assert len(handler.processed_tasks) == 5
-            
+
             # Verify all tasks completed
             for i, task_id in enumerate(task_ids):
                 # Note: In real implementation, you'd check task status
                 assert task_id is not None
-        
+
         finally:
             await queue.stop()
 
@@ -591,17 +591,17 @@ class TestMemoryQueueIntegration:
                     payload={"index": start_index + i}
                 )
                 await memory_queue.enqueue(task)
-        
+
         # Run concurrent enqueue operations
         await asyncio.gather(
             enqueue_tasks(0, 10),
             enqueue_tasks(10, 10),
             enqueue_tasks(20, 10),
         )
-        
+
         # Verify all tasks were enqueued
         assert memory_queue._metrics.pending_tasks == 30
-        
+
         # Dequeue all tasks
         dequeued_count = 0
         while True:
@@ -609,7 +609,7 @@ class TestMemoryQueueIntegration:
             if task is None:
                 break
             dequeued_count += 1
-        
+
         assert dequeued_count == 30
 
 
@@ -620,14 +620,14 @@ class TestMemoryQueueFactory:
         """Test factory function."""
         settings = MemoryQueueSettings(max_workers=5)
         queue = create_memory_queue(settings)
-        
+
         assert isinstance(queue, MemoryQueue)
         assert queue._settings.max_workers == 5
 
     def test_create_memory_queue_default_settings(self):
         """Test factory function with default settings."""
         queue = create_memory_queue()
-        
+
         assert isinstance(queue, MemoryQueue)
         assert isinstance(queue._settings, MemoryQueueSettings)
 
