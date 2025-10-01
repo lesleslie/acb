@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from acb.config import Config, Settings
 from acb.core.cleanup import CleanupMixin
 from acb.depends import depends
@@ -121,8 +121,9 @@ class TaskData(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     tags: dict[str, str] = Field(default_factory=dict)
 
-    @validator("scheduled_at", pre=True)
-    def parse_scheduled_at(self, v):
+    @field_validator("scheduled_at", mode="before")
+    @classmethod
+    def parse_scheduled_at(cls, v):
         if isinstance(v, str):
             return datetime.fromisoformat(v)
         return v

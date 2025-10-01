@@ -22,7 +22,7 @@ except ImportError:
 
 import contextlib
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from ._base import (
     QueueBase,
@@ -65,8 +65,9 @@ class ScheduleRule(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     tags: dict[str, str] = Field(default_factory=dict)
 
-    @validator("cron_expression")
-    def validate_cron_expression(self, v):
+    @field_validator("cron_expression")
+    @classmethod
+    def validate_cron_expression(cls, v):
         if v and not CRONITER_AVAILABLE:
             msg = "croniter is required for cron expressions. Install with: pip install croniter"
             raise ImportError(
@@ -83,8 +84,9 @@ class ScheduleRule(BaseModel):
 
         return v
 
-    @validator("interval_seconds")
-    def validate_interval(self, v):
+    @field_validator("interval_seconds")
+    @classmethod
+    def validate_interval(cls, v):
         if v is not None and v <= 0:
             msg = "Interval must be positive"
             raise ValueError(msg)

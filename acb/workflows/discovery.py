@@ -170,10 +170,11 @@ def generate_engine_id() -> UUID:
     """Generate a UUID7 identifier for workflow engine registration.
 
     Returns:
-        UUID7 if available, otherwise UUID4
+        UUID7 if available, otherwise UUID4 (as standard UUID)
     """
     if _uuid7_available:
-        return uuid_lib.uuid7()
+        # Convert uuid_utils.UUID to standard uuid.UUID for pydantic compatibility
+        return UUID(str(uuid_lib.uuid7()))
     return uuid_lib.uuid4()
 
 
