@@ -8,12 +8,14 @@ lifecycle across different platforms like MLflow, W&B, and TensorBoard.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from datetime import datetime
+    from pathlib import Path
 
 
 class ExperimentStatus(str, Enum):
@@ -147,17 +149,14 @@ class BaseExperimentAdapter(ABC):
     @abstractmethod
     async def connect(self) -> None:
         """Connect to experiment tracking service."""
-        pass
 
     @abstractmethod
     async def disconnect(self) -> None:
         """Disconnect from experiment tracking service."""
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
         """Check if the experiment tracking service is healthy."""
-        pass
 
     # Experiment Management
     @abstractmethod
@@ -177,7 +176,6 @@ class BaseExperimentAdapter(ABC):
         Returns:
             Experiment ID
         """
-        pass
 
     @abstractmethod
     async def get_experiment(self, experiment_id: str) -> ExperimentInfo:
@@ -189,7 +187,6 @@ class BaseExperimentAdapter(ABC):
         Returns:
             Experiment information
         """
-        pass
 
     @abstractmethod
     async def list_experiments(
@@ -206,7 +203,6 @@ class BaseExperimentAdapter(ABC):
         Returns:
             List of experiment information
         """
-        pass
 
     @abstractmethod
     async def delete_experiment(self, experiment_id: str) -> None:
@@ -215,7 +211,6 @@ class BaseExperimentAdapter(ABC):
         Args:
             experiment_id: Experiment ID
         """
-        pass
 
     # Run Management
     @abstractmethod
@@ -235,11 +230,12 @@ class BaseExperimentAdapter(ABC):
         Returns:
             Run ID
         """
-        pass
 
     @abstractmethod
     async def end_run(
-        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+        self,
+        run_id: str,
+        status: ExperimentStatus = ExperimentStatus.FINISHED,
     ) -> None:
         """End an experiment run.
 
@@ -247,7 +243,6 @@ class BaseExperimentAdapter(ABC):
             run_id: Run ID
             status: Final run status
         """
-        pass
 
     @abstractmethod
     async def get_run(self, run_id: str) -> dict[str, Any]:
@@ -259,7 +254,6 @@ class BaseExperimentAdapter(ABC):
         Returns:
             Run information
         """
-        pass
 
     # Parameter and Metric Logging
     @abstractmethod
@@ -271,7 +265,6 @@ class BaseExperimentAdapter(ABC):
             key: Parameter name
             value: Parameter value
         """
-        pass
 
     @abstractmethod
     async def log_params(self, run_id: str, params: dict[str, Any]) -> None:
@@ -281,14 +274,13 @@ class BaseExperimentAdapter(ABC):
             run_id: Run ID
             params: Parameters dictionary
         """
-        pass
 
     @abstractmethod
     async def log_metric(
         self,
         run_id: str,
         key: str,
-        value: float | int,
+        value: float,
         step: int | None = None,
         timestamp: datetime | None = None,
     ) -> None:
@@ -301,7 +293,6 @@ class BaseExperimentAdapter(ABC):
             step: Optional step number
             timestamp: Optional timestamp
         """
-        pass
 
     @abstractmethod
     async def log_metrics(
@@ -319,7 +310,6 @@ class BaseExperimentAdapter(ABC):
             step: Optional step number
             timestamp: Optional timestamp
         """
-        pass
 
     # Artifact Management
     @abstractmethod
@@ -338,7 +328,6 @@ class BaseExperimentAdapter(ABC):
             artifact_path: Remote artifact path
             artifact_type: Artifact type
         """
-        pass
 
     @abstractmethod
     async def log_artifacts(
@@ -354,7 +343,6 @@ class BaseExperimentAdapter(ABC):
             local_dir: Local directory path
             artifact_path: Remote artifact path prefix
         """
-        pass
 
     @abstractmethod
     async def download_artifact(
@@ -370,11 +358,12 @@ class BaseExperimentAdapter(ABC):
             artifact_path: Remote artifact path
             local_path: Local download path
         """
-        pass
 
     @abstractmethod
     async def list_artifacts(
-        self, run_id: str, path: str | None = None
+        self,
+        run_id: str,
+        path: str | None = None,
     ) -> list[ArtifactInfo]:
         """List artifacts for a run.
 
@@ -385,7 +374,6 @@ class BaseExperimentAdapter(ABC):
         Returns:
             List of artifact information
         """
-        pass
 
     # Search and Query
     @abstractmethod
@@ -409,7 +397,6 @@ class BaseExperimentAdapter(ABC):
         Returns:
             List of run information
         """
-        pass
 
     # Convenience Methods
     async def set_experiment(self, experiment_id: str) -> None:

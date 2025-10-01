@@ -84,7 +84,10 @@ class PerformanceTestProvider:
             self.results = []
 
         async def run_benchmark(
-            self, func: t.Callable, *args, **kwargs
+            self,
+            func: t.Callable,
+            *args,
+            **kwargs,
         ) -> dict[str, t.Any]:
             """Run a benchmark test."""
             # Warmup rounds
@@ -134,7 +137,10 @@ class PerformanceTestProvider:
             self.results = []
 
         async def run_load_test(
-            self, func: t.Callable, *args, **kwargs
+            self,
+            func: t.Callable,
+            *args,
+            **kwargs,
         ) -> dict[str, t.Any]:
             """Run a load test."""
             start_time = time.perf_counter()
@@ -206,7 +212,10 @@ class PerformanceTestProvider:
             self.start_time = time.perf_counter()
 
         def record_metric(
-            self, name: str, value: float, tags: dict | None = None
+            self,
+            name: str,
+            value: float,
+            tags: dict | None = None,
         ) -> None:
             """Record a performance metric."""
             timestamp = time.perf_counter() - self.start_time
@@ -219,7 +228,7 @@ class PerformanceTestProvider:
                     "value": value,
                     "timestamp": timestamp,
                     "tags": tags or {},
-                }
+                },
             )
 
         def get_metric_summary(self, name: str) -> dict[str, t.Any] | None:

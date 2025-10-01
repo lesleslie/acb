@@ -32,19 +32,16 @@ def format_tool_response(response: Any) -> dict[str, Any]:
     """Format a tool response for MCP transmission."""
     if isinstance(response, dict):
         return response
-    elif isinstance(response, list | tuple):
+    if isinstance(response, list | tuple):
         return {"items": list(response)}
-    elif isinstance(response, str | int | float | bool):
+    if isinstance(response, str | int | float | bool):
         return {"value": response}
     return {"value": str(response)}
 
 
 def validate_parameters(parameters: dict[str, Any], required_params: list[str]) -> bool:
     """Validate that required parameters are present."""
-    for param in required_params:
-        if param not in parameters:
-            return False
-    return True
+    return all(param in parameters for param in required_params)
 
 
 def get_parameter(parameters: dict[str, Any], name: str, default: Any = None) -> Any:
@@ -53,7 +50,11 @@ def get_parameter(parameters: dict[str, Any], name: str, default: Any = None) ->
 
 
 async def async_retry(
-    func: Any, max_attempts: int = 3, delay: float = 1.0, *args: Any, **kwargs: Any
+    func: Any,
+    max_attempts: int = 3,
+    delay: float = 1.0,
+    *args: Any,
+    **kwargs: Any,
 ) -> Any:
     """Execute a function with retry logic."""
     last_exception: Exception | None = None
@@ -73,4 +74,5 @@ async def async_retry(
     # This should never be reached due to the loop logic, but just in case
     if last_exception:
         raise last_exception
-    raise RuntimeError("Unexpected error in async_retry")
+    msg = "Unexpected error in async_retry"
+    raise RuntimeError(msg)

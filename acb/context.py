@@ -10,10 +10,11 @@ import asyncio
 import typing as t
 from contextvars import ContextVar
 
-from anyio import Path as AsyncPath
 from pydantic import BaseModel, ConfigDict
 
 if t.TYPE_CHECKING:
+    from anyio import Path as AsyncPath
+
     from .actions import Action
     from .adapters import Adapter
 
@@ -61,7 +62,8 @@ class ACBContext:
         self._lazy_registration_queue: list[tuple[str, AsyncPath]] = []
         self._registration_completed: bool = False
         self.pkg_registry: ContextVar[list[Pkg]] = ContextVar(
-            "pkg_registry", default=[]
+            "pkg_registry",
+            default=[],
         )
 
         # Runtime mode detection

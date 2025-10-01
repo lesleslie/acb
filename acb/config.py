@@ -156,7 +156,8 @@ def get_version_default() -> str:
 
         asyncio.get_running_loop()
         # If we're in an async context, we shouldn't use this function
-        raise RuntimeError("Use await get_version() in async context")
+        msg = "Use await get_version() in async context"
+        raise RuntimeError(msg)
     except RuntimeError:
         # No event loop running, return a sensible default
         return "0.1.0"
@@ -312,7 +313,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         data: dict[str, t.Any] = {}
         model_secrets = self.get_model_secrets()
         self.secrets_path: AsyncPath = await AsyncPath(
-            str(self.secrets_path)
+            str(self.secrets_path),
         ).expanduser()
         if not await self.secrets_path.exists():
             await self.secrets_path.mkdir(parents=True, exist_ok=True)
@@ -466,9 +467,12 @@ class Settings(BaseModel):
                 asyncio.get_running_loop()
                 # We're in an async context but being called synchronously
                 # This is problematic - defer to create_async()
-                raise RuntimeError(
+                msg = (
                     "Settings require async initialization. "
                     "Use 'await Settings.create_async()' instead."
+                )
+                raise RuntimeError(
+                    msg,
                 )
             except RuntimeError as e:
                 if "no running event loop" in str(e):
@@ -588,7 +592,7 @@ _adapter_instances: dict[type, t.Any] = {}
 def get_singleton_instance[T](cls: type[T], *args: t.Any, **kwargs: t.Any) -> T:
     if cls not in _adapter_instances:
         _adapter_instances[cls] = cls(*args, **kwargs)
-    return t.cast(T, _adapter_instances[cls])
+    return t.cast("T", _adapter_instances[cls])
 
 
 @t.runtime_checkable
@@ -798,7 +802,7 @@ class AdapterBase:
                     continue
 
         self.logger.debug(
-            f"No cleanup method found for resource type: {type(resource)}"
+            f"No cleanup method found for resource type: {type(resource)}",
         )
 
     async def cleanup(self) -> None:
@@ -813,7 +817,7 @@ class AdapterBase:
                 self.logger.debug(f"Successfully cleaned up {self.__class__.__name__}")
             except Exception as e:
                 self.logger.exception(
-                    f"Failed to cleanup {self.__class__.__name__}: {e}"
+                    f"Failed to cleanup {self.__class__.__name__}: {e}",
                 )
                 raise
 
@@ -832,7 +836,7 @@ class AdapterBase:
 class ConfigHotReload:
     """Simple configuration hot-reloading capability."""
 
-    def __init__(self, config: Config, check_interval: float = 5.0):
+    def __init__(self, config: Config, check_interval: float = 5.0) -> None:
         self.config = config
         self.check_interval = check_interval
         self._running = False
@@ -863,9 +867,8 @@ class ConfigHotReload:
                 await asyncio.sleep(self.check_interval)
             except asyncio.CancelledError:
                 break
-            except Exception as e:
+            except Exception:
                 # Log error but continue monitoring
-                print(f"Config monitoring error: {e}")
                 await asyncio.sleep(self.check_interval)
 
     async def _check_for_changes(self) -> None:
@@ -887,9 +890,6 @@ class ConfigHotReload:
                         self._last_modified[config_file] = current_mtime
                         if last_mtime > 0:  # Skip initial load
                             await self._reload_config()
-                            print(
-                                f"Configuration reloaded due to change in {config_file}"
-                            )
                             break
 
                 except OSError:
@@ -912,8 +912,8 @@ class ConfigHotReload:
                     except AttributeError:
                         continue
 
-        except Exception as e:
-            print(f"Failed to reload configuration: {e}")
+        except Exception:
+            pass
 
 
 # Global hot-reload instance (optional)
@@ -921,7 +921,8 @@ _hot_reload: ConfigHotReload | None = None
 
 
 async def enable_config_hot_reload(
-    config: Config, check_interval: float = 5.0
+    config: Config,
+    check_interval: float = 5.0,
 ) -> ConfigHotReload:
     """Enable configuration hot-reloading for the given config instance."""
     global _hot_reload

@@ -94,7 +94,7 @@ class Secret(SecretBase):
 
     async def get_client(self) -> Cloudflare:
         client = await self._ensure_client()
-        return t.cast(Cloudflare, client)  # type: ignore[no-any-return]
+        return t.cast("Cloudflare", client)  # type: ignore[no-any-return]
 
     @property
     def client(self) -> Cloudflare:
@@ -124,7 +124,7 @@ class Secret(SecretBase):
             raise
         except Exception as e:
             logger.exception(
-                f"Unexpected error initializing Cloudflare KV secret adapter: {e}"
+                f"Unexpected error initializing Cloudflare KV secret adapter: {e}",
             )  # type: ignore[no-untyped-call]
             raise
 
@@ -170,7 +170,7 @@ class Secret(SecretBase):
                 return None
 
             self.logger.info(f"Fetched secret - {name}")
-            return t.cast(str, response)  # type: ignore[return-value]
+            return t.cast("str", response)  # type: ignore[return-value]
         except NotFoundError:
             # Cloudflare returns NotFoundError for missing keys
             return None
@@ -263,7 +263,7 @@ class Secret(SecretBase):
 
     async def list_versions(self, name: str) -> builtins.list[str]:
         self.logger.warning(
-            "Listing secret versions is not supported by Cloudflare KV adapter"
+            "Listing secret versions is not supported by Cloudflare KV adapter",
         )
         return []
 

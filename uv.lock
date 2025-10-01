@@ -49,6 +49,7 @@ dependencies = [
     { name = "icecream" },
     { name = "infisicalsdk" },
     { name = "inflection" },
+    { name = "leap-ai" },
     { name = "logfire", extra = ["httpx", "redis", "system-metrics"] },
     { name = "loguru" },
     { name = "mailgun" },
@@ -69,6 +70,7 @@ dependencies = [
     { name = "sqlmodel" },
     { name = "toml" },
     { name = "tomli-w" },
+    { name = "transformers" },
     { name = "uuid-utils" },
     { name = "uvicorn" },
     { name = "validators" },
@@ -505,6 +507,7 @@ requires-dist = [
     { name = "langchain", marker = "python_full_version < '3.13' and extra == 'reasoning'", specifier = ">=0.1" },
     { name = "langchain-community", marker = "python_full_version < '3.13' and extra == 'reasoning'", specifier = ">=0.0.20" },
     { name = "langchain-openai", marker = "python_full_version < '3.13' and extra == 'reasoning'", specifier = ">=0.1" },
+    { name = "leap-ai", specifier = ">=0.1.0" },
     { name = "llama-index", marker = "python_full_version < '3.13' and extra == 'reasoning'", specifier = ">=0.9" },
     { name = "llama-index-llms-openai", marker = "python_full_version < '3.13' and extra == 'reasoning'", specifier = ">=0.1" },
     { name = "logfire", extras = ["httpx"], marker = "extra == 'requests'", specifier = ">=3.24" },
@@ -573,6 +576,7 @@ requires-dist = [
     { name = "torch", marker = "python_full_version < '3.13' and extra == 'ai'", specifier = ">=2" },
     { name = "torch", marker = "python_full_version < '3.13' and extra == 'embedding'", specifier = ">=2" },
     { name = "torchserve", marker = "python_full_version < '3.13' and extra == 'mlmodel'", specifier = ">=0.8" },
+    { name = "transformers", specifier = ">=4.56.2" },
     { name = "transformers", marker = "extra == 'ai'", specifier = ">=4.30" },
     { name = "transformers", marker = "extra == 'embedding'", specifier = ">=4" },
     { name = "uuid-utils", specifier = ">=0.11" },
@@ -3059,6 +3063,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6f/6a/11ad7e349307c3ca4c0175db7a77d60ce42a41c60bcb11800aabd6a8acb8/lazy_object_proxy-1.12.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:256262384ebd2a77b023ad02fbcc9326282bcfd16484d5531154b02bc304f4c5", size = 70391, upload-time = "2025-08-22T13:49:56.35Z" },
     { url = "https://files.pythonhosted.org/packages/59/97/9b410ed8fbc6e79c1ee8b13f8777a80137d4bc189caf2c6202358e66192c/lazy_object_proxy-1.12.0-cp314-cp314-win_amd64.whl", hash = "sha256:7601ec171c7e8584f8ff3f4e440aa2eebf93e854f04639263875b8c2971f819f", size = 26988, upload-time = "2025-08-22T13:49:57.302Z" },
 ]
+
+[[package]]
+name = "leap-ai"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple/" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/68/33d64260f5d4cbc9da48c3e7c7c7cc0ce0ffe5749910cf2ea7a206471dcc/leap-ai-0.1.0.tar.gz", hash = "sha256:700f8669348563e18c894f4f3ea28a102033acb8a9553202b7271d6accbe0609", size = 974, upload-time = "2023-03-21T23:50:33.536Z" }
 
 [[package]]
 name = "libcst"

@@ -21,7 +21,7 @@ from acb.gateway._base import (
     GatewayLevel,
     GatewayRequest,
     GatewayResponse,
-    HttpMethod,
+    RequestMethod,
 )
 from acb.gateway.validation import RequestResponseValidator
 
@@ -41,16 +41,13 @@ def mock_config():
 def mock_request():
     """Mock gateway request."""
     return GatewayRequest(
-        method=HttpMethod.GET,
+        method=RequestMethod.GET,
         path="/api/test",
         headers={"Authorization": "Bearer test-token"},
         body="",
         query_params={"param": "value"},
-        tenant_id="test-tenant",
         client_ip="127.0.0.1",
         user_agent="test-agent",
-        request_id=str(uuid4()),
-        content_length=0,
     )
 
 
@@ -99,8 +96,7 @@ class TestGatewayService:
         mock_components["security"].validate_request_security.return_value = []
         mock_components["security"].handle_preflight_request.return_value = None
         mock_components["routing_engine"].route_request.return_value = AsyncMock(
-            target_url="http://backend:8080/api/test",
-            tenant_id="test-tenant"
+            target_url="http://backend:8080/api/test"
         )
         mock_components["cache"].get.return_value = None
 
@@ -250,7 +246,7 @@ class TestGatewayService:
     async def test_process_request_cors_preflight(self, gateway_service, mock_request, mock_components):
         """Test CORS preflight request handling."""
         # Setup CORS preflight
-        mock_request.method = HttpMethod.OPTIONS
+        mock_request.method = RequestMethod.OPTIONS
 
         preflight_response = GatewayResponse(
             status_code=200,
@@ -284,16 +280,13 @@ class TestGatewayService:
 
         # Create request
         request = GatewayRequest(
-            method=HttpMethod.GET,
+            method=RequestMethod.GET,
             path="/api/test",
             headers={"Authorization": "Bearer token"},
             body="",
             query_params={},
-            tenant_id="test-tenant",
             client_ip="127.0.0.1",
             user_agent="test-agent",
-            request_id=str(uuid4()),
-            content_length=0,
         )
 
         # Call upstream
@@ -314,16 +307,13 @@ class TestGatewayService:
 
         # Create request
         request = GatewayRequest(
-            method=HttpMethod.GET,
+            method=RequestMethod.GET,
             path="/api/test",
             headers={},
             body="",
             query_params={},
-            tenant_id="test-tenant",
             client_ip="127.0.0.1",
             user_agent="test-agent",
-            request_id=str(uuid4()),
-            content_length=0,
         )
 
         # Call upstream

@@ -168,7 +168,7 @@ class Nosql(NosqlBase):
     ) -> list[dict[str, t.Any]]:
         cursor = self.db[collection].find(filter, **kwargs)
         result = await cursor.to_list(length=None)
-        return t.cast(list[dict[str, t.Any]], result)  # type: ignore[no-any-return]
+        return t.cast("list[dict[str, t.Any]]", result)  # type: ignore[no-any-return]
 
     async def find_one(
         self,
@@ -177,7 +177,7 @@ class Nosql(NosqlBase):
         **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         result = await self.db[collection].find_one(filter, **kwargs)
-        return t.cast(dict[str, t.Any] | None, result)  # type: ignore[no-any-return]
+        return t.cast("dict[str, t.Any] | None", result)  # type: ignore[no-any-return]
 
     async def insert_one(
         self,
@@ -195,7 +195,7 @@ class Nosql(NosqlBase):
         **kwargs: t.Any,
     ) -> list[t.Any]:
         result = await self.db[collection].insert_many(documents, **kwargs)
-        return t.cast(list[t.Any], result.inserted_ids)  # type: ignore[no-any-return]
+        return t.cast("list[t.Any]", result.inserted_ids)  # type: ignore[no-any-return]
 
     async def update_one(
         self,
@@ -248,7 +248,7 @@ class Nosql(NosqlBase):
     ) -> list[dict[str, t.Any]]:
         cursor = self.db[collection].aggregate(pipeline, **kwargs)
         result = await cursor.to_list(length=None)
-        return t.cast(list[dict[str, t.Any]], result)  # type: ignore[no-any-return]
+        return t.cast("list[dict[str, t.Any]]", result)  # type: ignore[no-any-return]
 
     @asynccontextmanager
     async def transaction(self) -> t.AsyncGenerator[None]:
@@ -261,7 +261,9 @@ class Nosql(NosqlBase):
             self.logger.exception(f"Transaction failed: {e}")
             with suppress(Exception):
                 if getattr(session, "has_ended", False) is False and getattr(
-                    session, "end_session", None
+                    session,
+                    "end_session",
+                    None,
                 ):
                     await session.end_session()
             raise

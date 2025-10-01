@@ -70,7 +70,9 @@ class OutputValidator:
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or "output", value=data, original_value=data
+            field_name=field_name or "output",
+            value=data,
+            original_value=data,
         )
 
         try:
@@ -94,7 +96,10 @@ class OutputValidator:
         return result
 
     async def _validate_with_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate data against a specific contract."""
         if contract.output_type == OutputType.DICT:
@@ -113,7 +118,10 @@ class OutputValidator:
             await self._validate_custom_contract(data, contract, result)
 
     async def _validate_dict_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate dictionary output contract."""
         if not isinstance(data, dict):
@@ -132,7 +140,7 @@ class OutputValidator:
                 if contract.strict_types and not isinstance(value, expected_type):
                     result.add_error(
                         f"Field '{field_name}' type mismatch: "
-                        f"expected {expected_type.__name__}, got {type(value).__name__}"
+                        f"expected {expected_type.__name__}, got {type(value).__name__}",
                     )
 
         # Check for unexpected fields
@@ -143,7 +151,10 @@ class OutputValidator:
                     result.add_error(f"Unexpected field '{field_name}'")
 
     async def _validate_list_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate list output contract."""
         if not isinstance(data, list | tuple):
@@ -158,7 +169,10 @@ class OutputValidator:
             result.add_error(f"List too long: {len(data)} > {contract.max_length}")
 
     async def _validate_json_api_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate JSON API response contract."""
         if not isinstance(data, dict):
@@ -181,7 +195,10 @@ class OutputValidator:
             result.add_error("JSON API 'errors' must be an array")
 
     async def _validate_rest_api_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate REST API response contract."""
         # REST API validation is similar to dict validation but with
@@ -198,7 +215,10 @@ class OutputValidator:
         await self._validate_dict_contract(data, contract, result)
 
     async def _validate_model_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate model instance contract."""
         # Check if data has expected model attributes
@@ -213,11 +233,14 @@ class OutputValidator:
                 if contract.strict_types and not isinstance(value, expected_type):
                     result.add_error(
                         f"Model attribute '{field_name}' type mismatch: "
-                        f"expected {expected_type.__name__}, got {type(value).__name__}"
+                        f"expected {expected_type.__name__}, got {type(value).__name__}",
                     )
 
     async def _validate_scalar_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate scalar value contract."""
         # Type validation
@@ -226,23 +249,26 @@ class OutputValidator:
             if contract.strict_types and not isinstance(data, expected_type):
                 result.add_error(
                     f"Scalar type mismatch: "
-                    f"expected {expected_type.__name__}, got {type(data).__name__}"
+                    f"expected {expected_type.__name__}, got {type(data).__name__}",
                 )
 
         # Length validation for strings
         if isinstance(data, str):
             if contract.min_length is not None and len(data) < contract.min_length:
                 result.add_error(
-                    f"String too short: {len(data)} < {contract.min_length}"
+                    f"String too short: {len(data)} < {contract.min_length}",
                 )
 
             if contract.max_length is not None and len(data) > contract.max_length:
                 result.add_error(
-                    f"String too long: {len(data)} > {contract.max_length}"
+                    f"String too long: {len(data)} > {contract.max_length}",
                 )
 
     async def _validate_custom_contract(
-        self, data: t.Any, contract: OutputContract, result: ValidationResult
+        self,
+        data: t.Any,
+        contract: OutputContract,
+        result: ValidationResult,
     ) -> None:
         """Validate using custom validators."""
         for validator in contract.custom_validators:
@@ -294,7 +320,9 @@ class ResponseValidator:
     ) -> ValidationResult:
         """Validate HTTP response structure."""
         result = ValidationResult(
-            field_name="http_response", value=data, original_value=data
+            field_name="http_response",
+            value=data,
+            original_value=data,
         )
 
         if not isinstance(data, dict):
@@ -319,7 +347,9 @@ class ResponseValidator:
     async def validate_api_error_response(self, data: t.Any) -> ValidationResult:
         """Validate API error response structure."""
         result = ValidationResult(
-            field_name="error_response", value=data, original_value=data
+            field_name="error_response",
+            value=data,
+            original_value=data,
         )
 
         if not isinstance(data, dict):

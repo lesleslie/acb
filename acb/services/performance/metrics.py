@@ -5,6 +5,7 @@ for ACB applications with FastBlocks integration.
 """
 
 import asyncio
+import contextlib
 import time
 import typing as t
 from collections import defaultdict, deque
@@ -14,14 +15,13 @@ from statistics import mean, median
 from pydantic import BaseModel, Field
 from acb.config import Config
 from acb.depends import depends
-
-from .._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 SERVICE_METADATA: t.Any = None
 
 try:
-    from ..discovery import (
+    from acb.services.discovery import (
         ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
@@ -139,7 +139,7 @@ class MetricsCollector(ServiceBase):
             return deque(maxlen=self._settings.max_data_points)
 
         self._metrics_data: dict[str, deque[PerformanceMetric]] = defaultdict(
-            _create_deque
+            _create_deque,
         )
         self._collection_task: asyncio.Task[t.Any] | None = None
         self._start_time = time.time()
@@ -154,10 +154,8 @@ class MetricsCollector(ServiceBase):
         """Shutdown the metrics collector."""
         if self._collection_task:
             self._collection_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._collection_task
-            except asyncio.CancelledError:
-                pass
 
     async def _health_check(self) -> dict[str, t.Any]:
         """Health check for metrics collector."""
@@ -200,7 +198,9 @@ class MetricsCollector(ServiceBase):
         self.increment_requests()
 
     async def record_response_time(
-        self, duration_ms: float, endpoint: str | None = None
+        self,
+        duration_ms: float,
+        endpoint: str | None = None,
     ) -> None:
         """Record HTTP response time metric.
 
@@ -212,7 +212,9 @@ class MetricsCollector(ServiceBase):
         await self.record_metric("response_time", duration_ms, tags)
 
     async def record_database_query_time(
-        self, duration_ms: float, query_type: str | None = None
+        self,
+        duration_ms: float,
+        query_type: str | None = None,
     ) -> None:
         """Record database query time metric.
 
@@ -224,7 +226,9 @@ class MetricsCollector(ServiceBase):
         await self.record_metric("db_query_time", duration_ms, tags)
 
     async def record_cache_operation(
-        self, hit: bool, duration_ms: float | None = None
+        self,
+        hit: bool,
+        duration_ms: float | None = None,
     ) -> None:
         """Record cache operation metric.
 
@@ -239,7 +243,9 @@ class MetricsCollector(ServiceBase):
             await self.record_metric("cache_duration", duration_ms, tags)
 
     async def record_error_metric(
-        self, error_type: str, endpoint: str | None = None
+        self,
+        error_type: str,
+        endpoint: str | None = None,
     ) -> None:
         """Record error metric.
 
@@ -254,7 +260,9 @@ class MetricsCollector(ServiceBase):
         await self.record_metric("error", 1.0, tags)
 
     def get_metrics_summary(
-        self, metric_name: str, time_window_seconds: int | None = None
+        self,
+        metric_name: str,
+        time_window_seconds: int | None = None,
     ) -> MetricsSummary | None:
         """Get statistical summary for a metric.
 
@@ -337,14 +345,14 @@ class MetricsCollector(ServiceBase):
         # Error rates (calculate from error and response metrics)
         if "error" in self._metrics_data and "response_time" in self._metrics_data:
             error_count = len(
-                [m for m in self._metrics_data["error"] if m.timestamp >= cutoff_time]
+                [m for m in self._metrics_data["error"] if m.timestamp >= cutoff_time],
             )
             response_count = len(
                 [
                     m
                     for m in self._metrics_data["response_time"]
                     if m.timestamp >= cutoff_time
-                ]
+                ],
             )
             if response_count > 0:
                 error_rate = (error_count / response_count) * 100
@@ -399,7 +407,7 @@ class MetricsCollector(ServiceBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Metrics collection error: {e}")
+                self.logger.exception(f"Metrics collection error: {e}")
                 await asyncio.sleep(60)  # Wait before retrying
 
     async def _collect_system_metrics(self) -> None:

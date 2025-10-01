@@ -237,35 +237,40 @@ class StorageBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
         """Upload file to storage."""
         bucket_obj = getattr(self, bucket, None)
         if bucket_obj is None:
-            raise ValueError(f"Bucket '{bucket}' not found")
+            msg = f"Bucket '{bucket}' not found"
+            raise ValueError(msg)
         return await bucket_obj.write(AsyncPath(path), data)
 
     async def download(self, bucket: str, path: str) -> t.Any:
         """Download file from storage."""
         bucket_obj = getattr(self, bucket, None)
         if bucket_obj is None:
-            raise ValueError(f"Bucket '{bucket}' not found")
+            msg = f"Bucket '{bucket}' not found"
+            raise ValueError(msg)
         return await bucket_obj.open(AsyncPath(path))
 
     async def delete(self, bucket: str, path: str) -> t.Any:
         """Delete file from storage."""
         bucket_obj = getattr(self, bucket, None)
         if bucket_obj is None:
-            raise ValueError(f"Bucket '{bucket}' not found")
+            msg = f"Bucket '{bucket}' not found"
+            raise ValueError(msg)
         return await bucket_obj.delete(AsyncPath(path))
 
     async def exists(self, bucket: str, path: str) -> bool:
         """Check if file exists in storage."""
         bucket_obj = getattr(self, bucket, None)
         if bucket_obj is None:
-            raise ValueError(f"Bucket '{bucket}' not found")
+            msg = f"Bucket '{bucket}' not found"
+            raise ValueError(msg)
         return await bucket_obj.exists(AsyncPath(path))  # type: ignore  # type: ignore[no-any-return]
 
     async def stat(self, bucket: str, path: str) -> t.Any:
         """Get file stats from storage."""
         bucket_obj = getattr(self, bucket, None)
         if bucket_obj is None:
-            raise ValueError(f"Bucket '{bucket}' not found")
+            msg = f"Bucket '{bucket}' not found"
+            raise ValueError(msg)
         return await bucket_obj.stat(AsyncPath(path))
 
 

@@ -23,7 +23,9 @@ from acb.adapters.embedding._base import (
 )
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger
 
 try:
     import onnxruntime as ort
@@ -82,10 +84,12 @@ class ONNXEmbeddingSettings(EmbeddingBaseSettings):
     enable_mem_pattern: bool = Field(default=True)
     enable_profiling: bool = Field(default=False)
     inter_op_num_threads: int = Field(
-        default=0, description="Number of threads for inter-op parallelism"
+        default=0,
+        description="Number of threads for inter-op parallelism",
     )
     intra_op_num_threads: int = Field(
-        default=0, description="Number of threads for intra-op parallelism"
+        default=0,
+        description="Number of threads for intra-op parallelism",
     )
 
     # Processing settings
@@ -97,7 +101,8 @@ class ONNXEmbeddingSettings(EmbeddingBaseSettings):
     optimize_for_inference: bool = Field(default=True)
     enable_quantization: bool = Field(default=False)
     graph_optimization_level: str = Field(
-        default="ORT_ENABLE_ALL", description="Graph optimization level"
+        default="ORT_ENABLE_ALL",
+        description="Graph optimization level",
     )
 
     class Config:
@@ -109,8 +114,9 @@ class ONNXEmbedding(EmbeddingAdapter):
 
     def __init__(self, settings: ONNXEmbeddingSettings | None = None) -> None:
         if not _onnx_available:
+            msg = "ONNX Runtime or transformers library not available. Install with: pip install onnxruntime transformers"
             raise ImportError(
-                "ONNX Runtime or transformers library not available. Install with: pip install onnxruntime transformers"
+                msg,
             )
 
         config: Config = depends.get("config")
@@ -199,14 +205,14 @@ class ONNXEmbedding(EmbeddingAdapter):
             self.register_resource(self._session)
 
             await logger.info(
-                f"Successfully loaded ONNX model with providers: {self._settings.providers}"
+                f"Successfully loaded ONNX model with providers: {self._settings.providers}",
             )
             await logger.debug(
-                f"Model inputs: {self._input_names}, outputs: {self._output_names}"
+                f"Model inputs: {self._input_names}, outputs: {self._output_names}",
             )
 
         except Exception as e:
-            await logger.error(f"Error loading ONNX model: {e}")
+            await logger.exception(f"Error loading ONNX model: {e}")
             raise
 
     async def _embed_texts(
@@ -248,11 +254,11 @@ class ONNXEmbedding(EmbeddingAdapter):
                         onnx_inputs[input_name] = inputs["input_ids"].astype(np.int64)
                     elif input_name == "attention_mask":
                         onnx_inputs[input_name] = inputs["attention_mask"].astype(
-                            np.int64
+                            np.int64,
                         )
                     elif input_name == "token_type_ids" and "token_type_ids" in inputs:
                         onnx_inputs[input_name] = inputs["token_type_ids"].astype(
-                            np.int64
+                            np.int64,
                         )
 
                 # Run inference
@@ -293,11 +299,11 @@ class ONNXEmbedding(EmbeddingAdapter):
                     results.append(result)
 
                 await logger.debug(
-                    f"ONNX embeddings batch completed: {len(batch_texts)} texts, model: {model}"
+                    f"ONNX embeddings batch completed: {len(batch_texts)} texts, model: {model}",
                 )
 
             except Exception as e:
-                await logger.error(f"Error generating ONNX embeddings: {e}")
+                await logger.exception(f"Error generating ONNX embeddings: {e}")
                 raise
 
         processing_time = time.time() - start_time
@@ -322,32 +328,40 @@ class ONNXEmbedding(EmbeddingAdapter):
             # Mean pooling with attention mask
             input_mask_expanded = np.expand_dims(attention_mask, axis=-1)
             input_mask_expanded = np.repeat(
-                input_mask_expanded, token_embeddings.shape[-1], axis=-1
+                input_mask_expanded,
+                token_embeddings.shape[-1],
+                axis=-1,
             )
 
             sum_embeddings = np.sum(token_embeddings * input_mask_expanded, axis=1)
             sum_mask = np.clip(
-                np.sum(input_mask_expanded, axis=1), a_min=1e-9, a_max=None
+                np.sum(input_mask_expanded, axis=1),
+                a_min=1e-9,
+                a_max=None,
             )
             return sum_embeddings / sum_mask
 
-        elif strategy == PoolingStrategy.MAX:
+        if strategy == PoolingStrategy.MAX:
             # Max pooling
             input_mask_expanded = np.expand_dims(attention_mask, axis=-1)
             input_mask_expanded = np.repeat(
-                input_mask_expanded, token_embeddings.shape[-1], axis=-1
+                input_mask_expanded,
+                token_embeddings.shape[-1],
+                axis=-1,
             )
 
             token_embeddings = np.where(
-                input_mask_expanded == 0, -1e9, token_embeddings
+                input_mask_expanded == 0,
+                -1e9,
+                token_embeddings,
             )
             return np.max(token_embeddings, axis=1)
 
-        elif strategy == PoolingStrategy.CLS:
+        if strategy == PoolingStrategy.CLS:
             # CLS token pooling (first token)
             return token_embeddings[:, 0]
 
-        elif strategy == PoolingStrategy.WEIGHTED_MEAN:
+        if strategy == PoolingStrategy.WEIGHTED_MEAN:
             # Weighted mean (simple implementation)
             weights = np.expand_dims(attention_mask, axis=-1).astype(np.float32)
             weighted_embeddings = token_embeddings * weights
@@ -355,8 +369,8 @@ class ONNXEmbedding(EmbeddingAdapter):
             sum_weights = np.sum(weights, axis=1)
             return sum_embeddings / np.clip(sum_weights, a_min=1e-9, a_max=None)
 
-        else:
-            raise ValueError(f"Unsupported pooling strategy: {strategy}")
+        msg = f"Unsupported pooling strategy: {strategy}"
+        raise ValueError(msg)
 
     def _normalize_embeddings(self, embeddings: np.ndarray) -> np.ndarray:
         """Normalize embeddings using L2 normalization."""
@@ -396,7 +410,7 @@ class ONNXEmbedding(EmbeddingAdapter):
                         "is_chunk": True,
                         "chunk_size": chunk_size,
                         "chunk_overlap": chunk_overlap,
-                    }
+                    },
                 )
 
             batches.append(batch)
@@ -412,14 +426,14 @@ class ONNXEmbedding(EmbeddingAdapter):
         """Compute similarity between two embeddings."""
         if method == "cosine":
             return EmbeddingUtils.cosine_similarity(embedding1, embedding2)
-        elif method == "euclidean":
+        if method == "euclidean":
             return EmbeddingUtils.euclidean_distance(embedding1, embedding2)
-        elif method == "dot":
+        if method == "dot":
             return EmbeddingUtils.dot_product(embedding1, embedding2)
-        elif method == "manhattan":
+        if method == "manhattan":
             return EmbeddingUtils.manhattan_distance(embedding1, embedding2)
-        else:
-            raise ValueError(f"Unsupported similarity method: {method}")
+        msg = f"Unsupported similarity method: {method}"
+        raise ValueError(msg)
 
     async def _get_model_info(self, model: str) -> dict[str, t.Any]:
         """Get information about the ONNX model."""
@@ -438,7 +452,7 @@ class ONNXEmbedding(EmbeddingAdapter):
                     "providers": self._session.get_providers(),
                     "input_names": self._input_names,
                     "output_names": self._output_names,
-                }
+                },
             )
 
         return model_info

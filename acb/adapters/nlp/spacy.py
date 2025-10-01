@@ -117,9 +117,12 @@ class SpacyNLP(BaseNLPAdapter):
             settings: spaCy-specific adapter settings
         """
         if not _spacy_available:
-            raise ImportError(
+            msg = (
                 "spaCy is required for SpacyNLP adapter. "
                 "Install with: pip install spacy && python -m spacy download en_core_web_sm"
+            )
+            raise ImportError(
+                msg,
             )
 
         super().__init__(settings)
@@ -162,7 +165,7 @@ class SpacyNLP(BaseNLPAdapter):
 
         return nlp
 
-    async def _add_extensions(self, nlp):
+    async def _add_extensions(self, nlp) -> None:
         """Add spaCy extensions for additional functionality."""
         try:
             # Add sentiment extension if textblob is available
@@ -344,7 +347,7 @@ class SpacyNLP(BaseNLPAdapter):
                     start=ent.start_char,
                     end=ent.end_char,
                     confidence=1.0,  # spaCy doesn't provide confidence scores by default
-                )
+                ),
             )
 
         return entities
@@ -378,8 +381,9 @@ class SpacyNLP(BaseNLPAdapter):
         """Translate text (spaCy doesn't have built-in translation)."""
         # spaCy doesn't have built-in translation
         # This would need integration with external translation service
+        msg = "Translation not available in base spaCy. Use a specialized translation adapter."
         raise NotImplementedError(
-            "Translation not available in base spaCy. Use a specialized translation adapter."
+            msg,
         )
 
     async def classify_text(
@@ -396,8 +400,9 @@ class SpacyNLP(BaseNLPAdapter):
             "textcat" not in nlp.pipe_names
             and "textcat_multilabel" not in nlp.pipe_names
         ):
+            msg = "Text classification component not available in spaCy model"
             raise NotImplementedError(
-                "Text classification component not available in spaCy model"
+                msg,
             )
 
         doc = await self._run_sync(nlp, text)
@@ -405,7 +410,8 @@ class SpacyNLP(BaseNLPAdapter):
         # Get classification scores
         scores = doc.cats
         if not scores:
-            raise ValueError("No classification scores available")
+            msg = "No classification scores available"
+            raise ValueError(msg)
 
         # Find best label
         best_label = max(scores, key=scores.get)
@@ -463,7 +469,9 @@ class SpacyNLP(BaseNLPAdapter):
         return await self._extract_keywords_from_doc(doc, max_keywords)
 
     async def _extract_keywords_from_doc(
-        self, doc, max_keywords: int = 10
+        self,
+        doc,
+        max_keywords: int = 10,
     ) -> list[KeywordResult]:
         """Extract keywords from spaCy doc."""
         # Extract important tokens (nouns, adjectives, proper nouns)
@@ -493,7 +501,8 @@ class SpacyNLP(BaseNLPAdapter):
                 keywords[key]["count"] += 1
                 # Score based on POS and position
                 pos_weight = {"PROPN": 3, "NOUN": 2, "ADJ": 1.5, "VERB": 1}.get(
-                    token.pos_, 1
+                    token.pos_,
+                    1,
                 )
                 keywords[key]["score"] += pos_weight
 

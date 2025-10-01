@@ -11,15 +11,17 @@ import builtins
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import Field
 from acb.config import Settings
 from acb.depends import depends
 
 from ._base import PaginationInfo, RepositoryBase, SortCriteria
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 EntityType = TypeVar("EntityType")
 IDType = TypeVar("IDType")
@@ -80,26 +82,32 @@ class RepositoryCacheSettings(Settings):
     # Cache key settings
     key_prefix: str = Field(default="repo_cache", description="Cache key prefix")
     include_entity_version: bool = Field(
-        default=True, description="Include entity version in keys"
+        default=True,
+        description="Include entity version in keys",
     )
 
     # Performance settings
     max_query_cache_size: int = Field(
-        default=1000, description="Max cached query results"
+        default=1000,
+        description="Max cached query results",
     )
     batch_invalidation: bool = Field(
-        default=True, description="Enable batch invalidation"
+        default=True,
+        description="Enable batch invalidation",
     )
     async_invalidation: bool = Field(
-        default=False, description="Enable async invalidation"
+        default=False,
+        description="Enable async invalidation",
     )
 
     # Serialization settings
     compress_large_objects: bool = Field(
-        default=True, description="Compress objects > 1KB"
+        default=True,
+        description="Compress objects > 1KB",
     )
     compression_threshold: int = Field(
-        default=1024, description="Compression threshold in bytes"
+        default=1024,
+        description="Compression threshold in bytes",
     )
 
 
@@ -114,7 +122,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         self,
         wrapped_repository: RepositoryBase[EntityType, IDType],
         cache_settings: RepositoryCacheSettings | None = None,
-    ):
+    ) -> None:
         super().__init__(wrapped_repository.entity_type, wrapped_repository.settings)
         self.wrapped = wrapped_repository
         self.cache_settings = cache_settings or depends.get(RepositoryCacheSettings)
@@ -152,7 +160,8 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         # Sort for consistency
         sorted_data = json.dumps(key_data, sort_keys=True)
         hash_suffix = hashlib.md5(
-            sorted_data.encode(), usedforsecurity=False
+            sorted_data.encode(),
+            usedforsecurity=False,
         ).hexdigest()[:8]
 
         return f"{self.cache_settings.key_prefix}:query:{self.entity_name.lower()}:{operation}:{hash_suffix}"
@@ -161,13 +170,11 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         """Build cache key for count operation."""
         if filters:
             filter_hash = hashlib.md5(
-                json.dumps(filters, sort_keys=True).encode(), usedforsecurity=False
+                json.dumps(filters, sort_keys=True).encode(),
+                usedforsecurity=False,
             ).hexdigest()[:8]
             return f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:{filter_hash}"
-        else:
-            return (
-                f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:all"
-            )
+        return f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:all"
 
     async def _get_from_cache(self, key: str) -> tuple[Any, bool]:
         """Get value from cache.
@@ -184,9 +191,8 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
             if value is not None:
                 self._metrics.hits += 1
                 return value, True
-            else:
-                self._metrics.misses += 1
-                return None, False
+            self._metrics.misses += 1
+            return None, False
         except Exception:
             self._metrics.errors += 1
             return None, False
@@ -269,12 +275,14 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
                 if entity_id:
                     entity_key = self._build_entity_key(entity_id)
                     await self._set_in_cache(
-                        entity_key, created_entity, self.cache_settings.entity_ttl
+                        entity_key,
+                        created_entity,
+                        self.cache_settings.entity_ttl,
                     )
 
             # Invalidate related caches
             if hasattr(created_entity, "id"):
-                await self._invalidate_entity_cache(getattr(created_entity, "id"))
+                await self._invalidate_entity_cache(created_entity.id)
 
             return created_entity
 
@@ -300,7 +308,9 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
             # Cache the result if found
             if entity and self.cache_settings.strategy != CacheStrategy.WRITE_BEHIND:
                 await self._set_in_cache(
-                    entity_key, entity, self.cache_settings.entity_ttl
+                    entity_key,
+                    entity,
+                    self.cache_settings.entity_ttl,
                 )
 
             return entity
@@ -323,7 +333,9 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
                     # Update cache immediately
                     entity_key = self._build_entity_key(entity_id)
                     await self._set_in_cache(
-                        entity_key, updated_entity, self.cache_settings.entity_ttl
+                        entity_key,
+                        updated_entity,
+                        self.cache_settings.entity_ttl,
                     )
                 else:
                     # Invalidate cache
@@ -453,7 +465,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
             f"{self.cache_settings.key_prefix}:count:{self.entity_name.lower()}:*",
         ]
 
-        for pattern in patterns:
+        for _pattern in patterns:
             # Note: Not all cache backends support pattern deletion
             # This would need to be implemented per cache type
             pass

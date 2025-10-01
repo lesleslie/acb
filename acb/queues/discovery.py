@@ -38,16 +38,19 @@ class QueueProviderDescriptor(BaseModel):
     module_path: str = Field(description="Python module path")
     class_name: str = Field(description="Queue class name")
     factory_function: str | None = Field(
-        default=None, description="Factory function name"
+        default=None,
+        description="Factory function name",
     )
 
     # Metadata
     metadata: QueueMetadata | None = Field(
-        default=None, description="Provider metadata"
+        default=None,
+        description="Provider metadata",
     )
     status: QueueProviderStatus = Field(default=QueueProviderStatus.AVAILABLE)
     error_message: str | None = Field(
-        default=None, description="Error message if unavailable"
+        default=None,
+        description="Error message if unavailable",
     )
 
     # Configuration
@@ -62,7 +65,7 @@ class QueueProviderDescriptor(BaseModel):
 class QueueProviderNotFound(Exception):
     """Exception raised when a queue provider is not found."""
 
-    def __init__(self, provider_name: str):
+    def __init__(self, provider_name: str) -> None:
         self.provider_name = provider_name
         super().__init__(f"Queue provider not found: {provider_name}")
 
@@ -70,12 +73,12 @@ class QueueProviderNotFound(Exception):
 class QueueProviderNotInstalled(Exception):
     """Exception raised when a queue provider is not installed."""
 
-    def __init__(self, provider_name: str, missing_packages: list[str]):
+    def __init__(self, provider_name: str, missing_packages: list[str]) -> None:
         self.provider_name = provider_name
         self.missing_packages = missing_packages
         super().__init__(
             f"Queue provider {provider_name} is not installed. "
-            f"Missing packages: {', '.join(missing_packages)}"
+            f"Missing packages: {', '.join(missing_packages)}",
         )
 
 
@@ -241,7 +244,7 @@ def get_queue_provider_class(provider_name: str) -> type[QueueBase]:
     descriptor = _provider_registry[actual_provider]
 
     # Check dependencies
-    status, error_msg = _check_provider_dependencies(descriptor)
+    status, _error_msg = _check_provider_dependencies(descriptor)
     if status == QueueProviderStatus.MISSING_DEPENDENCIES:
         raise QueueProviderNotInstalled(actual_provider, descriptor.required_packages)
 
@@ -259,7 +262,8 @@ def get_queue_provider_class(provider_name: str) -> type[QueueBase]:
 
     except ImportError as e:
         raise QueueProviderNotInstalled(
-            actual_provider, descriptor.required_packages
+            actual_provider,
+            descriptor.required_packages,
         ) from e
     except AttributeError as e:
         raise QueueProviderNotFound(actual_provider) from e
@@ -448,7 +452,7 @@ def enable_queue_provider(provider_name: str, target_provider: str) -> None:
     global _provider_overrides
     _provider_overrides[provider_name] = target_provider
     logger.info(
-        f"Enabled queue provider override: {provider_name} -> {target_provider}"
+        f"Enabled queue provider override: {provider_name} -> {target_provider}",
     )
 
 
@@ -504,7 +508,7 @@ def apply_queue_provider_overrides(config_path: str | Path | None = None) -> Non
         logger.info(f"Applied queue provider overrides from {config_path}")
 
     except Exception as e:
-        logger.error(f"Failed to apply queue provider overrides: {e}")
+        logger.exception(f"Failed to apply queue provider overrides: {e}")
 
 
 # Factory functions
@@ -573,7 +577,7 @@ class QueueContext:
         provider_name: str | None = None,
         settings: QueueSettings | None = None,
         **kwargs: t.Any,
-    ):
+    ) -> None:
         self.provider_name = provider_name
         self.settings = settings
         self.kwargs = kwargs
@@ -582,7 +586,9 @@ class QueueContext:
     async def __aenter__(self) -> QueueBase:
         """Enter the context manager."""
         self.queue = await create_queue_instance_async(
-            self.provider_name, self.settings, **self.kwargs
+            self.provider_name,
+            self.settings,
+            **self.kwargs,
         )
         return self.queue
 

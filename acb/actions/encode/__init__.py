@@ -49,7 +49,7 @@ def yaml_encode(
     )
     if isinstance(result, str):
         return result.encode()
-    return t.cast(bytes, result)  # type: ignore[return-value]
+    return t.cast("bytes", result)  # type: ignore[return-value]
 
 
 msgspec.yaml.encode = t.cast("t.Any", yaml_encode)

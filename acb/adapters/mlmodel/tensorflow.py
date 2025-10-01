@@ -33,11 +33,13 @@ from acb.adapters.mlmodel._base import (
 )
 
 try:
-    import tensorflow_serving.apis.model_management_pb2 as model_management_pb2
-    import tensorflow_serving.apis.model_service_pb2 as model_service_pb2
-    import tensorflow_serving.apis.predict_pb2 as predict_pb2
-    import tensorflow_serving.apis.prediction_service_pb2_grpc as prediction_service_pb2_grpc
     from tensorflow.core.framework import tensor_pb2, types_pb2
+    from tensorflow_serving.apis import (
+        model_management_pb2,
+        model_service_pb2,
+        predict_pb2,
+        prediction_service_pb2_grpc,
+    )
 
     TENSORFLOW_SERVING_AVAILABLE = True
 except ImportError:
@@ -49,28 +51,33 @@ class TensorFlowServingSettings(MLModelSettings):
 
     # Protocol settings
     use_grpc: bool = Field(
-        default=True, description="Use gRPC protocol (faster) vs REST"
+        default=True,
+        description="Use gRPC protocol (faster) vs REST",
     )
     grpc_port: int = Field(default=8500, description="gRPC port")
     rest_port: int = Field(default=8501, description="REST API port")
 
     # Model settings
     model_signature_name: str = Field(
-        default="serving_default", description="Model signature name"
+        default="serving_default",
+        description="Model signature name",
     )
 
     # Performance settings
     enable_model_warmup: bool = Field(
-        default=True, description="Enable model warmup on startup"
+        default=True,
+        description="Enable model warmup on startup",
     )
     warmup_requests: int = Field(default=5, description="Number of warmup requests")
 
     # gRPC specific settings
     grpc_max_receive_message_length: int = Field(
-        default=4 * 1024 * 1024, description="Max gRPC message size (4MB)"
+        default=4 * 1024 * 1024,
+        description="Max gRPC message size (4MB)",
     )
     grpc_max_send_message_length: int = Field(
-        default=4 * 1024 * 1024, description="Max gRPC send message size (4MB)"
+        default=4 * 1024 * 1024,
+        description="Max gRPC send message size (4MB)",
     )
 
 
@@ -119,15 +126,18 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
             grpc_target = f"{self.tf_settings.host}:{self.tf_settings.grpc_port}"
             if self.tf_settings.use_tls:
                 self._grpc_channel = grpc.aio.secure_channel(
-                    grpc_target, grpc.ssl_channel_credentials(), options=grpc_options
+                    grpc_target,
+                    grpc.ssl_channel_credentials(),
+                    options=grpc_options,
                 )
             else:
                 self._grpc_channel = grpc.aio.insecure_channel(
-                    grpc_target, options=grpc_options
+                    grpc_target,
+                    options=grpc_options,
                 )
 
             self._grpc_stub = prediction_service_pb2_grpc.PredictionServiceStub(
-                self._grpc_channel
+                self._grpc_channel,
             )
             clients["grpc"] = self._grpc_stub
 
@@ -153,15 +163,18 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
 
         if version:
             return f"{base_url}/v1/models/{model_name}/versions/{version}:predict"
-        else:
-            return f"{base_url}/v1/models/{model_name}:predict"
+        return f"{base_url}/v1/models/{model_name}:predict"
 
     def _prepare_grpc_request(
-        self, model_name: str, inputs: dict[str, Any], version: str | None = None
+        self,
+        model_name: str,
+        inputs: dict[str, Any],
+        version: str | None = None,
     ) -> predict_pb2.PredictRequest:
         """Prepare gRPC prediction request."""
         if not TENSORFLOW_SERVING_AVAILABLE:
-            raise RuntimeError("TensorFlow Serving gRPC libraries not available")
+            msg = "TensorFlow Serving gRPC libraries not available"
+            raise RuntimeError(msg)
 
         request = predict_pb2.PredictRequest()
         request.model_spec.name = model_name
@@ -182,8 +195,8 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                         dim=[
                             tensor_pb2.TensorShapeProto.Dim(size=s)
                             for s in input_array.shape
-                        ]
-                    )
+                        ],
+                    ),
                 )
                 tensor.float_val.extend(input_array.flatten().astype(float))
             else:
@@ -232,15 +245,20 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
             ):
                 # Use gRPC for better performance
                 grpc_request = self._prepare_grpc_request(
-                    request.model_name, request.inputs, request.model_version
+                    request.model_name,
+                    request.inputs,
+                    request.model_version,
                 )
 
                 response = await self._grpc_stub.Predict(
-                    grpc_request, timeout=request.timeout or self.tf_settings.timeout
+                    grpc_request,
+                    timeout=request.timeout or self.tf_settings.timeout,
                 )
 
                 predictions = self._process_grpc_response(
-                    response, request.model_name, request.model_version
+                    response,
+                    request.model_name,
+                    request.model_version,
                 )
 
             else:
@@ -254,7 +272,8 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                 async with self._http_session.post(url, json=payload) as response:
                     if response.status != 200:
                         error_text = await response.text()
-                        raise RuntimeError(f"TensorFlow Serving error: {error_text}")
+                        msg = f"TensorFlow Serving error: {error_text}"
+                        raise RuntimeError(msg)
 
                     result = await response.json()
                     predictions = result.get("outputs", {})
@@ -279,10 +298,12 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
 
         except Exception as e:
             self._metrics["errors_total"] = self._metrics.get("errors_total", 0) + 1
-            raise RuntimeError(f"TensorFlow Serving prediction failed: {e}")
+            msg = f"TensorFlow Serving prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def batch_predict(
-        self, request: BatchPredictionRequest
+        self,
+        request: BatchPredictionRequest,
     ) -> BatchPredictionResponse:
         """Perform batch inference using TensorFlow Serving."""
         start_time = time.time()
@@ -300,7 +321,7 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
 
                 # Combine batch inputs for efficient processing
                 combined_inputs = {}
-                for key in batch_inputs[0].keys():
+                for key in batch_inputs[0]:
                     combined_inputs[key] = [item[key] for item in batch_inputs]
 
                 # Create prediction request for batch
@@ -344,7 +365,8 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
             self._metrics["batch_errors_total"] = (
                 self._metrics.get("batch_errors_total", 0) + 1
             )
-            raise RuntimeError(f"TensorFlow Serving batch prediction failed: {e}")
+            msg = f"TensorFlow Serving batch prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def list_models(self) -> list[ModelInfo]:
         """List available models from TensorFlow Serving."""
@@ -358,7 +380,8 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
             async with self._http_session.get(url) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise RuntimeError(f"Failed to list models: {error_text}")
+                    msg = f"Failed to list models: {error_text}"
+                    raise RuntimeError(msg)
 
                 result = await response.json()
                 models = []
@@ -381,16 +404,19 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                                     if self.tf_settings.use_grpc
                                     else "rest",
                                 },
-                            )
+                            ),
                         )
 
                 return models
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list TensorFlow Serving models: {e}")
+            msg = f"Failed to list TensorFlow Serving models: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_info(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelInfo:
         """Get detailed information about a specific model."""
         try:
@@ -405,7 +431,8 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
             async with self._http_session.get(url) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise RuntimeError(f"Model not found: {error_text}")
+                    msg = f"Model not found: {error_text}"
+                    raise RuntimeError(msg)
 
                 result = await response.json()
                 metadata = result.get("metadata", {})
@@ -425,10 +452,13 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                 )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get TensorFlow Serving model info: {e}")
+            msg = f"Failed to get TensorFlow Serving model info: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_health(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelHealth:
         """Get health status of a specific model."""
         try:

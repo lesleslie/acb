@@ -62,7 +62,7 @@ class StructlogSettings(LoggerBaseSettings):
         # Add timestamp
         if self.add_timestamp:
             processors.extend(
-                (structlog.stdlib.add_log_level, structlog.stdlib.add_logger_name)
+                (structlog.stdlib.add_log_level, structlog.stdlib.add_logger_name),
             )
             processors.append(structlog.processors.TimeStamper(fmt="ISO"))
 
@@ -78,8 +78,8 @@ class StructlogSettings(LoggerBaseSettings):
                         structlog.processors.CallsiteParameter.FILENAME,
                         structlog.processors.CallsiteParameter.FUNC_NAME,
                         structlog.processors.CallsiteParameter.LINENO,
-                    ]
-                )
+                    ],
+                ),
             )
 
         # Add development/production specific processors
@@ -91,7 +91,7 @@ class StructlogSettings(LoggerBaseSettings):
                     structlog.processors.format_exc_info,
                     structlog.processors.UnicodeDecoder(),
                     structlog.processors.JSONRenderer(),
-                ]
+                ],
             )
         else:
             processors.extend(
@@ -102,7 +102,7 @@ class StructlogSettings(LoggerBaseSettings):
                     structlog.dev.ConsoleRenderer()
                     if self.pretty_print
                     else structlog.processors.JSONRenderer(),
-                ]
+                ],
             )
 
         return processors
@@ -143,9 +143,12 @@ class Logger(LoggerBase):
         self._bound_context: dict[str, t.Any] = {}
 
         if not structlog:
-            raise ImportError(
+            msg = (
                 "structlog is required for StructlogLogger. "
                 "Install with: pip install structlog"
+            )
+            raise ImportError(
+                msg,
             )
 
     @property
@@ -230,7 +233,11 @@ class Logger(LoggerBase):
         self._log_app_info()
 
     def _log_with_context(
-        self, log_method: t.Callable, msg: str, *args: t.Any, **kwargs: t.Any
+        self,
+        log_method: t.Callable,
+        msg: str,
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> None:
         """Log message with merged context."""
         # Extract additional context from kwargs
@@ -244,7 +251,7 @@ class Logger(LoggerBase):
                 "module": frame.f_globals.get("__name__", "unknown"),
                 "function": frame.f_code.co_name,
                 "line": frame.f_lineno,
-            }
+            },
         )
 
         # Format message with args if provided
@@ -299,7 +306,7 @@ class Logger(LoggerBase):
 
         # Wrap existing loggers
         structlog.stdlib.recreate_defaults(
-            log_level=getattr(logging, self._get_effective_level())
+            log_level=getattr(logging, self._get_effective_level()),
         )
 
     def _log_app_info(self) -> None:
@@ -329,7 +336,10 @@ class Logger(LoggerBase):
         )
 
     def log_performance(
-        self, operation: str, duration_ms: float, **context: t.Any
+        self,
+        operation: str,
+        duration_ms: float,
+        **context: t.Any,
     ) -> None:
         """Log performance metrics."""
         logger = self._ensure_logger()
@@ -350,5 +360,4 @@ class Logger(LoggerBase):
             error_message=str(error),
             exception=error,
             **context,
-            exc_info=True,
         )

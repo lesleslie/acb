@@ -124,12 +124,12 @@ class EdgeAI(AIBase):
         """Create edge AI client based on provider."""
         if self.settings.provider == ModelProvider.OLLAMA:
             return await self._create_ollama_client()
-        elif self.settings.provider == ModelProvider.LIQUID_AI:
+        if self.settings.provider == ModelProvider.LIQUID_AI:
             return await self._create_liquid_ai_client()
-        elif self.settings.provider == ModelProvider.LOCAL:
+        if self.settings.provider == ModelProvider.LOCAL:
             return await self._create_local_client()
-        else:
-            raise ValueError(f"Unsupported edge provider: {self.settings.provider}")
+        msg = f"Unsupported edge provider: {self.settings.provider}"
+        raise ValueError(msg)
 
     async def _create_ollama_client(self) -> httpx.AsyncClient:
         """Create Ollama HTTP client."""
@@ -150,62 +150,151 @@ class EdgeAI(AIBase):
 
         return self._http_client
 
+    def _get_lfm_model_id(self) -> str:
+        """Get HuggingFace model ID for LFM2."""
+        lfm_models = {
+            "lfm2-350m": "liquid-ai/lfm2-350m",
+            "lfm2-700m": "liquid-ai/lfm2-700m",
+            "lfm2-1.2b": "liquid-ai/lfm2-1.2b",
+        }
+
+        model_name = self.settings.default_model
+        if model_name not in lfm_models:
+            model_name = "lfm2-350m"  # Default to smallest for edge
+
+        return lfm_models[model_name]
+
     async def _create_liquid_ai_client(self) -> t.Any:
-        """Create Liquid AI LFM client."""
+        """Create Liquid AI LFM client using HuggingFace transformers."""
         try:
-            # Mock implementation - would use actual Liquid AI SDK
-            class LiquidAIClient:
-                def __init__(self, endpoint: str, api_key: str | None = None):
-                    self.endpoint = endpoint
-                    self.api_key = api_key
-                    self._models_loaded = {}
-
-                async def load_model(self, model_name: str, **config: t.Any) -> str:
-                    # Simulate model loading with LFM optimizations
-                    model_id = f"lfm_{model_name}_{id(self)}"
-                    self._models_loaded[model_name] = model_id
-                    return model_id
-
-                async def generate(
-                    self, model_id: str, prompt: str, **kwargs: t.Any
-                ) -> t.Any:
-                    # Mock LFM generation response
-                    class Response:
-                        text = f"LFM response to: {prompt[:50]}..."
-                        latency_ms = 45  # Simulated fast edge inference
-                        memory_usage_mb = 256  # Simulated low memory usage
-                        tokens_used = len(prompt.split()) + 50
-
-                    return Response()
-
-            client = LiquidAIClient(
-                endpoint=self.settings.liquid_ai_endpoint or "http://localhost:8080",
-                api_key=self.settings.liquid_ai_api_key.get_secret_value()
-                if self.settings.liquid_ai_api_key
-                else None,
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+        except ImportError:
+            msg = (
+                "transformers package required for Liquid AI LFM provider. "
+                "Install with: uv add transformers"
+            )
+            raise ImportError(
+                msg,
             )
 
-            # Preload default model
-            if self.settings.model_preload:
-                await client.load_model(
-                    self.settings.default_model,
-                    deployment_target=self.settings.lfm_deployment_target,
-                    precision=self.settings.lfm_precision,
-                    adaptive_weights=self.settings.lfm_adaptive_weights,
-                    memory_budget_mb=self.settings.memory_budget_mb,
-                )
+        model_id = self._get_lfm_model_id()
 
-            return client
+        class LiquidAIClient:
+            """Real LFM2 client using HuggingFace transformers."""
 
-        except ImportError:
-            raise ImportError("liquid-ai package required for Liquid AI LFM provider")
+            def __init__(self, model_id: str, settings: EdgeAISettings) -> None:
+                self.model_id = model_id
+                self.settings = settings
+                self._model = None
+                self._tokenizer = None
+                self._models_loaded = {}
+
+            async def load_model(self, model_name: str, **config: t.Any) -> str:
+                """Load LFM2 model from HuggingFace."""
+                if model_name in self._models_loaded:
+                    return self._models_loaded[model_name]
+
+                # Run model loading in executor to avoid blocking
+                loop = asyncio.get_event_loop()
+
+                def load():
+                    # Determine quantization settings
+                    load_kwargs = {
+                        "low_cpu_mem_usage": True,
+                        "trust_remote_code": True,
+                    }
+
+                    if self.settings.enable_quantization:
+                        if self.settings.quantization_bits == 8:
+                            load_kwargs["load_in_8bit"] = True
+                        elif self.settings.quantization_bits == 4:
+                            load_kwargs["load_in_4bit"] = True
+
+                    # Load tokenizer
+                    tokenizer = AutoTokenizer.from_pretrained(
+                        self.model_id,
+                        trust_remote_code=True,
+                    )
+
+                    # Load model with edge optimizations
+                    model = AutoModelForCausalLM.from_pretrained(
+                        self.model_id,
+                        **load_kwargs,
+                    )
+
+                    return model, tokenizer
+
+                self._model, self._tokenizer = await loop.run_in_executor(None, load)
+                self._models_loaded[model_name] = model_name
+                return model_name
+
+            async def generate(
+                self,
+                model_id: str,
+                prompt: str,
+                **kwargs: t.Any,
+            ) -> t.Any:
+                """Generate text using LFM2 model."""
+                if self._model is None or self._tokenizer is None:
+                    msg = "Model not loaded. Call load_model first."
+                    raise RuntimeError(msg)
+
+                # Run inference in executor
+                loop = asyncio.get_event_loop()
+                start_time = loop.time()
+
+                def inference():
+                    inputs = self._tokenizer(prompt, return_tensors="pt")
+                    max_new_tokens = kwargs.get("max_tokens", 512)
+                    temperature = kwargs.get("temperature", 0.7)
+
+                    outputs = self._model.generate(
+                        **inputs,
+                        max_new_tokens=max_new_tokens,
+                        temperature=temperature,
+                        do_sample=True,
+                        pad_token_id=self._tokenizer.eos_token_id,
+                    )
+
+                    generated_text = self._tokenizer.decode(
+                        outputs[0],
+                        skip_special_tokens=True,
+                    )
+
+                    # Remove input prompt from output
+                    if generated_text.startswith(prompt):
+                        generated_text = generated_text[len(prompt) :].strip()
+
+                    return generated_text, len(outputs[0])
+
+                text, tokens_used = await loop.run_in_executor(None, inference)
+                latency_ms = int((loop.time() - start_time) * 1000)
+
+                # Create response object
+                class Response:
+                    def __init__(self, text: str, tokens: int, latency: int) -> None:
+                        self.text = text
+                        self.tokens_used = tokens
+                        self.latency_ms = latency
+                        self.memory_usage_mb = 256  # LFM2 optimized memory
+
+                return Response(text, tokens_used, latency_ms)
+
+        client = LiquidAIClient(model_id, self.settings)
+
+        # Preload default model if enabled
+        if self.settings.model_preload:
+            await client.load_model(self.settings.default_model)
+
+        return client
 
     async def _create_local_client(self) -> t.Any:
         """Create local model client using transformers."""
         try:
             from transformers import pipeline
         except ImportError:
-            raise ImportError("transformers package required for local provider")
+            msg = "transformers package required for local provider"
+            raise ImportError(msg)
 
         # Create text generation pipeline with optimization
         device = 0 if self.settings.enable_gpu else -1
@@ -229,8 +318,7 @@ class EdgeAI(AIBase):
             # Add quantization for memory efficiency
             pipeline_kwargs["model_kwargs"]["load_in_8bit"] = True
 
-        client = pipeline(**pipeline_kwargs)
-        return client
+        return pipeline(**pipeline_kwargs)
 
     async def _preload_model(self) -> None:
         """Preload model for faster inference."""
@@ -248,7 +336,7 @@ class EdgeAI(AIBase):
                     if self.settings.default_model not in model_names:
                         # Pull model
                         self.logger.info(
-                            f"Pulling model: {self.settings.default_model}"
+                            f"Pulling model: {self.settings.default_model}",
                         )
                         pull_response = await self._http_client.post(
                             "/api/pull",
@@ -257,7 +345,7 @@ class EdgeAI(AIBase):
                         )
                         if pull_response.status_code != 200:
                             self.logger.error(
-                                f"Failed to pull model: {pull_response.text}"
+                                f"Failed to pull model: {pull_response.text}",
                             )
 
                 # Load model into memory
@@ -283,7 +371,8 @@ class EdgeAI(AIBase):
 
         # Apply edge-specific limits
         request.max_tokens = min(
-            request.max_tokens, self.settings.max_tokens_per_request
+            request.max_tokens,
+            self.settings.max_tokens_per_request,
         )
 
         start_time = asyncio.get_event_loop().time()
@@ -296,7 +385,8 @@ class EdgeAI(AIBase):
             elif self.settings.provider == ModelProvider.LOCAL:
                 response = await self._local_generate(client, request)
             else:
-                raise ValueError(f"Unsupported provider: {self.settings.provider}")
+                msg = f"Unsupported provider: {self.settings.provider}"
+                raise ValueError(msg)
 
             latency_ms = int((asyncio.get_event_loop().time() - start_time) * 1000)
             response.latency_ms = latency_ms
@@ -304,7 +394,7 @@ class EdgeAI(AIBase):
             return response
 
         except Exception as e:
-            self.logger.error(f"Edge text generation failed: {e}")
+            self.logger.exception(f"Edge text generation failed: {e}")
             raise
 
     async def _generate_text_stream(self, request: AIRequest) -> StreamingResponse:
@@ -317,14 +407,17 @@ class EdgeAI(AIBase):
         elif self.settings.provider == ModelProvider.LIQUID_AI:
             generator = self._liquid_ai_stream(client, request)
         else:
+            msg = f"Streaming not supported for provider: {self.settings.provider}"
             raise ValueError(
-                f"Streaming not supported for provider: {self.settings.provider}"
+                msg,
             )
 
         return StreamingResponse(generator)
 
     async def _ollama_generate(
-        self, client: httpx.AsyncClient, request: AIRequest
+        self,
+        client: httpx.AsyncClient,
+        request: AIRequest,
     ) -> AIResponse:
         """Generate text using Ollama."""
         prompt = (
@@ -360,7 +453,9 @@ class EdgeAI(AIBase):
         )
 
     async def _liquid_ai_generate(
-        self, client: t.Any, request: AIRequest
+        self,
+        client: t.Any,
+        request: AIRequest,
     ) -> AIResponse:
         """Generate text using Liquid AI LFM."""
         prompt = (
@@ -430,7 +525,9 @@ class EdgeAI(AIBase):
         )
 
     async def _ollama_stream(
-        self, client: httpx.AsyncClient, request: AIRequest
+        self,
+        client: httpx.AsyncClient,
+        request: AIRequest,
     ) -> t.AsyncGenerator[str]:
         """Stream text generation from Ollama."""
         prompt = (
@@ -466,7 +563,9 @@ class EdgeAI(AIBase):
                         continue
 
     async def _liquid_ai_stream(
-        self, client: t.Any, request: AIRequest
+        self,
+        client: t.Any,
+        request: AIRequest,
     ) -> t.AsyncGenerator[str]:
         """Stream text generation from Liquid AI LFM."""
         # Mock streaming implementation for LFM
@@ -485,12 +584,11 @@ class EdgeAI(AIBase):
         """Get available models for edge deployment."""
         if self.settings.provider == ModelProvider.OLLAMA:
             return await self._get_ollama_models()
-        elif self.settings.provider == ModelProvider.LIQUID_AI:
+        if self.settings.provider == ModelProvider.LIQUID_AI:
             return await self._get_liquid_ai_models()
-        elif self.settings.provider == ModelProvider.LOCAL:
+        if self.settings.provider == ModelProvider.LOCAL:
             return await self._get_local_models()
-        else:
-            return []
+        return []
 
     async def _get_ollama_models(self) -> list[ModelInfo]:
         """Get available Ollama models."""
@@ -519,13 +617,13 @@ class EdgeAI(AIBase):
                         memory_footprint_mb=size_mb,
                         latency_p95_ms=200,  # Typical edge latency
                         supports_streaming=True,
-                    )
+                    ),
                 )
 
             return models
 
         except Exception as e:
-            self.logger.error(f"Failed to get Ollama models: {e}")
+            self.logger.exception(f"Failed to get Ollama models: {e}")
             return []
 
     async def _get_liquid_ai_models(self) -> list[ModelInfo]:
@@ -606,7 +704,7 @@ class EdgeAI(AIBase):
                     "deployment_target": self.settings.lfm_deployment_target,
                     "memory_reduction_percent": 70,  # LFM advantage
                     "latency_improvement_percent": 200,  # 3x faster
-                }
+                },
             )
 
         return optimizations

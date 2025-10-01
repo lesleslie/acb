@@ -47,7 +47,8 @@ class MockActionProvider:
         self._call_history = {}
 
     def create_compress_action_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> MagicMock:
         """Create a realistic compress action mock."""
         compress_mock = MagicMock()
@@ -115,7 +116,8 @@ class MockActionProvider:
         return compress_mock
 
     def create_encode_action_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> MagicMock:
         """Create a realistic encode action mock."""
         encode_mock = MagicMock()
@@ -131,25 +133,32 @@ class MockActionProvider:
 
         # Assign behaviors using helper methods
         encode_mock.json_encode.side_effect = lambda data: self._mock_json_encode(
-            data, default_behavior
+            data,
+            default_behavior,
         )
         encode_mock.json_decode.side_effect = lambda data: self._mock_json_decode(
-            data, default_behavior
+            data,
+            default_behavior,
         )
         encode_mock.yaml_encode.side_effect = lambda data: self._mock_yaml_encode(
-            data, default_behavior
+            data,
+            default_behavior,
         )
         encode_mock.yaml_decode.side_effect = lambda data: self._mock_yaml_decode(
-            data, default_behavior
+            data,
+            default_behavior,
         )
         encode_mock.toml_encode.side_effect = lambda data: self._mock_toml_encode(
-            data, default_behavior
+            data,
+            default_behavior,
         )
         encode_mock.msgpack_encode.side_effect = lambda data: self._mock_msgpack_encode(
-            data, default_behavior
+            data,
+            default_behavior,
         )
         encode_mock.msgpack_decode.side_effect = lambda data: self._mock_msgpack_decode(
-            data, default_behavior
+            data,
+            default_behavior,
         )
 
         self._mock_instances["encode"] = encode_mock
@@ -260,7 +269,8 @@ class MockActionProvider:
         return text
 
     def create_hash_action_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> MagicMock:
         """Create a realistic hash action mock."""
         hash_mock = MagicMock()
@@ -348,7 +358,11 @@ class MockActionProvider:
         return self._call_history.get(action_type, [])
 
     def record_call(
-        self, action_type: str, method: str, args: tuple, kwargs: dict
+        self,
+        action_type: str,
+        method: str,
+        args: tuple,
+        kwargs: dict,
     ) -> None:
         """Record a method call for analysis."""
         if action_type not in self._call_history:
@@ -360,12 +374,14 @@ class MockActionProvider:
                 "args": args,
                 "kwargs": kwargs,
                 "timestamp": "2024-01-01T12:00:00Z",  # Mock timestamp
-            }
+            },
         )
 
     @contextmanager
     def mock_action_context(
-        self, action_type: str, behavior: dict[str, t.Any] | None = None
+        self,
+        action_type: str,
+        behavior: dict[str, t.Any] | None = None,
     ):
         """Context manager for temporary mock action."""
         # Create mock based on type

@@ -10,8 +10,7 @@ from __future__ import annotations
 import asyncio
 import os
 from datetime import datetime
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 from pydantic import Field
@@ -29,6 +28,9 @@ from acb.adapters.experiment._base import (
     ExperimentSettings,
     ExperimentStatus,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 try:
     import mlflow
@@ -126,9 +128,12 @@ class MLflowExperiment(BaseExperimentAdapter):
             settings: MLflow-specific adapter settings
         """
         if not _mlflow_available:
-            raise ImportError(
+            msg = (
                 "MLflow is required for MLflowExperiment adapter. "
                 "Install with: pip install mlflow>=2.0.0"
+            )
+            raise ImportError(
+                msg,
             )
 
         super().__init__(settings)
@@ -185,12 +190,13 @@ class MLflowExperiment(BaseExperimentAdapter):
         # Create MLflow client
         tracking_uri = self._settings.mlflow_tracking_uri or self._settings.tracking_uri
         client = MlflowClient(
-            tracking_uri=tracking_uri, registry_uri=self._settings.registry_uri
+            tracking_uri=tracking_uri,
+            registry_uri=self._settings.registry_uri,
         )
 
         # Create aiohttp session for async operations
         self._session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=self._settings.timeout)
+            timeout=aiohttp.ClientTimeout(total=self._settings.timeout),
         )
 
         # Create default experiment if configured
@@ -235,13 +241,12 @@ class MLflowExperiment(BaseExperimentAdapter):
         if description:
             experiment_tags["description"] = description
 
-        experiment_id = await self._run_sync(
+        return await self._run_sync(
             client.create_experiment,
             name,
             artifact_location=self._settings.default_artifact_root,
             tags=experiment_tags,
         )
-        return experiment_id
 
     async def get_experiment(self, experiment_id: str) -> ExperimentInfo:
         """Get experiment information."""
@@ -311,7 +316,7 @@ class MLflowExperiment(BaseExperimentAdapter):
             if experiment_id is None:
                 # Get or create default experiment
                 experiment_id = await self.get_or_create_experiment(
-                    self._settings.default_experiment_name
+                    self._settings.default_experiment_name,
                 )
 
         run = await self._run_sync(
@@ -323,7 +328,9 @@ class MLflowExperiment(BaseExperimentAdapter):
         return run.info.run_id
 
     async def end_run(
-        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+        self,
+        run_id: str,
+        status: ExperimentStatus = ExperimentStatus.FINISHED,
     ) -> None:
         """End an experiment run."""
         client = await self._ensure_client()
@@ -372,7 +379,7 @@ class MLflowExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         key: str,
-        value: float | int,
+        value: float,
         step: int | None = None,
         timestamp: datetime | None = None,
     ) -> None:
@@ -459,7 +466,9 @@ class MLflowExperiment(BaseExperimentAdapter):
         )
 
     async def list_artifacts(
-        self, run_id: str, path: str | None = None
+        self,
+        run_id: str,
+        path: str | None = None,
     ) -> list[ArtifactInfo]:
         """List artifacts for a run."""
         client = await self._ensure_client()

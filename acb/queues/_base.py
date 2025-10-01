@@ -21,9 +21,6 @@ from acb.core.cleanup import CleanupMixin
 from acb.depends import depends
 from acb.logger import Logger
 
-if t.TYPE_CHECKING:
-    pass
-
 logger = logging.getLogger(__name__)
 
 
@@ -125,7 +122,7 @@ class TaskData(BaseModel):
     tags: dict[str, str] = Field(default_factory=dict)
 
     @validator("scheduled_at", pre=True)
-    def parse_scheduled_at(cls, v):
+    def parse_scheduled_at(self, v):
         if isinstance(v, str):
             return datetime.fromisoformat(v)
         return v
@@ -228,7 +225,6 @@ class TaskHandler(ABC):
             task: Completed task
             result: Task result
         """
-        pass
 
 
 class FunctionalTaskHandler(TaskHandler):
@@ -241,7 +237,7 @@ class FunctionalTaskHandler(TaskHandler):
         | None = None,
         on_success_func: t.Callable[[TaskData, TaskResult], t.Awaitable[None]]
         | None = None,
-    ):
+    ) -> None:
         self._handler_func = handler_func
         self._on_failure_func = on_failure_func
         self._on_success_func = on_success_func
@@ -387,7 +383,7 @@ class QueueBase(ABC, CleanupMixin):
     config: Config
     logger: Logger
 
-    def __init__(self, settings: QueueSettings | None = None):
+    def __init__(self, settings: QueueSettings | None = None) -> None:
         super().__init__()
         CleanupMixin.__init__(self)
 
@@ -514,7 +510,7 @@ class QueueBase(ABC, CleanupMixin):
             worker_id = f"worker-{i}"
             if worker_id not in self._workers:
                 self._workers[worker_id] = asyncio.create_task(
-                    self._worker_loop(worker_id)
+                    self._worker_loop(worker_id),
                 )
 
         self._metrics.worker_metrics.total_workers = len(self._workers)
@@ -525,7 +521,7 @@ class QueueBase(ABC, CleanupMixin):
         self._shutdown_event.set()
 
         # Cancel all worker tasks
-        for worker_id, task in self._workers.items():
+        for task in self._workers.values():
             task.cancel()
 
         # Wait for workers to finish
@@ -566,7 +562,7 @@ class QueueBase(ABC, CleanupMixin):
                 except asyncio.CancelledError:
                     break
                 except Exception as e:
-                    self.logger.error(f"Worker {worker_id} error: {e}")
+                    self.logger.exception(f"Worker {worker_id} error: {e}")
                     await asyncio.sleep(self._settings.retry_delay)
                 finally:
                     # Update worker metrics
@@ -593,8 +589,9 @@ class QueueBase(ABC, CleanupMixin):
             # Get task handler
             handler = self._handlers.get(task.task_type)
             if handler is None:
+                msg = f"No handler registered for task type: {task.task_type}"
                 raise ValueError(
-                    f"No handler registered for task type: {task.task_type}"
+                    msg,
                 )
 
             # Execute task with timeout
@@ -610,7 +607,8 @@ class QueueBase(ABC, CleanupMixin):
                 await self._on_task_completed(task, result)
 
             except TimeoutError:
-                raise Exception(f"Task timed out after {task.timeout}s")
+                msg = f"Task timed out after {task.timeout}s"
+                raise Exception(msg)
 
         except Exception as e:
             # Handle task failure
@@ -806,7 +804,7 @@ class QueueBase(ABC, CleanupMixin):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Health check error: {e}")
+                self.logger.exception(f"Health check error: {e}")
 
     async def _metrics_loop(self) -> None:
         """Metrics collection loop."""
@@ -820,13 +818,12 @@ class QueueBase(ABC, CleanupMixin):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Metrics collection error: {e}")
+                self.logger.exception(f"Metrics collection error: {e}")
 
     async def _update_metrics(self) -> None:
         """Update queue metrics."""
         # Update queue depth and other metrics
         # This should be implemented by concrete queue implementations
-        pass
 
     async def health_check(self) -> dict[str, t.Any]:
         """Perform health check.

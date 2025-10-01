@@ -95,9 +95,7 @@ class SQLModelAdapter(ModelAdapter[T]):
         model_class: type[T],
         data: dict[str, Any],
     ) -> dict[str, Any]:
-        if hasattr(model_class, "__fields__"):
-            model_fields = set(model_class.model_fields.keys())  # type: ignore[attr-defined]
-        elif hasattr(model_class, "model_fields"):
+        if hasattr(model_class, "__fields__") or hasattr(model_class, "model_fields"):
             model_fields = set(model_class.model_fields.keys())  # type: ignore[attr-defined]
         else:
             return data
@@ -117,13 +115,13 @@ class SQLModelAdapter(ModelAdapter[T]):
     def get_field_mapping(self, model_class: type[T]) -> dict[str, str]:
         if hasattr(model_class, "model_fields"):
             return self._extract_field_mapping_from_fields(
-                model_class.model_fields.items()  # type: ignore[attr-defined]
+                model_class.model_fields.items(),  # type: ignore[attr-defined]
             )
-        elif hasattr(model_class, "__fields__"):
+        if hasattr(model_class, "__fields__"):
             return self._extract_field_mapping_from_fields(
-                model_class.__fields__.items()  # type: ignore  # type: ignore[attr-defined]
+                model_class.__fields__.items(),  # type: ignore  # type: ignore[attr-defined]
             )
-        elif hasattr(model_class, "__annotations__"):
+        if hasattr(model_class, "__annotations__"):
             return {name: name for name in model_class.__annotations__}
 
         return {}
@@ -183,14 +181,14 @@ class SQLModelAdapter(ModelAdapter[T]):
         if hasattr(model_class, "__fields__"):
             field_info = model_class.__fields__.get(field_name)  # type: ignore  # type: ignore[attr-defined]
             if field_info:
-                return t.cast(type, field_info.type_)  # type: ignore[no-any-return, return-value]
+                return t.cast("type", field_info.type_)  # type: ignore[no-any-return, return-value]
         elif hasattr(model_class, "model_fields"):
             field_info = model_class.model_fields.get(field_name)  # type: ignore[attr-defined]
             if field_info:
-                return t.cast(type, field_info.annotation)  # type: ignore[no-any-return, return-value]
+                return t.cast("type", field_info.annotation)  # type: ignore[no-any-return, return-value]
         elif hasattr(model_class, "__annotations__"):
             annotation = model_class.__annotations__.get(field_name, Any)
-            return t.cast(type, annotation)  # type: ignore[no-any-return]
+            return t.cast("type", annotation)  # type: ignore[no-any-return]
 
         return Any  # type: ignore[return-value]
 

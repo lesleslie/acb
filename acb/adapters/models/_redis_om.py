@@ -38,16 +38,18 @@ class RedisOMModelAdapter(ModelAdapter[T]):
 
     def serialize(self, instance: T) -> dict[str, Any]:
         if hasattr(instance, "model_dump") and callable(
-            getattr(instance, "model_dump")
+            instance.model_dump,
         ):
-            return getattr(instance, "model_dump")()  # type: ignore  # type: ignore[no-any-return]
-        elif hasattr(instance, "dict") and callable(getattr(instance, "dict")):
-            return getattr(instance, "dict")()  # type: ignore  # type: ignore[no-any-return]
+            return instance.model_dump()  # type: ignore  # type: ignore[no-any-return]
+        if hasattr(instance, "dict") and callable(instance.dict):
+            return instance.dict()  # type: ignore  # type: ignore[no-any-return]
         return self._manual_serialize(instance)
 
     def _manual_serialize(self, instance: T) -> dict[str, Any]:
         fields = getattr(instance, "model_fields", None) or getattr(
-            instance, "__fields__", None
+            instance,
+            "__fields__",
+            None,
         )
         if fields:
             return self._serialize_from_fields(instance, fields)
@@ -66,7 +68,7 @@ class RedisOMModelAdapter(ModelAdapter[T]):
         result = {}
         for attr_name in dir(instance):
             if not attr_name.startswith("_") and not callable(
-                getattr(instance, attr_name)
+                getattr(instance, attr_name),
             ):
                 value = getattr(instance, attr_name)
                 result[attr_name] = self._serialize_value(value)
@@ -151,7 +153,9 @@ class RedisOMModelAdapter(ModelAdapter[T]):
 
     def get_primary_key_field(self, model_class: type[T]) -> str:
         fields = getattr(model_class, "model_fields", None) or getattr(
-            model_class, "__fields__", None
+            model_class,
+            "__fields__",
+            None,
         )
         if fields:
             for field_name, field_info in fields.items():

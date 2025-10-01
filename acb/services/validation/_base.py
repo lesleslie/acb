@@ -119,7 +119,9 @@ class ValidationSchema(ABC):
 
     @abstractmethod
     async def validate(
-        self, data: t.Any, field_name: str | None = None
+        self,
+        data: t.Any,
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Validate data against this schema.
 
@@ -238,7 +240,10 @@ class ValidationMetrics:
         self.schema_cache_misses: int = 0
 
     def record_validation(
-        self, success: bool, validation_time_ms: float, cache_hit: bool = False
+        self,
+        success: bool,
+        validation_time_ms: float,
+        cache_hit: bool = False,
     ) -> None:
         """Record a validation operation."""
         self.total_validations += 1
@@ -253,8 +258,9 @@ class ValidationMetrics:
             self.total_validation_time_ms / self.total_validations
         )
 
-        if validation_time_ms > self.max_validation_time_ms:
-            self.max_validation_time_ms = validation_time_ms
+        self.max_validation_time_ms = max(
+            self.max_validation_time_ms, validation_time_ms
+        )
 
         if cache_hit:
             self.schema_cache_hits += 1

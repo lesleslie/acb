@@ -24,8 +24,10 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
 
-from pydantic import BaseModel, Field
-from acb.gateway._base import GatewayRequest
+from pydantic import BaseModel, ConfigDict, Field
+
+if t.TYPE_CHECKING:
+    from acb.gateway._base import GatewayRequest
 
 
 class RateLimitAlgorithm(Enum):
@@ -102,8 +104,7 @@ class RateLimitConfig(BaseModel):
     # Custom limits per client/endpoint
     custom_limits: dict[str, dict[str, int]] = Field(default_factory=dict)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class RateLimitResult(BaseModel):
@@ -119,8 +120,7 @@ class RateLimitResult(BaseModel):
     endpoint: str | None = None
     tenant_id: str | None = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class RateLimiterProtocol(ABC):
@@ -240,7 +240,10 @@ class TokenBucketLimiter:
         if bucket["tokens"] >= 1:
             bucket["tokens"] -= 1
             remaining = int(bucket["tokens"])
-            reset_time = current_time + (bucket["capacity"] - bucket["tokens"]) / bucket["refill_rate"]
+            reset_time = (
+                current_time
+                + (bucket["capacity"] - bucket["tokens"]) / bucket["refill_rate"]
+            )
 
             return RateLimitResult(
                 status=RateLimitStatus.ALLOWED,
@@ -253,26 +256,30 @@ class TokenBucketLimiter:
                 client_id=client_id,
                 endpoint=endpoint,
             )
-        else:
-            # Calculate retry after time
-            retry_after = (1 - bucket["tokens"]) / bucket["refill_rate"]
-            reset_time = current_time + bucket["capacity"] / bucket["refill_rate"]
+        # Calculate retry after time
+        retry_after = (1 - bucket["tokens"]) / bucket["refill_rate"]
+        reset_time = current_time + bucket["capacity"] / bucket["refill_rate"]
 
-            return RateLimitResult(
-                status=RateLimitStatus.RATE_LIMITED,
-                allowed=False,
-                info=RateLimitInfo(
-                    limit=bucket["capacity"],
-                    remaining=0,
-                    reset_time=reset_time,
-                    retry_after=retry_after,
-                ),
-                reason="Rate limit exceeded",
-                client_id=client_id,
-                endpoint=endpoint,
-            )
+        return RateLimitResult(
+            status=RateLimitStatus.RATE_LIMITED,
+            allowed=False,
+            info=RateLimitInfo(
+                limit=bucket["capacity"],
+                remaining=0,
+                reset_time=reset_time,
+                retry_after=retry_after,
+            ),
+            reason="Rate limit exceeded",
+            client_id=client_id,
+            endpoint=endpoint,
+        )
 
-    def _get_rate_limit(self, config: RateLimitConfig, client_id: str, endpoint: str) -> int:
+    def _get_rate_limit(
+        self,
+        config: RateLimitConfig,
+        client_id: str,
+        endpoint: str,
+    ) -> int:
         """Get rate limit for client/endpoint combination."""
         # Check for custom limits
         if client_id in config.custom_limits:
@@ -283,52 +290,53 @@ class TokenBucketLimiter:
         # Use configured limits
         if config.requests_per_minute:
             return config.requests_per_minute
-        elif config.requests_per_second:
+        if config.requests_per_second:
             return config.requests_per_second * 60
-        elif config.requests_per_hour:
+        if config.requests_per_hour:
             return config.requests_per_hour
-        elif config.requests_per_day:
+        if config.requests_per_day:
             return config.requests_per_day
-        else:
-            return 100  # Default fallback
+        return 100  # Default fallback
 
     def _get_client_id(self, request: GatewayRequest, config: RateLimitConfig) -> str:
         """Extract client ID from request."""
         if config.scope == RateLimitScope.GLOBAL:
             return "global"
-        elif config.scope == RateLimitScope.PER_CLIENT:
+        if config.scope == RateLimitScope.PER_CLIENT:
             return (
-                request.headers.get(config.client_id_header) or
-                request.client_ip or
-                "unknown"
+                request.headers.get(config.client_id_header)
+                or request.client_ip
+                or "unknown"
             )
-        elif config.scope == RateLimitScope.PER_USER:
+        if config.scope == RateLimitScope.PER_USER:
             return (
-                request.headers.get(config.user_id_header) or
-                request.auth_user.get("user_id") if request.auth_user else "anonymous"
+                request.headers.get(config.user_id_header)
+                or request.auth_user.get("user_id")
+                if request.auth_user
+                else "anonymous"
             )
-        elif config.scope == RateLimitScope.PER_TENANT:
+        if config.scope == RateLimitScope.PER_TENANT:
             return (
-                request.headers.get(config.tenant_id_header) or
-                request.tenant_id or
-                "default"
+                request.headers.get(config.tenant_id_header)
+                or request.tenant_id
+                or "default"
             )
-        else:
-            return request.client_ip or "unknown"
+        return request.client_ip or "unknown"
 
     def _get_endpoint_id(self, request: GatewayRequest, config: RateLimitConfig) -> str:
         """Extract endpoint ID from request."""
         if config.scope == RateLimitScope.PER_ENDPOINT:
             return f"{request.method.value}:{request.path}"
-        else:
-            return "all"
+        return "all"
 
     async def reset_limits(self, client_id: str | None = None) -> None:
         """Reset rate limits."""
         async with self._lock:
             if client_id:
                 # Reset specific client
-                keys_to_remove = [key for key in self._buckets.keys() if key.startswith(f"{client_id}:")]
+                keys_to_remove = [
+                    key for key in self._buckets if key.startswith(f"{client_id}:")
+                ]
                 for key in keys_to_remove:
                     del self._buckets[key]
             else:
@@ -346,7 +354,10 @@ class TokenBucketLimiter:
             if bucket_key in self._buckets:
                 bucket = self._buckets[bucket_key]
                 current_time = time.time()
-                reset_time = current_time + (bucket["capacity"] - bucket["tokens"]) / bucket["refill_rate"]
+                reset_time = (
+                    current_time
+                    + (bucket["capacity"] - bucket["tokens"]) / bucket["refill_rate"]
+                )
 
                 return RateLimitInfo(
                     limit=bucket["capacity"],
@@ -418,7 +429,11 @@ class SlidingWindowLimiter:
             # Allow request
             window.append(current_time)
             remaining = limit - current_count - 1
-            reset_time = window[0] + config.window_size if window else current_time + config.window_size
+            reset_time = (
+                window[0] + config.window_size
+                if window
+                else current_time + config.window_size
+            )
 
             return RateLimitResult(
                 status=RateLimitStatus.ALLOWED,
@@ -431,26 +446,34 @@ class SlidingWindowLimiter:
                 client_id=client_id,
                 endpoint=endpoint,
             )
-        else:
-            # Rate limited
-            reset_time = window[0] + config.window_size if window else current_time + config.window_size
-            retry_after = reset_time - current_time
+        # Rate limited
+        reset_time = (
+            window[0] + config.window_size
+            if window
+            else current_time + config.window_size
+        )
+        retry_after = reset_time - current_time
 
-            return RateLimitResult(
-                status=RateLimitStatus.RATE_LIMITED,
-                allowed=False,
-                info=RateLimitInfo(
-                    limit=limit,
-                    remaining=0,
-                    reset_time=reset_time,
-                    retry_after=retry_after,
-                ),
-                reason="Rate limit exceeded",
-                client_id=client_id,
-                endpoint=endpoint,
-            )
+        return RateLimitResult(
+            status=RateLimitStatus.RATE_LIMITED,
+            allowed=False,
+            info=RateLimitInfo(
+                limit=limit,
+                remaining=0,
+                reset_time=reset_time,
+                retry_after=retry_after,
+            ),
+            reason="Rate limit exceeded",
+            client_id=client_id,
+            endpoint=endpoint,
+        )
 
-    def _get_rate_limit(self, config: RateLimitConfig, client_id: str, endpoint: str) -> int:
+    def _get_rate_limit(
+        self,
+        config: RateLimitConfig,
+        client_id: str,
+        endpoint: str,
+    ) -> int:
         """Get rate limit for client/endpoint combination."""
         # Check for custom limits
         if client_id in config.custom_limits:
@@ -461,52 +484,53 @@ class SlidingWindowLimiter:
         # Convert to window-based limit
         if config.requests_per_minute and config.window_size == 60.0:
             return config.requests_per_minute
-        elif config.requests_per_second:
+        if config.requests_per_second:
             return int(config.requests_per_second * config.window_size)
-        elif config.requests_per_minute:
+        if config.requests_per_minute:
             return int(config.requests_per_minute * config.window_size / 60.0)
-        elif config.requests_per_hour:
+        if config.requests_per_hour:
             return int(config.requests_per_hour * config.window_size / 3600.0)
-        else:
-            return int(100 * config.window_size / 60.0)  # Default fallback
+        return int(100 * config.window_size / 60.0)  # Default fallback
 
     def _get_client_id(self, request: GatewayRequest, config: RateLimitConfig) -> str:
         """Extract client ID from request."""
         if config.scope == RateLimitScope.GLOBAL:
             return "global"
-        elif config.scope == RateLimitScope.PER_CLIENT:
+        if config.scope == RateLimitScope.PER_CLIENT:
             return (
-                request.headers.get(config.client_id_header) or
-                request.client_ip or
-                "unknown"
+                request.headers.get(config.client_id_header)
+                or request.client_ip
+                or "unknown"
             )
-        elif config.scope == RateLimitScope.PER_USER:
+        if config.scope == RateLimitScope.PER_USER:
             return (
-                request.headers.get(config.user_id_header) or
-                request.auth_user.get("user_id") if request.auth_user else "anonymous"
+                request.headers.get(config.user_id_header)
+                or request.auth_user.get("user_id")
+                if request.auth_user
+                else "anonymous"
             )
-        elif config.scope == RateLimitScope.PER_TENANT:
+        if config.scope == RateLimitScope.PER_TENANT:
             return (
-                request.headers.get(config.tenant_id_header) or
-                request.tenant_id or
-                "default"
+                request.headers.get(config.tenant_id_header)
+                or request.tenant_id
+                or "default"
             )
-        else:
-            return request.client_ip or "unknown"
+        return request.client_ip or "unknown"
 
     def _get_endpoint_id(self, request: GatewayRequest, config: RateLimitConfig) -> str:
         """Extract endpoint ID from request."""
         if config.scope == RateLimitScope.PER_ENDPOINT:
             return f"{request.method.value}:{request.path}"
-        else:
-            return "all"
+        return "all"
 
     async def reset_limits(self, client_id: str | None = None) -> None:
         """Reset rate limits."""
         async with self._lock:
             if client_id:
                 # Reset specific client
-                keys_to_remove = [key for key in self._windows.keys() if key.startswith(f"{client_id}:")]
+                keys_to_remove = [
+                    key for key in self._windows if key.startswith(f"{client_id}:")
+                ]
                 for key in keys_to_remove:
                     del self._windows[key]
             else:
@@ -557,11 +581,10 @@ class RateLimiter:
         """Check rate limit using configured algorithm."""
         if config.algorithm == RateLimitAlgorithm.TOKEN_BUCKET:
             return await self._token_bucket.check_rate_limit(request, config)
-        elif config.algorithm == RateLimitAlgorithm.SLIDING_WINDOW:
+        if config.algorithm == RateLimitAlgorithm.SLIDING_WINDOW:
             return await self._sliding_window.check_rate_limit(request, config)
-        else:
-            # Default to token bucket
-            return await self._token_bucket.check_rate_limit(request, config)
+        # Default to token bucket
+        return await self._token_bucket.check_rate_limit(request, config)
 
     async def reset_limits(self, client_id: str | None = None) -> None:
         """Reset rate limits for all algorithms."""
@@ -577,7 +600,6 @@ class RateLimiter:
         """Get current limit information."""
         if algorithm == RateLimitAlgorithm.TOKEN_BUCKET:
             return await self._token_bucket.get_limit_info(client_id, endpoint)
-        elif algorithm == RateLimitAlgorithm.SLIDING_WINDOW:
+        if algorithm == RateLimitAlgorithm.SLIDING_WINDOW:
             return await self._sliding_window.get_limit_info(client_id, endpoint)
-        else:
-            return await self._token_bucket.get_limit_info(client_id, endpoint)
+        return await self._token_bucket.get_limit_info(client_id, endpoint)

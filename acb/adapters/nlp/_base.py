@@ -184,17 +184,14 @@ class BaseNLPAdapter(ABC):
     @abstractmethod
     async def connect(self) -> None:
         """Connect to NLP service or load models."""
-        pass
 
     @abstractmethod
     async def disconnect(self) -> None:
         """Disconnect from NLP service or unload models."""
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
         """Check if the NLP service is healthy."""
-        pass
 
     # Core NLP Tasks
     @abstractmethod
@@ -214,7 +211,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             Dictionary with analysis results for each task
         """
-        pass
 
     @abstractmethod
     async def analyze_sentiment(
@@ -231,7 +227,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             Sentiment analysis result
         """
-        pass
 
     @abstractmethod
     async def extract_entities(
@@ -250,7 +245,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             List of named entities
         """
-        pass
 
     @abstractmethod
     async def translate_text(
@@ -269,7 +263,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             Translation result
         """
-        pass
 
     @abstractmethod
     async def classify_text(
@@ -288,7 +281,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             Classification result
         """
-        pass
 
     @abstractmethod
     async def detect_language(self, text: str) -> LanguageDetectionResult:
@@ -300,7 +292,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             Language detection result
         """
-        pass
 
     @abstractmethod
     async def extract_keywords(
@@ -319,7 +310,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             List of extracted keywords
         """
-        pass
 
     @abstractmethod
     async def calculate_similarity(
@@ -338,7 +328,6 @@ class BaseNLPAdapter(ABC):
         Returns:
             Similarity result
         """
-        pass
 
     # Batch Processing
     async def analyze_sentiment_batch(

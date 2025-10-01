@@ -20,6 +20,8 @@ except ImportError:
     croniter = None
     CRONITER_AVAILABLE = False
 
+import contextlib
+
 from pydantic import BaseModel, Field, validator
 
 from ._base import (
@@ -46,7 +48,8 @@ class ScheduleRule(BaseModel):
     # Scheduling configuration
     cron_expression: str | None = Field(default=None, description="Cron expression")
     interval_seconds: float | None = Field(
-        default=None, description="Interval in seconds"
+        default=None,
+        description="Interval in seconds",
     )
     start_time: datetime | None = Field(default=None, description="Start time")
     end_time: datetime | None = Field(default=None, description="End time")
@@ -63,10 +66,11 @@ class ScheduleRule(BaseModel):
     tags: dict[str, str] = Field(default_factory=dict)
 
     @validator("cron_expression")
-    def validate_cron_expression(cls, v):
+    def validate_cron_expression(self, v):
         if v and not CRONITER_AVAILABLE:
+            msg = "croniter is required for cron expressions. Install with: pip install croniter"
             raise ImportError(
-                "croniter is required for cron expressions. Install with: pip install croniter"
+                msg,
             )
 
         if v:
@@ -74,14 +78,16 @@ class ScheduleRule(BaseModel):
                 if croniter:
                     croniter.croniter(v)
             except Exception as e:
-                raise ValueError(f"Invalid cron expression: {e}")
+                msg = f"Invalid cron expression: {e}"
+                raise ValueError(msg)
 
         return v
 
     @validator("interval_seconds")
-    def validate_interval(cls, v):
+    def validate_interval(self, v):
         if v is not None and v <= 0:
-            raise ValueError("Interval must be positive")
+            msg = "Interval must be positive"
+            raise ValueError(msg)
         return v
 
     def model_post_init(self, __context: Any) -> None:
@@ -116,7 +122,8 @@ class ScheduleRule(BaseModel):
                 cron = croniter.croniter(self.cron_expression, base_time)
                 next_time = cron.get_next(datetime)
             else:
-                raise ImportError("croniter is required for cron expressions")
+                msg = "croniter is required for cron expressions"
+                raise ImportError(msg)
         elif self.interval_seconds:
             # Use interval
             if self.last_run:
@@ -150,10 +157,7 @@ class ScheduleRule(BaseModel):
             return False
 
         # Check if it's time to run
-        if self.next_run and current_time >= self.next_run:
-            return True
-
-        return False
+        return bool(self.next_run and current_time >= self.next_run)
 
     def mark_run(self, run_time: datetime | None = None) -> None:
         """Mark the rule as having run."""
@@ -166,7 +170,7 @@ class ScheduleRule(BaseModel):
 class TaskScheduler:
     """Task scheduler for ACB queue system."""
 
-    def __init__(self, queue: QueueBase):
+    def __init__(self, queue: QueueBase) -> None:
         self.queue = queue
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -206,10 +210,8 @@ class TaskScheduler:
         # Stop scheduler task
         if self._scheduler_task:
             self._scheduler_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._scheduler_task
-            except asyncio.CancelledError:
-                pass
 
         self.logger.info("Task scheduler stopped")
 
@@ -227,8 +229,8 @@ class TaskScheduler:
                             await self._execute_rule(rule, current_time)
                             tasks_scheduled += 1
                         except Exception as e:
-                            self.logger.error(
-                                f"Failed to execute rule {rule.name}: {e}"
+                            self.logger.exception(
+                                f"Failed to execute rule {rule.name}: {e}",
                             )
 
                 if tasks_scheduled > 0:
@@ -240,7 +242,7 @@ class TaskScheduler:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Scheduler loop error: {e}")
+                self.logger.exception(f"Scheduler loop error: {e}")
                 await asyncio.sleep(self._check_interval)
 
     async def _execute_rule(self, rule: ScheduleRule, run_time: datetime) -> None:
@@ -268,11 +270,11 @@ class TaskScheduler:
             rule.mark_run(run_time)
 
             self.logger.debug(
-                f"Scheduled task {task_id} for rule {rule.name} (run {rule.run_count})"
+                f"Scheduled task {task_id} for rule {rule.name} (run {rule.run_count})",
             )
 
         except Exception as e:
-            self.logger.error(f"Failed to execute rule {rule.name}: {e}")
+            self.logger.exception(f"Failed to execute rule {rule.name}: {e}")
             raise
 
     def add_rule(self, rule: ScheduleRule) -> UUID:
@@ -477,8 +479,9 @@ def scheduled_task(
                 **rule_kwargs,
             )
         else:
+            msg = "Either cron_expression or interval_seconds must be provided"
             raise ValueError(
-                "Either cron_expression or interval_seconds must be provided"
+                msg,
             )
 
         # Register the rule
@@ -512,15 +515,19 @@ def parse_cron_expression(expression: str) -> dict[str, Any]:
         Information about the cron expression
     """
     if not CRONITER_AVAILABLE:
-        raise ImportError(
+        msg = (
             "croniter is required for cron parsing. Install with: pip install croniter"
+        )
+        raise ImportError(
+            msg,
         )
 
     try:
         if croniter:
             cron = croniter.croniter(expression)
         else:
-            raise ImportError("croniter is required for cron parsing")
+            msg = "croniter is required for cron parsing"
+            raise ImportError(msg)
 
         # Get next few runs
         next_runs = []

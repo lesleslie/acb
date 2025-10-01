@@ -166,7 +166,7 @@ class Storage(StorageBase):
             return None
         except Exception as e:
             self.logger.exception(
-                f"Unexpected error getting file from client {path}: {e}"
+                f"Unexpected error getting file from client {path}: {e}",
             )
             return None
 
@@ -208,7 +208,7 @@ class Storage(StorageBase):
                 return False
             except Exception as e:
                 self.logger.exception(
-                    f"Unexpected error checking if file exists {path}: {e}"
+                    f"Unexpected error checking if file exists {path}: {e}",
                 )
                 return False
         except (OSError, PermissionError) as e:
@@ -216,7 +216,7 @@ class Storage(StorageBase):
             return False
         except Exception as e:
             self.logger.exception(
-                f"Unexpected error checking if file exists {path}: {e}"
+                f"Unexpected error checking if file exists {path}: {e}",
             )
             return False
 
@@ -234,7 +234,7 @@ class Storage(StorageBase):
                 return False
             except Exception as e:
                 self.logger.exception(
-                    f"Unexpected error creating directory {path}: {e}"
+                    f"Unexpected error creating directory {path}: {e}",
                 )
                 return False
         except (OSError, PermissionError, FileExistsError) as e:
@@ -256,7 +256,7 @@ class Storage(StorageBase):
                 return False
             except Exception as e:
                 self.logger.exception(
-                    f"Unexpected error checking if directory exists {path}: {e}"
+                    f"Unexpected error checking if directory exists {path}: {e}",
                 )
                 return False
         except (OSError, PermissionError) as e:
@@ -264,7 +264,7 @@ class Storage(StorageBase):
             return False
         except Exception as e:
             self.logger.exception(
-                f"Unexpected error checking if directory exists {path}: {e}"
+                f"Unexpected error checking if directory exists {path}: {e}",
             )
             return False
 

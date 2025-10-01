@@ -49,7 +49,9 @@ class DatabaseTestProvider:
         self._migrations = []
 
     async def create_test_database(
-        self, db_type: str = "sqlite", config: dict | None = None
+        self,
+        db_type: str = "sqlite",
+        config: dict | None = None,
     ) -> AsyncMock:
         """Create an in-memory test database."""
         db_mock = AsyncMock()
@@ -194,7 +196,7 @@ class DatabaseTestProvider:
                     "sql": migration_sql,
                     "executed_at": "2024-01-01T12:00:00Z",
                     "success": True,
-                }
+                },
             )
 
             return True
@@ -205,7 +207,7 @@ class DatabaseTestProvider:
                     "executed_at": "2024-01-01T12:00:00Z",
                     "success": False,
                     "error": str(e),
-                }
+                },
             )
             return False
 

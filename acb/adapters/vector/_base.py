@@ -90,7 +90,6 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> list[VectorSearchResult]:
         """Perform vector similarity search."""
-        pass
 
     @abstractmethod
     async def insert(
@@ -100,7 +99,6 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> list[str]:
         """Insert documents with vectors."""
-        pass
 
     @abstractmethod
     async def upsert(
@@ -110,7 +108,6 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> list[str]:
         """Upsert documents with vectors."""
-        pass
 
     @abstractmethod
     async def delete(
@@ -120,7 +117,6 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> bool:
         """Delete documents by IDs."""
-        pass
 
     @abstractmethod
     async def get(
@@ -131,7 +127,6 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> list[VectorDocument]:
         """Retrieve documents by IDs."""
-        pass
 
     @abstractmethod
     async def count(
@@ -141,7 +136,6 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> int:
         """Count documents in collection."""
-        pass
 
     @abstractmethod
     async def create_collection(
@@ -152,7 +146,6 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> bool:
         """Create a new collection."""
-        pass
 
     @abstractmethod
     async def delete_collection(
@@ -161,12 +154,10 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> bool:
         """Delete a collection."""
-        pass
 
     @abstractmethod
     async def list_collections(self, **kwargs: t.Any) -> list[str]:
         """List all collections."""
-        pass
 
     # Optional Phase 5 methods (for adapters that support advanced features)
     async def text_search(
@@ -178,7 +169,8 @@ class VectorProtocol(t.Protocol):
         **kwargs: t.Any,
     ) -> list[VectorSearchResult]:
         """Text-based search (for hybrid search support)."""
-        raise NotImplementedError("Text search not implemented for this adapter")
+        msg = "Text search not implemented for this adapter"
+        raise NotImplementedError(msg)
 
     def has_capability(self, capability: str) -> bool:
         """Check if adapter supports a specific capability."""
@@ -201,26 +193,41 @@ class VectorCollection:
         **kwargs: t.Any,
     ) -> list[VectorSearchResult]:
         return await t.cast("VectorProtocol", self.adapter).search(
-            self.name, query_vector, limit, filter_expr, include_vectors, **kwargs
+            self.name,
+            query_vector,
+            limit,
+            filter_expr,
+            include_vectors,
+            **kwargs,
         )
 
     async def insert(
-        self, documents: list[VectorDocument], **kwargs: t.Any
+        self,
+        documents: list[VectorDocument],
+        **kwargs: t.Any,
     ) -> list[str]:
         return await t.cast("VectorProtocol", self.adapter).insert(
-            self.name, documents, **kwargs
+            self.name,
+            documents,
+            **kwargs,
         )
 
     async def upsert(
-        self, documents: list[VectorDocument], **kwargs: t.Any
+        self,
+        documents: list[VectorDocument],
+        **kwargs: t.Any,
     ) -> list[str]:
         return await t.cast("VectorProtocol", self.adapter).upsert(
-            self.name, documents, **kwargs
+            self.name,
+            documents,
+            **kwargs,
         )
 
     async def delete(self, ids: list[str], **kwargs: t.Any) -> bool:
         return await t.cast("VectorProtocol", self.adapter).delete(
-            self.name, ids, **kwargs
+            self.name,
+            ids,
+            **kwargs,
         )
 
     async def get(
@@ -230,14 +237,21 @@ class VectorCollection:
         **kwargs: t.Any,
     ) -> list[VectorDocument]:
         return await t.cast("VectorProtocol", self.adapter).get(
-            self.name, ids, include_vectors, **kwargs
+            self.name,
+            ids,
+            include_vectors,
+            **kwargs,
         )
 
     async def count(
-        self, filter_expr: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        filter_expr: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         return await t.cast("VectorProtocol", self.adapter).count(
-            self.name, filter_expr, **kwargs
+            self.name,
+            filter_expr,
+            **kwargs,
         )
 
 
@@ -359,7 +373,11 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
         if cache:
             # Convert VectorDocuments to VectorSearchResults
             cached_docs = await cache.search(
-                collection, query_vector, limit, filter_expr, **kwargs
+                collection,
+                query_vector,
+                limit,
+                filter_expr,
+                **kwargs,
             )
             return [
                 VectorSearchResult(
@@ -373,7 +391,12 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
 
         # Fallback to regular search
         result: list[VectorSearchResult] = await self.search(
-            collection, query_vector, limit, filter_expr, include_vectors, **kwargs
+            collection,
+            query_vector,
+            limit,
+            filter_expr,
+            include_vectors,
+            **kwargs,
         )
         return result
 
@@ -390,7 +413,12 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
         hybrid = await self.get_hybrid_search()
         if hybrid:
             hybrid_results = await hybrid.search(
-                collection, query_vector, query_text, limit, filter_expr, **kwargs
+                collection,
+                query_vector,
+                query_text,
+                limit,
+                filter_expr,
+                **kwargs,
             )
 
             # Convert to VectorSearchResult
@@ -406,14 +434,17 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
 
         # Fallback to regular vector search
         result: list[VectorSearchResult] = await self.search(
-            collection, query_vector, limit, filter_expr, **kwargs
+            collection,
+            query_vector,
+            limit,
+            filter_expr,
+            **kwargs,
         )
         return result
 
     @abstractmethod
     async def init(self) -> None:
         """Initialize the vector adapter."""
-        pass
 
     @asynccontextmanager
     async def transaction(self) -> t.AsyncGenerator[t.Any]:

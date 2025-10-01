@@ -157,7 +157,7 @@ class Smtp(SmtpBase):
         records = []
         rrdata = self.config.smtp.mx_servers
         record = DnsRecord.model_validate(
-            {"name": domain, "type": "MX", "rrdata": rrdata}
+            {"name": domain, "type": "MX", "rrdata": rrdata},
         )
         records.append(record)
         spf_record = DnsRecord.model_validate(

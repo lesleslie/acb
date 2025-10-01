@@ -80,23 +80,23 @@ except ImportError:
 __all__ = [
     # Base classes
     "BaseNLPAdapter",
-    "NLPSettings",
-    "SentimentResult",
-    "SentimentLabel",
-    "NamedEntity",
-    "EntityType",
-    "TranslationResult",
     "ClassificationResult",
-    "LanguageDetectionResult",
+    "EntityType",
     "KeywordResult",
+    "LanguageDetectionResult",
+    "NLPSettings",
+    "NamedEntity",
+    "SentimentLabel",
+    "SentimentResult",
     "SimilarityResult",
-    "TaskType",
     # spaCy
     "SpacyNLP",
     "SpacyNLPSettings",
+    "TaskType",
     # Transformers
     "TransformersNLP",
     "TransformersNLPSettings",
+    "TranslationResult",
 ]
 
 # Create mapping for dynamic adapter loading

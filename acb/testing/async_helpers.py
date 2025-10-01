@@ -124,7 +124,8 @@ async def cleanup_async_tasks(timeout: float = 5.0) -> None:
         # Wait for tasks to complete or timeout
         try:
             await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), timeout=timeout
+                asyncio.gather(*tasks, return_exceptions=True),
+                timeout=timeout,
             )
         except TimeoutError:
             # Force cleanup if timeout exceeded
@@ -175,7 +176,8 @@ async def timeout_async_call(
 
 @asynccontextmanager
 async def mock_async_context(
-    mock_class: type = AsyncMock, **mock_kwargs: t.Any
+    mock_class: type = AsyncMock,
+    **mock_kwargs: t.Any,
 ) -> t.AsyncGenerator[AsyncMock]:
     """Create a mock async context manager."""
     mock = mock_class(**mock_kwargs)
@@ -320,7 +322,8 @@ def async_test(
 
 @asynccontextmanager
 async def temporary_async_task(
-    coro: t.Coroutine[t.Any, t.Any, t.Any], name: str | None = None
+    coro: t.Coroutine[t.Any, t.Any, t.Any],
+    name: str | None = None,
 ) -> t.AsyncGenerator[asyncio.Task[t.Any]]:
     """Context manager for temporary async tasks."""
     task: asyncio.Task[t.Any] = asyncio.create_task(coro, name=name)
@@ -405,7 +408,8 @@ async def assert_async_raises(
 
 @asynccontextmanager
 async def async_timeout_context(
-    timeout: float, message: str | None = None
+    timeout: float,
+    message: str | None = None,
 ) -> t.AsyncGenerator[None]:
     """Context manager that raises TimeoutError if operations take too long."""
     try:

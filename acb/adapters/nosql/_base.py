@@ -140,12 +140,16 @@ class NosqlCollection:
         self.name = name
 
     async def find(
-        self, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         return await self.adapter.find(self.name, filter, **kwargs)
 
     async def find_one(
-        self, filter: dict[str, t.Any], **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> dict[str, t.Any] | None:
         return await self.adapter.find_one(self.name, filter, **kwargs)
 
@@ -153,7 +157,9 @@ class NosqlCollection:
         return await self.adapter.insert_one(self.name, document, **kwargs)
 
     async def insert_many(
-        self, documents: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        documents: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[t.Any]:
         return await self.adapter.insert_many(self.name, documents, **kwargs)
 
@@ -180,12 +186,16 @@ class NosqlCollection:
         return await self.adapter.delete_many(self.name, filter, **kwargs)
 
     async def count(
-        self, filter: dict[str, t.Any] | None = None, **kwargs: t.Any
+        self,
+        filter: dict[str, t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> int:
         return await self.adapter.count(self.name, filter, **kwargs)
 
     async def aggregate(
-        self, pipeline: list[dict[str, t.Any]], **kwargs: t.Any
+        self,
+        pipeline: list[dict[str, t.Any]],
+        **kwargs: t.Any,
     ) -> list[dict[str, t.Any]]:
         return await self.adapter.aggregate(self.name, pipeline, **kwargs)
 

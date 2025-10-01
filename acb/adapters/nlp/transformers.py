@@ -124,9 +124,12 @@ class TransformersNLP(BaseNLPAdapter):
             settings: Transformers-specific adapter settings
         """
         if not _transformers_available:
-            raise ImportError(
+            msg = (
                 "Transformers is required for TransformersNLP adapter. "
                 "Install with: pip install transformers torch"
+            )
+            raise ImportError(
+                msg,
             )
 
         super().__init__(settings)
@@ -193,9 +196,9 @@ class TransformersNLP(BaseNLPAdapter):
                 },
             )
             self._pipelines[key] = pipe
-        except Exception as e:
+        except Exception:
             # Model loading failed, skip this pipeline
-            print(f"Failed to load {key} pipeline: {e}")
+            pass
 
     async def _run_sync(self, func, *args, **kwargs):
         """Run synchronous function in thread pool."""
@@ -237,7 +240,8 @@ class TransformersNLP(BaseNLPAdapter):
                     results["sentiment"] = await self.analyze_sentiment(text, language)
                 elif task == TaskType.NAMED_ENTITY_RECOGNITION:
                     results["entities"] = await self.extract_entities(
-                        text, language=language
+                        text,
+                        language=language,
                     )
                 elif (
                     task == TaskType.TEXT_CLASSIFICATION
@@ -257,7 +261,8 @@ class TransformersNLP(BaseNLPAdapter):
     ) -> SentimentResult:
         """Analyze sentiment using Transformers."""
         if "sentiment" not in self._pipelines:
-            raise ValueError("Sentiment analysis pipeline not available")
+            msg = "Sentiment analysis pipeline not available"
+            raise ValueError(msg)
 
         result = await self._run_sync(self._pipelines["sentiment"], text)
 
@@ -296,7 +301,8 @@ class TransformersNLP(BaseNLPAdapter):
     ) -> list[NamedEntity]:
         """Extract named entities using Transformers."""
         if "ner" not in self._pipelines:
-            raise ValueError("NER pipeline not available")
+            msg = "NER pipeline not available"
+            raise ValueError(msg)
 
         result = await self._run_sync(self._pipelines["ner"], text)
 
@@ -316,7 +322,7 @@ class TransformersNLP(BaseNLPAdapter):
                     start=ent["start"],
                     end=ent["end"],
                     confidence=ent["score"],
-                )
+                ),
             )
 
         return entities
@@ -356,7 +362,8 @@ class TransformersNLP(BaseNLPAdapter):
             )
 
         if "translation" not in self._pipelines:
-            raise ValueError("Translation pipeline not available")
+            msg = "Translation pipeline not available"
+            raise ValueError(msg)
 
         result = await self._run_sync(self._pipelines["translation"], text)
 
@@ -380,10 +387,12 @@ class TransformersNLP(BaseNLPAdapter):
     ) -> ClassificationResult:
         """Classify text using Transformers."""
         if "classification" not in self._pipelines:
-            raise ValueError("Classification pipeline not available")
+            msg = "Classification pipeline not available"
+            raise ValueError(msg)
 
         if not labels:
-            raise ValueError("Labels required for zero-shot classification")
+            msg = "Labels required for zero-shot classification"
+            raise ValueError(msg)
 
         result = await self._run_sync(
             self._pipelines["classification"],
@@ -394,7 +403,7 @@ class TransformersNLP(BaseNLPAdapter):
         # Parse zero-shot classification result
         best_label = result["labels"][0]
         confidence = result["scores"][0]
-        scores = dict(zip(result["labels"], result["scores"]))
+        scores = dict(zip(result["labels"], result["scores"], strict=False))
 
         return ClassificationResult(
             label=best_label,
@@ -430,7 +439,7 @@ class TransformersNLP(BaseNLPAdapter):
                     keyword=ent.text,
                     score=ent.confidence,
                     frequency=1,
-                )
+                ),
             )
 
         return keywords
@@ -478,7 +487,7 @@ class TransformersNLP(BaseNLPAdapter):
                 TaskType.TEXT_ANALYSIS,
                 TaskType.KEYWORD_EXTRACTION,
                 TaskType.TEXT_SIMILARITY,
-            ]
+            ],
         )
 
         return tasks

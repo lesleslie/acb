@@ -9,22 +9,14 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 
-def main():
+def main() -> int:
     """Main function to demonstrate the MCP server."""
     try:
-        print("ACB MCP Server Example")
-        print("=" * 30)
-        print("Successfully imported MCP server components")
+        pass
 
-        print("\nExample usage:")
-        print("To run the server, use:")
-        print("  uvicorn examples.mcp_demo:app --host 0.0.0.0 --port 8000")
-
-    except ImportError as e:
-        print(f"Failed to import MCP server: {e}")
+    except ImportError:
         return 1
-    except Exception as e:
-        print(f"Error running MCP server example: {e}")
+    except Exception:
         return 1
 
     return 0

@@ -126,7 +126,7 @@ class Nosql(NosqlBase):
         if data is None:
             data = {}
         data["_id"] = doc.id  # type: ignore[index]
-        return t.cast(dict[str, t.Any], data)  # type: ignore[return-value]
+        return t.cast("dict[str, t.Any]", data)  # type: ignore[return-value]
 
     def _prepare_document(self, document: dict[str, t.Any]) -> dict[str, t.Any]:
         if "_id" in document:

@@ -17,7 +17,7 @@ import asyncio
 import logging
 import typing as t
 from collections import defaultdict, deque
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
@@ -47,16 +47,19 @@ class SubscriberSettings(ServiceSettings):
     # Subscription configuration
     default_mode: SubscriptionMode = Field(default=SubscriptionMode.PUSH)
     max_subscriptions: int = Field(
-        default=1000, description="Maximum number of subscriptions"
+        default=1000,
+        description="Maximum number of subscriptions",
     )
     subscription_timeout: float = Field(
-        default=30.0, description="Default subscription timeout"
+        default=30.0,
+        description="Default subscription timeout",
     )
 
     # Buffer configuration
     enable_buffering: bool = Field(default=True)
     buffer_size: int = Field(
-        default=1000, description="Maximum events in buffer per subscription"
+        default=1000,
+        description="Maximum events in buffer per subscription",
     )
     buffer_timeout: float = Field(default=5.0, description="Buffer flush timeout")
 
@@ -86,31 +89,37 @@ class EventFilter(BaseModel):
 
     # Basic filters
     event_types: list[str] | None = Field(
-        default=None, description="Allowed event types"
+        default=None,
+        description="Allowed event types",
     )
     sources: list[str] | None = Field(default=None, description="Allowed event sources")
     tags: list[str] | None = Field(default=None, description="Required tags")
 
     # Content filters
     payload_filters: dict[str, t.Any] | None = Field(
-        default=None, description="Payload field filters"
+        default=None,
+        description="Payload field filters",
     )
     header_filters: dict[str, t.Any] | None = Field(
-        default=None, description="Header field filters"
+        default=None,
+        description="Header field filters",
     )
 
     # Pattern matching
     event_type_patterns: list[str] | None = Field(
-        default=None, description="Event type regex patterns"
+        default=None,
+        description="Event type regex patterns",
     )
     source_patterns: list[str] | None = Field(
-        default=None, description="Source regex patterns"
+        default=None,
+        description="Source regex patterns",
     )
 
     # Priority and routing
     min_priority: str | None = Field(default=None, description="Minimum event priority")
     routing_keys: list[str] | None = Field(
-        default=None, description="Required routing keys"
+        default=None,
+        description="Required routing keys",
     )
 
     def matches(self, event: Event) -> bool:  # noqa: C901
@@ -148,24 +157,24 @@ class EventFilter(BaseModel):
                     return False
 
         # Check event type patterns
-        if self.event_type_patterns:
-            if not any(
-                re.match(
-                    pattern, event.metadata.event_type
-                )  # REGEX OK: User-provided pattern matching for event filtering
-                for pattern in self.event_type_patterns
-            ):
-                return False
+        if self.event_type_patterns and not any(
+            re.match(
+                pattern,
+                event.metadata.event_type,
+            )  # REGEX OK: User-provided pattern matching for event filtering
+            for pattern in self.event_type_patterns
+        ):
+            return False
 
         # Check source patterns
-        if self.source_patterns:
-            if not any(
-                re.match(
-                    pattern, event.metadata.source
-                )  # REGEX OK: User-provided pattern matching for source filtering
-                for pattern in self.source_patterns
-            ):
-                return False
+        if self.source_patterns and not any(
+            re.match(
+                pattern,
+                event.metadata.source,
+            )  # REGEX OK: User-provided pattern matching for source filtering
+            for pattern in self.source_patterns
+        ):
+            return False
 
         # Check minimum priority
         if self.min_priority:
@@ -214,7 +223,9 @@ class EventBuffer:
             return self._buffer.popleft()
 
     async def get_batch(
-        self, batch_size: int, timeout: float | None = None
+        self,
+        batch_size: int,
+        timeout: float | None = None,
     ) -> list[Event]:
         """Get a batch of events from buffer."""
         events = []
@@ -332,7 +343,7 @@ class EventRouter:
     def remove_subscription(self, subscription_id: UUID) -> bool:
         """Remove subscription from routing tables."""
         # Check type routes
-        for event_type, subs in self._type_routes.items():
+        for subs in self._type_routes.values():
             for i, managed_sub in enumerate(subs):
                 if managed_sub.subscription.subscription_id == subscription_id:
                     subs.pop(i)
@@ -375,7 +386,9 @@ class EventRouter:
         return matching
 
     def _subscription_matches(
-        self, managed_sub: ManagedSubscription, event: Event
+        self,
+        managed_sub: ManagedSubscription,
+        event: Event,
     ) -> bool:
         """Check if a managed subscription matches an event."""
         if not managed_sub.active or managed_sub.paused:
@@ -386,10 +399,7 @@ class EventRouter:
             return False
 
         # Check filter-level matching
-        if managed_sub.filter and not managed_sub.filter.matches(event):
-            return False
-
-        return True
+        return not (managed_sub.filter and not managed_sub.filter.matches(event))
 
 
 class EventSubscriber(ServiceBase):
@@ -403,7 +413,7 @@ class EventSubscriber(ServiceBase):
 
         # Processing control
         self._processing_semaphore = asyncio.Semaphore(
-            self._settings.max_concurrent_handlers
+            self._settings.max_concurrent_handlers,
         )
         self._shutdown_event = asyncio.Event()
 
@@ -429,10 +439,8 @@ class EventSubscriber(ServiceBase):
         # Stop health monitoring
         if self._health_check_task and not self._health_check_task.done():
             self._health_check_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._health_check_task
-            except asyncio.CancelledError:
-                pass
 
         await super().stop()
         self._logger.info("Event subscriber stopped")
@@ -458,7 +466,8 @@ class EventSubscriber(ServiceBase):
             Subscription ID
         """
         if len(self._subscriptions) >= self._settings.max_subscriptions:
-            raise ValueError("Maximum number of subscriptions reached")
+            msg = "Maximum number of subscriptions reached"
+            raise ValueError(msg)
 
         # Create subscription
         subscription = EventSubscription(
@@ -563,7 +572,7 @@ class EventSubscriber(ServiceBase):
                 return_exceptions=True,
             )
 
-            for (sub_id, _), result in zip(tasks, completed_tasks):
+            for (sub_id, _), result in zip(tasks, completed_tasks, strict=False):
                 if isinstance(result, Exception):
                     results[sub_id] = EventHandlerResult(
                         success=False,
@@ -597,11 +606,12 @@ class EventSubscriber(ServiceBase):
         if batch_size == 1:
             event = await managed_sub.buffer.get(timeout)
             return [event] if event else []
-        else:
-            return await managed_sub.buffer.get_batch(batch_size, timeout)
+        return await managed_sub.buffer.get_batch(batch_size, timeout)
 
     async def _deliver_push(
-        self, event: Event, managed_sub: ManagedSubscription
+        self,
+        event: Event,
+        managed_sub: ManagedSubscription,
     ) -> EventHandlerResult:
         """Deliver event using push mode."""
         async with self._processing_semaphore:
@@ -649,7 +659,7 @@ class EventSubscriber(ServiceBase):
                     )
 
             except Exception as e:
-                self._logger.error("Health check error: %s", e)
+                self._logger.exception("Health check error: %s", e)
 
     # Subscription management methods
     async def pause_subscription(self, subscription_id: UUID) -> bool:
@@ -669,7 +679,8 @@ class EventSubscriber(ServiceBase):
         return False
 
     async def get_subscription_stats(
-        self, subscription_id: UUID
+        self,
+        subscription_id: UUID,
     ) -> dict[str, t.Any] | None:
         """Get statistics for a subscription."""
         managed_sub = self._subscriptions.get(subscription_id)

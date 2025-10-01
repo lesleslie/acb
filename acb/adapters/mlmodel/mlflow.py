@@ -46,54 +46,66 @@ class MLflowSettings(MLModelSettings):
 
     # MLflow server settings
     tracking_uri: str = Field(
-        default="http://localhost:5000", description="MLflow tracking server URI"
+        default="http://localhost:5000",
+        description="MLflow tracking server URI",
     )
     model_registry_uri: str | None = Field(
-        default=None, description="MLflow model registry URI (defaults to tracking_uri)"
+        default=None,
+        description="MLflow model registry URI (defaults to tracking_uri)",
     )
     artifact_uri: str | None = Field(
-        default=None, description="MLflow artifact store URI"
+        default=None,
+        description="MLflow artifact store URI",
     )
 
     # Model serving settings
     serving_uri: str | None = Field(
-        default=None, description="MLflow model serving endpoint"
+        default=None,
+        description="MLflow model serving endpoint",
     )
     serving_port: int = Field(default=5001, description="MLflow model serving port")
 
     # Model registry settings
     registered_model_name: str | None = Field(
-        default=None, description="Default registered model name"
+        default=None,
+        description="Default registered model name",
     )
     model_stage: str = Field(
-        default="Production", description="Model stage (Production, Staging, Archived)"
+        default="Production",
+        description="Model stage (Production, Staging, Archived)",
     )
     model_version: str | None = Field(
-        default=None, description="Specific model version"
+        default=None,
+        description="Specific model version",
     )
 
     # Experiment settings
     experiment_name: str | None = Field(
-        default=None, description="MLflow experiment name"
+        default=None,
+        description="MLflow experiment name",
     )
     experiment_id: str | None = Field(default=None, description="MLflow experiment ID")
 
     # Serving settings
     enable_model_serving: bool = Field(
-        default=True, description="Enable MLflow model serving"
+        default=True,
+        description="Enable MLflow model serving",
     )
     workers: int = Field(default=1, description="Number of serving workers")
     worker_timeout: int = Field(default=60, description="Worker timeout in seconds")
 
     # Registry settings
     enable_model_versioning: bool = Field(
-        default=True, description="Enable automatic model versioning"
+        default=True,
+        description="Enable automatic model versioning",
     )
     enable_model_signature: bool = Field(
-        default=True, description="Enable model signature validation"
+        default=True,
+        description="Enable model signature validation",
     )
     enable_input_example: bool = Field(
-        default=True, description="Store input examples with models"
+        default=True,
+        description="Store input examples with models",
     )
 
     # Authentication
@@ -128,7 +140,8 @@ class MLflowAdapter(BaseMLModelAdapter):
     async def _create_client(self) -> dict[str, Any]:
         """Create MLflow client and HTTP session."""
         if not MLFLOW_AVAILABLE:
-            raise RuntimeError("MLflow not available. Install with: pip install mlflow")
+            msg = "MLflow not available. Install with: pip install mlflow"
+            raise RuntimeError(msg)
 
         # Set MLflow tracking URI
         mlflow.set_tracking_uri(self.mlflow_settings.tracking_uri)
@@ -144,7 +157,7 @@ class MLflowAdapter(BaseMLModelAdapter):
 
         # Create HTTP session for serving API
         connector = aiohttp.TCPConnector(
-            limit=self.mlflow_settings.connection_pool_size
+            limit=self.mlflow_settings.connection_pool_size,
         )
         timeout = aiohttp.ClientTimeout(total=self.mlflow_settings.timeout)
         headers = {"Content-Type": "application/json"}
@@ -173,7 +186,9 @@ class MLflowAdapter(BaseMLModelAdapter):
         }
 
     def _get_serving_url(
-        self, model_name: str | None = None, version: str | None = None
+        self,
+        model_name: str | None = None,
+        version: str | None = None,
     ) -> str:
         """Get model serving URL."""
         if self.mlflow_settings.serving_uri:
@@ -185,21 +200,21 @@ class MLflowAdapter(BaseMLModelAdapter):
         if model_name:
             if version:
                 return f"{base_url}/invocations"
-            else:
-                return f"{base_url}/invocations"
-        else:
             return f"{base_url}/invocations"
+        return f"{base_url}/invocations"
 
     def _get_model_uri(
-        self, model_name: str, version: str | None = None, stage: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
+        stage: str | None = None,
     ) -> str:
         """Get MLflow model URI."""
         if stage:
             return f"models:/{model_name}/{stage}"
-        elif version:
+        if version:
             return f"models:/{model_name}/{version}"
-        else:
-            return f"models:/{model_name}/{self.mlflow_settings.model_stage}"
+        return f"models:/{model_name}/{self.mlflow_settings.model_stage}"
 
     async def predict(self, request: ModelPredictionRequest) -> ModelPredictionResponse:
         """Perform real-time inference using MLflow model serving."""
@@ -212,7 +227,8 @@ class MLflowAdapter(BaseMLModelAdapter):
             # Prepare prediction request
             self._get_model_uri(request.model_name, request.model_version)
             serving_url = self._get_serving_url(
-                request.model_name, request.model_version
+                request.model_name,
+                request.model_version,
             )
 
             # Format input data for MLflow serving
@@ -230,7 +246,8 @@ class MLflowAdapter(BaseMLModelAdapter):
             async with http_session.post(serving_url, json=payload) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise RuntimeError(f"MLflow serving error: {error_text}")
+                    msg = f"MLflow serving error: {error_text}"
+                    raise RuntimeError(msg)
 
                 result = await response.json()
                 predictions = result.get("predictions", result)
@@ -257,10 +274,12 @@ class MLflowAdapter(BaseMLModelAdapter):
 
         except Exception as e:
             self._metrics["errors_total"] = self._metrics.get("errors_total", 0) + 1
-            raise RuntimeError(f"MLflow prediction failed: {e}")
+            msg = f"MLflow prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def batch_predict(
-        self, request: BatchPredictionRequest
+        self,
+        request: BatchPredictionRequest,
     ) -> BatchPredictionResponse:
         """Perform batch inference using MLflow."""
         start_time = time.time()
@@ -270,7 +289,8 @@ class MLflowAdapter(BaseMLModelAdapter):
             http_session = client["http_session"]
 
             serving_url = self._get_serving_url(
-                request.model_name, request.model_version
+                request.model_name,
+                request.model_version,
             )
 
             # Format batch data for MLflow serving
@@ -279,7 +299,8 @@ class MLflowAdapter(BaseMLModelAdapter):
             async with http_session.post(serving_url, json=payload) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise RuntimeError(f"MLflow batch serving error: {error_text}")
+                    msg = f"MLflow batch serving error: {error_text}"
+                    raise RuntimeError(msg)
 
                 result = await response.json()
                 predictions_list = result.get("predictions", [])
@@ -313,7 +334,8 @@ class MLflowAdapter(BaseMLModelAdapter):
             self._metrics["batch_errors_total"] = (
                 self._metrics.get("batch_errors_total", 0) + 1
             )
-            raise RuntimeError(f"MLflow batch prediction failed: {e}")
+            msg = f"MLflow batch prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def list_models(self) -> list[ModelInfo]:
         """List registered models from MLflow."""
@@ -329,7 +351,7 @@ class MLflowAdapter(BaseMLModelAdapter):
 
                 # Get all versions for this model
                 for model_version in mlflow_client.search_model_versions(
-                    f"name='{model_name}'"
+                    f"name='{model_name}'",
                 ):
                     run_id = model_version.run_id
 
@@ -350,10 +372,10 @@ class MLflowAdapter(BaseMLModelAdapter):
                             description=model_version.description,
                             framework="mlflow",
                             created_at=pd.Timestamp.fromtimestamp(
-                                model_version.creation_timestamp / 1000
+                                model_version.creation_timestamp / 1000,
                             ).isoformat(),
                             updated_at=pd.Timestamp.fromtimestamp(
-                                model_version.last_updated_timestamp / 1000
+                                model_version.last_updated_timestamp / 1000,
                             ).isoformat(),
                             metrics=metrics,
                             metadata={
@@ -364,16 +386,19 @@ class MLflowAdapter(BaseMLModelAdapter):
                                 "params": params,
                                 "tags": model_version.tags,
                             },
-                        )
+                        ),
                     )
 
             return models
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list MLflow models: {e}")
+            msg = f"Failed to list MLflow models: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_info(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelInfo:
         """Get detailed information about a specific model."""
         try:
@@ -386,11 +411,13 @@ class MLflowAdapter(BaseMLModelAdapter):
             else:
                 # Get latest version in specified stage
                 versions = mlflow_client.get_latest_versions(
-                    model_name, stages=[self.mlflow_settings.model_stage]
+                    model_name,
+                    stages=[self.mlflow_settings.model_stage],
                 )
                 if not versions:
+                    msg = f"No model found in stage {self.mlflow_settings.model_stage}"
                     raise RuntimeError(
-                        f"No model found in stage {self.mlflow_settings.model_stage}"
+                        msg,
                     )
                 model_version = versions[0]
 
@@ -434,10 +461,10 @@ class MLflowAdapter(BaseMLModelAdapter):
                 input_schema=input_schema,
                 output_schema=output_schema,
                 created_at=pd.Timestamp.fromtimestamp(
-                    model_version.creation_timestamp / 1000
+                    model_version.creation_timestamp / 1000,
                 ).isoformat(),
                 updated_at=pd.Timestamp.fromtimestamp(
-                    model_version.last_updated_timestamp / 1000
+                    model_version.last_updated_timestamp / 1000,
                 ).isoformat(),
                 metrics=metrics,
                 metadata={
@@ -452,10 +479,13 @@ class MLflowAdapter(BaseMLModelAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get MLflow model info: {e}")
+            msg = f"Failed to get MLflow model info: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_health(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelHealth:
         """Get health status of a specific model."""
         try:
@@ -499,7 +529,10 @@ class MLflowAdapter(BaseMLModelAdapter):
             )
 
     async def load_model(
-        self, model_name: str, model_path: str, version: str | None = None
+        self,
+        model_name: str,
+        model_path: str,
+        version: str | None = None,
     ) -> bool:
         """Register a model in MLflow registry."""
         try:
@@ -523,16 +556,21 @@ class MLflowAdapter(BaseMLModelAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"MLflow model registration failed: {e}")
+            msg = f"MLflow model registration failed: {e}"
+            raise RuntimeError(msg)
 
     async def scale_model(
-        self, model_name: str, replicas: int, version: str | None = None
+        self,
+        model_name: str,
+        replicas: int,
+        version: str | None = None,
     ) -> bool:
         """MLflow doesn't support direct scaling - this would be handled by deployment platform."""
         # MLflow model serving typically runs as a single process
         # Scaling would be handled by the deployment platform (Kubernetes, Docker, etc.)
+        msg = "Model scaling should be handled by deployment platform"
         raise NotImplementedError(
-            "Model scaling should be handled by deployment platform"
+            msg,
         )
 
     async def get_metrics(self) -> dict[str, Any]:
@@ -546,7 +584,7 @@ class MLflowAdapter(BaseMLModelAdapter):
             # Add MLflow specific metrics
             mlflow_metrics = {
                 "registered_models_count": len(
-                    mlflow_client.search_registered_models()
+                    mlflow_client.search_registered_models(),
                 ),
                 "tracking_uri": self.mlflow_settings.tracking_uri,
                 "model_registry_uri": self.mlflow_settings.model_registry_uri
@@ -557,11 +595,11 @@ class MLflowAdapter(BaseMLModelAdapter):
             if self.mlflow_settings.experiment_name:
                 try:
                     experiment = mlflow_client.get_experiment_by_name(
-                        self.mlflow_settings.experiment_name
+                        self.mlflow_settings.experiment_name,
                     )
                     if experiment:
                         runs = mlflow_client.search_runs(
-                            experiment_ids=[experiment.experiment_id]
+                            experiment_ids=[experiment.experiment_id],
                         )
                         mlflow_metrics["experiment_runs_count"] = len(runs)
                 except:

@@ -53,7 +53,7 @@ class MsgspecModelAdapter(ModelAdapter[T]):
         else:
             for attr_name in dir(instance):
                 if not attr_name.startswith("_") and not callable(
-                    getattr(instance, attr_name)
+                    getattr(instance, attr_name),
                 ):
                     value = getattr(instance, attr_name)
                     result[attr_name] = self._serialize_value(value)
@@ -136,15 +136,15 @@ class MsgspecModelAdapter(ModelAdapter[T]):
     def get_field_type(self, model_class: type[T], field_name: str) -> type:
         if hasattr(model_class, "__annotations__"):
             annotation = model_class.__annotations__.get(field_name, Any)
-            return t.cast(type, annotation)  # type: ignore[no-any-return]
+            return t.cast("type", annotation)  # type: ignore[no-any-return]
         return Any  # type: ignore[return-value]
 
     def is_relationship_field(self, model_class: type[T], field_name: str) -> bool:
         field_type = self.get_field_type(model_class, field_name)
         if hasattr(field_type, "__origin__"):
-            origin = get_origin(t.cast(t.Any, field_type))
+            origin = get_origin(t.cast("t.Any", field_type))
             if origin is list:
-                args = get_args(t.cast(t.Any, field_type))
+                args = get_args(t.cast("t.Any", field_type))
                 if (
                     args
                     and inspect.isclass(args[0])
@@ -152,7 +152,7 @@ class MsgspecModelAdapter(ModelAdapter[T]):
                 ):
                     return True
         return bool(
-            inspect.isclass(field_type) and issubclass(field_type, msgspec.Struct)
+            inspect.isclass(field_type) and issubclass(field_type, msgspec.Struct),
         )
 
     def get_nested_model_class(

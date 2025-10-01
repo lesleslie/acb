@@ -20,8 +20,6 @@ __all__: list[str] = ["secure"]
 class SecurityError(Exception):
     """Raised when security operations fail."""
 
-    pass
-
 
 class Secure:
     """Pure utility functions for cryptographic and security operations."""
@@ -94,7 +92,10 @@ class Secure:
             salt = secrets.token_hex(32)
 
         password_hash = hashlib.pbkdf2_hmac(
-            "sha256", password.encode(), salt.encode(), 100000
+            "sha256",
+            password.encode(),
+            salt.encode(),
+            100000,
         )
         return password_hash.hex(), salt
 
@@ -192,7 +193,8 @@ class Secure:
             encrypted = fernet.encrypt(data.encode())
             return base64.urlsafe_b64encode(encrypted).decode()
         except Exception as e:
-            raise SecurityError(f"Encryption failed: {e}") from e
+            msg = f"Encryption failed: {e}"
+            raise SecurityError(msg) from e
 
     @staticmethod
     def decrypt_data(encrypted_data: str, key: bytes) -> str:
@@ -211,11 +213,13 @@ class Secure:
             decrypted = fernet.decrypt(encrypted)
             return decrypted.decode()
         except Exception as e:
-            raise SecurityError(f"Decryption failed: {e}") from e
+            msg = f"Decryption failed: {e}"
+            raise SecurityError(msg) from e
 
     @staticmethod
     def validate_password_strength(
-        password: str, min_length: int = 8
+        password: str,
+        min_length: int = 8,
     ) -> dict[str, bool]:
         """Validate password strength against common requirements.
 

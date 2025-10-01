@@ -91,16 +91,17 @@ class ServiceMetadata(BaseModel):
 
     name: str = Field(description="Human-readable service name")
     category: str = Field(
-        description="Service category (performance, health, validation, etc.)"
+        description="Service category (performance, health, validation, etc.)",
     )
     service_type: str = Field(
-        description="Service type (optimizer, monitor, validator, etc.)"
+        description="Service type (optimizer, monitor, validator, etc.)",
     )
 
     version: str = Field(description="Semantic version of this service")
     acb_min_version: str = Field(description="Minimum ACB version required")
     acb_max_version: str | None = Field(
-        default=None, description="Maximum ACB version supported"
+        default=None,
+        description="Maximum ACB version supported",
     )
 
     author: str = Field(description="Primary author/maintainer")
@@ -109,31 +110,38 @@ class ServiceMetadata(BaseModel):
 
     status: ServiceStatus = Field(description="Development/stability status")
     capabilities: list[ServiceCapability] = Field(
-        default_factory=list, description="List of features this service supports"
+        default_factory=list,
+        description="List of features this service supports",
     )
 
     required_packages: list[str] = Field(
-        default_factory=list, description="External packages required for this service"
+        default_factory=list,
+        description="External packages required for this service",
     )
     optional_packages: dict[str, str] = Field(
-        default_factory=dict, description="Optional packages and their purpose"
+        default_factory=dict,
+        description="Optional packages and their purpose",
     )
 
     description: str = Field(description="Brief description of service functionality")
     documentation_url: str | None = Field(
-        default=None, description="Link to detailed documentation"
+        default=None,
+        description="Link to detailed documentation",
     )
     repository_url: str | None = Field(
-        default=None, description="Source code repository"
+        default=None,
+        description="Source code repository",
     )
 
     settings_class: str = Field(description="Name of the settings class")
     config_example: dict[str, t.Any] | None = Field(
-        default=None, description="Example configuration for this service"
+        default=None,
+        description="Example configuration for this service",
     )
 
     custom: dict[str, t.Any] = Field(
-        default_factory=dict, description="Custom metadata fields"
+        default_factory=dict,
+        description="Custom metadata fields",
     )
 
     model_config = ConfigDict(use_enum_values=True, extra="forbid")
@@ -144,9 +152,8 @@ def generate_service_id() -> UUID:
     if _uuid7_available:
         uuid_obj = uuid_lib.uuid7()
         return UUID(str(uuid_obj))
-    else:
-        uuid_obj = uuid_lib.uuid4()
-        return UUID(str(uuid_obj))
+    uuid_obj = uuid_lib.uuid4()
+    return UUID(str(uuid_obj))
 
 
 def create_service_metadata_template(
@@ -184,13 +191,9 @@ def create_service_metadata_template(
 class ServiceNotFound(Exception):
     """Raised when a service cannot be found."""
 
-    pass
-
 
 class ServiceNotInstalled(Exception):
     """Raised when a service is not installed."""
-
-    pass
 
 
 class Service(BaseModel):
@@ -211,7 +214,7 @@ class Service(BaseModel):
     def __hash__(self) -> int:
         base_hash = (self.name, self.class_name, self.category, self.module)
         if self.metadata:
-            return hash(base_hash + (str(self.metadata.service_id),))
+            return hash((*base_hash, str(self.metadata.service_id)))
         return hash(base_hash)
 
     def __eq__(self, other: object) -> bool:
@@ -228,10 +231,12 @@ class Service(BaseModel):
 # Service registry using ContextVar for thread safety
 service_registry: ContextVar[list[Service]] = ContextVar("service_registry", default=[])
 _enabled_services_cache: ContextVar[dict[str, Service]] = ContextVar(
-    "_enabled_services_cache", default={}
+    "_enabled_services_cache",
+    default={},
 )
 _installed_services_cache: ContextVar[dict[str, Service]] = ContextVar(
-    "_installed_services_cache", default={}
+    "_installed_services_cache",
+    default={},
 )
 
 # Core services registry - static mappings like adapters
@@ -350,7 +355,8 @@ def get_service_class(category: str, name: str | None = None) -> type[t.Any]:
 
     service = get_service_descriptor(category)
     if not service:
-        raise ServiceNotFound(f"Service not found: {category}")
+        msg = f"Service not found: {category}"
+        raise ServiceNotFound(msg)
 
     if name and service.name != name:
         # Look for specific named service
@@ -360,14 +366,16 @@ def get_service_class(category: str, name: str | None = None) -> type[t.Any]:
                 service = s
                 break
         else:
-            raise ServiceNotFound(f"Service not found: {category}/{name}")
+            msg = f"Service not found: {category}/{name}"
+            raise ServiceNotFound(msg)
 
     try:
         module = import_module(service.module)
         return getattr(module, service.class_name)
     except (ImportError, AttributeError) as e:
+        msg = f"Service not available: {service.module}.{service.class_name}"
         raise ServiceNotInstalled(
-            f"Service not available: {service.module}.{service.class_name}"
+            msg,
         ) from e
 
 
@@ -404,7 +412,8 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
         service_class = try_import_service(service_categories, service_name)
         if service_class:
             return service_class
-        raise ServiceNotFound(f"Service not found or not enabled: {service_categories}")
+        msg = f"Service not found or not enabled: {service_categories}"
+        raise ServiceNotFound(msg)
 
     if service_categories is None:
         # Try to auto-detect from calling context
@@ -433,25 +442,27 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
             except (OSError, IndexError):
                 pass
 
-        raise ValueError("Could not determine service category from context")
+        msg = "Could not determine service category from context"
+        raise ValueError(msg)
 
     if isinstance(service_categories, list):
         results = []
         for category in service_categories:
             service_class = try_import_service(category)
             if not service_class:
-                raise ServiceNotFound(f"Service not found or not enabled: {category}")
+                msg = f"Service not found or not enabled: {category}"
+                raise ServiceNotFound(msg)
             results.append(service_class)
         return tuple(results) if len(results) > 1 else results[0]
 
-    raise ValueError(f"Invalid service_categories type: {type(service_categories)}")
+    msg = f"Invalid service_categories type: {type(service_categories)}"
+    raise ValueError(msg)
 
 
 def register_services(services_path: str | None = None) -> None:
     """Register services from a path (for discovery)."""
     # Implementation for auto-discovery could be added here
     # For now, we rely on static registration
-    pass
 
 
 def get_service_info(service_class: type) -> dict[str, t.Any]:
@@ -464,7 +475,7 @@ def get_service_info(service_class: type) -> dict[str, t.Any]:
 
     # Check for metadata
     if hasattr(service_class, "SERVICE_METADATA"):
-        metadata = getattr(service_class, "SERVICE_METADATA")
+        metadata = service_class.SERVICE_METADATA
         if isinstance(metadata, ServiceMetadata):
             info["metadata"] = metadata.model_dump()
 

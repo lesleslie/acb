@@ -23,7 +23,9 @@ from acb.adapters.embedding._base import (
 )
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger
 
 try:
     import torch.nn.functional as F
@@ -70,7 +72,8 @@ class HuggingFaceEmbeddingSettings(EmbeddingBaseSettings):
 
     model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2")
     device: str = Field(
-        default="auto", description="Device to run model on (cpu, cuda, auto)"
+        default="auto",
+        description="Device to run model on (cpu, cuda, auto)",
     )
     trust_remote_code: bool = Field(default=False)
     cache_dir: str | None = Field(default=None, description="Model cache directory")
@@ -80,7 +83,8 @@ class HuggingFaceEmbeddingSettings(EmbeddingBaseSettings):
     # Model optimization
     use_auth_token: str | None = Field(default=None)
     torch_dtype: str = Field(
-        default="auto", description="Torch data type (float32, float16, auto)"
+        default="auto",
+        description="Torch data type (float32, float16, auto)",
     )
     model_kwargs: dict[str, t.Any] = Field(default_factory=dict)
     tokenizer_kwargs: dict[str, t.Any] = Field(default_factory=dict)
@@ -104,8 +108,9 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
 
     def __init__(self, settings: HuggingFaceEmbeddingSettings | None = None) -> None:
         if not _transformers_available:
+            msg = "Transformers library not available. Install with: pip install transformers torch"
             raise ImportError(
-                "Transformers library not available. Install with: pip install transformers torch"
+                msg,
             )
 
         config: Config = depends.get("config")
@@ -137,7 +142,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 self._device = self._settings.device
 
             await logger.info(
-                f"Loading HuggingFace model: {self._settings.model} on {self._device}"
+                f"Loading HuggingFace model: {self._settings.model} on {self._device}",
             )
 
             # Load tokenizer
@@ -204,11 +209,11 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
             self.register_resource(self._model)
 
             await logger.info(
-                f"Successfully loaded HuggingFace model: {self._settings.model}"
+                f"Successfully loaded HuggingFace model: {self._settings.model}",
             )
 
         except Exception as e:
-            await logger.error(f"Error loading HuggingFace model: {e}")
+            await logger.exception(f"Error loading HuggingFace model: {e}")
             raise
 
     async def _embed_texts(
@@ -284,11 +289,11 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                     results.append(result)
 
                 await logger.debug(
-                    f"HuggingFace embeddings batch completed: {len(batch_texts)} texts, model: {model}"
+                    f"HuggingFace embeddings batch completed: {len(batch_texts)} texts, model: {model}",
                 )
 
             except Exception as e:
-                await logger.error(f"Error generating HuggingFace embeddings: {e}")
+                await logger.exception(f"Error generating HuggingFace embeddings: {e}")
                 raise
 
         processing_time = time.time() - start_time
@@ -318,7 +323,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
             sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
             return sum_embeddings / sum_mask
 
-        elif strategy == PoolingStrategy.MAX:
+        if strategy == PoolingStrategy.MAX:
             # Max pooling
             input_mask_expanded = (
                 attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
@@ -328,11 +333,11 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
             ] = -1e9  # Set padding tokens to large negative value
             return torch.max(token_embeddings, 1)[0]
 
-        elif strategy == PoolingStrategy.CLS:
+        if strategy == PoolingStrategy.CLS:
             # CLS token pooling (first token)
             return token_embeddings[:, 0]
 
-        elif strategy == PoolingStrategy.WEIGHTED_MEAN:
+        if strategy == PoolingStrategy.WEIGHTED_MEAN:
             # Weighted mean (simple implementation)
             weights = attention_mask.float().unsqueeze(-1)
             weighted_embeddings = token_embeddings * weights
@@ -340,8 +345,8 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
             sum_weights = torch.sum(weights, 1)
             return sum_embeddings / torch.clamp(sum_weights, min=1e-9)
 
-        else:
-            raise ValueError(f"Unsupported pooling strategy: {strategy}")
+        msg = f"Unsupported pooling strategy: {strategy}"
+        raise ValueError(msg)
 
     async def _embed_documents(
         self,
@@ -375,7 +380,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                         "is_chunk": True,
                         "chunk_size": chunk_size,
                         "chunk_overlap": chunk_overlap,
-                    }
+                    },
                 )
 
             batches.append(batch)
@@ -391,14 +396,14 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
         """Compute similarity between two embeddings."""
         if method == "cosine":
             return EmbeddingUtils.cosine_similarity(embedding1, embedding2)
-        elif method == "euclidean":
+        if method == "euclidean":
             return EmbeddingUtils.euclidean_distance(embedding1, embedding2)
-        elif method == "dot":
+        if method == "dot":
             return EmbeddingUtils.dot_product(embedding1, embedding2)
-        elif method == "manhattan":
+        if method == "manhattan":
             return EmbeddingUtils.manhattan_distance(embedding1, embedding2)
-        else:
-            raise ValueError(f"Unsupported similarity method: {method}")
+        msg = f"Unsupported similarity method: {method}"
+        raise ValueError(msg)
 
     async def _get_model_info(self, model: str) -> dict[str, t.Any]:
         """Get information about a HuggingFace model."""
@@ -415,16 +420,22 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 {
                     "vocab_size": self._tokenizer.vocab_size,
                     "max_position_embeddings": getattr(
-                        self._model.config, "max_position_embeddings", None
+                        self._model.config,
+                        "max_position_embeddings",
+                        None,
                     ),
                     "hidden_size": getattr(self._model.config, "hidden_size", None),
                     "num_attention_heads": getattr(
-                        self._model.config, "num_attention_heads", None
+                        self._model.config,
+                        "num_attention_heads",
+                        None,
                     ),
                     "num_hidden_layers": getattr(
-                        self._model.config, "num_hidden_layers", None
+                        self._model.config,
+                        "num_hidden_layers",
+                        None,
                     ),
-                }
+                },
             )
 
         return model_info

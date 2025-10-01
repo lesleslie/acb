@@ -92,7 +92,8 @@ class Secret(SecretBase):
         credential = DefaultAzureCredential()
 
         return SecretClient(  # type: ignore  # type: ignore[no-any-return]
-            vault_url=self.config.secret.vault_url, credential=credential
+            vault_url=self.config.secret.vault_url,
+            credential=credential,
         )
 
     async def get_client(self) -> SecretClient:
@@ -128,12 +129,12 @@ class Secret(SecretBase):
             logger.info("Azure Key Vault secret adapter initialized successfully")  # type: ignore[no-untyped-call]
         except (ClientAuthenticationError, HttpResponseError, AzureError) as e:
             logger.exception(  # type: ignore[no-untyped-call]
-                f"Failed to initialize Azure Key Vault secret adapter: {e}"
+                f"Failed to initialize Azure Key Vault secret adapter: {e}",
             )
             raise
         except Exception as e:
             logger.exception(  # type: ignore[no-untyped-call]
-                f"Unexpected error initializing Azure Key Vault secret adapter: {e}"
+                f"Unexpected error initializing Azure Key Vault secret adapter: {e}",
             )
             raise
 
@@ -152,7 +153,7 @@ class Secret(SecretBase):
             result = []
             for secret_property in secret_properties:
                 if secret_property.name and secret_property.name.startswith(
-                    filter_prefix
+                    filter_prefix,
                 ):
                     secret_name = self._extract_secret_name(secret_property.name)
                     result.append(secret_name)
@@ -263,13 +264,12 @@ class Secret(SecretBase):
             client = await self.get_client()
 
             secret_versions = client.list_properties_of_secret_versions(full_key)
-            versions = [
+            return [
                 version_property.version
                 for version_property in secret_versions
                 if version_property.version
             ]
 
-            return versions
         except (
             ClientAuthenticationError,
             ResourceNotFoundError,
@@ -280,7 +280,7 @@ class Secret(SecretBase):
             return []
         except Exception as e:
             self.logger.exception(
-                f"Unexpected error listing versions for secret {name}: {e}"
+                f"Unexpected error listing versions for secret {name}: {e}",
             )
             return []
 

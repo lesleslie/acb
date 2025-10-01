@@ -28,8 +28,11 @@ class RepositoryError(Exception):
     """Base exception for repository operations."""
 
     def __init__(
-        self, message: str, entity_type: str | None = None, operation: str | None = None
-    ):
+        self,
+        message: str,
+        entity_type: str | None = None,
+        operation: str | None = None,
+    ) -> None:
         self.entity_type = entity_type
         self.operation = operation
         super().__init__(message)
@@ -38,7 +41,7 @@ class RepositoryError(Exception):
 class EntityNotFoundError(RepositoryError):
     """Raised when an entity is not found."""
 
-    def __init__(self, entity_type: str, entity_id: Any):
+    def __init__(self, entity_type: str, entity_id: Any) -> None:
         super().__init__(
             f"{entity_type} with ID {entity_id} not found",
             entity_type=entity_type,
@@ -50,7 +53,7 @@ class EntityNotFoundError(RepositoryError):
 class DuplicateEntityError(RepositoryError):
     """Raised when trying to create a duplicate entity."""
 
-    def __init__(self, entity_type: str, conflict_field: str, value: Any):
+    def __init__(self, entity_type: str, conflict_field: str, value: Any) -> None:
         super().__init__(
             f"{entity_type} with {conflict_field}={value} already exists",
             entity_type=entity_type,
@@ -119,10 +122,12 @@ class RepositorySettings(Settings):
 
     # Transaction settings
     transaction_timeout: float = Field(
-        default=60.0, description="Transaction timeout in seconds"
+        default=60.0,
+        description="Transaction timeout in seconds",
     )
     isolation_level: str = Field(
-        default="READ_COMMITTED", description="Default isolation level"
+        default="READ_COMMITTED",
+        description="Default isolation level",
     )
 
     # Performance settings
@@ -134,7 +139,8 @@ class RepositorySettings(Settings):
     def validate_page_size(cls, v, info):
         values = info.data if hasattr(info, "data") else {}
         if "max_page_size" in values and v > values["max_page_size"]:
-            raise ValueError("default_page_size cannot exceed max_page_size")
+            msg = "default_page_size cannot exceed max_page_size"
+            raise ValueError(msg)
         return v
 
 
@@ -187,8 +193,10 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
     """
 
     def __init__(
-        self, entity_type: type[EntityType], settings: RepositorySettings | None = None
-    ):
+        self,
+        entity_type: type[EntityType],
+        settings: RepositorySettings | None = None,
+    ) -> None:
         super().__init__()
         self.entity_type = entity_type
         self.entity_name = entity_type.__name__
@@ -217,7 +225,7 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
                 self.settings.cache_enabled = False
         return self._cache
 
-    async def _increment_metric(self, operation: str, success: bool = True):
+    async def _increment_metric(self, operation: str, success: bool = True) -> None:
         """Track operation metrics."""
         metric_key = f"{operation}_{'success' if success else 'error'}"
         self._metrics[metric_key] = self._metrics.get(metric_key, 0) + 1
@@ -230,8 +238,9 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
             raise
 
         # Wrap other exceptions in RepositoryError
+        msg = f"Repository operation failed: {error}"
         raise RepositoryError(
-            f"Repository operation failed: {error}",
+            msg,
             entity_type=self.entity_name,
             operation=operation,
         ) from error
@@ -250,7 +259,6 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
             DuplicateEntityError: If entity already exists
             RepositoryError: For other creation failures
         """
-        pass
 
     @abstractmethod
     async def get_by_id(self, entity_id: IDType) -> EntityType | None:
@@ -262,7 +270,6 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         Returns:
             Entity if found, None otherwise
         """
-        pass
 
     async def get_by_id_or_raise(self, entity_id: IDType) -> EntityType:
         """Get entity by ID, raise if not found.
@@ -295,7 +302,6 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
             EntityNotFoundError: If entity doesn't exist
             RepositoryError: For other update failures
         """
-        pass
 
     @abstractmethod
     async def delete(self, entity_id: IDType) -> bool:
@@ -307,7 +313,6 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         Returns:
             True if entity was deleted, False if not found
         """
-        pass
 
     async def delete_or_raise(self, entity_id: IDType) -> None:
         """Delete entity by ID, raise if not found.
@@ -339,7 +344,6 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         Returns:
             List of entities matching criteria
         """
-        pass
 
     @abstractmethod
     async def count(self, filters: dict[str, Any] | None = None) -> int:
@@ -351,7 +355,6 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         Returns:
             Number of matching entities
         """
-        pass
 
     async def exists(self, entity_id: IDType) -> bool:
         """Check if entity exists.
@@ -393,7 +396,9 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
 
         # Create pagination info
         pagination = PaginationInfo(
-            page=page, page_size=page_size, total_items=total_items
+            page=page,
+            page_size=page_size,
+            total_items=total_items,
         )
 
         # Get entities for current page
@@ -402,7 +407,8 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         return entities, pagination
 
     async def batch_create(
-        self, entities: builtins.list[EntityType]
+        self,
+        entities: builtins.list[EntityType],
     ) -> builtins.list[EntityType]:
         """Create multiple entities in batch.
 
@@ -418,7 +424,8 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         return created
 
     async def batch_update(
-        self, entities: builtins.list[EntityType]
+        self,
+        entities: builtins.list[EntityType],
     ) -> builtins.list[EntityType]:
         """Update multiple entities in batch.
 

@@ -29,9 +29,9 @@ class ValidationType(str, Enum):
 class ValidationSeverity(str, Enum):
     """Severity levels for validation errors."""
 
-    ERROR = "error"          # Block request/response
-    WARNING = "warning"      # Log but allow through
-    INFO = "info"           # Informational only
+    ERROR = "error"  # Block request/response
+    WARNING = "warning"  # Log but allow through
+    INFO = "info"  # Informational only
 
 
 class ValidationResult(BaseModel):
@@ -88,7 +88,7 @@ class ValidatorProtocol(Protocol):
 class BasicSchemaValidator:
     """Basic schema-based validator using built-in Python validation."""
 
-    def __init__(self, schema: dict[str, Any]):
+    def __init__(self, schema: dict[str, Any]) -> None:
         self.schema = schema
 
     async def validate(self, data: Any, context: dict[str, Any]) -> ValidationResult:
@@ -104,12 +104,14 @@ class BasicSchemaValidator:
             errors.extend(self._validate_type(data, self.schema, ""))
 
         except Exception as e:
-            errors.append({
-                "field": "__root__",
-                "message": f"Schema validation failed: {str(e)}",
-                "invalid_value": data,
-                "error_type": "validation_error"
-            })
+            errors.append(
+                {
+                    "field": "__root__",
+                    "message": f"Schema validation failed: {e!s}",
+                    "invalid_value": data,
+                    "error_type": "validation_error",
+                },
+            )
 
         end_time = asyncio.get_event_loop().time()
         processing_time = (end_time - start_time) * 1000
@@ -120,10 +122,15 @@ class BasicSchemaValidator:
             warnings=warnings,
             validation_id=validation_id,
             validation_type=context.get("validation_type", ValidationType.REQUEST_BODY),
-            processing_time_ms=processing_time
+            processing_time_ms=processing_time,
         )
 
-    def _validate_type(self, data: Any, schema: dict[str, Any], field_path: str) -> list[dict[str, Any]]:
+    def _validate_type(
+        self,
+        data: Any,
+        schema: dict[str, Any],
+        field_path: str,
+    ) -> list[dict[str, Any]]:
         """Validate data type against schema."""
         errors = []
 
@@ -134,7 +141,7 @@ class BasicSchemaValidator:
         type_validators = {
             "string": lambda x: isinstance(x, str),
             "integer": lambda x: isinstance(x, int),
-            "number": lambda x: isinstance(x, (int, float)),
+            "number": lambda x: isinstance(x, int | float),
             "boolean": lambda x: isinstance(x, bool),
             "array": lambda x: isinstance(x, list),
             "object": lambda x: isinstance(x, dict),
@@ -149,16 +156,26 @@ class BasicSchemaValidator:
 
         return errors
 
-    def _create_type_error(self, field_path: str, expected_type: str, data: Any) -> dict[str, Any]:
+    def _create_type_error(
+        self,
+        field_path: str,
+        expected_type: str,
+        data: Any,
+    ) -> dict[str, Any]:
         """Create a type validation error."""
         return {
             "field": field_path,
             "message": f"Expected {expected_type}, got {type(data).__name__}",
             "invalid_value": data,
-            "error_type": "type_error"
+            "error_type": "type_error",
         }
 
-    def _validate_constraints(self, data: Any, schema: dict[str, Any], field_path: str) -> list[dict[str, Any]]:
+    def _validate_constraints(
+        self,
+        data: Any,
+        schema: dict[str, Any],
+        field_path: str,
+    ) -> list[dict[str, Any]]:
         """Validate additional constraints."""
         errors = []
 
@@ -167,7 +184,7 @@ class BasicSchemaValidator:
             errors.extend(self._validate_string_constraints(data, schema, field_path))
 
         # Numeric constraints
-        if isinstance(data, (int, float)):
+        if isinstance(data, int | float):
             errors.extend(self._validate_numeric_constraints(data, schema, field_path))
 
         # Array constraints
@@ -176,77 +193,106 @@ class BasicSchemaValidator:
 
         return errors
 
-    def _validate_string_constraints(self, data: str, schema: dict[str, Any], field_path: str) -> list[dict[str, Any]]:
+    def _validate_string_constraints(
+        self,
+        data: str,
+        schema: dict[str, Any],
+        field_path: str,
+    ) -> list[dict[str, Any]]:
         """Validate string-specific constraints."""
         errors = []
 
         if "minLength" in schema and len(data) < schema["minLength"]:
-            errors.append({
-                "field": field_path,
-                "message": f"String too short (min: {schema['minLength']})",
-                "invalid_value": data,
-                "error_type": "length_error"
-            })
+            errors.append(
+                {
+                    "field": field_path,
+                    "message": f"String too short (min: {schema['minLength']})",
+                    "invalid_value": data,
+                    "error_type": "length_error",
+                },
+            )
 
         if "maxLength" in schema and len(data) > schema["maxLength"]:
-            errors.append({
-                "field": field_path,
-                "message": f"String too long (max: {schema['maxLength']})",
-                "invalid_value": data,
-                "error_type": "length_error"
-            })
+            errors.append(
+                {
+                    "field": field_path,
+                    "message": f"String too long (max: {schema['maxLength']})",
+                    "invalid_value": data,
+                    "error_type": "length_error",
+                },
+            )
 
         if "pattern" in schema and not re.match(schema["pattern"], data):
-            errors.append({
-                "field": field_path,
-                "message": f"String does not match pattern: {schema['pattern']}",
-                "invalid_value": data,
-                "error_type": "pattern_error"
-            })
+            errors.append(
+                {
+                    "field": field_path,
+                    "message": f"String does not match pattern: {schema['pattern']}",
+                    "invalid_value": data,
+                    "error_type": "pattern_error",
+                },
+            )
 
         return errors
 
-    def _validate_numeric_constraints(self, data: int | float, schema: dict[str, Any], field_path: str) -> list[dict[str, Any]]:
+    def _validate_numeric_constraints(
+        self,
+        data: float,
+        schema: dict[str, Any],
+        field_path: str,
+    ) -> list[dict[str, Any]]:
         """Validate numeric constraints."""
         errors = []
 
         if "minimum" in schema and data < schema["minimum"]:
-            errors.append({
-                "field": field_path,
-                "message": f"Value too small (min: {schema['minimum']})",
-                "invalid_value": data,
-                "error_type": "range_error"
-            })
+            errors.append(
+                {
+                    "field": field_path,
+                    "message": f"Value too small (min: {schema['minimum']})",
+                    "invalid_value": data,
+                    "error_type": "range_error",
+                },
+            )
 
         if "maximum" in schema and data > schema["maximum"]:
-            errors.append({
-                "field": field_path,
-                "message": f"Value too large (max: {schema['maximum']})",
-                "invalid_value": data,
-                "error_type": "range_error"
-            })
+            errors.append(
+                {
+                    "field": field_path,
+                    "message": f"Value too large (max: {schema['maximum']})",
+                    "invalid_value": data,
+                    "error_type": "range_error",
+                },
+            )
 
         return errors
 
-    def _validate_array_constraints(self, data: list[Any], schema: dict[str, Any], field_path: str) -> list[dict[str, Any]]:
+    def _validate_array_constraints(
+        self,
+        data: list[Any],
+        schema: dict[str, Any],
+        field_path: str,
+    ) -> list[dict[str, Any]]:
         """Validate array constraints."""
         errors = []
 
         if "minItems" in schema and len(data) < schema["minItems"]:
-            errors.append({
-                "field": field_path,
-                "message": f"Array too short (min items: {schema['minItems']})",
-                "invalid_value": data,
-                "error_type": "length_error"
-            })
+            errors.append(
+                {
+                    "field": field_path,
+                    "message": f"Array too short (min items: {schema['minItems']})",
+                    "invalid_value": data,
+                    "error_type": "length_error",
+                },
+            )
 
         if "maxItems" in schema and len(data) > schema["maxItems"]:
-            errors.append({
-                "field": field_path,
-                "message": f"Array too long (max items: {schema['maxItems']})",
-                "invalid_value": data,
-                "error_type": "length_error"
-            })
+            errors.append(
+                {
+                    "field": field_path,
+                    "message": f"Array too long (max items: {schema['maxItems']})",
+                    "invalid_value": data,
+                    "error_type": "length_error",
+                },
+            )
 
         return errors
 
@@ -254,7 +300,7 @@ class BasicSchemaValidator:
 class PydanticValidator:
     """Pydantic model-based validator."""
 
-    def __init__(self, model_class: type[BaseModel]):
+    def __init__(self, model_class: type[BaseModel]) -> None:
         self.model_class = model_class
 
     async def validate(self, data: Any, context: dict[str, Any]) -> ValidationResult:
@@ -279,17 +325,19 @@ class PydanticValidator:
                     "message": error["msg"],
                     "invalid_value": error.get("input"),
                     "error_type": error["type"],
-                    "constraint": error.get("ctx", {})
+                    "constraint": error.get("ctx", {}),
                 }
                 errors.append(error_detail)
 
         except Exception as e:
-            errors.append({
-                "field": "__root__",
-                "message": f"Pydantic validation failed: {str(e)}",
-                "invalid_value": data,
-                "error_type": "validation_error"
-            })
+            errors.append(
+                {
+                    "field": "__root__",
+                    "message": f"Pydantic validation failed: {e!s}",
+                    "invalid_value": data,
+                    "error_type": "validation_error",
+                },
+            )
 
         end_time = asyncio.get_event_loop().time()
         processing_time = (end_time - start_time) * 1000
@@ -300,14 +348,14 @@ class PydanticValidator:
             warnings=warnings,
             validation_id=validation_id,
             validation_type=context.get("validation_type", ValidationType.REQUEST_BODY),
-            processing_time_ms=processing_time
+            processing_time_ms=processing_time,
         )
 
 
 class CustomValidator:
     """Custom function-based validator."""
 
-    def __init__(self, validator_func: callable):
+    def __init__(self, validator_func: callable) -> None:
         self.validator_func = validator_func
 
     async def validate(self, data: Any, context: dict[str, Any]) -> ValidationResult:
@@ -324,22 +372,32 @@ class CustomValidator:
             # Handle different return types
             if isinstance(result, ValidationResult):
                 return result
-            elif isinstance(result, bool):
+            if isinstance(result, bool):
                 return ValidationResult(
                     valid=result,
                     validation_id=validation_id,
-                    validation_type=context.get("validation_type", ValidationType.REQUEST_BODY),
-                    processing_time_ms=(asyncio.get_event_loop().time() - start_time) * 1000
+                    validation_type=context.get(
+                        "validation_type",
+                        ValidationType.REQUEST_BODY,
+                    ),
+                    processing_time_ms=(asyncio.get_event_loop().time() - start_time)
+                    * 1000,
                 )
-            elif isinstance(result, dict):
+            if isinstance(result, dict):
                 return ValidationResult(
                     validation_id=validation_id,
-                    validation_type=context.get("validation_type", ValidationType.REQUEST_BODY),
-                    processing_time_ms=(asyncio.get_event_loop().time() - start_time) * 1000,
-                    **result
+                    validation_type=context.get(
+                        "validation_type",
+                        ValidationType.REQUEST_BODY,
+                    ),
+                    processing_time_ms=(asyncio.get_event_loop().time() - start_time)
+                    * 1000,
+                    **result,
                 )
-            else:
-                raise ValueError(f"Invalid return type from custom validator: {type(result)}")
+            msg = f"Invalid return type from custom validator: {type(result)}"
+            raise ValueError(
+                msg,
+            )
 
         except Exception as e:
             end_time = asyncio.get_event_loop().time()
@@ -347,29 +405,34 @@ class CustomValidator:
 
             return ValidationResult(
                 valid=False,
-                errors=[{
-                    "field": "__root__",
-                    "message": f"Custom validation failed: {str(e)}",
-                    "invalid_value": data,
-                    "error_type": "custom_validation_error"
-                }],
+                errors=[
+                    {
+                        "field": "__root__",
+                        "message": f"Custom validation failed: {e!s}",
+                        "invalid_value": data,
+                        "error_type": "custom_validation_error",
+                    },
+                ],
                 validation_id=validation_id,
-                validation_type=context.get("validation_type", ValidationType.REQUEST_BODY),
-                processing_time_ms=processing_time
+                validation_type=context.get(
+                    "validation_type",
+                    ValidationType.REQUEST_BODY,
+                ),
+                processing_time_ms=processing_time,
             )
 
 
 class RequestResponseValidator:
     """Main validator class for API Gateway requests and responses."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._rules: dict[str, ValidationRule] = {}
         self._validators: dict[str, ValidatorProtocol] = {}
         self._validation_stats = {
             "total_validations": 0,
             "successful_validations": 0,
             "failed_validations": 0,
-            "avg_processing_time_ms": 0.0
+            "avg_processing_time_ms": 0.0,
         }
 
     def add_rule(self, rule: ValidationRule) -> None:
@@ -397,65 +460,93 @@ class RequestResponseValidator:
         """Get a validation rule by name."""
         return self._rules.get(rule_name)
 
-    def list_rules(self, validation_type: ValidationType | None = None) -> list[ValidationRule]:
+    def list_rules(
+        self,
+        validation_type: ValidationType | None = None,
+    ) -> list[ValidationRule]:
         """List all validation rules, optionally filtered by type."""
         if validation_type:
-            return [rule for rule in self._rules.values() if rule.validation_type == validation_type]
+            return [
+                rule
+                for rule in self._rules.values()
+                if rule.validation_type == validation_type
+            ]
         return list(self._rules.values())
 
-    async def validate_request_body(self, body: Any, content_type: str = "application/json") -> ValidationResult:
+    async def validate_request_body(
+        self,
+        body: Any,
+        content_type: str = "application/json",
+    ) -> ValidationResult:
         """Validate request body."""
         return await self._validate_data(
             data=body,
             validation_type=ValidationType.REQUEST_BODY,
-            content_type=content_type
+            content_type=content_type,
         )
 
-    async def validate_request_headers(self, headers: dict[str, str]) -> ValidationResult:
+    async def validate_request_headers(
+        self,
+        headers: dict[str, str],
+    ) -> ValidationResult:
         """Validate request headers."""
         return await self._validate_data(
             data=headers,
-            validation_type=ValidationType.REQUEST_HEADERS
+            validation_type=ValidationType.REQUEST_HEADERS,
         )
 
-    async def validate_request_query(self, query_params: dict[str, Any]) -> ValidationResult:
+    async def validate_request_query(
+        self,
+        query_params: dict[str, Any],
+    ) -> ValidationResult:
         """Validate request query parameters."""
         return await self._validate_data(
             data=query_params,
-            validation_type=ValidationType.REQUEST_QUERY
+            validation_type=ValidationType.REQUEST_QUERY,
         )
 
-    async def validate_request_path(self, path_params: dict[str, Any]) -> ValidationResult:
+    async def validate_request_path(
+        self,
+        path_params: dict[str, Any],
+    ) -> ValidationResult:
         """Validate request path parameters."""
         return await self._validate_data(
             data=path_params,
-            validation_type=ValidationType.REQUEST_PATH
+            validation_type=ValidationType.REQUEST_PATH,
         )
 
-    async def validate_response_body(self, body: Any, content_type: str = "application/json") -> ValidationResult:
+    async def validate_response_body(
+        self,
+        body: Any,
+        content_type: str = "application/json",
+    ) -> ValidationResult:
         """Validate response body."""
         return await self._validate_data(
             data=body,
             validation_type=ValidationType.RESPONSE_BODY,
-            content_type=content_type
+            content_type=content_type,
         )
 
-    async def validate_response_headers(self, headers: dict[str, str]) -> ValidationResult:
+    async def validate_response_headers(
+        self,
+        headers: dict[str, str],
+    ) -> ValidationResult:
         """Validate response headers."""
         return await self._validate_data(
             data=headers,
-            validation_type=ValidationType.RESPONSE_HEADERS
+            validation_type=ValidationType.RESPONSE_HEADERS,
         )
 
     async def _validate_data(
         self,
         data: Any,
         validation_type: ValidationType,
-        content_type: str = "application/json"
+        content_type: str = "application/json",
     ) -> ValidationResult:
         """Internal method to validate data against all applicable rules."""
         applicable_rules = [
-            rule for rule in self._rules.values()
+            rule
+            for rule in self._rules.values()
             if rule.validation_type == validation_type and rule.enabled
         ]
 
@@ -465,7 +556,7 @@ class RequestResponseValidator:
                 valid=True,
                 validation_id=str(uuid4()),
                 validation_type=validation_type,
-                processing_time_ms=0.0
+                processing_time_ms=0.0,
             )
 
         all_errors = []
@@ -475,22 +566,27 @@ class RequestResponseValidator:
         context = {
             "validation_type": validation_type,
             "content_type": content_type,
-            "data_size": len(str(data)) if data else 0
+            "data_size": len(str(data)) if data else 0,
         }
 
         for rule in applicable_rules:
             # Check content type restrictions
-            if rule.allowed_content_types and content_type not in rule.allowed_content_types:
+            if (
+                rule.allowed_content_types
+                and content_type not in rule.allowed_content_types
+            ):
                 continue
 
             # Check size limits
             if rule.max_size_bytes and context["data_size"] > rule.max_size_bytes:
-                all_errors.append({
-                    "rule": rule.name,
-                    "field": "__size__",
-                    "message": f"Data size {context['data_size']} exceeds limit {rule.max_size_bytes}",
-                    "error_type": "size_limit_exceeded"
-                })
+                all_errors.append(
+                    {
+                        "rule": rule.name,
+                        "field": "__size__",
+                        "message": f"Data size {context['data_size']} exceeds limit {rule.max_size_bytes}",
+                        "error_type": "size_limit_exceeded",
+                    },
+                )
                 continue
 
             # Perform basic field validation
@@ -513,12 +609,14 @@ class RequestResponseValidator:
                     all_warnings.extend(result.warnings)
 
                 except Exception as e:
-                    all_errors.append({
-                        "rule": rule.name,
-                        "field": "__validator__",
-                        "message": f"Validator execution failed: {str(e)}",
-                        "error_type": "validator_error"
-                    })
+                    all_errors.append(
+                        {
+                            "rule": rule.name,
+                            "field": "__validator__",
+                            "message": f"Validator execution failed: {e!s}",
+                            "error_type": "validator_error",
+                        },
+                    )
 
         # Update statistics
         self._validation_stats["total_validations"] += 1
@@ -531,8 +629,8 @@ class RequestResponseValidator:
         current_avg = self._validation_stats["avg_processing_time_ms"]
         total_validations = self._validation_stats["total_validations"]
         self._validation_stats["avg_processing_time_ms"] = (
-            (current_avg * (total_validations - 1) + total_processing_time) / total_validations
-        )
+            current_avg * (total_validations - 1) + total_processing_time
+        ) / total_validations
 
         return ValidationResult(
             valid=len(all_errors) == 0,
@@ -540,67 +638,82 @@ class RequestResponseValidator:
             warnings=all_warnings,
             validation_id=str(uuid4()),
             validation_type=validation_type,
-            processing_time_ms=total_processing_time
+            processing_time_ms=total_processing_time,
         )
 
-    def _validate_fields(self, data: dict[str, Any], rule: ValidationRule) -> list[dict[str, Any]]:
+    def _validate_fields(
+        self,
+        data: dict[str, Any],
+        rule: ValidationRule,
+    ) -> list[dict[str, Any]]:
         """Validate field-level rules."""
         errors = []
 
         # Check required fields
         for field in rule.required_fields:
             if field not in data:
-                errors.append({
-                    "rule": rule.name,
-                    "field": field,
-                    "message": f"Required field '{field}' is missing",
-                    "error_type": "required_field_missing"
-                })
+                errors.append(
+                    {
+                        "rule": rule.name,
+                        "field": field,
+                        "message": f"Required field '{field}' is missing",
+                        "error_type": "required_field_missing",
+                    },
+                )
 
         # Check forbidden fields
         for field in rule.forbidden_fields:
             if field in data:
-                errors.append({
-                    "rule": rule.name,
-                    "field": field,
-                    "message": f"Forbidden field '{field}' is present",
-                    "error_type": "forbidden_field_present"
-                })
+                errors.append(
+                    {
+                        "rule": rule.name,
+                        "field": field,
+                        "message": f"Forbidden field '{field}' is present",
+                        "error_type": "forbidden_field_present",
+                    },
+                )
 
         # Check field patterns
         for field, pattern in rule.field_patterns.items():
             if field in data:
                 import re
+
                 if not re.match(pattern, str(data[field])):
-                    errors.append({
-                        "rule": rule.name,
-                        "field": field,
-                        "message": f"Field '{field}' does not match pattern '{pattern}'",
-                        "invalid_value": data[field],
-                        "error_type": "pattern_mismatch"
-                    })
+                    errors.append(
+                        {
+                            "rule": rule.name,
+                            "field": field,
+                            "message": f"Field '{field}' does not match pattern '{pattern}'",
+                            "invalid_value": data[field],
+                            "error_type": "pattern_mismatch",
+                        },
+                    )
 
         # Check array length limits
         if rule.max_array_length:
             for field, value in data.items():
                 if isinstance(value, list) and len(value) > rule.max_array_length:
-                    errors.append({
-                        "rule": rule.name,
-                        "field": field,
-                        "message": f"Array length {len(value)} exceeds limit {rule.max_array_length}",
-                        "error_type": "array_too_long"
-                    })
+                    errors.append(
+                        {
+                            "rule": rule.name,
+                            "field": field,
+                            "message": f"Array length {len(value)} exceeds limit {rule.max_array_length}",
+                            "error_type": "array_too_long",
+                        },
+                    )
 
         # Check string length limits
         if rule.max_string_length:
             for field, value in data.items():
                 if isinstance(value, str) and len(value) > rule.max_string_length:
-                    errors.append({
-                        "rule": rule.name,
-                        "field": field,
-                        "message": f"String length {len(value)} exceeds limit {rule.max_string_length}",
-                        "error_type": "string_too_long"
-                    })
+                    errors.append(
+                        {
+                            "rule": rule.name,
+                            "field": field,
+                            "message": f"String length {len(value)} exceeds limit {rule.max_string_length}",
+                            "error_type": "string_too_long",
+                        },
+                    )
 
         return errors
 
@@ -626,33 +739,20 @@ class RequestResponseValidator:
             "total_validations": 0,
             "successful_validations": 0,
             "failed_validations": 0,
-            "avg_processing_time_ms": 0.0
+            "avg_processing_time_ms": 0.0,
         }
 
 
 # Common validation schemas and rules
 COMMON_SCHEMAS = {
-    "email": {
-        "type": "string",
-        "format": "email",
-        "maxLength": 254
-    },
+    "email": {"type": "string", "format": "email", "maxLength": 254},
     "uuid": {
         "type": "string",
-        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
     },
-    "positive_integer": {
-        "type": "integer",
-        "minimum": 1
-    },
-    "non_empty_string": {
-        "type": "string",
-        "minLength": 1
-    },
-    "iso_datetime": {
-        "type": "string",
-        "format": "date-time"
-    }
+    "positive_integer": {"type": "integer", "minimum": 1},
+    "non_empty_string": {"type": "string", "minLength": 1},
+    "iso_datetime": {"type": "string", "format": "date-time"},
 }
 
 # Default validation rules for common scenarios
@@ -661,12 +761,12 @@ DEFAULT_REQUEST_BODY_RULE = ValidationRule(
     validation_type=ValidationType.REQUEST_BODY,
     severity=ValidationSeverity.ERROR,
     max_size_bytes=1024 * 1024,  # 1MB
-    allowed_content_types=["application/json", "application/x-www-form-urlencoded"]
+    allowed_content_types=["application/json", "application/x-www-form-urlencoded"],
 )
 
 DEFAULT_RESPONSE_BODY_RULE = ValidationRule(
     name="default_response_body",
     validation_type=ValidationType.RESPONSE_BODY,
     severity=ValidationSeverity.WARNING,
-    max_size_bytes=10 * 1024 * 1024  # 10MB
+    max_size_bytes=10 * 1024 * 1024,  # 10MB
 )

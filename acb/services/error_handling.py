@@ -123,7 +123,10 @@ class CircuitBreakerError(Exception):
     """Raised when circuit breaker is open."""
 
     def __init__(
-        self, message: str, state: CircuitBreakerState, metrics: ErrorMetrics
+        self,
+        message: str,
+        state: CircuitBreakerState,
+        metrics: ErrorMetrics,
     ) -> None:
         super().__init__(message)
         self.state = state
@@ -155,7 +158,10 @@ class CircuitBreaker:
         return self._metrics
 
     async def call(
-        self, func: t.Callable[..., t.Awaitable[t.Any]], *args, **kwargs
+        self,
+        func: t.Callable[..., t.Awaitable[t.Any]],
+        *args,
+        **kwargs,
     ) -> t.Any:
         """Execute a function through the circuit breaker."""
         async with self._lock:
@@ -174,7 +180,7 @@ class CircuitBreaker:
 
             return result
 
-        except Exception as e:
+        except Exception:
             execution_time = time.perf_counter() - start_time
 
             async with self._lock:
@@ -182,7 +188,7 @@ class CircuitBreaker:
                 # Check if we should open the circuit after recording failure
                 await self._check_state_after_failure()
 
-            raise e
+            raise
 
     async def _check_state(self) -> None:
         """Check and update circuit breaker state."""
@@ -199,18 +205,20 @@ class CircuitBreaker:
                 self._consecutive_failures = 0
 
         # Check if we should open the circuit
-        if self._state == CircuitBreakerState.CLOSED:
-            if (
-                self._consecutive_failures >= self.config.failure_threshold
-                or self._should_open_based_on_rate()
-            ):
-                self._state = CircuitBreakerState.OPEN
-                self._last_failure_time = now
+        if self._state == CircuitBreakerState.CLOSED and (
+            self._consecutive_failures >= self.config.failure_threshold
+            or self._should_open_based_on_rate()
+        ):
+            self._state = CircuitBreakerState.OPEN
+            self._last_failure_time = now
 
         # Block requests if circuit is open
         if self._state == CircuitBreakerState.OPEN:
+            msg = f"Circuit breaker '{self.name}' is OPEN"
             raise CircuitBreakerError(
-                f"Circuit breaker '{self.name}' is OPEN", self._state, self._metrics
+                msg,
+                self._state,
+                self._metrics,
             )
 
     def _should_open_based_on_rate(self) -> bool:
@@ -335,7 +343,10 @@ class RetryableError(Exception):
     """Wrapper for retryable errors."""
 
     def __init__(
-        self, original_error: Exception, attempt: int, max_attempts: int
+        self,
+        original_error: Exception,
+        attempt: int,
+        max_attempts: int,
     ) -> None:
         super().__init__(f"Retry {attempt}/{max_attempts}: {original_error}")
         self.original_error = original_error
@@ -356,7 +367,9 @@ class ErrorHandlingService:
         self._bulkheads: dict[str, asyncio.Semaphore] = {}
 
     def create_circuit_breaker(
-        self, name: str, config: CircuitBreakerConfig | None = None
+        self,
+        name: str,
+        config: CircuitBreakerConfig | None = None,
     ) -> CircuitBreaker:
         """Create or get a circuit breaker."""
         if name not in self._circuit_breakers:
@@ -379,13 +392,17 @@ class ErrorHandlingService:
         return False
 
     def register_error_handler(
-        self, exception_type: type[Exception], handler: t.Callable[[Exception], t.Any]
+        self,
+        exception_type: type[Exception],
+        handler: t.Callable[[Exception], t.Any],
     ) -> None:
         """Register a global error handler for specific exception types."""
         self._error_handlers[exception_type] = handler
 
     def register_fallback_handler(
-        self, operation_name: str, handler: t.Callable
+        self,
+        operation_name: str,
+        handler: t.Callable,
     ) -> None:
         """Register a fallback handler for operations."""
         self._fallback_handlers[operation_name] = handler
@@ -474,11 +491,13 @@ class ErrorHandlingService:
                 return handler(e, *args, **kwargs)
 
             # No fallback available, re-raise
-            raise e
+            raise
 
     @asynccontextmanager
     async def with_bulkhead(
-        self, bulkhead_name: str, max_concurrent: int | None = None
+        self,
+        bulkhead_name: str,
+        max_concurrent: int | None = None,
     ):
         """Execute within a bulkhead for resource isolation."""
         if bulkhead_name not in self._bulkheads and max_concurrent:
@@ -495,7 +514,9 @@ class ErrorHandlingService:
             yield
 
     async def handle_error(
-        self, error: Exception, context: dict[str, t.Any] | None = None
+        self,
+        error: Exception,
+        context: dict[str, t.Any] | None = None,
     ) -> t.Any:
         """Handle an error using registered handlers."""
         # Update global metrics
@@ -569,7 +590,11 @@ def circuit_breaker(
         async def wrapper(*args, **kwargs):
             error_service = service or ErrorHandlingService()
             return await error_service.with_circuit_breaker(
-                name, func, *args, config=config, **kwargs
+                name,
+                func,
+                *args,
+                config=config,
+                **kwargs,
             )
 
         return wrapper
@@ -578,7 +603,8 @@ def circuit_breaker(
 
 
 def retry(
-    config: RetryConfig | None = None, service: ErrorHandlingService | None = None
+    config: RetryConfig | None = None,
+    service: ErrorHandlingService | None = None,
 ):
     """Decorator to add retry logic to functions."""
 
@@ -605,7 +631,11 @@ def fallback(
         async def wrapper(*args, **kwargs):
             error_service = service or ErrorHandlingService()
             return await error_service.with_fallback(
-                operation_name, func, *args, fallback_handler=fallback_handler, **kwargs
+                operation_name,
+                func,
+                *args,
+                fallback_handler=fallback_handler,
+                **kwargs,
             )
 
         return wrapper
@@ -614,7 +644,9 @@ def fallback(
 
 
 def bulkhead(
-    name: str, max_concurrent: int, service: ErrorHandlingService | None = None
+    name: str,
+    max_concurrent: int,
+    service: ErrorHandlingService | None = None,
 ):
     """Decorator to add bulkhead isolation to functions."""
 
@@ -637,24 +669,22 @@ def classify_error_severity(error: Exception) -> ErrorSeverity:
     """Classify error severity based on exception type."""
     if isinstance(error, SystemExit | KeyboardInterrupt):
         return ErrorSeverity.CRITICAL
-    elif isinstance(error, MemoryError | OSError):
+    if isinstance(error, MemoryError | OSError):
         return ErrorSeverity.HIGH
-    elif isinstance(error, ValueError | TypeError | AttributeError):
+    if isinstance(error, ValueError | TypeError | AttributeError):
         return ErrorSeverity.MEDIUM
-    else:
-        return ErrorSeverity.LOW
+    return ErrorSeverity.LOW
 
 
 def suggest_recovery_strategy(error: Exception) -> RecoveryStrategy:
     """Suggest recovery strategy based on error type."""
     if isinstance(error, ConnectionError | TimeoutError):
         return RecoveryStrategy.RETRY
-    elif isinstance(error, PermissionError | AuthenticationError):
+    if isinstance(error, PermissionError | AuthenticationError):
         return RecoveryStrategy.FAIL_FAST
-    elif isinstance(error, MemoryError | OSError):
+    if isinstance(error, MemoryError | OSError):
         return RecoveryStrategy.CIRCUIT_BREAKER
-    else:
-        return RecoveryStrategy.FALLBACK
+    return RecoveryStrategy.FALLBACK
 
 
 # Custom exceptions for the error handling service

@@ -109,16 +109,17 @@ class GatewayMetadata(BaseModel):
 
     name: str = Field(description="Human-readable gateway name")
     category: str = Field(
-        description="Gateway category (cloud, enterprise, standalone, etc.)"
+        description="Gateway category (cloud, enterprise, standalone, etc.)",
     )
     gateway_type: str = Field(
-        description="Gateway type (kong, istio, envoy, nginx, custom, etc.)"
+        description="Gateway type (kong, istio, envoy, nginx, custom, etc.)",
     )
 
     version: str = Field(description="Semantic version of this gateway")
     acb_min_version: str = Field(description="Minimum ACB version required")
     acb_max_version: str | None = Field(
-        default=None, description="Maximum ACB version supported"
+        default=None,
+        description="Maximum ACB version supported",
     )
 
     author: str = Field(description="Primary author/maintainer")
@@ -127,45 +128,53 @@ class GatewayMetadata(BaseModel):
 
     status: GatewayStatus = Field(description="Development/stability status")
     capabilities: list[GatewayCapability] = Field(
-        default_factory=list, description="List of features this gateway supports"
+        default_factory=list,
+        description="List of features this gateway supports",
     )
 
     required_packages: list[str] = Field(
-        default_factory=list, description="External packages required for this gateway"
+        default_factory=list,
+        description="External packages required for this gateway",
     )
     optional_packages: dict[str, str] = Field(
-        default_factory=dict, description="Optional packages and their purpose"
+        default_factory=dict,
+        description="Optional packages and their purpose",
     )
 
     description: str = Field(description="Brief description of gateway functionality")
     documentation_url: str | None = Field(
-        default=None, description="Link to detailed documentation"
+        default=None,
+        description="Link to detailed documentation",
     )
     repository_url: str | None = Field(
-        default=None, description="Source code repository"
+        default=None,
+        description="Source code repository",
     )
 
     settings_class: str = Field(description="Name of the settings class")
     config_example: dict[str, t.Any] | None = Field(
-        default=None, description="Example configuration for this gateway"
+        default=None,
+        description="Example configuration for this gateway",
     )
 
     # Gateway-specific metadata
     default_port: int | None = Field(
-        default=None, description="Default port for gateway service"
+        default=None,
+        description="Default port for gateway service",
     )
-    admin_port: int | None = Field(
-        default=None, description="Admin/management port"
-    )
+    admin_port: int | None = Field(default=None, description="Admin/management port")
     supported_protocols: list[str] = Field(
-        default_factory=list, description="Supported protocols (HTTP, HTTPS, gRPC, etc.)"
+        default_factory=list,
+        description="Supported protocols (HTTP, HTTPS, gRPC, etc.)",
     )
     deployment_types: list[str] = Field(
-        default_factory=list, description="Supported deployment types (docker, k8s, standalone)"
+        default_factory=list,
+        description="Supported deployment types (docker, k8s, standalone)",
     )
 
     custom: dict[str, t.Any] = Field(
-        default_factory=dict, description="Custom metadata fields"
+        default_factory=dict,
+        description="Custom metadata fields",
     )
 
     model_config = ConfigDict(use_enum_values=True, extra="forbid")
@@ -176,9 +185,8 @@ def generate_gateway_id() -> UUID:
     if _uuid7_available:
         uuid_obj = uuid_lib.uuid7()
         return UUID(str(uuid_obj))
-    else:
-        uuid_obj = uuid_lib.uuid4()
-        return UUID(str(uuid_obj))
+    uuid_obj = uuid_lib.uuid4()
+    return UUID(str(uuid_obj))
 
 
 def create_gateway_metadata_template(
@@ -216,13 +224,9 @@ def create_gateway_metadata_template(
 class GatewayNotFound(Exception):
     """Raised when a gateway cannot be found."""
 
-    pass
-
 
 class GatewayNotInstalled(Exception):
     """Raised when a gateway is not installed."""
-
-    pass
 
 
 class Gateway(BaseModel):
@@ -243,7 +247,7 @@ class Gateway(BaseModel):
     def __hash__(self) -> int:
         base_hash = (self.name, self.class_name, self.category, self.module)
         if self.metadata:
-            return hash(base_hash + (str(self.metadata.gateway_id),))
+            return hash((*base_hash, str(self.metadata.gateway_id)))
         return hash(base_hash)
 
     def __eq__(self, other: object) -> bool:
@@ -260,10 +264,12 @@ class Gateway(BaseModel):
 # Gateway registry using ContextVar for thread safety
 gateway_registry: ContextVar[list[Gateway]] = ContextVar("gateway_registry", default=[])
 _enabled_gateways_cache: ContextVar[dict[str, Gateway]] = ContextVar(
-    "_enabled_gateways_cache", default={}
+    "_enabled_gateways_cache",
+    default={},
 )
 _installed_gateways_cache: ContextVar[dict[str, Gateway]] = ContextVar(
-    "_installed_gateways_cache", default={}
+    "_installed_gateways_cache",
+    default={},
 )
 
 # Core gateways registry - static mappings like adapters
@@ -366,7 +372,8 @@ def get_gateway_class(category: str, name: str | None = None) -> type[t.Any]:
 
     gateway = get_gateway_descriptor(category)
     if not gateway:
-        raise GatewayNotFound(f"Gateway not found: {category}")
+        msg = f"Gateway not found: {category}"
+        raise GatewayNotFound(msg)
 
     if name and gateway.name != name:
         # Look for specific named gateway
@@ -376,14 +383,16 @@ def get_gateway_class(category: str, name: str | None = None) -> type[t.Any]:
                 gateway = g
                 break
         else:
-            raise GatewayNotFound(f"Gateway not found: {category}/{name}")
+            msg = f"Gateway not found: {category}/{name}"
+            raise GatewayNotFound(msg)
 
     try:
         module = import_module(gateway.module)
         return getattr(module, gateway.class_name)
     except (ImportError, AttributeError) as e:
+        msg = f"Gateway not available: {gateway.module}.{gateway.class_name}"
         raise GatewayNotInstalled(
-            f"Gateway not available: {gateway.module}.{gateway.class_name}"
+            msg,
         ) from e
 
 
@@ -420,7 +429,8 @@ def import_gateway(gateway_categories: str | list[str] | None = None) -> t.Any:
         gateway_class = try_import_gateway(gateway_categories, gateway_name)
         if gateway_class:
             return gateway_class
-        raise GatewayNotFound(f"Gateway not found or not enabled: {gateway_categories}")
+        msg = f"Gateway not found or not enabled: {gateway_categories}"
+        raise GatewayNotFound(msg)
 
     if gateway_categories is None:
         # Try to auto-detect from calling context
@@ -449,25 +459,27 @@ def import_gateway(gateway_categories: str | list[str] | None = None) -> t.Any:
             except (OSError, IndexError):
                 pass
 
-        raise ValueError("Could not determine gateway category from context")
+        msg = "Could not determine gateway category from context"
+        raise ValueError(msg)
 
     if isinstance(gateway_categories, list):
         results = []
         for category in gateway_categories:
             gateway_class = try_import_gateway(category)
             if not gateway_class:
-                raise GatewayNotFound(f"Gateway not found or not enabled: {category}")
+                msg = f"Gateway not found or not enabled: {category}"
+                raise GatewayNotFound(msg)
             results.append(gateway_class)
         return tuple(results) if len(results) > 1 else results[0]
 
-    raise ValueError(f"Invalid gateway_categories type: {type(gateway_categories)}")
+    msg = f"Invalid gateway_categories type: {type(gateway_categories)}"
+    raise ValueError(msg)
 
 
 def register_gateways(gateways_path: str | None = None) -> None:
     """Register gateways from a path (for discovery)."""
     # Implementation for auto-discovery could be added here
     # For now, we rely on static registration
-    pass
 
 
 def get_gateway_info(gateway_class: type) -> dict[str, t.Any]:
@@ -480,7 +492,7 @@ def get_gateway_info(gateway_class: type) -> dict[str, t.Any]:
 
     # Check for metadata
     if hasattr(gateway_class, "GATEWAY_METADATA"):
-        metadata = getattr(gateway_class, "GATEWAY_METADATA")
+        metadata = gateway_class.GATEWAY_METADATA
         if isinstance(metadata, GatewayMetadata):
             info["metadata"] = metadata.model_dump()
 

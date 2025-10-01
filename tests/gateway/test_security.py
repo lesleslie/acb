@@ -18,7 +18,7 @@ from acb.gateway.security import (
     SecurityValidator,
     SecurityViolation,
 )
-from acb.gateway._base import GatewayRequest, GatewayResponse, HttpMethod
+from acb.gateway._base import GatewayRequest, GatewayResponse, RequestMethod
 
 
 @pytest.fixture
@@ -64,16 +64,13 @@ def security_config(security_headers_config, cors_config):
 def mock_request():
     """Mock gateway request."""
     return GatewayRequest(
-        method=HttpMethod.GET,
+        method=RequestMethod.GET,
         path="/api/test",
         headers={"User-Agent": "test-agent", "Origin": "https://example.com"},
         body="",
         query_params={},
-        tenant_id="test-tenant",
         client_ip="127.0.0.1",
         user_agent="test-agent",
-        request_id="test-request",
-        content_length=100,
     )
 
 
@@ -167,7 +164,7 @@ class TestCORSManager:
 
     def test_handle_preflight_request_success(self, cors_config, mock_request):
         """Test successful CORS preflight handling."""
-        mock_request.method = HttpMethod.OPTIONS
+        mock_request.method = RequestMethod.OPTIONS
         mock_request.headers["access-control-request-method"] = "POST"
         mock_request.headers["access-control-request-headers"] = "Content-Type,Authorization"
 
@@ -181,7 +178,7 @@ class TestCORSManager:
 
     def test_handle_preflight_request_invalid_origin(self, cors_config, mock_request):
         """Test CORS preflight with invalid origin."""
-        mock_request.method = HttpMethod.OPTIONS
+        mock_request.method = RequestMethod.OPTIONS
         mock_request.headers["origin"] = "https://evil.com"
 
         manager = CORSManager(cors_config)
@@ -192,7 +189,7 @@ class TestCORSManager:
 
     def test_handle_preflight_request_invalid_method(self, cors_config, mock_request):
         """Test CORS preflight with invalid method."""
-        mock_request.method = HttpMethod.OPTIONS
+        mock_request.method = RequestMethod.OPTIONS
         mock_request.headers["access-control-request-method"] = "DELETE"
 
         manager = CORSManager(cors_config)
@@ -415,7 +412,7 @@ class TestSecurityManager:
     @pytest.mark.asyncio
     async def test_handle_preflight_request(self, security_config, mock_request):
         """Test CORS preflight request handling."""
-        mock_request.method = HttpMethod.OPTIONS
+        mock_request.method = RequestMethod.OPTIONS
 
         manager = SecurityManager(security_config)
         response = await manager.handle_preflight_request(mock_request)

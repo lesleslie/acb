@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.config import Settings
 from acb.depends import depends
 
@@ -20,9 +20,9 @@ from acb.depends import depends
 class GatewayLevel(Enum):
     """Gateway processing levels."""
 
-    BASIC = "basic"          # Basic routing and forwarding
-    STANDARD = "standard"    # Add authentication and basic security
-    ENHANCED = "enhanced"    # Add rate limiting and validation
+    BASIC = "basic"  # Basic routing and forwarding
+    STANDARD = "standard"  # Add authentication and basic security
+    ENHANCED = "enhanced"  # Add rate limiting and validation
     ENTERPRISE = "enterprise"  # Full feature set with analytics
 
 
@@ -67,7 +67,7 @@ class GatewayMetrics:
 
     # Performance metrics
     avg_response_time_ms: float = 0.0
-    min_response_time_ms: float = float('inf')
+    min_response_time_ms: float = float("inf")
     max_response_time_ms: float = 0.0
 
     # Cache metrics
@@ -85,7 +85,7 @@ class GatewayMetrics:
         self,
         success: bool,
         response_time_ms: float,
-        status: GatewayStatus | None = None
+        status: GatewayStatus | None = None,
     ) -> None:
         """Record a request and its performance metrics."""
         self.requests_processed += 1
@@ -102,11 +102,17 @@ class GatewayMetrics:
             else:
                 # Running average
                 self.avg_response_time_ms = (
-                    (self.avg_response_time_ms * (self.requests_processed - 1) + response_time_ms)
-                    / self.requests_processed
+                    self.avg_response_time_ms * (self.requests_processed - 1)
+                    + response_time_ms
+                ) / self.requests_processed
+                self.min_response_time_ms = min(
+                    self.min_response_time_ms,
+                    response_time_ms,
                 )
-                self.min_response_time_ms = min(self.min_response_time_ms, response_time_ms)
-                self.max_response_time_ms = max(self.max_response_time_ms, response_time_ms)
+                self.max_response_time_ms = max(
+                    self.max_response_time_ms,
+                    response_time_ms,
+                )
 
         # Update status-specific metrics
         if status:
@@ -132,7 +138,9 @@ class GatewayMetrics:
             "routing_failures": self.routing_failures,
             "upstream_errors": self.upstream_errors,
             "avg_response_time_ms": self.avg_response_time_ms,
-            "min_response_time_ms": self.min_response_time_ms if self.min_response_time_ms != float('inf') else 0.0,
+            "min_response_time_ms": self.min_response_time_ms
+            if self.min_response_time_ms != float("inf")
+            else 0.0,
             "max_response_time_ms": self.max_response_time_ms,
             "cache_hits": self.cache_hits,
             "cache_misses": self.cache_misses,
@@ -172,7 +180,9 @@ class GatewaySettings(Settings):
     # Security settings
     enable_cors: bool = True
     allowed_origins: list[str] = field(default_factory=lambda: ["*"])
-    allowed_methods: list[str] = field(default_factory=lambda: ["GET", "POST", "PUT", "DELETE"])
+    allowed_methods: list[str] = field(
+        default_factory=lambda: ["GET", "POST", "PUT", "DELETE"],
+    )
     allowed_headers: list[str] = field(default_factory=lambda: ["*"])
 
     # Caching settings
@@ -216,8 +226,7 @@ class GatewayConfig(BaseModel):
     tenant_id: str | None = None
     tenant_config: dict[str, t.Any] | None = None
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 @dataclass
@@ -259,7 +268,9 @@ class GatewayRequest:
     @property
     def content_length(self) -> int:
         """Get request content length."""
-        length_header = self.headers.get("content-length") or self.headers.get("Content-Length")
+        length_header = self.headers.get("content-length") or self.headers.get(
+            "Content-Length",
+        )
         if length_header:
             try:
                 return int(length_header)
@@ -268,12 +279,13 @@ class GatewayRequest:
 
         if isinstance(self.body, bytes):
             return len(self.body)
-        elif isinstance(self.body, str):
-            return len(self.body.encode('utf-8'))
-        elif self.body is not None:
+        if isinstance(self.body, str):
+            return len(self.body.encode("utf-8"))
+        if self.body is not None:
             # Estimate for dict/object
             import json
-            return len(json.dumps(self.body).encode('utf-8'))
+
+            return len(json.dumps(self.body).encode("utf-8"))
 
         return 0
 
@@ -362,8 +374,7 @@ class GatewayResult(BaseModel):
         if component not in self.components_used:
             self.components_used.append(component)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class GatewayProtocol(ABC):
@@ -426,7 +437,10 @@ class MiddlewareProtocol(ABC):
         self,
         request: GatewayRequest,
         config: GatewayConfig,
-        next_middleware: t.Callable[[GatewayRequest, GatewayConfig], t.Awaitable[GatewayResult]],
+        next_middleware: t.Callable[
+            [GatewayRequest, GatewayConfig],
+            t.Awaitable[GatewayResult],
+        ],
     ) -> GatewayResult:
         """Process request through middleware.
 

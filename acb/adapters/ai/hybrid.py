@@ -151,7 +151,7 @@ class HybridAISettings(AIBaseSettings):
             "fast": "gpt-3.5-turbo",
             "smart": "gpt-4",
             "vision": "gpt-4-vision-preview",
-        }
+        },
     )
 
     edge_models: dict[str, str] = Field(
@@ -159,7 +159,7 @@ class HybridAISettings(AIBaseSettings):
             "fast": "llama2:7b",
             "smart": "lfm2",
             "vision": "lfm2-vl",
-        }
+        },
     )
 
     # Performance tracking
@@ -228,7 +228,7 @@ class HybridAI(AIBase):
 
         self.logger.info(
             f"Routing decision: {routing_result.decision} "
-            f"(confidence: {routing_result.confidence:.2f}) - {routing_result.reasoning}"
+            f"(confidence: {routing_result.confidence:.2f}) - {routing_result.reasoning}",
         )
 
         # Execute request with selected adapter
@@ -239,7 +239,8 @@ class HybridAI(AIBase):
             elif routing_result.strategy == DeploymentStrategy.EDGE:
                 response = await self._execute_edge_request(request, routing_result)
             else:
-                raise ValueError(f"Unsupported strategy: {routing_result.strategy}")
+                msg = f"Unsupported strategy: {routing_result.strategy}"
+                raise ValueError(msg)
 
             # Track performance
             latency_ms = int((asyncio.get_event_loop().time() - start_time) * 1000)
@@ -267,12 +268,12 @@ class HybridAI(AIBase):
         try:
             if routing_result.strategy == DeploymentStrategy.CLOUD:
                 return await self._cloud_adapter.generate_text_stream(request)
-            elif routing_result.strategy == DeploymentStrategy.EDGE:
+            if routing_result.strategy == DeploymentStrategy.EDGE:
                 return await self._edge_adapter.generate_text_stream(request)
-            else:
-                raise ValueError(
-                    f"Unsupported streaming strategy: {routing_result.strategy}"
-                )
+            msg = f"Unsupported streaming strategy: {routing_result.strategy}"
+            raise ValueError(
+                msg,
+            )
 
         except Exception as e:
             # Fallback for streaming
@@ -288,16 +289,17 @@ class HybridAI(AIBase):
                 and self.settings.cloud_fallback_enabled
             ):
                 return await self._cloud_adapter.generate_text_stream(request)
-            elif (
+            if (
                 fallback_strategy == DeploymentStrategy.EDGE
                 and self.settings.edge_fallback_enabled
             ):
                 return await self._edge_adapter.generate_text_stream(request)
-            else:
-                raise
+            raise
 
     async def _route_request(
-        self, criteria: RoutingCriteria, request: AIRequest
+        self,
+        criteria: RoutingCriteria,
+        request: AIRequest,
     ) -> RoutingResult:
         """Make intelligent routing decision."""
         # Get current performance metrics
@@ -310,16 +312,18 @@ class HybridAI(AIBase):
         # Routing logic based on strategy
         if self.settings.routing_strategy == RoutingStrategy.LATENCY:
             return await self._route_by_latency(
-                criteria, cloud_avg_latency, edge_avg_latency
+                criteria,
+                cloud_avg_latency,
+                edge_avg_latency,
             )
 
-        elif self.settings.routing_strategy == RoutingStrategy.COST:
+        if self.settings.routing_strategy == RoutingStrategy.COST:
             return await self._route_by_cost(criteria, request)
 
-        elif self.settings.routing_strategy == RoutingStrategy.QUALITY:
+        if self.settings.routing_strategy == RoutingStrategy.QUALITY:
             return await self._route_by_quality(criteria, request)
 
-        elif self.settings.routing_strategy == RoutingStrategy.PERFORMANCE:
+        if self.settings.routing_strategy == RoutingStrategy.PERFORMANCE:
             return await self._route_by_performance(
                 criteria,
                 cloud_avg_latency,
@@ -328,24 +332,26 @@ class HybridAI(AIBase):
                 edge_success_rate,
             )
 
-        elif self.settings.routing_strategy == RoutingStrategy.AVAILABILITY:
+        if self.settings.routing_strategy == RoutingStrategy.AVAILABILITY:
             return await self._route_by_availability(criteria)
 
-        elif self.settings.routing_strategy == RoutingStrategy.ADAPTIVE:
+        if self.settings.routing_strategy == RoutingStrategy.ADAPTIVE:
             return await self._route_adaptive(criteria, request)
 
-        else:
-            # Default to performance routing
-            return await self._route_by_performance(
-                criteria,
-                cloud_avg_latency,
-                edge_avg_latency,
-                cloud_success_rate,
-                edge_success_rate,
-            )
+        # Default to performance routing
+        return await self._route_by_performance(
+            criteria,
+            cloud_avg_latency,
+            edge_avg_latency,
+            cloud_success_rate,
+            edge_success_rate,
+        )
 
     async def _route_by_latency(
-        self, criteria: RoutingCriteria, cloud_latency: float, edge_latency: float
+        self,
+        criteria: RoutingCriteria,
+        cloud_latency: float,
+        edge_latency: float,
     ) -> RoutingResult:
         """Route based on latency requirements."""
         if criteria.max_latency_ms and criteria.max_latency_ms < 500:
@@ -359,7 +365,7 @@ class HybridAI(AIBase):
                 estimated_latency_ms=int(edge_latency),
             )
 
-        elif edge_latency < cloud_latency * 0.5:
+        if edge_latency < cloud_latency * 0.5:
             # Edge is significantly faster
             return RoutingResult(
                 decision=RoutingDecision.EDGE,
@@ -370,19 +376,20 @@ class HybridAI(AIBase):
                 estimated_latency_ms=int(edge_latency),
             )
 
-        else:
-            # Default to cloud for general latency requirements
-            return RoutingResult(
-                decision=RoutingDecision.CLOUD,
-                strategy=DeploymentStrategy.CLOUD,
-                model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
-                confidence=0.7,
-                reasoning="Cloud provides reliable latency for general use",
-                estimated_latency_ms=int(cloud_latency),
-            )
+        # Default to cloud for general latency requirements
+        return RoutingResult(
+            decision=RoutingDecision.CLOUD,
+            strategy=DeploymentStrategy.CLOUD,
+            model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
+            confidence=0.7,
+            reasoning="Cloud provides reliable latency for general use",
+            estimated_latency_ms=int(cloud_latency),
+        )
 
     async def _route_by_cost(
-        self, criteria: RoutingCriteria, request: AIRequest
+        self,
+        criteria: RoutingCriteria,
+        request: AIRequest,
     ) -> RoutingResult:
         """Route based on cost optimization."""
         if criteria.max_cost_per_token and criteria.max_cost_per_token < 0.000001:
@@ -396,7 +403,7 @@ class HybridAI(AIBase):
                 estimated_cost=0.0,
             )
 
-        elif request.max_tokens > 1000:
+        if request.max_tokens > 1000:
             # Large response - edge saves significant cost
             return RoutingResult(
                 decision=RoutingDecision.EDGE,
@@ -407,18 +414,19 @@ class HybridAI(AIBase):
                 estimated_cost=0.0,
             )
 
-        else:
-            # Balance cost and quality
-            return RoutingResult(
-                decision=RoutingDecision.CLOUD,
-                strategy=DeploymentStrategy.CLOUD,
-                model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
-                confidence=0.6,
-                reasoning="Balanced cost-quality trade-off favors cloud",
-            )
+        # Balance cost and quality
+        return RoutingResult(
+            decision=RoutingDecision.CLOUD,
+            strategy=DeploymentStrategy.CLOUD,
+            model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
+            confidence=0.6,
+            reasoning="Balanced cost-quality trade-off favors cloud",
+        )
 
     async def _route_by_quality(
-        self, criteria: RoutingCriteria, request: AIRequest
+        self,
+        criteria: RoutingCriteria,
+        request: AIRequest,
     ) -> RoutingResult:
         """Route based on model quality requirements."""
         requires_advanced_capabilities = False
@@ -430,7 +438,7 @@ class HybridAI(AIBase):
                 ModelCapability.CODE_GENERATION,
             }
             requires_advanced_capabilities = bool(
-                set(criteria.model_capabilities) & advanced_caps
+                set(criteria.model_capabilities) & advanced_caps,
             )
 
         if requires_advanced_capabilities:
@@ -442,7 +450,7 @@ class HybridAI(AIBase):
                 reasoning="Advanced capabilities require cloud deployment",
             )
 
-        elif criteria.min_quality_score and criteria.min_quality_score > 0.9:
+        if criteria.min_quality_score and criteria.min_quality_score > 0.9:
             return RoutingResult(
                 decision=RoutingDecision.CLOUD,
                 strategy=DeploymentStrategy.CLOUD,
@@ -451,15 +459,14 @@ class HybridAI(AIBase):
                 reasoning="High quality requirement favors cloud models",
             )
 
-        else:
-            # Edge can handle general quality requirements
-            return RoutingResult(
-                decision=RoutingDecision.EDGE,
-                strategy=DeploymentStrategy.EDGE,
-                model=self.settings.edge_models.get("smart", "lfm2"),
-                confidence=0.7,
-                reasoning="General quality requirements can be met by edge models",
-            )
+        # Edge can handle general quality requirements
+        return RoutingResult(
+            decision=RoutingDecision.EDGE,
+            strategy=DeploymentStrategy.EDGE,
+            model=self.settings.edge_models.get("smart", "lfm2"),
+            confidence=0.7,
+            reasoning="General quality requirements can be met by edge models",
+        )
 
     async def _route_by_performance(
         self,
@@ -493,15 +500,14 @@ class HybridAI(AIBase):
                 reasoning=f"Edge performance score ({edge_score:.2f}) better than cloud ({cloud_score:.2f})",
                 estimated_latency_ms=int(edge_latency),
             )
-        else:
-            return RoutingResult(
-                decision=RoutingDecision.CLOUD,
-                strategy=DeploymentStrategy.CLOUD,
-                model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
-                confidence=min(0.95, cloud_score / (cloud_score + edge_score)),
-                reasoning=f"Cloud performance score ({cloud_score:.2f}) better than edge ({edge_score:.2f})",
-                estimated_latency_ms=int(cloud_latency),
-            )
+        return RoutingResult(
+            decision=RoutingDecision.CLOUD,
+            strategy=DeploymentStrategy.CLOUD,
+            model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
+            confidence=min(0.95, cloud_score / (cloud_score + edge_score)),
+            reasoning=f"Cloud performance score ({cloud_score:.2f}) better than edge ({edge_score:.2f})",
+            estimated_latency_ms=int(cloud_latency),
+        )
 
     async def _route_by_availability(self, criteria: RoutingCriteria) -> RoutingResult:
         """Route based on provider availability."""
@@ -517,7 +523,7 @@ class HybridAI(AIBase):
                 confidence=0.9,
                 reasoning="Cloud unavailable, routing to edge",
             )
-        elif cloud_available and not edge_available:
+        if cloud_available and not edge_available:
             return RoutingResult(
                 decision=RoutingDecision.CLOUD,
                 strategy=DeploymentStrategy.CLOUD,
@@ -525,7 +531,7 @@ class HybridAI(AIBase):
                 confidence=0.9,
                 reasoning="Edge unavailable, routing to cloud",
             )
-        elif edge_available and cloud_available:
+        if edge_available and cloud_available:
             # Both available, prefer edge for lower dependency
             return RoutingResult(
                 decision=RoutingDecision.EDGE,
@@ -534,11 +540,13 @@ class HybridAI(AIBase):
                 confidence=0.7,
                 reasoning="Both available, preferring edge for independence",
             )
-        else:
-            raise RuntimeError("Neither cloud nor edge deployment available")
+        msg = "Neither cloud nor edge deployment available"
+        raise RuntimeError(msg)
 
     async def _route_adaptive(
-        self, criteria: RoutingCriteria, request: AIRequest
+        self,
+        criteria: RoutingCriteria,
+        request: AIRequest,
     ) -> RoutingResult:
         """Adaptive routing based on learning from history."""
         # Simplified adaptive logic - would use ML in production
@@ -570,21 +578,23 @@ class HybridAI(AIBase):
                 confidence=edge_success_rate,
                 reasoning=f"Adaptive learning favors edge (success rate: {edge_success_rate:.2f})",
             )
-        else:
-            return RoutingResult(
-                decision=RoutingDecision.CLOUD,
-                strategy=DeploymentStrategy.CLOUD,
-                model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
-                confidence=cloud_success_rate,
-                reasoning=f"Adaptive learning favors cloud (success rate: {cloud_success_rate:.2f})",
-            )
+        return RoutingResult(
+            decision=RoutingDecision.CLOUD,
+            strategy=DeploymentStrategy.CLOUD,
+            model=self.settings.cloud_models.get("fast", "gpt-3.5-turbo"),
+            confidence=cloud_success_rate,
+            reasoning=f"Adaptive learning favors cloud (success rate: {cloud_success_rate:.2f})",
+        )
 
     async def _execute_cloud_request(
-        self, request: AIRequest, routing: RoutingResult
+        self,
+        request: AIRequest,
+        routing: RoutingResult,
     ) -> AIResponse:
         """Execute request using cloud adapter."""
         if not self._cloud_adapter:
-            raise RuntimeError("Cloud adapter not initialized")
+            msg = "Cloud adapter not initialized"
+            raise RuntimeError(msg)
 
         # Override model if routing specified one
         if routing.model != request.model:
@@ -604,11 +614,14 @@ class HybridAI(AIBase):
         return await self._cloud_adapter._generate_text(request)
 
     async def _execute_edge_request(
-        self, request: AIRequest, routing: RoutingResult
+        self,
+        request: AIRequest,
+        routing: RoutingResult,
     ) -> AIResponse:
         """Execute request using edge adapter."""
         if not self._edge_adapter:
-            raise RuntimeError("Edge adapter not initialized")
+            msg = "Edge adapter not initialized"
+            raise RuntimeError(msg)
 
         # Override model if routing specified one
         if routing.model != request.model:
@@ -625,7 +638,10 @@ class HybridAI(AIBase):
         return await self._edge_adapter._generate_text(request)
 
     async def _handle_fallback(
-        self, request: AIRequest, routing: RoutingResult, error: Exception
+        self,
+        request: AIRequest,
+        routing: RoutingResult,
+        error: Exception,
     ) -> AIResponse:
         """Handle fallback when primary strategy fails."""
         self.logger.warning(f"Primary strategy {routing.strategy} failed: {error}")
@@ -644,7 +660,7 @@ class HybridAI(AIBase):
             )
             return await self._execute_edge_request(request, edge_routing)
 
-        elif (
+        if (
             routing.strategy == DeploymentStrategy.EDGE
             and self.settings.cloud_fallback_enabled
         ):
@@ -658,9 +674,8 @@ class HybridAI(AIBase):
             )
             return await self._execute_cloud_request(request, cloud_routing)
 
-        else:
-            # No fallback available
-            raise error
+        # No fallback available
+        raise error
 
     async def _check_cloud_availability(self) -> bool:
         """Check if cloud provider is available."""
@@ -695,7 +710,10 @@ class HybridAI(AIBase):
         )
 
     async def _track_performance(
-        self, routing: RoutingResult, latency_ms: int, success: bool
+        self,
+        routing: RoutingResult,
+        latency_ms: int,
+        success: bool,
     ) -> None:
         """Track performance metrics for adaptive routing."""
         if not self.settings.track_performance:

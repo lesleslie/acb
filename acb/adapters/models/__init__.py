@@ -27,8 +27,8 @@ __all__ = [
     "ModelsAdapter",
     "ModelsSettings",
     "PydanticModelAdapter",
-    "SQLModelAdapter",
     "SQLAlchemyModelAdapter",
+    "SQLModelAdapter",
 ]
 
 
@@ -123,7 +123,8 @@ class ModelsAdapter(ModelsBase):
         return "pydantic"
 
     def get_adapter_for_model(
-        self, model_class: type[Any]
+        self,
+        model_class: type[Any],
     ) -> (
         PydanticModelAdapter[Any]
         | SQLModelAdapter[Any]
@@ -136,15 +137,15 @@ class ModelsAdapter(ModelsBase):
 
         if model_type == "sqlmodel":
             return self._get_sqlmodel_adapter()
-        elif model_type == "sqlalchemy":
+        if model_type == "sqlalchemy":
             return self._get_sqlalchemy_adapter()
-        elif model_type == "pydantic":
+        if model_type == "pydantic":
             return self._get_pydantic_adapter()
-        elif model_type == "redis_om":
+        if model_type == "redis_om":
             return self._get_redis_om_adapter()
-        elif model_type == "msgspec":
+        if model_type == "msgspec":
             return self._get_msgspec_adapter()
-        elif model_type == "attrs":
+        if model_type == "attrs":
             return self._get_attrs_adapter()
 
         return self._get_pydantic_adapter()

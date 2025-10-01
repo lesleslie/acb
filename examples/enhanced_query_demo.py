@@ -112,42 +112,42 @@ class UserRepository(Repository[User]):  # type: ignore[misc]
     async def find_active(self) -> list[User]:
         """Find active users."""
         result = await self.find_by_specification(ActiveUserSpec())
-        return t.cast(list[User], result)  # type: ignore[no-any-return]
+        return t.cast("list[User]", result)  # type: ignore[no-any-return]
 
     async def find_premium(self) -> list[User]:
         """Find premium users."""
         result = await self.find_by_specification(PremiumUserSpec())
-        return t.cast(list[User], result)  # type: ignore[no-any-return]
+        return t.cast("list[User]", result)  # type: ignore[no-any-return]
 
     async def find_active_premium(self) -> list[User]:
         """Find active premium users."""
         spec = ActiveUserSpec().and_(PremiumUserSpec())
         result = await self.find_by_specification(spec)
-        return t.cast(list[User], result)  # type: ignore[no-any-return]
+        return t.cast("list[User]", result)  # type: ignore[no-any-return]
 
     async def find_recent(self, days: int = 7) -> list[User]:
         """Find recently created users."""
         result = await self.find_by_specification(RecentUserSpec(days))
-        return t.cast(list[User], result)  # type: ignore[no-any-return]
+        return t.cast("list[User]", result)  # type: ignore[no-any-return]
 
     async def find_by_age_range(self, min_age: int, max_age: int) -> list[User]:
         """Find users within age range."""
         spec = range_spec("age", min_age, max_age)
         result = await self.find_by_specification(spec)
-        return t.cast(list[User], result)  # type: ignore[no-any-return]
+        return t.cast("list[User]", result)  # type: ignore[no-any-return]
 
     async def find_by_email_domain(self, domain: str) -> list[User]:
         """Find users with specific email domain."""
         spec = field("email").like(f"%@{domain}")
         result = await self.find_by_specification(spec)
-        return t.cast(list[User], result)  # type: ignore[no-any-return]
+        return t.cast("list[User]", result)  # type: ignore[no-any-return]
 
     async def find_inactive_users(self, days: int = 30) -> list[User]:
         """Find users who haven't logged in recently."""
         cutoff = datetime.now() - timedelta(days=days)
         spec = field("last_login").less_than(cutoff).or_(field("last_login").is_null())
         result = await self.find_by_specification(spec)
-        return t.cast(list[User], result)  # type: ignore[no-any-return]
+        return t.cast("list[User]", result)  # type: ignore[no-any-return]
 
     async def get_user_statistics(self) -> dict[str, t.Any]:
         """Get user statistics."""
@@ -279,16 +279,6 @@ async def demonstrate_enhanced_query_interface() -> None:
     # Caching examples
 
     # Real-world examples
-
-    print("✓ In-memory evaluation for testing")
-    print("✓ Batch operations for efficiency")
-    print("✓ Extensible and maintainable architecture")
-
-    print("\nChoose the right style for your use case:")
-    print("• Simple:        Basic CRUD operations")
-    print("• Repository:    Domain-specific business logic")
-    print("• Advanced:      Complex queries and joins")
-    print("• Specification: Composable business rules")
 
 
 if __name__ == "__main__":

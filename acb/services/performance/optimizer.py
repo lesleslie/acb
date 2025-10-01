@@ -5,6 +5,7 @@ with FastBlocks integration and ACB adapter compatibility.
 """
 
 import asyncio
+import contextlib
 import time
 import typing as t
 from dataclasses import dataclass, field
@@ -14,14 +15,13 @@ from pydantic import BaseModel, Field
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-
-from .._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 SERVICE_METADATA: t.Any = None
 
 try:
-    from ..discovery import (
+    from acb.services.discovery import (
         ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
@@ -156,7 +156,7 @@ class PerformanceOptimizer(ServiceBase):
         # Start background optimization if enabled
         if self._settings.background_optimization:
             self._optimization_task = asyncio.create_task(
-                self._background_optimization_loop()
+                self._background_optimization_loop(),
             )
 
         self.logger.info("Performance optimizer initialized")
@@ -165,10 +165,8 @@ class PerformanceOptimizer(ServiceBase):
         """Shutdown the performance optimizer."""
         if self._optimization_task:
             self._optimization_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._optimization_task
-            except asyncio.CancelledError:
-                pass
 
     async def _health_check(self) -> dict[str, t.Any]:
         """Health check for performance optimizer."""
@@ -220,7 +218,8 @@ class PerformanceOptimizer(ServiceBase):
             if cached_result is not None:
                 duration = (time.perf_counter() - start_time) * 1000
                 self.set_custom_metric(
-                    "cache_hits", self.get_custom_metric("cache_hits", 0) + 1
+                    "cache_hits",
+                    self.get_custom_metric("cache_hits", 0) + 1,
                 )
                 return OptimizationResult(
                     operation="cache_operation_hit",
@@ -241,7 +240,8 @@ class PerformanceOptimizer(ServiceBase):
 
             total_duration = (time.perf_counter() - start_time) * 1000
             self.set_custom_metric(
-                "cache_misses", self.get_custom_metric("cache_misses", 0) + 1
+                "cache_misses",
+                self.get_custom_metric("cache_misses", 0) + 1,
             )
 
             return OptimizationResult(
@@ -267,7 +267,9 @@ class PerformanceOptimizer(ServiceBase):
             )
 
     async def optimize_query_batch(
-        self, queries: list[str], parameters: list[dict[str, t.Any]] | None = None
+        self,
+        queries: list[str],
+        parameters: list[dict[str, t.Any]] | None = None,
     ) -> OptimizationResult:
         """Optimize batch query execution.
 
@@ -306,7 +308,7 @@ class PerformanceOptimizer(ServiceBase):
                 )
 
                 # Execute batch
-                for query, params in zip(batch_queries, batch_params):
+                for query, params in zip(batch_queries, batch_params, strict=False):
                     result = await self._sql_adapter.execute(query, params)
                     results.append(result)
 
@@ -343,9 +345,12 @@ class PerformanceOptimizer(ServiceBase):
             )
 
     def optimize_function(
-        self, cache_key_template: str | None = None, ttl: int | None = None
+        self,
+        cache_key_template: str | None = None,
+        ttl: int | None = None,
     ) -> t.Callable[
-        [t.Callable[..., t.Awaitable[t.Any]]], t.Callable[..., t.Awaitable[t.Any]]
+        [t.Callable[..., t.Awaitable[t.Any]]],
+        t.Callable[..., t.Awaitable[t.Any]],
     ]:
         """Decorator to optimize async functions with caching.
 
@@ -370,7 +375,8 @@ class PerformanceOptimizer(ServiceBase):
 
                     arg_str = str((args, sorted(kwargs.items())))
                     arg_hash = hashlib.md5(
-                        arg_str.encode(), usedforsecurity=False
+                        arg_str.encode(),
+                        usedforsecurity=False,
                     ).hexdigest()[:8]
                     cache_key = f"{cache_key}:{arg_hash}"
 
@@ -384,8 +390,8 @@ class PerformanceOptimizer(ServiceBase):
                 if result.success:
                     self.increment_requests()
                     return result.metadata.get("result")
-                else:
-                    raise RuntimeError(f"Function optimization failed: {result.error}")
+                msg = f"Function optimization failed: {result.error}"
+                raise RuntimeError(msg)
 
             return wrapper
 
@@ -404,7 +410,7 @@ class PerformanceOptimizer(ServiceBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Background optimization error: {e}")
+                self.logger.exception(f"Background optimization error: {e}")
                 await asyncio.sleep(60)  # Wait before retrying
 
     async def _perform_background_optimizations(self) -> None:
@@ -432,5 +438,5 @@ class PerformanceOptimizer(ServiceBase):
             )
 
         except Exception as e:
-            self.logger.error(f"Error in background optimizations: {e}")
+            self.logger.exception(f"Error in background optimizations: {e}")
             self.record_error(str(e))

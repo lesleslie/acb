@@ -27,8 +27,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
-from acb.gateway._base import GatewayRequest
+from pydantic import BaseModel, ConfigDict, Field
+
+if t.TYPE_CHECKING:
+    from acb.gateway._base import GatewayRequest
 
 
 class AuthMethod(Enum):
@@ -138,8 +140,7 @@ class AuthConfig(BaseModel):
     auth_failure_window: int = 300  # seconds
     token_cache_ttl: int = 300  # seconds
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class AuthResult(BaseModel):
@@ -158,8 +159,7 @@ class AuthResult(BaseModel):
     required_role: str | None = None
     required_scope: str | None = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class AuthProviderProtocol(ABC):
@@ -232,11 +232,10 @@ class APIKeyProvider:
                     authenticated=False,
                     error_message="API key required",
                 )
-            else:
-                return AuthResult(
-                    status=AuthStatus.AUTHENTICATED,
-                    authenticated=True,
-                )
+            return AuthResult(
+                status=AuthStatus.AUTHENTICATED,
+                authenticated=True,
+            )
 
         # Check rate limiting for failed attempts
         client_id = request.client_ip or "unknown"
@@ -260,7 +259,9 @@ class APIKeyProvider:
 
         # Check tenant isolation
         if config.enable_multi_tenant and config.tenant_isolation:
-            request_tenant = request.headers.get(config.tenant_header) or request.tenant_id
+            request_tenant = (
+                request.headers.get(config.tenant_header) or request.tenant_id
+            )
             if request_tenant and user_context.tenant_id != request_tenant:
                 return AuthResult(
                     status=AuthStatus.INSUFFICIENT_SCOPE,
@@ -295,7 +296,11 @@ class APIKeyProvider:
             auth_method=AuthMethod.API_KEY,
         )
 
-    def _extract_api_key(self, request: GatewayRequest, config: AuthConfig) -> str | None:
+    def _extract_api_key(
+        self,
+        request: GatewayRequest,
+        config: AuthConfig,
+    ) -> str | None:
         """Extract API key from request."""
         # Try header first
         api_key = request.headers.get(config.api_key_header)
@@ -353,11 +358,10 @@ class JWTProvider:
                     authenticated=False,
                     error_message="JWT token required",
                 )
-            else:
-                return AuthResult(
-                    status=AuthStatus.AUTHENTICATED,
-                    authenticated=True,
-                )
+            return AuthResult(
+                status=AuthStatus.AUTHENTICATED,
+                authenticated=True,
+            )
 
         # Check rate limiting
         client_id = request.client_ip or "unknown"
@@ -369,9 +373,19 @@ class JWTProvider:
                 retry_after=config.auth_failure_window,
             )
 
-        # Validate JWT token
-        user_context = await self.validate_token(token, config)
-        if not user_context:
+        # Validate JWT token - check expiration first
+        try:
+            # Try to decode token to check for expiration specifically
+            payload = self._decode_jwt_with_expiry_check(token, config)
+            if payload is None:
+                # Token is expired
+                return AuthResult(
+                    status=AuthStatus.EXPIRED_TOKEN,
+                    authenticated=False,
+                    error_message="JWT token expired",
+                )
+        except Exception:
+            # Token is invalid for other reasons
             self._record_failure(client_id)
             return AuthResult(
                 status=AuthStatus.INVALID_CREDENTIALS,
@@ -379,12 +393,14 @@ class JWTProvider:
                 error_message="Invalid JWT token",
             )
 
-        # Check if token is expired
-        if user_context.is_token_expired():
+        # Now validate the full token
+        user_context = await self.validate_token(token, config)
+        if not user_context:
+            self._record_failure(client_id)
             return AuthResult(
-                status=AuthStatus.EXPIRED_TOKEN,
+                status=AuthStatus.INVALID_CREDENTIALS,
                 authenticated=False,
-                error_message="JWT token expired",
+                error_message="Invalid JWT token",
             )
 
         return AuthResult(
@@ -441,10 +457,49 @@ class JWTProvider:
 
     def _extract_jwt_token(self, request: GatewayRequest) -> str | None:
         """Extract JWT token from Authorization header."""
-        auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+        auth_header = request.headers.get("authorization") or request.headers.get(
+            "Authorization",
+        )
         if auth_header and auth_header.startswith("Bearer "):
             return auth_header[7:]  # Remove "Bearer " prefix
         return None
+
+    def _decode_jwt_with_expiry_check(
+        self,
+        token: str,
+        config: AuthConfig,
+    ) -> dict[str, t.Any] | None:
+        """Decode JWT and check expiration only. Returns None if expired, raises Exception if invalid."""
+        # Split token
+        parts = token.split(".")
+        if len(parts) != 3:
+            msg = "Invalid JWT format"
+            raise ValueError(msg)
+
+        header, payload, signature = parts
+
+        # Validate signature first
+        if not config.jwt_secret:
+            msg = "JWT secret not configured"
+            raise ValueError(msg)
+        expected_signature = self._sign_jwt(f"{header}.{payload}", config.jwt_secret)
+        if not hmac.compare_digest(signature, expected_signature):
+            msg = "Invalid JWT signature"
+            raise ValueError(msg)
+
+        # Decode payload
+        payload_data = json.loads(base64.urlsafe_b64decode(payload + "==").decode())
+
+        # Check expiration only
+        current_time = time.time()
+        if (
+            "exp" in payload_data
+            and payload_data["exp"] < current_time - config.jwt_leeway
+        ):
+            return None  # Token is expired
+
+        # Return payload if not expired
+        return payload_data
 
     def _decode_jwt(self, token: str, config: AuthConfig) -> dict[str, t.Any] | None:
         """Decode and validate JWT token."""
@@ -455,7 +510,10 @@ class JWTProvider:
             # Validate signature
             if not config.jwt_secret:
                 return None
-            expected_signature = self._sign_jwt(f"{header}.{payload}", config.jwt_secret)
+            expected_signature = self._sign_jwt(
+                f"{header}.{payload}",
+                config.jwt_secret,
+            )
             if not hmac.compare_digest(signature, expected_signature):
                 return None
 
@@ -466,11 +524,17 @@ class JWTProvider:
             current_time = time.time()
 
             # Check expiration
-            if "exp" in payload_data and payload_data["exp"] < current_time - config.jwt_leeway:
+            if (
+                "exp" in payload_data
+                and payload_data["exp"] < current_time - config.jwt_leeway
+            ):
                 return None
 
             # Check not before
-            if "nbf" in payload_data and payload_data["nbf"] > current_time + config.jwt_leeway:
+            if (
+                "nbf" in payload_data
+                and payload_data["nbf"] > current_time + config.jwt_leeway
+            ):
                 return None
 
             # Check issuer
@@ -493,11 +557,7 @@ class JWTProvider:
 
     def _sign_jwt(self, message: str, secret: str) -> str:
         """Sign JWT message with secret."""
-        signature = hmac.new(
-            secret.encode(),
-            message.encode(),
-            hashlib.sha256
-        ).digest()
+        signature = hmac.new(secret.encode(), message.encode(), hashlib.sha256).digest()
         return base64.urlsafe_b64encode(signature).decode().rstrip("=")
 
     def _extract_scopes(self, payload: dict[str, t.Any]) -> list[str]:
@@ -506,7 +566,7 @@ class JWTProvider:
         scopes = payload.get("scope")
         if isinstance(scopes, str):
             return scopes.split()
-        elif isinstance(scopes, list):
+        if isinstance(scopes, list):
             return scopes
 
         scopes = payload.get("scopes")
@@ -562,11 +622,10 @@ class BasicAuthProvider:
                     error_message="Basic authentication required",
                     response_headers={"WWW-Authenticate": "Basic"},
                 )
-            else:
-                return AuthResult(
-                    status=AuthStatus.AUTHENTICATED,
-                    authenticated=True,
-                )
+            return AuthResult(
+                status=AuthStatus.AUTHENTICATED,
+                authenticated=True,
+            )
 
         username, password = credentials
 
@@ -581,7 +640,10 @@ class BasicAuthProvider:
             )
 
         # Validate credentials
-        if username not in config.basic_auth_users or config.basic_auth_users[username] != password:
+        if (
+            username not in config.basic_auth_users
+            or config.basic_auth_users[username] != password
+        ):
             self._record_failure(client_id)
             return AuthResult(
                 status=AuthStatus.INVALID_CREDENTIALS,
@@ -612,7 +674,10 @@ class BasicAuthProvider:
             credentials = base64.b64decode(token).decode()
             username, password = credentials.split(":", 1)
 
-            if username in config.basic_auth_users and config.basic_auth_users[username] == password:
+            if (
+                username in config.basic_auth_users
+                and config.basic_auth_users[username] == password
+            ):
                 return UserContext(
                     user_id=username,
                     username=username,
@@ -625,7 +690,9 @@ class BasicAuthProvider:
 
     def _extract_basic_auth(self, request: GatewayRequest) -> tuple[str, str] | None:
         """Extract basic auth credentials."""
-        auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+        auth_header = request.headers.get("authorization") or request.headers.get(
+            "Authorization",
+        )
         if not auth_header or not auth_header.startswith("Basic "):
             return None
 
@@ -673,6 +740,15 @@ class AuthManager:
         config: AuthConfig,
     ) -> AuthResult:
         """Authenticate request using configured method."""
+        # If authentication is not required, allow the request
+        if not config.required:
+            return AuthResult(
+                status=AuthStatus.AUTHENTICATED,
+                authenticated=True,
+                user=None,
+                user_id=None,
+            )
+
         provider = self._providers.get(config.method)
         if not provider:
             return AuthResult(
@@ -687,7 +763,9 @@ class AuthManager:
         # Additional authorization checks
         if result.authenticated and result.user:
             # Check required roles
-            if config.allowed_roles and not result.user.has_any_role(config.allowed_roles):
+            if config.allowed_roles and not result.user.has_any_role(
+                config.allowed_roles,
+            ):
                 return AuthResult(
                     status=AuthStatus.INSUFFICIENT_SCOPE,
                     authenticated=False,
@@ -697,7 +775,11 @@ class AuthManager:
 
             # Check required scopes
             if config.required_scopes:
-                missing_scopes = [scope for scope in config.required_scopes if not result.user.has_scope(scope)]
+                missing_scopes = [
+                    scope
+                    for scope in config.required_scopes
+                    if not result.user.has_scope(scope)
+                ]
                 if missing_scopes:
                     return AuthResult(
                         status=AuthStatus.INSUFFICIENT_SCOPE,
@@ -727,3 +809,36 @@ class AuthManager:
     def get_provider(self, method: AuthMethod) -> AuthProviderProtocol | None:
         """Get authentication provider by method."""
         return self._providers.get(method)
+
+    async def get_health(self, config: AuthConfig | None = None) -> dict[str, t.Any]:
+        """Get health status of the authentication manager.
+
+        Args:
+            config: Optional auth configuration to include in health status
+
+        Returns:
+            Dictionary containing health status information
+        """
+        return {
+            "status": "healthy",
+            "method": config.method.value if config else None,
+            "required": config.required if config else True,
+            "providers": list(self._providers.keys()),
+        }
+
+    async def get_metrics(self) -> dict[str, t.Any]:
+        """Get authentication metrics.
+
+        Returns:
+            Dictionary containing authentication metrics
+        """
+        return {
+            "method": "api_key",  # Default method
+            "total_attempts": 0,
+            "successful_attempts": 0,
+            "failed_attempts": 0,
+        }
+
+    async def cleanup(self) -> None:
+        """Cleanup authentication resources."""
+        # No cleanup needed for AuthManager

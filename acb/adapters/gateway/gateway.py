@@ -149,7 +149,8 @@ class RequestProcessor(GatewayBase):
             auth_result: AuthResult | None = None
             if self.settings.gateway_config.auth_enabled:
                 auth_result = await self.auth_middleware.authenticate_request(
-                    request.headers, required_scopes
+                    request.headers,
+                    required_scopes,
                 )
 
                 if not auth_result.success:
@@ -161,11 +162,12 @@ class RequestProcessor(GatewayBase):
             if self.settings.gateway_config.rate_limiting_enabled:
                 user_id = auth_result.user_id if auth_result else None
                 rate_limit_key = self.rate_limit_middleware.get_rate_limit_key(
-                    user_id, request.ip_address
+                    user_id,
+                    request.ip_address,
                 )
 
                 rate_limit_result = await self.rate_limit_middleware.check_rate_limit(
-                    rate_limit_key
+                    rate_limit_key,
                 )
 
                 if rate_limit_result.status == RateLimitStatus.RATE_LIMITED:
@@ -182,13 +184,13 @@ class RequestProcessor(GatewayBase):
                     {
                         "X-RateLimit-Remaining": str(rate_limit_result.remaining),
                         "X-RateLimit-Reset": str(int(rate_limit_result.reset_time)),
-                    }
+                    },
                 )
 
             # 4. Quota checking (if usage tracking enabled)
             if self.settings.gateway_config.usage_tracking_enabled and auth_result:
                 quota_ok, quota_error = await self.usage_tracker.check_quota(
-                    auth_result.user_id
+                    auth_result.user_id,
                 )
 
                 if not quota_ok:
@@ -364,7 +366,10 @@ class APIGateway(GatewayBase):
 
         try:
             self.processor.auth_middleware.add_api_key(
-                api_key, user_id, scopes, metadata
+                api_key,
+                user_id,
+                scopes,
+                metadata,
             )
             return True
         except Exception as e:
@@ -397,7 +402,7 @@ class APIGateway(GatewayBase):
             return {"error": "Analytics not available"}
 
         endpoint_analytics = await self.usage_analytics.get_endpoint_analytics(
-            time_range_hours
+            time_range_hours,
         )
         user_analytics = await self.usage_analytics.get_user_analytics(time_range_hours)
 
@@ -417,7 +422,7 @@ class APIGateway(GatewayBase):
         """Comprehensive health check."""
         base_health = await super().health_check()
 
-        health_data = {
+        return {
             **base_health,
             "components": {
                 "processor": self.processor.status.value
@@ -441,8 +446,6 @@ class APIGateway(GatewayBase):
             },
             "running": self._running,
         }
-
-        return health_data
 
 
 # Convenience function for ACB integration

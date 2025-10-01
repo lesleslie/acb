@@ -24,16 +24,16 @@ import typing as t
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.gateway._base import GatewayRequest, GatewayResponse
 
 
 class SecurityLevel(Enum):
     """Security enforcement levels."""
 
-    BASIC = "basic"        # Basic security headers
+    BASIC = "basic"  # Basic security headers
     STANDARD = "standard"  # Standard security headers + CORS
-    STRICT = "strict"      # Strict security headers + CSP
+    STRICT = "strict"  # Strict security headers + CSP
     PARANOID = "paranoid"  # Maximum security enforcement
 
 
@@ -59,7 +59,7 @@ class SecurityViolation:
     source_ip: str | None = None
     user_agent: str | None = None
     request_path: str | None = None
-    timestamp: float = field(default_factory=lambda: __import__('time').time())
+    timestamp: float = field(default_factory=lambda: __import__("time").time())
 
     # Additional context
     headers: dict[str, str] = field(default_factory=dict)
@@ -80,8 +80,12 @@ class SecurityHeaders(BaseModel):
     enable_csp: bool = True
     csp_default_src: list[str] = Field(default_factory=lambda: ["'self'"])
     csp_script_src: list[str] = Field(default_factory=lambda: ["'self'"])
-    csp_style_src: list[str] = Field(default_factory=lambda: ["'self'", "'unsafe-inline'"])
-    csp_img_src: list[str] = Field(default_factory=lambda: ["'self'", "data:", "https:"])
+    csp_style_src: list[str] = Field(
+        default_factory=lambda: ["'self'", "'unsafe-inline'"],
+    )
+    csp_img_src: list[str] = Field(
+        default_factory=lambda: ["'self'", "data:", "https:"],
+    )
     csp_font_src: list[str] = Field(default_factory=lambda: ["'self'"])
     csp_connect_src: list[str] = Field(default_factory=lambda: ["'self'"])
     csp_media_src: list[str] = Field(default_factory=lambda: ["'self'"])
@@ -113,14 +117,13 @@ class SecurityHeaders(BaseModel):
             "microphone": [],
             "geolocation": [],
             "payment": [],
-        }
+        },
     )
 
     # Additional security headers
     custom_headers: dict[str, str] = Field(default_factory=dict)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class CORSConfig(BaseModel):
@@ -144,7 +147,7 @@ class CORSConfig(BaseModel):
             CORSMethod.PATCH,
             CORSMethod.HEAD,
             CORSMethod.OPTIONS,
-        ]
+        ],
     )
 
     # Allowed headers
@@ -156,7 +159,7 @@ class CORSConfig(BaseModel):
             "Content-Type",
             "Authorization",
             "X-Requested-With",
-        ]
+        ],
     )
 
     # Exposed headers
@@ -169,8 +172,7 @@ class CORSConfig(BaseModel):
     # Per-tenant CORS
     tenant_specific_cors: dict[str, dict[str, t.Any]] = Field(default_factory=dict)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class SecurityConfig(BaseModel):
@@ -197,7 +199,7 @@ class SecurityConfig(BaseModel):
             r".*scanner.*",
             r".*nikto.*",
             r".*sqlmap.*",
-        ]
+        ],
     )
 
     # IP filtering
@@ -215,8 +217,7 @@ class SecurityConfig(BaseModel):
     log_all_requests: bool = False
     log_security_events: bool = True
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class SecurityHeadersManager:
@@ -298,7 +299,9 @@ class SecurityHeadersManager:
         permissions_directives = []
         for feature, allowed_origins in self._config.permissions_policy.items():
             if allowed_origins:
-                permissions_directives.append(f"{feature}=({' '.join(allowed_origins)})")
+                permissions_directives.append(
+                    f"{feature}=({' '.join(allowed_origins)})",
+                )
             else:
                 permissions_directives.append(f"{feature}=()")
 
@@ -339,12 +342,18 @@ class CORSManager:
 
         # Check requested method
         requested_method = request.headers.get("access-control-request-method")
-        if requested_method and not self._is_method_allowed(requested_method, cors_config):
+        if requested_method and not self._is_method_allowed(
+            requested_method,
+            cors_config,
+        ):
             return self._create_cors_error_response("Method not allowed")
 
         # Check requested headers
         requested_headers = request.headers.get("access-control-request-headers")
-        if requested_headers and not self._are_headers_allowed(requested_headers, cors_config):
+        if requested_headers and not self._are_headers_allowed(
+            requested_headers,
+            cors_config,
+        ):
             return self._create_cors_error_response("Headers not allowed")
 
         # Create preflight response
@@ -397,11 +406,15 @@ class CORSManager:
 
         # Access-Control-Allow-Headers
         if cors_config.allowed_headers:
-            response.headers["Access-Control-Allow-Headers"] = ", ".join(cors_config.allowed_headers)
+            response.headers["Access-Control-Allow-Headers"] = ", ".join(
+                cors_config.allowed_headers,
+            )
 
         # Access-Control-Expose-Headers
         if cors_config.exposed_headers:
-            response.headers["Access-Control-Expose-Headers"] = ", ".join(cors_config.exposed_headers)
+            response.headers["Access-Control-Expose-Headers"] = ", ".join(
+                cors_config.exposed_headers,
+            )
 
         # Access-Control-Max-Age
         if request.method.value == "OPTIONS":
@@ -468,7 +481,10 @@ class SecurityValidator:
         self._config = config
         self._violations: list[SecurityViolation] = []
 
-    async def validate_request(self, request: GatewayRequest) -> list[SecurityViolation]:
+    async def validate_request(
+        self,
+        request: GatewayRequest,
+    ) -> list[SecurityViolation]:
         """Validate request for security issues."""
         violations = []
 
@@ -477,56 +493,65 @@ class SecurityValidator:
 
         # Check request size
         if request.content_length > self._config.max_request_size:
-            violations.append(SecurityViolation(
-                violation_type="request_size",
-                severity="medium",
-                description=f"Request size {request.content_length} exceeds limit {self._config.max_request_size}",
-                source_ip=request.client_ip,
-                user_agent=request.user_agent,
-                request_path=request.path,
-            ))
+            violations.append(
+                SecurityViolation(
+                    violation_type="request_size",
+                    severity="medium",
+                    description=f"Request size {request.content_length} exceeds limit {self._config.max_request_size}",
+                    source_ip=request.client_ip,
+                    user_agent=request.user_agent,
+                    request_path=request.path,
+                ),
+            )
 
         # Check user agent
         if self._config.block_suspicious_user_agents and request.user_agent:
             for pattern in self._config.suspicious_user_agents:
                 try:
                     if re.search(pattern, request.user_agent, re.IGNORECASE):
-                        violations.append(SecurityViolation(
-                            violation_type="suspicious_user_agent",
-                            severity="high",
-                            description=f"Suspicious user agent detected: {request.user_agent}",
-                            source_ip=request.client_ip,
-                            user_agent=request.user_agent,
-                            request_path=request.path,
-                        ))
+                        violations.append(
+                            SecurityViolation(
+                                violation_type="suspicious_user_agent",
+                                severity="high",
+                                description=f"Suspicious user agent detected: {request.user_agent}",
+                                source_ip=request.client_ip,
+                                user_agent=request.user_agent,
+                                request_path=request.path,
+                            ),
+                        )
                         break
                 except re.error:
                     continue
 
         # Check IP filtering
-        if self._config.enable_ip_filtering:
-            if request.client_ip:
-                if request.client_ip in self._config.blocked_ips:
-                    violations.append(SecurityViolation(
+        if self._config.enable_ip_filtering and request.client_ip:
+            if request.client_ip in self._config.blocked_ips:
+                violations.append(
+                    SecurityViolation(
                         violation_type="blocked_ip",
                         severity="high",
                         description=f"Request from blocked IP: {request.client_ip}",
                         source_ip=request.client_ip,
                         user_agent=request.user_agent,
                         request_path=request.path,
-                    ))
+                    ),
+                )
 
-                if (self._config.allowed_ips and
-                    request.client_ip not in self._config.allowed_ips and
-                    request.client_ip not in self._config.trusted_proxies):
-                    violations.append(SecurityViolation(
+            if (
+                self._config.allowed_ips
+                and request.client_ip not in self._config.allowed_ips
+                and request.client_ip not in self._config.trusted_proxies
+            ):
+                violations.append(
+                    SecurityViolation(
                         violation_type="ip_not_allowed",
                         severity="medium",
                         description=f"Request from non-allowed IP: {request.client_ip}",
                         source_ip=request.client_ip,
                         user_agent=request.user_agent,
                         request_path=request.path,
-                    ))
+                    ),
+                )
 
         # Check for common attack patterns in URL
         attack_patterns = [
@@ -541,14 +566,16 @@ class SecurityValidator:
         for pattern, violation_type, severity in attack_patterns:
             try:
                 if re.search(pattern, request.path, re.IGNORECASE):
-                    violations.append(SecurityViolation(
-                        violation_type=violation_type,
-                        severity=severity,
-                        description=f"Potential {violation_type} detected in path",
-                        source_ip=request.client_ip,
-                        user_agent=request.user_agent,
-                        request_path=request.path,
-                    ))
+                    violations.append(
+                        SecurityViolation(
+                            violation_type=violation_type,
+                            severity=severity,
+                            description=f"Potential {violation_type} detected in path",
+                            source_ip=request.client_ip,
+                            user_agent=request.user_agent,
+                            request_path=request.path,
+                        ),
+                    )
             except re.error:
                 continue
 

@@ -34,7 +34,7 @@ class ServiceDependencyError(Exception):
         self.service_id = service_id
         self.missing_deps = missing_deps
         super().__init__(
-            f"Service '{service_id}' has unresolved dependencies: {', '.join(missing_deps)}"
+            f"Service '{service_id}' has unresolved dependencies: {', '.join(missing_deps)}",
         )
 
 
@@ -56,7 +56,9 @@ class ServiceRegistry:
         self._initialized = False
 
     async def register_service(
-        self, service: "ServiceBase", config: "ServiceConfig | None" = None
+        self,
+        service: "ServiceBase",
+        config: "ServiceConfig | None" = None,
     ) -> None:
         """Register a service with the registry.
 
@@ -70,7 +72,7 @@ class ServiceRegistry:
 
             if service_id in self._services:
                 self.logger.warning(
-                    f"Service '{service_id}' already registered, replacing"
+                    f"Service '{service_id}' already registered, replacing",
                 )
 
             self._services[service_id] = service
@@ -90,7 +92,7 @@ class ServiceRegistry:
         async with self._registry_lock:
             if service_id not in self._services:
                 self.logger.warning(
-                    f"Service '{service_id}' not found for unregistration"
+                    f"Service '{service_id}' not found for unregistration",
                 )
                 return
 
@@ -190,8 +192,8 @@ class ServiceRegistry:
                     await service.initialize()
                     self.logger.info(f"Initialized service: {service_id}")
                 except Exception as e:
-                    self.logger.error(
-                        f"Failed to initialize service '{service_id}': {e}"
+                    self.logger.exception(
+                        f"Failed to initialize service '{service_id}': {e}",
                     )
                     # Continue with other services but log the failure
                     continue
@@ -214,8 +216,8 @@ class ServiceRegistry:
                         await service.shutdown()
                         self.logger.info(f"Shut down service: {service_id}")
                     except Exception as e:
-                        self.logger.error(
-                            f"Error shutting down service '{service_id}': {e}"
+                        self.logger.exception(
+                            f"Error shutting down service '{service_id}': {e}",
                         )
                         # Continue with other services
 
@@ -270,7 +272,7 @@ class ServiceRegistry:
 
         # Resolve dependencies using topological sort
         ordered_services = self._topological_sort(
-            [s[1] for s in services_with_priority]
+            [s[1] for s in services_with_priority],
         )
 
         self._initialization_order = ordered_services
@@ -297,7 +299,7 @@ class ServiceRegistry:
                         in_degree[service_id] += 1
                     else:
                         self.logger.warning(
-                            f"Service '{service_id}' depends on '{dep}' which is not registered"
+                            f"Service '{service_id}' depends on '{dep}' which is not registered",
                         )
 
         # Kahn's algorithm for topological sorting
@@ -317,7 +319,7 @@ class ServiceRegistry:
         if len(result) != len(service_ids):
             remaining = [s for s in service_ids if s not in result]
             self.logger.error(
-                f"Circular dependency detected among services: {remaining}"
+                f"Circular dependency detected among services: {remaining}",
             )
             # Add remaining services anyway to prevent complete failure
             result.extend(remaining)
@@ -347,7 +349,8 @@ def get_registry() -> ServiceRegistry:
 
 
 async def register_service(
-    service: "ServiceBase", config: "ServiceConfig | None" = None
+    service: "ServiceBase",
+    config: "ServiceConfig | None" = None,
 ) -> None:
     """Register a service with the global registry."""
     registry = get_registry()

@@ -52,12 +52,10 @@ class RateLimiter(ABC):
     @abstractmethod
     async def check_rate_limit(self, key: str) -> RateLimitResult:
         """Check if request is within rate limit."""
-        pass
 
     @abstractmethod
     async def reset_limit(self, key: str) -> bool:
         """Reset rate limit for a key."""
-        pass
 
 
 class TokenBucketLimiter(RateLimiter):
@@ -98,14 +96,13 @@ class TokenBucketLimiter(RateLimiter):
                         reset_time=current_time
                         + (bucket_size - bucket["tokens"]) / replenish_rate,
                     )
-                else:
-                    retry_after = int((1 - bucket["tokens"]) / replenish_rate) + 1
-                    return RateLimitResult(
-                        status=RateLimitStatus.RATE_LIMITED,
-                        remaining=0,
-                        retry_after=retry_after,
-                        reset_time=current_time + retry_after,
-                    )
+                retry_after = int((1 - bucket["tokens"]) / replenish_rate) + 1
+                return RateLimitResult(
+                    status=RateLimitStatus.RATE_LIMITED,
+                    remaining=0,
+                    retry_after=retry_after,
+                    reset_time=current_time + retry_after,
+                )
 
             except Exception as e:
                 return RateLimitResult(
@@ -153,7 +150,7 @@ class SlidingWindowLimiter(RateLimiter):
                 if len(self._windows[key]) < self.config.requests_per_window:
                     self._windows[key].append(current_time)
                     remaining = self.config.requests_per_window - len(
-                        self._windows[key]
+                        self._windows[key],
                     )
                     oldest_request = (
                         min(self._windows[key]) if self._windows[key] else current_time
@@ -165,19 +162,17 @@ class SlidingWindowLimiter(RateLimiter):
                         remaining=remaining,
                         reset_time=reset_time,
                     )
-                else:
-                    oldest_request = min(self._windows[key])
-                    retry_after = (
-                        int(oldest_request + self.config.window_seconds - current_time)
-                        + 1
-                    )
+                oldest_request = min(self._windows[key])
+                retry_after = (
+                    int(oldest_request + self.config.window_seconds - current_time) + 1
+                )
 
-                    return RateLimitResult(
-                        status=RateLimitStatus.RATE_LIMITED,
-                        remaining=0,
-                        retry_after=max(1, retry_after),
-                        reset_time=oldest_request + self.config.window_seconds,
-                    )
+                return RateLimitResult(
+                    status=RateLimitStatus.RATE_LIMITED,
+                    remaining=0,
+                    retry_after=max(1, retry_after),
+                    reset_time=oldest_request + self.config.window_seconds,
+                )
 
             except Exception as e:
                 return RateLimitResult(
@@ -273,12 +268,13 @@ class RateLimitMiddleware(GatewayBase):
             return False
 
     def get_rate_limit_key(
-        self, user_id: str | None, ip_address: str | None = None
+        self,
+        user_id: str | None,
+        ip_address: str | None = None,
     ) -> str:
         """Generate rate limit key from user ID and/or IP address."""
         if user_id:
             return f"user:{user_id}"
-        elif ip_address:
+        if ip_address:
             return f"ip:{ip_address}"
-        else:
-            return "anonymous"
+        return "anonymous"

@@ -7,10 +7,12 @@ allowing the universal query interface to work with Pydantic classes.
 from __future__ import annotations
 
 import inspect
-from collections.abc import Sequence
-from typing import Any, TypeVar, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Any, TypeVar, Union, get_args, get_origin
 
 from acb.adapters.models._attrs import ModelAdapter
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 # Import pydantic or create fallback
 try:
@@ -63,13 +65,15 @@ class PydanticModelAdapter(ModelAdapter[T]):
     def _manual_serialize(self, instance: T) -> dict[str, Any]:
         if hasattr(instance, "model_fields"):
             return self._serialize_fields(instance, list(instance.model_fields.keys()))
-        elif hasattr(instance, "__fields__"):
+        if hasattr(instance, "__fields__"):
             return self._serialize_fields(instance, list(instance.__fields__.keys()))
 
         return self._serialize_all_attributes(instance)
 
     def _serialize_fields(
-        self, instance: T, field_names: Sequence[str]
+        self,
+        instance: T,
+        field_names: Sequence[str],
     ) -> dict[str, Any]:
         result = {}
         for field_name in field_names:
@@ -82,7 +86,7 @@ class PydanticModelAdapter(ModelAdapter[T]):
         result = {}
         for attr_name in dir(instance):
             if not attr_name.startswith("_") and not callable(
-                getattr(instance, attr_name)
+                getattr(instance, attr_name),
             ):
                 value = getattr(instance, attr_name)
                 result[attr_name] = self._serialize_value(value)
@@ -131,7 +135,7 @@ class PydanticModelAdapter(ModelAdapter[T]):
 
         # Check for modern get_collection_name method (Pydantic v2+ recommended)
         if hasattr(model_class, "get_collection_name") and callable(
-            getattr(model_class, "get_collection_name")
+            model_class.get_collection_name,
         ):
             return model_class.get_collection_name()  # type: ignore[attr-defined, no-any-return]
 
@@ -151,7 +155,7 @@ class PydanticModelAdapter(ModelAdapter[T]):
                 model_class.model_config.get(  # type: ignore[attr-defined]
                     "collection_name",
                     getattr(model_class, "__name__", "unknown").lower(),
-                )
+                ),
             )  # type: ignore[no-any-return]
 
         return str(getattr(model_class, "__name__", "unknown").lower())  # type: ignore[no-any-return]
@@ -160,11 +164,11 @@ class PydanticModelAdapter(ModelAdapter[T]):
         field_mapping = {}
         if hasattr(model_class, "model_fields"):
             field_mapping = self._extract_field_mapping_from_fields(
-                model_class.model_fields.items()  # type: ignore[attr-defined]
+                model_class.model_fields.items(),  # type: ignore[attr-defined]
             )
         elif hasattr(model_class, "__fields__"):
             field_mapping = self._extract_field_mapping_from_fields(
-                model_class.__fields__.items()  # type: ignore[attr-defined]
+                model_class.__fields__.items(),  # type: ignore[attr-defined]
             )
         elif hasattr(model_class, "__annotations__"):
             field_mapping = {name: name for name in model_class.__annotations__}
@@ -204,7 +208,7 @@ class PydanticModelAdapter(ModelAdapter[T]):
     def _get_configured_primary_key(self, model_class: type[T]) -> str | None:
         # Check for modern get_primary_key method (Pydantic v2+ recommended)
         if hasattr(model_class, "get_primary_key") and callable(
-            getattr(model_class, "get_primary_key")
+            model_class.get_primary_key,
         ):
             return model_class.get_primary_key()  # type: ignore[attr-defined, no-any-return]
 
@@ -247,7 +251,9 @@ class PydanticModelAdapter(ModelAdapter[T]):
             field_info = model_class.__fields__.get(field_name)  # type: ignore[attr-defined]
             if field_info:
                 field_type = getattr(
-                    field_info, "annotation", getattr(field_info, "type_", Any)
+                    field_info,
+                    "annotation",
+                    getattr(field_info, "type_", Any),
                 )
                 return self._unwrap_optional_type(field_type)  # type: ignore[no-any-return]
         elif hasattr(model_class, "__annotations__"):
@@ -258,12 +264,7 @@ class PydanticModelAdapter(ModelAdapter[T]):
 
     def _unwrap_optional_type(self, field_type: Any) -> type:
         origin = get_origin(field_type)
-        if origin is Union:
-            args = get_args(field_type)
-            non_none_args = [arg for arg in args if arg is not type(None)]
-            if len(non_none_args) == 1:
-                return non_none_args[0]  # type: ignore[return-value, no-any-return]
-        elif (
+        if origin is Union or (
             hasattr(field_type, "__class__")
             and field_type.__class__.__name__ == "UnionType"
         ):

@@ -5,6 +5,7 @@ with integration to ACB's cache adapters.
 """
 
 import asyncio
+import contextlib
 import time
 import typing as t
 from dataclasses import dataclass
@@ -15,14 +16,13 @@ from pydantic import Field
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-
-from .._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 SERVICE_METADATA: t.Any = None
 
 try:
-    from ..discovery import (
+    from acb.services.discovery import (
         ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
@@ -140,7 +140,7 @@ class CacheOptimizer(ServiceBase):
             Cache = import_adapter("cache")
             self._cache_adapter = depends.get(Cache)
         except Exception as e:
-            self.logger.error(f"Failed to get cache adapter: {e}")
+            self.logger.exception(f"Failed to get cache adapter: {e}")
             raise
 
         # Start optimization task
@@ -152,10 +152,8 @@ class CacheOptimizer(ServiceBase):
         """Shutdown the cache optimizer."""
         if self._optimization_task:
             self._optimization_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._optimization_task
-            except asyncio.CancelledError:
-                pass
 
     async def _health_check(self) -> dict[str, t.Any]:
         """Health check for cache optimizer."""
@@ -274,7 +272,7 @@ class CacheOptimizer(ServiceBase):
             return cleared_count
 
         except Exception as e:
-            self.logger.error(f"Failed to clear expired cache entries: {e}")
+            self.logger.exception(f"Failed to clear expired cache entries: {e}")
             return 0
 
     async def optimize_memory_usage(self) -> dict[str, t.Any]:
@@ -315,7 +313,7 @@ class CacheOptimizer(ServiceBase):
             return optimization_results
 
         except Exception as e:
-            self.logger.error(f"Memory optimization failed: {e}")
+            self.logger.exception(f"Memory optimization failed: {e}")
             return {"error": str(e)}
 
     def get_cache_stats(self) -> CacheStats:
@@ -355,14 +353,16 @@ class CacheOptimizer(ServiceBase):
             if access_frequency > self._settings.usage_threshold_for_promotion:
                 # Frequently accessed - longer TTL
                 return self._settings.max_ttl_seconds
-            else:
-                # Less frequently accessed - shorter TTL
-                return self._settings.default_ttl_seconds
+            # Less frequently accessed - shorter TTL
+            return self._settings.default_ttl_seconds
 
         return self._settings.default_ttl_seconds
 
     def _update_usage_pattern(
-        self, key: str, operation: str, tags: list[str] | None = None
+        self,
+        key: str,
+        operation: str,
+        tags: list[str] | None = None,
     ) -> None:
         """Update usage patterns for a cache key.
 
@@ -450,7 +450,8 @@ class CacheOptimizer(ServiceBase):
         """
         # Sort by last accessed time
         sorted_patterns = sorted(
-            self._usage_patterns.items(), key=lambda x: x[1]["last_accessed"]
+            self._usage_patterns.items(),
+            key=lambda x: x[1]["last_accessed"],
         )
 
         # Evict oldest 20%
@@ -482,5 +483,5 @@ class CacheOptimizer(ServiceBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Cache optimization loop error: {e}")
+                self.logger.exception(f"Cache optimization loop error: {e}")
                 await asyncio.sleep(60)  # Wait before retrying

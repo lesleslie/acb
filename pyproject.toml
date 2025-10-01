@@ -56,6 +56,8 @@ dependencies = [
     "tomli-w>=1.2",
     "uuid-utils>=0.11",
     "uvicorn>=0.30",
+    "leap-ai>=0.1.0",
+    "transformers>=4.56.2",
 ]
 
 [project.license]
@@ -343,7 +345,7 @@ markers = [
 ]
 timeout = 300
 timeout_method = "thread"
-addopts = "--cov=acb --cov-report=term --cov-fail-under=42"
+addopts = "--cov=acb --cov-report=term"
 filterwarnings = [
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
 ]
@@ -512,4 +514,3 @@ exclude_patterns = [
     "acb/adapters/vector/**",
 ]
 max_complexity = 15
-

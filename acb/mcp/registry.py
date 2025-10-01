@@ -11,7 +11,7 @@ from acb.logger import Logger
 class ComponentRegistry:
     """Registry for ACB components exposed through MCP."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the component registry."""
         self.config: Config = depends.get(Config)
         self.logger: Logger = depends.get(Logger)
@@ -76,7 +76,7 @@ class ComponentRegistry:
                     self._adapters[adapter_name] = adapter_instance
                 except Exception as e:
                     self.logger.warning(
-                        f"Failed to register adapter {adapter_name}: {e}"
+                        f"Failed to register adapter {adapter_name}: {e}",
                     )
 
             self.logger.debug(f"Registered {len(self._adapters)} adapters")

@@ -150,73 +150,73 @@ from .scheduler import (
 )
 
 __all__ = [
-    # Core queue classes
-    "QueueBase",
-    "QueueCapability",
-    "QueueMetadata",
-    "QueueSettings",
-    "TaskData",
-    "TaskHandler",
-    "TaskResult",
-    "TaskStatus",
-    "TaskPriority",
+    "RABBITMQ_AVAILABLE",
+    "REDIS_AVAILABLE",
     "FunctionalTaskHandler",
-    "WorkerMetrics",
-    "QueueMetrics",
-    "create_task_data",
-    "generate_queue_id",
-    "task_handler",
     # Memory queue implementation
     "MemoryQueue",
     "MemoryQueueSettings",
-    "create_memory_queue",
-    # Redis queue implementation (if available)
-    "RedisQueue",
-    "RedisQueueSettings",
-    "create_redis_queue",
-    "REDIS_AVAILABLE",
-    # RabbitMQ queue implementation (if available)
-    "RabbitMQQueue",
-    "RabbitMQQueueSettings",
-    "create_rabbitmq_queue",
-    "RABBITMQ_AVAILABLE",
-    # Task scheduling
-    "ScheduleRule",
-    "TaskScheduler",
-    "create_scheduler",
-    "parse_cron_expression",
-    "scheduled_task",
+    # Core queue classes
+    "QueueBase",
+    "QueueCapability",
+    "QueueContext",
+    "QueueMetadata",
+    "QueueMetrics",
     # Discovery system
     "QueueProviderDescriptor",
     "QueueProviderNotFound",
     "QueueProviderNotInstalled",
     "QueueProviderStatus",
-    "QueueContext",
+    # Service integration
+    "QueueService",
+    "QueueServiceSettings",
+    "QueueSettings",
+    # RabbitMQ queue implementation (if available)
+    "RabbitMQQueue",
+    "RabbitMQQueueSettings",
+    # Redis queue implementation (if available)
+    "RedisQueue",
+    "RedisQueueSettings",
+    # Task scheduling
+    "ScheduleRule",
+    "TaskData",
+    "TaskHandler",
+    "TaskPriority",
+    "TaskResult",
+    "TaskScheduler",
+    "TaskStatus",
+    "WorkerMetrics",
     "apply_queue_provider_overrides",
+    "create_memory_queue",
     "create_queue_instance",
     "create_queue_instance_async",
     "create_queue_metadata_template",
+    "create_rabbitmq_queue",
+    "create_redis_queue",
+    "create_scheduler",
+    "create_task_data",
     "disable_queue_provider",
     "enable_queue_provider",
     "generate_provider_id",
+    "generate_queue_id",
     "get_queue_provider_class",
     "get_queue_provider_descriptor",
     "get_queue_provider_info",
     "get_queue_provider_override",
+    "get_queue_service",
     "import_queue_provider",
     "initialize_queue_discovery",
     "list_available_queue_providers",
     "list_enabled_queue_providers",
     "list_queue_providers",
     "list_queue_providers_by_capability",
+    "parse_cron_expression",
     "queue_context",
     "register_queue_providers",
-    "try_import_queue_provider",
-    # Service integration
-    "QueueService",
-    "QueueServiceSettings",
-    "get_queue_service",
+    "scheduled_task",
     "setup_queue_service",
+    "task_handler",
+    "try_import_queue_provider",
 ]
 
 
@@ -286,7 +286,7 @@ class QueueService(ServiceBase):
         settings_class="QueueServiceSettings",
     )
 
-    def __init__(self, settings: QueueServiceSettings | None = None):
+    def __init__(self, settings: QueueServiceSettings | None = None) -> None:
         super().__init__()
         self._settings = settings or QueueServiceSettings()
         self._queue: QueueBase | None = None
@@ -319,7 +319,8 @@ class QueueService(ServiceBase):
 
         # Create and start queue
         self._queue = create_queue_instance(
-            self._settings.queue_provider, queue_settings
+            self._settings.queue_provider,
+            queue_settings,
         )
         await self._queue.start()
 
@@ -369,7 +370,8 @@ class QueueService(ServiceBase):
     async def enqueue(self, task: TaskData) -> str:
         """Enqueue a task."""
         if not self._queue:
-            raise RuntimeError("Queue not available")
+            msg = "Queue not available"
+            raise RuntimeError(msg)
         return await self._queue.enqueue(task)
 
     async def create_task(
@@ -382,15 +384,21 @@ class QueueService(ServiceBase):
     ) -> str:
         """Create and enqueue a task."""
         if not self._queue:
-            raise RuntimeError("Queue not available")
+            msg = "Queue not available"
+            raise RuntimeError(msg)
         return await self._queue.create_task(
-            task_type, payload, queue_name, priority, **kwargs
+            task_type,
+            payload,
+            queue_name,
+            priority,
+            **kwargs,
         )
 
     def register_handler(self, task_type: str, handler: TaskHandler) -> None:
         """Register a task handler."""
         if not self._queue:
-            raise RuntimeError("Queue not available")
+            msg = "Queue not available"
+            raise RuntimeError(msg)
         self._queue.register_handler(task_type, handler)
 
     def schedule_cron(
@@ -402,7 +410,8 @@ class QueueService(ServiceBase):
     ) -> UUID:
         """Schedule a task using cron expression."""
         if not self._scheduler:
-            raise RuntimeError("Scheduler not available")
+            msg = "Scheduler not available"
+            raise RuntimeError(msg)
         return self._scheduler.schedule_cron(cron_expression, task_type, name, **kwargs)
 
     def schedule_interval(
@@ -414,9 +423,13 @@ class QueueService(ServiceBase):
     ) -> UUID:
         """Schedule a task at regular intervals."""
         if not self._scheduler:
-            raise RuntimeError("Scheduler not available")
+            msg = "Scheduler not available"
+            raise RuntimeError(msg)
         return self._scheduler.schedule_interval(
-            interval_seconds, task_type, name, **kwargs
+            interval_seconds,
+            task_type,
+            name,
+            **kwargs,
         )
 
 

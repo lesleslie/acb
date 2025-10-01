@@ -49,57 +49,69 @@ class AWSFeatureStoreSettings(FeatureStoreSettings):
     region_name: str = Field(default="us-east-1", description="AWS region name")
     aws_access_key_id: str | None = Field(default=None, description="AWS access key ID")
     aws_secret_access_key: str | None = Field(
-        default=None, description="AWS secret access key"
+        default=None,
+        description="AWS secret access key",
     )  # pragma: allowlist secret
     profile_name: str | None = Field(default=None, description="AWS profile name")
 
     # SageMaker Feature Store settings
     feature_group_prefix: str = Field(
-        default="acb", description="Feature group name prefix"
+        default="acb",
+        description="Feature group name prefix",
     )
     s3_bucket: str = Field(description="S3 bucket for offline store")
     s3_prefix: str = Field(
-        default="feature-store", description="S3 prefix for offline store"
+        default="feature-store",
+        description="S3 prefix for offline store",
     )
 
     # Online store settings (DynamoDB)
     enable_online_store: bool = Field(default=True, description="Enable online store")
     online_store_kms_key_id: str | None = Field(
-        default=None, description="KMS key for online store encryption"
+        default=None,
+        description="KMS key for online store encryption",
     )
 
     # Offline store settings (S3)
     enable_offline_store: bool = Field(default=True, description="Enable offline store")
     offline_store_kms_key_id: str | None = Field(
-        default=None, description="KMS key for offline store encryption"
+        default=None,
+        description="KMS key for offline store encryption",
     )
     data_catalog_config: dict[str, str] | None = Field(
-        default=None, description="Glue data catalog configuration"
+        default=None,
+        description="Glue data catalog configuration",
     )
 
     # Security settings
     role_arn: str = Field(description="IAM role ARN for SageMaker Feature Store")
     enable_encryption: bool = Field(
-        default=True, description="Enable encryption at rest"
+        default=True,
+        description="Enable encryption at rest",
     )
 
     # Performance settings
     throughput_mode: str = Field(
-        default="OnDemand", description="DynamoDB throughput mode"
+        default="OnDemand",
+        description="DynamoDB throughput mode",
     )
     read_capacity_units: int | None = Field(
-        default=None, description="DynamoDB read capacity units"
+        default=None,
+        description="DynamoDB read capacity units",
     )
     write_capacity_units: int | None = Field(
-        default=None, description="DynamoDB write capacity units"
+        default=None,
+        description="DynamoDB write capacity units",
     )
 
     # Monitoring settings
     enable_data_quality_monitoring: bool = Field(
-        default=True, description="Enable data quality monitoring"
+        default=True,
+        description="Enable data quality monitoring",
     )
     monitoring_schedule_name: str | None = Field(
-        default=None, description="Data quality monitoring schedule"
+        default=None,
+        description="Data quality monitoring schedule",
     )
 
 
@@ -117,8 +129,9 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             settings: AWS-specific configuration settings
         """
         if not AWS_AVAILABLE:
+            msg = "AWS SDK not available. Install with: uv add 'boto3>=1.26.0'"
             raise ImportError(
-                "AWS SDK not available. Install with: uv add 'boto3>=1.26.0'"
+                msg,
             )
 
         super().__init__(settings or AWSFeatureStoreSettings())
@@ -144,7 +157,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 {
                     "aws_access_key_id": self.aws_settings.aws_access_key_id,
                     "aws_secret_access_key": self.aws_settings.aws_secret_access_key,
-                }
+                },
             )
         elif self.aws_settings.profile_name:
             session_kwargs["profile_name"] = self.aws_settings.profile_name
@@ -174,7 +187,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
         """Refresh the feature groups cache."""
         try:
             response = self._sagemaker_client.list_feature_groups(
-                NameContains=self.aws_settings.feature_group_prefix
+                NameContains=self.aws_settings.feature_group_prefix,
             )
 
             for fg_summary in response.get("FeatureGroupSummaries", []):
@@ -182,7 +195,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
                 # Get detailed feature group information
                 fg_detail = self._sagemaker_client.describe_feature_group(
-                    FeatureGroupName=fg_name
+                    FeatureGroupName=fg_name,
                 )
 
                 self._feature_groups_cache[fg_name] = fg_detail
@@ -192,13 +205,15 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
     # Feature Serving Methods
     async def get_online_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from AWS Feature Store online store for real-time serving."""
         start_time = datetime.now()
 
         if not self.aws_settings.enable_online_store:
-            raise RuntimeError("Online store is not enabled")
+            msg = "Online store is not enabled"
+            raise RuntimeError(msg)
 
         try:
             feature_vectors = []
@@ -208,7 +223,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
                 # Group features by feature group
                 features_by_group = self._group_features_by_feature_group(
-                    request.feature_names
+                    request.feature_names,
                 )
 
                 for feature_group, feature_names in features_by_group.items():
@@ -238,7 +253,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                         entity_id=entity_id,
                         features=features,
                         timestamp=request.timestamp or datetime.now(),
-                    )
+                    ),
                 )
 
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -249,16 +264,19 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get online features: {e}")
+            msg = f"Failed to get online features: {e}"
+            raise RuntimeError(msg)
 
     async def get_offline_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from AWS Feature Store offline store for batch processing."""
         start_time = datetime.now()
 
         if not self.aws_settings.enable_offline_store:
-            raise RuntimeError("Offline store is not enabled")
+            msg = "Offline store is not enabled"
+            raise RuntimeError(msg)
 
         try:
             # Create entity DataFrame for batch feature retrieval
@@ -267,7 +285,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     "entity_id": request.entity_ids,
                     "event_time": [request.timestamp or datetime.now()]
                     * len(request.entity_ids),
-                }
+                },
             )
 
             # Use historical features method
@@ -290,7 +308,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                         entity_id=str(row.get("entity_id", "")),
                         features=features,
                         timestamp=row.get("event_time"),
-                    )
+                    ),
                 )
 
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -301,7 +319,8 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get offline features: {e}")
+            msg = f"Failed to get offline features: {e}"
+            raise RuntimeError(msg)
 
     async def get_historical_features(
         self,
@@ -320,7 +339,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             result_df = entity_df.copy()
 
             # For each feature group, simulate querying the offline store
-            for feature_group, features in features_by_group.items():
+            for features in features_by_group.values():
                 for feature_name in features:
                     # In practice, this would query Athena or use SageMaker Processing
                     result_df[feature_name] = f"historical_{feature_name}_value"
@@ -328,10 +347,12 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             return result_df
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get historical features: {e}")
+            msg = f"Failed to get historical features: {e}"
+            raise RuntimeError(msg)
 
     def _group_features_by_feature_group(
-        self, feature_names: list[str]
+        self,
+        feature_names: list[str],
     ) -> dict[str, list[str]]:
         """Group feature names by their feature group."""
         features_by_group: dict[str, list[str]] = {}
@@ -364,7 +385,8 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
     # Feature Ingestion Methods
     async def ingest_features(
-        self, request: FeatureIngestionRequest
+        self,
+        request: FeatureIngestionRequest,
     ) -> FeatureIngestionResponse:
         """Ingest features into AWS Feature Store."""
         start_time = datetime.now()
@@ -423,7 +445,10 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
     async def ingest_batch_features(
-        self, feature_group: str, df: pd.DataFrame, mode: str = "append"
+        self,
+        feature_group: str,
+        df: pd.DataFrame,
+        mode: str = "append",
     ) -> FeatureIngestionResponse:
         """Ingest batch features from DataFrame."""
         start_time = datetime.now()
@@ -438,7 +463,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                         {
                             "FeatureName": column,
                             "ValueAsString": str(value),
-                        }
+                        },
                     )
                 records.append(record)
 
@@ -483,10 +508,12 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             await self._refresh_feature_groups_cache()
             return list(self._feature_groups_cache.keys())
         except Exception as e:
-            raise RuntimeError(f"Failed to list feature groups: {e}")
+            msg = f"Failed to list feature groups: {e}"
+            raise RuntimeError(msg)
 
     async def list_features(
-        self, feature_group: str | None = None
+        self,
+        feature_group: str | None = None,
     ) -> list[FeatureDefinition]:
         """List available features."""
         try:
@@ -506,13 +533,14 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                                 description=fg_detail.get("Description"),
                                 tags=self._convert_aws_tags(fg_detail.get("Tags", [])),
                                 created_at=fg_detail.get("CreationTime"),
-                            )
+                            ),
                         )
 
             return features
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list features: {e}")
+            msg = f"Failed to list features: {e}"
+            raise RuntimeError(msg)
 
     def _convert_aws_tags(self, aws_tags: list[dict[str, str]]) -> dict[str, str]:
         """Convert AWS tags format to dictionary."""
@@ -537,13 +565,17 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                             created_at=fg_detail.get("CreationTime"),
                         )
 
-            raise ValueError(f"Feature {feature_name} not found")
+            msg = f"Feature {feature_name} not found"
+            raise ValueError(msg)
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get feature definition: {e}")
+            msg = f"Failed to get feature definition: {e}"
+            raise RuntimeError(msg)
 
     async def search_features(
-        self, query: str, filters: dict[str, Any] | None = None
+        self,
+        query: str,
+        filters: dict[str, Any] | None = None,
     ) -> list[FeatureDefinition]:
         """Search features by query and filters."""
         all_features = await self.list_features()
@@ -573,7 +605,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     {
                         "FeatureName": feature.name,
                         "FeatureType": feature.data_type or "String",
-                    }
+                    },
                 )
 
             # Add required record identifier and event time features
@@ -581,7 +613,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 [
                     {"FeatureName": "entity_id", "FeatureType": "String"},
                     {"FeatureName": "event_time", "FeatureType": "String"},
-                ]
+                ],
             )
 
             # Create feature group configuration
@@ -600,7 +632,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 online_store_config = {"EnableOnlineStore": True}
                 if self.aws_settings.online_store_kms_key_id:
                     online_store_config["SecurityConfig"] = {
-                        "KmsKeyId": self.aws_settings.online_store_kms_key_id
+                        "KmsKeyId": self.aws_settings.online_store_kms_key_id,
                     }
                 create_kwargs["OnlineStoreConfig"] = online_store_config
 
@@ -634,7 +666,8 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"Failed to create feature group: {e}")
+            msg = f"Failed to create feature group: {e}"
+            raise RuntimeError(msg)
 
     async def register_feature(self, feature: FeatureDefinition) -> bool:
         """Register a new feature definition."""
@@ -661,7 +694,9 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
         )
 
     async def detect_feature_drift(
-        self, feature_name: str, reference_window: int = 7
+        self,
+        feature_name: str,
+        reference_window: int = 7,
     ) -> float:
         """Detect feature drift compared to reference window."""
         return 0.08
@@ -676,7 +711,10 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
         return ["v1.0", "v1.1"]
 
     async def get_feature_at_timestamp(
-        self, feature_name: str, entity_id: str, timestamp: datetime
+        self,
+        feature_name: str,
+        entity_id: str,
+        timestamp: datetime,
     ) -> FeatureValue | None:
         """Get feature value at specific timestamp."""
         return FeatureValue(
@@ -692,7 +730,10 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
         return True
 
     async def get_feature_for_experiment(
-        self, feature_name: str, entity_id: str, experiment_id: str
+        self,
+        feature_name: str,
+        entity_id: str,
+        experiment_id: str,
     ) -> Any:
         """Get feature value for A/B testing experiment."""
         return "experiment_value"
@@ -774,9 +815,9 @@ FeatureStore = AWSFeatureStoreAdapter
 FeatureStoreSettings = AWSFeatureStoreSettings
 
 __all__ = [
+    "MODULE_METADATA",
     "AWSFeatureStoreAdapter",
     "AWSFeatureStoreSettings",
     "FeatureStore",
     "FeatureStoreSettings",
-    "MODULE_METADATA",
 ]

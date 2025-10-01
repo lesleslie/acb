@@ -12,7 +12,7 @@ from .registry import ComponentRegistry
 class WorkflowOrchestrator:
     """Orchestrator for complex workflows across ACB components."""
 
-    def __init__(self, component_registry: ComponentRegistry):
+    def __init__(self, component_registry: ComponentRegistry) -> None:
         """Initialize the workflow orchestrator."""
         self.component_registry = component_registry
         self.logger: Logger = depends.get(Logger)
@@ -30,7 +30,9 @@ class WorkflowOrchestrator:
         self.logger.info("ACB Workflow Orchestrator initialized")
 
     async def execute_workflow(
-        self, workflow_name: str, steps: list[dict[str, Any]]
+        self,
+        workflow_name: str,
+        steps: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Execute a complex workflow consisting of multiple steps."""
         try:
@@ -49,14 +51,19 @@ class WorkflowOrchestrator:
                 # Execute the step based on component type
                 if component_type == "action":
                     result = await self._execute_action_step(
-                        component_name, action, parameters
+                        component_name,
+                        action,
+                        parameters,
                     )
                 elif component_type == "adapter":
                     result = await self._execute_adapter_step(
-                        component_name, action, parameters
+                        component_name,
+                        action,
+                        parameters,
                     )
                 else:
-                    raise ValueError(f"Unsupported component type: {component_type}")
+                    msg = f"Unsupported component type: {component_type}"
+                    raise ValueError(msg)
 
                 results[step_name] = result
 
@@ -67,23 +74,28 @@ class WorkflowOrchestrator:
                 "results": results,
             }
         except Exception as e:
-            self.logger.error(f"Workflow {workflow_name} failed: {e}")
+            self.logger.exception(f"Workflow {workflow_name} failed: {e}")
             return {"workflow": workflow_name, "status": "failed", "error": str(e)}
 
     async def _execute_action_step(
-        self, action_category: str, action_name: str, parameters: dict[str, Any]
+        self,
+        action_category: str,
+        action_name: str,
+        parameters: dict[str, Any],
     ) -> Any:
         """Execute an action step in a workflow."""
         actions = self.component_registry.get_actions()
         category = actions.get(action_category)
 
         if not category:
-            raise ValueError(f"Action category '{action_category}' not found")
+            msg = f"Action category '{action_category}' not found"
+            raise ValueError(msg)
 
         action = getattr(category, action_name, None)
         if not action:
+            msg = f"Action '{action_name}' not found in category '{action_category}'"
             raise ValueError(
-                f"Action '{action_name}' not found in category '{action_category}'"
+                msg,
             )
 
         # Execute the action
@@ -95,17 +107,22 @@ class WorkflowOrchestrator:
         return result
 
     async def _execute_adapter_step(
-        self, adapter_name: str, method_name: str, parameters: dict[str, Any]
+        self,
+        adapter_name: str,
+        method_name: str,
+        parameters: dict[str, Any],
     ) -> Any:
         """Execute an adapter step in a workflow."""
         adapter = self.component_registry.get_adapter(adapter_name)
         if not adapter:
-            raise ValueError(f"Adapter '{adapter_name}' not found")
+            msg = f"Adapter '{adapter_name}' not found"
+            raise ValueError(msg)
 
         method = getattr(adapter, method_name, None)
         if not method:
+            msg = f"Method '{method_name}' not found in adapter '{adapter_name}'"
             raise ValueError(
-                f"Method '{method_name}' not found in adapter '{adapter_name}'"
+                msg,
             )
 
         # Execute the method
@@ -117,7 +134,9 @@ class WorkflowOrchestrator:
         return result
 
     async def start_background_workflow(
-        self, workflow_id: str, steps: list[dict[str, Any]]
+        self,
+        workflow_id: str,
+        steps: list[dict[str, Any]],
     ) -> None:
         """Start a workflow in the background."""
 

@@ -110,13 +110,16 @@ class OpenAIFunctionReasoningSettings(ReasoningBaseSettings):
 class FunctionCallTracker:
     """Tracks function calls during reasoning."""
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger) -> None:
         self.logger = logger
         self.calls: list[dict[str, t.Any]] = []
         self.call_count = 0
 
     def record_call(
-        self, function_name: str, arguments: dict[str, t.Any], result: t.Any
+        self,
+        function_name: str,
+        arguments: dict[str, t.Any],
+        result: t.Any,
     ) -> None:
         """Record a function call."""
         self.call_count += 1
@@ -134,7 +137,7 @@ class FunctionCallTracker:
         """Get summary of all function calls."""
         return {
             "total_calls": len(self.calls),
-            "unique_functions": len(set(call["function_name"] for call in self.calls)),
+            "unique_functions": len({call["function_name"] for call in self.calls}),
             "function_names": [call["function_name"] for call in self.calls],
             "call_details": self.calls,
         }
@@ -144,7 +147,9 @@ class Reasoning(ReasoningBase):
     """OpenAI function calling reasoning adapter."""
 
     def __init__(
-        self, settings: OpenAIFunctionReasoningSettings | None = None, **kwargs: t.Any
+        self,
+        settings: OpenAIFunctionReasoningSettings | None = None,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(**kwargs)
         self._settings = settings or OpenAIFunctionReasoningSettings()
@@ -152,9 +157,12 @@ class Reasoning(ReasoningBase):
         self._conversation_histories: dict[str, list[dict[str, t.Any]]] = {}
 
         if not OPENAI_AVAILABLE:
-            raise ImportError(
+            msg = (
                 "OpenAI is not installed. Please install with: "
                 "pip install 'acb[reasoning]' or pip install openai"
+            )
+            raise ImportError(
+                msg,
             )
 
     async def _create_client(self) -> AsyncOpenAI:
@@ -166,18 +174,17 @@ class Reasoning(ReasoningBase):
 
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
+                msg = "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
                 raise ValueError(
-                    "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
+                    msg,
                 )
 
-        client = AsyncOpenAI(
+        return AsyncOpenAI(
             api_key=api_key,
             base_url=self._settings.base_url,
             timeout=self._settings.timeout_seconds,
             max_retries=self._settings.max_retries,
         )
-
-        return client
 
     async def _reason(self, request: ReasoningRequest) -> ReasoningResponse:
         """Perform reasoning using OpenAI function calling."""
@@ -190,20 +197,32 @@ class Reasoning(ReasoningBase):
 
             if request.strategy == ReasoningStrategy.FUNCTION_CALLING:
                 response = await self._function_calling_reasoning(
-                    request, client, function_tracker, reasoning_chain
+                    request,
+                    client,
+                    function_tracker,
+                    reasoning_chain,
                 )
             elif request.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
                 response = await self._chain_of_thought_reasoning(
-                    request, client, function_tracker, reasoning_chain
+                    request,
+                    client,
+                    function_tracker,
+                    reasoning_chain,
                 )
             elif request.strategy == ReasoningStrategy.REACT:
                 response = await self._react_reasoning(
-                    request, client, function_tracker, reasoning_chain
+                    request,
+                    client,
+                    function_tracker,
+                    reasoning_chain,
                 )
             else:
                 # Default to function calling (OpenAI's strength)
                 response = await self._function_calling_reasoning(
-                    request, client, function_tracker, reasoning_chain
+                    request,
+                    client,
+                    function_tracker,
+                    reasoning_chain,
                 )
 
             # Calculate metrics
@@ -214,19 +233,21 @@ class Reasoning(ReasoningBase):
 
             if not response.confidence_score:
                 response.confidence_score = await calculate_confidence_score(
-                    response.reasoning_chain
+                    response.reasoning_chain,
                 )
 
             # Update conversation history if enabled
             if request.enable_memory and request.context:
                 await self._update_conversation_history(
-                    request.context.session_id, request.query, response.final_answer
+                    request.context.session_id,
+                    request.query,
+                    response.final_answer,
                 )
 
             return response
 
         except Exception as e:
-            self.logger.error(f"OpenAI function calling reasoning failed: {e}")
+            self.logger.exception(f"OpenAI function calling reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=reasoning_chain,
@@ -264,7 +285,7 @@ class Reasoning(ReasoningBase):
                     "functions_count": len(functions),
                 },
                 reasoning="Set up function calling with available tools and conversation context",
-            )
+            ),
         )
 
         final_answer = ""
@@ -306,14 +327,16 @@ class Reasoning(ReasoningBase):
                         ]
                         if message.tool_calls
                         else None,
-                    }
+                    },
                 )
 
                 # Check if function calls were made
                 if message.tool_calls:
                     # Execute function calls
                     tool_results = await self._execute_tool_calls(
-                        message.tool_calls, request.tools or [], function_tracker
+                        message.tool_calls,
+                        request.tools or [],
+                        function_tracker,
                     )
 
                     reasoning_chain.append(
@@ -327,22 +350,24 @@ class Reasoning(ReasoningBase):
                                         "arguments": tc.function.arguments,
                                     }
                                     for tc in message.tool_calls
-                                ]
+                                ],
                             },
                             output_data={"results": tool_results},
                             reasoning=f"Executed {len(message.tool_calls)} tool calls to gather information",
                             tools_used=[tc.function.name for tc in message.tool_calls],
-                        )
+                        ),
                     )
 
                     # Add tool results to messages
-                    for tool_call, result in zip(message.tool_calls, tool_results):
+                    for tool_call, result in zip(
+                        message.tool_calls, tool_results, strict=False
+                    ):
                         messages.append(
                             {
                                 "role": "tool",
                                 "tool_call_id": tool_call.id,
                                 "content": json.dumps(result),
-                            }
+                            },
                         )
 
                     call_count += 1
@@ -352,8 +377,8 @@ class Reasoning(ReasoningBase):
                     break
 
             except Exception as e:
-                self.logger.error(
-                    f"Error in function calling iteration {call_count}: {e}"
+                self.logger.exception(
+                    f"Error in function calling iteration {call_count}: {e}",
                 )
                 reasoning_chain.append(
                     ReasoningStep(
@@ -361,9 +386,9 @@ class Reasoning(ReasoningBase):
                         description="Error in function calling",
                         input_data={"iteration": call_count},
                         output_data={},
-                        reasoning=f"Error occurred during function calling: {str(e)}",
+                        reasoning=f"Error occurred during function calling: {e!s}",
                         error=str(e),
-                    )
+                    ),
                 )
                 break
 
@@ -422,7 +447,7 @@ Show your reasoning process explicitly at each step.
                 input_data={"query": request.query},
                 output_data={"messages_prepared": len(messages)},
                 reasoning="Prepared structured prompt for step-by-step reasoning",
-            )
+            ),
         )
 
         try:
@@ -443,7 +468,7 @@ Show your reasoning process explicitly at each step.
                     input_data={"query": request.query},
                     output_data={"response_length": len(final_answer)},
                     reasoning="Performed systematic step-by-step reasoning to reach conclusion",
-                )
+                ),
             )
 
             return ReasoningResponse(
@@ -455,7 +480,7 @@ Show your reasoning process explicitly at each step.
             )
 
         except Exception as e:
-            self.logger.error(f"Chain-of-thought reasoning failed: {e}")
+            self.logger.exception(f"Chain-of-thought reasoning failed: {e}")
             raise
 
     async def _react_reasoning(
@@ -469,7 +494,10 @@ Show your reasoning process explicitly at each step.
         if not request.tools:
             # Fall back to chain of thought if no tools
             return await self._chain_of_thought_reasoning(
-                request, client, function_tracker, reasoning_chain
+                request,
+                client,
+                function_tracker,
+                reasoning_chain,
             )
 
         # ReAct uses a specific prompt format
@@ -503,7 +531,7 @@ Available tools will be provided as function calls. Use them when you need to ga
                 input_data={"query": request.query, "tools_available": len(functions)},
                 output_data={"strategy": "react"},
                 reasoning="Prepared ReAct framework for reasoning and acting with available tools",
-            )
+            ),
         )
 
         step_count = 0
@@ -540,13 +568,15 @@ Available tools will be provided as function calls. Use them when you need to ga
                         ]
                         if message.tool_calls
                         else None,
-                    }
+                    },
                 )
 
                 if message.tool_calls:
                     # Execute tools (Act phase)
                     tool_results = await self._execute_tool_calls(
-                        message.tool_calls, request.tools, function_tracker
+                        message.tool_calls,
+                        request.tools,
+                        function_tracker,
                     )
 
                     reasoning_chain.append(
@@ -562,17 +592,19 @@ Available tools will be provided as function calls. Use them when you need to ga
                             output_data={"tool_results": tool_results},
                             reasoning="Executed tools based on reasoning analysis",
                             tools_used=[tc.function.name for tc in message.tool_calls],
-                        )
+                        ),
                     )
 
                     # Add tool results (Observe phase)
-                    for tool_call, result in zip(message.tool_calls, tool_results):
+                    for tool_call, result in zip(
+                        message.tool_calls, tool_results, strict=False
+                    ):
                         messages.append(
                             {
                                 "role": "tool",
                                 "tool_call_id": tool_call.id,
                                 "content": f"Observation: {json.dumps(result)}",
-                            }
+                            },
                         )
 
                     step_count += 1
@@ -587,7 +619,7 @@ Available tools will be provided as function calls. Use them when you need to ga
                             input_data={"steps_completed": step_count},
                             output_data={"final_answer": final_answer},
                             reasoning="Reached final conclusion through ReAct reasoning and acting process",
-                        )
+                        ),
                     )
 
                     return ReasoningResponse(
@@ -599,7 +631,7 @@ Available tools will be provided as function calls. Use them when you need to ga
                     )
 
             except Exception as e:
-                self.logger.error(f"Error in ReAct step {step_count}: {e}")
+                self.logger.exception(f"Error in ReAct step {step_count}: {e}")
                 break
 
         # If we exit the loop without a final answer
@@ -613,7 +645,8 @@ Available tools will be provided as function calls. Use them when you need to ga
         )
 
     async def _prepare_messages(
-        self, request: ReasoningRequest
+        self,
+        request: ReasoningRequest,
     ) -> list[dict[str, t.Any]]:
         """Prepare messages for OpenAI API call."""
         messages = []
@@ -713,7 +746,10 @@ Available tools will be provided as function calls. Use them when you need to ga
         return results
 
     async def _update_conversation_history(
-        self, session_id: str, query: str, response: str
+        self,
+        session_id: str,
+        query: str,
+        response: str,
     ) -> None:
         """Update conversation history for session."""
         if session_id not in self._conversation_histories:
@@ -785,4 +821,4 @@ Available tools will be provided as function calls. Use them when you need to ga
 
 
 # Export the adapter class
-__all__ = ["Reasoning", "OpenAIFunctionReasoningSettings", "MODULE_METADATA"]
+__all__ = ["MODULE_METADATA", "OpenAIFunctionReasoningSettings", "Reasoning"]

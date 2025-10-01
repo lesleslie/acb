@@ -47,7 +47,8 @@ class MockServiceProvider:
         self._metrics = {}
 
     def create_performance_service_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> AsyncMock:
         """Create a realistic performance service mock."""
         perf_mock = AsyncMock()
@@ -125,7 +126,8 @@ class MockServiceProvider:
         return perf_mock
 
     def create_health_service_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> AsyncMock:
         """Create a realistic health service mock."""
         health_mock = AsyncMock()
@@ -190,7 +192,8 @@ class MockServiceProvider:
         return health_mock
 
     def create_validation_service_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> AsyncMock:
         """Create a realistic validation service mock."""
         validation_mock = AsyncMock()
@@ -220,7 +223,7 @@ class MockServiceProvider:
                         "field": "test_field",
                         "message": "Validation failed",
                         "code": "INVALID_FORMAT",
-                    }
+                    },
                 )
 
             return {
@@ -265,7 +268,8 @@ class MockServiceProvider:
         return validation_mock
 
     def create_repository_service_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> AsyncMock:
         """Create a realistic repository service mock."""
         repo_mock = AsyncMock()
@@ -362,7 +366,9 @@ class MockServiceProvider:
 
     @asynccontextmanager
     async def mock_service_context(
-        self, service_type: str, behavior: dict[str, t.Any] | None = None
+        self,
+        service_type: str,
+        behavior: dict[str, t.Any] | None = None,
     ):
         """Context manager for temporary mock service."""
         # Create mock based on type

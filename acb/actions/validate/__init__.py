@@ -15,7 +15,9 @@ __all__: list[str] = ["validate"]
 class ValidationError(Exception):
     """Raised when input validation fails."""
 
-    def __init__(self, message: str, field: str | None = None, value: t.Any = None):
+    def __init__(
+        self, message: str, field: str | None = None, value: t.Any = None
+    ) -> None:
         super().__init__(message)
         self.field = field
         self.value = value
@@ -63,7 +65,7 @@ class Validate:
             True if email is valid, False otherwise
         """
         pattern = re.compile(  # REGEX OK: email validation
-            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
         )
         return bool(pattern.match(email))
 
@@ -113,7 +115,9 @@ class Validate:
 
         for pattern in Validate.SQL_INJECTION_PATTERNS:
             if re.search(
-                pattern, value_lower, re.IGNORECASE
+                pattern,
+                value_lower,
+                re.IGNORECASE,
             ):  # REGEX OK: SQL injection detection
                 return False
 
@@ -133,7 +137,9 @@ class Validate:
 
         for pattern in Validate.SCRIPT_INJECTION_PATTERNS:
             if re.search(
-                pattern, value_lower, re.IGNORECASE
+                pattern,
+                value_lower,
+                re.IGNORECASE,
             ):  # REGEX OK: XSS detection
                 return False
 
@@ -153,7 +159,9 @@ class Validate:
 
         for pattern in Validate.PATH_TRAVERSAL_PATTERNS:
             if re.search(
-                pattern, value_lower, re.IGNORECASE
+                pattern,
+                value_lower,
+                re.IGNORECASE,
             ):  # REGEX OK: path traversal detection
                 return False
 
@@ -161,7 +169,9 @@ class Validate:
 
     @staticmethod
     def length(
-        value: str, min_length: int | None = None, max_length: int | None = None
+        value: str,
+        min_length: int | None = None,
+        max_length: int | None = None,
     ) -> bool:
         """Validate string length.
 
@@ -176,10 +186,7 @@ class Validate:
         if min_length is not None and len(value) < min_length:
             return False
 
-        if max_length is not None and len(value) > max_length:
-            return False
-
-        return True
+        return not (max_length is not None and len(value) > max_length)
 
     @staticmethod
     def pattern(value: str, pattern: str) -> bool:
@@ -221,8 +228,7 @@ class Validate:
         """
         # Basic SQL quote escaping
         value = value.replace("'", "''")
-        value = value.replace('"', '""')
-        return value
+        return value.replace('"', '""')
 
 
 # Export an instance

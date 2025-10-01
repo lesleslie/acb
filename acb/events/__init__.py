@@ -109,66 +109,66 @@ from .subscriber import (
 __all__ = [
     # Core event classes
     "Event",
-    "EventMetadata",
-    "EventHandler",
-    "EventHandlerResult",
-    "EventSubscription",
-    "EventPublisherBase",
-    "TypedEventHandler",
-    "FunctionalEventHandler",
-    "EventStatus",
-    "EventPriority",
-    "EventDeliveryMode",
-    "generate_event_id",
-    "create_event",
-    "create_subscription",
-    "event_handler",
-    # Publisher classes
-    "EventPublisher",
-    "EventPublisherSettings",
-    "EventQueue",
-    "PublisherBackend",
-    "PublisherMetrics",
-    "create_event_publisher",
-    "event_publisher_context",
-    # Subscriber classes
-    "EventSubscriber",
     "EventBuffer",
+    "EventCapability",
+    "EventDeliveryMode",
     "EventFilter",
-    "EventRouter",
-    "ManagedSubscription",
-    "SubscriberSettings",
-    "SubscriptionMode",
-    "create_event_subscriber",
-    "event_subscriber_context",
+    "EventHandler",
+    "EventHandlerDescriptor",
     # Discovery system
     "EventHandlerMetadata",
-    "EventCapability",
-    "EventHandlerStatus",
-    "EventHandlerDescriptor",
     "EventHandlerNotFound",
     "EventHandlerNotInstalled",
-    "generate_event_handler_id",
-    "create_event_metadata_template",
-    "import_event_handler",
-    "try_import_event_handler",
-    "get_event_handler_class",
-    "get_event_handler_descriptor",
-    "get_event_handler_info",
-    "register_event_handlers",
-    "list_event_handlers",
-    "list_available_event_handlers",
-    "list_enabled_event_handlers",
-    "list_event_handlers_by_capability",
-    "enable_event_handler",
-    "disable_event_handler",
-    "get_event_handler_override",
-    "apply_event_handler_overrides",
+    "EventHandlerResult",
+    "EventHandlerStatus",
+    "EventMetadata",
+    "EventPriority",
+    # Publisher classes
+    "EventPublisher",
+    "EventPublisherBase",
+    "EventPublisherSettings",
+    "EventQueue",
+    "EventRouter",
+    "EventStatus",
+    # Subscriber classes
+    "EventSubscriber",
+    "EventSubscription",
     # Service integration
     "EventsService",
     "EventsServiceSettings",
+    "FunctionalEventHandler",
+    "ManagedSubscription",
+    "PublisherBackend",
+    "PublisherMetrics",
+    "SubscriberSettings",
+    "SubscriptionMode",
+    "TypedEventHandler",
+    "apply_event_handler_overrides",
+    "create_event",
+    "create_event_metadata_template",
+    "create_event_publisher",
+    "create_event_subscriber",
+    "create_subscription",
+    "disable_event_handler",
+    "enable_event_handler",
+    "event_handler",
+    "event_publisher_context",
+    "event_subscriber_context",
+    "generate_event_handler_id",
+    "generate_event_id",
+    "get_event_handler_class",
+    "get_event_handler_descriptor",
+    "get_event_handler_info",
+    "get_event_handler_override",
     "get_events_service",
+    "import_event_handler",
+    "list_available_event_handlers",
+    "list_enabled_event_handlers",
+    "list_event_handlers",
+    "list_event_handlers_by_capability",
+    "register_event_handlers",
     "setup_events_service",
+    "try_import_event_handler",
 ]
 
 
@@ -240,7 +240,7 @@ class EventsService(ServiceBase):
         settings_class="EventsServiceSettings",
     )
 
-    def __init__(self, settings: EventsServiceSettings | None = None):
+    def __init__(self, settings: EventsServiceSettings | None = None) -> None:
         super().__init__()
         self._settings = settings or EventsServiceSettings()
         self._publisher: EventPublisher | None = None
@@ -306,7 +306,8 @@ class EventsService(ServiceBase):
     async def publish(self, event: Event) -> None:
         """Publish an event."""
         if not self._publisher:
-            raise RuntimeError("Publisher not enabled")
+            msg = "Publisher not enabled"
+            raise RuntimeError(msg)
         await self._publisher.publish(event)
 
     async def subscribe(
@@ -317,7 +318,8 @@ class EventsService(ServiceBase):
     ) -> str:
         """Subscribe to events."""
         if not self._subscriber:
-            raise RuntimeError("Subscriber not enabled")
+            msg = "Subscriber not enabled"
+            raise RuntimeError(msg)
         sub_id = await self._subscriber.subscribe(handler, event_type, **kwargs)
         return str(sub_id)
 

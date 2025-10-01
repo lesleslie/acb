@@ -89,8 +89,7 @@ class Vector(VectorBase):
     async def _get_index(self) -> t.Any:
         """Get Pinecone index instance."""
         client = await self._ensure_client()
-        index = client.Index(self.config.vector.index_name)
-        return index
+        return client.Index(self.config.vector.index_name)
 
     async def init(self) -> None:
         """Initialize Pinecone vector adapter."""
@@ -104,7 +103,7 @@ class Vector(VectorBase):
             self.logger.debug(f"Using existing index: {self.config.vector.index_name}")
         except Exception:
             self.logger.info(
-                f"Index {self.config.vector.index_name} not found, creating..."
+                f"Index {self.config.vector.index_name} not found, creating...",
             )
             await self._create_default_index()
 
@@ -119,7 +118,7 @@ class Vector(VectorBase):
                 "serverless": {
                     "cloud": self.config.vector.cloud,
                     "region": self.config.vector.region,
-                }
+                },
             }
         else:
             spec = {
@@ -129,7 +128,7 @@ class Vector(VectorBase):
                     "pods": 1,
                     "replicas": self.config.vector.replicas,
                     "shards": self.config.vector.shards,
-                }
+                },
             }
 
         client.create_index(
@@ -187,7 +186,7 @@ class Vector(VectorBase):
             return results
 
         except Exception as e:
-            self.logger.error(f"Pinecone search failed: {e}")
+            self.logger.exception(f"Pinecone search failed: {e}")
             return []
 
     async def insert(
@@ -246,7 +245,7 @@ class Vector(VectorBase):
             return document_ids
 
         except Exception as e:
-            self.logger.error(f"Pinecone upsert failed: {e}")
+            self.logger.exception(f"Pinecone upsert failed: {e}")
             return []
 
     async def delete(
@@ -267,7 +266,7 @@ class Vector(VectorBase):
             return True  # Pinecone delete doesn't return detailed status
 
         except Exception as e:
-            self.logger.error(f"Pinecone delete failed: {e}")
+            self.logger.exception(f"Pinecone delete failed: {e}")
             return False
 
     async def get(
@@ -304,7 +303,7 @@ class Vector(VectorBase):
             return documents
 
         except Exception as e:
-            self.logger.error(f"Pinecone fetch failed: {e}")
+            self.logger.exception(f"Pinecone fetch failed: {e}")
             return []
 
     async def count(
@@ -328,11 +327,10 @@ class Vector(VectorBase):
             if collection and collection != "default":
                 namespace_stats = stats.get("namespaces", {}).get(collection, {})
                 return namespace_stats.get("vector_count", 0)
-            else:
-                return stats.get("total_vector_count", 0)
+            return stats.get("total_vector_count", 0)
 
         except Exception as e:
-            self.logger.error(f"Pinecone count failed: {e}")
+            self.logger.exception(f"Pinecone count failed: {e}")
             return 0
 
     async def create_collection(
@@ -347,7 +345,7 @@ class Vector(VectorBase):
         # The index itself needs to be created at the account level
         # This method is mainly for compatibility with the base interface
         self.logger.info(
-            f"Namespace '{name}' will be created implicitly on first insert"
+            f"Namespace '{name}' will be created implicitly on first insert",
         )
         return True
 
@@ -369,7 +367,7 @@ class Vector(VectorBase):
             return True
 
         except Exception as e:
-            self.logger.error(f"Pinecone namespace delete failed: {e}")
+            self.logger.exception(f"Pinecone namespace delete failed: {e}")
             return False
 
     async def list_collections(self, **kwargs: t.Any) -> list[str]:
@@ -389,7 +387,7 @@ class Vector(VectorBase):
             return namespaces
 
         except Exception as e:
-            self.logger.error(f"Pinecone list namespaces failed: {e}")
+            self.logger.exception(f"Pinecone list namespaces failed: {e}")
             return []
 
     def has_capability(self, capability: str) -> bool:

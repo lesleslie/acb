@@ -18,12 +18,10 @@ class MiddlewareBase(ABC):
     @abstractmethod
     async def process_request(self, request: dict[str, t.Any]) -> dict[str, t.Any]:
         """Process incoming request."""
-        pass
 
     @abstractmethod
     async def process_response(self, response: dict[str, t.Any]) -> dict[str, t.Any]:
         """Process outgoing response."""
-        pass
 
 
 class CORSMiddleware(MiddlewareBase):
@@ -101,7 +99,7 @@ class SecurityHeadersMiddleware(MiddlewareBase):
                 "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
                 "Referrer-Policy": "strict-origin-when-cross-origin",
                 "Content-Security-Policy": "default-src 'self'",
-            }
+            },
         )
 
         return response

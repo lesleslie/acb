@@ -86,7 +86,7 @@ class Vector(VectorBase):
         # Add authentication if configured
         if self.config.vector.use_auth and self.config.vector.api_key:
             auth_config = AuthApiKey(
-                api_key=self.config.vector.api_key.get_secret_value()
+                api_key=self.config.vector.api_key.get_secret_value(),
             )
             connection_params["auth_client_secret"] = auth_config
 
@@ -122,7 +122,7 @@ class Vector(VectorBase):
             else:
                 self.logger.debug("Weaviate connection verified")
         except Exception as e:
-            self.logger.error(f"Failed to verify Weaviate connection: {e}")
+            self.logger.exception(f"Failed to verify Weaviate connection: {e}")
             raise
 
         self.logger.info("Weaviate vector adapter initialized successfully")
@@ -134,7 +134,9 @@ class Vector(VectorBase):
         return collection.capitalize()
 
     async def _ensure_class_exists(
-        self, class_name: str, dimension: int | None = None
+        self,
+        class_name: str,
+        dimension: int | None = None,
     ) -> bool:
         """Ensure Weaviate class exists, create if needed."""
         client = await self._ensure_client()
@@ -189,7 +191,7 @@ class Vector(VectorBase):
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to ensure class {class_name}: {e}")
+            self.logger.exception(f"Failed to ensure class {class_name}: {e}")
             return False
 
     async def search(
@@ -246,11 +248,12 @@ class Vector(VectorBase):
             return results
 
         except Exception as e:
-            self.logger.error(f"Weaviate search failed: {e}")
+            self.logger.exception(f"Weaviate search failed: {e}")
             return []
 
     def _build_where_filter(
-        self, filter_expr: dict[str, t.Any]
+        self,
+        filter_expr: dict[str, t.Any],
     ) -> dict[str, t.Any] | None:
         """Build Weaviate where filter from filter expression."""
         try:
@@ -258,16 +261,14 @@ class Vector(VectorBase):
 
             conditions = []
             for key, value in filter_expr.items():
-                if isinstance(value, str):
-                    conditions.append(Filter.by_property(key).equal(value))
-                elif isinstance(value, int | float):
+                if isinstance(value, str | (int | float)):
                     conditions.append(Filter.by_property(key).equal(value))
                 elif isinstance(value, list):
                     conditions.append(Filter.by_property(key).contains_any(value))
 
             if len(conditions) == 1:
                 return conditions[0]
-            elif len(conditions) > 1:
+            if len(conditions) > 1:
                 # Combine with AND
                 result = conditions[0]
                 for condition in conditions[1:]:
@@ -325,7 +326,7 @@ class Vector(VectorBase):
                     {
                         "content": properties.get("content", ""),
                         "source": properties.get("source", ""),
-                    }
+                    },
                 )
 
                 obj_data = {
@@ -353,7 +354,7 @@ class Vector(VectorBase):
             return document_ids
 
         except Exception as e:
-            self.logger.error(f"Weaviate upsert failed: {e}")
+            self.logger.exception(f"Weaviate upsert failed: {e}")
             return []
 
     async def delete(
@@ -376,7 +377,7 @@ class Vector(VectorBase):
             return True
 
         except Exception as e:
-            self.logger.error(f"Weaviate delete failed: {e}")
+            self.logger.exception(f"Weaviate delete failed: {e}")
             return False
 
     async def get(
@@ -418,7 +419,7 @@ class Vector(VectorBase):
             return documents
 
         except Exception as e:
-            self.logger.error(f"Weaviate fetch failed: {e}")
+            self.logger.exception(f"Weaviate fetch failed: {e}")
             return []
 
     async def count(
@@ -439,7 +440,8 @@ class Vector(VectorBase):
                 where_filter = self._build_where_filter(filter_expr)
                 if where_filter:
                     response = weaviate_collection.aggregate.over_all(
-                        where=where_filter, total_count=True
+                        where=where_filter,
+                        total_count=True,
                     )
                 else:
                     response = weaviate_collection.aggregate.over_all(total_count=True)
@@ -449,7 +451,7 @@ class Vector(VectorBase):
             return response.total_count or 0
 
         except Exception as e:
-            self.logger.error(f"Weaviate count failed: {e}")
+            self.logger.exception(f"Weaviate count failed: {e}")
             return 0
 
     async def create_collection(
@@ -477,7 +479,7 @@ class Vector(VectorBase):
             return True
 
         except Exception as e:
-            self.logger.error(f"Weaviate class delete failed: {e}")
+            self.logger.exception(f"Weaviate class delete failed: {e}")
             return False
 
     async def list_collections(self, **kwargs: t.Any) -> list[str]:
@@ -489,7 +491,7 @@ class Vector(VectorBase):
             return [col.name.lower() for col in collections]
 
         except Exception as e:
-            self.logger.error(f"Weaviate list collections failed: {e}")
+            self.logger.exception(f"Weaviate list collections failed: {e}")
             return []
 
     async def text_search(
@@ -539,7 +541,7 @@ class Vector(VectorBase):
             return results
 
         except Exception as e:
-            self.logger.error(f"Weaviate text search failed: {e}")
+            self.logger.exception(f"Weaviate text search failed: {e}")
             return []
 
     def has_capability(self, capability: str) -> bool:

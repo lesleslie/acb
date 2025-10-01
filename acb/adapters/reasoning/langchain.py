@@ -120,14 +120,17 @@ class LangChainReasoningSettings(ReasoningBaseSettings):
 class LangChainCallback(AsyncCallbackHandler):
     """Async callback handler for LangChain operations."""
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger) -> None:
         self.logger = logger
         self.steps: list[ReasoningStep] = []
         self.current_step: ReasoningStep | None = None
         self.step_counter = 0
 
     async def on_chain_start(
-        self, serialized: dict[str, t.Any], inputs: dict[str, t.Any], **kwargs: t.Any
+        self,
+        serialized: dict[str, t.Any],
+        inputs: dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> None:
         """Called when a chain starts running."""
         self.step_counter += 1
@@ -155,7 +158,10 @@ class LangChainCallback(AsyncCallbackHandler):
         self.logger.error(f"Chain error: {error}")
 
     async def on_tool_start(
-        self, serialized: dict[str, t.Any], input_str: str, **kwargs: t.Any
+        self,
+        serialized: dict[str, t.Any],
+        input_str: str,
+        **kwargs: t.Any,
     ) -> None:
         """Called when a tool starts running."""
         tool_name = serialized.get("name", "Unknown Tool")
@@ -182,7 +188,9 @@ class Reasoning(ReasoningBase):
     """LangChain-based reasoning adapter."""
 
     def __init__(
-        self, settings: LangChainReasoningSettings | None = None, **kwargs: t.Any
+        self,
+        settings: LangChainReasoningSettings | None = None,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(**kwargs)
         self._settings = settings or LangChainReasoningSettings()
@@ -192,9 +200,12 @@ class Reasoning(ReasoningBase):
         self._memories: dict[str, t.Any] = {}
 
         if not LANGCHAIN_AVAILABLE:
-            raise ImportError(
+            msg = (
                 "LangChain is not installed. Please install with: "
                 "pip install 'acb[reasoning]' or pip install langchain langchain-openai"
+            )
+            raise ImportError(
+                msg,
             )
 
     async def _create_client(self) -> LLM:
@@ -206,12 +217,13 @@ class Reasoning(ReasoningBase):
 
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
+                msg = "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
                 raise ValueError(
-                    "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
+                    msg,
                 )
 
         # Create ChatOpenAI instance for better chat capabilities
-        llm = ChatOpenAI(
+        return ChatOpenAI(
             model=self._settings.model,
             temperature=self._settings.temperature,
             max_tokens=self._settings.max_tokens_per_step,
@@ -220,8 +232,6 @@ class Reasoning(ReasoningBase):
             timeout=self._settings.timeout_seconds,
             streaming=self._settings.enable_streaming,
         )
-
-        return llm
 
     async def _reason(self, request: ReasoningRequest) -> ReasoningResponse:
         """Perform reasoning using LangChain."""
@@ -233,7 +243,9 @@ class Reasoning(ReasoningBase):
 
             if request.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
                 response = await self._chain_of_thought_reasoning(
-                    request, llm, callback
+                    request,
+                    llm,
+                    callback,
                 )
             elif request.strategy == ReasoningStrategy.REACT:
                 response = await self._react_reasoning(request, llm, callback)
@@ -244,7 +256,9 @@ class Reasoning(ReasoningBase):
             else:
                 # Default to chain of thought
                 response = await self._chain_of_thought_reasoning(
-                    request, llm, callback
+                    request,
+                    llm,
+                    callback,
                 )
 
             # Calculate metrics
@@ -254,19 +268,21 @@ class Reasoning(ReasoningBase):
 
             if not response.confidence_score:
                 response.confidence_score = await calculate_confidence_score(
-                    response.reasoning_chain
+                    response.reasoning_chain,
                 )
 
             # Update memory if enabled
             if request.enable_memory and request.context:
                 await self._update_memory(
-                    request.context.session_id, request.query, response.final_answer
+                    request.context.session_id,
+                    request.query,
+                    response.final_answer,
                 )
 
             return response
 
         except Exception as e:
-            self.logger.error(f"Reasoning failed: {e}")
+            self.logger.exception(f"Reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=callback.steps,
@@ -277,7 +293,10 @@ class Reasoning(ReasoningBase):
             )
 
     async def _chain_of_thought_reasoning(
-        self, request: ReasoningRequest, llm: LLM, callback: LangChainCallback
+        self,
+        request: ReasoningRequest,
+        llm: LLM,
+        callback: LangChainCallback,
     ) -> ReasoningResponse:
         """Perform chain-of-thought reasoning."""
         # Create prompt template for chain of thought
@@ -306,7 +325,10 @@ Reasoning:
 
         # Create chain
         chain = LLMChain(
-            llm=llm, prompt=prompt, verbose=self._settings.verbose, callbacks=[callback]
+            llm=llm,
+            prompt=prompt,
+            verbose=self._settings.verbose,
+            callbacks=[callback],
         )
 
         # Execute reasoning
@@ -321,7 +343,10 @@ Reasoning:
         )
 
     async def _react_reasoning(
-        self, request: ReasoningRequest, llm: LLM, callback: LangChainCallback
+        self,
+        request: ReasoningRequest,
+        llm: LLM,
+        callback: LangChainCallback,
     ) -> ReasoningResponse:
         """Perform ReAct reasoning with tools."""
         if not request.tools:
@@ -366,7 +391,10 @@ Reasoning:
         )
 
     async def _rag_workflow_reasoning(
-        self, request: ReasoningRequest, llm: LLM, callback: LangChainCallback
+        self,
+        request: ReasoningRequest,
+        llm: LLM,
+        callback: LangChainCallback,
     ) -> ReasoningResponse:
         """Perform RAG workflow reasoning."""
         try:
@@ -374,19 +402,19 @@ Reasoning:
             contexts = []
             if request.context and request.context.retrieved_contexts:
                 contexts = request.context.retrieved_contexts
-            else:
-                # Attempt to retrieve contexts
-                if request.context and request.context.knowledge_base:
-                    contexts = await self._retrieve_contexts(
-                        request.query, request.context.knowledge_base
-                    )
+            # Attempt to retrieve contexts
+            elif request.context and request.context.knowledge_base:
+                contexts = await self._retrieve_contexts(
+                    request.query,
+                    request.context.knowledge_base,
+                )
 
             # Create RAG prompt with retrieved contexts
             context_text = "\n\n".join(
                 [
                     f"Source {i + 1}: {ctx.get('content', '')}"
                     for i, ctx in enumerate(contexts)
-                ]
+                ],
             )
 
             rag_prompt_template = f"""
@@ -403,7 +431,8 @@ Answer:
 """
 
             prompt = PromptTemplate(
-                template=rag_prompt_template, input_variables=["question"]
+                template=rag_prompt_template,
+                input_variables=["question"],
             )
 
             # Create chain
@@ -437,12 +466,15 @@ Answer:
             )
 
         except Exception as e:
-            self.logger.error(f"RAG workflow failed: {e}")
+            self.logger.exception(f"RAG workflow failed: {e}")
             # Fall back to regular reasoning
             return await self._chain_of_thought_reasoning(request, llm, callback)
 
     async def _rule_based_reasoning(
-        self, request: ReasoningRequest, llm: LLM, callback: LangChainCallback
+        self,
+        request: ReasoningRequest,
+        llm: LLM,
+        callback: LangChainCallback,
     ) -> ReasoningResponse:
         """Perform rule-based reasoning."""
         # This would typically involve decision tree evaluation
@@ -464,12 +496,16 @@ Rules-based Analysis:
 """
 
         prompt = PromptTemplate(
-            template=rule_prompt_template, input_variables=["input"]
+            template=rule_prompt_template,
+            input_variables=["input"],
         )
 
         # Create chain
         chain = LLMChain(
-            llm=llm, prompt=prompt, verbose=self._settings.verbose, callbacks=[callback]
+            llm=llm,
+            prompt=prompt,
+            verbose=self._settings.verbose,
+            callbacks=[callback],
         )
 
         # Execute reasoning
@@ -506,7 +542,9 @@ Rules-based Analysis:
         return memory.buffer if hasattr(memory, "buffer") else str(memory)
 
     async def _tree_of_thoughts(
-        self, request: ReasoningRequest, num_paths: int
+        self,
+        request: ReasoningRequest,
+        num_paths: int,
     ) -> ReasoningResponse:
         """Enhanced tree-of-thoughts implementation using LangChain."""
         llm = await self._ensure_client()
@@ -553,7 +591,7 @@ Rules-based Analysis:
             [
                 f"Path {i + 1} Analysis: {result.final_answer}"
                 for i, result in enumerate(valid_results)
-            ]
+            ],
         )
 
         # Synthesize final answer
@@ -590,10 +628,11 @@ Please synthesize the insights from all paths and provide the best possible answ
             strategy_used=ReasoningStrategy.TREE_OF_THOUGHTS,
             provider=ReasoningProvider.LANGCHAIN,
             confidence_score=min(
-                best_confidence + 0.1, 1.0
+                best_confidence + 0.1,
+                1.0,
             ),  # Boost confidence for synthesis
         )
 
 
 # Export the adapter class
-__all__ = ["Reasoning", "LangChainReasoningSettings", "MODULE_METADATA"]
+__all__ = ["MODULE_METADATA", "LangChainReasoningSettings", "Reasoning"]

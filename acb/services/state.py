@@ -15,7 +15,7 @@ Features:
 import asyncio
 import typing as t
 from collections import defaultdict
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -83,34 +83,42 @@ class StateManagerSettings(ServiceSettings):
 
     # In-memory state configuration
     default_ttl_seconds: int = Field(
-        default=3600, description="Default TTL for state entries"
+        default=3600,
+        description="Default TTL for state entries",
     )
     max_memory_entries: int = Field(
-        default=10000, description="Maximum entries in memory"
+        default=10000,
+        description="Maximum entries in memory",
     )
     cleanup_interval_seconds: float = Field(
-        default=300.0, description="Interval for automatic cleanup"
+        default=300.0,
+        description="Interval for automatic cleanup",
     )
 
     # Persistent storage configuration
     enable_persistent_storage: bool = Field(
-        default=True, description="Enable persistent state storage"
+        default=True,
+        description="Enable persistent state storage",
     )
     persistent_storage_adapter: str = Field(
-        default="repository", description="Adapter for persistent storage"
+        default="repository",
+        description="Adapter for persistent storage",
     )
 
     # Synchronization settings
     enable_state_sync: bool = Field(
-        default=False, description="Enable state synchronization"
+        default=False,
+        description="Enable state synchronization",
     )
     sync_interval_seconds: float = Field(
-        default=60.0, description="State sync interval"
+        default=60.0,
+        description="State sync interval",
     )
 
     # Performance settings
     lock_timeout_seconds: float = Field(
-        default=10.0, description="Timeout for state locks"
+        default=10.0,
+        description="Timeout for state locks",
     )
     batch_size: int = Field(default=100, description="Batch size for bulk operations")
 
@@ -201,7 +209,7 @@ class StateManager:
 class InMemoryStateManager(StateManager):
     """In-memory state manager with TTL support."""
 
-    def __init__(self, settings: StateManagerSettings):
+    def __init__(self, settings: StateManagerSettings) -> None:
         self._settings = settings
         self._state: dict[str, StateEntry] = {}
         self._locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
@@ -293,7 +301,7 @@ class InMemoryStateManager(StateManager):
             # Simple pattern matching (could be enhanced with regex)
             import fnmatch
 
-            return [key for key in self._state.keys() if fnmatch.fnmatch(key, pattern)]
+            return [key for key in self._state if fnmatch.fnmatch(key, pattern)]
 
     async def clear(self, state_type: StateType | None = None) -> int:
         """Clear state entries, optionally by type."""
@@ -327,7 +335,9 @@ class InMemoryStateManager(StateManager):
 
         # Remove oldest entries until under limit
         sorted_entries = sorted(
-            self._state.items(), key=lambda x: x[1].updated_at, reverse=False
+            self._state.items(),
+            key=lambda x: x[1].updated_at,
+            reverse=False,
         )
 
         entries_to_remove = len(self._state) - self._settings.max_memory_entries
@@ -357,7 +367,7 @@ class InMemoryStateManager(StateManager):
 class PersistentStateManager(StateManager):
     """Persistent state manager using Repository Layer."""
 
-    def __init__(self, settings: StateManagerSettings):
+    def __init__(self, settings: StateManagerSettings) -> None:
         self._settings = settings
         self._repository = None  # Will be injected via dependency system
 
@@ -371,7 +381,7 @@ class PersistentStateManager(StateManager):
                 self._repository = depends.get("repository_service")
             except Exception:
                 # Fallback to mock implementation for testing
-                self._repository = t.cast(t.Any, MockRepositoryService())
+                self._repository = t.cast("t.Any", MockRepositoryService())
 
         return self._repository
 
@@ -379,7 +389,7 @@ class PersistentStateManager(StateManager):
         """Get state value from persistent storage."""
         repository = await self._ensure_repository()
         try:
-            result = await t.cast(t.Any, repository.find_by_key)("state_entries", key)
+            result = await t.cast("t.Any", repository.find_by_key)("state_entries", key)
             if result:
                 entry_data = result.get("data", {})
                 entry = StateEntry(**entry_data)
@@ -418,15 +428,18 @@ class PersistentStateManager(StateManager):
             metadata=metadata or {},
         )
 
-        await t.cast(t.Any, repository.upsert)(
-            "state_entries", {"key": key, "data": entry.model_dump()}
+        await t.cast("t.Any", repository.upsert)(
+            "state_entries",
+            {"key": key, "data": entry.model_dump()},
         )
 
     async def delete(self, key: str) -> bool:
         """Delete state entry from persistent storage."""
         repository = await self._ensure_repository()
         try:
-            result = await t.cast(t.Any, repository.delete_by_key)("state_entries", key)
+            result = await t.cast("t.Any", repository.delete_by_key)(
+                "state_entries", key
+            )
             return result is not None
         except Exception:
             return False
@@ -435,7 +448,7 @@ class PersistentStateManager(StateManager):
         """Check if state key exists in persistent storage."""
         repository = await self._ensure_repository()
         try:
-            result = await t.cast(t.Any, repository.find_by_key)("state_entries", key)
+            result = await t.cast("t.Any", repository.find_by_key)("state_entries", key)
             if result:
                 entry_data = result.get("data", {})
                 entry = StateEntry(**entry_data)
@@ -451,7 +464,7 @@ class PersistentStateManager(StateManager):
         """List state keys from persistent storage."""
         repository = await self._ensure_repository()
         try:
-            results = await t.cast(t.Any, repository.find_all)("state_entries")
+            results = await t.cast("t.Any", repository.find_all)("state_entries")
             keys = [result.get("key", "") for result in results if result.get("key")]
 
             if pattern == "*":
@@ -468,13 +481,13 @@ class PersistentStateManager(StateManager):
         repository = await self._ensure_repository()
         try:
             if state_type is None:
-                results = await t.cast(t.Any, repository.find_all)("state_entries")
+                results = await t.cast("t.Any", repository.find_all)("state_entries")
                 count = len(results)
-                await t.cast(t.Any, repository.clear_collection)("state_entries")
+                await t.cast("t.Any", repository.clear_collection)("state_entries")
                 return count
 
             # Filter by state type
-            results = await t.cast(t.Any, repository.find_all)("state_entries")
+            results = await t.cast("t.Any", repository.find_all)("state_entries")
             keys_to_remove = []
 
             for result in results:
@@ -484,7 +497,7 @@ class PersistentStateManager(StateManager):
                     keys_to_remove.append(entry.key)
 
             for key in keys_to_remove:
-                await t.cast(t.Any, repository.delete_by_key)("state_entries", key)
+                await t.cast("t.Any", repository.delete_by_key)("state_entries", key)
 
             return len(keys_to_remove)
         except Exception:
@@ -509,7 +522,7 @@ class MockRepositoryService:
 
     async def delete_by_key(self, collection: str, key: str) -> dict[str, t.Any] | None:
         """Delete entry by key."""
-        return t.cast(dict[str, t.Any] | None, self._data[collection].pop(key, None))
+        return t.cast("dict[str, t.Any] | None", self._data[collection].pop(key, None))
 
     async def find_all(self, collection: str) -> list[dict[str, t.Any]]:
         """Find all entries in collection."""
@@ -537,7 +550,7 @@ class StateManagerService(ServiceBase):
         settings_class="StateManagerSettings",
     )
 
-    def __init__(self, settings: StateManagerSettings | None = None):
+    def __init__(self, settings: StateManagerSettings | None = None) -> None:
         super().__init__()
         self._settings = settings or StateManagerSettings()
         self._config = StateManagerConfig(
@@ -566,10 +579,8 @@ class StateManagerService(ServiceBase):
         """Service-specific shutdown logic."""
         if self._cleanup_task:
             self._cleanup_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
 
     async def initialize(self) -> None:
         """Initialize the state management service."""
@@ -581,7 +592,9 @@ class StateManagerService(ServiceBase):
 
     @asynccontextmanager
     async def state_lock(
-        self, key: str, timeout: float | None = None
+        self,
+        key: str,
+        timeout: float | None = None,
     ) -> t.AsyncGenerator[None]:
         """Context manager for exclusive state access."""
         timeout = timeout or self._settings.lock_timeout_seconds
@@ -820,7 +833,7 @@ async def get_state_service() -> StateManagerService:
     from acb.depends import depends
 
     try:
-        return t.cast(StateManagerService, depends.get(StateManagerService))
+        return t.cast("StateManagerService", depends.get(StateManagerService))
     except Exception:
         # Fallback to new instance
         service = StateManagerService()

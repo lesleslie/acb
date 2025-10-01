@@ -36,16 +36,19 @@ class BasicValidationSchema(ValidationSchema):
     async def compile(self) -> None:
         """Compile the schema (no-op for basic schema)."""
         # Basic schema requires no compilation
-        pass
 
     async def validate(
-        self, data: t.Any, field_name: str | None = None
+        self,
+        data: t.Any,
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Validate data against basic schema rules."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name, value=data, original_value=data
+            field_name=field_name or self.name,
+            value=data,
+            original_value=data,
         )
 
         # Check if value is None
@@ -66,15 +69,15 @@ class BasicValidationSchema(ValidationSchema):
                 if self.config.enable_coercion:
                     result.value = self.data_type(data)
                     result.add_warning(
-                        f"Value coerced from {type(data).__name__} to {self.data_type.__name__}"
+                        f"Value coerced from {type(data).__name__} to {self.data_type.__name__}",
                     )
                 else:
                     result.add_error(
-                        f"Expected {self.data_type.__name__}, got {type(data).__name__}"
+                        f"Expected {self.data_type.__name__}, got {type(data).__name__}",
                     )
             except (ValueError, TypeError):
                 result.add_error(
-                    f"Cannot convert {type(data).__name__} to {self.data_type.__name__}"
+                    f"Cannot convert {type(data).__name__} to {self.data_type.__name__}",
                 )
 
         result.validation_time_ms = (time.perf_counter() - start_time) * 1000
@@ -104,17 +107,21 @@ class StringValidationSchema(ValidationSchema):
         """Compile regex pattern for performance."""
         if self.pattern:
             self._compiled_pattern = re.compile(
-                self.pattern
+                self.pattern,
             )  # REGEX OK: User-provided pattern validation
 
     async def validate(
-        self, data: t.Any, field_name: str | None = None
+        self,
+        data: t.Any,
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Validate string data."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name, value=data, original_value=data
+            field_name=field_name or self.name,
+            value=data,
+            original_value=data,
         )
 
         # Convert to string if possible
@@ -123,7 +130,7 @@ class StringValidationSchema(ValidationSchema):
                 try:
                     result.value = str(data)
                     result.add_warning(
-                        f"Value coerced from {type(data).__name__} to str"
+                        f"Value coerced from {type(data).__name__} to str",
                     )
                 except Exception:
                     result.add_error("Cannot convert to string")
@@ -164,26 +171,31 @@ class EmailValidationSchema(ValidationSchema):
     """Schema for email validation."""
 
     def __init__(
-        self, name: str = "email", config: ValidationConfig | None = None
+        self,
+        name: str = "email",
+        config: ValidationConfig | None = None,
     ) -> None:
         super().__init__(name, config)
         # RFC 5322 compliant email regex (simplified)
         self._email_pattern = re.compile(
-            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"  # REGEX OK: Email format validation
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",  # REGEX OK: Email format validation
         )
 
     async def compile(self) -> None:
         """Compile email pattern (already compiled in __init__)."""
-        pass
 
     async def validate(
-        self, data: t.Any, field_name: str | None = None
+        self,
+        data: t.Any,
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Validate email address."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name, value=data, original_value=data
+            field_name=field_name or self.name,
+            value=data,
+            original_value=data,
         )
 
         # Must be string
@@ -228,17 +240,21 @@ class ModelValidationSchema(ValidationSchema):
         """Compile model schema by preparing adapter instance."""
         if self.models_adapter is not None:
             self._adapter_instance = self.models_adapter.get_adapter_for_model(
-                self.model_class
+                self.model_class,
             )
 
     async def validate(
-        self, data: t.Any, field_name: str | None = None
+        self,
+        data: t.Any,
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Validate data against model class."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name, value=data, original_value=data
+            field_name=field_name or self.name,
+            value=data,
+            original_value=data,
         )
 
         if self._adapter_instance is None:
@@ -249,7 +265,8 @@ class ModelValidationSchema(ValidationSchema):
             # Try to create instance using the adapter
             if isinstance(data, dict):
                 instance = self._adapter_instance.create_instance(
-                    self.model_class, **data
+                    self.model_class,
+                    **data,
                 )
             else:
                 # For non-dict data, try direct instantiation
@@ -290,13 +307,17 @@ class ListValidationSchema(ValidationSchema):
             await self.item_schema._ensure_compiled()
 
     async def validate(
-        self, data: t.Any, field_name: str | None = None
+        self,
+        data: t.Any,
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Validate list data."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name, value=data, original_value=data
+            field_name=field_name or self.name,
+            value=data,
+            original_value=data,
         )
 
         # Convert to list if possible
@@ -305,7 +326,7 @@ class ListValidationSchema(ValidationSchema):
                 try:
                     result.value = list(data) if hasattr(data, "__iter__") else [data]
                     result.add_warning(
-                        f"Value coerced from {type(data).__name__} to list"
+                        f"Value coerced from {type(data).__name__} to list",
                     )
                 except Exception:
                     result.add_error("Cannot convert to list")
@@ -327,7 +348,7 @@ class ListValidationSchema(ValidationSchema):
             result.add_error(f"List too long: {len(items)} > {self.max_items}")
 
         # Unique items validation
-        if self.unique_items and len(items) != len(set(str(item) for item in items)):
+        if self.unique_items and len(items) != len({str(item) for item in items}):
             result.add_error("List items must be unique")
 
         # Validate individual items if schema provided
@@ -335,7 +356,8 @@ class ListValidationSchema(ValidationSchema):
             validated_items = []
             for i, item in enumerate(items):
                 item_result = await self.item_schema.validate(
-                    item, f"{field_name or self.name}[{i}]"
+                    item,
+                    f"{field_name or self.name}[{i}]",
                 )
                 if not item_result.is_valid:
                     for error in item_result.errors:
@@ -374,13 +396,17 @@ class DictValidationSchema(ValidationSchema):
             await schema._ensure_compiled()
 
     async def validate(
-        self, data: t.Any, field_name: str | None = None
+        self,
+        data: t.Any,
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Validate dictionary data."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name or self.name, value=data, original_value=data
+            field_name=field_name or self.name,
+            value=data,
+            original_value=data,
         )
 
         # Must be dict-like
@@ -435,7 +461,10 @@ class SchemaBuilder:
     ) -> SchemaBuilder:
         """Add a basic validation schema."""
         self._schemas[name] = BasicValidationSchema(
-            name=name, data_type=data_type, required=required, allow_none=allow_none
+            name=name,
+            data_type=data_type,
+            required=required,
+            allow_none=allow_none,
         )
         return self
 
@@ -448,7 +477,10 @@ class SchemaBuilder:
     ) -> SchemaBuilder:
         """Add a string validation schema."""
         self._schemas[name] = StringValidationSchema(
-            name=name, min_length=min_length, max_length=max_length, pattern=pattern
+            name=name,
+            min_length=min_length,
+            max_length=max_length,
+            pattern=pattern,
         )
         return self
 
@@ -466,7 +498,10 @@ class SchemaBuilder:
     ) -> SchemaBuilder:
         """Add a list validation schema."""
         self._schemas[name] = ListValidationSchema(
-            name=name, item_schema=item_schema, min_items=min_items, max_items=max_items
+            name=name,
+            item_schema=item_schema,
+            min_items=min_items,
+            max_items=max_items,
         )
         return self
 
@@ -478,7 +513,9 @@ class SchemaBuilder:
     ) -> SchemaBuilder:
         """Add a dictionary validation schema."""
         self._schemas[name] = DictValidationSchema(
-            name=name, field_schemas=field_schemas, required_fields=required_fields
+            name=name,
+            field_schemas=field_schemas,
+            required_fields=required_fields,
         )
         return self
 

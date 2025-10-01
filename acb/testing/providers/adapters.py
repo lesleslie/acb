@@ -109,7 +109,8 @@ class MockAdapterProvider:
         return cache_mock
 
     def create_storage_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> AsyncMock:
         """Create a realistic storage adapter mock."""
         storage_mock = AsyncMock()
@@ -134,7 +135,7 @@ class MockAdapterProvider:
                 msg = f"File not found: {path}"
                 raise FileNotFoundError(msg)
 
-            return t.cast(bytes, storage_mock._files[path])
+            return t.cast("bytes", storage_mock._files[path])
 
         async def mock_write(path: str, data: bytes) -> bool:
             if len(data) > default_behavior["max_file_size"]:
@@ -179,7 +180,8 @@ class MockAdapterProvider:
             default_behavior.update(behavior)
 
         async def mock_execute(
-            query: str, params: tuple[t.Any, ...] | None = None
+            query: str,
+            params: tuple[t.Any, ...] | None = None,
         ) -> t.Any:
             import asyncio
 
@@ -193,7 +195,7 @@ class MockAdapterProvider:
                 result_mock.lastrowid = sql_mock._next_id
                 sql_mock._next_id += 1
             elif query.strip().upper().startswith(
-                "UPDATE"
+                "UPDATE",
             ) or query.strip().upper().startswith("DELETE"):
                 result_mock.rowcount = 1
             else:
@@ -202,7 +204,8 @@ class MockAdapterProvider:
             return result_mock
 
         async def mock_fetch_one(
-            query: str, params: tuple[t.Any, ...] | None = None
+            query: str,
+            params: tuple[t.Any, ...] | None = None,
         ) -> dict[str, t.Any] | None:
             import asyncio
 
@@ -212,7 +215,8 @@ class MockAdapterProvider:
             return {"id": 1, "name": "test_record", "active": True}
 
         async def mock_fetch_all(
-            query: str, params: tuple[t.Any, ...] | None = None
+            query: str,
+            params: tuple[t.Any, ...] | None = None,
         ) -> list[dict[str, t.Any]]:
             import asyncio
 
@@ -247,7 +251,8 @@ class MockAdapterProvider:
             default_behavior.update(behavior)
 
         async def mock_find_one(
-            collection: str, query: dict[str, t.Any]
+            collection: str,
+            query: dict[str, t.Any],
         ) -> dict[str, t.Any] | None:
             import asyncio
 
@@ -260,7 +265,8 @@ class MockAdapterProvider:
             return {"_id": "507f1f77bcf86cd799439011", "name": "test", "active": True}
 
         async def mock_find_many(
-            collection: str, query: dict[str, t.Any]
+            collection: str,
+            query: dict[str, t.Any],
         ) -> list[dict[str, t.Any]]:
             import asyncio
 
@@ -274,12 +280,13 @@ class MockAdapterProvider:
                         "_id": f"507f1f77bcf86cd79943901{i}",
                         "name": f"test_{i}",
                         "active": True,
-                    }
+                    },
                 )
             return docs
 
         async def mock_insert_one(
-            collection: str, document: dict[str, t.Any]
+            collection: str,
+            document: dict[str, t.Any],
         ) -> dict[str, t.Any]:
             import asyncio
 
@@ -330,7 +337,7 @@ class MockAdapterProvider:
                 msg = f"Secret not found: {name}"
                 raise ValueError(msg)
 
-            return t.cast(str, secret_mock._secrets[name])
+            return t.cast("str", secret_mock._secrets[name])
 
         async def mock_set_secret(name: str, value: str) -> bool:
             import asyncio
@@ -362,7 +369,9 @@ class MockAdapterProvider:
 
     @asynccontextmanager
     async def mock_adapter_context(
-        self, adapter_type: str, behavior: dict[str, t.Any] | None = None
+        self,
+        adapter_type: str,
+        behavior: dict[str, t.Any] | None = None,
     ) -> t.AsyncGenerator[AsyncMock]:
         """Context manager for temporary mock adapter."""
         # Create mock based on type

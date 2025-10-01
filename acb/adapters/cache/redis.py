@@ -107,7 +107,7 @@ def _get_redis_imports() -> dict[str, t.Any]:
                     "TrackingCache": TrackingCache,
                     "Redis": Redis,
                     "RedisCluster": RedisCluster,
-                }
+                },
             )
         except ImportError as e:
             debug(f"Redis dependencies not available: {e}")
@@ -234,7 +234,8 @@ class Cache(CacheBase, SSLConfigMixin):
         """Create Redis client with lazy imports for better performance."""
         redis_imports = _get_redis_imports()
         if not redis_imports:
-            raise ImportError("Redis dependencies not available")
+            msg = "Redis dependencies not available"
+            raise ImportError(msg)
 
         Redis = redis_imports["Redis"]
         RedisCluster = redis_imports["RedisCluster"]
@@ -256,7 +257,8 @@ class Cache(CacheBase, SSLConfigMixin):
                 self.logger.info("RedisCluster mode enabled")  # type: ignore[no-untyped-call]
                 del redis_kwargs["health_check_interval"]
                 return RedisCluster.from_url(
-                    self.config.cache.connection_string, **redis_kwargs
+                    self.config.cache.connection_string,
+                    **redis_kwargs,
                 )
 
             return Redis.from_url(self.config.cache.connection_string, **redis_kwargs)
@@ -373,14 +375,14 @@ class Cache(CacheBase, SSLConfigMixin):
 
         if self.config.cache.connection_string:
             masked_connection_string = self._mask_connection_string(
-                self.config.cache.connection_string
+                self.config.cache.connection_string,
             )
             self.logger.info(
-                f"Initializing Redis cache connection to {masked_connection_string}"
+                f"Initializing Redis cache connection to {masked_connection_string}",
             )  # type: ignore[no-untyped-call]
         else:
             self.logger.info(
-                f"Initializing Redis cache connection to {self.config.cache.host.get_secret_value()}:{self.config.cache.port}"
+                f"Initializing Redis cache connection to {self.config.cache.host.get_secret_value()}:{self.config.cache.port}",
             )  # type: ignore[no-untyped-call]
 
         try:

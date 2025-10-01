@@ -22,7 +22,9 @@ from acb.adapters.embedding._base import (
 )
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger
 
 try:
     import openai
@@ -69,17 +71,20 @@ class OpenAIEmbeddingSettings(EmbeddingBaseSettings):
     api_key: SecretStr = Field(description="OpenAI API key")
     organization: str | None = Field(default=None, description="OpenAI organization ID")
     base_url: str = Field(
-        default="https://api.openai.com/v1", description="OpenAI API base URL"
+        default="https://api.openai.com/v1",
+        description="OpenAI API base URL",
     )
     model: str = Field(default=EmbeddingModel.TEXT_EMBEDDING_3_SMALL.value)
     max_retries: int = Field(default=3)
     timeout: float = Field(default=30.0)
     batch_size: int = Field(default=100)  # OpenAI supports up to 2048 inputs
     dimensions: int | None = Field(
-        default=None, description="Embedding dimensions (for v3 models)"
+        default=None,
+        description="Embedding dimensions (for v3 models)",
     )
     encoding_format: str = Field(
-        default="float", description="Encoding format (float or base64)"
+        default="float",
+        description="Encoding format (float or base64)",
     )
 
     # Rate limiting
@@ -95,8 +100,9 @@ class OpenAIEmbedding(EmbeddingAdapter):
 
     def __init__(self, settings: OpenAIEmbeddingSettings | None = None) -> None:
         if not _openai_available:
+            msg = "OpenAI library not available. Install with: pip install openai"
             raise ImportError(
-                "OpenAI library not available. Install with: pip install openai"
+                msg,
             )
 
         config: Config = depends.get("config")
@@ -160,7 +166,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
 
                 # Make API request
                 response: CreateEmbeddingResponse = await client.embeddings.create(
-                    **request_params
+                    **request_params,
                 )
 
                 # Process response
@@ -170,7 +176,8 @@ class OpenAIEmbedding(EmbeddingAdapter):
                     # Normalize if requested
                     if normalize:
                         embedding = self._normalize_vector(
-                            embedding, self._settings.normalization
+                            embedding,
+                            self._settings.normalization,
                         )
 
                     result = EmbeddingResult(
@@ -191,11 +198,11 @@ class OpenAIEmbedding(EmbeddingAdapter):
                     total_tokens += response.usage.total_tokens
 
                 await logger.debug(
-                    f"OpenAI embeddings batch completed: {len(batch_texts)} texts, model: {model}"
+                    f"OpenAI embeddings batch completed: {len(batch_texts)} texts, model: {model}",
                 )
 
             except Exception as e:
-                await logger.error(f"Error generating OpenAI embeddings: {e}")
+                await logger.exception(f"Error generating OpenAI embeddings: {e}")
                 raise
 
         processing_time = time.time() - start_time
@@ -240,7 +247,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
                         "is_chunk": True,
                         "chunk_size": chunk_size,
                         "chunk_overlap": chunk_overlap,
-                    }
+                    },
                 )
 
             batches.append(batch)
@@ -256,14 +263,14 @@ class OpenAIEmbedding(EmbeddingAdapter):
         """Compute similarity between two embeddings."""
         if method == "cosine":
             return EmbeddingUtils.cosine_similarity(embedding1, embedding2)
-        elif method == "euclidean":
+        if method == "euclidean":
             return EmbeddingUtils.euclidean_distance(embedding1, embedding2)
-        elif method == "dot":
+        if method == "dot":
             return EmbeddingUtils.dot_product(embedding1, embedding2)
-        elif method == "manhattan":
+        if method == "manhattan":
             return EmbeddingUtils.manhattan_distance(embedding1, embedding2)
-        else:
-            raise ValueError(f"Unsupported similarity method: {method}")
+        msg = f"Unsupported similarity method: {method}"
+        raise ValueError(msg)
 
     async def _get_model_info(self, model: str) -> dict[str, t.Any]:
         """Get information about an OpenAI embedding model."""
@@ -282,7 +289,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
                     "max_tokens": 8191,
                     "price_per_1k_tokens": 0.00002,
                     "description": "Most efficient embedding model with good performance",
-                }
+                },
             )
         elif model == EmbeddingModel.TEXT_EMBEDDING_3_LARGE.value:
             model_info.update(
@@ -292,7 +299,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
                     "max_tokens": 8191,
                     "price_per_1k_tokens": 0.00013,
                     "description": "Most powerful embedding model with highest accuracy",
-                }
+                },
             )
         elif model == EmbeddingModel.TEXT_EMBEDDING_ADA_002.value:
             model_info.update(
@@ -302,7 +309,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
                     "max_tokens": 8191,
                     "price_per_1k_tokens": 0.0001,
                     "description": "Legacy embedding model (v2)",
-                }
+                },
             )
 
         return model_info

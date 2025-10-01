@@ -83,7 +83,8 @@ class SecurityTestProvider:
         for vuln_type, patterns in self._vulnerability_patterns.items():
             for pattern in patterns:
                 if re.search(
-                    pattern, input_data
+                    pattern,
+                    input_data,
                 ):  # REGEX OK: security vulnerability scanning
                     vulnerabilities.append(
                         {
@@ -91,9 +92,9 @@ class SecurityTestProvider:
                             "pattern": pattern,
                             "severity": self._get_severity(vuln_type),
                             "description": self._get_vulnerability_description(
-                                vuln_type
+                                vuln_type,
                             ),
-                        }
+                        },
                     )
 
         return {
@@ -131,7 +132,8 @@ class SecurityTestProvider:
 
         severity_scores = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
         max_severity = max(
-            (severity_scores.get(v["severity"], 1) for v in vulnerabilities), default=1
+            (severity_scores.get(v["severity"], 1) for v in vulnerabilities),
+            default=1,
         )
 
         if max_severity >= 4:
@@ -143,7 +145,9 @@ class SecurityTestProvider:
         return "LOW"
 
     def validate_input_sanitization(
-        self, original: str, sanitized: str
+        self,
+        original: str,
+        sanitized: str,
     ) -> dict[str, t.Any]:
         """Validate that input sanitization was effective."""
         original_vulns = self.scan_for_vulnerabilities(original)
@@ -160,7 +164,8 @@ class SecurityTestProvider:
         }
 
     def create_auth_test_mock(
-        self, behavior: dict[str, t.Any] | None = None
+        self,
+        behavior: dict[str, t.Any] | None = None,
     ) -> AsyncMock:
         """Create a mock for authentication testing."""
         auth_mock = AsyncMock()
@@ -218,16 +223,16 @@ class SecurityTestProvider:
         checks = {
             "length": len(password) >= 8,
             "uppercase": bool(
-                re.search(r"[A-Z]", password)
+                re.search(r"[A-Z]", password),
             ),  # REGEX OK: password strength validation
             "lowercase": bool(
-                re.search(r"[a-z]", password)
+                re.search(r"[a-z]", password),
             ),  # REGEX OK: password strength validation
             "digits": bool(
-                re.search(r"\d", password)
+                re.search(r"\d", password),
             ),  # REGEX OK: password strength validation
             "special_chars": bool(
-                re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password)
+                re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password),
             ),  # REGEX OK: password strength validation
             "no_common_patterns": not any(
                 pattern in password.lower()
@@ -303,7 +308,9 @@ class SecurityTestProvider:
         )
 
     def assert_vulnerability_detected(
-        self, scan_result: dict[str, t.Any], vuln_type: str
+        self,
+        scan_result: dict[str, t.Any],
+        vuln_type: str,
     ) -> None:
         """Assert that a specific vulnerability type was detected."""
         found_types = [v["type"] for v in scan_result["vulnerabilities"]]

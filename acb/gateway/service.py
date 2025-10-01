@@ -10,7 +10,6 @@ from __future__ import annotations
 import time
 import typing as t
 
-from acb.config import Config
 from acb.depends import depends
 from acb.gateway._base import (
     GatewayConfig,
@@ -29,8 +28,11 @@ from acb.gateway.rate_limiting import RateLimitConfig, RateLimiter
 from acb.gateway.routing import Route, RoutingEngine
 from acb.gateway.security import SecurityManager
 from acb.gateway.validation import RequestResponseValidator, ValidationRule
-from acb.logger import Logger
 from acb.services._base import ServiceBase, ServiceConfig
+
+if t.TYPE_CHECKING:
+    from acb.config import Config
+    from acb.logger import Logger
 
 # Service metadata for discovery system
 try:
@@ -237,7 +239,11 @@ class GatewayService(ServiceBase, GatewayProtocol):
 
         try:
             # Pre-processing pipeline
-            cache_hit = await self._run_preprocessing_pipeline(request, result, gateway_config)
+            cache_hit = await self._run_preprocessing_pipeline(
+                request,
+                result,
+                gateway_config,
+            )
             if cache_hit or not result.success:
                 return result
 
@@ -248,7 +254,7 @@ class GatewayService(ServiceBase, GatewayProtocol):
             await self._run_postprocessing_pipeline(request, result, gateway_config)
 
         except Exception as e:
-            self.logger.error(f"Gateway processing error: {e}")
+            self.logger.exception(f"Gateway processing error: {e}")
             result.add_error(f"Gateway processing failed: {e}")
             result.status = GatewayStatus.GATEWAY_ERROR
 
@@ -263,7 +269,9 @@ class GatewayService(ServiceBase, GatewayProtocol):
             # Record analytics
             if result.response:
                 await self._analytics_collector.collect_request_end(
-                    request, result.response, processing_time_ms
+                    request,
+                    result.response,
+                    processing_time_ms,
                 )
 
             # Update service metrics
@@ -368,7 +376,9 @@ class GatewayService(ServiceBase, GatewayProtocol):
         try:
             # Security validation
             if gateway_config.enable_security_headers:
-                violations = await self._security_manager.validate_request_security(request)
+                violations = await self._security_manager.validate_request_security(
+                    request,
+                )
                 if self._security_manager.is_request_blocked(violations):
                     result.add_error("Request blocked by security policy")
                     result.status = GatewayStatus.FORBIDDEN
@@ -378,7 +388,8 @@ class GatewayService(ServiceBase, GatewayProtocol):
             if gateway_config.enable_rate_limiting:
                 rate_limit_config = RateLimitConfig()
                 rate_limit_result = await self._rate_limiter.check_rate_limit(
-                    request, rate_limit_config
+                    request,
+                    rate_limit_config,
                 )
                 if not rate_limit_result.allowed:
                     result.add_error("Rate limit exceeded")
@@ -388,7 +399,10 @@ class GatewayService(ServiceBase, GatewayProtocol):
             # Authentication check
             if gateway_config.enable_authentication:
                 auth_config = AuthConfig()
-                auth_result = await self._auth_manager.authenticate(request, auth_config)
+                auth_result = await self._auth_manager.authenticate(
+                    request,
+                    auth_config,
+                )
                 if not auth_result.authenticated:
                     result.add_error("Authentication failed")
                     result.status = GatewayStatus.UNAUTHORIZED
@@ -397,7 +411,9 @@ class GatewayService(ServiceBase, GatewayProtocol):
             # Request validation
             if gateway_config.enable_validation and self._validation_service:
                 try:
-                    validation_result = await self._validation_service.validate(request.body)
+                    validation_result = await self._validation_service.validate(
+                        request.body,
+                    )
                     if not validation_result.is_valid:
                         result.add_error("Request validation failed")
                         result.status = GatewayStatus.VALIDATION_FAILED
@@ -406,7 +422,7 @@ class GatewayService(ServiceBase, GatewayProtocol):
                     self.logger.warning(f"Validation service error: {e}")
 
         except Exception as e:
-            self.logger.error(f"Request validation error: {e}")
+            self.logger.exception(f"Request validation error: {e}")
             result.add_error(f"Validation failed: {e}")
             result.status = GatewayStatus.GATEWAY_ERROR
 
@@ -428,13 +444,18 @@ class GatewayService(ServiceBase, GatewayProtocol):
 
     # Helper methods for request processing pipeline
 
-    async def _process_security(self, request: GatewayRequest, result: GatewayResult) -> None:
+    async def _process_security(
+        self,
+        request: GatewayRequest,
+        result: GatewayResult,
+    ) -> None:
         """Process security validation."""
         result.add_component_used("security")
 
         # Handle CORS preflight
         preflight_response = await self._security_manager.handle_preflight_request(
-            request, request.tenant_id
+            request,
+            request.tenant_id,
         )
         if preflight_response:
             result.response = preflight_response
@@ -448,15 +469,23 @@ class GatewayService(ServiceBase, GatewayProtocol):
             result.add_error("Request blocked by security policy")
             result.status = GatewayStatus.FORBIDDEN
 
-    async def _process_rate_limiting(self, request: GatewayRequest, result: GatewayResult) -> None:
+    async def _process_rate_limiting(
+        self,
+        request: GatewayRequest,
+        result: GatewayResult,
+    ) -> None:
         """Process rate limiting."""
         result.add_component_used("rate_limiter")
 
         rate_limit_config = RateLimitConfig()
-        rate_limit_result = await self._rate_limiter.check_rate_limit(request, rate_limit_config)
+        rate_limit_result = await self._rate_limiter.check_rate_limit(
+            request,
+            rate_limit_config,
+        )
 
         await self._analytics_collector.collect_rate_limit_event(
-            request, not rate_limit_result.allowed
+            request,
+            not rate_limit_result.allowed,
         )
 
         if not rate_limit_result.allowed:
@@ -466,10 +495,17 @@ class GatewayService(ServiceBase, GatewayProtocol):
             result.response = GatewayResponse(
                 status_code=429,
                 headers={"Retry-After": str(rate_limit_result.info.retry_after or 60)},
-                body={"error": "Rate limit exceeded", "retry_after": rate_limit_result.info.retry_after},
+                body={
+                    "error": "Rate limit exceeded",
+                    "retry_after": rate_limit_result.info.retry_after,
+                },
             )
 
-    async def _process_authentication(self, request: GatewayRequest, result: GatewayResult) -> None:
+    async def _process_authentication(
+        self,
+        request: GatewayRequest,
+        result: GatewayResult,
+    ) -> None:
         """Process authentication."""
         result.add_component_used("auth")
 
@@ -490,20 +526,26 @@ class GatewayService(ServiceBase, GatewayProtocol):
             result.response = GatewayResponse(
                 status_code=401,
                 headers=auth_result.response_headers,
-                body={"error": "Authentication required", "message": auth_result.error_message},
+                body={
+                    "error": "Authentication required",
+                    "message": auth_result.error_message,
+                },
             )
-        else:
-            # Add user context to request
-            if auth_result.user:
-                request.auth_user = {
-                    "user_id": auth_result.user.user_id,
-                    "username": auth_result.user.username,
-                    "roles": auth_result.user.roles,
-                    "scopes": auth_result.user.scopes,
-                    "tenant_id": auth_result.user.tenant_id,
-                }
+        # Add user context to request
+        elif auth_result.user:
+            request.auth_user = {
+                "user_id": auth_result.user.user_id,
+                "username": auth_result.user.username,
+                "roles": auth_result.user.roles,
+                "scopes": auth_result.user.scopes,
+                "tenant_id": auth_result.user.tenant_id,
+            }
 
-    async def _process_validation(self, request: GatewayRequest, result: GatewayResult) -> None:
+    async def _process_validation(
+        self,
+        request: GatewayRequest,
+        result: GatewayResult,
+    ) -> None:
         """Process request validation using RequestResponseValidator."""
         result.add_component_used("validation")
 
@@ -512,7 +554,7 @@ class GatewayService(ServiceBase, GatewayProtocol):
             if request.body is not None:
                 body_validation = await self._validator.validate_request_body(
                     request.body,
-                    request.headers.get("content-type", "application/json")
+                    request.headers.get("content-type", "application/json"),
                 )
                 if not body_validation.valid:
                     result.add_error("Request body validation failed")
@@ -530,7 +572,9 @@ class GatewayService(ServiceBase, GatewayProtocol):
                     return
 
             # Validate request headers
-            header_validation = await self._validator.validate_request_headers(request.headers)
+            header_validation = await self._validator.validate_request_headers(
+                request.headers,
+            )
             if not header_validation.valid:
                 result.add_error("Request header validation failed")
                 result.status = GatewayStatus.VALIDATION_FAILED
@@ -548,7 +592,9 @@ class GatewayService(ServiceBase, GatewayProtocol):
 
             # Validate query parameters
             if request.query_params:
-                query_validation = await self._validator.validate_request_query(request.query_params)
+                query_validation = await self._validator.validate_request_query(
+                    request.query_params,
+                )
                 if not query_validation.valid:
                     result.add_error("Query parameter validation failed")
                     result.status = GatewayStatus.VALIDATION_FAILED
@@ -566,7 +612,9 @@ class GatewayService(ServiceBase, GatewayProtocol):
 
             # Validate path parameters
             if request.path_params:
-                path_validation = await self._validator.validate_request_path(request.path_params)
+                path_validation = await self._validator.validate_request_path(
+                    request.path_params,
+                )
                 if not path_validation.valid:
                     result.add_error("Path parameter validation failed")
                     result.status = GatewayStatus.VALIDATION_FAILED
@@ -584,10 +632,14 @@ class GatewayService(ServiceBase, GatewayProtocol):
 
         except Exception as e:
             self.logger.warning(f"Validation processing error: {e}")
-            result.add_error(f"Validation processing error: {str(e)}")
+            result.add_error(f"Validation processing error: {e!s}")
             result.status = GatewayStatus.VALIDATION_FAILED
 
-    async def _process_response_validation(self, request: GatewayRequest, result: GatewayResult) -> None:
+    async def _process_response_validation(
+        self,
+        request: GatewayRequest,
+        result: GatewayResult,
+    ) -> None:
         """Process response validation using RequestResponseValidator."""
         if not result.response:
             return
@@ -597,15 +649,18 @@ class GatewayService(ServiceBase, GatewayProtocol):
         try:
             # Validate response body
             if result.response.body is not None:
-                content_type = result.response.headers.get("content-type", "application/json")
+                content_type = result.response.headers.get(
+                    "content-type",
+                    "application/json",
+                )
                 body_validation = await self._validator.validate_response_body(
                     result.response.body,
-                    content_type
+                    content_type,
                 )
                 if not body_validation.valid:
                     self.logger.warning(
                         f"Response body validation failed for request {request.request_id}: "
-                        f"{body_validation.errors}"
+                        f"{body_validation.errors}",
                     )
                     # Log validation warnings but don't block response for warnings
                     result.add_error("Response body validation failed")
@@ -613,42 +668,62 @@ class GatewayService(ServiceBase, GatewayProtocol):
                     # In production, you might want to handle this differently
 
             # Validate response headers
-            header_validation = await self._validator.validate_response_headers(result.response.headers)
+            header_validation = await self._validator.validate_response_headers(
+                result.response.headers,
+            )
             if not header_validation.valid:
                 self.logger.warning(
                     f"Response header validation failed for request {request.request_id}: "
-                    f"{header_validation.errors}"
+                    f"{header_validation.errors}",
                 )
                 result.add_error("Response header validation failed")
 
         except Exception as e:
             self.logger.warning(f"Response validation processing error: {e}")
-            result.add_error(f"Response validation processing error: {str(e)}")
+            result.add_error(f"Response validation processing error: {e!s}")
 
-    async def _check_cache(self, request: GatewayRequest, result: GatewayResult) -> GatewayResponse | None:
+    async def _check_cache(
+        self,
+        request: GatewayRequest,
+        result: GatewayResult,
+    ) -> GatewayResponse | None:
         """Check for cached response."""
         result.add_component_used("cache")
 
         cached_response = await self._cache_manager.get_cached_response(
-            request, request.tenant_id
+            request,
+            request.tenant_id,
         )
 
         if cached_response:
             await self._analytics_collector.collect_cache_event(request, True)
             return cached_response.to_gateway_response()
-        else:
-            await self._analytics_collector.collect_cache_event(request, False)
-            return None
+        await self._analytics_collector.collect_cache_event(request, False)
+        return None
 
-    async def _cache_response(self, request: GatewayRequest, response: GatewayResponse) -> None:
+    async def _cache_response(
+        self,
+        request: GatewayRequest,
+        response: GatewayResponse,
+    ) -> None:
         """Cache the response."""
         await self._cache_manager.cache_response(
-            request, response, tenant_id=request.tenant_id
+            request,
+            response,
+            tenant_id=request.tenant_id,
         )
 
-    async def _apply_security_headers(self, request: GatewayRequest, response: GatewayResponse) -> None:
+    async def _apply_security_headers(
+        self,
+        request: GatewayRequest,
+        response: GatewayResponse,
+    ) -> None:
         """Apply security headers to response."""
-        self._security_manager.apply_security_headers(response, request, request.tenant_id)
+        self._security_manager.apply_security_headers(
+            response,
+            request,
+            request.tenant_id,
+        )
 
     async def _process_routing(
         self,
@@ -712,14 +787,24 @@ class GatewayService(ServiceBase, GatewayProtocol):
 
     # Analytics methods
 
-    async def get_analytics_metrics(self, tenant_id: str | None = None) -> dict[str, t.Any]:
+    async def get_analytics_metrics(
+        self,
+        tenant_id: str | None = None,
+    ) -> dict[str, t.Any]:
         """Get analytics metrics."""
         metrics = await self._analytics_collector.get_metrics(tenant_id)
         return metrics.to_dict()
 
-    async def get_recent_events(self, limit: int = 100, tenant_id: str | None = None) -> list[dict[str, t.Any]]:
+    async def get_recent_events(
+        self,
+        limit: int = 100,
+        tenant_id: str | None = None,
+    ) -> list[dict[str, t.Any]]:
         """Get recent analytics events."""
-        events = await self._analytics_collector.get_recent_events(limit, tenant_id=tenant_id)
+        events = await self._analytics_collector.get_recent_events(
+            limit,
+            tenant_id=tenant_id,
+        )
         return [event.to_dict() for event in events]
 
     # Validation management methods
@@ -738,7 +823,10 @@ class GatewayService(ServiceBase, GatewayProtocol):
         """Get a validation rule by name."""
         return self._validator.get_rule(rule_name)
 
-    def list_validation_rules(self, validation_type: t.Any = None) -> list[ValidationRule]:
+    def list_validation_rules(
+        self,
+        validation_type: t.Any = None,
+    ) -> list[ValidationRule]:
         """List all validation rules."""
         return self._validator.list_rules(validation_type)
 

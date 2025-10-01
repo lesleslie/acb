@@ -20,19 +20,19 @@ from .context import get_context
 # Services layer imports
 try:
     from .services import (
-        PerformanceOptimizer as PerformanceOptimizer,  # noqa: F401
+        PerformanceOptimizer as PerformanceOptimizer,
     )
     from .services import (
-        ServiceBase as ServiceBase,  # noqa: F401
+        ServiceBase as ServiceBase,
     )
     from .services import (
-        ServiceRegistry as ServiceRegistry,  # noqa: F401
+        ServiceRegistry as ServiceRegistry,
     )
     from .services import (
-        setup_services as setup_services,  # noqa: F401
+        setup_services as setup_services,
     )
     from .services import (
-        shutdown_services_layer as shutdown_services_layer,  # noqa: F401
+        shutdown_services_layer as shutdown_services_layer,
     )
 
     HAS_SERVICES = True
@@ -46,8 +46,8 @@ except ImportError:
 
 # MCP Server imports
 try:
-    from .mcp import ACMCPServer as ACMCPServer  # noqa: F401
-    from .mcp import create_mcp_server as create_mcp_server  # noqa: F401
+    from .mcp import ACMCPServer as ACMCPServer
+    from .mcp import create_mcp_server as create_mcp_server
 
     HAS_MCP = True
 except ImportError:

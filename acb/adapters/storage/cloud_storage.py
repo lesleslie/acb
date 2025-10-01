@@ -41,7 +41,7 @@ MODULE_METADATA = AdapterMetadata(
                 "method": ["*"],
                 "responseHeader": ["*"],
                 "maxAgeSeconds": 600,
-            }
+            },
         },
     },
 )

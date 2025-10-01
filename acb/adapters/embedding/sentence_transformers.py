@@ -22,7 +22,9 @@ from acb.adapters.embedding._base import (
 )
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger
 
 try:
     import torch
@@ -69,7 +71,8 @@ class SentenceTransformersSettings(EmbeddingBaseSettings):
 
     model: str = Field(default=EmbeddingModel.ALL_MINILM_L6_V2.value)
     device: str = Field(
-        default="auto", description="Device to run model on (cpu, cuda, auto)"
+        default="auto",
+        description="Device to run model on (cpu, cuda, auto)",
     )
     cache_folder: str | None = Field(default=None, description="Model cache directory")
     use_auth_token: str | None = Field(default=None)
@@ -85,7 +88,8 @@ class SentenceTransformersSettings(EmbeddingBaseSettings):
     # Batch processing
     batch_size: int = Field(default=32)
     precision: str = Field(
-        default="float32", description="Model precision (float32, float16)"
+        default="float32",
+        description="Model precision (float32, float16)",
     )
 
     # Edge optimization
@@ -101,8 +105,9 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
 
     def __init__(self, settings: SentenceTransformersSettings | None = None) -> None:
         if not _sentence_transformers_available:
+            msg = "Sentence Transformers library not available. Install with: pip install sentence-transformers"
             raise ImportError(
-                "Sentence Transformers library not available. Install with: pip install sentence-transformers"
+                msg,
             )
 
         config: Config = depends.get("config")
@@ -133,7 +138,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
                 self._device = self._settings.device
 
             await logger.info(
-                f"Loading Sentence Transformer model: {self._settings.model} on {self._device}"
+                f"Loading Sentence Transformer model: {self._settings.model} on {self._device}",
             )
 
             # Load model
@@ -161,11 +166,11 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
             self.register_resource(self._model)
 
             await logger.info(
-                f"Successfully loaded Sentence Transformer model: {self._settings.model}"
+                f"Successfully loaded Sentence Transformer model: {self._settings.model}",
             )
 
         except Exception as e:
-            await logger.error(f"Error loading Sentence Transformer model: {e}")
+            await logger.exception(f"Error loading Sentence Transformer model: {e}")
             raise
 
     async def _embed_texts(
@@ -203,7 +208,9 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
 
             # Create results
             results = []
-            for i, (text, embedding) in enumerate(zip(texts, embeddings_list)):
+            for _i, (text, embedding) in enumerate(
+                zip(texts, embeddings_list, strict=False)
+            ):
                 result = EmbeddingResult(
                     text=text,
                     embedding=embedding,
@@ -221,7 +228,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
             processing_time = time.time() - start_time
 
             await logger.debug(
-                f"Sentence Transformers embeddings completed: {len(texts)} texts, model: {model}"
+                f"Sentence Transformers embeddings completed: {len(texts)} texts, model: {model}",
             )
 
             return EmbeddingBatch(
@@ -233,8 +240,8 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
             )
 
         except Exception as e:
-            await logger.error(
-                f"Error generating Sentence Transformers embeddings: {e}"
+            await logger.exception(
+                f"Error generating Sentence Transformers embeddings: {e}",
             )
             raise
 
@@ -270,7 +277,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
                         "is_chunk": True,
                         "chunk_size": chunk_size,
                         "chunk_overlap": chunk_overlap,
-                    }
+                    },
                 )
 
             batches.append(batch)
@@ -286,14 +293,14 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
         """Compute similarity between two embeddings."""
         if method == "cosine":
             return EmbeddingUtils.cosine_similarity(embedding1, embedding2)
-        elif method == "euclidean":
+        if method == "euclidean":
             return EmbeddingUtils.euclidean_distance(embedding1, embedding2)
-        elif method == "dot":
+        if method == "dot":
             return EmbeddingUtils.dot_product(embedding1, embedding2)
-        elif method == "manhattan":
+        if method == "manhattan":
             return EmbeddingUtils.manhattan_distance(embedding1, embedding2)
-        else:
-            raise ValueError(f"Unsupported similarity method: {method}")
+        msg = f"Unsupported similarity method: {method}"
+        raise ValueError(msg)
 
     async def similarity_search(
         self,
@@ -324,7 +331,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
             similarities = similarities[0]
 
         # Sort by similarity (descending)
-        results = list(zip(documents, similarities))
+        results = list(zip(documents, similarities, strict=False))
         results.sort(key=lambda x: x[1], reverse=True)
 
         return results[:top_k]
@@ -348,7 +355,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
                         "tokenizer": type(self._model.tokenizer).__name__
                         if hasattr(self._model, "tokenizer")
                         else None,
-                    }
+                    },
                 )
             except Exception:
                 pass  # Some models may not have these attributes

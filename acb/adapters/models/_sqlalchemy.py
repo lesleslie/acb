@@ -96,7 +96,7 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
         else:
             for attr_name in dir(instance):
                 if not attr_name.startswith(
-                    ("_", "metadata", "registry")
+                    ("_", "metadata", "registry"),
                 ) and not callable(getattr(instance, attr_name)):
                     try:
                         value = getattr(instance, attr_name)
@@ -113,17 +113,16 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
             hasattr(value, "__class__") and self._is_sqlalchemy_model(value.__class__)
         ):
             return self.serialize(value)
-        elif isinstance(value, list):
+        if isinstance(value, list):
             return [self._serialize_value(item) for item in value]
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return {k: self._serialize_value(v) for k, v in value.items()}
-        else:
-            try:
-                if hasattr(value, "python_type"):
-                    return value
+        try:
+            if hasattr(value, "python_type"):
                 return value
-            except Exception:
-                return str(value)
+            return value
+        except Exception:
+            return str(value)
 
     def deserialize(self, data: dict[str, Any]) -> T:
         msg = "Deserialize requires specific model class context"
@@ -180,8 +179,7 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
         if hasattr(model_class, "__table__"):
             for column in model_class.__table__.columns:  # type: ignore  # type: ignore[attr-defined]
                 if column.primary_key:
-                    column_name = str(column.name)
-                    return column_name  # type: ignore[no-any-return]
+                    return str(column.name)
         if hasattr(model_class, "__annotations__"):
             for field_name in model_class.__annotations__:
                 if field_name in ("id", "pk", "primary_key", "_id"):
@@ -194,12 +192,12 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
             for column in model_class.__table__.columns:  # type: ignore  # type: ignore[attr-defined]
                 if column.name == field_name:
                     try:
-                        return t.cast(type, column.type.python_type)  # type: ignore[no-any-return, return-value]
+                        return t.cast("type", column.type.python_type)  # type: ignore[no-any-return, return-value]
                     except Exception:
                         return Any  # type: ignore[return-value]
         if hasattr(model_class, "__annotations__"):
             annotation = model_class.__annotations__.get(field_name, Any)
-            return t.cast(type, annotation)  # type: ignore[no-any-return, return-value]
+            return t.cast("type", annotation)  # type: ignore[no-any-return, return-value]
 
         return Any  # type: ignore[return-value]
 
@@ -217,7 +215,9 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
         return self._analyze_field_type_for_relationship(model_class, field_name)
 
     def _analyze_field_type_for_relationship(
-        self, model_class: type[T], field_name: str
+        self,
+        model_class: type[T],
+        field_name: str,
     ) -> bool:
         field_type = self.get_field_type(model_class, field_name)
         if hasattr(field_type, "__origin__"):
@@ -228,7 +228,7 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
                     return self._is_sqlalchemy_model(args[0])
 
         return bool(
-            inspect.isclass(field_type) and self._is_sqlalchemy_model(field_type)
+            inspect.isclass(field_type) and self._is_sqlalchemy_model(field_type),
         )
 
     def get_nested_model_class(
@@ -248,7 +248,9 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
         return self._analyze_field_type_for_nested_model(model_class, field_name)
 
     def _inspect_nested_model_class(
-        self, model_class: type[T], field_name: str
+        self,
+        model_class: type[T],
+        field_name: str,
     ) -> type | None:
         if sqlalchemy_inspect is None:
             return None
@@ -259,13 +261,16 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
                 if field_name in mapper.relationships:
                     relationship = mapper.relationships[field_name]
                     if hasattr(relationship, "mapper") and hasattr(
-                        relationship.mapper, "class_"
+                        relationship.mapper,
+                        "class_",
                     ):
-                        return t.cast(type, relationship.mapper.class_)  # type: ignore[no-any-return, return-value]
+                        return t.cast("type", relationship.mapper.class_)  # type: ignore[no-any-return, return-value]
         return None
 
     def _analyze_field_type_for_nested_model(
-        self, model_class: type[T], field_name: str
+        self,
+        model_class: type[T],
+        field_name: str,
     ) -> type | None:
         field_type = self.get_field_type(model_class, field_name)
 
@@ -292,7 +297,7 @@ class SQLAlchemyModelAdapter(ModelAdapter[T]):
             return True
         if hasattr(model_class, "__mro__"):
             for base in model_class.__mro__:
-                if isinstance(base, t.cast(type, DeclarativeMeta)):  # type: ignore[arg-type]
+                if isinstance(base, t.cast("type", DeclarativeMeta)):  # type: ignore[arg-type]
                     return True
 
         return False

@@ -9,7 +9,7 @@ memory-efficient processing.
 import asyncio
 import time
 import typing as t
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from functools import wraps
 from weakref import WeakSet
@@ -18,14 +18,13 @@ from pydantic import Field
 from acb.config import Config
 from acb.core.cleanup import CleanupMixin
 from acb.depends import depends
-
-from .._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 SERVERLESS_OPTIMIZER_METADATA: t.Any = None
 
 try:
-    from ..discovery import (
+    from acb.services.discovery import (
         ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
@@ -132,7 +131,7 @@ class ServerlessOptimizer(ServiceBase):
 
         if self._settings.resource_cleanup_enabled:
             self._resource_cleanup_task = asyncio.create_task(
-                self._resource_cleanup_loop()
+                self._resource_cleanup_loop(),
             )
 
         self.logger.info("Serverless optimizer initialized")
@@ -141,10 +140,8 @@ class ServerlessOptimizer(ServiceBase):
         """Shutdown serverless optimizer."""
         if self._resource_cleanup_task:
             self._resource_cleanup_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._resource_cleanup_task
-            except asyncio.CancelledError:
-                pass
 
     async def _health_check(self) -> dict[str, t.Any]:
         """Health check for serverless optimizer."""
@@ -177,7 +174,7 @@ class ServerlessOptimizer(ServiceBase):
             self.logger.info(f"Cold start optimization completed in {duration:.2f}ms")
 
         except Exception as e:
-            self.logger.error(f"Cold start optimization failed: {e}")
+            self.logger.exception(f"Cold start optimization failed: {e}")
             self.record_error(str(e))
 
     async def _preload_adapters(self) -> None:
@@ -198,7 +195,7 @@ class ServerlessOptimizer(ServiceBase):
                 duration = (time.perf_counter() - start_time) * 1000
 
                 self.logger.debug(
-                    f"Preloaded {adapter_name} adapter in {duration:.2f}ms"
+                    f"Preloaded {adapter_name} adapter in {duration:.2f}ms",
                 )
                 self._cold_start_metrics.resources_preloaded += 1
 
@@ -231,7 +228,7 @@ class ServerlessOptimizer(ServiceBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Resource cleanup error: {e}")
+                self.logger.exception(f"Resource cleanup error: {e}")
                 await asyncio.sleep(60)
 
     async def _cleanup_idle_resources(self) -> None:
@@ -256,7 +253,7 @@ class ServerlessOptimizer(ServiceBase):
                 self.logger.debug(f"Cleaned up idle adapter: {name}")
 
         except Exception as e:
-            self.logger.error(f"Error during resource cleanup: {e}")
+            self.logger.exception(f"Error during resource cleanup: {e}")
 
     async def _monitor_memory_usage(self) -> None:
         """Monitor and report memory usage."""
@@ -275,7 +272,7 @@ class ServerlessOptimizer(ServiceBase):
             # psutil not available
             pass
         except Exception as e:
-            self.logger.error(f"Memory monitoring error: {e}")
+            self.logger.exception(f"Memory monitoring error: {e}")
 
     def get_metrics(self) -> ColdStartMetrics:
         """Get current cold start metrics."""
@@ -308,7 +305,8 @@ class LazyInitializer(CleanupMixin):
 
             try:
                 self._instance = await asyncio.wait_for(
-                    self._factory(), timeout=self._timeout
+                    self._factory(),
+                    timeout=self._timeout,
                 )
                 self._initialized = True
 
@@ -319,8 +317,9 @@ class LazyInitializer(CleanupMixin):
                 return self._instance
 
             except TimeoutError:
+                msg = f"Lazy initialization timed out after {self._timeout}s"
                 raise RuntimeError(
-                    f"Lazy initialization timed out after {self._timeout}s"
+                    msg,
                 )
 
     @property
@@ -345,7 +344,9 @@ class AdapterPreInitializer:
         self._lazy_initializers: dict[str, LazyInitializer] = {}
 
     async def preinitialize_adapter(
-        self, adapter_name: str, eager: bool = False
+        self,
+        adapter_name: str,
+        eager: bool = False,
     ) -> None:
         """Pre-initialize an adapter."""
         try:
@@ -375,7 +376,8 @@ class AdapterPreInitializer:
                 self._lazy_initializers[adapter_name] = LazyInitializer(factory)
 
         except Exception as e:
-            raise RuntimeError(f"Failed to pre-initialize adapter {adapter_name}: {e}")
+            msg = f"Failed to pre-initialize adapter {adapter_name}: {e}"
+            raise RuntimeError(msg)
 
     async def get_adapter(self, adapter_name: str) -> t.Any:
         """Get a pre-initialized adapter."""
@@ -385,7 +387,8 @@ class AdapterPreInitializer:
         if adapter_name in self._lazy_initializers:
             return await self._lazy_initializers[adapter_name].get()
 
-        raise ValueError(f"Adapter {adapter_name} not pre-initialized")
+        msg = f"Adapter {adapter_name} not pre-initialized"
+        raise ValueError(msg)
 
     def is_preinitialized(self, adapter_name: str) -> bool:
         """Check if an adapter is pre-initialized."""
@@ -403,7 +406,9 @@ class FastDependencies:
         self._resolution_times: dict[str, float] = {}
 
     def cached_resolve(
-        self, dependency_type: type[t.Any], cache_key: str | None = None
+        self,
+        dependency_type: type[t.Any],
+        cache_key: str | None = None,
     ) -> t.Any:
         """Resolve dependency with caching."""
         key = cache_key or f"{dependency_type.__module__}.{dependency_type.__name__}"
@@ -452,10 +457,8 @@ class ServerlessResourceCleanup(CleanupMixin):
         """Stop the resource cleanup loop."""
         if self._cleanup_task:
             self._cleanup_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
 
     async def _cleanup_loop(self) -> None:
         """Background cleanup loop."""
@@ -470,7 +473,7 @@ class ServerlessResourceCleanup(CleanupMixin):
                 # Log error but continue cleanup loop
                 import logging
 
-                logging.getLogger(__name__).error(f"Cleanup loop error: {e}")
+                logging.getLogger(__name__).exception(f"Cleanup loop error: {e}")
 
     async def _perform_cleanup(self) -> None:
         """Perform resource cleanup."""
@@ -486,7 +489,9 @@ class ServerlessResourceCleanup(CleanupMixin):
             except Exception as e:
                 import logging
 
-                logging.getLogger(__name__).error(f"Error cleaning up resource: {e}")
+                logging.getLogger(__name__).exception(
+                    f"Error cleaning up resource: {e}"
+                )
 
         if cleanup_count > 0:
             import logging
@@ -500,7 +505,8 @@ class ServerlessResourceCleanup(CleanupMixin):
 def optimize_cold_start(
     preload_adapters: list[str] | None = None,
 ) -> t.Callable[
-    [t.Callable[..., t.Awaitable[t.Any]]], t.Callable[..., t.Awaitable[t.Any]]
+    [t.Callable[..., t.Awaitable[t.Any]]],
+    t.Callable[..., t.Awaitable[t.Any]],
 ]:
     """Decorator to optimize function cold starts."""
 
@@ -535,7 +541,8 @@ def optimize_cold_start(
 
 @asynccontextmanager
 async def lazy_resource(
-    factory: t.Callable[[], t.Awaitable[t.Any]], timeout: float = 30.0
+    factory: t.Callable[[], t.Awaitable[t.Any]],
+    timeout: float = 30.0,
 ) -> t.AsyncGenerator[t.Any]:
     """Context manager for lazy resource initialization."""
     initializer = LazyInitializer(factory, timeout)
@@ -575,7 +582,8 @@ class AdaptiveConnectionPool:
         self._creation_lock = asyncio.Lock()
 
     async def acquire(
-        self, connection_factory: t.Callable[[], t.Awaitable[t.Any]]
+        self,
+        connection_factory: t.Callable[[], t.Awaitable[t.Any]],
     ) -> t.Any:
         """Acquire a connection from the pool."""
         # Try to get an existing connection
@@ -697,8 +705,7 @@ class ServerlessTieredCache:
             if time.time() - timestamp < 300:  # 5 minute memory TTL
                 self._cache_stats["memory_hits"] += 1
                 return value
-            else:
-                del self._memory_cache[key]
+            del self._memory_cache[key]
 
         # Try Redis
         try:
@@ -754,7 +761,8 @@ class ServerlessTieredCache:
             and self._memory_cache
         ):
             oldest_key = min(
-                self._memory_cache.keys(), key=lambda k: self._memory_cache[k][1]
+                self._memory_cache.keys(),
+                key=lambda k: self._memory_cache[k][1],
             )
             del self._memory_cache[oldest_key]
             self._memory_usage_mb *= 0.9  # Rough adjustment
@@ -771,7 +779,7 @@ class ServerlessTieredCache:
     async def _store_in_redis(self, key: str, value: t.Any, ttl: int = 3600) -> None:
         """Store value in Redis cache."""
         # Integration point with ACB Redis adapter
-        pass  # Placeholder
+        # Placeholder
 
     async def _get_from_storage(self, key: str) -> t.Any | None:
         """Get value from object storage."""
@@ -781,7 +789,7 @@ class ServerlessTieredCache:
     async def _store_in_storage(self, key: str, value: t.Any) -> None:
         """Store value in object storage."""
         # Integration point with ACB Storage adapter
-        pass  # Placeholder
+        # Placeholder
 
     def get_cache_stats(self) -> dict[str, t.Any]:
         """Get cache statistics."""
@@ -811,7 +819,8 @@ class DeferredInitializer:
 
     def __init__(self) -> None:
         self._initializers: dict[
-            str, tuple[t.Callable[[], t.Awaitable[t.Any]], int]
+            str,
+            tuple[t.Callable[[], t.Awaitable[t.Any]], int],
         ] = {}
         self._initialized: dict[str, t.Any] = {}
         self._initialization_order: list[str] = []
@@ -833,7 +842,8 @@ class DeferredInitializer:
             return self._initialized[name]
 
         if name not in self._initializers:
-            raise ValueError(f"No initializer registered for '{name}'")
+            msg = f"No initializer registered for '{name}'"
+            raise ValueError(msg)
 
         async with self._locks[name]:
             # Double-check after acquiring lock
@@ -855,7 +865,8 @@ class DeferredInitializer:
         for i in range(0, len(sorted_items), max_concurrent):
             batch = sorted_items[i : i + max_concurrent]
             await asyncio.gather(
-                *[self.get(name) for name, _ in batch], return_exceptions=True
+                *[self.get(name) for name, _ in batch],
+                return_exceptions=True,
             )
 
     def is_initialized(self, name: str) -> bool:
@@ -994,7 +1005,7 @@ class MemoryEfficientProcessor:
                 import logging
 
                 logging.getLogger(__name__).warning(
-                    f"High memory usage: {memory_mb:.1f}MB / {self._max_memory_mb}MB"
+                    f"High memory usage: {memory_mb:.1f}MB / {self._max_memory_mb}MB",
                 )
         except ImportError:
             pass  # psutil not available

@@ -167,7 +167,7 @@ class Smtp(SmtpBase):
             mx_host = f"{r['priority']} {r['value']}."
             rrdata.append(mx_host)
         record = DnsRecord.model_validate(
-            {"name": domain, "type": "MX", "rrdata": rrdata}
+            {"name": domain, "type": "MX", "rrdata": rrdata},
         )
         records.append(record)
         for r in sending_records:
@@ -208,7 +208,7 @@ class Smtp(SmtpBase):
     async def delete_route(self, route: dict[str, str]) -> HttpxResponse:
         resp = await self.requests.delete("delete", domain={route["id"]})  # type: ignore
         self.logger.info(f"Deleted route for {route['description']}")
-        return t.cast(HttpxResponse, resp)  # type: ignore[no-any-return]
+        return t.cast("HttpxResponse", resp)  # type: ignore[no-any-return]
 
     @staticmethod
     def get_name(address: str) -> str:

@@ -90,16 +90,17 @@ class TestProviderMetadata(BaseModel):
 
     name: str = Field(description="Human-readable test provider name")
     category: str = Field(
-        description="Test provider category (unit, integration, performance, etc.)"
+        description="Test provider category (unit, integration, performance, etc.)",
     )
     provider_type: str = Field(
-        description="Provider type (mock, fixture, runner, etc.)"
+        description="Provider type (mock, fixture, runner, etc.)",
     )
 
     version: str = Field(description="Semantic version of this test provider")
     acb_min_version: str = Field(description="Minimum ACB version required")
     acb_max_version: str | None = Field(
-        default=None, description="Maximum ACB version supported"
+        default=None,
+        description="Maximum ACB version supported",
     )
 
     author: str = Field(description="Primary author/maintainer")
@@ -123,10 +124,12 @@ class TestProviderMetadata(BaseModel):
 
     description: str = Field(description="Brief description of provider functionality")
     documentation_url: str | None = Field(
-        default=None, description="Link to detailed documentation"
+        default=None,
+        description="Link to detailed documentation",
     )
     repository_url: str | None = Field(
-        default=None, description="Source code repository"
+        default=None,
+        description="Source code repository",
     )
 
     settings_class: str = Field(description="Name of the settings class")
@@ -232,7 +235,8 @@ class TestProvider(BaseModel):
 
 # Test provider registry using ContextVar for thread safety
 test_provider_registry: ContextVar[list[TestProvider]] = ContextVar(
-    "test_provider_registry", default=[]
+    "test_provider_registry",
+    default=[],
 )
 _enabled_test_providers_cache: ContextVar[dict[str, TestProvider]] = ContextVar(
     "_enabled_test_providers_cache",
@@ -358,7 +362,8 @@ def get_test_provider_class(category: str, name: str | None = None) -> type[t.An
 
 
 def try_import_test_provider(
-    category: str, name: str | None = None
+    category: str,
+    name: str | None = None,
 ) -> type[t.Any] | None:
     """Try to import a test provider class, return None if not available."""
     try:

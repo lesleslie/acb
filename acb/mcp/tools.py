@@ -12,7 +12,7 @@ from .registry import ComponentRegistry
 class ACBMCPTools:
     """MCP tools implementation for ACB."""
 
-    def __init__(self, component_registry: ComponentRegistry):
+    def __init__(self, component_registry: ComponentRegistry) -> None:
         """Initialize the MCP tools."""
         self.component_registry = component_registry
         self.logger: Logger = depends.get(Logger)
@@ -29,7 +29,8 @@ class ACBMCPTools:
         self.logger.info("ACB MCP Tools initialized")
 
     async def list_components(
-        self, component_type: str | None = None
+        self,
+        component_type: str | None = None,
     ) -> dict[str, list[str]]:
         """List available components of a specific type or all components."""
         result = {}
@@ -49,7 +50,10 @@ class ACBMCPTools:
         return result
 
     async def execute_action(
-        self, action_category: str, action_name: str, **kwargs
+        self,
+        action_category: str,
+        action_name: str,
+        **kwargs,
     ) -> Any:
         """Execute a specific action with the given parameters."""
         try:
@@ -58,13 +62,17 @@ class ACBMCPTools:
             category = actions.get(action_category)
 
             if not category:
-                raise ValueError(f"Action category '{action_category}' not found")
+                msg = f"Action category '{action_category}' not found"
+                raise ValueError(msg)
 
             # Get the specific action
             action = getattr(category, action_name, None)
             if not action:
-                raise ValueError(
+                msg = (
                     f"Action '{action_name}' not found in category '{action_category}'"
+                )
+                raise ValueError(
+                    msg,
                 )
 
             # Execute the action
@@ -76,8 +84,8 @@ class ACBMCPTools:
             self.logger.info(f"Executed action: {action_category}.{action_name}")
             return result
         except Exception as e:
-            self.logger.error(
-                f"Failed to execute action {action_category}.{action_name}: {e}"
+            self.logger.exception(
+                f"Failed to execute action {action_category}.{action_name}: {e}",
             )
             raise
 
@@ -85,7 +93,8 @@ class ACBMCPTools:
         """Get information about a specific adapter."""
         adapter = self.component_registry.get_adapter(adapter_name)
         if not adapter:
-            raise ValueError(f"Adapter '{adapter_name}' not found")
+            msg = f"Adapter '{adapter_name}' not found"
+            raise ValueError(msg)
 
         # Return adapter information
         info = {

@@ -9,13 +9,15 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
-from typing import Any
+from contextlib import asynccontextmanager, suppress
+from typing import TYPE_CHECKING, Any, Self
 
 import pandas as pd
 from pydantic import BaseModel, Field
 from acb.core.cleanup import CleanupMixin
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 
 class ModelPredictionRequest(BaseModel):
@@ -24,13 +26,16 @@ class ModelPredictionRequest(BaseModel):
     inputs: dict[str, Any] = Field(description="Input data for prediction")
     model_name: str = Field(description="Name of the model to use for prediction")
     model_version: str | None = Field(
-        default=None, description="Specific model version to use"
+        default=None,
+        description="Specific model version to use",
     )
     timeout: float | None = Field(
-        default=30.0, description="Request timeout in seconds"
+        default=30.0,
+        description="Request timeout in seconds",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional request metadata"
+        default_factory=dict,
+        description="Additional request metadata",
     )
 
 
@@ -40,16 +45,19 @@ class ModelPredictionResponse(BaseModel):
     predictions: dict[str, Any] = Field(description="Model predictions/outputs")
     model_name: str = Field(description="Name of the model that generated predictions")
     model_version: str = Field(
-        description="Version of the model that generated predictions"
+        description="Version of the model that generated predictions",
     )
     confidence_scores: dict[str, float] | None = Field(
-        default=None, description="Confidence scores for predictions"
+        default=None,
+        description="Confidence scores for predictions",
     )
     latency_ms: float | None = Field(
-        default=None, description="Prediction latency in milliseconds"
+        default=None,
+        description="Prediction latency in milliseconds",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional response metadata"
+        default_factory=dict,
+        description="Additional response metadata",
     )
 
 
@@ -57,18 +65,21 @@ class BatchPredictionRequest(BaseModel):
     """Batch prediction request format."""
 
     inputs: list[dict[str, Any]] = Field(
-        description="List of input data for batch prediction"
+        description="List of input data for batch prediction",
     )
     model_name: str = Field(description="Name of the model to use for prediction")
     model_version: str | None = Field(
-        default=None, description="Specific model version to use"
+        default=None,
+        description="Specific model version to use",
     )
     batch_size: int | None = Field(default=32, description="Batch size for processing")
     timeout: float | None = Field(
-        default=300.0, description="Request timeout in seconds"
+        default=300.0,
+        description="Request timeout in seconds",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional request metadata"
+        default_factory=dict,
+        description="Additional request metadata",
     )
 
 
@@ -76,21 +87,24 @@ class BatchPredictionResponse(BaseModel):
     """Batch prediction response format."""
 
     predictions: list[dict[str, Any]] = Field(
-        description="List of model predictions/outputs"
+        description="List of model predictions/outputs",
     )
     model_name: str = Field(description="Name of the model that generated predictions")
     model_version: str = Field(
-        description="Version of the model that generated predictions"
+        description="Version of the model that generated predictions",
     )
     batch_size: int = Field(description="Actual batch size used")
     total_latency_ms: float | None = Field(
-        default=None, description="Total batch processing latency in milliseconds"
+        default=None,
+        description="Total batch processing latency in milliseconds",
     )
     avg_latency_ms: float | None = Field(
-        default=None, description="Average per-item latency in milliseconds"
+        default=None,
+        description="Average per-item latency in milliseconds",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional response metadata"
+        default_factory=dict,
+        description="Additional response metadata",
     )
 
 
@@ -102,23 +116,29 @@ class ModelInfo(BaseModel):
     status: str = Field(description="Model status (ready, loading, error)")
     description: str | None = Field(default=None, description="Model description")
     framework: str | None = Field(
-        default=None, description="ML framework (tensorflow, pytorch, etc.)"
+        default=None,
+        description="ML framework (tensorflow, pytorch, etc.)",
     )
     input_schema: dict[str, Any] | None = Field(
-        default=None, description="Expected input schema"
+        default=None,
+        description="Expected input schema",
     )
     output_schema: dict[str, Any] | None = Field(
-        default=None, description="Expected output schema"
+        default=None,
+        description="Expected output schema",
     )
     metrics: dict[str, Any] = Field(
-        default_factory=dict, description="Model performance metrics"
+        default_factory=dict,
+        description="Model performance metrics",
     )
     created_at: str | None = Field(default=None, description="Model creation timestamp")
     updated_at: str | None = Field(
-        default=None, description="Model last update timestamp"
+        default=None,
+        description="Model last update timestamp",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional model metadata"
+        default_factory=dict,
+        description="Additional model metadata",
     )
 
 
@@ -129,29 +149,37 @@ class ModelHealth(BaseModel):
     model_version: str = Field(description="Model version")
     status: str = Field(description="Health status (healthy, unhealthy, unknown)")
     latency_p50: float | None = Field(
-        default=None, description="50th percentile latency in ms"
+        default=None,
+        description="50th percentile latency in ms",
     )
     latency_p95: float | None = Field(
-        default=None, description="95th percentile latency in ms"
+        default=None,
+        description="95th percentile latency in ms",
     )
     latency_p99: float | None = Field(
-        default=None, description="99th percentile latency in ms"
+        default=None,
+        description="99th percentile latency in ms",
     )
     error_rate: float | None = Field(default=None, description="Error rate (0.0-1.0)")
     throughput_qps: float | None = Field(
-        default=None, description="Throughput in queries per second"
+        default=None,
+        description="Throughput in queries per second",
     )
     memory_usage_mb: float | None = Field(
-        default=None, description="Memory usage in MB"
+        default=None,
+        description="Memory usage in MB",
     )
     cpu_usage_percent: float | None = Field(
-        default=None, description="CPU usage percentage"
+        default=None,
+        description="CPU usage percentage",
     )
     last_check: str | None = Field(
-        default=None, description="Last health check timestamp"
+        default=None,
+        description="Last health check timestamp",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional health metadata"
+        default_factory=dict,
+        description="Additional health metadata",
     )
 
 
@@ -172,19 +200,23 @@ class MLModelSettings(BaseModel):
 
     # Model settings
     default_model_name: str | None = Field(
-        default=None, description="Default model name"
+        default=None,
+        description="Default model name",
     )
     default_model_version: str | None = Field(
-        default=None, description="Default model version"
+        default=None,
+        description="Default model version",
     )
     auto_reload: bool = Field(default=True, description="Auto-reload models on changes")
 
     # Performance settings
     max_batch_size: int = Field(
-        default=32, description="Maximum batch size for batch inference"
+        default=32,
+        description="Maximum batch size for batch inference",
     )
     max_concurrent_requests: int = Field(
-        default=100, description="Maximum concurrent requests"
+        default=100,
+        description="Maximum concurrent requests",
     )
     connection_pool_size: int = Field(default=10, description="Connection pool size")
 
@@ -192,7 +224,8 @@ class MLModelSettings(BaseModel):
     enable_metrics: bool = Field(default=True, description="Enable metrics collection")
     enable_health_checks: bool = Field(default=True, description="Enable health checks")
     health_check_interval: float = Field(
-        default=30.0, description="Health check interval in seconds"
+        default=30.0,
+        description="Health check interval in seconds",
     )
 
     # Caching settings
@@ -201,10 +234,12 @@ class MLModelSettings(BaseModel):
 
     # Advanced settings
     custom_headers: dict[str, str] = Field(
-        default_factory=dict, description="Custom HTTP headers"
+        default_factory=dict,
+        description="Custom HTTP headers",
     )
     extra_config: dict[str, Any] = Field(
-        default_factory=dict, description="Provider-specific configuration"
+        default_factory=dict,
+        description="Provider-specific configuration",
     )
 
 
@@ -240,7 +275,6 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         Returns:
             Configured client instance
         """
-        pass
 
     async def _ensure_client(self) -> Any:
         """Ensure client is initialized using lazy loading pattern."""
@@ -259,17 +293,18 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         Returns:
             Prediction response
         """
-        pass
 
     async def _predict(
-        self, request: ModelPredictionRequest
+        self,
+        request: ModelPredictionRequest,
     ) -> ModelPredictionResponse:
         """Internal prediction implementation."""
         return await self.predict(request)
 
     @abstractmethod
     async def batch_predict(
-        self, request: BatchPredictionRequest
+        self,
+        request: BatchPredictionRequest,
     ) -> BatchPredictionResponse:
         """Perform batch inference on multiple requests.
 
@@ -279,10 +314,10 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         Returns:
             Batch prediction response
         """
-        pass
 
     async def _batch_predict(
-        self, request: BatchPredictionRequest
+        self,
+        request: BatchPredictionRequest,
     ) -> BatchPredictionResponse:
         """Internal batch prediction implementation."""
         return await self.batch_predict(request)
@@ -294,7 +329,6 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         Returns:
             List of available models with their information
         """
-        pass
 
     async def _list_models(self) -> list[ModelInfo]:
         """Internal list models implementation."""
@@ -302,7 +336,9 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
 
     @abstractmethod
     async def get_model_info(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelInfo:
         """Get information about a specific model.
 
@@ -313,17 +349,20 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         Returns:
             Model information
         """
-        pass
 
     async def _get_model_info(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelInfo:
         """Internal get model info implementation."""
         return await self.get_model_info(model_name, version)
 
     @abstractmethod
     async def get_model_health(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelHealth:
         """Get health status of a specific model.
 
@@ -334,16 +373,20 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         Returns:
             Model health status
         """
-        pass
 
     async def _get_model_health(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelHealth:
         """Internal get model health implementation."""
         return await self.get_model_health(model_name, version)
 
     async def load_model(
-        self, model_name: str, model_path: str, version: str | None = None
+        self,
+        model_name: str,
+        model_path: str,
+        version: str | None = None,
     ) -> bool:
         """Load a model into the serving platform.
 
@@ -356,10 +399,14 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
             True if model loaded successfully
         """
         # Default implementation - override in subclasses that support model loading
-        raise NotImplementedError("Model loading not supported by this adapter")
+        msg = "Model loading not supported by this adapter"
+        raise NotImplementedError(msg)
 
     async def _load_model(
-        self, model_name: str, model_path: str, version: str | None = None
+        self,
+        model_name: str,
+        model_path: str,
+        version: str | None = None,
     ) -> bool:
         """Internal load model implementation."""
         return await self.load_model(model_name, model_path, version)
@@ -375,14 +422,18 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
             True if model unloaded successfully
         """
         # Default implementation - override in subclasses that support model unloading
-        raise NotImplementedError("Model unloading not supported by this adapter")
+        msg = "Model unloading not supported by this adapter"
+        raise NotImplementedError(msg)
 
     async def _unload_model(self, model_name: str, version: str | None = None) -> bool:
         """Internal unload model implementation."""
         return await self.unload_model(model_name, version)
 
     async def scale_model(
-        self, model_name: str, replicas: int, version: str | None = None
+        self,
+        model_name: str,
+        replicas: int,
+        version: str | None = None,
     ) -> bool:
         """Scale model serving replicas.
 
@@ -395,10 +446,14 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
             True if scaling successful
         """
         # Default implementation - override in subclasses that support scaling
-        raise NotImplementedError("Model scaling not supported by this adapter")
+        msg = "Model scaling not supported by this adapter"
+        raise NotImplementedError(msg)
 
     async def _scale_model(
-        self, model_name: str, replicas: int, version: str | None = None
+        self,
+        model_name: str,
+        replicas: int,
+        version: str | None = None,
     ) -> bool:
         """Internal scale model implementation."""
         return await self.scale_model(model_name, replicas, version)
@@ -461,10 +516,8 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         """Stop background health monitoring."""
         if self._health_monitor_task is not None:
             self._health_monitor_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._health_monitor_task
-            except asyncio.CancelledError:
-                pass
             self._health_monitor_task = None
 
     @asynccontextmanager
@@ -483,7 +536,7 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         if self._settings.enable_health_checks:
             await self.start_health_monitoring()
 
-    async def __aenter__(self) -> BaseMLModelAdapter:
+    async def __aenter__(self) -> Self:
         """Async context manager entry."""
         await self.init()
         return self
@@ -497,11 +550,11 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
 # Export base types for use by concrete adapters
 __all__ = [
     "BaseMLModelAdapter",
-    "MLModelSettings",
-    "ModelPredictionRequest",
-    "ModelPredictionResponse",
     "BatchPredictionRequest",
     "BatchPredictionResponse",
-    "ModelInfo",
+    "MLModelSettings",
     "ModelHealth",
+    "ModelInfo",
+    "ModelPredictionRequest",
+    "ModelPredictionResponse",
 ]

@@ -62,7 +62,7 @@ class UnitOfWorkError(RepositoryError):
         message: str,
         transaction_id: str | None = None,
         state: UnitOfWorkState | None = None,
-    ):
+    ) -> None:
         super().__init__(message, operation="unit_of_work")
         self.transaction_id = transaction_id
         self.state = state
@@ -77,8 +77,10 @@ class UnitOfWork(CleanupMixin):
     """
 
     def __init__(
-        self, isolation_level: str | None = None, timeout: float | None = None
-    ):
+        self,
+        isolation_level: str | None = None,
+        timeout: float | None = None,
+    ) -> None:
         super().__init__()
         transaction_id = str(uuid.uuid4())
         self.isolation_level = isolation_level
@@ -89,7 +91,8 @@ class UnitOfWork(CleanupMixin):
         self._sql_sessions: dict[str, Any] = {}
         self._nosql_sessions: dict[str, Any] = {}
         self._metrics = UnitOfWorkMetrics(
-            transaction_id=transaction_id, start_time=datetime.now(UTC)
+            transaction_id=transaction_id,
+            start_time=datetime.now(UTC),
         )
         self._transaction_context = None
         self._rollback_operations: list[t.Callable] = []
@@ -122,8 +125,9 @@ class UnitOfWork(CleanupMixin):
             repository: Repository instance
         """
         if self._state != UnitOfWorkState.INACTIVE:
+            msg = f"Cannot add repository {name} in state {self._state}"
             raise UnitOfWorkError(
-                f"Cannot add repository {name} in state {self._state}",
+                msg,
                 self.transaction_id,
                 self._state,
             )
@@ -145,8 +149,9 @@ class UnitOfWork(CleanupMixin):
     async def begin(self) -> None:
         """Begin the Unit of Work transaction."""
         if self._state != UnitOfWorkState.INACTIVE:
+            msg = f"Cannot begin transaction in state {self._state}"
             raise UnitOfWorkError(
-                f"Cannot begin transaction in state {self._state}",
+                msg,
                 self.transaction_id,
                 self._state,
             )
@@ -165,15 +170,19 @@ class UnitOfWork(CleanupMixin):
         except Exception as e:
             self._state = UnitOfWorkState.FAILED
             self._metrics.error_message = str(e)
+            msg = f"Failed to begin transaction: {e}"
             raise UnitOfWorkError(
-                f"Failed to begin transaction: {e}", self.transaction_id, self._state
+                msg,
+                self.transaction_id,
+                self._state,
             ) from e
 
     async def commit(self) -> None:
         """Commit the Unit of Work transaction."""
         if self._state != UnitOfWorkState.ACTIVE:
+            msg = f"Cannot commit transaction in state {self._state}"
             raise UnitOfWorkError(
-                f"Cannot commit transaction in state {self._state}",
+                msg,
                 self.transaction_id,
                 self._state,
             )
@@ -190,8 +199,11 @@ class UnitOfWork(CleanupMixin):
         except Exception as e:
             self._metrics.error_message = str(e)
             await self.rollback()
+            msg = f"Failed to commit transaction: {e}"
             raise UnitOfWorkError(
-                f"Failed to commit transaction: {e}", self.transaction_id, self._state
+                msg,
+                self.transaction_id,
+                self._state,
             ) from e
 
     async def rollback(self) -> None:
@@ -206,9 +218,9 @@ class UnitOfWork(CleanupMixin):
             for rollback_op in reversed(self._rollback_operations):
                 try:
                     await rollback_op()
-                except Exception as e:
+                except Exception:
                     # Log rollback errors but continue
-                    print(f"Rollback operation failed: {e}")
+                    pass
 
             # Rollback all database sessions
             await self._rollback_sessions()
@@ -219,8 +231,11 @@ class UnitOfWork(CleanupMixin):
         except Exception as e:
             self._state = UnitOfWorkState.FAILED
             self._metrics.error_message = str(e)
+            msg = f"Failed to rollback transaction: {e}"
             raise UnitOfWorkError(
-                f"Failed to rollback transaction: {e}", self.transaction_id, self._state
+                msg,
+                self.transaction_id,
+                self._state,
             ) from e
 
     def add_operation(self, operation: str, entity_type: str, data: Any = None) -> None:
@@ -237,7 +252,7 @@ class UnitOfWork(CleanupMixin):
                 "entity_type": entity_type,
                 "timestamp": datetime.now(UTC),
                 "data": data,
-            }
+            },
         )
         self._metrics.operations_count += 1
 
@@ -276,7 +291,8 @@ class UnitOfWork(CleanupMixin):
                 pass  # NoSQL adapter not available
 
         except Exception as e:
-            raise UnitOfWorkError(f"Failed to initialize sessions: {e}") from e
+            msg = f"Failed to initialize sessions: {e}"
+            raise UnitOfWorkError(msg) from e
 
     async def _commit_sessions(self) -> None:
         """Commit all database sessions."""
@@ -294,7 +310,8 @@ class UnitOfWork(CleanupMixin):
         # But we can flush any pending operations
 
         if errors:
-            raise UnitOfWorkError(f"Session commit errors: {'; '.join(errors)}")
+            msg = f"Session commit errors: {'; '.join(errors)}"
+            raise UnitOfWorkError(msg)
 
     async def _rollback_sessions(self) -> None:
         """Rollback all database sessions."""
@@ -312,7 +329,7 @@ class UnitOfWork(CleanupMixin):
         # We rely on application-level rollback operations
 
         if errors:
-            print(f"Session rollback errors: {'; '.join(errors)}")
+            pass
 
     async def _timeout_handler(self) -> None:
         """Handle transaction timeout."""
@@ -366,14 +383,16 @@ class UnitOfWorkManager(CleanupMixin):
     with automatic cleanup and monitoring capabilities.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._active_transactions: dict[str, UnitOfWork] = {}
         self._completed_transactions: list[UnitOfWorkMetrics] = []
         self._max_completed_history = 1000
 
     async def create_unit_of_work(
-        self, isolation_level: str | None = None, timeout: float | None = None
+        self,
+        isolation_level: str | None = None,
+        timeout: float | None = None,
     ) -> UnitOfWork:
         """Create a new Unit of Work.
 
@@ -390,7 +409,9 @@ class UnitOfWorkManager(CleanupMixin):
 
     @asynccontextmanager
     async def transaction(
-        self, isolation_level: str | None = None, timeout: float | None = None
+        self,
+        isolation_level: str | None = None,
+        timeout: float | None = None,
     ) -> t.AsyncGenerator[UnitOfWork]:
         """Context manager for Unit of Work transactions.
 
@@ -424,7 +445,8 @@ class UnitOfWorkManager(CleanupMixin):
         return metrics
 
     async def get_transaction_history(
-        self, limit: int = 100
+        self,
+        limit: int = 100,
     ) -> list[UnitOfWorkMetrics]:
         """Get completed transaction history.
 

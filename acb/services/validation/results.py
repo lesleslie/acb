@@ -9,7 +9,8 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass, field
 
-from acb.services.validation._base import ValidationResult
+if t.TYPE_CHECKING:
+    from acb.services.validation._base import ValidationResult
 
 
 class ValidationError(Exception):
@@ -83,7 +84,7 @@ class ValidationReport:
         if not self.results:
             return 0.0
         return sum(result.validation_time_ms for result in self.results) / len(
-            self.results
+            self.results,
         )
 
     @property
@@ -186,7 +187,7 @@ class ValidationReport:
 
         lines.append(
             f"Performance: {self.average_validation_time_ms:.2f}ms avg, "
-            f"{self.max_validation_time_ms:.2f}ms max"
+            f"{self.max_validation_time_ms:.2f}ms max",
         )
 
         return "\n".join(lines)

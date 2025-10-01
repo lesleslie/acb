@@ -50,7 +50,9 @@ class IntegrationTestProvider:
         self._integration_results = {}
 
     async def setup_test_environment(
-        self, environment_name: str, config: dict
+        self,
+        environment_name: str,
+        config: dict,
     ) -> dict[str, t.Any]:
         """Setup an isolated test environment."""
         test_env = {
@@ -79,7 +81,7 @@ class IntegrationTestProvider:
         if "external_apis" in config:
             for api_name in config["external_apis"]:
                 test_env["services"][api_name] = self._create_mock_external_api(
-                    api_name
+                    api_name,
                 )
 
         test_env["status"] = "ready"
@@ -255,7 +257,9 @@ class IntegrationTestProvider:
         return test_result
 
     async def test_adapter_integration(
-        self, adapter_type: str, environment_name: str
+        self,
+        adapter_type: str,
+        environment_name: str,
     ) -> dict[str, t.Any]:
         """Test adapter integration with external systems."""
         if environment_name not in self._test_environments:
@@ -283,7 +287,7 @@ class IntegrationTestProvider:
                 assert value == "test_value"
                 await adapter.delete("test_key")
                 test_results.append(
-                    {"operation": "cache_operations", "status": "passed"}
+                    {"operation": "cache_operations", "status": "passed"},
                 )
 
             elif adapter_type == "database":
@@ -293,7 +297,7 @@ class IntegrationTestProvider:
                 row = await adapter.fetch_one("SELECT 1 as test")
                 assert row is not None
                 test_results.append(
-                    {"operation": "database_operations", "status": "passed"}
+                    {"operation": "database_operations", "status": "passed"},
                 )
 
             elif adapter_type == "storage":
@@ -305,7 +309,7 @@ class IntegrationTestProvider:
                 read_data = await adapter.read("/test/file.txt")
                 assert read_data == test_data
                 test_results.append(
-                    {"operation": "storage_operations", "status": "passed"}
+                    {"operation": "storage_operations", "status": "passed"},
                 )
 
             return {
@@ -328,7 +332,9 @@ class IntegrationTestProvider:
             }
 
     async def test_api_integration(
-        self, api_name: str, environment_name: str
+        self,
+        api_name: str,
+        environment_name: str,
     ) -> dict[str, t.Any]:
         """Test external API integration."""
         if environment_name not in self._test_environments:
@@ -352,23 +358,25 @@ class IntegrationTestProvider:
             health_response = await api.request("GET", "/health")
             assert health_response["status"] == "ok"
             test_results.append(
-                {"endpoint": "/health", "method": "GET", "status": "passed"}
+                {"endpoint": "/health", "method": "GET", "status": "passed"},
             )
 
             # Test data retrieval
             users_response = await api.request("GET", "/api/users")
             assert "users" in users_response
             test_results.append(
-                {"endpoint": "/api/users", "method": "GET", "status": "passed"}
+                {"endpoint": "/api/users", "method": "GET", "status": "passed"},
             )
 
             # Test data creation
             create_response = await api.request(
-                "POST", "/api/users", {"name": "Integration Test User"}
+                "POST",
+                "/api/users",
+                {"name": "Integration Test User"},
             )
             assert create_response.get("created") is True
             test_results.append(
-                {"endpoint": "/api/users", "method": "POST", "status": "passed"}
+                {"endpoint": "/api/users", "method": "POST", "status": "passed"},
             )
 
             return {

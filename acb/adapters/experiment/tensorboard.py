@@ -109,9 +109,12 @@ class TensorBoardExperiment(BaseExperimentAdapter):
             settings: TensorBoard-specific adapter settings
         """
         if not _tensorboard_available:
-            raise ImportError(
+            msg = (
                 "TensorBoard is required for TensorBoardExperiment adapter. "
                 "Install with: pip install torch tensorboard numpy"
+            )
+            raise ImportError(
+                msg,
             )
 
         super().__init__(settings)
@@ -186,7 +189,8 @@ class TensorBoardExperiment(BaseExperimentAdapter):
                 tags={},
             )
 
-        raise ValueError(f"Experiment {experiment_id} not found")
+        msg = f"Experiment {experiment_id} not found"
+        raise ValueError(msg)
 
     async def list_experiments(
         self,
@@ -212,7 +216,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
                             status=ExperimentStatus.RUNNING,
                             created_at=datetime.fromtimestamp(exp_dir.stat().st_ctime),
                             tags={},
-                        )
+                        ),
                     )
 
         return experiments[:max_results]
@@ -291,7 +295,9 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         return run_id
 
     async def end_run(
-        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+        self,
+        run_id: str,
+        status: ExperimentStatus = ExperimentStatus.FINISHED,
     ) -> None:
         """End an experiment run."""
         if run_id in self._writers:
@@ -305,7 +311,8 @@ class TensorBoardExperiment(BaseExperimentAdapter):
     async def get_run(self, run_id: str) -> dict[str, Any]:
         """Get run information."""
         if run_id not in self._runs:
-            raise ValueError(f"Run {run_id} not found")
+            msg = f"Run {run_id} not found"
+            raise ValueError(msg)
 
         return self._runs[run_id].copy()
 
@@ -334,7 +341,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         key: str,
-        value: float | int,
+        value: float,
         step: int | None = None,
         timestamp: datetime | None = None,
     ) -> None:
@@ -456,7 +463,9 @@ class TensorBoardExperiment(BaseExperimentAdapter):
             await self._run_sync(shutil.copy2, str(artifact_file), str(local_path))
 
     async def list_artifacts(
-        self, run_id: str, path: str | None = None
+        self,
+        run_id: str,
+        path: str | None = None,
     ) -> list[ArtifactInfo]:
         """List artifacts for a run."""
         if run_id not in self._runs:
@@ -482,7 +491,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
                         artifact_type=ArtifactType.OTHER,
                         size_bytes=file_path.stat().st_size,
                         created_at=datetime.fromtimestamp(file_path.stat().st_ctime),
-                    )
+                    ),
                 )
 
         return artifacts
@@ -499,7 +508,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         """Search experiment runs."""
         # Filter runs by experiment IDs if provided
         runs = []
-        for run_id, run_info in self._runs.items():
+        for run_info in self._runs.values():
             if experiment_ids:
                 if run_info["experiment_id"] not in experiment_ids:
                     continue

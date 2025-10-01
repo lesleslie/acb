@@ -206,7 +206,7 @@ class Sql(SqlBase):
                     self.logger.debug(f"SQLite journal mode: {journal_mode}")
                 else:
                     self.logger.debug(
-                        f"Turso connection URL: {self.config.sql._async_url}"
+                        f"Turso connection URL: {self.config.sql._async_url}",
                     )
             try:
                 await conn.run_sync(SQLModel.metadata.drop_all)

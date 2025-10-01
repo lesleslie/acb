@@ -88,7 +88,7 @@ class Secret(SecretBase):
             raise
         except Exception as e:
             logger.exception(  # type: ignore[no-untyped-call]
-                f"Unexpected error initializing Infisical secret adapter: {e}"
+                f"Unexpected error initializing Infisical secret adapter: {e}",
             )
             raise
 
@@ -138,7 +138,7 @@ class Secret(SecretBase):
                 version=version or "",
             )
             self.logger.info(f"Fetched secret - {name}")
-            return t.cast(str, response.secretValue)  # type: ignore[no-any-return]
+            return t.cast("str", response.secretValue)  # type: ignore[no-any-return]
         except (InfisicalError, ConnectionError, ValueError) as e:
             self.logger.exception(f"Failed to get secret {name}: {e}")
             raise

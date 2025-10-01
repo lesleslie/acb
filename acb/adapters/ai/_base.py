@@ -115,7 +115,7 @@ class AIResponse:
 class StreamingResponse:
     """Streaming response handler for real-time AI responses."""
 
-    def __init__(self, response_generator: t.AsyncGenerator[str]):
+    def __init__(self, response_generator: t.AsyncGenerator[str]) -> None:
         self._generator = response_generator
         self._complete_response = ""
         self._stop_event = AsyncEvent()
@@ -161,7 +161,8 @@ class PromptTemplate(BaseModel):
         # Validate all required variables are provided
         missing_vars = set(self.variables) - set(render_vars.keys())
         if missing_vars:
-            raise ValueError(f"Missing template variables: {missing_vars}")
+            msg = f"Missing template variables: {missing_vars}"
+            raise ValueError(msg)
 
         return self.template.format(**render_vars)
 
@@ -261,7 +262,8 @@ class AIBase(CleanupMixin, ABC):
     def settings(self) -> AIBaseSettings:
         """Get adapter settings."""
         if self._settings is None:
-            raise RuntimeError("Settings not initialized")
+            msg = "Settings not initialized"
+            raise RuntimeError(msg)
         return self._settings
 
     @abstractmethod
@@ -322,7 +324,7 @@ class AIBase(CleanupMixin, ABC):
         # Default implementation falls back to text-only processing
         if request.images or request.audio:
             self.logger.warning(
-                "Multimodal processing not supported, falling back to text-only"
+                "Multimodal processing not supported, falling back to text-only",
             )
         return await self._generate_text(request)
 
@@ -349,7 +351,8 @@ class AIBase(CleanupMixin, ABC):
     async def _render_template(self, template_name: str, **kwargs: t.Any) -> str:
         """Render template from cache."""
         if template_name not in self._template_cache:
-            raise ValueError(f"Template '{template_name}' not found")
+            msg = f"Template '{template_name}' not found"
+            raise ValueError(msg)
         return self._template_cache[template_name].render(**kwargs)
 
     async def _health_check(self) -> dict[str, t.Any]:
@@ -382,22 +385,29 @@ async def estimate_tokens(text: str, model: str = "gpt-4") -> int:
 async def validate_request(request: AIRequest) -> None:
     """Validate AI request parameters."""
     if not request.prompt:
-        raise ValueError("Prompt cannot be empty")
+        msg = "Prompt cannot be empty"
+        raise ValueError(msg)
 
     if request.max_tokens <= 0:
-        raise ValueError("max_tokens must be positive")
+        msg = "max_tokens must be positive"
+        raise ValueError(msg)
 
     if not (0.0 <= request.temperature <= 2.0):
-        raise ValueError("temperature must be between 0.0 and 2.0")
+        msg = "temperature must be between 0.0 and 2.0"
+        raise ValueError(msg)
 
     if request.function_definitions and not isinstance(
-        request.function_definitions, list
+        request.function_definitions,
+        list,
     ):
-        raise ValueError("function_definitions must be a list")
+        msg = "function_definitions must be a list"
+        raise ValueError(msg)
 
 
 async def calculate_cost(
-    tokens_used: int, model: str, provider: ModelProvider
+    tokens_used: int,
+    model: str,
+    provider: ModelProvider,
 ) -> float | None:
     """Calculate estimated cost for AI request."""
     # Cost calculation based on provider and model

@@ -83,8 +83,11 @@ class Dns(DnsBase):
                 await self._get_zone_id()
             else:
                 if not self.config.app:
-                    raise ValueError(
+                    msg = (
                         "App configuration is required when zone_name is not specified"
+                    )
+                    raise ValueError(
+                        msg,
                     )
                 self.config.dns.zone_name = self.config.app.domain
                 await self._get_zone_id()

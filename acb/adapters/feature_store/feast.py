@@ -8,7 +8,7 @@ online and offline feature serving with Redis and BigQuery backends.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 from pydantic import Field
@@ -33,8 +33,11 @@ from acb.adapters.feature_store._base import (
     FeatureVector,
 )
 
+if TYPE_CHECKING:
+    from feast import FeatureService
+
 try:
-    from feast import FeatureService, FeatureStore
+    from feast import FeatureStore
     from feast.infra.online_stores.redis import RedisOnlineStoreConfig
     from feast.repo_config import RepoConfig
 
@@ -48,13 +51,15 @@ class FeastSettings(FeatureStoreSettings):
 
     # Feast repository settings
     repo_path: str = Field(
-        default="./feature_store", description="Feast repository path"
+        default="./feature_store",
+        description="Feast repository path",
     )
     project_name: str = Field(default="acb_features", description="Feast project name")
 
     # Online store settings (Redis)
     redis_host: str = Field(
-        default="localhost", description="Redis host for online store"
+        default="localhost",
+        description="Redis host for online store",
     )
     redis_port: int = Field(default=6379, description="Redis port for online store")
     redis_db: int = Field(default=0, description="Redis database number")
@@ -63,7 +68,8 @@ class FeastSettings(FeatureStoreSettings):
     # Offline store settings (can be file, BigQuery, Snowflake, etc.)
     offline_store_type: str = Field(default="file", description="Offline store type")
     offline_store_path: str | None = Field(
-        default=None, description="Offline store path"
+        default=None,
+        description="Offline store path",
     )
 
     # Registry settings
@@ -72,15 +78,18 @@ class FeastSettings(FeatureStoreSettings):
 
     # Feature serving settings
     feature_service_name: str | None = Field(
-        default=None, description="Default feature service"
+        default=None,
+        description="Default feature service",
     )
     enable_feature_logging: bool = Field(
-        default=True, description="Enable feature logging"
+        default=True,
+        description="Enable feature logging",
     )
 
     # Advanced settings
     entity_key_serialization_version: int = Field(
-        default=2, description="Entity key serialization version"
+        default=2,
+        description="Entity key serialization version",
     )
 
 
@@ -98,8 +107,9 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             settings: Feast-specific configuration settings
         """
         if not FEAST_AVAILABLE:
+            msg = "Feast not available. Install with: uv add 'feast>=0.35.0'"
             raise ImportError(
-                "Feast not available. Install with: uv add 'feast>=0.35.0'"
+                msg,
             )
 
         super().__init__(settings or FeastSettings())
@@ -158,18 +168,17 @@ class FeastAdapter(BaseFeatureStoreAdapter):
                 "type": "file",
                 "path": self.feast_settings.offline_store_path or "./data",
             }
-        elif self.feast_settings.offline_store_type == "bigquery":
+        if self.feast_settings.offline_store_type == "bigquery":
             return {
                 "type": "bigquery",
                 "project_id": self.feast_settings.extra_config.get(
-                    "bigquery_project_id"
+                    "bigquery_project_id",
                 ),
                 "dataset_id": self.feast_settings.extra_config.get(
-                    "bigquery_dataset_id"
+                    "bigquery_dataset_id",
                 ),
             }
-        else:
-            return {"type": "file", "path": "./data"}
+        return {"type": "file", "path": "./data"}
 
     def _create_registry_config(self) -> str:
         """Create registry configuration."""
@@ -177,12 +186,11 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             return (
                 self.feast_settings.registry_path or "./feature_store/data/registry.db"
             )
-        elif self.feast_settings.registry_type == "gcs":
+        if self.feast_settings.registry_type == "gcs":
             return (
                 f"gs://{self.feast_settings.extra_config.get('gcs_bucket')}/registry.db"
             )
-        else:
-            return "./feature_store/data/registry.db"
+        return "./feature_store/data/registry.db"
 
     async def _ensure_feast_store(self) -> FeatureStore:
         """Ensure Feast store is initialized."""
@@ -192,7 +200,8 @@ class FeastAdapter(BaseFeatureStoreAdapter):
 
     # Feature Serving Methods
     async def get_online_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from Feast online store for real-time serving."""
         start_time = datetime.now()
@@ -224,7 +233,7 @@ class FeastAdapter(BaseFeatureStoreAdapter):
                         entity_id=entity_id,
                         features=features,
                         timestamp=request.timestamp or datetime.now(),
-                    )
+                    ),
                 )
 
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -235,10 +244,12 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get online features: {e}")
+            msg = f"Failed to get online features: {e}"
+            raise RuntimeError(msg)
 
     async def get_offline_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from Feast offline store for batch processing."""
         start_time = datetime.now()
@@ -251,7 +262,7 @@ class FeastAdapter(BaseFeatureStoreAdapter):
                     "entity_id": request.entity_ids,
                     "event_timestamp": [request.timestamp or datetime.now()]
                     * len(request.entity_ids),
-                }
+                },
             )
 
             # Get historical features
@@ -273,7 +284,7 @@ class FeastAdapter(BaseFeatureStoreAdapter):
                         entity_id=str(row.get("entity_id", "")),
                         features=features,
                         timestamp=row.get("event_timestamp"),
-                    )
+                    ),
                 )
 
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -284,7 +295,8 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get offline features: {e}")
+            msg = f"Failed to get offline features: {e}"
+            raise RuntimeError(msg)
 
     async def get_historical_features(
         self,
@@ -299,23 +311,23 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             # Ensure timestamp column is named correctly for Feast
             if timestamp_column != "event_timestamp":
                 entity_df = entity_df.rename(
-                    columns={timestamp_column: "event_timestamp"}
+                    columns={timestamp_column: "event_timestamp"},
                 )
 
             # Get historical features
-            training_df = feast_store.get_historical_features(
+            return feast_store.get_historical_features(
                 entity_df=entity_df,
                 features=feature_names,
             ).to_df()
 
-            return training_df
-
         except Exception as e:
-            raise RuntimeError(f"Failed to get historical features: {e}")
+            msg = f"Failed to get historical features: {e}"
+            raise RuntimeError(msg)
 
     # Feature Ingestion Methods
     async def ingest_features(
-        self, request: FeatureIngestionRequest
+        self,
+        request: FeatureIngestionRequest,
     ) -> FeatureIngestionResponse:
         """Ingest features into Feast feature store."""
         start_time = datetime.now()
@@ -334,13 +346,11 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             df = pd.DataFrame(rows)
 
             # Use batch ingestion method
-            response = await self.ingest_batch_features(
+            return await self.ingest_batch_features(
                 feature_group=request.feature_group,
                 df=df,
                 mode=request.mode,
             )
-
-            return response
 
         except Exception as e:
             return FeatureIngestionResponse(
@@ -351,7 +361,10 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             )
 
     async def ingest_batch_features(
-        self, feature_group: str, df: pd.DataFrame, mode: str = "append"
+        self,
+        feature_group: str,
+        df: pd.DataFrame,
+        mode: str = "append",
     ) -> FeatureIngestionResponse:
         """Ingest batch features from DataFrame."""
         start_time = datetime.now()
@@ -388,10 +401,12 @@ class FeastAdapter(BaseFeatureStoreAdapter):
             feature_views = feast_store.list_feature_views()
             return [fv.name for fv in feature_views]
         except Exception as e:
-            raise RuntimeError(f"Failed to list feature groups: {e}")
+            msg = f"Failed to list feature groups: {e}"
+            raise RuntimeError(msg)
 
     async def list_features(
-        self, feature_group: str | None = None
+        self,
+        feature_group: str | None = None,
     ) -> list[FeatureDefinition]:
         """List available features."""
         feast_store = await self._ensure_feast_store()
@@ -411,13 +426,14 @@ class FeastAdapter(BaseFeatureStoreAdapter):
                                 description=getattr(fv, "description", None),
                                 tags=getattr(fv, "tags", {}),
                                 created_at=getattr(fv, "created_timestamp", None),
-                            )
+                            ),
                         )
 
             return features
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list features: {e}")
+            msg = f"Failed to list features: {e}"
+            raise RuntimeError(msg)
 
     async def get_feature_definition(self, feature_name: str) -> FeatureDefinition:
         """Get feature definition and metadata."""
@@ -443,13 +459,17 @@ class FeastAdapter(BaseFeatureStoreAdapter):
                         created_at=getattr(feature_view, "created_timestamp", None),
                     )
 
-            raise ValueError(f"Feature {feature_name} not found")
+            msg = f"Feature {feature_name} not found"
+            raise ValueError(msg)
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get feature definition: {e}")
+            msg = f"Failed to get feature definition: {e}"
+            raise RuntimeError(msg)
 
     async def search_features(
-        self, query: str, filters: dict[str, Any] | None = None
+        self,
+        query: str,
+        filters: dict[str, Any] | None = None,
     ) -> list[FeatureDefinition]:
         """Search features by query and filters."""
         # Get all features and filter by query
@@ -501,7 +521,9 @@ class FeastAdapter(BaseFeatureStoreAdapter):
         )
 
     async def detect_feature_drift(
-        self, feature_name: str, reference_window: int = 7
+        self,
+        feature_name: str,
+        reference_window: int = 7,
     ) -> float:
         """Detect feature drift compared to reference window."""
         # Mock implementation - in practice, this would analyze feature distributions
@@ -518,7 +540,10 @@ class FeastAdapter(BaseFeatureStoreAdapter):
         return ["v1.0", "v1.1", "v2.0"]  # Mock data
 
     async def get_feature_at_timestamp(
-        self, feature_name: str, entity_id: str, timestamp: datetime
+        self,
+        feature_name: str,
+        entity_id: str,
+        timestamp: datetime,
     ) -> FeatureValue | None:
         """Get feature value at specific timestamp (time travel)."""
         # This would use Feast's point-in-time feature retrieval
@@ -535,7 +560,10 @@ class FeastAdapter(BaseFeatureStoreAdapter):
         return True
 
     async def get_feature_for_experiment(
-        self, feature_name: str, entity_id: str, experiment_id: str
+        self,
+        feature_name: str,
+        entity_id: str,
+        experiment_id: str,
     ) -> Any:
         """Get feature value for A/B testing experiment."""
         return "experiment_variant_value"
@@ -618,9 +646,9 @@ FeatureStore = FeastAdapter
 FeatureStoreSettings = FeastSettings
 
 __all__ = [
+    "MODULE_METADATA",
     "FeastAdapter",
     "FeastSettings",
     "FeatureStore",
     "FeatureStoreSettings",
-    "MODULE_METADATA",
 ]

@@ -16,7 +16,7 @@ from .tools import ACBMCPTools
 class ACMCPServer:
     """ACB MCP Server implementation."""
 
-    def __init__(self, app: FastAPI | None = None):
+    def __init__(self, app: FastAPI | None = None) -> None:
         """Initialize the MCP server."""
         self.app = app or FastAPI(title="ACB MCP Server")
         self.config: Config = depends.get(Config)

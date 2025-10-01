@@ -141,7 +141,7 @@ class LlamaIndexReasoningSettings(ReasoningBaseSettings):
 class LlamaIndexCallback:
     """Callback handler for LlamaIndex operations."""
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger) -> None:
         self.logger = logger
         self.steps: list[ReasoningStep] = []
         self.step_counter = 0
@@ -202,7 +202,9 @@ class Reasoning(ReasoningBase):
     """LlamaIndex-based reasoning adapter focused on RAG workflows."""
 
     def __init__(
-        self, settings: LlamaIndexReasoningSettings | None = None, **kwargs: t.Any
+        self,
+        settings: LlamaIndexReasoningSettings | None = None,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(**kwargs)
         self._settings = settings or LlamaIndexReasoningSettings()
@@ -213,9 +215,12 @@ class Reasoning(ReasoningBase):
         self._chat_engines: dict[str, SimpleChatEngine] = {}
 
         if not LLAMAINDEX_AVAILABLE:
-            raise ImportError(
+            msg = (
                 "LlamaIndex is not installed. Please install with: "
                 "pip install 'acb[reasoning]' or pip install llama-index"
+            )
+            raise ImportError(
+                msg,
             )
 
     async def _create_client(self) -> OpenAI:
@@ -227,8 +232,9 @@ class Reasoning(ReasoningBase):
 
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
+                msg = "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
                 raise ValueError(
-                    "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
+                    msg,
                 )
 
         # Create OpenAI LLM
@@ -273,7 +279,7 @@ class Reasoning(ReasoningBase):
 
             if not response.confidence_score:
                 response.confidence_score = await calculate_confidence_score(
-                    response.reasoning_chain
+                    response.reasoning_chain,
                 )
 
             # Add citation information
@@ -283,7 +289,7 @@ class Reasoning(ReasoningBase):
             return response
 
         except Exception as e:
-            self.logger.error(f"LlamaIndex reasoning failed: {e}")
+            self.logger.exception(f"LlamaIndex reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=callback.steps,
@@ -294,7 +300,9 @@ class Reasoning(ReasoningBase):
             )
 
     async def _rag_workflow_reasoning(
-        self, request: ReasoningRequest, callback: LlamaIndexCallback
+        self,
+        request: ReasoningRequest,
+        callback: LlamaIndexCallback,
     ) -> ReasoningResponse:
         """Perform RAG workflow reasoning using LlamaIndex."""
         try:
@@ -302,7 +310,8 @@ class Reasoning(ReasoningBase):
             if request.context and request.context.knowledge_base:
                 index = await self._get_or_create_index(request.context.knowledge_base)
                 query_engine = await self._get_or_create_query_engine(
-                    request.context.knowledge_base, index
+                    request.context.knowledge_base,
+                    index,
                 )
             else:
                 # Create a simple query engine for general reasoning
@@ -332,11 +341,13 @@ class Reasoning(ReasoningBase):
             )
 
         except Exception as e:
-            self.logger.error(f"RAG workflow failed: {e}")
+            self.logger.exception(f"RAG workflow failed: {e}")
             raise
 
     async def _chain_of_thought_reasoning(
-        self, request: ReasoningRequest, callback: LlamaIndexCallback
+        self,
+        request: ReasoningRequest,
+        callback: LlamaIndexCallback,
     ) -> ReasoningResponse:
         """Perform chain-of-thought reasoning using LlamaIndex."""
         llm = await self._ensure_client()
@@ -358,7 +369,7 @@ Please follow this structured approach:
 6. **Final Answer**: Provide a clear, concise conclusion
 
 Let's work through this:
-"""
+""",
         )
 
         # Create a simple query engine with the custom template
@@ -378,7 +389,9 @@ Let's work through this:
         )
 
     async def _react_reasoning(
-        self, request: ReasoningRequest, callback: LlamaIndexCallback
+        self,
+        request: ReasoningRequest,
+        callback: LlamaIndexCallback,
     ) -> ReasoningResponse:
         """Perform ReAct reasoning with tools using LlamaIndex."""
         if not request.tools:
@@ -437,7 +450,8 @@ Let's work through this:
             # This is a simplified integration - in practice, you'd want
             # to properly convert vector DB results to LlamaIndex documents
             docs = await self._get_documents_from_vector_db(
-                knowledge_base_name, vector_adapter
+                knowledge_base_name,
+                vector_adapter,
             )
 
             if docs:
@@ -447,7 +461,7 @@ Let's work through this:
                 # Persist index if enabled
                 if self._settings.persist_index:
                     index.storage_context.persist(
-                        persist_dir=f"{self._settings.index_cache_dir}/{knowledge_base_name}"
+                        persist_dir=f"{self._settings.index_cache_dir}/{knowledge_base_name}",
                     )
 
                 self._indices[knowledge_base_name] = index
@@ -462,13 +476,16 @@ Let's work through this:
         return index
 
     async def _get_documents_from_vector_db(
-        self, collection_name: str, vector_adapter: t.Any
+        self,
+        collection_name: str,
+        vector_adapter: t.Any,
     ) -> list[Document]:
         """Get documents from vector database and convert to LlamaIndex format."""
         try:
             # Get all documents from collection (simplified)
             results = await vector_adapter.get_all(
-                collection=collection_name, limit=1000
+                collection=collection_name,
+                limit=1000,
             )
 
             documents = []
@@ -482,11 +499,13 @@ Let's work through this:
             return documents
 
         except Exception as e:
-            self.logger.error(f"Failed to get documents from vector DB: {e}")
+            self.logger.exception(f"Failed to get documents from vector DB: {e}")
             return []
 
     async def _get_or_create_query_engine(
-        self, knowledge_base_name: str, index: VectorStoreIndex
+        self,
+        knowledge_base_name: str,
+        index: VectorStoreIndex,
     ) -> BaseQueryEngine:
         """Get existing query engine or create new one."""
         if knowledge_base_name in self._query_engines:
@@ -514,7 +533,9 @@ Let's work through this:
         return query_engine
 
     def _create_simple_query_engine(
-        self, llm: OpenAI, template: PromptTemplate | None = None
+        self,
+        llm: OpenAI,
+        template: PromptTemplate | None = None,
     ) -> BaseQueryEngine:
         """Create a simple query engine for general reasoning."""
         # Create empty index for simple querying
@@ -529,13 +550,15 @@ Let's work through this:
 
         if template:
             query_engine.update_prompts(
-                {"response_synthesizer:text_qa_template": template}
+                {"response_synthesizer:text_qa_template": template},
             )
 
         return query_engine
 
     async def create_chat_engine(
-        self, session_id: str, knowledge_base: str | None = None
+        self,
+        session_id: str,
+        knowledge_base: str | None = None,
     ) -> SimpleChatEngine:
         """Create a chat engine for conversational reasoning."""
         if session_id in self._chat_engines:
@@ -549,7 +572,7 @@ Let's work through this:
             chat_engine = index.as_chat_engine(
                 llm=llm,
                 memory=ChatMemoryBuffer.from_defaults(
-                    token_limit=self._settings.chat_memory_token_limit
+                    token_limit=self._settings.chat_memory_token_limit,
                 ),
                 streaming=self._settings.streaming,
             )
@@ -558,7 +581,7 @@ Let's work through this:
             chat_engine = SimpleChatEngine.from_defaults(
                 llm=llm,
                 memory=ChatMemoryBuffer.from_defaults(
-                    token_limit=self._settings.chat_memory_token_limit
+                    token_limit=self._settings.chat_memory_token_limit,
                 ),
             )
 
@@ -566,7 +589,10 @@ Let's work through this:
         return chat_engine
 
     async def chat(
-        self, session_id: str, message: str, knowledge_base: str | None = None
+        self,
+        session_id: str,
+        message: str,
+        knowledge_base: str | None = None,
     ) -> str:
         """Perform conversational reasoning."""
         chat_engine = await self.create_chat_engine(session_id, knowledge_base)
@@ -599,7 +625,9 @@ Let's work through this:
             del self._query_engines[knowledge_base_name]
 
     async def _tree_of_thoughts(
-        self, request: ReasoningRequest, num_paths: int
+        self,
+        request: ReasoningRequest,
+        num_paths: int,
     ) -> ReasoningResponse:
         """Enhanced tree-of-thoughts using LlamaIndex."""
         await self._ensure_client()
@@ -653,7 +681,7 @@ Let's work through this:
 
         synthesis_index = VectorStoreIndex.from_documents(synthesis_docs)
         synthesis_engine = synthesis_index.as_query_engine(
-            response_mode="tree_summarize"
+            response_mode="tree_summarize",
         )
 
         synthesis_query = f"Based on multiple reasoning paths, provide the best answer to: {request.query}"
@@ -678,4 +706,4 @@ Let's work through this:
 
 
 # Export the adapter class
-__all__ = ["Reasoning", "LlamaIndexReasoningSettings", "MODULE_METADATA"]
+__all__ = ["MODULE_METADATA", "LlamaIndexReasoningSettings", "Reasoning"]

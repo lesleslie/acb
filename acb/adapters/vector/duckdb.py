@@ -126,7 +126,7 @@ class Vector(VectorBase):
         """Validate and sanitize SELECT fields to prevent SQL injection."""
         # Allow only safe field names and common SQL tokens
         allowed_chars = set(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_, ."
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_, .",
         )
         if not all(c in allowed_chars for c in select_fields):
             msg = f"Invalid select fields: {select_fields}"
@@ -146,7 +146,7 @@ class Vector(VectorBase):
                 # Properly escape single quotes in string values
                 escaped_value = value.replace("'", "''")
                 filter_conditions.append(
-                    f"json_extract_string(metadata, '$.{key}') = '{escaped_value}'"
+                    f"json_extract_string(metadata, '$.{key}') = '{escaped_value}'",
                 )
             else:
                 filter_conditions.append(f"json_extract(metadata, '$.{key}') = {value}")
@@ -179,7 +179,10 @@ class Vector(VectorBase):
         return query
 
     def _build_fallback_query(
-        self, table_name: str, select_fields: str, limit: int
+        self,
+        table_name: str,
+        select_fields: str,
+        limit: int,
     ) -> str:
         """Build fallback query without VSS."""
         # Validate inputs to prevent SQL injection
@@ -193,7 +196,9 @@ class Vector(VectorBase):
         """  # nosec B608 - table and field names are validated
 
     def _convert_row_to_result(
-        self, row: t.Any, include_vectors: bool
+        self,
+        row: t.Any,
+        include_vectors: bool,
     ) -> VectorSearchResult:
         """Convert database row to VectorSearchResult."""
         result_data = {
@@ -232,7 +237,10 @@ class Vector(VectorBase):
         # Try VSS-based search first, fallback to basic search
         try:
             query = self._build_search_query(
-                table_name, select_fields, filter_expr, limit
+                table_name,
+                select_fields,
+                filter_expr,
+                limit,
             )
             result = client.execute(query, [query_vector]).fetchall()
         except Exception as e:
@@ -327,7 +335,7 @@ class Vector(VectorBase):
             client.execute(query, ids)
             return True
         except Exception as e:
-            self.logger.error(f"Failed to delete documents: {e}")
+            self.logger.exception(f"Failed to delete documents: {e}")
             return False
 
     async def get(
@@ -367,7 +375,7 @@ class Vector(VectorBase):
             return documents
 
         except Exception as e:
-            self.logger.error(f"Failed to retrieve documents: {e}")
+            self.logger.exception(f"Failed to retrieve documents: {e}")
             return []
 
     async def count(
@@ -422,7 +430,7 @@ class Vector(VectorBase):
             client.execute(f"DROP TABLE IF EXISTS {table_name}")  # nosec B608
             return True
         except Exception as e:
-            self.logger.error(f"Failed to delete collection {name}: {e}")
+            self.logger.exception(f"Failed to delete collection {name}: {e}")
             return False
 
     async def list_collections(self, **kwargs: t.Any) -> list[str]:
@@ -431,15 +439,18 @@ class Vector(VectorBase):
 
         try:
             result = client.execute(
-                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'vectors'"
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'vectors'",
             ).fetchall()
             return [row[0] for row in result]
         except Exception as e:
-            self.logger.error(f"Failed to list collections: {e}")
+            self.logger.exception(f"Failed to list collections: {e}")
             return []
 
     async def _ensure_collection_exists(
-        self, name: str, dimension: int, distance_metric: str = "cosine"
+        self,
+        name: str,
+        dimension: int,
+        distance_metric: str = "cosine",
     ) -> bool:
         """Ensure collection table exists."""
         client = await self.get_client()
@@ -491,7 +502,7 @@ class Vector(VectorBase):
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to create collection {name}: {e}")
+            self.logger.exception(f"Failed to create collection {name}: {e}")
             return False
 
 

@@ -1,6 +1,110 @@
 ---
-id: 01K6EGN78BGCBJFSKW0K9S5VXJ
+id: 01K6EZ12BDS63DVX7Q38DN4DE6
 ---
+______________________________________________________________________
+
+## id: 01K6EZ05RDAWY4ESG2E5R5FTZJ
+
+______________________________________________________________________
+
+## id: 01K6EYXYWCPRJM2JAFA7JF67PV
+
+______________________________________________________________________
+
+## id: 01K6EYX7GDR26K8P6PK219MSQM
+
+______________________________________________________________________
+
+## id: 01K6EXJR34MPQHBTHNDCFC1WDR
+
+______________________________________________________________________
+
+## id: 01K6EXHQE3C4M59SCV42KH3C55
+
+______________________________________________________________________
+
+## id: 01K6EXCM9ZW6EZS0406F0FZJ6C
+
+______________________________________________________________________
+
+## id: 01K6EXBRHCCYG6VE9RFP4C3PGY
+
+______________________________________________________________________
+
+## id: 01K6EWFHM8BQZXZJY0FB9SXD07
+
+______________________________________________________________________
+
+## id: 01K6EWEPZNX3REEWGDBRNXB60N
+
+______________________________________________________________________
+
+## id: 01K6ETPQEFCYZDP6BQQ5V3Y4T8
+
+______________________________________________________________________
+
+## id: 01K6ETP2TKXQHE5VXMQT9VQ048
+
+______________________________________________________________________
+
+## id: 01K6ETJBBQEH32X9WDNZGKWMA3
+
+______________________________________________________________________
+
+## id: 01K6ETHJZR7B7HJN1WJTC6T74S
+
+______________________________________________________________________
+
+## id: 01K6ESWKWT4RK7RPH9WVKRZ1B6
+
+______________________________________________________________________
+
+## id: 01K6ESVYS5CKGBR4A92D1GS2YR
+
+______________________________________________________________________
+
+## id: 01K6ESP2F709QJDCBE6SJ0P90A
+
+______________________________________________________________________
+
+## id: 01K6ESNDYPEYA3EQKQSTY9AP8F
+
+______________________________________________________________________
+
+## id: 01K6ESM0CC8TSZ0EBXEZZ360ZQ
+
+______________________________________________________________________
+
+## id: 01K6ESK96956C802X2477WGMJ1
+
+______________________________________________________________________
+
+## id: 01K6ESHF7YZGC1JG3V5YE66E29
+
+______________________________________________________________________
+
+## id: 01K6ESGVNP9H4JV1Y36Z271M3D
+
+______________________________________________________________________
+
+## id: 01K6EN5R2TR3RGVAKKQQX55Z9M
+
+______________________________________________________________________
+
+## id: 01K6EN4Z2ZTXH1K69KRNNXG8G3
+
+______________________________________________________________________
+
+## id: 01K6EMS4GSGJPPD74YQGNHF0VK
+
+______________________________________________________________________
+
+## id: 01K6EMRBXDXFNMWZQ980ZXDEQ4
+
+______________________________________________________________________
+
+## id: 01K6EGN78BGCBJFSKW0K9S5VXJ
+
 # API Gateway Adapter
 
 Comprehensive API Gateway implementation for ACB framework providing authentication, rate limiting, usage tracking, and request/response validation.
@@ -45,7 +149,7 @@ response = await gateway.handle_request(
     path="/api/users",
     headers={"Authorization": "Bearer my-secret-key"},
     body={"name": "John Doe"},
-    required_scopes=["write"]
+    required_scopes=["write"],
 )
 
 print(f"Status: {response.status}")
@@ -96,10 +200,7 @@ strict_validation: false
 from acb.adapters.gateway.auth import JWTAuthProvider
 
 # Configure JWT in settings
-config = GatewayConfig(
-    jwt_secret="your-secret-key",
-    jwt_algorithm="HS256"
-)
+config = GatewayConfig(jwt_secret="your-secret-key", jwt_algorithm="HS256")
 
 # Use JWT token in requests
 headers = {"Authorization": "Bearer your-jwt-token"}
@@ -123,10 +224,7 @@ headers = {"Authorization": "ApiKey api-key-123"}
 from acb.adapters.gateway.rate_limit import RateLimitConfig, TokenBucketLimiter
 
 config = RateLimitConfig(
-    requests_per_window=100,
-    window_seconds=60,
-    burst_size=10,
-    replenish_rate=1.0
+    requests_per_window=100, window_seconds=60, burst_size=10, replenish_rate=1.0
 )
 
 limiter = TokenBucketLimiter(config)
@@ -158,7 +256,7 @@ await tracker.record_request(
     endpoint="/api/users",
     method="GET",
     response_status=200,
-    response_time_ms=150.5
+    response_time_ms=150.5,
 )
 ```
 
@@ -185,7 +283,7 @@ await gateway.create_user_quota(
     requests_per_hour=2000,
     requests_per_day=50000,
     requests_per_month=1000000,
-    bytes_per_day=100 * 1024 * 1024  # 100MB
+    bytes_per_day=100 * 1024 * 1024,  # 100MB
 )
 ```
 
@@ -195,6 +293,7 @@ await gateway.create_user_quota(
 
 ```python
 from acb.adapters.gateway.middleware import MiddlewareBase
+
 
 class CustomMiddleware(MiddlewareBase):
     async def process_request(self, request):
@@ -207,6 +306,7 @@ class CustomMiddleware(MiddlewareBase):
         response["headers"]["X-Custom"] = "processed"
         return response
 
+
 # Add to gateway
 gateway.processor.middleware_chain.add_middleware(CustomMiddleware())
 ```
@@ -217,13 +317,17 @@ gateway.processor.middleware_chain.add_middleware(CustomMiddleware())
 from pydantic import BaseModel
 from acb.adapters.gateway.middleware import ValidationMiddleware
 
+
 class UserCreateSchema(BaseModel):
     name: str
     email: str
     age: int
 
+
 # Register schema for validation
-validation_middleware = gateway.processor.middleware_chain.get_middleware_by_type(ValidationMiddleware)
+validation_middleware = gateway.processor.middleware_chain.get_middleware_by_type(
+    ValidationMiddleware
+)
 validation_middleware.register_schema("/api/users", "POST", UserCreateSchema)
 ```
 
@@ -253,6 +357,7 @@ gateway = Gateway()
 await gateway.initialize()
 
 depends.set(Gateway, gateway)
+
 
 # Use in other components
 @depends.inject

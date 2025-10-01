@@ -156,7 +156,7 @@ class CustomReasoningSettings(ReasoningBaseSettings):
 class RuleEngine:
     """Core rule engine for evaluating complex rules."""
 
-    def __init__(self, settings: CustomReasoningSettings, logger: Logger):
+    def __init__(self, settings: CustomReasoningSettings, logger: Logger) -> None:
         self.settings = settings
         self.logger = logger
         self.rules: dict[str, EnhancedRule] = {}
@@ -175,7 +175,9 @@ class RuleEngine:
             self.logger.debug(f"Removed rule: {rule_name}")
 
     def evaluate_rule(
-        self, rule: EnhancedRule, data: dict[str, t.Any]
+        self,
+        rule: EnhancedRule,
+        data: dict[str, t.Any],
     ) -> RuleEvaluationResult:
         """Evaluate a single rule against data."""
         start_time = time.time()
@@ -187,7 +189,7 @@ class RuleEngine:
                 cached_result = self.rule_cache[cache_key]
                 if self.settings.log_rule_evaluations:
                     self.logger.debug(
-                        f"Rule {rule.name} returned cached result: {cached_result.matched}"
+                        f"Rule {rule.name} returned cached result: {cached_result.matched}",
                     )
                 return cached_result
 
@@ -208,7 +210,7 @@ class RuleEngine:
                 result, explanation = self._evaluate_condition(condition, data)
                 condition_results.append((result, condition.weight))
                 explanations.append(
-                    f"  {condition.field} {condition.operator.value} {condition.value}: {result}"
+                    f"  {condition.field} {condition.operator.value} {condition.value}: {result}",
                 )
 
                 if self.settings.debug_mode:
@@ -253,24 +255,26 @@ class RuleEngine:
 
             if self.settings.log_rule_evaluations:
                 self.logger.debug(
-                    f"Rule {rule.name} evaluation: {matched} (confidence: {confidence:.2f})"
+                    f"Rule {rule.name} evaluation: {matched} (confidence: {confidence:.2f})",
                 )
 
             return result
 
         except Exception as e:
-            self.logger.error(f"Error evaluating rule {rule.name}: {e}")
+            self.logger.exception(f"Error evaluating rule {rule.name}: {e}")
             return RuleEvaluationResult(
                 rule_name=rule.name,
                 matched=False,
                 confidence=0.0,
                 triggered_actions=[],
-                explanation=f"Error: {str(e)}",
+                explanation=f"Error: {e!s}",
                 execution_time_ms=(time.time() - start_time) * 1000,
             )
 
     def _evaluate_condition(
-        self, condition: RuleCondition, data: dict[str, t.Any]
+        self,
+        condition: RuleCondition,
+        data: dict[str, t.Any],
     ) -> tuple[bool, str]:
         """Evaluate a single condition."""
         field_value = self._get_field_value(condition.field, data)
@@ -300,7 +304,7 @@ class RuleEngine:
                 result = str(field_value).lower().endswith(str(condition.value).lower())
             elif condition.operator == RuleOperator.REGEX_MATCH:
                 result = bool(
-                    re.search(str(condition.value), str(field_value))
+                    re.search(str(condition.value), str(field_value)),
                 )  # REGEX OK: rule condition evaluation
             elif condition.operator == RuleOperator.IN:
                 result = field_value in condition.value
@@ -337,7 +341,9 @@ class RuleEngine:
 
         # Sort rules by priority (highest first)
         sorted_rules = sorted(
-            self.rules.values(), key=lambda r: r.priority, reverse=True
+            self.rules.values(),
+            key=lambda r: r.priority,
+            reverse=True,
         )
 
         for rule in sorted_rules:
@@ -364,7 +370,9 @@ class Reasoning(ReasoningBase):
     """Custom rule engine reasoning adapter."""
 
     def __init__(
-        self, settings: CustomReasoningSettings | None = None, **kwargs: t.Any
+        self,
+        settings: CustomReasoningSettings | None = None,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(**kwargs)
         self._settings = settings or CustomReasoningSettings()
@@ -385,16 +393,22 @@ class Reasoning(ReasoningBase):
 
             if request.strategy == ReasoningStrategy.RULE_BASED:
                 response = await self._rule_based_reasoning(
-                    request, engine, reasoning_chain
+                    request,
+                    engine,
+                    reasoning_chain,
                 )
             elif request.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
                 response = await self._chain_of_thought_reasoning(
-                    request, engine, reasoning_chain
+                    request,
+                    engine,
+                    reasoning_chain,
                 )
             else:
                 # Default to rule-based reasoning
                 response = await self._rule_based_reasoning(
-                    request, engine, reasoning_chain
+                    request,
+                    engine,
+                    reasoning_chain,
                 )
 
             # Calculate metrics
@@ -404,13 +418,13 @@ class Reasoning(ReasoningBase):
 
             if not response.confidence_score:
                 response.confidence_score = await calculate_confidence_score(
-                    response.reasoning_chain
+                    response.reasoning_chain,
                 )
 
             return response
 
         except Exception as e:
-            self.logger.error(f"Custom reasoning failed: {e}")
+            self.logger.exception(f"Custom reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=reasoning_chain,
@@ -438,7 +452,7 @@ class Reasoning(ReasoningBase):
                 input_data={"query": request.query},
                 output_data={"extracted_data": input_data},
                 reasoning="Parsed query and context to extract structured data for rule evaluation",
-            )
+            ),
         )
 
         # Evaluate all rules
@@ -455,7 +469,7 @@ class Reasoning(ReasoningBase):
                     "matched_rules": [r.rule_name for r in rule_results if r.matched],
                 },
                 reasoning=f"Evaluated {len(rule_results)} rules, {len([r for r in rule_results if r.matched])} matched",
-            )
+            ),
         )
 
         # Find best matching rule
@@ -465,7 +479,8 @@ class Reasoning(ReasoningBase):
 
             # Execute actions
             action_results = await self._execute_actions(
-                best_rule.triggered_actions, input_data
+                best_rule.triggered_actions,
+                input_data,
             )
 
             reasoning_chain.append(
@@ -479,11 +494,12 @@ class Reasoning(ReasoningBase):
                     output_data=action_results,
                     reasoning=f"Executed {len(best_rule.triggered_actions)} actions from best matching rule",
                     confidence=best_rule.confidence,
-                )
+                ),
             )
 
             final_answer = action_results.get(
-                "final_result", f"Rule '{best_rule.rule_name}' matched"
+                "final_result",
+                f"Rule '{best_rule.rule_name}' matched",
             )
             confidence = best_rule.confidence
 
@@ -502,7 +518,7 @@ class Reasoning(ReasoningBase):
                     output_data={"matched_rules": 0},
                     reasoning="No rules met the confidence threshold for the given input",
                     confidence=0.0,
-                )
+                ),
             )
 
         return ReasoningResponse(
@@ -530,7 +546,7 @@ class Reasoning(ReasoningBase):
                 input_data={"query": request.query},
                 output_data={"steps": steps},
                 reasoning=f"Broke down complex query into {len(steps)} manageable steps",
-            )
+            ),
         )
 
         final_answer = ""
@@ -547,10 +563,12 @@ class Reasoning(ReasoningBase):
             if matched_rules:
                 best_rule = max(matched_rules, key=lambda r: r.confidence)
                 action_results = await self._execute_actions(
-                    best_rule.triggered_actions, step_input
+                    best_rule.triggered_actions,
+                    step_input,
                 )
                 step_result = action_results.get(
-                    "final_result", f"Step {i + 1} completed"
+                    "final_result",
+                    f"Step {i + 1} completed",
                 )
                 step_confidence = best_rule.confidence
             else:
@@ -565,7 +583,7 @@ class Reasoning(ReasoningBase):
                     output_data={"result": step_result},
                     reasoning=f"Applied rule-based reasoning to step {i + 1}",
                     confidence=step_confidence,
-                )
+                ),
             )
 
             final_answer += f"Step {i + 1}: {step_result}\n"
@@ -582,7 +600,7 @@ class Reasoning(ReasoningBase):
                 output_data={"final_answer": final_answer},
                 reasoning="Combined results from all reasoning steps into final answer",
                 confidence=overall_confidence,
-            )
+            ),
         )
 
         return ReasoningResponse(
@@ -609,11 +627,11 @@ class Reasoning(ReasoningBase):
                     "session_id": request.context.session_id,
                     "user_id": request.context.user_id,
                     "has_conversation_history": bool(
-                        request.context.conversation_history
+                        request.context.conversation_history,
                     ),
                     "has_knowledge_base": bool(request.context.knowledge_base),
                     "has_retrieved_contexts": bool(request.context.retrieved_contexts),
-                }
+                },
             )
 
         # Try to extract entities from query
@@ -640,7 +658,8 @@ class Reasoning(ReasoningBase):
 
         # Extract numbers
         numbers = re.findall(
-            r"\b\d+(?:\.\d+)?\b", text
+            r"\b\d+(?:\.\d+)?\b",
+            text,
         )  # REGEX OK: number extraction for entity parsing
         if numbers:
             entities["numbers"] = [float(n) for n in numbers]
@@ -658,7 +677,8 @@ class Reasoning(ReasoningBase):
 
         # Extract email addresses
         emails = re.findall(  # REGEX OK: email extraction for entity parsing
-            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", text
+            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+            text,
         )
         entities["emails"] = emails
         entities["has_emails"] = bool(emails)
@@ -726,7 +746,9 @@ class Reasoning(ReasoningBase):
         return steps
 
     async def _execute_actions(
-        self, actions: list[RuleAction], data: dict[str, t.Any]
+        self,
+        actions: list[RuleAction],
+        data: dict[str, t.Any],
     ) -> dict[str, t.Any]:
         """Execute rule actions."""
         results = {"executed_actions": [], "final_result": ""}
@@ -756,13 +778,15 @@ class Reasoning(ReasoningBase):
 
                 else:
                     results["executed_actions"].append(
-                        f"Unknown action type: {action.action_type}"
+                        f"Unknown action type: {action.action_type}",
                     )
 
             except Exception as e:
-                self.logger.error(f"Error executing action {action.action_type}: {e}")
+                self.logger.exception(
+                    f"Error executing action {action.action_type}: {e}"
+                )
                 results["executed_actions"].append(
-                    f"Error in {action.action_type}: {e}"
+                    f"Error in {action.action_type}: {e}",
                 )
 
         return results
@@ -821,4 +845,4 @@ class Reasoning(ReasoningBase):
 
 
 # Export the adapter class
-__all__ = ["Reasoning", "CustomReasoningSettings", "MODULE_METADATA"]
+__all__ = ["MODULE_METADATA", "CustomReasoningSettings", "Reasoning"]

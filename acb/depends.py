@@ -28,7 +28,7 @@ class Depends:
     @staticmethod
     def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
         """Decorator to inject dependencies into a function."""
-        return t.cast(t.Callable[..., t.Any], auto_inject(func))
+        return t.cast("t.Callable[..., t.Any]", auto_inject(func))
 
     @staticmethod
     def set(class_: t.Any, instance: t.Any = None) -> t.Any:

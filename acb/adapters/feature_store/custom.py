@@ -42,54 +42,67 @@ class CustomFeatureStoreSettings(FeatureStoreSettings):
 
     # Storage settings
     storage_type: str = Field(
-        default="file", description="Storage type (file, sqlite, memory)"
+        default="file",
+        description="Storage type (file, sqlite, memory)",
     )
     storage_path: str = Field(
-        default="./feature_store_data", description="Storage directory path"
+        default="./feature_store_data",
+        description="Storage directory path",
     )
     database_path: str = Field(
-        default="./feature_store.db", description="SQLite database path"
+        default="./feature_store.db",
+        description="SQLite database path",
     )
 
     # File format settings
     feature_file_format: str = Field(
-        default="parquet", description="Feature file format (parquet, csv, json)"
+        default="parquet",
+        description="Feature file format (parquet, csv, json)",
     )
     metadata_file_format: str = Field(
-        default="json", description="Metadata file format (json, yaml)"
+        default="json",
+        description="Metadata file format (json, yaml)",
     )
 
     # Performance settings
     in_memory_cache_size: int = Field(
-        default=1000, description="In-memory cache size for features"
+        default=1000,
+        description="In-memory cache size for features",
     )
     batch_write_size: int = Field(
-        default=1000, description="Batch size for writing features"
+        default=1000,
+        description="Batch size for writing features",
     )
 
     # Retention settings
     feature_retention_days: int = Field(
-        default=365, description="Feature retention period in days"
+        default=365,
+        description="Feature retention period in days",
     )
     enable_automatic_cleanup: bool = Field(
-        default=True, description="Enable automatic cleanup of old features"
+        default=True,
+        description="Enable automatic cleanup of old features",
     )
 
     # Compression settings
     enable_compression: bool = Field(
-        default=True, description="Enable file compression"
+        default=True,
+        description="Enable file compression",
     )
     compression_type: str = Field(
-        default="gzip", description="Compression type (gzip, snappy, lz4)"
+        default="gzip",
+        description="Compression type (gzip, snappy, lz4)",
     )
 
     # Backup settings
     enable_backup: bool = Field(default=False, description="Enable automatic backup")
     backup_interval_hours: int = Field(
-        default=24, description="Backup interval in hours"
+        default=24,
+        description="Backup interval in hours",
     )
     backup_retention_days: int = Field(
-        default=30, description="Backup retention period in days"
+        default=30,
+        description="Backup retention period in days",
     )
 
 
@@ -127,8 +140,9 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
         elif self.custom_settings.storage_type == "memory":
             await self._init_memory_storage()
         else:
+            msg = f"Unsupported storage type: {self.custom_settings.storage_type}"
             raise ValueError(
-                f"Unsupported storage type: {self.custom_settings.storage_type}"
+                msg,
             )
 
         # Load metadata cache
@@ -181,13 +195,13 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
         # Create indexes
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_features_entity_id ON features(entity_id)"
+            "CREATE INDEX IF NOT EXISTS idx_features_entity_id ON features(entity_id)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_features_name ON features(feature_name)"
+            "CREATE INDEX IF NOT EXISTS idx_features_name ON features(feature_name)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_features_timestamp ON features(timestamp)"
+            "CREATE INDEX IF NOT EXISTS idx_features_timestamp ON features(timestamp)",
         )
 
         self._db_connection.commit()
@@ -205,7 +219,6 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
     async def _init_memory_storage(self) -> None:
         """Initialize memory-based storage."""
         # Storage is handled via instance variables
-        pass
 
     async def _load_metadata_cache(self) -> None:
         """Load feature metadata into cache."""
@@ -242,7 +255,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
     # Feature Serving Methods
     async def get_online_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from custom online store for real-time serving."""
         start_time = datetime.now()
@@ -262,7 +276,9 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
                     # Retrieve from storage
                     value = await self._get_feature_value(
-                        feature_name, entity_id, request.timestamp
+                        feature_name,
+                        entity_id,
+                        request.timestamp,
                     )
 
                     if value is not None:
@@ -279,7 +295,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                         entity_id=entity_id,
                         features=features,
                         timestamp=request.timestamp or datetime.now(),
-                    )
+                    ),
                 )
 
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -296,10 +312,12 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get online features: {e}")
+            msg = f"Failed to get online features: {e}"
+            raise RuntimeError(msg)
 
     async def get_offline_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from custom offline store for batch processing."""
         start_time = datetime.now()
@@ -311,7 +329,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     "entity_id": request.entity_ids,
                     "event_timestamp": [request.timestamp or datetime.now()]
                     * len(request.entity_ids),
-                }
+                },
             )
 
             # Use historical features method
@@ -334,7 +352,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                         entity_id=str(row.get("entity_id", "")),
                         features=features,
                         timestamp=row.get("event_timestamp"),
-                    )
+                    ),
                 )
 
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
@@ -345,7 +363,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get offline features: {e}")
+            msg = f"Failed to get offline features: {e}"
+            raise RuntimeError(msg)
 
     async def get_historical_features(
         self,
@@ -416,10 +435,14 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             return result_df
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get historical features: {e}")
+            msg = f"Failed to get historical features: {e}"
+            raise RuntimeError(msg)
 
     async def _get_feature_value(
-        self, feature_name: str, entity_id: str, timestamp: datetime | None = None
+        self,
+        feature_name: str,
+        entity_id: str,
+        timestamp: datetime | None = None,
     ) -> Any:
         """Get a single feature value from storage."""
         if self.custom_settings.storage_type == "sqlite" and self._db_connection:
@@ -447,7 +470,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             result = cursor.fetchone()
             return json.loads(result[0]) if result else None
 
-        elif self.custom_settings.storage_type == "file":
+        if self.custom_settings.storage_type == "file":
             feature_file = self._storage_path / "features" / f"{feature_name}.parquet"
 
             if feature_file.exists():
@@ -466,13 +489,13 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
             return None
 
-        else:
-            # Memory storage - return mock value
-            return f"mock_{feature_name}_value"
+        # Memory storage - return mock value
+        return f"mock_{feature_name}_value"
 
     # Feature Ingestion Methods
     async def ingest_features(
-        self, request: FeatureIngestionRequest
+        self,
+        request: FeatureIngestionRequest,
     ) -> FeatureIngestionResponse:
         """Ingest features into custom feature store."""
         start_time = datetime.now()
@@ -515,7 +538,10 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
     async def ingest_batch_features(
-        self, feature_group: str, df: pd.DataFrame, mode: str = "append"
+        self,
+        feature_group: str,
+        df: pd.DataFrame,
+        mode: str = "append",
     ) -> FeatureIngestionResponse:
         """Ingest batch features from DataFrame."""
         start_time = datetime.now()
@@ -536,7 +562,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                             if column not in ["entity_id", "timestamp", "event_time"]:
                                 value = row[column]
                                 timestamp = row.get(
-                                    "timestamp", row.get("event_time", datetime.now())
+                                    "timestamp",
+                                    row.get("event_time", datetime.now()),
                                 )
                                 entity_id = row["entity_id"]
 
@@ -573,7 +600,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                             # Prepare feature data
                             feature_data = df[["entity_id", column]].copy()
                             feature_data["timestamp"] = df.get(
-                                "timestamp", df.get("event_time", datetime.now())
+                                "timestamp",
+                                df.get("event_time", datetime.now()),
                             )
                             feature_data["value"] = feature_data[column]
                             feature_data = feature_data[
@@ -584,7 +612,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                                 # Append to existing file
                                 existing_df = pd.read_parquet(feature_file)
                                 combined_df = pd.concat(
-                                    [existing_df, feature_data], ignore_index=True
+                                    [existing_df, feature_data],
+                                    ignore_index=True,
                                 )
                                 combined_df.to_parquet(feature_file, index=False)
                             else:
@@ -657,8 +686,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                         "timestamp": timestamp,
                         "value": value,
                         "metadata": json.dumps(metadata) if metadata else None,
-                    }
-                ]
+                    },
+                ],
             )
 
             if feature_file.exists():
@@ -693,13 +722,15 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                         except Exception:
                             continue
 
-            return sorted(list(feature_groups))
+            return sorted(feature_groups)
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list feature groups: {e}")
+            msg = f"Failed to list feature groups: {e}"
+            raise RuntimeError(msg)
 
     async def list_features(
-        self, feature_group: str | None = None
+        self,
+        feature_group: str | None = None,
     ) -> list[FeatureDefinition]:
         """List available features."""
         try:
@@ -713,7 +744,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             return features
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list features: {e}")
+            msg = f"Failed to list features: {e}"
+            raise RuntimeError(msg)
 
     async def get_feature_definition(self, feature_name: str) -> FeatureDefinition:
         """Get feature definition and metadata."""
@@ -722,14 +754,17 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
             if feature_name in self._metadata_cache:
                 return self._metadata_cache[feature_name]
-            else:
-                raise ValueError(f"Feature {feature_name} not found")
+            msg = f"Feature {feature_name} not found"
+            raise ValueError(msg)
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get feature definition: {e}")
+            msg = f"Failed to get feature definition: {e}"
+            raise RuntimeError(msg)
 
     async def search_features(
-        self, query: str, filters: dict[str, Any] | None = None
+        self,
+        query: str,
+        filters: dict[str, Any] | None = None,
     ) -> list[FeatureDefinition]:
         """Search features by query and filters."""
         all_features = await self.list_features()
@@ -760,7 +795,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"Failed to create feature group: {e}")
+            msg = f"Failed to create feature group: {e}"
+            raise RuntimeError(msg)
 
     async def register_feature(self, feature: FeatureDefinition) -> bool:
         """Register a new feature definition."""
@@ -797,7 +833,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"Failed to register feature: {e}")
+            msg = f"Failed to register feature: {e}"
+            raise RuntimeError(msg)
 
     async def delete_feature(self, feature_name: str) -> bool:
         """Delete a feature definition."""
@@ -805,10 +842,12 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             if self.custom_settings.storage_type == "sqlite" and self._db_connection:
                 cursor = self._db_connection.cursor()
                 cursor.execute(
-                    "DELETE FROM feature_definitions WHERE name = ?", (feature_name,)
+                    "DELETE FROM feature_definitions WHERE name = ?",
+                    (feature_name,),
                 )
                 cursor.execute(
-                    "DELETE FROM features WHERE feature_name = ?", (feature_name,)
+                    "DELETE FROM features WHERE feature_name = ?",
+                    (feature_name,),
                 )
                 self._db_connection.commit()
 
@@ -830,7 +869,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"Failed to delete feature: {e}")
+            msg = f"Failed to delete feature: {e}"
+            raise RuntimeError(msg)
 
     # Feature Monitoring Methods (Mock implementations)
     async def get_feature_monitoring(self, feature_name: str) -> FeatureMonitoring:
@@ -845,7 +885,9 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
         )
 
     async def detect_feature_drift(
-        self, feature_name: str, reference_window: int = 7
+        self,
+        feature_name: str,
+        reference_window: int = 7,
     ) -> float:
         """Detect feature drift compared to reference window."""
         return 0.03
@@ -860,7 +902,10 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
         return ["v1.0"]
 
     async def get_feature_at_timestamp(
-        self, feature_name: str, entity_id: str, timestamp: datetime
+        self,
+        feature_name: str,
+        entity_id: str,
+        timestamp: datetime,
     ) -> FeatureValue | None:
         """Get feature value at specific timestamp."""
         value = await self._get_feature_value(feature_name, entity_id, timestamp)
@@ -881,7 +926,10 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
         return True
 
     async def get_feature_for_experiment(
-        self, feature_name: str, entity_id: str, experiment_id: str
+        self,
+        feature_name: str,
+        entity_id: str,
+        experiment_id: str,
     ) -> Any:
         """Get feature value for A/B testing experiment."""
         return "experiment_value"
@@ -962,9 +1010,9 @@ FeatureStore = CustomFeatureStoreAdapter
 FeatureStoreSettings = CustomFeatureStoreSettings
 
 __all__ = [
+    "MODULE_METADATA",
     "CustomFeatureStoreAdapter",
     "CustomFeatureStoreSettings",
     "FeatureStore",
     "FeatureStoreSettings",
-    "MODULE_METADATA",
 ]

@@ -25,7 +25,7 @@ import typing as t
 from dataclasses import dataclass
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.gateway._base import GatewayRequest, RequestMethod
 
 
@@ -89,10 +89,7 @@ class Upstream:
 
     def is_healthy(self) -> bool:
         """Check if upstream is healthy."""
-        return (
-            self.status == UpstreamStatus.HEALTHY
-            and not self.circuit_breaker_open
-        )
+        return self.status == UpstreamStatus.HEALTHY and not self.circuit_breaker_open
 
     def record_request(self, success: bool, response_time: float) -> None:
         """Record request metrics."""
@@ -106,9 +103,9 @@ class Upstream:
                 self.average_response_time = response_time
             else:
                 self.average_response_time = (
-                    (self.average_response_time * (self.total_requests - 1) + response_time)
-                    / self.total_requests
-                )
+                    self.average_response_time * (self.total_requests - 1)
+                    + response_time
+                ) / self.total_requests
         else:
             self.consecutive_successes = 0
             self.consecutive_failures += 1
@@ -145,8 +142,7 @@ class RoutingConfig(BaseModel):
     request_timeout: float = 30.0
     connect_timeout: float = 5.0
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class Route(BaseModel):
@@ -210,9 +206,9 @@ class Route(BaseModel):
         """Check if path matches the route pattern."""
         if self.route_type == RouteType.EXACT:
             return path == self.path_pattern
-        elif self.route_type == RouteType.PREFIX:
+        if self.route_type == RouteType.PREFIX:
             return path.startswith(self.path_pattern)
-        elif self.route_type == RouteType.REGEX:
+        if self.route_type == RouteType.REGEX:
             try:
                 return bool(re.match(self.path_pattern, path))
             except re.error:
@@ -231,8 +227,7 @@ class Route(BaseModel):
         """Get list of healthy upstreams."""
         return [upstream for upstream in self.upstreams if upstream.is_healthy()]
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class LoadBalancer:
@@ -255,20 +250,23 @@ class LoadBalancer:
         algorithm = config.algorithm
         if algorithm == LoadBalancingAlgorithm.ROUND_ROBIN:
             return self._round_robin_selection(route.id, healthy_upstreams)
-        elif algorithm == LoadBalancingAlgorithm.WEIGHTED_ROUND_ROBIN:
+        if algorithm == LoadBalancingAlgorithm.WEIGHTED_ROUND_ROBIN:
             return self._weighted_round_robin_selection(route.id, healthy_upstreams)
-        elif algorithm == LoadBalancingAlgorithm.LEAST_CONNECTIONS:
+        if algorithm == LoadBalancingAlgorithm.LEAST_CONNECTIONS:
             return self._least_connections_selection(healthy_upstreams)
-        elif algorithm == LoadBalancingAlgorithm.RANDOM:
+        if algorithm == LoadBalancingAlgorithm.RANDOM:
             return self._random_selection(healthy_upstreams)
-        elif algorithm == LoadBalancingAlgorithm.IP_HASH:
+        if algorithm == LoadBalancingAlgorithm.IP_HASH:
             return self._ip_hash_selection(request, healthy_upstreams)
-        elif algorithm == LoadBalancingAlgorithm.HEALTH_AWARE:
+        if algorithm == LoadBalancingAlgorithm.HEALTH_AWARE:
             return self._health_aware_selection(healthy_upstreams)
-        else:
-            return self._round_robin_selection(route.id, healthy_upstreams)
+        return self._round_robin_selection(route.id, healthy_upstreams)
 
-    def _round_robin_selection(self, route_id: str, upstreams: list[Upstream]) -> Upstream:
+    def _round_robin_selection(
+        self,
+        route_id: str,
+        upstreams: list[Upstream],
+    ) -> Upstream:
         """Round robin selection."""
         if route_id not in self._round_robin_counters:
             self._round_robin_counters[route_id] = 0
@@ -277,7 +275,11 @@ class LoadBalancer:
         self._round_robin_counters[route_id] += 1
         return upstreams[index]
 
-    def _weighted_round_robin_selection(self, route_id: str, upstreams: list[Upstream]) -> Upstream:
+    def _weighted_round_robin_selection(
+        self,
+        route_id: str,
+        upstreams: list[Upstream],
+    ) -> Upstream:
         """Weighted round robin selection."""
         # Calculate total weight
         total_weight = sum(upstream.weight for upstream in upstreams)
@@ -306,9 +308,14 @@ class LoadBalancer:
     def _random_selection(self, upstreams: list[Upstream]) -> Upstream:
         """Random selection."""
         import random
+
         return random.choice(upstreams)
 
-    def _ip_hash_selection(self, request: GatewayRequest, upstreams: list[Upstream]) -> Upstream:
+    def _ip_hash_selection(
+        self,
+        request: GatewayRequest,
+        upstreams: list[Upstream],
+    ) -> Upstream:
         """IP hash-based selection."""
         client_ip = request.client_ip or "unknown"
         hash_value = hash(client_ip)
@@ -318,7 +325,10 @@ class LoadBalancer:
     def _health_aware_selection(self, upstreams: list[Upstream]) -> Upstream:
         """Health-aware selection (prefer faster responses)."""
         # Sort by average response time and select the fastest
-        sorted_upstreams = sorted(upstreams, key=lambda u: u.average_response_time or float('inf'))
+        sorted_upstreams = sorted(
+            upstreams,
+            key=lambda u: u.average_response_time or float("inf"),
+        )
         return sorted_upstreams[0]
 
 
@@ -347,8 +357,7 @@ class CircuitBreaker:
                 upstream.circuit_breaker_open = False
                 upstream.consecutive_failures = 0
                 return True
-            else:
-                return False
+            return False
 
         # Check failure threshold
         if upstream.consecutive_failures >= config.failure_threshold:
@@ -374,15 +383,16 @@ class CircuitBreaker:
 
         if success:
             # Check if we can close the circuit breaker
-            if (upstream.circuit_breaker_open and
-                upstream.consecutive_successes >= config.success_threshold):
+            if (
+                upstream.circuit_breaker_open
+                and upstream.consecutive_successes >= config.success_threshold
+            ):
                 upstream.circuit_breaker_open = False
                 upstream.circuit_breaker_reset_time = 0.0
-        else:
-            # Check if we need to open the circuit breaker
-            if upstream.consecutive_failures >= config.failure_threshold:
-                upstream.circuit_breaker_open = True
-                upstream.circuit_breaker_reset_time = time.time() + config.timeout_duration
+        # Check if we need to open the circuit breaker
+        elif upstream.consecutive_failures >= config.failure_threshold:
+            upstream.circuit_breaker_open = True
+            upstream.circuit_breaker_reset_time = time.time() + config.timeout_duration
 
 
 class RoutingEngine:
@@ -438,7 +448,10 @@ class RoutingEngine:
         # Filter by circuit breaker
         available_upstreams = []
         for upstream in healthy_upstreams:
-            if await self._circuit_breaker.check_circuit_breaker(upstream, routing_config):
+            if await self._circuit_breaker.check_circuit_breaker(
+                upstream,
+                routing_config,
+            ):
                 available_upstreams.append(upstream)
 
         if not available_upstreams:
@@ -466,7 +479,7 @@ class RoutingEngine:
         if routing_config.strip_path_prefix and route.route_type == RouteType.PREFIX:
             # Remove the route prefix from the path
             if target_path.startswith(route.path_pattern):
-                target_path = target_path[len(route.path_pattern):]
+                target_path = target_path[len(route.path_pattern) :]
                 if not target_path.startswith("/"):
                     target_path = "/" + target_path
 
@@ -479,8 +492,7 @@ class RoutingEngine:
             query_string = "?" + "&".join(query_parts)
 
         # Combine URL
-        upstream_url = upstream.url.rstrip("/") + target_path + query_string
-        return upstream_url
+        return upstream.url.rstrip("/") + target_path + query_string
 
     async def transform_request(
         self,
@@ -520,6 +532,7 @@ class RoutingEngine:
         # Preserve or update host header
         if not routing_config.preserve_host_header:
             from urllib.parse import urlparse
+
             parsed_url = urlparse(upstream.url)
             if parsed_url.hostname:
                 transformed_request.headers["Host"] = parsed_url.hostname
@@ -569,7 +582,8 @@ class RoutingEngine:
             return self._routes.copy()
 
         return [
-            route for route in self._routes
+            route
+            for route in self._routes
             if not route.tenant_specific or route.tenant_id == tenant_id
         ]
 
@@ -581,17 +595,19 @@ class RoutingEngine:
 
         upstream_metrics = []
         for upstream in route.upstreams:
-            upstream_metrics.append({
-                "id": upstream.id,
-                "url": upstream.url,
-                "status": upstream.status.value,
-                "active_connections": upstream.active_connections,
-                "total_requests": upstream.total_requests,
-                "average_response_time": upstream.average_response_time,
-                "consecutive_failures": upstream.consecutive_failures,
-                "consecutive_successes": upstream.consecutive_successes,
-                "circuit_breaker_open": upstream.circuit_breaker_open,
-            })
+            upstream_metrics.append(
+                {
+                    "id": upstream.id,
+                    "url": upstream.url,
+                    "status": upstream.status.value,
+                    "active_connections": upstream.active_connections,
+                    "total_requests": upstream.total_requests,
+                    "average_response_time": upstream.average_response_time,
+                    "consecutive_failures": upstream.consecutive_failures,
+                    "consecutive_successes": upstream.consecutive_successes,
+                    "circuit_breaker_open": upstream.circuit_breaker_open,
+                },
+            )
 
         return {
             "route_id": route.id,

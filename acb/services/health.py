@@ -6,6 +6,7 @@ centralized health status reporting and alerting.
 """
 
 import asyncio
+import contextlib
 import logging
 import time
 import typing as t
@@ -155,7 +156,8 @@ class HealthCheckMixin(ABC):
             try:
                 # Run the health check with timeout
                 result = await asyncio.wait_for(
-                    self._perform_health_check(check_type), timeout=timeout
+                    self._perform_health_check(check_type),
+                    timeout=timeout,
                 )
 
                 # Calculate duration and update result
@@ -190,7 +192,8 @@ class HealthCheckMixin(ABC):
 
     @abstractmethod
     async def _perform_health_check(
-        self, check_type: HealthCheckType
+        self,
+        check_type: HealthCheckType,
     ) -> HealthCheckResult:
         """Implement component-specific health check logic.
 
@@ -258,11 +261,12 @@ class HealthReporter(CleanupMixin):
             del self._components[component_id]
             # Keep history for analysis
             self.logger.info(
-                f"Unregistered component from health monitoring: {component_id}"
+                f"Unregistered component from health monitoring: {component_id}",
             )
 
     async def check_all_components(
-        self, check_type: HealthCheckType = HealthCheckType.LIVENESS
+        self,
+        check_type: HealthCheckType = HealthCheckType.LIVENESS,
     ) -> dict[str, HealthCheckResult]:
         """Check health of all registered components."""
         if not self._components:
@@ -278,7 +282,7 @@ class HealthReporter(CleanupMixin):
 
         # Process results and update history
         component_results = {}
-        for component_id, result in zip(self._components.keys(), results):
+        for component_id, result in zip(self._components.keys(), results, strict=False):
             if isinstance(result, Exception):
                 # Create error result for failed checks
                 result = HealthCheckResult(
@@ -299,7 +303,8 @@ class HealthReporter(CleanupMixin):
         return component_results
 
     def get_system_health(
-        self, fresh_results: dict[str, HealthCheckResult] | None = None
+        self,
+        fresh_results: dict[str, HealthCheckResult] | None = None,
     ) -> dict[str, t.Any]:
         """Get overall system health status and summary."""
         component_count = len(self._components)
@@ -329,7 +334,7 @@ class HealthReporter(CleanupMixin):
                     status_counts["unknown"] += 1
         else:
             # Use cached status from history
-            for component_id in self._components.keys():
+            for component_id in self._components:
                 status = self._get_component_status(component_id)
                 if status == HealthStatus.HEALTHY:
                     status_counts["healthy"] += 1
@@ -353,7 +358,7 @@ class HealthReporter(CleanupMixin):
             system_healthy = False
             system_status = "unhealthy"
         elif unhealthy_total > 0 or status_counts["degraded"] > 0:
-            system_healthy = False if unhealthy_total > 0 else True
+            system_healthy = not unhealthy_total > 0
             system_status = "degraded"
         else:
             system_healthy = True
@@ -376,12 +381,14 @@ class HealthReporter(CleanupMixin):
                     "status": self._get_component_status(component_id).value,
                     "last_check": self._get_last_check_time(component_id),
                 }
-                for component_id in self._components.keys()
+                for component_id in self._components
             },
         }
 
     def get_component_history(
-        self, component_id: str, limit: int = 10
+        self,
+        component_id: str,
+        limit: int = 10,
     ) -> list[HealthCheckResult]:
         """Get health check history for a specific component."""
         history = self._history.get(component_id, [])
@@ -402,10 +409,8 @@ class HealthReporter(CleanupMixin):
 
         if self._check_task:
             self._check_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._check_task
-            except asyncio.CancelledError:
-                pass
             self._check_task = None
 
         self.logger.info("Stopped health monitoring")
@@ -427,7 +432,7 @@ class HealthReporter(CleanupMixin):
                     continue  # Time for next check
 
             except Exception as e:
-                self.logger.error(f"Error in health monitoring loop: {e}")
+                self.logger.exception(f"Error in health monitoring loop: {e}")
                 await asyncio.sleep(self._settings.check_interval)
 
     def _update_history(self, component_id: str, result: HealthCheckResult) -> None:
@@ -567,7 +572,8 @@ class HealthService(ServiceBase, HealthCheckMixin):
         self.logger.info("Health service shut down successfully")
 
     async def _perform_health_check(
-        self, check_type: HealthCheckType
+        self,
+        check_type: HealthCheckType,
     ) -> HealthCheckResult:
         """Health check for the health service itself."""
         # Check if reporter is running
@@ -624,7 +630,7 @@ class HealthService(ServiceBase, HealthCheckMixin):
         """Get comprehensive system health status."""
         # Perform dependency health checks on all components for comprehensive status
         component_results = await self._reporter.check_all_components(
-            HealthCheckType.DEPENDENCY
+            HealthCheckType.DEPENDENCY,
         )
 
         # Get system summary using fresh results
@@ -638,7 +644,8 @@ class HealthService(ServiceBase, HealthCheckMixin):
         return system_health
 
     async def check_component_health(
-        self, component_id: str
+        self,
+        component_id: str,
     ) -> HealthCheckResult | None:
         """Check health of a specific component."""
         if component_id in self._reporter._components:
@@ -650,7 +657,9 @@ class HealthService(ServiceBase, HealthCheckMixin):
         return None
 
     def get_component_history(
-        self, component_id: str, limit: int = 10
+        self,
+        component_id: str,
+        limit: int = 10,
     ) -> list[dict[str, t.Any]]:
         """Get health history for a component."""
         history = self._reporter.get_component_history(component_id, limit)

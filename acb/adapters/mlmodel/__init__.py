@@ -33,11 +33,11 @@ from ._base import (
 
 __all__ = [
     "BaseMLModelAdapter",
-    "MLModelSettings",
-    "ModelPredictionRequest",
-    "ModelPredictionResponse",
     "BatchPredictionRequest",
     "BatchPredictionResponse",
-    "ModelInfo",
+    "MLModelSettings",
     "ModelHealth",
+    "ModelInfo",
+    "ModelPredictionRequest",
+    "ModelPredictionResponse",
 ]

@@ -1,6 +1,110 @@
 ---
-id: 01K6EJ7YR450BPMNTE6005P0R0
+id: 01K6EZ11S8JEEGSPYK3P8JGZC7
 ---
+______________________________________________________________________
+
+## id: 01K6EZ05EJ8DHRCMXC57M5RJBN
+
+______________________________________________________________________
+
+## id: 01K6EYXXDQFQX635V8WR4F4NP6
+
+______________________________________________________________________
+
+## id: 01K6EYX71AAT7BXNE32CA8Q90W
+
+______________________________________________________________________
+
+## id: 01K6EXJPHNHJK0B5TRGQHPMREP
+
+______________________________________________________________________
+
+## id: 01K6EXHNX99V1FHPT6B099SNZ6
+
+______________________________________________________________________
+
+## id: 01K6EXCJ39YCJT8JDTWHH3GJYQ
+
+______________________________________________________________________
+
+## id: 01K6EXBR49YTT8F9TZ556PYT6J
+
+______________________________________________________________________
+
+## id: 01K6EWFGYR9CW333DB62RPQGMR
+
+______________________________________________________________________
+
+## id: 01K6EWEPE4HFYYPZ8GDFT6XG7F
+
+______________________________________________________________________
+
+## id: 01K6ETPQ2HKZ1Y93NDDXT2ZSPP
+
+______________________________________________________________________
+
+## id: 01K6ETP1VBYQVDB5MJYVEFNYJQ
+
+______________________________________________________________________
+
+## id: 01K6ETJAREEJYZ6SDN39XVE87J
+
+______________________________________________________________________
+
+## id: 01K6ETHJN1QWCR2WKQ2YF0NG8P
+
+______________________________________________________________________
+
+## id: 01K6ESWK48DSRVQEZQ9S3VVB5T
+
+______________________________________________________________________
+
+## id: 01K6ESVYAC8ZT9NSQHGZY6NPFK
+
+______________________________________________________________________
+
+## id: 01K6ESP1VSPTCX6TE4BFF580SD
+
+______________________________________________________________________
+
+## id: 01K6ESND3T6X1R74Z5VP2VCCJ1
+
+______________________________________________________________________
+
+## id: 01K6ESKZMJ2JK4G3FSS1326YV6
+
+______________________________________________________________________
+
+## id: 01K6ESK8W4PES0RM4W0VE4TQ55
+
+______________________________________________________________________
+
+## id: 01K6ESHEHAAD1BKTET3G98AHPK
+
+______________________________________________________________________
+
+## id: 01K6ESGV3BDM3GR95YCREM4RY1
+
+______________________________________________________________________
+
+## id: 01K6EN5QQTASTVQC9G0MC0VA1K
+
+______________________________________________________________________
+
+## id: 01K6EN4YAEE902RMZBHSFG993K
+
+______________________________________________________________________
+
+## id: 01K6EMS40R7VZTAKPTJZW34SQD
+
+______________________________________________________________________
+
+## id: 01K6EMRAZQAGM2VGXCDTSPM08R
+
+______________________________________________________________________
+
+## id: 01K6EJ7YR450BPMNTE6005P0R0
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -702,17 +806,17 @@ ACB maintains a detailed changelog tracking all significant changes:
 
 Each adapter category has its own detailed README with usage examples and configuration:
 
-- **[[acb/adapters/cache/README|Cache]]**: Memory and Redis caching with aiocache interface
-- **[[acb/adapters/dns/README|DNS]]**: Domain management (Cloud DNS, Cloudflare, Route53)
-- **[[acb/adapters/ftpd/README|FTPD]]**: File transfer protocols (FTP, SFTP)
-- **[[acb/adapters/models/README|Models]]**: Universal query interface for multiple ORMs
-- **[[acb/adapters/monitoring/README|Monitoring]]**: Error tracking (Sentry, Logfire)
-- **[[acb/adapters/nosql/README|NoSQL]]**: Document databases (MongoDB, Firestore, Redis)
-- **[[acb/adapters/requests/README|Requests]]**: HTTP clients (HTTPX, Niquests)
-- **[[acb/adapters/secret/README|Secret]]**: Secret management (Infisical, GCP, Azure, Cloudflare)
-- **[[acb/adapters/smtp/README|SMTP]]**: Email sending (Gmail, Mailgun)
-- **[[acb/adapters/sql/README|SQL]]**: Relational databases (MySQL, PostgreSQL, SQLite)
-- **[[acb/adapters/storage/README|Storage]]**: File storage (S3, GCS, Azure, local)
+- **\[[acb/adapters/cache/README|Cache]\]**: Memory and Redis caching with aiocache interface
+- **\[[acb/adapters/dns/README|DNS]\]**: Domain management (Cloud DNS, Cloudflare, Route53)
+- **\[[acb/adapters/ftpd/README|FTPD]\]**: File transfer protocols (FTP, SFTP)
+- **\[[acb/adapters/models/README|Models]\]**: Universal query interface for multiple ORMs
+- **\[[acb/adapters/monitoring/README|Monitoring]\]**: Error tracking (Sentry, Logfire)
+- **\[[acb/adapters/nosql/README|NoSQL]\]**: Document databases (MongoDB, Firestore, Redis)
+- **\[[acb/adapters/requests/README|Requests]\]**: HTTP clients (HTTPX, Niquests)
+- **\[[acb/adapters/secret/README|Secret]\]**: Secret management (Infisical, GCP, Azure, Cloudflare)
+- **\[[acb/adapters/smtp/README|SMTP]\]**: Email sending (Gmail, Mailgun)
+- **\[[acb/adapters/sql/README|SQL]\]**: Relational databases (MySQL, PostgreSQL, SQLite)
+- **\[[acb/adapters/storage/README|Storage]\]**: File storage (S3, GCS, Azure, local)
 
 ## Common Issues and Solutions
 

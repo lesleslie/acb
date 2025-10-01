@@ -8,7 +8,7 @@ from pathlib import Path
 # Import devtools.pformat without direct import
 import devtools
 
-_pformat = getattr(devtools, "pformat")
+_pformat = devtools.pformat
 from aioconsole import aprint
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
@@ -60,17 +60,12 @@ def patch_record(mod: Path | None, msg: str, logger: Logger = depends()) -> None
 
 
 def colorized_stderr_print(s: str) -> None:
-    import sys
-
     try:
         colored = colorize(s)
-        with supportTerminalColorsInWindows():
-            try:
-                asyncio.run(aprint(colored, use_stderr=True))
-            except Exception:
-                print(colored, file=sys.stderr)
+        with supportTerminalColorsInWindows(), suppress(Exception):
+            asyncio.run(aprint(colored, use_stderr=True))
     except ImportError:
-        print(s, file=sys.stderr)
+        pass
 
 
 def print_debug_info(msg: str) -> t.Any:

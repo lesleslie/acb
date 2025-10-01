@@ -75,7 +75,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
         else:
             for attr_name in dir(instance):
                 if not attr_name.startswith("_") and not callable(
-                    getattr(instance, attr_name)
+                    getattr(instance, attr_name),
                 ):
                     value = getattr(instance, attr_name)
                     result[attr_name] = self._serialize_value(value)
@@ -109,7 +109,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
             model_fields = {field.name for field in attrs_lib.fields(model_class)}
             return {k: v for k, v in data.items() if k in model_fields}
-        elif hasattr(model_class, "__annotations__"):
+        if hasattr(model_class, "__annotations__"):
             model_fields = set(model_class.__annotations__.keys())
             return {k: v for k, v in data.items() if k in model_fields}
         return data
@@ -198,7 +198,8 @@ class AttrsModelAdapter(ModelAdapter[T]):
         return self._get_field_types_from_annotations(model_class)
 
     def _get_field_types_from_annotations(
-        self, model_class: type[T]
+        self,
+        model_class: type[T],
     ) -> dict[str, type]:
         if hasattr(model_class, "__annotations__"):
             annotations = getattr(model_class, "__annotations__", {})
@@ -209,12 +210,10 @@ class AttrsModelAdapter(ModelAdapter[T]):
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
             for field in attrs_lib.fields(model_class):  # type: ignore[arg-type]
                 if field.name == field_name:
-                    field_type = field.type or Any
-                    return field_type  # type: ignore[no-any-return,return-value]
+                    return field.type or Any
         if hasattr(model_class, "__annotations__"):
             annotations = getattr(model_class, "__annotations__", {})
-            annotation_type = annotations.get(field_name, Any)
-            return annotation_type  # type: ignore  # type: ignore[no-any-return]
+            return annotations.get(field_name, Any)
 
         return Any  # type: ignore  # type: ignore[no-any-return]
 
@@ -230,7 +229,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
         return bool(
             inspect.isclass(field_type)
             and ATTRS_AVAILABLE
-            and attrs_lib.has(field_type)
+            and attrs_lib.has(field_type),
         )
 
     def get_nested_model_class(

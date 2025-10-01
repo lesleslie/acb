@@ -137,7 +137,10 @@ class MockSqlAdapter:
 
 class MockNoSqlAdapter:
     async def find(
-        self, collection: str, filter_dict: dict[str, Any], **options: Any
+        self,
+        collection: str,
+        filter_dict: dict[str, Any],
+        **options: Any,
     ) -> list[dict[str, Any]]:
         return [
             {
@@ -219,7 +222,9 @@ async def _register_adapters(adapters: dict[str, Any]) -> None:
     # Register model adapters
     if pydantic_available:
         registry.register_model_adapter(
-            "pydantic", adapters["pydantic"], is_default=True
+            "pydantic",
+            adapters["pydantic"],
+            is_default=True,
         )
 
     if sqlmodel_available:

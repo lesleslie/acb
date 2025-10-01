@@ -35,6 +35,8 @@ except ImportError:
     AbstractExchange = None
     RABBITMQ_AVAILABLE = False
 
+import contextlib
+
 from ._base import (
     QueueBase,
     QueueCapability,
@@ -144,10 +146,11 @@ class RabbitMQQueueSettings(QueueSettings):
 class RabbitMQQueue(QueueBase):
     """RabbitMQ-backed task queue implementation."""
 
-    def __init__(self, settings: RabbitMQQueueSettings | None = None):
+    def __init__(self, settings: RabbitMQQueueSettings | None = None) -> None:
         if not RABBITMQ_AVAILABLE:
+            msg = "aio-pika is required for RabbitMQQueue. Install with: pip install aio-pika>=9.0.0"
             raise ImportError(
-                "aio-pika is required for RabbitMQQueue. Install with: pip install aio-pika>=9.0.0"
+                msg,
             )
 
         super().__init__(settings)
@@ -168,7 +171,8 @@ class RabbitMQQueue(QueueBase):
         )
         self._queues: dict[str, t.Any] = {}  # dict[str, Queue] when aio_pika available
         self._consumers: dict[
-            str, t.Any
+            str,
+            t.Any,
         ] = {}  # dict[str, AbstractQueueIterator] when aio_pika available
 
         # Background tasks
@@ -194,17 +198,13 @@ class RabbitMQQueue(QueueBase):
         # Stop background tasks
         if self._consumer_task:
             self._consumer_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._consumer_task
-            except asyncio.CancelledError:
-                pass
 
         if self._health_monitor:
             self._health_monitor.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_monitor
-            except asyncio.CancelledError:
-                pass
 
         await super().stop()
 
@@ -244,19 +244,19 @@ class RabbitMQQueue(QueueBase):
                 # Create main channel
                 self._channel = await self._connection.channel()
                 await self._channel.set_qos(
-                    prefetch_count=self._settings.prefetch_count
+                    prefetch_count=self._settings.prefetch_count,
                 )
 
                 # Create consumer channel
                 self._consumer_channel = await self._connection.channel()
                 await self._consumer_channel.set_qos(
-                    prefetch_count=self._settings.prefetch_count
+                    prefetch_count=self._settings.prefetch_count,
                 )
 
                 self.logger.debug("RabbitMQ connection established")
 
             except Exception as e:
-                self.logger.error(f"Failed to connect to RabbitMQ: {e}")
+                self.logger.exception(f"Failed to connect to RabbitMQ: {e}")
                 raise
 
         return self._connection
@@ -264,7 +264,8 @@ class RabbitMQQueue(QueueBase):
     async def _setup_exchanges(self) -> None:
         """Setup RabbitMQ exchanges."""
         if not self._channel:
-            raise RuntimeError("Channel not available")
+            msg = "Channel not available"
+            raise RuntimeError(msg)
 
         try:
             # Main exchange
@@ -297,14 +298,15 @@ class RabbitMQQueue(QueueBase):
             self.logger.debug("RabbitMQ exchanges setup complete")
 
         except Exception as e:
-            self.logger.error(f"Failed to setup exchanges: {e}")
+            self.logger.exception(f"Failed to setup exchanges: {e}")
             raise
 
     async def _ensure_queue(self, queue_name: str) -> Queue:
         """Ensure a queue exists and return it."""
         if queue_name not in self._queues:
             if not self._channel:
-                raise RuntimeError("Channel not available")
+                msg = "Channel not available"
+                raise RuntimeError(msg)
 
             # Queue arguments
             arguments = {
@@ -339,7 +341,8 @@ class RabbitMQQueue(QueueBase):
     async def enqueue(self, task: TaskData) -> str:
         """Enqueue a task for processing."""
         if not self._running:
-            raise RuntimeError("Queue is not running")
+            msg = "Queue is not running"
+            raise RuntimeError(msg)
 
         await self._ensure_connection()
 
@@ -375,12 +378,12 @@ class RabbitMQQueue(QueueBase):
             self._metrics.pending_tasks += 1
 
             self.logger.debug(
-                f"Enqueued task {task.task_id} to queue {task.queue_name}"
+                f"Enqueued task {task.task_id} to queue {task.queue_name}",
             )
             return str(task.task_id)
 
         except Exception as e:
-            self.logger.error(f"Failed to enqueue task {task.task_id}: {e}")
+            self.logger.exception(f"Failed to enqueue task {task.task_id}: {e}")
             raise
 
     async def _enqueue_delayed_task(self, task: TaskData, message: Message) -> None:
@@ -446,7 +449,7 @@ class RabbitMQQueue(QueueBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Consumer loop error: {e}")
+                self.logger.exception(f"Consumer loop error: {e}")
                 await asyncio.sleep(5.0)
 
     async def _start_queue_consumer(self, queue_name: str) -> None:
@@ -464,7 +467,9 @@ class RabbitMQQueue(QueueBase):
             self.logger.debug(f"Started consumer for queue: {queue_name}")
 
         except Exception as e:
-            self.logger.error(f"Failed to start consumer for queue {queue_name}: {e}")
+            self.logger.exception(
+                f"Failed to start consumer for queue {queue_name}: {e}"
+            )
 
     async def _process_queue_messages(
         self,
@@ -485,7 +490,8 @@ class RabbitMQQueue(QueueBase):
 
                         # Update metrics
                         self._metrics.pending_tasks = max(
-                            0, self._metrics.pending_tasks - 1
+                            0,
+                            self._metrics.pending_tasks - 1,
                         )
                         self._metrics.processing_tasks += 1
 
@@ -493,14 +499,16 @@ class RabbitMQQueue(QueueBase):
                         await self._process_rabbitmq_task(task, message)
 
                     except Exception as e:
-                        self.logger.error(f"Failed to process message: {e}")
+                        self.logger.exception(f"Failed to process message: {e}")
                         # Message will be rejected and potentially sent to DLQ
                         raise
 
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            self.logger.error(f"Queue message processor error for {queue_name}: {e}")
+            self.logger.exception(
+                f"Queue message processor error for {queue_name}: {e}"
+            )
 
     async def _process_rabbitmq_task(self, task: TaskData, message: t.Any) -> None:
         """Process a RabbitMQ task message."""
@@ -512,8 +520,9 @@ class RabbitMQQueue(QueueBase):
             # Get task handler
             handler = self._handlers.get(task.task_type)
             if handler is None:
+                msg = f"No handler registered for task type: {task.task_type}"
                 raise ValueError(
-                    f"No handler registered for task type: {task.task_type}"
+                    msg,
                 )
 
             # Execute task
@@ -533,7 +542,11 @@ class RabbitMQQueue(QueueBase):
         except TimeoutError:
             error = f"Task timed out after {task.timeout}s"
             await self._handle_task_failure(
-                task, message, Exception(error), worker_id, start_time
+                task,
+                message,
+                Exception(error),
+                worker_id,
+                start_time,
             )
         except Exception as e:
             await self._handle_task_failure(task, message, e, worker_id, start_time)
@@ -641,7 +654,7 @@ class RabbitMQQueue(QueueBase):
             }
 
         except Exception as e:
-            self.logger.error(f"Failed to get queue info for {queue_name}: {e}")
+            self.logger.exception(f"Failed to get queue info for {queue_name}: {e}")
             return {"name": queue_name, "error": str(e)}
 
     async def purge_queue(self, queue_name: str) -> int:
@@ -653,12 +666,12 @@ class RabbitMQQueue(QueueBase):
             result = await queue.purge()
 
             self.logger.info(
-                f"Purged {result.message_count} messages from queue {queue_name}"
+                f"Purged {result.message_count} messages from queue {queue_name}",
             )
             return result.message_count
 
         except Exception as e:
-            self.logger.error(f"Failed to purge queue {queue_name}: {e}")
+            self.logger.exception(f"Failed to purge queue {queue_name}: {e}")
             return 0
 
     async def list_queues(self) -> list[str]:
@@ -683,7 +696,7 @@ class RabbitMQQueue(QueueBase):
                 else:
                     # Try to reconnect
                     self.logger.warning(
-                        "RabbitMQ connection lost, attempting reconnect"
+                        "RabbitMQ connection lost, attempting reconnect",
                     )
                     await self._ensure_connection()
                     await self._setup_exchanges()
@@ -691,7 +704,7 @@ class RabbitMQQueue(QueueBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"RabbitMQ health monitor error: {e}")
+                self.logger.exception(f"RabbitMQ health monitor error: {e}")
 
     async def _on_task_completed(self, task: TaskData, result: TaskResult) -> None:
         """Handle task completion."""
@@ -718,7 +731,7 @@ class RabbitMQQueue(QueueBase):
                     [
                         self._exchange is not None,
                         self._dead_letter_exchange is not None,
-                    ]
+                    ],
                 ),
                 "active_consumers": len(self._consumers),
                 "queues_count": len(self._queues),
@@ -759,7 +772,7 @@ class RabbitMQQueue(QueueBase):
             self.logger.info("Dead letter queue consumer created")
 
         except Exception as e:
-            self.logger.error(f"Failed to create dead letter consumer: {e}")
+            self.logger.exception(f"Failed to create dead letter consumer: {e}")
 
     async def get_dead_letter_messages(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get messages from dead letter queue."""
@@ -781,7 +794,7 @@ class RabbitMQQueue(QueueBase):
                             "body": message.body.decode(),
                             "headers": dict(message.headers) if message.headers else {},
                             "timestamp": message.timestamp,
-                        }
+                        },
                     )
 
                 return messages
@@ -789,7 +802,7 @@ class RabbitMQQueue(QueueBase):
             return []
 
         except Exception as e:
-            self.logger.error(f"Failed to get dead letter messages: {e}")
+            self.logger.exception(f"Failed to get dead letter messages: {e}")
             return []
 
 

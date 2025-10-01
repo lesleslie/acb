@@ -284,7 +284,8 @@ class Nosql(NosqlBase):
                 )
             else:
                 await self.client.hset(
-                    key, mapping=t.cast("dict[t.Any, t.Any]", update)
+                    key,
+                    mapping=t.cast("dict[t.Any, t.Any]", update),
                 )
             modified_count += 1
         return {"modified_count": modified_count}

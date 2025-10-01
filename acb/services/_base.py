@@ -68,10 +68,12 @@ class ServiceConfig(BaseModel):
     version: str = Field(default="1.0.0", description="Service version")
     description: str | None = Field(default=None, description="Service description")
     dependencies: list[str] = Field(
-        default_factory=list, description="Required service dependencies"
+        default_factory=list,
+        description="Required service dependencies",
     )
     priority: int = Field(
-        default=100, description="Service initialization priority (lower = earlier)"
+        default=100,
+        description="Service initialization priority (lower = earlier)",
     )
 
     class Config:
@@ -97,7 +99,8 @@ class ServiceBase(ABC, CleanupMixin):
         CleanupMixin.__init__(self)
 
         self._service_config = service_config or ServiceConfig(
-            service_id=self.__class__.__name__.lower(), name=self.__class__.__name__
+            service_id=self.__class__.__name__.lower(),
+            name=self.__class__.__name__,
         )
         self._settings = settings or ServiceSettings()
         self._status = ServiceStatus.INACTIVE
@@ -165,7 +168,7 @@ class ServiceBase(ABC, CleanupMixin):
                 self._status = ServiceStatus.ERROR
                 self._metrics.errors_count += 1
                 self._metrics.last_error = str(e)
-                self.logger.error(f"Failed to initialize service {self.name}: {e}")
+                self.logger.exception(f"Failed to initialize service {self.name}: {e}")
                 raise
 
     async def shutdown(self) -> None:
@@ -196,7 +199,7 @@ class ServiceBase(ABC, CleanupMixin):
             self._status = ServiceStatus.ERROR
             self._metrics.errors_count += 1
             self._metrics.last_error = str(e)
-            self.logger.error(f"Error during service {self.name} shutdown: {e}")
+            self.logger.exception(f"Error during service {self.name} shutdown: {e}")
             raise
 
     async def health_check(self) -> dict[str, t.Any]:
@@ -256,14 +259,14 @@ class ServiceBase(ABC, CleanupMixin):
                 health = await self.health_check()
                 if not health.get("healthy", False):
                     self.logger.warning(
-                        f"Service {self.name} health check failed: {health}"
+                        f"Service {self.name} health check failed: {health}",
                     )
 
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(
-                    f"Health check loop error for service {self.name}: {e}"
+                self.logger.exception(
+                    f"Health check loop error for service {self.name}: {e}",
                 )
                 await asyncio.sleep(self._settings.health_check_interval)
 

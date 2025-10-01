@@ -174,10 +174,12 @@ class CacheBase(BaseCache, CleanupMixin):  # type: ignore[misc]
         """Set cache value."""
         client = await self._ensure_client()
         await client.set(key, value, ttl=ttl)
-        return None
 
     async def delete(
-        self, key: str, namespace: str | None = None, _conn: t.Any = None
+        self,
+        key: str,
+        namespace: str | None = None,
+        _conn: t.Any = None,
     ) -> bool:
         """Delete cache key."""
         client = await self._ensure_client()

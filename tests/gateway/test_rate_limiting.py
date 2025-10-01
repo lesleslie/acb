@@ -11,8 +11,8 @@ from acb.gateway.rate_limiting import (
     RateLimitConfig,
     RateLimitResult,
     RateLimiter,
-    TokenBucketRateLimiter,
-    SlidingWindowRateLimiter,
+    TokenBucketLimiter,
+    SlidingWindowLimiter,
 )
 
 
@@ -48,13 +48,13 @@ def mock_storage():
     return storage
 
 
-class TestTokenBucketRateLimiter:
-    """Test cases for TokenBucketRateLimiter."""
+class TestTokenBucketLimiter:
+    """Test cases for TokenBucketLimiter."""
 
     @pytest.mark.asyncio
     async def test_check_rate_limit_allow(self, token_bucket_config, mock_storage):
         """Test rate limit check allowing request."""
-        limiter = TokenBucketRateLimiter(token_bucket_config, mock_storage)
+        limiter = TokenBucketLimiter(token_bucket_config, mock_storage)
 
         # Mock bucket with tokens available
         mock_storage.get.return_value = {
@@ -71,7 +71,7 @@ class TestTokenBucketRateLimiter:
     @pytest.mark.asyncio
     async def test_check_rate_limit_deny(self, token_bucket_config, mock_storage):
         """Test rate limit check denying request."""
-        limiter = TokenBucketRateLimiter(token_bucket_config, mock_storage)
+        limiter = TokenBucketLimiter(token_bucket_config, mock_storage)
 
         # Mock bucket with no tokens
         mock_storage.get.return_value = {
@@ -88,7 +88,7 @@ class TestTokenBucketRateLimiter:
     @pytest.mark.asyncio
     async def test_token_refill(self, token_bucket_config, mock_storage):
         """Test token bucket refill mechanism."""
-        limiter = TokenBucketRateLimiter(token_bucket_config, mock_storage)
+        limiter = TokenBucketLimiter(token_bucket_config, mock_storage)
 
         # Mock bucket from 2 seconds ago with 0 tokens
         past_time = time.time() - 2.0
@@ -106,7 +106,7 @@ class TestTokenBucketRateLimiter:
     @pytest.mark.asyncio
     async def test_new_bucket_creation(self, token_bucket_config, mock_storage):
         """Test creation of new token bucket."""
-        limiter = TokenBucketRateLimiter(token_bucket_config, mock_storage)
+        limiter = TokenBucketLimiter(token_bucket_config, mock_storage)
 
         # Mock no existing bucket
         mock_storage.get.return_value = None
@@ -120,7 +120,7 @@ class TestTokenBucketRateLimiter:
     @pytest.mark.asyncio
     async def test_get_metrics(self, token_bucket_config, mock_storage):
         """Test metrics collection."""
-        limiter = TokenBucketRateLimiter(token_bucket_config, mock_storage)
+        limiter = TokenBucketLimiter(token_bucket_config, mock_storage)
 
         # Simulate some requests
         await limiter.check_rate_limit("test-key-1")
@@ -134,13 +134,13 @@ class TestTokenBucketRateLimiter:
         assert "unique_keys" in metrics
 
 
-class TestSlidingWindowRateLimiter:
-    """Test cases for SlidingWindowRateLimiter."""
+class TestSlidingWindowLimiter:
+    """Test cases for SlidingWindowLimiter."""
 
     @pytest.mark.asyncio
     async def test_check_rate_limit_allow(self, sliding_window_config, mock_storage):
         """Test rate limit check allowing request."""
-        limiter = SlidingWindowRateLimiter(sliding_window_config, mock_storage)
+        limiter = SlidingWindowLimiter(sliding_window_config, mock_storage)
 
         # Mock low request count in window
         mock_storage.get.return_value = {
@@ -157,7 +157,7 @@ class TestSlidingWindowRateLimiter:
     @pytest.mark.asyncio
     async def test_check_rate_limit_deny(self, sliding_window_config, mock_storage):
         """Test rate limit check denying request."""
-        limiter = SlidingWindowRateLimiter(sliding_window_config, mock_storage)
+        limiter = SlidingWindowLimiter(sliding_window_config, mock_storage)
 
         # Mock request count at limit
         mock_storage.get.return_value = {
@@ -174,7 +174,7 @@ class TestSlidingWindowRateLimiter:
     @pytest.mark.asyncio
     async def test_window_reset(self, sliding_window_config, mock_storage):
         """Test sliding window reset."""
-        limiter = SlidingWindowRateLimiter(sliding_window_config, mock_storage)
+        limiter = SlidingWindowLimiter(sliding_window_config, mock_storage)
 
         # Mock old window (past window size)
         past_time = time.time() - sliding_window_config.window_size_seconds - 10
@@ -192,7 +192,7 @@ class TestSlidingWindowRateLimiter:
     @pytest.mark.asyncio
     async def test_new_window_creation(self, sliding_window_config, mock_storage):
         """Test creation of new sliding window."""
-        limiter = SlidingWindowRateLimiter(sliding_window_config, mock_storage)
+        limiter = SlidingWindowLimiter(sliding_window_config, mock_storage)
 
         # Mock no existing window
         mock_storage.get.return_value = None
@@ -206,7 +206,7 @@ class TestSlidingWindowRateLimiter:
     @pytest.mark.asyncio
     async def test_concurrent_requests(self, sliding_window_config, mock_storage):
         """Test handling concurrent requests."""
-        limiter = SlidingWindowRateLimiter(sliding_window_config, mock_storage)
+        limiter = SlidingWindowLimiter(sliding_window_config, mock_storage)
 
         # Mock near-limit scenario
         mock_storage.get.return_value = {

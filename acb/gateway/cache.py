@@ -25,7 +25,7 @@ import typing as t
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.gateway._base import GatewayRequest, GatewayResponse
 
 
@@ -165,7 +165,9 @@ class CacheConfig(BaseModel):
     key_strategy: CacheKeyStrategy = CacheKeyStrategy.QUERY_AWARE
     key_prefix: str = "gateway:"
     include_headers: list[str] = Field(default_factory=list)
-    exclude_headers: list[str] = Field(default_factory=lambda: ["authorization", "cookie"])
+    exclude_headers: list[str] = Field(
+        default_factory=lambda: ["authorization", "cookie"],
+    )
 
     # TTL settings
     default_ttl: int = 300  # 5 minutes
@@ -180,7 +182,9 @@ class CacheConfig(BaseModel):
     # Response caching rules
     cache_successful_responses: bool = True
     cache_error_responses: bool = False
-    cacheable_status_codes: list[int] = Field(default_factory=lambda: [200, 301, 302, 404])
+    cacheable_status_codes: list[int] = Field(
+        default_factory=lambda: [200, 301, 302, 404],
+    )
     cacheable_methods: list[str] = Field(default_factory=lambda: ["GET", "HEAD"])
 
     # Multi-tenancy
@@ -196,8 +200,7 @@ class CacheConfig(BaseModel):
     enable_warming: bool = False
     warming_paths: list[str] = Field(default_factory=list)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class CacheKeyGenerator:
@@ -215,16 +218,15 @@ class CacheKeyGenerator:
         """Generate cache key based on strategy."""
         if self._config.key_strategy == CacheKeyStrategy.SIMPLE:
             return self._simple_key(request)
-        elif self._config.key_strategy == CacheKeyStrategy.QUERY_AWARE:
+        if self._config.key_strategy == CacheKeyStrategy.QUERY_AWARE:
             return self._query_aware_key(request)
-        elif self._config.key_strategy == CacheKeyStrategy.HEADER_AWARE:
+        if self._config.key_strategy == CacheKeyStrategy.HEADER_AWARE:
             return self._header_aware_key(request)
-        elif self._config.key_strategy == CacheKeyStrategy.USER_AWARE:
+        if self._config.key_strategy == CacheKeyStrategy.USER_AWARE:
             return self._user_aware_key(request, user_id)
-        elif self._config.key_strategy == CacheKeyStrategy.TENANT_AWARE:
+        if self._config.key_strategy == CacheKeyStrategy.TENANT_AWARE:
             return self._tenant_aware_key(request, tenant_id)
-        else:
-            return self._simple_key(request)
+        return self._simple_key(request)
 
     def _simple_key(self, request: GatewayRequest) -> str:
         """Generate simple cache key from method and path."""
@@ -378,10 +380,7 @@ class MemoryCache:
                 return False
 
             # Calculate TTL
-            effective_ttl = min(
-                ttl or self._config.default_ttl,
-                self._config.max_ttl
-            )
+            effective_ttl = min(ttl or self._config.default_ttl, self._config.max_ttl)
             effective_ttl = max(effective_ttl, self._config.min_ttl)
 
             # Check size limits
@@ -449,20 +448,20 @@ class MemoryCache:
         if tenant_id and self._config.tenant_isolation:
             # Clear only tenant-specific entries
             keys_to_remove = [
-                key for key, cached_response in self._cache.items()
+                key
+                for key, cached_response in self._cache.items()
                 if cached_response.tenant_id == tenant_id
             ]
             for key in keys_to_remove:
                 await self.delete(key)
             return len(keys_to_remove)
-        else:
-            # Clear all entries
-            count = len(self._cache)
-            self._cache.clear()
-            self._stats.total_entries = 0
-            self._stats.memory_usage_bytes = 0
-            self._stats.tenant_stats.clear()
-            return count
+        # Clear all entries
+        count = len(self._cache)
+        self._cache.clear()
+        self._stats.total_entries = 0
+        self._stats.memory_usage_bytes = 0
+        self._stats.tenant_stats.clear()
+        return count
 
     async def get_stats(self) -> CacheStats:
         """Get cache statistics."""
@@ -481,10 +480,7 @@ class MemoryCache:
 
         # Check for cache control headers
         cache_control = response.headers.get("cache-control", "").lower()
-        if "no-cache" in cache_control or "no-store" in cache_control:
-            return False
-
-        return True
+        return not ("no-cache" in cache_control or "no-store" in cache_control)
 
     def _filter_headers(self, headers: dict[str, str]) -> dict[str, str]:
         """Filter headers for caching."""
@@ -511,6 +507,7 @@ class MemoryCache:
             else:
                 # Estimate for dict/object
                 import json
+
                 size += len(json.dumps(response.body).encode())
 
         return size
@@ -537,23 +534,34 @@ class MemoryCache:
         # Find LRU entry (lowest hits, oldest cache time)
         lru_key = min(
             self._cache.keys(),
-            key=lambda k: (self._cache[k].hits, self._cache[k].cached_at)
+            key=lambda k: (self._cache[k].hits, self._cache[k].cached_at),
         )
 
         await self.delete(lru_key)
         self._stats.evictions += 1
         return True
 
-    async def _compress_response(self, cached_response: CachedResponse, original_size: int) -> None:
+    async def _compress_response(
+        self,
+        cached_response: CachedResponse,
+        original_size: int,
+    ) -> None:
         """Compress response body if beneficial."""
         if original_size < self._config.compression_threshold:
             return
 
-        if isinstance(cached_response.body, (str, bytes)):
+        if isinstance(cached_response.body, str | bytes):
             import gzip
 
-            body_bytes = cached_response.body.encode() if isinstance(cached_response.body, str) else cached_response.body
-            compressed = gzip.compress(body_bytes, compresslevel=self._config.compression_level)
+            body_bytes = (
+                cached_response.body.encode()
+                if isinstance(cached_response.body, str)
+                else cached_response.body
+            )
+            compressed = gzip.compress(
+                body_bytes,
+                compresslevel=self._config.compression_level,
+            )
 
             # Only use compression if it reduces size significantly
             if len(compressed) < original_size * 0.9:
@@ -568,9 +576,9 @@ class MemoryCache:
             self._stats.avg_lookup_time_ms = lookup_time_ms
         else:
             self._stats.avg_lookup_time_ms = (
-                (self._stats.avg_lookup_time_ms * (self._stats.total_requests - 1) + lookup_time_ms)
-                / self._stats.total_requests
-            )
+                self._stats.avg_lookup_time_ms * (self._stats.total_requests - 1)
+                + lookup_time_ms
+            ) / self._stats.total_requests
 
     def _update_avg_store_time(self, store_time_ms: float) -> None:
         """Update average store time."""
@@ -579,9 +587,8 @@ class MemoryCache:
             self._stats.avg_store_time_ms = store_time_ms
         else:
             self._stats.avg_store_time_ms = (
-                (self._stats.avg_store_time_ms * (count - 1) + store_time_ms)
-                / count
-            )
+                self._stats.avg_store_time_ms * (count - 1) + store_time_ms
+            ) / count
 
 
 class CacheManager:
@@ -642,14 +649,13 @@ class CacheManager:
         if pattern:
             # Pattern-based invalidation (simplified)
             return await self._cache.clear(tenant_id)
-        elif request:
+        if request:
             # Specific request invalidation
             cache_key = self._key_generator.generate_key(request, tenant_id)
             deleted = await self._cache.delete(cache_key)
             return 1 if deleted else 0
-        else:
-            # Clear all for tenant or everything
-            return await self._cache.clear(tenant_id)
+        # Clear all for tenant or everything
+        return await self._cache.clear(tenant_id)
 
     async def get_cache_stats(self) -> CacheStats:
         """Get cache statistics."""
@@ -663,10 +669,7 @@ class CacheManager:
 
         # Check for cache control headers
         cache_control = request.headers.get("cache-control", "").lower()
-        if "no-cache" in cache_control:
-            return False
-
-        return True
+        return "no-cache" not in cache_control
 
 
 class CacheResult(BaseModel):
@@ -677,5 +680,4 @@ class CacheResult(BaseModel):
     cache_key: str | None = None
     ttl_remaining: int | None = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)

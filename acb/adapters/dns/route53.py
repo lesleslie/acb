@@ -115,7 +115,7 @@ class Dns(DnsBase):
 
         try:
             response = client.list_hosted_zones_by_name(
-                DNSName=self.config.dns.zone_name
+                DNSName=self.config.dns.zone_name,
             )
 
             for zone in response.get("HostedZones", []):
@@ -145,7 +145,7 @@ class Dns(DnsBase):
             await self.get_client()
             await self._get_zone_id()
             logger.info(
-                f"Route53 DNS adapter initialized for zone: {self.config.dns.zone_name}"
+                f"Route53 DNS adapter initialized for zone: {self.config.dns.zone_name}",
             )  # type: ignore[no-untyped-call]
         except Exception as e:
             logger.exception(f"Failed to initialize Route53 DNS adapter: {e}")  # type: ignore[no-untyped-call]
@@ -169,7 +169,7 @@ class Dns(DnsBase):
             for record_set in response.get("ResourceRecordSets", []):
                 # Skip NS and SOA records for the zone itself
                 if record_set["Type"] in ("NS", "SOA") and record_set["Name"].rstrip(
-                    "."
+                    ".",
                 ) == self.config.dns.zone_name.rstrip("."):
                     continue
 
@@ -183,7 +183,7 @@ class Dns(DnsBase):
                         rrdata=rrdata
                         if len(rrdata) > 1
                         else (rrdata[0] if rrdata else None),
-                    )
+                    ),
                 )
 
             self.current_records = records
@@ -194,7 +194,8 @@ class Dns(DnsBase):
             raise
 
     def _prepare_resource_records(
-        self, rrdata: str | list[str] | None
+        self,
+        rrdata: str | list[str] | None,
     ) -> list[dict[str, str]]:
         """Prepare resource records for Route53 API."""
         if rrdata is None:
@@ -217,7 +218,9 @@ class Dns(DnsBase):
         }
 
     def _prepare_batch_changes(
-        self, records: list[DnsRecord], action: str
+        self,
+        records: list[DnsRecord],
+        action: str,
     ) -> list[dict[str, t.Any]]:
         """Prepare changes for Route53 batch operation."""
         changes = []
@@ -228,7 +231,9 @@ class Dns(DnsBase):
         return changes
 
     async def _submit_batch_changes(
-        self, changes: list[dict[str, t.Any]], comment: str
+        self,
+        changes: list[dict[str, t.Any]],
+        comment: str,
     ) -> str:
         """Submit batch changes to Route53 and return change ID."""
         zone_id = await self._get_zone_id()
@@ -259,10 +264,11 @@ class Dns(DnsBase):
                 return
 
             change_id = await self._submit_batch_changes(
-                changes, "ACB Route53 adapter batch update"
+                changes,
+                "ACB Route53 adapter batch update",
             )
             self.logger.info(
-                f"DNS records submitted for creation. Change ID: {change_id}"
+                f"DNS records submitted for creation. Change ID: {change_id}",
             )
 
             # Optionally wait for changes to propagate
@@ -303,10 +309,11 @@ class Dns(DnsBase):
                 return
 
             change_id = await self._submit_batch_changes(
-                changes, "ACB Route53 adapter batch deletion"
+                changes,
+                "ACB Route53 adapter batch deletion",
             )
             self.logger.info(
-                f"DNS records submitted for deletion. Change ID: {change_id}"
+                f"DNS records submitted for deletion. Change ID: {change_id}",
             )
 
         except (ClientError, BotoCoreError) as e:
@@ -325,7 +332,8 @@ class Dns(DnsBase):
                 "name": response["HostedZone"]["Name"],
                 "record_count": response["HostedZone"]["ResourceRecordSetCount"],
                 "private_zone": response["HostedZone"]["Config"].get(
-                    "PrivateZone", False
+                    "PrivateZone",
+                    False,
                 ),
                 "comment": response["HostedZone"]["Config"].get("Comment", ""),
             }

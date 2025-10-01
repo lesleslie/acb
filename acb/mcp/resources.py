@@ -13,7 +13,7 @@ from .registry import ComponentRegistry
 class ACBMCPResources:
     """MCP resources implementation for ACB."""
 
-    def __init__(self, component_registry: ComponentRegistry):
+    def __init__(self, component_registry: ComponentRegistry) -> None:
         """Initialize the MCP resources."""
         self.component_registry = component_registry
         self.logger: Logger = depends.get(Logger)
@@ -31,19 +31,18 @@ class ACBMCPResources:
 
     async def get_component_registry(self) -> dict[str, Any]:
         """Get the component registry as a resource."""
-        registry = {
+        return {
             "actions": list(self.component_registry.get_actions().keys()),
             "adapters": list(self.component_registry.get_adapters().keys()),
             "services": list(self.component_registry.get_services().keys()),
             "events": list(self.component_registry.get_events().keys()),
         }
-        return registry
 
     async def get_system_metrics(self) -> dict[str, Any]:
         """Get system metrics as a resource."""
         # This is a placeholder implementation
         # In a real implementation, this would gather actual system metrics
-        metrics = {
+        return {
             "timestamp": asyncio.get_event_loop().time(),
             "component_count": {
                 "actions": len(self.component_registry.get_actions()),
@@ -52,7 +51,6 @@ class ACBMCPResources:
                 "events": len(self.component_registry.get_events()),
             },
         }
-        return metrics
 
     async def get_event_stream(self) -> AsyncGenerator[dict[str, Any]]:
         """Get a stream of system events."""

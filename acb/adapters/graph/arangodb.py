@@ -186,7 +186,7 @@ class Graph(GraphBase):
                         "edge_collection": edge_collection,
                         "from_vertex_collections": vertex_collections,
                         "to_vertex_collections": vertex_collections,
-                    }
+                    },
                 )
 
             self._database.create_graph(
@@ -260,7 +260,7 @@ class Graph(GraphBase):
                 if isinstance(record, dict):
                     # Check if it's a vertex
                     if "_id" in record and "/" in record["_id"]:
-                        collection, doc_key = record["_id"].split("/", 1)
+                        collection, _doc_key = record["_id"].split("/", 1)
                         if collection in (
                             self._settings.vertex_collections or ["vertices"]
                         ):
@@ -291,13 +291,16 @@ class Graph(GraphBase):
             )
 
         except Exception as e:
-            self.logger.error(
-                "Failed to execute AQL query", extra={"error": str(e), "query": query}
+            self.logger.exception(
+                "Failed to execute AQL query",
+                extra={"error": str(e), "query": query},
             )
             raise
 
     async def _create_node(
-        self, labels: list[str], properties: dict[str, t.Any]
+        self,
+        labels: list[str],
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Create a vertex in ArangoDB."""
         database = await self._ensure_client()
@@ -360,7 +363,9 @@ class Graph(GraphBase):
         return None
 
     async def _update_node(
-        self, node_id: str, properties: dict[str, t.Any]
+        self,
+        node_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Update vertex properties."""
         database = await self._ensure_client()
@@ -455,7 +460,9 @@ class Graph(GraphBase):
         return None
 
     async def _update_edge(
-        self, edge_id: str, properties: dict[str, t.Any]
+        self,
+        edge_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphEdgeModel:
         """Update edge properties."""
         database = await self._ensure_client()
@@ -533,7 +540,7 @@ class Graph(GraphBase):
                         nodes=nodes,
                         edges=edges,
                         length=len(edges),
-                    )
+                    ),
                 )
 
         return paths
@@ -642,7 +649,7 @@ class Graph(GraphBase):
                         "type": index.get("type"),
                         "fields": index.get("fields", []),
                         "unique": index.get("unique", False),
-                    }
+                    },
                 )
 
         return GraphSchemaModel(
@@ -653,7 +660,10 @@ class Graph(GraphBase):
         )
 
     async def _create_index(
-        self, labels: list[str], properties: list[str], index_type: str
+        self,
+        labels: list[str],
+        properties: list[str],
+        index_type: str,
     ) -> bool:
         """Create an index on properties."""
         database = await self._ensure_client()
@@ -665,7 +675,7 @@ class Graph(GraphBase):
                     {
                         "type": index_type,
                         "fields": properties,
-                    }
+                    },
                 )
 
         return True
@@ -687,7 +697,8 @@ class Graph(GraphBase):
         return False
 
     async def _bulk_create_nodes(
-        self, nodes: list[dict[str, t.Any]]
+        self,
+        nodes: list[dict[str, t.Any]],
     ) -> list[GraphNodeModel]:
         """Create multiple vertices in bulk."""
         database = await self._ensure_client()
@@ -725,7 +736,8 @@ class Graph(GraphBase):
         return results
 
     async def _bulk_create_edges(
-        self, edges: list[dict[str, t.Any]]
+        self,
+        edges: list[dict[str, t.Any]],
     ) -> list[GraphEdgeModel]:
         """Create multiple edges in bulk."""
         database = await self._ensure_client()
@@ -774,15 +786,14 @@ class Graph(GraphBase):
                 if result.records:
                     total += result.records[0]
             return total
-        else:
-            vertex_collections = self._settings.vertex_collections or ["vertices"]
-            total = 0
-            for collection_name in vertex_collections:
-                query = f"RETURN LENGTH({collection_name})"
-                result = await self._execute_query(query)
-                if result.records:
-                    total += result.records[0]
-            return total
+        vertex_collections = self._settings.vertex_collections or ["vertices"]
+        total = 0
+        for collection_name in vertex_collections:
+            query = f"RETURN LENGTH({collection_name})"
+            result = await self._execute_query(query)
+            if result.records:
+                total += result.records[0]
+        return total
 
     async def _count_edges(self, edge_types: list[str] | None) -> int:
         """Count edges in the graph."""
@@ -794,15 +805,14 @@ class Graph(GraphBase):
                 if result.records:
                     total += result.records[0]
             return total
-        else:
-            edge_collections = self._settings.edge_collections or ["edges"]
-            total = 0
-            for collection_name in edge_collections:
-                query = f"RETURN LENGTH({collection_name})"
-                result = await self._execute_query(query)
-                if result.records:
-                    total += result.records[0]
-            return total
+        edge_collections = self._settings.edge_collections or ["edges"]
+        total = 0
+        for collection_name in edge_collections:
+            query = f"RETURN LENGTH({collection_name})"
+            result = await self._execute_query(query)
+            if result.records:
+                total += result.records[0]
+        return total
 
     async def _clear_graph(self) -> bool:
         """Clear all vertices and edges."""

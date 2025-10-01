@@ -9,14 +9,17 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any, Self
 
-import pandas as pd
 from pydantic import BaseModel, Field
 from acb.core.cleanup import CleanupMixin
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
+    import pandas as pd
 
 
 class FeatureDefinition(BaseModel):
@@ -30,12 +33,14 @@ class FeatureDefinition(BaseModel):
     owner: str | None = Field(default=None, description="Feature owner")
     created_at: datetime | None = Field(default=None, description="Creation timestamp")
     updated_at: datetime | None = Field(
-        default=None, description="Last update timestamp"
+        default=None,
+        description="Last update timestamp",
     )
     version: str | None = Field(default=None, description="Feature version")
     status: str = Field(default="active", description="Feature status")
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata"
+        default_factory=dict,
+        description="Additional metadata",
     )
 
 
@@ -56,7 +61,8 @@ class FeatureVector(BaseModel):
     features: dict[str, Any] = Field(description="Feature name-value pairs")
     timestamp: datetime | None = Field(default=None, description="Vector timestamp")
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Vector metadata"
+        default_factory=dict,
+        description="Vector metadata",
     )
 
 
@@ -67,11 +73,13 @@ class FeatureServingRequest(BaseModel):
     feature_names: list[str] = Field(description="List of feature names to retrieve")
     feature_group: str | None = Field(default=None, description="Feature group filter")
     timestamp: datetime | None = Field(
-        default=None, description="Point-in-time timestamp"
+        default=None,
+        description="Point-in-time timestamp",
     )
     version: str | None = Field(default=None, description="Feature version")
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Request metadata"
+        default_factory=dict,
+        description="Request metadata",
     )
 
 
@@ -79,12 +87,13 @@ class FeatureServingResponse(BaseModel):
     """Feature serving response."""
 
     feature_vectors: list[FeatureVector] = Field(
-        description="Retrieved feature vectors"
+        description="Retrieved feature vectors",
     )
     latency_ms: float | None = Field(default=None, description="Serving latency in ms")
     cache_hit_ratio: float | None = Field(default=None, description="Cache hit ratio")
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Response metadata"
+        default_factory=dict,
+        description="Response metadata",
     )
 
 
@@ -94,10 +103,12 @@ class FeatureIngestionRequest(BaseModel):
     feature_group: str = Field(description="Target feature group")
     features: list[FeatureValue] = Field(description="Features to ingest")
     mode: str = Field(
-        default="append", description="Ingestion mode (append, overwrite)"
+        default="append",
+        description="Ingestion mode (append, overwrite)",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Ingestion metadata"
+        default_factory=dict,
+        description="Ingestion metadata",
     )
 
 
@@ -107,11 +118,13 @@ class FeatureIngestionResponse(BaseModel):
     ingested_count: int = Field(description="Number of features ingested")
     failed_count: int = Field(default=0, description="Number of failed ingestions")
     latency_ms: float | None = Field(
-        default=None, description="Ingestion latency in ms"
+        default=None,
+        description="Ingestion latency in ms",
     )
     errors: list[str] = Field(default_factory=list, description="Ingestion errors")
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Response metadata"
+        default_factory=dict,
+        description="Response metadata",
     )
 
 
@@ -122,17 +135,21 @@ class FeatureMonitoring(BaseModel):
     drift_score: float | None = Field(default=None, description="Data drift score")
     quality_score: float | None = Field(default=None, description="Data quality score")
     freshness_hours: float | None = Field(
-        default=None, description="Data freshness in hours"
+        default=None,
+        description="Data freshness in hours",
     )
     completeness_ratio: float | None = Field(
-        default=None, description="Data completeness ratio"
+        default=None,
+        description="Data completeness ratio",
     )
     anomaly_count: int | None = Field(default=None, description="Number of anomalies")
     last_updated: datetime | None = Field(
-        default=None, description="Last monitoring update"
+        default=None,
+        description="Last monitoring update",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Monitoring metadata"
+        default_factory=dict,
+        description="Monitoring metadata",
     )
 
 
@@ -145,14 +162,17 @@ class FeatureExperiment(BaseModel):
     traffic_split: dict[str, float] = Field(description="Traffic allocation")
     status: str = Field(description="Experiment status")
     start_time: datetime | None = Field(
-        default=None, description="Experiment start time"
+        default=None,
+        description="Experiment start time",
     )
     end_time: datetime | None = Field(default=None, description="Experiment end time")
     metrics: dict[str, Any] = Field(
-        default_factory=dict, description="Experiment metrics"
+        default_factory=dict,
+        description="Experiment metrics",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Experiment metadata"
+        default_factory=dict,
+        description="Experiment metadata",
     )
 
 
@@ -161,22 +181,28 @@ class FeatureLineage(BaseModel):
 
     feature_name: str = Field(description="Feature name")
     upstream_features: list[str] = Field(
-        default_factory=list, description="Upstream dependencies"
+        default_factory=list,
+        description="Upstream dependencies",
     )
     downstream_features: list[str] = Field(
-        default_factory=list, description="Downstream consumers"
+        default_factory=list,
+        description="Downstream consumers",
     )
     data_sources: list[str] = Field(
-        default_factory=list, description="Source data tables"
+        default_factory=list,
+        description="Source data tables",
     )
     transformations: list[str] = Field(
-        default_factory=list, description="Applied transformations"
+        default_factory=list,
+        description="Applied transformations",
     )
     lineage_graph: dict[str, Any] = Field(
-        default_factory=dict, description="Full lineage graph"
+        default_factory=dict,
+        description="Full lineage graph",
     )
     metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Lineage metadata"
+        default_factory=dict,
+        description="Lineage metadata",
     )
 
 
@@ -198,16 +224,19 @@ class FeatureStoreSettings(BaseModel):
     # Feature serving settings
     online_store_host: str | None = Field(default=None, description="Online store host")
     offline_store_host: str | None = Field(
-        default=None, description="Offline store host"
+        default=None,
+        description="Offline store host",
     )
     default_feature_group: str | None = Field(
-        default=None, description="Default feature group"
+        default=None,
+        description="Default feature group",
     )
 
     # Performance settings
     max_batch_size: int = Field(default=1000, description="Maximum batch size")
     max_concurrent_requests: int = Field(
-        default=100, description="Maximum concurrent requests"
+        default=100,
+        description="Maximum concurrent requests",
     )
     connection_pool_size: int = Field(default=10, description="Connection pool size")
 
@@ -218,30 +247,37 @@ class FeatureStoreSettings(BaseModel):
 
     # Monitoring settings
     enable_monitoring: bool = Field(
-        default=True, description="Enable feature monitoring"
+        default=True,
+        description="Enable feature monitoring",
     )
     enable_drift_detection: bool = Field(
-        default=True, description="Enable drift detection"
+        default=True,
+        description="Enable drift detection",
     )
     monitoring_interval: float = Field(
-        default=60.0, description="Monitoring interval in seconds"
+        default=60.0,
+        description="Monitoring interval in seconds",
     )
 
     # Data quality settings
     enable_validation: bool = Field(default=True, description="Enable data validation")
     quality_threshold: float = Field(
-        default=0.95, description="Quality score threshold"
+        default=0.95,
+        description="Quality score threshold",
     )
     freshness_threshold_hours: float = Field(
-        default=24.0, description="Freshness threshold"
+        default=24.0,
+        description="Freshness threshold",
     )
 
     # Advanced settings
     custom_headers: dict[str, str] = Field(
-        default_factory=dict, description="Custom HTTP headers"
+        default_factory=dict,
+        description="Custom HTTP headers",
     )
     extra_config: dict[str, Any] = Field(
-        default_factory=dict, description="Provider-specific config"
+        default_factory=dict,
+        description="Provider-specific config",
     )
 
 
@@ -279,7 +315,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Configured online client instance
         """
-        pass
 
     @abstractmethod
     async def _create_offline_client(self) -> Any:
@@ -288,7 +323,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Configured offline client instance
         """
-        pass
 
     async def _ensure_online_client(self) -> Any:
         """Ensure online client is initialized using lazy loading pattern."""
@@ -307,7 +341,8 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
     # Feature Serving Methods
     @abstractmethod
     async def get_online_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from online store for real-time serving.
 
@@ -317,17 +352,18 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature serving response
         """
-        pass
 
     async def _get_online_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Internal online features implementation."""
         return await self.get_online_features(request)
 
     @abstractmethod
     async def get_offline_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Get features from offline store for batch processing.
 
@@ -337,10 +373,10 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature serving response
         """
-        pass
 
     async def _get_offline_features(
-        self, request: FeatureServingRequest
+        self,
+        request: FeatureServingRequest,
     ) -> FeatureServingResponse:
         """Internal offline features implementation."""
         return await self.get_offline_features(request)
@@ -362,7 +398,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             DataFrame with historical features
         """
-        pass
 
     async def _get_historical_features(
         self,
@@ -372,13 +407,16 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
     ) -> pd.DataFrame:
         """Internal historical features implementation."""
         return await self.get_historical_features(
-            entity_df, feature_names, timestamp_column
+            entity_df,
+            feature_names,
+            timestamp_column,
         )
 
     # Feature Ingestion Methods
     @abstractmethod
     async def ingest_features(
-        self, request: FeatureIngestionRequest
+        self,
+        request: FeatureIngestionRequest,
     ) -> FeatureIngestionResponse:
         """Ingest features into the feature store.
 
@@ -388,17 +426,20 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature ingestion response
         """
-        pass
 
     async def _ingest_features(
-        self, request: FeatureIngestionRequest
+        self,
+        request: FeatureIngestionRequest,
     ) -> FeatureIngestionResponse:
         """Internal feature ingestion implementation."""
         return await self.ingest_features(request)
 
     @abstractmethod
     async def ingest_batch_features(
-        self, feature_group: str, df: pd.DataFrame, mode: str = "append"
+        self,
+        feature_group: str,
+        df: pd.DataFrame,
+        mode: str = "append",
     ) -> FeatureIngestionResponse:
         """Ingest batch features from DataFrame.
 
@@ -410,10 +451,12 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature ingestion response
         """
-        pass
 
     async def _ingest_batch_features(
-        self, feature_group: str, df: pd.DataFrame, mode: str = "append"
+        self,
+        feature_group: str,
+        df: pd.DataFrame,
+        mode: str = "append",
     ) -> FeatureIngestionResponse:
         """Internal batch ingestion implementation."""
         return await self.ingest_batch_features(feature_group, df, mode)
@@ -426,7 +469,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             List of feature group names
         """
-        pass
 
     async def _list_feature_groups(self) -> list[str]:
         """Internal list feature groups implementation."""
@@ -434,7 +476,8 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
 
     @abstractmethod
     async def list_features(
-        self, feature_group: str | None = None
+        self,
+        feature_group: str | None = None,
     ) -> list[FeatureDefinition]:
         """List available features.
 
@@ -444,10 +487,10 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             List of feature definitions
         """
-        pass
 
     async def _list_features(
-        self, feature_group: str | None = None
+        self,
+        feature_group: str | None = None,
     ) -> list[FeatureDefinition]:
         """Internal list features implementation."""
         return await self.list_features(feature_group)
@@ -462,7 +505,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature definition
         """
-        pass
 
     async def _get_feature_definition(self, feature_name: str) -> FeatureDefinition:
         """Internal get feature definition implementation."""
@@ -470,7 +512,9 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
 
     @abstractmethod
     async def search_features(
-        self, query: str, filters: dict[str, Any] | None = None
+        self,
+        query: str,
+        filters: dict[str, Any] | None = None,
     ) -> list[FeatureDefinition]:
         """Search features by query and filters.
 
@@ -481,10 +525,11 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             List of matching feature definitions
         """
-        pass
 
     async def _search_features(
-        self, query: str, filters: dict[str, Any] | None = None
+        self,
+        query: str,
+        filters: dict[str, Any] | None = None,
     ) -> list[FeatureDefinition]:
         """Internal search features implementation."""
         return await self.search_features(query, filters)
@@ -507,7 +552,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             True if created successfully
         """
-        pass
 
     async def _create_feature_group(
         self,
@@ -528,7 +572,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             True if registered successfully
         """
-        pass
 
     async def _register_feature(self, feature: FeatureDefinition) -> bool:
         """Internal register feature implementation."""
@@ -544,7 +587,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             True if deleted successfully
         """
-        pass
 
     async def _delete_feature(self, feature_name: str) -> bool:
         """Internal delete feature implementation."""
@@ -561,7 +603,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature monitoring metrics
         """
-        pass
 
     async def _get_feature_monitoring(self, feature_name: str) -> FeatureMonitoring:
         """Internal get feature monitoring implementation."""
@@ -569,7 +610,9 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
 
     @abstractmethod
     async def detect_feature_drift(
-        self, feature_name: str, reference_window: int = 7
+        self,
+        feature_name: str,
+        reference_window: int = 7,
     ) -> float:
         """Detect feature drift compared to reference window.
 
@@ -580,10 +623,11 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Drift score (0.0 = no drift, 1.0 = maximum drift)
         """
-        pass
 
     async def _detect_feature_drift(
-        self, feature_name: str, reference_window: int = 7
+        self,
+        feature_name: str,
+        reference_window: int = 7,
     ) -> float:
         """Internal detect feature drift implementation."""
         return await self.detect_feature_drift(feature_name, reference_window)
@@ -598,7 +642,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Quality score (0.0 = poor quality, 1.0 = perfect quality)
         """
-        pass
 
     async def _validate_feature_quality(self, feature_name: str) -> float:
         """Internal validate feature quality implementation."""
@@ -615,7 +658,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             List of available versions
         """
-        pass
 
     async def _get_feature_versions(self, feature_name: str) -> list[str]:
         """Internal get feature versions implementation."""
@@ -623,7 +665,10 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
 
     @abstractmethod
     async def get_feature_at_timestamp(
-        self, feature_name: str, entity_id: str, timestamp: datetime
+        self,
+        feature_name: str,
+        entity_id: str,
+        timestamp: datetime,
     ) -> FeatureValue | None:
         """Get feature value at specific timestamp (time travel).
 
@@ -635,10 +680,12 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature value at timestamp or None if not found
         """
-        pass
 
     async def _get_feature_at_timestamp(
-        self, feature_name: str, entity_id: str, timestamp: datetime
+        self,
+        feature_name: str,
+        entity_id: str,
+        timestamp: datetime,
     ) -> FeatureValue | None:
         """Internal get feature at timestamp implementation."""
         return await self.get_feature_at_timestamp(feature_name, entity_id, timestamp)
@@ -654,7 +701,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             True if created successfully
         """
-        pass
 
     async def _create_feature_experiment(self, experiment: FeatureExperiment) -> bool:
         """Internal create feature experiment implementation."""
@@ -662,7 +708,10 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
 
     @abstractmethod
     async def get_feature_for_experiment(
-        self, feature_name: str, entity_id: str, experiment_id: str
+        self,
+        feature_name: str,
+        entity_id: str,
+        experiment_id: str,
     ) -> Any:
         """Get feature value for A/B testing experiment.
 
@@ -674,14 +723,18 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature value for the experiment variant
         """
-        pass
 
     async def _get_feature_for_experiment(
-        self, feature_name: str, entity_id: str, experiment_id: str
+        self,
+        feature_name: str,
+        entity_id: str,
+        experiment_id: str,
     ) -> Any:
         """Internal get feature for experiment implementation."""
         return await self.get_feature_for_experiment(
-            feature_name, entity_id, experiment_id
+            feature_name,
+            entity_id,
+            experiment_id,
         )
 
     # Feature Lineage Methods
@@ -695,7 +748,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Feature lineage information
         """
-        pass
 
     async def _get_feature_lineage(self, feature_name: str) -> FeatureLineage:
         """Internal get feature lineage implementation."""
@@ -711,7 +763,6 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         Returns:
             Dependency graph and impact analysis
         """
-        pass
 
     async def _trace_feature_dependencies(self, feature_name: str) -> dict[str, Any]:
         """Internal trace feature dependencies implementation."""
@@ -763,7 +814,7 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
                     for feature in features:
                         try:
                             quality_score = await self.validate_feature_quality(
-                                feature.name
+                                feature.name,
                             )
                             drift_score = await self.detect_feature_drift(feature.name)
 
@@ -792,10 +843,8 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         """Stop background feature monitoring."""
         if self._monitoring_task is not None:
             self._monitoring_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._monitoring_task
-            except asyncio.CancelledError:
-                pass
             self._monitoring_task = None
 
     @asynccontextmanager
@@ -816,7 +865,7 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         if self._settings.enable_monitoring:
             await self.start_monitoring()
 
-    async def __aenter__(self) -> BaseFeatureStoreAdapter:
+    async def __aenter__(self) -> Self:
         """Async context manager entry."""
         await self.init()
         return self
@@ -830,15 +879,15 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
 # Export base types for use by concrete adapters
 __all__ = [
     "BaseFeatureStoreAdapter",
-    "FeatureStoreSettings",
     "FeatureDefinition",
-    "FeatureValue",
-    "FeatureVector",
-    "FeatureServingRequest",
-    "FeatureServingResponse",
+    "FeatureExperiment",
     "FeatureIngestionRequest",
     "FeatureIngestionResponse",
-    "FeatureMonitoring",
-    "FeatureExperiment",
     "FeatureLineage",
+    "FeatureMonitoring",
+    "FeatureServingRequest",
+    "FeatureServingResponse",
+    "FeatureStoreSettings",
+    "FeatureValue",
+    "FeatureVector",
 ]

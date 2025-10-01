@@ -33,7 +33,8 @@ class ValidationTimer:
     def stop(self) -> float:
         """Stop the timer and return elapsed time in milliseconds."""
         if self._start_time is None:
-            raise RuntimeError("Timer not started")
+            msg = "Timer not started"
+            raise RuntimeError(msg)
         self._end_time = time.perf_counter()
         return (self._end_time - self._start_time) * 1000
 
@@ -65,7 +66,7 @@ def create_validation_result(
     metadata: dict[str, t.Any] | None = None,
 ) -> ValidationResult:
     """Create a ValidationResult with provided parameters."""
-    result = ValidationResult(
+    return ValidationResult(
         field_name=field_name,
         is_valid=is_valid,
         value=value,
@@ -75,11 +76,11 @@ def create_validation_result(
         validation_time_ms=validation_time_ms,
         metadata=metadata or {},
     )
-    return result
 
 
 def combine_validation_results(
-    results: list[ValidationResult], field_name: str | None = None
+    results: list[ValidationResult],
+    field_name: str | None = None,
 ) -> ValidationResult:
     """Combine multiple validation results into a single result."""
     if not results:
@@ -104,14 +105,15 @@ def combine_validation_results(
 
 
 def is_validation_result_successful(
-    result: ValidationResult, level: ValidationLevel = ValidationLevel.STRICT
+    result: ValidationResult,
+    level: ValidationLevel = ValidationLevel.STRICT,
 ) -> bool:
     """Check if validation result is successful based on validation level."""
     if level == ValidationLevel.STRICT:
         return result.is_valid and not result.has_errors()
-    elif level == ValidationLevel.LENIENT:
+    if level == ValidationLevel.LENIENT:
         return not result.has_errors()  # Allow warnings
-    elif level == ValidationLevel.PERMISSIVE:
+    if level == ValidationLevel.PERMISSIVE:
         return True  # Always pass, just collect information
     return result.is_valid
 
@@ -180,7 +182,9 @@ class ValidationHelper:
 
     @staticmethod
     def get_nested_value(
-        data: dict[str, t.Any], path: str, default: t.Any = None
+        data: dict[str, t.Any],
+        path: str,
+        default: t.Any = None,
     ) -> t.Any:
         """Get nested value from dictionary using dot notation."""
         keys = path.split(".")
@@ -209,7 +213,9 @@ class ValidationHelper:
 
     @staticmethod
     def flatten_dict(
-        data: dict[str, t.Any], parent_key: str = "", separator: str = "."
+        data: dict[str, t.Any],
+        parent_key: str = "",
+        separator: str = ".",
     ) -> dict[str, t.Any]:
         """Flatten a nested dictionary."""
         items = []
@@ -217,7 +223,7 @@ class ValidationHelper:
             new_key = f"{parent_key}{separator}{key}" if parent_key else key
             if isinstance(value, dict):
                 items.extend(
-                    ValidationHelper.flatten_dict(value, new_key, separator).items()
+                    ValidationHelper.flatten_dict(value, new_key, separator).items(),
                 )
             else:
                 items.append((new_key, value))
@@ -250,7 +256,9 @@ class SchemaValidator:
         return results
 
     async def find_best_matching_schema(
-        self, data: t.Any, schemas: list[ValidationSchema]
+        self,
+        data: t.Any,
+        schemas: list[ValidationSchema],
     ) -> tuple[ValidationSchema | None, ValidationResult | None]:
         """Find the schema that best matches the data."""
         best_schema = None
@@ -291,7 +299,9 @@ class ValidationCache:
         return hashlib.md5(data_str.encode(), usedforsecurity=False).hexdigest()
 
     def get(
-        self, data: t.Any, schema_name: str | None = None
+        self,
+        data: t.Any,
+        schema_name: str | None = None,
     ) -> ValidationResult | None:
         """Get cached validation result."""
         key = self._generate_key(data, schema_name)
@@ -302,14 +312,16 @@ class ValidationCache:
             # Check if result is still valid (TTL)
             if time.time() - timestamp < self._ttl_seconds:
                 return result
-            else:
-                # Remove expired entry
-                del self._cache[key]
+            # Remove expired entry
+            del self._cache[key]
 
         return None
 
     def set(
-        self, data: t.Any, result: ValidationResult, schema_name: str | None = None
+        self,
+        data: t.Any,
+        result: ValidationResult,
+        schema_name: str | None = None,
     ) -> None:
         """Cache validation result."""
         key = self._generate_key(data, schema_name)

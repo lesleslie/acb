@@ -21,7 +21,8 @@ from acb.depends import depends
 
 
 def assert_adapter_interface(
-    adapter_class: type, expected_methods: list[str] | None = None
+    adapter_class: type,
+    expected_methods: list[str] | None = None,
 ) -> None:
     """Assert that an adapter implements the expected interface."""
     if expected_methods is None:
@@ -47,7 +48,8 @@ def assert_adapter_interface(
 
 
 def assert_service_interface(
-    service_class: type, expected_methods: list[str] | None = None
+    service_class: type,
+    expected_methods: list[str] | None = None,
 ) -> None:
     """Assert that a service implements the expected interface."""
     if expected_methods is None:
@@ -71,7 +73,8 @@ def assert_service_interface(
 
 
 def assert_action_interface(
-    action_module: t.Any, expected_functions: list[str] | None = None
+    action_module: t.Any,
+    expected_functions: list[str] | None = None,
 ) -> None:
     """Assert that an action module implements the expected interface."""
     if expected_functions is None:
@@ -215,7 +218,7 @@ async def create_test_service(service_type: str, config: dict | None = None) -> 
 
         elif service_type == "validation":
             mock_service.validate = AsyncMock(
-                return_value={"valid": True, "errors": []}
+                return_value={"valid": True, "errors": []},
             )
             mock_service.sanitize = AsyncMock(return_value="clean data")
 
@@ -311,7 +314,7 @@ async def run_acb_test_suite(
                             "status": "failed",
                             "error": str(result),
                             "error_type": type(result).__name__,
-                        }
+                        },
                     )
                 else:
                     results.append(
@@ -319,7 +322,7 @@ async def run_acb_test_suite(
                             "test": test_functions[i].__name__,
                             "status": "passed",
                             "result": result,
-                        }
+                        },
                     )
 
         else:
@@ -336,7 +339,7 @@ async def run_acb_test_suite(
                             "test": test_func.__name__,
                             "status": "passed",
                             "result": result,
-                        }
+                        },
                     )
 
                 except Exception as e:
@@ -346,7 +349,7 @@ async def run_acb_test_suite(
                             "status": "failed",
                             "error": str(e),
                             "error_type": type(e).__name__,
-                        }
+                        },
                     )
 
     finally:
@@ -376,7 +379,8 @@ async def run_acb_test_suite(
 
 
 def validate_test_result(
-    result: dict[str, t.Any], expected_status: str = "passed"
+    result: dict[str, t.Any],
+    expected_status: str = "passed",
 ) -> None:
     """Validate that a test result meets expectations."""
     assert "status" in result, "Test result missing status"
@@ -393,7 +397,8 @@ def validate_test_result(
 
 
 def create_mock_dependency(
-    interface_type: type, behavior: dict | None = None
+    interface_type: type,
+    behavior: dict | None = None,
 ) -> MagicMock:
     """Create a mock dependency that implements a specific interface."""
     mock = MagicMock(spec=interface_type)

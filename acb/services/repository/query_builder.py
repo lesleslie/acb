@@ -75,7 +75,7 @@ class QueryBuilder:
     support for filtering, sorting, pagination, and aggregation.
     """
 
-    def __init__(self, repository: RepositoryBase[EntityType, Any]):
+    def __init__(self, repository: RepositoryBase[EntityType, Any]) -> None:
         self.repository = repository
         self._specifications: list[Specification] = []
         self._sort_criteria: list[SortCriteria] = []
@@ -102,7 +102,10 @@ class QueryBuilder:
         return self
 
     def where_field(
-        self, field: str, operator: ComparisonOperator, value: Any
+        self,
+        field: str,
+        operator: ComparisonOperator,
+        value: Any,
     ) -> "QueryBuilder":
         """Add field-based WHERE clause.
 
@@ -189,7 +192,9 @@ class QueryBuilder:
         return self.where_field(field, ComparisonOperator.IS_NOT_NULL, None)
 
     def order_by(
-        self, field: str, direction: SortDirection = SortDirection.ASC
+        self,
+        field: str,
+        direction: SortDirection = SortDirection.ASC,
     ) -> "QueryBuilder":
         """Add ORDER BY clause.
 
@@ -308,7 +313,10 @@ class QueryBuilder:
         return self
 
     def aggregate(
-        self, function: AggregateFunction, field: str, alias: str | None = None
+        self,
+        function: AggregateFunction,
+        field: str,
+        alias: str | None = None,
     ) -> "QueryBuilder":
         """Add aggregate function.
 
@@ -458,8 +466,9 @@ class QueryBuilder:
 
         except Exception as e:
             execution_time = (datetime.now() - start_time).total_seconds()
+            msg = f"Query execution failed after {execution_time:.3f}s: {e}"
             raise RuntimeError(
-                f"Query execution failed after {execution_time:.3f}s: {e}"
+                msg,
             ) from e
 
     async def first(self) -> EntityType | None:

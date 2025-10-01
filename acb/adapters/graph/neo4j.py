@@ -151,8 +151,7 @@ class Graph(GraphBase):
     async def _begin_transaction(self, client: "AsyncDriver") -> "AsyncTransaction":
         """Begin a Neo4j transaction."""
         session = client.session(database=self._settings.database)
-        transaction = await session.begin_transaction()
-        return transaction
+        return await session.begin_transaction()
 
     async def _commit_transaction(self, transaction: "AsyncTransaction") -> None:
         """Commit a Neo4j transaction."""
@@ -220,14 +219,16 @@ class Graph(GraphBase):
                 )
 
         except Exception as e:
-            self.logger.error(
+            self.logger.exception(
                 "Failed to execute Cypher query",
                 extra={"error": str(e), "query": query},
             )
             raise
 
     async def _create_node(
-        self, labels: list[str], properties: dict[str, t.Any]
+        self,
+        labels: list[str],
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Create a node in Neo4j."""
         # Add timestamps
@@ -262,14 +263,17 @@ class Graph(GraphBase):
         return result.nodes[0] if result.nodes else None
 
     async def _update_node(
-        self, node_id: str, properties: dict[str, t.Any]
+        self,
+        node_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Update node properties."""
         properties["updated_at"] = datetime.now().isoformat()
 
         query = "MATCH (n {id: $node_id}) SET n += $properties RETURN n"
         result = await self._execute_query(
-            query, {"node_id": node_id, "properties": properties}
+            query,
+            {"node_id": node_id, "properties": properties},
         )
 
         if result.nodes:
@@ -338,14 +342,17 @@ class Graph(GraphBase):
         return result.edges[0] if result.edges else None
 
     async def _update_edge(
-        self, edge_id: str, properties: dict[str, t.Any]
+        self,
+        edge_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphEdgeModel:
         """Update edge properties."""
         properties["updated_at"] = datetime.now().isoformat()
 
         query = "MATCH ()-[r {id: $edge_id}]-() SET r += $properties RETURN r"
         result = await self._execute_query(
-            query, {"edge_id": edge_id, "properties": properties}
+            query,
+            {"edge_id": edge_id, "properties": properties},
         )
 
         if result.edges:
@@ -384,7 +391,8 @@ class Graph(GraphBase):
         """
 
         result = await self._execute_query(
-            query, {"from_id": from_node_id, "to_id": to_node_id}
+            query,
+            {"from_id": from_node_id, "to_id": to_node_id},
         )
         return result.paths
 
@@ -474,7 +482,10 @@ class Graph(GraphBase):
         )
 
     async def _create_index(
-        self, labels: list[str], properties: list[str], index_type: str
+        self,
+        labels: list[str],
+        properties: list[str],
+        index_type: str,
     ) -> bool:
         """Create an index on properties."""
         for label in labels:
@@ -490,7 +501,8 @@ class Graph(GraphBase):
         return True
 
     async def _bulk_create_nodes(
-        self, nodes: list[dict[str, t.Any]]
+        self,
+        nodes: list[dict[str, t.Any]],
     ) -> list[GraphNodeModel]:
         """Create multiple nodes in bulk."""
         results = []
@@ -502,7 +514,8 @@ class Graph(GraphBase):
         return results
 
     async def _bulk_create_edges(
-        self, edges: list[dict[str, t.Any]]
+        self,
+        edges: list[dict[str, t.Any]],
     ) -> list[GraphEdgeModel]:
         """Create multiple edges in bulk."""
         results = []

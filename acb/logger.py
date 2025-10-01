@@ -126,4 +126,4 @@ class InterceptHandler(logging.Handler):
 logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 
 # Export for backward compatibility
-__all__ = ["Logger", "LoggerSettings", "LoggerProtocol", "InterceptHandler"]
+__all__ = ["InterceptHandler", "Logger", "LoggerProtocol", "LoggerSettings"]

@@ -79,8 +79,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
     """
 
     def __init__(
-        self, default_strategy: CoordinationStrategy = CoordinationStrategy.BEST_EFFORT
-    ):
+        self,
+        default_strategy: CoordinationStrategy = CoordinationStrategy.BEST_EFFORT,
+    ) -> None:
         super().__init__()
         self.default_strategy = default_strategy
         self._connections: dict[str, DatabaseConnection] = {}
@@ -121,7 +122,10 @@ class MultiDatabaseCoordinator(CleanupMixin):
         self._repositories[name] = {}
 
     def register_repository(
-        self, database_name: str, entity_name: str, repository: RepositoryBase
+        self,
+        database_name: str,
+        entity_name: str,
+        repository: RepositoryBase,
     ) -> None:
         """Register a repository for a specific database.
 
@@ -131,7 +135,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
             repository: Repository instance
         """
         if database_name not in self._connections:
-            raise RepositoryError(f"Database {database_name} not registered")
+            msg = f"Database {database_name} not registered"
+            raise RepositoryError(msg)
 
         if database_name not in self._repositories:
             self._repositories[database_name] = {}
@@ -139,7 +144,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
         self._repositories[database_name][entity_name] = repository
 
     def get_repository(
-        self, database_name: str, entity_name: str
+        self,
+        database_name: str,
+        entity_name: str,
     ) -> RepositoryBase | None:
         """Get repository for database and entity.
 
@@ -155,7 +162,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
         return None
 
     def get_preferred_read_database(
-        self, db_type: DatabaseType | None = None
+        self,
+        db_type: DatabaseType | None = None,
     ) -> DatabaseConnection | None:
         """Get preferred database for read operations.
 
@@ -180,7 +188,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
         return candidates[0]
 
     def get_write_databases(
-        self, db_type: DatabaseType | None = None
+        self,
+        db_type: DatabaseType | None = None,
     ) -> list[DatabaseConnection]:
         """Get databases available for write operations.
 
@@ -246,7 +255,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
             elif strategy == CoordinationStrategy.BEST_EFFORT:
                 result = await self._execute_best_effort_create(task)
             else:
-                raise RepositoryError(f"Unsupported coordination strategy: {strategy}")
+                msg = f"Unsupported coordination strategy: {strategy}"
+                raise RepositoryError(msg)
 
             task.status = "completed"
             return result
@@ -307,7 +317,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
             elif strategy == CoordinationStrategy.BEST_EFFORT:
                 result = await self._execute_best_effort_update(task)
             else:
-                raise RepositoryError(f"Update not supported for strategy: {strategy}")
+                msg = f"Update not supported for strategy: {strategy}"
+                raise RepositoryError(msg)
 
             task.status = "completed"
             return result
@@ -420,7 +431,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
                     # Add compensation action
                     def compensate(db=db_name, repo=repository):
-                        async def _compensate():
+                        async def _compensate() -> None:
                             # Delete created entity
                             if "id" in task.data:
                                 await repo.delete(task.data["id"])
@@ -437,7 +448,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
         return results
 
     async def _execute_best_effort_create(
-        self, task: CoordinationTask
+        self,
+        task: CoordinationTask,
     ) -> dict[str, Any]:
         """Execute best effort create operation."""
         results = {}
@@ -472,7 +484,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
         return results
 
     async def _execute_best_effort_update(
-        self, task: CoordinationTask
+        self,
+        task: CoordinationTask,
     ) -> dict[str, Any]:
         """Execute best effort update operation."""
         results = {}
@@ -502,7 +515,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
         return results
 
     async def _execute_best_effort_delete(
-        self, task: CoordinationTask
+        self,
+        task: CoordinationTask,
     ) -> dict[str, Any]:
         """Execute best effort delete operation."""
         results = {}
@@ -536,9 +550,9 @@ class MultiDatabaseCoordinator(CleanupMixin):
         for compensation in reversed(task.compensation_actions):
             try:
                 await compensation()
-            except Exception as e:
+            except Exception:
                 # Log compensation failure but continue
-                print(f"Compensation failed for task {task.task_id}: {e}")
+                pass
 
     async def check_database_health(self) -> dict[str, dict[str, Any]]:
         """Check health of all registered databases.

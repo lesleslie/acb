@@ -25,8 +25,10 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
-from acb.gateway._base import GatewayRequest, GatewayResponse
+from pydantic import BaseModel, ConfigDict, Field
+
+if t.TYPE_CHECKING:
+    from acb.gateway._base import GatewayRequest, GatewayResponse
 
 
 class EventType(Enum):
@@ -135,7 +137,7 @@ class AggregatedMetrics:
 
     # Response time metrics
     avg_response_time_ms: float = 0.0
-    min_response_time_ms: float = float('inf')
+    min_response_time_ms: float = float("inf")
     max_response_time_ms: float = 0.0
     p50_response_time_ms: float = 0.0
     p95_response_time_ms: float = 0.0
@@ -177,7 +179,9 @@ class AggregatedMetrics:
             "successful_requests": self.successful_requests,
             "failed_requests": self.failed_requests,
             "avg_response_time_ms": self.avg_response_time_ms,
-            "min_response_time_ms": self.min_response_time_ms if self.min_response_time_ms != float('inf') else 0.0,
+            "min_response_time_ms": self.min_response_time_ms
+            if self.min_response_time_ms != float("inf")
+            else 0.0,
             "max_response_time_ms": self.max_response_time_ms,
             "p50_response_time_ms": self.p50_response_time_ms,
             "p95_response_time_ms": self.p95_response_time_ms,
@@ -226,14 +230,15 @@ class AnalyticsConfig(BaseModel):
 
     # Privacy settings
     anonymize_ip: bool = False
-    exclude_headers: list[str] = Field(default_factory=lambda: ["authorization", "cookie"])
+    exclude_headers: list[str] = Field(
+        default_factory=lambda: ["authorization", "cookie"],
+    )
     exclude_paths: list[str] = Field(default_factory=lambda: ["/health", "/metrics"])
 
     # Custom dimensions
     custom_dimensions: list[str] = Field(default_factory=list)
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class ResponseTimeTracker:
@@ -278,7 +283,9 @@ class ResponseTimeTracker:
 
         # Linear interpolation
         weight = index - lower_index
-        return sorted_data[lower_index] * (1 - weight) + sorted_data[upper_index] * weight
+        return (
+            sorted_data[lower_index] * (1 - weight) + sorted_data[upper_index] * weight
+        )
 
 
 class AnalyticsCollector:
@@ -286,15 +293,21 @@ class AnalyticsCollector:
 
     def __init__(self, config: AnalyticsConfig | None = None) -> None:
         self._config = config or AnalyticsConfig()
-        self._events: deque[AnalyticsEvent] = deque(maxlen=self._config.max_events_in_memory)
+        self._events: deque[AnalyticsEvent] = deque(
+            maxlen=self._config.max_events_in_memory,
+        )
         self._metrics = AggregatedMetrics()
         self._response_time_tracker = ResponseTimeTracker()
 
         # Per-tenant metrics
-        self._tenant_metrics: dict[str, AggregatedMetrics] = defaultdict(AggregatedMetrics)
+        self._tenant_metrics: dict[str, AggregatedMetrics] = defaultdict(
+            AggregatedMetrics,
+        )
 
         # Per-endpoint metrics
-        self._endpoint_metrics: dict[str, AggregatedMetrics] = defaultdict(AggregatedMetrics)
+        self._endpoint_metrics: dict[str, AggregatedMetrics] = defaultdict(
+            AggregatedMetrics,
+        )
 
         # Sampling state
         self._sample_counter = 0
@@ -506,7 +519,10 @@ class AnalyticsCollector:
         self._calculate_derived_metrics()
         return self._metrics
 
-    async def get_endpoint_metrics(self, endpoint: str | None = None) -> dict[str, AggregatedMetrics]:
+    async def get_endpoint_metrics(
+        self,
+        endpoint: str | None = None,
+    ) -> dict[str, AggregatedMetrics]:
         """Get per-endpoint metrics."""
         if endpoint:
             return {endpoint: self._endpoint_metrics.get(endpoint, AggregatedMetrics())}
@@ -550,10 +566,9 @@ class AnalyticsCollector:
 
         if format_type == "json":
             return metrics.to_dict()
-        elif format_type == "prometheus":
+        if format_type == "prometheus":
             return self._export_prometheus_format(metrics)
-        else:
-            return metrics.to_dict()
+        return metrics.to_dict()
 
     def _should_sample(self) -> bool:
         """Check if this request should be sampled."""
@@ -621,24 +636,38 @@ class AnalyticsCollector:
         else:
             # Running average
             self._metrics.avg_response_time_ms = (
-                (self._metrics.avg_response_time_ms * (self._metrics.total_requests - 1) + response_time_ms)
-                / self._metrics.total_requests
+                self._metrics.avg_response_time_ms * (self._metrics.total_requests - 1)
+                + response_time_ms
+            ) / self._metrics.total_requests
+            self._metrics.min_response_time_ms = min(
+                self._metrics.min_response_time_ms,
+                response_time_ms,
             )
-            self._metrics.min_response_time_ms = min(self._metrics.min_response_time_ms, response_time_ms)
-            self._metrics.max_response_time_ms = max(self._metrics.max_response_time_ms, response_time_ms)
+            self._metrics.max_response_time_ms = max(
+                self._metrics.max_response_time_ms,
+                response_time_ms,
+            )
 
     def _calculate_derived_metrics(self) -> None:
         """Calculate derived metrics."""
         # Error rate
         if self._metrics.total_requests > 0:
-            self._metrics.error_rate = self._metrics.failed_requests / self._metrics.total_requests
-            self._metrics.rate_limit_rate = self._metrics.rate_limited_requests / self._metrics.total_requests
-            self._metrics.auth_success_rate = (self._metrics.total_requests - self._metrics.auth_failures) / self._metrics.total_requests
+            self._metrics.error_rate = (
+                self._metrics.failed_requests / self._metrics.total_requests
+            )
+            self._metrics.rate_limit_rate = (
+                self._metrics.rate_limited_requests / self._metrics.total_requests
+            )
+            self._metrics.auth_success_rate = (
+                self._metrics.total_requests - self._metrics.auth_failures
+            ) / self._metrics.total_requests
 
         # Cache hit rate
         total_cache_operations = self._metrics.cache_hits + self._metrics.cache_misses
         if total_cache_operations > 0:
-            self._metrics.cache_hit_rate = self._metrics.cache_hits / total_cache_operations
+            self._metrics.cache_hit_rate = (
+                self._metrics.cache_hits / total_cache_operations
+            )
 
         # Response time percentiles
         percentiles = self._response_time_tracker.get_percentiles()
@@ -649,9 +678,7 @@ class AnalyticsCollector:
     def _extract_client_id(self, request: GatewayRequest) -> str | None:
         """Extract client ID from request."""
         return (
-            request.headers.get("X-Client-ID") or
-            request.api_key or
-            request.client_ip
+            request.headers.get("X-Client-ID") or request.api_key or request.client_ip
         )
 
     def _sanitize_path(self, path: str) -> str:

@@ -77,7 +77,7 @@ class VectorSettings(VectorBaseSettings):
             "type": "int8",
             "quantile": 0.99,
             "always_ram": True,
-        }
+        },
     }
 
 
@@ -130,7 +130,7 @@ class Vector(VectorBase):
             health_info = await client.get_cluster_info()
             self.logger.debug(f"Qdrant cluster status: {health_info}")
         except Exception as e:
-            self.logger.error(f"Failed to connect to Qdrant: {e}")
+            self.logger.exception(f"Failed to connect to Qdrant: {e}")
             raise
 
         self.logger.info("Qdrant vector adapter initialized successfully")
@@ -182,10 +182,12 @@ class Vector(VectorBase):
                 m=self.config.vector.hnsw_config.get("m", 16),
                 ef_construct=self.config.vector.hnsw_config.get("ef_construct", 100),
                 full_scan_threshold=self.config.vector.hnsw_config.get(
-                    "full_scan_threshold", 10000
+                    "full_scan_threshold",
+                    10000,
                 ),
                 max_indexing_threads=self.config.vector.hnsw_config.get(
-                    "max_indexing_threads", 0
+                    "max_indexing_threads",
+                    0,
                 ),
             )
 
@@ -197,10 +199,12 @@ class Vector(VectorBase):
                 quantization_config = ScalarQuantization(
                     type=QuantizationType.INT8,
                     quantile=self.config.vector.quantization_config["scalar"].get(
-                        "quantile", 0.99
+                        "quantile",
+                        0.99,
                     ),
                     always_ram=self.config.vector.quantization_config["scalar"].get(
-                        "always_ram", True
+                        "always_ram",
+                        True,
                     ),
                 )
 
@@ -216,7 +220,7 @@ class Vector(VectorBase):
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to ensure collection {collection_name}: {e}")
+            self.logger.exception(f"Failed to ensure collection {collection_name}: {e}")
             return False
 
     async def search(
@@ -263,7 +267,7 @@ class Vector(VectorBase):
             return results
 
         except Exception as e:
-            self.logger.error(f"Qdrant search failed: {e}")
+            self.logger.exception(f"Qdrant search failed: {e}")
             return []
 
     def _build_qdrant_filter(self, filter_expr: dict[str, t.Any]) -> t.Any:
@@ -278,17 +282,13 @@ class Vector(VectorBase):
 
             conditions = []
             for key, value in filter_expr.items():
-                if isinstance(value, str):
+                if isinstance(value, str | (int | float | bool)):
                     conditions.append(
-                        FieldCondition(key=key, match=MatchValue(value=value))
-                    )
-                elif isinstance(value, int | float | bool):
-                    conditions.append(
-                        FieldCondition(key=key, match=MatchValue(value=value))
+                        FieldCondition(key=key, match=MatchValue(value=value)),
                     )
                 elif isinstance(value, list):
                     conditions.append(
-                        FieldCondition(key=key, match=MatchAny(any=value))
+                        FieldCondition(key=key, match=MatchAny(any=value)),
                     )
 
             if conditions:
@@ -359,13 +359,13 @@ class Vector(VectorBase):
 
                 if operation_info.status.name != "COMPLETED":
                     self.logger.warning(
-                        f"Upsert batch {i // batch_size + 1} failed: {operation_info.status}"
+                        f"Upsert batch {i // batch_size + 1} failed: {operation_info.status}",
                     )
 
             return document_ids
 
         except Exception as e:
-            self.logger.error(f"Qdrant upsert failed: {e}")
+            self.logger.exception(f"Qdrant upsert failed: {e}")
             return []
 
     async def delete(
@@ -391,7 +391,7 @@ class Vector(VectorBase):
             return operation_info.status.name == "COMPLETED"
 
         except Exception as e:
-            self.logger.error(f"Qdrant delete failed: {e}")
+            self.logger.exception(f"Qdrant delete failed: {e}")
             return False
 
     async def get(
@@ -426,7 +426,7 @@ class Vector(VectorBase):
             return documents
 
         except Exception as e:
-            self.logger.error(f"Qdrant retrieve failed: {e}")
+            self.logger.exception(f"Qdrant retrieve failed: {e}")
             return []
 
     async def count(
@@ -454,7 +454,7 @@ class Vector(VectorBase):
             return count_result.count
 
         except Exception as e:
-            self.logger.error(f"Qdrant count failed: {e}")
+            self.logger.exception(f"Qdrant count failed: {e}")
             return 0
 
     async def create_collection(
@@ -480,7 +480,7 @@ class Vector(VectorBase):
             return True
 
         except Exception as e:
-            self.logger.error(f"Qdrant collection delete failed: {e}")
+            self.logger.exception(f"Qdrant collection delete failed: {e}")
             return False
 
     async def list_collections(self, **kwargs: t.Any) -> list[str]:
@@ -492,7 +492,7 @@ class Vector(VectorBase):
             return [col.name for col in collections.collections]
 
         except Exception as e:
-            self.logger.error(f"Qdrant list collections failed: {e}")
+            self.logger.exception(f"Qdrant list collections failed: {e}")
             return []
 
     async def scroll(
@@ -538,7 +538,7 @@ class Vector(VectorBase):
             return documents, next_offset
 
         except Exception as e:
-            self.logger.error(f"Qdrant scroll failed: {e}")
+            self.logger.exception(f"Qdrant scroll failed: {e}")
             return [], None
 
     def has_capability(self, capability: str) -> bool:

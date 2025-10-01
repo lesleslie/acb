@@ -63,7 +63,7 @@ class Secret(SecretBase):
         response = await self.client.access_secret_version(request=request)
         payload = response.payload.data.decode()
         self.logger.info(f"Fetched secret - {name}")
-        return t.cast(str, payload)  # type: ignore[no-any-return]
+        return t.cast("str", payload)  # type: ignore[no-any-return]
 
     async def create(self, name: str, value: str) -> None:
         with suppress(AlreadyExists):
@@ -122,7 +122,6 @@ class Secret(SecretBase):
 
     async def init(self) -> None:
         """Initialize the secret manager."""
-        pass
 
 
 depends.set(Secret)

@@ -117,36 +117,43 @@ class SSLConfig(BaseModel):
 
     # Certificate and key files
     cert_path: str | None = Field(
-        default=None, description="Path to SSL certificate file"
+        default=None,
+        description="Path to SSL certificate file",
     )
 
     key_path: str | None = Field(
-        default=None, description="Path to SSL private key file"
+        default=None,
+        description="Path to SSL private key file",
     )
 
     ca_path: str | None = Field(
-        default=None, description="Path to SSL Certificate Authority file"
+        default=None,
+        description="Path to SSL Certificate Authority file",
     )
 
     # Verification settings
     verify_mode: SSLVerifyMode = Field(
-        default=SSLVerifyMode.REQUIRED, description="Certificate verification mode"
+        default=SSLVerifyMode.REQUIRED,
+        description="Certificate verification mode",
     )
 
     verify_hostname: bool = Field(
-        default=True, description="Verify hostname against certificate"
+        default=True,
+        description="Verify hostname against certificate",
     )
 
     # Protocol settings
     tls_version: TLSVersion = Field(
-        default=TLSVersion.TLS_1_2, description="Minimum TLS version to use"
+        default=TLSVersion.TLS_1_2,
+        description="Minimum TLS version to use",
     )
 
     ciphers: str | None = Field(default=None, description="Allowed cipher suites")
 
     # Connection settings
     check_hostname: bool = Field(
-        default=True, description="Check hostname in certificate"
+        default=True,
+        description="Check hostname in certificate",
     )
 
     def validate_files(self) -> list[str]:
@@ -156,12 +163,11 @@ class SSLConfig(BaseModel):
             List of validation errors, empty if valid.
         """
         # Validate certificate file paths if provided
-        errors = [
+        return [
             f"SSL file not found: {path_attr}"
             for path_attr in (self.cert_path, self.key_path, self.ca_path)
             if path_attr and not Path(path_attr).exists()
         ]
-        return errors
 
     def create_ssl_context(self) -> ssl.SSLContext:
         """Create SSL context from configuration."""

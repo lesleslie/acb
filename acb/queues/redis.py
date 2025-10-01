@@ -24,6 +24,8 @@ except ImportError:
     ConnectionPool = None
     REDIS_AVAILABLE = False
 
+import contextlib
+
 from ._base import (
     QueueBase,
     QueueCapability,
@@ -113,10 +115,11 @@ class RedisQueueSettings(QueueSettings):
 class RedisQueue(QueueBase):
     """Redis-backed task queue implementation."""
 
-    def __init__(self, settings: RedisQueueSettings | None = None):
+    def __init__(self, settings: RedisQueueSettings | None = None) -> None:
         if not REDIS_AVAILABLE:
+            msg = "Redis is required for RedisQueue. Install with: pip install redis>=5.0.0"
             raise ImportError(
-                "Redis is required for RedisQueue. Install with: pip install redis>=5.0.0"
+                msg,
             )
 
         super().__init__(settings)
@@ -153,7 +156,7 @@ class RedisQueue(QueueBase):
 
         # Start delayed task processor
         self._delayed_task_processor = asyncio.create_task(
-            self._process_delayed_tasks()
+            self._process_delayed_tasks(),
         )
 
         # Start health monitor
@@ -166,17 +169,13 @@ class RedisQueue(QueueBase):
         # Stop background tasks
         if self._delayed_task_processor:
             self._delayed_task_processor.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._delayed_task_processor
-            except asyncio.CancelledError:
-                pass
 
         if self._health_monitor:
             self._health_monitor.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_monitor
-            except asyncio.CancelledError:
-                pass
 
         await super().stop()
 
@@ -214,7 +213,7 @@ class RedisQueue(QueueBase):
                 await self._redis.ping()
                 self.logger.debug("Redis connection established")
             except Exception as e:
-                self.logger.error(f"Failed to connect to Redis: {e}")
+                self.logger.exception(f"Failed to connect to Redis: {e}")
                 raise
 
         return self._redis
@@ -319,7 +318,8 @@ class RedisQueue(QueueBase):
     async def enqueue(self, task: TaskData) -> str:
         """Enqueue a task for processing."""
         if not self._running:
-            raise RuntimeError("Queue is not running")
+            msg = "Queue is not running"
+            raise RuntimeError(msg)
 
         redis_client = await self._ensure_redis()
 
@@ -368,12 +368,12 @@ class RedisQueue(QueueBase):
                 await pipe.execute()
 
             self.logger.debug(
-                f"Enqueued task {task.task_id} to queue {task.queue_name}"
+                f"Enqueued task {task.task_id} to queue {task.queue_name}",
             )
             return str(task.task_id)
 
         except Exception as e:
-            self.logger.error(f"Failed to enqueue task {task.task_id}: {e}")
+            self.logger.exception(f"Failed to enqueue task {task.task_id}: {e}")
             raise
 
     async def dequeue(self, queue_name: str | None = None) -> TaskData | None:
@@ -404,15 +404,18 @@ class RedisQueue(QueueBase):
 
                     if result:
                         task_key, task_data = result
-                        task = TaskData.model_validate_json(task_data)
-                        return task
+                        return TaskData.model_validate_json(task_data)
                 else:
                     # Manual atomic operation
                     pipe = redis_client.pipeline()
 
                     # Get task ready for processing
                     tasks = await redis_client.zrangebyscore(
-                        queue_key, "-inf", current_time, start=0, num=1
+                        queue_key,
+                        "-inf",
+                        current_time,
+                        start=0,
+                        num=1,
                     )
 
                     if tasks:
@@ -436,7 +439,7 @@ class RedisQueue(QueueBase):
             return None
 
         except Exception as e:
-            self.logger.error(f"Failed to dequeue task: {e}")
+            self.logger.exception(f"Failed to dequeue task: {e}")
             return None
 
     async def get_task_status(self, task_id: UUID) -> TaskResult | None:
@@ -487,7 +490,7 @@ class RedisQueue(QueueBase):
             return None
 
         except Exception as e:
-            self.logger.error(f"Failed to get task status for {task_id}: {e}")
+            self.logger.exception(f"Failed to get task status for {task_id}: {e}")
             return None
 
     async def cancel_task(self, task_id: UUID) -> bool:
@@ -531,7 +534,7 @@ class RedisQueue(QueueBase):
             return False
 
         except Exception as e:
-            self.logger.error(f"Failed to cancel task {task_id}: {e}")
+            self.logger.exception(f"Failed to cancel task {task_id}: {e}")
             return False
 
     async def get_queue_info(self, queue_name: str) -> dict[str, Any]:
@@ -555,7 +558,7 @@ class RedisQueue(QueueBase):
             }
 
         except Exception as e:
-            self.logger.error(f"Failed to get queue info for {queue_name}: {e}")
+            self.logger.exception(f"Failed to get queue info for {queue_name}: {e}")
             return {"name": queue_name, "error": str(e)}
 
     async def purge_queue(self, queue_name: str) -> int:
@@ -588,7 +591,7 @@ class RedisQueue(QueueBase):
             return task_count
 
         except Exception as e:
-            self.logger.error(f"Failed to purge queue {queue_name}: {e}")
+            self.logger.exception(f"Failed to purge queue {queue_name}: {e}")
             return 0
 
     async def list_queues(self) -> list[str]:
@@ -610,7 +613,7 @@ class RedisQueue(QueueBase):
             return sorted(queue_names)
 
         except Exception as e:
-            self.logger.error(f"Failed to list queues: {e}")
+            self.logger.exception(f"Failed to list queues: {e}")
             return []
 
     async def _store_dead_letter_task(self, task: TaskData, result: TaskResult) -> None:
@@ -642,7 +645,9 @@ class RedisQueue(QueueBase):
             await pipe.execute()
 
         except Exception as e:
-            self.logger.error(f"Failed to store dead letter task {task.task_id}: {e}")
+            self.logger.exception(
+                f"Failed to store dead letter task {task.task_id}: {e}"
+            )
 
     async def _process_delayed_tasks(self) -> None:
         """Process delayed tasks in background."""
@@ -654,7 +659,11 @@ class RedisQueue(QueueBase):
 
                 # Get ready delayed tasks
                 ready_tasks = await redis_client.zrangebyscore(
-                    self._delayed_key, "-inf", current_time, start=0, num=100
+                    self._delayed_key,
+                    "-inf",
+                    current_time,
+                    start=0,
+                    num=100,
                 )
 
                 if ready_tasks:
@@ -668,7 +677,7 @@ class RedisQueue(QueueBase):
 
                             # Move to appropriate queue
                             queue_key = self._queue_key.format(
-                                queue_name=task.queue_name
+                                queue_name=task.queue_name,
                             )
                             score = current_time * 1_000_000 - task.priority.value
                             pipe.zadd(queue_key, {task_key: score})
@@ -676,7 +685,7 @@ class RedisQueue(QueueBase):
 
                     await pipe.execute()
                     self.logger.debug(
-                        f"Moved {len(ready_tasks)} delayed tasks to queues"
+                        f"Moved {len(ready_tasks)} delayed tasks to queues",
                     )
 
                 await asyncio.sleep(1.0)
@@ -684,7 +693,7 @@ class RedisQueue(QueueBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Delayed task processor error: {e}")
+                self.logger.exception(f"Delayed task processor error: {e}")
                 await asyncio.sleep(5.0)
 
     async def _health_monitor_loop(self) -> None:
@@ -703,7 +712,7 @@ class RedisQueue(QueueBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Redis health monitor error: {e}")
+                self.logger.exception(f"Redis health monitor error: {e}")
                 # Try to reconnect
                 if self._redis:
                     try:
@@ -723,14 +732,14 @@ class RedisQueue(QueueBase):
             if metrics_data:
                 self._metrics.pending_tasks = int(metrics_data.get("pending_tasks", 0))
                 self._metrics.processing_tasks = int(
-                    metrics_data.get("processing_tasks", 0)
+                    metrics_data.get("processing_tasks", 0),
                 )
                 self._metrics.completed_tasks = int(
-                    metrics_data.get("completed_tasks", 0)
+                    metrics_data.get("completed_tasks", 0),
                 )
                 self._metrics.failed_tasks = int(metrics_data.get("failed_tasks", 0))
                 self._metrics.dead_letter_tasks = int(
-                    metrics_data.get("dead_letter_tasks", 0)
+                    metrics_data.get("dead_letter_tasks", 0),
                 )
 
             # Update queue depth
@@ -740,7 +749,7 @@ class RedisQueue(QueueBase):
             self._metrics.last_task_processed = datetime.utcnow()
 
         except Exception as e:
-            self.logger.error(f"Failed to update Redis metrics: {e}")
+            self.logger.exception(f"Failed to update Redis metrics: {e}")
 
     async def _on_task_completed(self, task: TaskData, result: TaskResult) -> None:
         """Handle task completion."""
@@ -779,8 +788,8 @@ class RedisQueue(QueueBase):
                 await pipe.execute()
 
         except Exception as e:
-            self.logger.error(
-                f"Failed to handle task completion for {task.task_id}: {e}"
+            self.logger.exception(
+                f"Failed to handle task completion for {task.task_id}: {e}",
             )
 
     async def _on_task_failed(self, task: TaskData, result: TaskResult) -> None:
@@ -816,7 +825,9 @@ class RedisQueue(QueueBase):
                 await pipe.execute()
 
         except Exception as e:
-            self.logger.error(f"Failed to handle task failure for {task.task_id}: {e}")
+            self.logger.exception(
+                f"Failed to handle task failure for {task.task_id}: {e}"
+            )
 
     async def health_check(self) -> dict[str, Any]:
         """Perform health check."""

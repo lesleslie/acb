@@ -212,7 +212,7 @@ class ReasoningBaseSettings(Settings, SSLConfigMixin):
 
     # Memory settings
     memory_types: list[MemoryType] = Field(
-        default_factory=lambda: [MemoryType.CONVERSATION, MemoryType.WORKING]
+        default_factory=lambda: [MemoryType.CONVERSATION, MemoryType.WORKING],
     )
     memory_persistence: bool = True
     memory_ttl: int = 86400  # 24 hours
@@ -277,7 +277,8 @@ class ReasoningBase(CleanupMixin, ABC):
     def settings(self) -> ReasoningBaseSettings:
         """Get adapter settings."""
         if self._settings is None:
-            raise RuntimeError("Settings not initialized")
+            msg = "Settings not initialized"
+            raise RuntimeError(msg)
         return self._settings
 
     @abstractmethod
@@ -356,7 +357,7 @@ class ReasoningBase(CleanupMixin, ABC):
         """Perform retrieval-augmented generation workflow."""
         if context is None:
             context = ReasoningContext(
-                session_id=f"rag_{asyncio.current_task().get_name()}"
+                session_id=f"rag_{asyncio.current_task().get_name()}",
             )
         context.knowledge_base = knowledge_base
 
@@ -386,7 +387,9 @@ class ReasoningBase(CleanupMixin, ABC):
         self._decision_trees[tree.name] = tree
 
     async def get_memory(
-        self, session_id: str, memory_type: MemoryType
+        self,
+        session_id: str,
+        memory_type: MemoryType,
     ) -> dict[str, t.Any] | None:
         """Get memory for a session."""
         return self._memory_store.get(session_id, {}).get(memory_type)
@@ -403,7 +406,9 @@ class ReasoningBase(CleanupMixin, ABC):
         self._memory_store[session_id][memory_type] = data
 
     async def clear_memory(
-        self, session_id: str, memory_type: MemoryType | None = None
+        self,
+        session_id: str,
+        memory_type: MemoryType | None = None,
     ) -> None:
         """Clear memory for a session."""
         if session_id in self._memory_store:
@@ -422,7 +427,9 @@ class ReasoningBase(CleanupMixin, ABC):
         """Implementation-specific reasoning."""
 
     async def _tree_of_thoughts(
-        self, request: ReasoningRequest, num_paths: int
+        self,
+        request: ReasoningRequest,
+        num_paths: int,
     ) -> ReasoningResponse:
         """Default tree-of-thoughts implementation - can be overridden."""
         # Default implementation creates parallel reasoning chains
@@ -469,7 +476,8 @@ class ReasoningBase(CleanupMixin, ABC):
             # Retrieve relevant context
             if request.context and request.context.knowledge_base:
                 retrieved_contexts = await self._retrieve_contexts(
-                    request.query, request.context.knowledge_base
+                    request.query,
+                    request.context.knowledge_base,
                 )
                 if request.context:
                     request.context.retrieved_contexts = retrieved_contexts
@@ -486,7 +494,9 @@ class ReasoningBase(CleanupMixin, ABC):
             )
 
     async def _retrieve_contexts(
-        self, query: str, knowledge_base: str
+        self,
+        query: str,
+        knowledge_base: str,
     ) -> list[dict[str, t.Any]]:
         """Retrieve relevant contexts for RAG."""
         try:
@@ -531,7 +541,8 @@ class ReasoningBase(CleanupMixin, ABC):
     ) -> str:
         """Evaluate decision tree against input data."""
         if tree_name not in self._decision_trees:
-            raise ValueError(f"Decision tree '{tree_name}' not found")
+            msg = f"Decision tree '{tree_name}' not found"
+            raise ValueError(msg)
 
         tree = self._decision_trees[tree_name]
 
@@ -560,11 +571,15 @@ class ReasoningBase(CleanupMixin, ABC):
             pattern = f"\\b{key}\\b"
             if isinstance(value, str):
                 condition = re.sub(
-                    pattern, f"'{value}'", condition
+                    pattern,
+                    f"'{value}'",
+                    condition,
                 )  # REGEX OK: variable replacement for condition evaluation
             else:
                 condition = re.sub(
-                    pattern, str(value), condition
+                    pattern,
+                    str(value),
+                    condition,
                 )  # REGEX OK: variable replacement for condition evaluation
 
         try:
@@ -597,18 +612,22 @@ class ReasoningBase(CleanupMixin, ABC):
 async def validate_reasoning_request(request: ReasoningRequest) -> None:
     """Validate reasoning request parameters."""
     if not request.query:
-        raise ValueError("Query cannot be empty")
+        msg = "Query cannot be empty"
+        raise ValueError(msg)
 
     if request.max_steps <= 0:
-        raise ValueError("max_steps must be positive")
+        msg = "max_steps must be positive"
+        raise ValueError(msg)
 
     if not (0.0 <= request.temperature <= 2.0):
-        raise ValueError("temperature must be between 0.0 and 2.0")
+        msg = "temperature must be between 0.0 and 2.0"
+        raise ValueError(msg)
 
     if request.tools:
         for tool in request.tools:
             if not tool.name or not tool.description:
-                raise ValueError("Tool must have name and description")
+                msg = "Tool must have name and description"
+                raise ValueError(msg)
 
 
 async def calculate_confidence_score(reasoning_chain: list[ReasoningStep]) -> float:
@@ -627,10 +646,11 @@ async def calculate_confidence_score(reasoning_chain: list[ReasoningStep]) -> fl
 
 
 async def merge_reasoning_contexts(
-    context1: ReasoningContext, context2: ReasoningContext
+    context1: ReasoningContext,
+    context2: ReasoningContext,
 ) -> ReasoningContext:
     """Merge two reasoning contexts."""
-    merged = ReasoningContext(
+    return ReasoningContext(
         session_id=context1.session_id,
         user_id=context1.user_id or context2.user_id,
         conversation_history=(context1.conversation_history or [])
@@ -641,4 +661,3 @@ async def merge_reasoning_contexts(
         memory_data={**(context1.memory_data or {}), **(context2.memory_data or {})},
         metadata={**(context1.metadata or {}), **(context2.metadata or {})},
     )
-    return merged

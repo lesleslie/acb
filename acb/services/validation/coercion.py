@@ -38,13 +38,18 @@ class TypeCoercer:
         self.strategy = strategy
 
     async def coerce_to_type(
-        self, data: t.Any, target_type: type[t.Any], field_name: str | None = None
+        self,
+        data: t.Any,
+        target_type: type[t.Any],
+        field_name: str | None = None,
     ) -> ValidationResult:
         """Coerce data to target type using configured strategy."""
         start_time = time.perf_counter()
 
         result = ValidationResult(
-            field_name=field_name, value=data, original_value=data
+            field_name=field_name,
+            value=data,
+            original_value=data,
         )
 
         # Skip coercion if already correct type
@@ -54,7 +59,7 @@ class TypeCoercer:
 
         if self.strategy == CoercionStrategy.STRICT:
             result.add_error(
-                f"Type mismatch: expected {target_type.__name__}, got {type(data).__name__}"
+                f"Type mismatch: expected {target_type.__name__}, got {type(data).__name__}",
             )
             result.validation_time_ms = (time.perf_counter() - start_time) * 1000
             return result
@@ -63,7 +68,7 @@ class TypeCoercer:
             coerced_value = await self._perform_coercion(data, target_type)
             result.value = coerced_value
             result.add_warning(
-                f"Value coerced from {type(data).__name__} to {target_type.__name__}"
+                f"Value coerced from {type(data).__name__} to {target_type.__name__}",
             )
 
         except Exception as e:
@@ -85,93 +90,91 @@ class TypeCoercer:
             return str(data)
 
         # Integer coercion
-        elif target_type is int:
+        if target_type is int:
             return await self._coerce_to_int(data)
 
         # Float coercion
-        elif target_type is float:
+        if target_type is float:
             return await self._coerce_to_float(data)
 
         # Boolean coercion
-        elif target_type is bool:
+        if target_type is bool:
             return await self._coerce_to_bool(data)
 
         # List coercion
-        elif target_type is list:
+        if target_type is list:
             return await self._coerce_to_list(data)
 
         # Dict coercion
-        elif target_type is dict:
+        if target_type is dict:
             return await self._coerce_to_dict(data)
 
         # Set coercion
-        elif target_type is set:
+        if target_type is set:
             return await self._coerce_to_set(data)
 
         # Tuple coercion
-        elif target_type is tuple:
+        if target_type is tuple:
             return await self._coerce_to_tuple(data)
 
         # Decimal coercion
-        elif target_type == Decimal:
+        if target_type == Decimal:
             return await self._coerce_to_decimal(data)
 
         # Datetime coercion
-        elif target_type == datetime:
+        if target_type == datetime:
             return await self._coerce_to_datetime(data)
 
         # UUID coercion
-        elif target_type == UUID:
+        if target_type == UUID:
             return await self._coerce_to_uuid(data)
 
         # Generic coercion attempt
-        else:
-            return target_type(data)
+        return target_type(data)
 
     async def _coerce_to_int(self, data: t.Any) -> int:
         """Coerce data to integer."""
         if isinstance(data, bool):
             return int(data)
-        elif isinstance(data, int | float):
+        if isinstance(data, int | float):
             if isinstance(data, float) and not data.is_integer():
                 if self.strategy == CoercionStrategy.PERMISSIVE:
                     return int(data)  # Truncate
-                else:
-                    raise ValueError(
-                        f"Cannot coerce float {data} to int without precision loss"
-                    )
+                msg = f"Cannot coerce float {data} to int without precision loss"
+                raise ValueError(
+                    msg,
+                )
             return int(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             # Handle common string representations
             data = data.strip()
             if data.lower() in ("true", "yes", "on", "1"):
                 return 1
-            elif data.lower() in ("false", "no", "off", "0"):
+            if data.lower() in ("false", "no", "off", "0"):
                 return 0
-            else:
-                # Try direct conversion
-                try:
-                    # Handle decimal strings
-                    if "." in data:
-                        float_val = float(data)
-                        if float_val.is_integer():
-                            return int(float_val)
-                        else:
-                            raise ValueError(
-                                f"Cannot convert decimal string '{data}' to int"
-                            )
-                    return int(data)
-                except ValueError:
-                    # Try parsing with commas (e.g., "1,234")
-                    clean_data = data.replace(",", "")
-                    return int(clean_data)
+            # Try direct conversion
+            try:
+                # Handle decimal strings
+                if "." in data:
+                    float_val = float(data)
+                    if float_val.is_integer():
+                        return int(float_val)
+                    msg = f"Cannot convert decimal string '{data}' to int"
+                    raise ValueError(
+                        msg,
+                    )
+                return int(data)
+            except ValueError:
+                # Try parsing with commas (e.g., "1,234")
+                clean_data = data.replace(",", "")
+                return int(clean_data)
         elif isinstance(data, Decimal):
             if data % 1 == 0:
                 return int(data)
-            else:
-                raise ValueError(
-                    f"Cannot convert Decimal {data} to int without precision loss"
-                )
+            msg = f"Cannot convert Decimal {data} to int without precision loss"
+            raise ValueError(
+                msg,
+            )
         else:
             return int(data)
 
@@ -179,39 +182,37 @@ class TypeCoercer:
         """Coerce data to float."""
         if isinstance(data, int | float | bool):
             return float(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             data = data.strip()
             if data.lower() in ("true", "yes", "on"):
                 return 1.0
-            elif data.lower() in ("false", "no", "off"):
+            if data.lower() in ("false", "no", "off"):
                 return 0.0
-            else:
-                # Handle common string representations
-                clean_data = data.replace(",", "")  # Remove commas
-                return float(clean_data)
-        elif isinstance(data, Decimal):
+            # Handle common string representations
+            clean_data = data.replace(",", "")  # Remove commas
+            return float(clean_data)
+        if isinstance(data, Decimal):
             return float(data)
-        else:
-            return float(data)
+        return float(data)
 
     async def _coerce_to_bool(self, data: t.Any) -> bool:
         """Coerce data to boolean."""
         if isinstance(data, bool):
             return data
-        elif isinstance(data, int | float):
+        if isinstance(data, int | float):
             return bool(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             data = data.strip().lower()
             if data in ("true", "yes", "on", "1", "y", "t"):
                 return True
-            elif data in ("false", "no", "off", "0", "n", "f", ""):
+            if data in ("false", "no", "off", "0", "n", "f", ""):
                 return False
-            else:
-                # Try numeric conversion
-                try:
-                    return bool(float(data))
-                except ValueError:
-                    raise ValueError(f"Cannot convert string '{data}' to bool")
+            # Try numeric conversion
+            try:
+                return bool(float(data))
+            except ValueError:
+                msg = f"Cannot convert string '{data}' to bool"
+                raise ValueError(msg)
         elif data is None:
             return False
         else:
@@ -221,26 +222,24 @@ class TypeCoercer:
         """Coerce data to list."""
         if isinstance(data, list):
             return data
-        elif isinstance(data, tuple | set):
+        if isinstance(data, tuple | set):
             return list(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             # Try to parse comma-separated values
             if "," in data:
                 return [item.strip() for item in data.split(",")]
-            else:
-                return [data]
-        elif hasattr(data, "__iter__") and not isinstance(data, str | bytes | dict):
-            return list(data)
-        else:
             return [data]
+        if hasattr(data, "__iter__") and not isinstance(data, str | bytes | dict):
+            return list(data)
+        return [data]
 
     async def _coerce_to_dict(self, data: t.Any) -> dict[str, t.Any]:
         """Coerce data to dictionary."""
         if isinstance(data, dict):
             return data
-        elif hasattr(data, "__dict__"):
+        if hasattr(data, "__dict__"):
             return data.__dict__.copy()
-        elif isinstance(data, str):
+        if isinstance(data, str):
             # Try to parse JSON-like string
             import json
 
@@ -252,53 +251,49 @@ class TypeCoercer:
                 pass
             # Return single-item dict
             return {"value": data}
-        else:
-            return {"value": data}
+        return {"value": data}
 
     async def _coerce_to_set(self, data: t.Any) -> set[t.Any]:
         """Coerce data to set."""
         if isinstance(data, set):
             return data
-        elif isinstance(data, list | tuple):
+        if isinstance(data, list | tuple):
             return set(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             if "," in data:
-                return set(item.strip() for item in data.split(","))
-            else:
-                return {data}
-        elif hasattr(data, "__iter__") and not isinstance(data, str | bytes | dict):
-            return set(data)
-        else:
+                return {item.strip() for item in data.split(",")}
             return {data}
+        if hasattr(data, "__iter__") and not isinstance(data, str | bytes | dict):
+            return set(data)
+        return {data}
 
     async def _coerce_to_tuple(self, data: t.Any) -> tuple[t.Any, ...]:
         """Coerce data to tuple."""
         if isinstance(data, tuple):
             return data
-        elif isinstance(data, list | set):
+        if isinstance(data, list | set):
             return tuple(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             if "," in data:
                 return tuple(item.strip() for item in data.split(","))
-            else:
-                return (data,)
-        elif hasattr(data, "__iter__") and not isinstance(data, str | bytes | dict):
-            return tuple(data)
-        else:
             return (data,)
+        if hasattr(data, "__iter__") and not isinstance(data, str | bytes | dict):
+            return tuple(data)
+        return (data,)
 
     async def _coerce_to_decimal(self, data: t.Any) -> Decimal:
         """Coerce data to Decimal."""
         if isinstance(data, Decimal):
             return data
-        elif isinstance(data, int | float):
+        if isinstance(data, int | float):
             return Decimal(str(data))
-        elif isinstance(data, str):
+        if isinstance(data, str):
             data = data.strip().replace(",", "")
             try:
                 return Decimal(data)
             except InvalidOperation as e:
-                raise ValueError(f"Cannot convert string '{data}' to Decimal: {e}")
+                msg = f"Cannot convert string '{data}' to Decimal: {e}"
+                raise ValueError(msg)
         else:
             return Decimal(str(data))
 
@@ -306,10 +301,10 @@ class TypeCoercer:
         """Coerce data to datetime."""
         if isinstance(data, datetime):
             return data
-        elif isinstance(data, int | float):
+        if isinstance(data, int | float):
             # Assume Unix timestamp
             return datetime.fromtimestamp(data, tz=UTC)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             # Try common datetime formats
             formats = [
                 "%Y-%m-%d %H:%M:%S",
@@ -330,22 +325,22 @@ class TypeCoercer:
 
             # Try parsing ISO format
             try:
-                return datetime.fromisoformat(data.replace("Z", "+00:00"))
+                return datetime.fromisoformat(data)
             except ValueError:
                 pass
 
-            raise ValueError(f"Cannot parse datetime string: {data}")
-        else:
-            raise ValueError(f"Cannot convert {type(data).__name__} to datetime")
+            msg = f"Cannot parse datetime string: {data}"
+            raise ValueError(msg)
+        msg = f"Cannot convert {type(data).__name__} to datetime"
+        raise ValueError(msg)
 
     async def _coerce_to_uuid(self, data: t.Any) -> UUID:
         """Coerce data to UUID."""
         if isinstance(data, UUID):
             return data
-        elif isinstance(data, str):
+        if isinstance(data, str):
             return UUID(data.strip())
-        else:
-            return UUID(str(data))
+        return UUID(str(data))
 
 
 class DataTransformer:
@@ -363,7 +358,9 @@ class DataTransformer:
 
             # Normalize whitespace
             normalized = re.sub(
-                r"\s+", " ", normalized
+                r"\s+",
+                " ",
+                normalized,
             )  # REGEX OK: String normalization
 
             # Unicode normalization
@@ -382,7 +379,9 @@ class DataTransformer:
         return result
 
     async def transform_case(
-        self, data: str, case_type: str = "lower"
+        self,
+        data: str,
+        case_type: str = "lower",
     ) -> ValidationResult:
         """Transform string case."""
         result = ValidationResult(value=data, original_value=data)
@@ -431,16 +430,16 @@ class FormatValidator:
 
         # Compiled regex patterns for performance
         self._email_pattern = re.compile(
-            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"  # REGEX OK: Email format validation
+            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",  # REGEX OK: Email format validation
         )
         self._phone_pattern = re.compile(
-            r"^\+?1?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$"  # REGEX OK: Phone number format validation
+            r"^\+?1?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$",  # REGEX OK: Phone number format validation
         )
         self._url_pattern = re.compile(
-            r"^https?://(?:[-\w.])+(?:[:\d]+)?(?:/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:\w)*))?$"  # REGEX OK: URL format validation
+            r"^https?://(?:[-\w.])+(?:[:\d]+)?(?:/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:\w)*))?$",  # REGEX OK: URL format validation
         )
         self._ipv4_pattern = re.compile(
-            r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"  # REGEX OK: IPv4 address format validation
+            r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",  # REGEX OK: IPv4 address format validation
         )
 
     async def validate_email(self, data: str) -> ValidationResult:
@@ -509,9 +508,9 @@ class RangeValidator:
 
     async def validate_numeric_range(
         self,
-        data: int | float | Decimal,
-        min_value: int | float | Decimal | None = None,
-        max_value: int | float | Decimal | None = None,
+        data: float | Decimal,
+        min_value: float | Decimal | None = None,
+        max_value: float | Decimal | None = None,
     ) -> ValidationResult:
         """Validate numeric range."""
         result = ValidationResult(value=data, original_value=data)

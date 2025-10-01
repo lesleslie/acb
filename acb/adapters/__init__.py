@@ -176,7 +176,7 @@ class AdapterCapability(str, Enum):
 
 class AdapterMetadata(BaseModel):
     module_id: UUID = Field(
-        description="UUID7 identifier for this specific adapter module"
+        description="UUID7 identifier for this specific adapter module",
     )
 
     name: str = Field(description="Human-readable adapter name")
@@ -184,11 +184,12 @@ class AdapterMetadata(BaseModel):
     provider: str = Field(description="Technology provider (redis, mysql, s3, etc.)")
 
     version: str = Field(
-        description="Semantic version of this adapter (independent of ACB version)"
+        description="Semantic version of this adapter (independent of ACB version)",
     )
     acb_min_version: str = Field(description="Minimum ACB version required")
     acb_max_version: str | None = Field(
-        default=None, description="Maximum ACB version supported (None = no limit)"
+        default=None,
+        description="Maximum ACB version supported (None = no limit)",
     )
 
     author: str = Field(description="Primary author/maintainer")
@@ -197,27 +198,33 @@ class AdapterMetadata(BaseModel):
 
     status: AdapterStatus = Field(description="Development/stability status")
     capabilities: list[AdapterCapability] = Field(
-        default_factory=list, description="List of features this adapter supports"
+        default_factory=list,
+        description="List of features this adapter supports",
     )
 
     required_packages: list[str] = Field(
-        default_factory=list, description="External packages required for this adapter"
+        default_factory=list,
+        description="External packages required for this adapter",
     )
     optional_packages: dict[str, str] = Field(
-        default_factory=dict, description="Optional packages and their purpose"
+        default_factory=dict,
+        description="Optional packages and their purpose",
     )
 
     description: str = Field(description="Brief description of adapter functionality")
     documentation_url: str | None = Field(
-        default=None, description="Link to detailed documentation"
+        default=None,
+        description="Link to detailed documentation",
     )
     repository_url: str | None = Field(
-        default=None, description="Source code repository for this adapter"
+        default=None,
+        description="Source code repository for this adapter",
     )
 
     settings_class: str = Field(description="Name of the settings class")
     config_example: dict[str, t.Any] | None = Field(
-        default=None, description="Example configuration for this adapter"
+        default=None,
+        description="Example configuration for this adapter",
     )
 
     custom: dict[str, t.Any] = Field(
@@ -236,10 +243,9 @@ def generate_adapter_id() -> UUID:
             if not isinstance(uuid_obj, UUID)
             else UUID(str(uuid_obj))
         )
-    else:
-        uuid_obj = uuid_lib.uuid4()
-        # Explicitly cast to UUID to satisfy type checker
-        return UUID(str(uuid_obj))
+    uuid_obj = uuid_lib.uuid4()
+    # Explicitly cast to UUID to satisfy type checker
+    return UUID(str(uuid_obj))
 
 
 def create_metadata_template(
@@ -270,7 +276,8 @@ def create_metadata_template(
 
 
 def validate_version_compatibility(
-    adapter_metadata: AdapterMetadata, current_acb_version: str
+    adapter_metadata: AdapterMetadata,
+    current_acb_version: str,
 ) -> bool:
     try:
         from packaging import version
@@ -296,7 +303,7 @@ def extract_metadata_from_module(module: t.Any) -> AdapterMetadata | None:
         metadata = module.MODULE_METADATA
         if isinstance(metadata, AdapterMetadata):
             return metadata
-        elif isinstance(metadata, dict):
+        if isinstance(metadata, dict):
             return AdapterMetadata(**metadata)
     return None
 
@@ -306,7 +313,7 @@ def extract_metadata_from_class(adapter_class: type) -> AdapterMetadata | None:
         metadata = adapter_class.__module_metadata__
         if isinstance(metadata, AdapterMetadata):
             return metadata
-        elif isinstance(metadata, dict):
+        if isinstance(metadata, dict):
             return AdapterMetadata(**metadata)
     return None
 
@@ -343,7 +350,8 @@ def get_adapter_info(adapter_class: type) -> dict[str, t.Any]:
 
 
 def check_adapter_capability(
-    adapter_class: type, capability: AdapterCapability
+    adapter_class: type,
+    capability: AdapterCapability,
 ) -> bool:
     metadata = extract_metadata_from_class(adapter_class)
     if metadata:
@@ -461,7 +469,7 @@ class Adapter(BaseModel):
     def __hash__(self) -> int:
         base_hash = (self.name, self.class_name, self.category, self.pkg, self.module)
         if self.metadata:
-            return hash(base_hash + (str(self.metadata.module_id),))
+            return hash((*base_hash, str(self.metadata.module_id)))
         return hash(base_hash)
 
     def __eq__(self, other: object) -> bool:

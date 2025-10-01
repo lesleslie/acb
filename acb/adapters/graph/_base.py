@@ -161,7 +161,9 @@ class GraphProtocol(t.Protocol):
     """Protocol for graph database operations."""
 
     async def execute_query(
-        self, query: str, parameters: dict[str, t.Any] | None = None
+        self,
+        query: str,
+        parameters: dict[str, t.Any] | None = None,
     ) -> GraphQueryResult: ...
 
     async def create_node(
@@ -295,7 +297,8 @@ class GraphBase(CleanupMixin, ABC):
         """Implementation-specific query execution."""
 
     async def execute_batch_queries(
-        self, queries: list[tuple[str, dict[str, t.Any] | None]]
+        self,
+        queries: list[tuple[str, dict[str, t.Any] | None]],
     ) -> list[GraphQueryResult]:
         """Execute multiple queries in batch."""
         results = []
@@ -315,7 +318,9 @@ class GraphBase(CleanupMixin, ABC):
 
     @abstractmethod
     async def _create_node(
-        self, labels: list[str], properties: dict[str, t.Any]
+        self,
+        labels: list[str],
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Implementation-specific node creation."""
 
@@ -328,14 +333,18 @@ class GraphBase(CleanupMixin, ABC):
         """Implementation-specific node retrieval."""
 
     async def update_node(
-        self, node_id: str, properties: dict[str, t.Any]
+        self,
+        node_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Update node properties."""
         return await self._update_node(node_id, properties)
 
     @abstractmethod
     async def _update_node(
-        self, node_id: str, properties: dict[str, t.Any]
+        self,
+        node_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Implementation-specific node update."""
 
@@ -357,7 +366,10 @@ class GraphBase(CleanupMixin, ABC):
     ) -> GraphEdgeModel:
         """Create a new edge between nodes."""
         return await self._create_edge(
-            edge_type, from_node_id, to_node_id, properties or {}
+            edge_type,
+            from_node_id,
+            to_node_id,
+            properties or {},
         )
 
     @abstractmethod
@@ -379,14 +391,18 @@ class GraphBase(CleanupMixin, ABC):
         """Implementation-specific edge retrieval."""
 
     async def update_edge(
-        self, edge_id: str, properties: dict[str, t.Any]
+        self,
+        edge_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphEdgeModel:
         """Update edge properties."""
         return await self._update_edge(edge_id, properties)
 
     @abstractmethod
     async def _update_edge(
-        self, edge_id: str, properties: dict[str, t.Any]
+        self,
+        edge_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphEdgeModel:
         """Implementation-specific edge update."""
 
@@ -465,14 +481,20 @@ class GraphBase(CleanupMixin, ABC):
         """Implementation-specific schema retrieval."""
 
     async def create_index(
-        self, labels: list[str], properties: list[str], index_type: str = "btree"
+        self,
+        labels: list[str],
+        properties: list[str],
+        index_type: str = "btree",
     ) -> bool:
         """Create an index on specified properties."""
         return await self._create_index(labels, properties, index_type)
 
     @abstractmethod
     async def _create_index(
-        self, labels: list[str], properties: list[str], index_type: str
+        self,
+        labels: list[str],
+        properties: list[str],
+        index_type: str,
     ) -> bool:
         """Implementation-specific index creation."""
 
@@ -486,26 +508,30 @@ class GraphBase(CleanupMixin, ABC):
 
     # Bulk Operations
     async def bulk_create_nodes(
-        self, nodes: list[dict[str, t.Any]]
+        self,
+        nodes: list[dict[str, t.Any]],
     ) -> list[GraphNodeModel]:
         """Create multiple nodes in bulk."""
         return await self._bulk_create_nodes(nodes)
 
     @abstractmethod
     async def _bulk_create_nodes(
-        self, nodes: list[dict[str, t.Any]]
+        self,
+        nodes: list[dict[str, t.Any]],
     ) -> list[GraphNodeModel]:
         """Implementation-specific bulk node creation."""
 
     async def bulk_create_edges(
-        self, edges: list[dict[str, t.Any]]
+        self,
+        edges: list[dict[str, t.Any]],
     ) -> list[GraphEdgeModel]:
         """Create multiple edges in bulk."""
         return await self._bulk_create_edges(edges)
 
     @abstractmethod
     async def _bulk_create_edges(
-        self, edges: list[dict[str, t.Any]]
+        self,
+        edges: list[dict[str, t.Any]],
     ) -> list[GraphEdgeModel]:
         """Implementation-specific bulk edge creation."""
 

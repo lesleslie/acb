@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from logfire import (
@@ -19,6 +20,9 @@ from acb.adapters import (
 from acb.depends import depends
 
 from ._base import MonitoringBase, MonitoringBaseSettings
+
+if TYPE_CHECKING:
+    from acb.adapters.sql._base import SqlBase
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b81656dc7888")
 MODULE_STATUS = AdapterStatus.STABLE
@@ -72,8 +76,6 @@ class Monitoring(MonitoringBase):
                 case "redis":
                     instrument_redis()
                 case "sqlalchemy":
-                    from acb.adapters.sql._base import SqlBase
-
                     sql: SqlBase = depends.get(category="sql")
                     instrument_sqlalchemy(engine=sql.engine)
                 case _:

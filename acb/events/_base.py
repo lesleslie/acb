@@ -69,9 +69,8 @@ def generate_event_id() -> UUID:
     if _uuid7_available:
         uuid_obj = uuid_lib.uuid7()
         return UUID(str(uuid_obj))
-    else:
-        uuid_obj = uuid_lib.uuid4()
-        return UUID(str(uuid_obj))
+    uuid_obj = uuid_lib.uuid4()
+    return UUID(str(uuid_obj))
 
 
 class EventMetadata(BaseModel):
@@ -89,20 +88,24 @@ class EventMetadata(BaseModel):
 
     # Routing information
     routing_key: str | None = Field(
-        default=None, description="Routing key for targeted delivery"
+        default=None,
+        description="Routing key for targeted delivery",
     )
     correlation_id: str | None = Field(
-        default=None, description="Correlation ID for request tracking"
+        default=None,
+        description="Correlation ID for request tracking",
     )
     reply_to: str | None = Field(default=None, description="Response destination")
 
     # Processing control
     max_retries: int = Field(default=3, description="Maximum retry attempts")
     retry_delay: float = Field(
-        default=1.0, description="Initial retry delay in seconds"
+        default=1.0,
+        description="Initial retry delay in seconds",
     )
     timeout: float | None = Field(
-        default=None, description="Processing timeout in seconds"
+        default=None,
+        description="Processing timeout in seconds",
     )
 
     # Custom metadata
@@ -203,7 +206,6 @@ class EventHandler(ABC):
         Returns:
             True if this handler can process the event
         """
-        pass
 
     @abstractmethod
     async def handle(self, event: Event) -> EventHandlerResult:
@@ -215,7 +217,6 @@ class EventHandler(ABC):
         Returns:
             Result of event processing
         """
-        pass
 
     async def handle_error(self, event: Event, error: Exception) -> EventHandlerResult:
         """Handle errors during event processing.
@@ -263,7 +264,8 @@ class FunctionalEventHandler(EventHandler):
     def __init__(
         self,
         handler_func: t.Callable[
-            [Event], EventHandlerResult | t.Awaitable[EventHandlerResult]
+            [Event],
+            EventHandlerResult | t.Awaitable[EventHandlerResult],
         ],
         event_type: str | None = None,
         predicate: t.Callable[[Event], bool] | None = None,
@@ -308,16 +310,19 @@ class EventSubscription(BaseModel):
     subscription_id: UUID = Field(default_factory=generate_event_id)
     handler: EventHandler = Field(description="Event handler instance")
     event_type: str | None = Field(
-        default=None, description="Specific event type to subscribe to"
+        default=None,
+        description="Specific event type to subscribe to",
     )
     predicate: t.Callable[[Event], bool] | None = Field(
-        default=None, description="Custom event filter"
+        default=None,
+        description="Custom event filter",
     )
 
     # Subscription options
     active: bool = Field(default=True)
     max_concurrent: int = Field(
-        default=1, description="Maximum concurrent event processing"
+        default=1,
+        description="Maximum concurrent event processing",
     )
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -371,7 +376,6 @@ class EventPublisherBase(ServiceBase):
         Args:
             event: Event to publish
         """
-        pass
 
     @abstractmethod
     async def subscribe(self, subscription: EventSubscription) -> None:
@@ -380,7 +384,6 @@ class EventPublisherBase(ServiceBase):
         Args:
             subscription: Subscription configuration
         """
-        pass
 
     @abstractmethod
     async def unsubscribe(self, subscription_id: UUID) -> bool:
@@ -392,7 +395,6 @@ class EventPublisherBase(ServiceBase):
         Returns:
             True if subscription was found and removed
         """
-        pass
 
     async def get_subscriptions(self) -> list[EventSubscription]:
         """Get all active subscriptions."""

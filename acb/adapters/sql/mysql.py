@@ -81,7 +81,7 @@ class SqlSettings(SqlBaseSettings):
                 "pool_size": self.pool_size,
                 "max_overflow": self.max_overflow,
                 "pool_recycle": self.pool_recycle,
-            }
+            },
         )
 
 

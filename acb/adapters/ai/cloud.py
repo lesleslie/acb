@@ -5,7 +5,6 @@ import json
 import typing as t
 from uuid import UUID
 
-import httpx
 from pydantic import SecretStr
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 
@@ -22,6 +21,9 @@ from ._base import (
     calculate_cost,
     validate_request,
 )
+
+if t.TYPE_CHECKING:
+    import httpx
 
 MODULE_ID = UUID("0197ff44-8c12-7f30-af61-2d41c6c89a73")
 MODULE_STATUS = AdapterStatus.STABLE
@@ -117,29 +119,31 @@ class CloudAI(AIBase):
         """Create cloud AI client based on provider."""
         if self.settings.provider == ModelProvider.OPENAI:
             return await self._create_openai_client()
-        elif self.settings.provider == ModelProvider.ANTHROPIC:
+        if self.settings.provider == ModelProvider.ANTHROPIC:
             return await self._create_anthropic_client()
-        elif self.settings.provider == ModelProvider.AZURE_OPENAI:
+        if self.settings.provider == ModelProvider.AZURE_OPENAI:
             return await self._create_azure_client()
-        elif self.settings.provider == ModelProvider.AWS_BEDROCK:
+        if self.settings.provider == ModelProvider.AWS_BEDROCK:
             return await self._create_bedrock_client()
-        elif self.settings.provider == ModelProvider.GOOGLE_VERTEX:
+        if self.settings.provider == ModelProvider.GOOGLE_VERTEX:
             return await self._create_vertex_client()
-        else:
-            raise ValueError(f"Unsupported cloud provider: {self.settings.provider}")
+        msg = f"Unsupported cloud provider: {self.settings.provider}"
+        raise ValueError(msg)
 
     async def _create_openai_client(self) -> t.Any:
         """Create OpenAI client."""
         try:
             import openai
         except ImportError:
-            raise ImportError("openai package required for OpenAI provider")
+            msg = "openai package required for OpenAI provider"
+            raise ImportError(msg)
 
         api_key = self.settings.openai_api_key or self.settings.api_key
         if not api_key:
-            raise ValueError("OpenAI API key required")
+            msg = "OpenAI API key required"
+            raise ValueError(msg)
 
-        client = openai.AsyncOpenAI(
+        return openai.AsyncOpenAI(
             api_key=api_key.get_secret_value(),
             organization=self.settings.openai_organization
             or self.settings.organization,
@@ -148,40 +152,40 @@ class CloudAI(AIBase):
             max_retries=self.settings.max_retries,
         )
 
-        return client
-
     async def _create_anthropic_client(self) -> t.Any:
         """Create Anthropic client."""
         try:
             import anthropic
         except ImportError:
-            raise ImportError("anthropic package required for Anthropic provider")
+            msg = "anthropic package required for Anthropic provider"
+            raise ImportError(msg)
 
         api_key = self.settings.anthropic_api_key or self.settings.api_key
         if not api_key:
-            raise ValueError("Anthropic API key required")
+            msg = "Anthropic API key required"
+            raise ValueError(msg)
 
-        client = anthropic.AsyncAnthropic(
+        return anthropic.AsyncAnthropic(
             api_key=api_key.get_secret_value(),
             base_url=self.settings.anthropic_base_url or self.settings.base_url,
             timeout=self.settings.request_timeout,
             max_retries=self.settings.max_retries,
         )
 
-        return client
-
     async def _create_azure_client(self) -> t.Any:
         """Create Azure OpenAI client."""
         try:
             import openai
         except ImportError:
-            raise ImportError("openai package required for Azure OpenAI provider")
+            msg = "openai package required for Azure OpenAI provider"
+            raise ImportError(msg)
 
         api_key = self.settings.azure_api_key or self.settings.api_key
         if not api_key or not self.settings.azure_endpoint:
-            raise ValueError("Azure API key and endpoint required")
+            msg = "Azure API key and endpoint required"
+            raise ValueError(msg)
 
-        client = openai.AsyncAzureOpenAI(
+        return openai.AsyncAzureOpenAI(
             api_key=api_key.get_secret_value(),
             azure_endpoint=self.settings.azure_endpoint,
             api_version=self.settings.azure_api_version,
@@ -189,14 +193,13 @@ class CloudAI(AIBase):
             max_retries=self.settings.max_retries,
         )
 
-        return client
-
     async def _create_bedrock_client(self) -> t.Any:
         """Create AWS Bedrock client."""
         try:
             import boto3
         except ImportError:
-            raise ImportError("boto3 package required for AWS Bedrock provider")
+            msg = "boto3 package required for AWS Bedrock provider"
+            raise ImportError(msg)
 
         session = boto3.Session(
             aws_access_key_id=self.settings.aws_access_key_id.get_secret_value()
@@ -208,8 +211,7 @@ class CloudAI(AIBase):
             region_name=self.settings.aws_region,
         )
 
-        client = session.client("bedrock-runtime")
-        return client
+        return session.client("bedrock-runtime")
 
     async def _create_vertex_client(self) -> t.Any:
         """Create Google Vertex AI client."""
@@ -217,12 +219,14 @@ class CloudAI(AIBase):
             from vertexai import init
             from vertexai.generative_models import GenerativeModel
         except ImportError:
+            msg = "google-cloud-aiplatform package required for Vertex AI provider"
             raise ImportError(
-                "google-cloud-aiplatform package required for Vertex AI provider"
+                msg,
             )
 
         if not self.settings.google_project_id:
-            raise ValueError("Google project ID required")
+            msg = "Google project ID required"
+            raise ValueError(msg)
 
         init(
             project=self.settings.google_project_id,
@@ -250,7 +254,8 @@ class CloudAI(AIBase):
             elif self.settings.provider == ModelProvider.GOOGLE_VERTEX:
                 response = await self._vertex_generate(client, request)
             else:
-                raise ValueError(f"Unsupported provider: {self.settings.provider}")
+                msg = f"Unsupported provider: {self.settings.provider}"
+                raise ValueError(msg)
 
             latency_ms = int((asyncio.get_event_loop().time() - start_time) * 1000)
             response.latency_ms = latency_ms
@@ -266,7 +271,7 @@ class CloudAI(AIBase):
             return response
 
         except Exception as e:
-            self.logger.error(f"Text generation failed: {e}")
+            self.logger.exception(f"Text generation failed: {e}")
             raise
 
     async def _generate_text_stream(self, request: AIRequest) -> StreamingResponse:
@@ -281,8 +286,9 @@ class CloudAI(AIBase):
         elif self.settings.provider == ModelProvider.AZURE_OPENAI:
             generator = self._azure_stream(client, request)
         else:
+            msg = f"Streaming not supported for provider: {self.settings.provider}"
             raise ValueError(
-                f"Streaming not supported for provider: {self.settings.provider}"
+                msg,
             )
 
         return StreamingResponse(generator)
@@ -312,7 +318,9 @@ class CloudAI(AIBase):
         )
 
     async def _anthropic_generate(
-        self, client: t.Any, request: AIRequest
+        self,
+        client: t.Any,
+        request: AIRequest,
     ) -> AIResponse:
         """Generate text using Anthropic."""
         system_prompt = request.system_prompt or ""
@@ -402,7 +410,9 @@ class CloudAI(AIBase):
         )
 
     async def _vertex_generate(
-        self, client_class: t.Any, request: AIRequest
+        self,
+        client_class: t.Any,
+        request: AIRequest,
     ) -> AIResponse:
         """Generate text using Google Vertex AI."""
         model = client_class(request.model or "gemini-pro")
@@ -431,7 +441,9 @@ class CloudAI(AIBase):
         )
 
     async def _openai_stream(
-        self, client: t.Any, request: AIRequest
+        self,
+        client: t.Any,
+        request: AIRequest,
     ) -> t.AsyncGenerator[str]:
         """Stream text generation from OpenAI."""
         messages = self._format_openai_messages(request)
@@ -449,7 +461,9 @@ class CloudAI(AIBase):
                 yield chunk.choices[0].delta.content
 
     async def _anthropic_stream(
-        self, client: t.Any, request: AIRequest
+        self,
+        client: t.Any,
+        request: AIRequest,
     ) -> t.AsyncGenerator[str]:
         """Stream text generation from Anthropic."""
         system_prompt = request.system_prompt or ""
@@ -468,7 +482,9 @@ class CloudAI(AIBase):
                 yield text
 
     async def _azure_stream(
-        self, client: t.Any, request: AIRequest
+        self,
+        client: t.Any,
+        request: AIRequest,
     ) -> t.AsyncGenerator[str]:
         """Stream text generation from Azure OpenAI."""
         messages = self._format_openai_messages(request)
@@ -491,16 +507,15 @@ class CloudAI(AIBase):
         """Get available models from cloud provider."""
         if self.settings.provider == ModelProvider.OPENAI:
             return await self._get_openai_models()
-        elif self.settings.provider == ModelProvider.ANTHROPIC:
+        if self.settings.provider == ModelProvider.ANTHROPIC:
             return await self._get_anthropic_models()
-        elif self.settings.provider == ModelProvider.AZURE_OPENAI:
+        if self.settings.provider == ModelProvider.AZURE_OPENAI:
             return await self._get_azure_models()
-        elif self.settings.provider == ModelProvider.AWS_BEDROCK:
+        if self.settings.provider == ModelProvider.AWS_BEDROCK:
             return await self._get_bedrock_models()
-        elif self.settings.provider == ModelProvider.GOOGLE_VERTEX:
+        if self.settings.provider == ModelProvider.GOOGLE_VERTEX:
             return await self._get_vertex_models()
-        else:
-            return []
+        return []
 
     async def _get_openai_models(self) -> list[ModelInfo]:
         """Get OpenAI models."""
@@ -650,7 +665,7 @@ class CloudAI(AIBase):
                             "image_url": {
                                 "url": img
                                 if isinstance(img, str)
-                                else f"data:image/jpeg;base64,{img}"
+                                else f"data:image/jpeg;base64,{img}",
                             },
                         }
                         for img in request.images
@@ -669,9 +684,9 @@ class CloudAI(AIBase):
                 {
                     "name": message.function_call.name,
                     "arguments": json.loads(message.function_call.arguments),
-                }
+                },
             ]
-        elif hasattr(message, "tool_calls") and message.tool_calls:
+        if hasattr(message, "tool_calls") and message.tool_calls:
             return [
                 {
                     "name": call.function.name,

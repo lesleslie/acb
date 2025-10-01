@@ -5,6 +5,7 @@ with integration to ACB's SQL adapters.
 """
 
 import asyncio
+import contextlib
 import hashlib
 import re
 import time
@@ -15,14 +16,13 @@ from enum import Enum
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-
-from .._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
 SERVICE_METADATA: t.Any = None
 
 try:
-    from ..discovery import (
+    from acb.services.discovery import (
         ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
@@ -158,7 +158,7 @@ class QueryOptimizer(ServiceBase):
             Sql = import_adapter("sql")
             self._sql_adapter = depends.get(Sql)
         except Exception as e:
-            self.logger.error(f"Failed to get SQL adapter: {e}")
+            self.logger.exception(f"Failed to get SQL adapter: {e}")
             raise
 
         # Start analysis task
@@ -171,10 +171,8 @@ class QueryOptimizer(ServiceBase):
         """Shutdown the query optimizer."""
         if self._analysis_task:
             self._analysis_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._analysis_task
-            except asyncio.CancelledError:
-                pass
 
     async def _health_check(self) -> dict[str, t.Any]:
         """Health check for query optimizer."""
@@ -239,7 +237,9 @@ class QueryOptimizer(ServiceBase):
             raise
 
     async def execute_batch_optimized(
-        self, queries: list[str], parameters_list: list[dict[str, t.Any]] | None = None
+        self,
+        queries: list[str],
+        parameters_list: list[dict[str, t.Any]] | None = None,
     ) -> list[t.Any]:
         """Execute multiple queries with batch optimization.
 
@@ -291,7 +291,9 @@ class QueryOptimizer(ServiceBase):
             List of query patterns
         """
         patterns = sorted(
-            self._query_patterns.values(), key=lambda p: p.execution_count, reverse=True
+            self._query_patterns.values(),
+            key=lambda p: p.execution_count,
+            reverse=True,
         )
         return patterns[:limit]
 
@@ -313,7 +315,9 @@ class QueryOptimizer(ServiceBase):
         ]
 
         return sorted(
-            slow_patterns, key=lambda p: p.average_execution_time, reverse=True
+            slow_patterns,
+            key=lambda p: p.average_execution_time,
+            reverse=True,
         )
 
     def get_optimization_suggestions(self) -> list[QueryOptimizationSuggestion]:
@@ -335,14 +339,20 @@ class QueryOptimizer(ServiceBase):
         """
         # Normalize query for pattern matching
         normalized = re.sub(
-            r"\s+", " ", query.strip().upper()
+            r"\s+",
+            " ",
+            query.strip().upper(),
         )  # REGEX OK: Query normalization
         # Remove parameter values for pattern matching
         normalized = re.sub(
-            r"'[^']*'", "'?'", normalized
+            r"'[^']*'",
+            "'?'",
+            normalized,
         )  # REGEX OK: Query normalization
         normalized = re.sub(
-            r"\b\d+\b", "?", normalized
+            r"\b\d+\b",
+            "?",
+            normalized,
         )  # REGEX OK: Query normalization
 
         return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()
@@ -360,17 +370,17 @@ class QueryOptimizer(ServiceBase):
 
         if query_upper.startswith("SELECT"):
             return QueryType.SELECT
-        elif query_upper.startswith("INSERT"):
+        if query_upper.startswith("INSERT"):
             return QueryType.INSERT
-        elif query_upper.startswith("UPDATE"):
+        if query_upper.startswith("UPDATE"):
             return QueryType.UPDATE
-        elif query_upper.startswith("DELETE"):
+        if query_upper.startswith("DELETE"):
             return QueryType.DELETE
-        elif query_upper.startswith("CREATE"):
+        if query_upper.startswith("CREATE"):
             return QueryType.CREATE
-        elif query_upper.startswith("ALTER"):
+        if query_upper.startswith("ALTER"):
             return QueryType.ALTER
-        elif query_upper.startswith("DROP"):
+        if query_upper.startswith("DROP"):
             return QueryType.DROP
 
         return QueryType.UNKNOWN
@@ -418,7 +428,9 @@ class QueryOptimizer(ServiceBase):
 
         # Remove unnecessary whitespace
         optimized = re.sub(
-            r"\s+", " ", optimized.strip()
+            r"\s+",
+            " ",
+            optimized.strip(),
         )  # REGEX OK: Query optimization
 
         # Add LIMIT if missing on potentially large SELECT queries
@@ -434,7 +446,9 @@ class QueryOptimizer(ServiceBase):
         return optimized
 
     def _group_similar_queries(
-        self, queries: list[str], parameters_list: list[dict[str, t.Any]] | None = None
+        self,
+        queries: list[str],
+        parameters_list: list[dict[str, t.Any]] | None = None,
     ) -> list[dict[str, t.Any]]:
         """Group similar queries for batch execution.
 
@@ -459,7 +473,7 @@ class QueryOptimizer(ServiceBase):
                 }
 
             groups[query_hash]["executions"].append(
-                {"query": query, "parameters": params, "index": i}
+                {"query": query, "parameters": params, "index": i},
             )
 
         return list(groups.values())
@@ -491,7 +505,11 @@ class QueryOptimizer(ServiceBase):
         return results
 
     async def _record_query_execution(
-        self, query: str, query_hash: str, execution_time: float, success: bool
+        self,
+        query: str,
+        query_hash: str,
+        execution_time: float,
+        success: bool,
     ) -> None:
         """Record query execution metrics.
 
@@ -522,7 +540,8 @@ class QueryOptimizer(ServiceBase):
         if len(self._query_patterns) > self._settings.max_patterns_tracked:
             # Remove least frequently used patterns
             sorted_patterns = sorted(
-                self._query_patterns.items(), key=lambda x: x[1].execution_count
+                self._query_patterns.items(),
+                key=lambda x: x[1].execution_count,
             )
             # Remove bottom 10%
             remove_count = len(sorted_patterns) // 10
@@ -543,7 +562,7 @@ class QueryOptimizer(ServiceBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Query analysis loop error: {e}")
+                self.logger.exception(f"Query analysis loop error: {e}")
                 await asyncio.sleep(60)  # Wait before retrying
 
     async def _analyze_query_patterns(self) -> None:
@@ -558,7 +577,7 @@ class QueryOptimizer(ServiceBase):
             if pattern.average_execution_time > self._settings.slow_query_threshold_ms:
                 self.logger.info(
                     f"Slow query detected: {pattern.query_hash} "
-                    f"(avg: {pattern.average_execution_time:.2f}ms)"
+                    f"(avg: {pattern.average_execution_time:.2f}ms)",
                 )
 
             patterns_analyzed += 1
@@ -611,8 +630,9 @@ class QueryOptimizer(ServiceBase):
 
         if new_suggestions:
             self.logger.info(
-                f"Generated {len(new_suggestions)} optimization suggestions"
+                f"Generated {len(new_suggestions)} optimization suggestions",
             )
             self.set_custom_metric(
-                "optimization_suggestions_generated", len(new_suggestions)
+                "optimization_suggestions_generated",
+                len(new_suggestions),
             )

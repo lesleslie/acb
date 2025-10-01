@@ -64,14 +64,16 @@ class Dns(DnsBase):
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
             if not self.config.app:
-                raise ValueError("App configuration is required for Google Cloud DNS")
+                msg = "App configuration is required for Google Cloud DNS"
+                raise ValueError(msg)
             self.client = DnsClient(project=self.config.app.project)
 
     def create_zone(self) -> None:
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             return
         if not self.config.app:
-            raise ValueError("App configuration is required for zone creation")
+            msg = "App configuration is required for zone creation"
+            raise ValueError(msg)
         self.zone = self.client.zone(self.config.app.name, f"{self.config.app.domain}.")
         if not self.zone.exists():
             self.logger.info(f"Creating cloud_dns zone '{self.config.app.name}...")
@@ -91,7 +93,8 @@ class Dns(DnsBase):
                 ),
             ]
         if not self.zone:
-            raise ValueError("Zone not initialized")
+            msg = "Zone not initialized"
+            raise ValueError(msg)
         records = self.zone.list_resource_record_sets()
         return [
             DnsRecord.model_validate(
@@ -126,7 +129,8 @@ class Dns(DnsBase):
 
     async def delete_record_sets(self) -> None:
         if not self.zone:
-            raise ValueError("Zone not initialized")
+            msg = "Zone not initialized"
+            raise ValueError(msg)
         changes = self.zone.changes()
         for record_set in self.current_record_sets:
             changes.delete_record_set(record_set)
@@ -135,7 +139,8 @@ class Dns(DnsBase):
 
     async def add_record_sets(self) -> None:
         if not self.zone:
-            raise ValueError("Zone not initialized")
+            msg = "Zone not initialized"
+            raise ValueError(msg)
         changes = self.zone.changes()
         for record_set in self.new_record_sets:
             changes.add_record_set(record_set)
@@ -144,7 +149,8 @@ class Dns(DnsBase):
 
     def get_record_set(self, record: DnsRecord) -> ResourceRecordSet:
         if not self.zone:
-            raise ValueError("Zone not initialized")
+            msg = "Zone not initialized"
+            raise ValueError(msg)
         return self.zone.resource_record_set(
             name=record.name,
             record_type=record.type,

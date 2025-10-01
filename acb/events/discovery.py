@@ -105,16 +105,17 @@ class EventMetadata(BaseModel):
 
     name: str = Field(description="Human-readable handler name")
     category: str = Field(
-        description="Handler category (publisher, subscriber, processor, etc.)"
+        description="Handler category (publisher, subscriber, processor, etc.)",
     )
     handler_type: str = Field(
-        description="Handler type (in_memory, redis, kafka, etc.)"
+        description="Handler type (in_memory, redis, kafka, etc.)",
     )
 
     version: str = Field(description="Semantic version of this handler")
     acb_min_version: str = Field(description="Minimum ACB version required")
     acb_max_version: str | None = Field(
-        default=None, description="Maximum ACB version supported"
+        default=None,
+        description="Maximum ACB version supported",
     )
 
     author: str = Field(description="Primary author/maintainer")
@@ -123,45 +124,56 @@ class EventMetadata(BaseModel):
 
     status: EventHandlerStatus = Field(description="Development/stability status")
     capabilities: list[EventCapability] = Field(
-        default_factory=list, description="List of features this handler supports"
+        default_factory=list,
+        description="List of features this handler supports",
     )
 
     required_packages: list[str] = Field(
-        default_factory=list, description="External packages required for this handler"
+        default_factory=list,
+        description="External packages required for this handler",
     )
     optional_packages: dict[str, str] = Field(
-        default_factory=dict, description="Optional packages and their purpose"
+        default_factory=dict,
+        description="Optional packages and their purpose",
     )
 
     description: str = Field(description="Brief description of handler functionality")
     documentation_url: str | None = Field(
-        default=None, description="Link to detailed documentation"
+        default=None,
+        description="Link to detailed documentation",
     )
     repository_url: str | None = Field(
-        default=None, description="Source code repository"
+        default=None,
+        description="Source code repository",
     )
 
     # Event-specific metadata
     supported_event_types: list[str] = Field(
-        default_factory=list, description="Event types this handler can process"
+        default_factory=list,
+        description="Event types this handler can process",
     )
     event_patterns: list[str] = Field(
-        default_factory=list, description="Event patterns this handler matches"
+        default_factory=list,
+        description="Event patterns this handler matches",
     )
     max_concurrent: int = Field(
-        default=1, description="Maximum concurrent event processing"
+        default=1,
+        description="Maximum concurrent event processing",
     )
     priority_levels: list[str] = Field(
-        default_factory=list, description="Supported priority levels"
+        default_factory=list,
+        description="Supported priority levels",
     )
 
     settings_class: str = Field(description="Name of the settings class")
     config_example: dict[str, t.Any] | None = Field(
-        default=None, description="Example configuration for this handler"
+        default=None,
+        description="Example configuration for this handler",
     )
 
     custom: dict[str, t.Any] = Field(
-        default_factory=dict, description="Custom metadata fields"
+        default_factory=dict,
+        description="Custom metadata fields",
     )
 
     model_config = ConfigDict(use_enum_values=True, extra="forbid")
@@ -172,9 +184,8 @@ def generate_event_handler_id() -> UUID:
     if _uuid7_available:
         uuid_obj = uuid_lib.uuid7()
         return UUID(str(uuid_obj))
-    else:
-        uuid_obj = uuid_lib.uuid4()
-        return UUID(str(uuid_obj))
+    uuid_obj = uuid_lib.uuid4()
+    return UUID(str(uuid_obj))
 
 
 def create_event_metadata_template(
@@ -212,13 +223,9 @@ def create_event_metadata_template(
 class EventHandlerNotFound(Exception):
     """Raised when an event handler cannot be found."""
 
-    pass
-
 
 class EventHandlerNotInstalled(Exception):
     """Raised when an event handler is not installed."""
-
-    pass
 
 
 class EventHandlerDescriptor(BaseModel):
@@ -239,7 +246,7 @@ class EventHandlerDescriptor(BaseModel):
     def __hash__(self) -> int:
         base_hash = (self.name, self.class_name, self.category, self.module)
         if self.metadata:
-            return hash(base_hash + (str(self.metadata.handler_id),))
+            return hash((*base_hash, str(self.metadata.handler_id)))
         return hash(base_hash)
 
     def __eq__(self, other: object) -> bool:
@@ -255,13 +262,16 @@ class EventHandlerDescriptor(BaseModel):
 
 # Event handler registry using ContextVar for thread safety
 event_handler_registry: ContextVar[list[EventHandlerDescriptor]] = ContextVar(
-    "event_handler_registry", default=[]
+    "event_handler_registry",
+    default=[],
 )
 _enabled_handlers_cache: ContextVar[dict[str, EventHandlerDescriptor]] = ContextVar(
-    "_enabled_handlers_cache", default={}
+    "_enabled_handlers_cache",
+    default={},
 )
 _installed_handlers_cache: ContextVar[dict[str, EventHandlerDescriptor]] = ContextVar(
-    "_installed_handlers_cache", default={}
+    "_installed_handlers_cache",
+    default={},
 )
 
 # Core event handlers registry - static mappings like adapters and services
@@ -319,7 +329,8 @@ core_event_handlers = [
 
 # Event Handler Discovery Functions (mirrors adapter and service patterns)
 def get_event_handler_descriptor(
-    category: str, name: str | None = None
+    category: str,
+    name: str | None = None,
 ) -> EventHandlerDescriptor | None:
     """Get event handler descriptor by category and optional name."""
     handlers = event_handler_registry.get()
@@ -363,20 +374,22 @@ def get_event_handler_class(category: str, name: str | None = None) -> type[t.An
     handler = get_event_handler_descriptor(category, name)
     if not handler:
         raise EventHandlerNotFound(
-            f"Event handler not found: {category}" + (f"/{name}" if name else "")
+            f"Event handler not found: {category}" + (f"/{name}" if name else ""),
         )
 
     try:
         module = import_module(handler.module)
         return getattr(module, handler.class_name)
     except (ImportError, AttributeError) as e:
+        msg = f"Event handler not available: {handler.module}.{handler.class_name}"
         raise EventHandlerNotInstalled(
-            f"Event handler not available: {handler.module}.{handler.class_name}"
+            msg,
         ) from e
 
 
 def try_import_event_handler(
-    category: str, name: str | None = None
+    category: str,
+    name: str | None = None,
 ) -> type[t.Any] | None:
     """Try to import an event handler class, return None if not available."""
     try:
@@ -410,8 +423,9 @@ def import_event_handler(handler_categories: str | list[str] | None = None) -> t
         handler_class = try_import_event_handler(handler_categories, handler_name)
         if handler_class:
             return handler_class
+        msg = f"Event handler not found or not enabled: {handler_categories}"
         raise EventHandlerNotFound(
-            f"Event handler not found or not enabled: {handler_categories}"
+            msg,
         )
 
     if handler_categories is None:
@@ -441,27 +455,29 @@ def import_event_handler(handler_categories: str | list[str] | None = None) -> t
             except (OSError, IndexError):
                 pass
 
-        raise ValueError("Could not determine event handler category from context")
+        msg = "Could not determine event handler category from context"
+        raise ValueError(msg)
 
     if isinstance(handler_categories, list):
         results = []
         for category in handler_categories:
             handler_class = try_import_event_handler(category)
             if not handler_class:
+                msg = f"Event handler not found or not enabled: {category}"
                 raise EventHandlerNotFound(
-                    f"Event handler not found or not enabled: {category}"
+                    msg,
                 )
             results.append(handler_class)
         return tuple(results) if len(results) > 1 else results[0]
 
-    raise ValueError(f"Invalid handler_categories type: {type(handler_categories)}")
+    msg = f"Invalid handler_categories type: {type(handler_categories)}"
+    raise ValueError(msg)
 
 
 def register_event_handlers(handlers_path: str | None = None) -> None:
     """Register event handlers from a path (for discovery)."""
     # Implementation for auto-discovery could be added here
     # For now, we rely on static registration
-    pass
 
 
 def get_event_handler_info(handler_class: type) -> dict[str, t.Any]:
@@ -474,7 +490,7 @@ def get_event_handler_info(handler_class: type) -> dict[str, t.Any]:
 
     # Check for metadata
     if hasattr(handler_class, "HANDLER_METADATA"):
-        metadata = getattr(handler_class, "HANDLER_METADATA")
+        metadata = handler_class.HANDLER_METADATA
         if isinstance(metadata, EventMetadata):
             info["metadata"] = metadata.model_dump()
 

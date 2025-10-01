@@ -50,17 +50,20 @@ class BentoMLSettings(MLModelSettings):
     service_name: str | None = Field(default=None, description="BentoML service name")
     bento_tag: str | None = Field(default=None, description="Bento tag (name:version)")
     working_dir: str | None = Field(
-        default=None, description="Working directory for service"
+        default=None,
+        description="Working directory for service",
     )
 
     # API settings
     api_endpoint: str = Field(default="/predict", description="Prediction API endpoint")
     batch_endpoint: str = Field(
-        default="/batch_predict", description="Batch prediction endpoint"
+        default="/batch_predict",
+        description="Batch prediction endpoint",
     )
     metrics_endpoint: str = Field(default="/metrics", description="Metrics endpoint")
     docs_endpoint: str = Field(
-        default="/docs", description="API documentation endpoint"
+        default="/docs",
+        description="API documentation endpoint",
     )
 
     # Runtime settings
@@ -77,27 +80,33 @@ class BentoMLSettings(MLModelSettings):
     # Container settings
     containerize: bool = Field(default=False, description="Enable containerization")
     container_registry: str | None = Field(
-        default=None, description="Container registry URL"
+        default=None,
+        description="Container registry URL",
     )
     base_image: str | None = Field(default=None, description="Base container image")
 
     # Cloud deployment settings
     deployment_target: str | None = Field(
-        default=None, description="Deployment target (aws, gcp, azure, etc.)"
+        default=None,
+        description="Deployment target (aws, gcp, azure, etc.)",
     )
     deployment_config: dict[str, Any] = Field(
-        default_factory=dict, description="Deployment-specific configuration"
+        default_factory=dict,
+        description="Deployment-specific configuration",
     )
 
     # Model packaging settings
     include_dependencies: bool = Field(
-        default=True, description="Include dependencies in Bento"
+        default=True,
+        description="Include dependencies in Bento",
     )
     python_version: str | None = Field(
-        default=None, description="Python version for Bento"
+        default=None,
+        description="Python version for Bento",
     )
     conda_channels: list[str] = Field(
-        default_factory=list, description="Conda channels for dependencies"
+        default_factory=list,
+        description="Conda channels for dependencies",
     )
 
 
@@ -129,28 +138,29 @@ class BentoMLAdapter(BaseMLModelAdapter):
     async def _create_client(self) -> dict[str, Any]:
         """Create BentoML client and HTTP session."""
         if not BENTOML_AVAILABLE:
+            msg = "BentoML not available. Install with: pip install bentoml"
             raise RuntimeError(
-                "BentoML not available. Install with: pip install bentoml"
+                msg,
             )
 
         # Configure BentoML stores
         if self.bentoml_settings.bento_store_uri:
             self._bento_store = bentoml.bento_store.BentoStore(
-                self.bentoml_settings.bento_store_uri
+                self.bentoml_settings.bento_store_uri,
             )
         else:
             self._bento_store = bentoml.bento_store.BentoStore()
 
         if self.bentoml_settings.model_store_uri:
             self._model_store = bentoml.models.ModelStore(
-                self.bentoml_settings.model_store_uri
+                self.bentoml_settings.model_store_uri,
             )
         else:
             self._model_store = bentoml.models.ModelStore()
 
         # Create HTTP session for API calls
         connector = aiohttp.TCPConnector(
-            limit=self.bentoml_settings.connection_pool_size
+            limit=self.bentoml_settings.connection_pool_size,
         )
         timeout = aiohttp.ClientTimeout(total=self.bentoml_settings.timeout)
         headers = {"Content-Type": "application/json"}
@@ -202,7 +212,8 @@ class BentoMLAdapter(BaseMLModelAdapter):
             async with http_session.post(url, json=payload) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise RuntimeError(f"BentoML prediction error: {error_text}")
+                    msg = f"BentoML prediction error: {error_text}"
+                    raise RuntimeError(msg)
 
                 # Handle different response formats
                 content_type = response.headers.get("content-type", "")
@@ -234,10 +245,12 @@ class BentoMLAdapter(BaseMLModelAdapter):
 
         except Exception as e:
             self._metrics["errors_total"] = self._metrics.get("errors_total", 0) + 1
-            raise RuntimeError(f"BentoML prediction failed: {e}")
+            msg = f"BentoML prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def batch_predict(
-        self, request: BatchPredictionRequest
+        self,
+        request: BatchPredictionRequest,
     ) -> BatchPredictionResponse:
         """Perform batch inference using BentoML service."""
         start_time = time.time()
@@ -270,7 +283,8 @@ class BentoMLAdapter(BaseMLModelAdapter):
                         all_predictions = result.get("predictions", result)
                     else:
                         # Fall back to individual predictions
-                        raise RuntimeError("Batch endpoint not available")
+                        msg = "Batch endpoint not available"
+                        raise RuntimeError(msg)
             except:
                 # Process individually if batch endpoint not available
                 all_predictions = []
@@ -306,7 +320,8 @@ class BentoMLAdapter(BaseMLModelAdapter):
             self._metrics["batch_errors_total"] = (
                 self._metrics.get("batch_errors_total", 0) + 1
             )
-            raise RuntimeError(f"BentoML batch prediction failed: {e}")
+            msg = f"BentoML batch prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def list_models(self) -> list[ModelInfo]:
         """List available models from BentoML model store."""
@@ -329,7 +344,7 @@ class BentoMLAdapter(BaseMLModelAdapter):
                         framework="bentoml",
                         description=f"BentoML model: {model.name}",
                         created_at=pd.Timestamp.fromtimestamp(
-                            model_info.creation_time
+                            model_info.creation_time,
                         ).isoformat(),
                         metadata={
                             "platform": "bentoml",
@@ -340,16 +355,19 @@ class BentoMLAdapter(BaseMLModelAdapter):
                             "options": model_info.options,
                             "labels": model_info.labels,
                         },
-                    )
+                    ),
                 )
 
             return models
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list BentoML models: {e}")
+            msg = f"Failed to list BentoML models: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_info(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelInfo:
         """Get detailed information about a specific model."""
         try:
@@ -363,7 +381,8 @@ class BentoMLAdapter(BaseMLModelAdapter):
                 # Get latest version
                 models = [m for m in model_store.list() if m.name == model_name]
                 if not models:
-                    raise RuntimeError(f"Model {model_name} not found")
+                    msg = f"Model {model_name} not found"
+                    raise RuntimeError(msg)
                 model_tag = str(models[-1].tag)  # Latest by creation time
 
             # Get model info
@@ -376,7 +395,7 @@ class BentoMLAdapter(BaseMLModelAdapter):
                 framework="bentoml",
                 description=f"BentoML model: {model_name}",
                 created_at=pd.Timestamp.fromtimestamp(
-                    model_info.creation_time
+                    model_info.creation_time,
                 ).isoformat(),
                 metadata={
                     "platform": "bentoml",
@@ -391,10 +410,13 @@ class BentoMLAdapter(BaseMLModelAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get BentoML model info: {e}")
+            msg = f"Failed to get BentoML model info: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_health(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelHealth:
         """Get health status of a specific model."""
         try:
@@ -437,19 +459,26 @@ class BentoMLAdapter(BaseMLModelAdapter):
             )
 
     async def load_model(
-        self, model_name: str, model_path: str, version: str | None = None
+        self,
+        model_name: str,
+        model_path: str,
+        version: str | None = None,
     ) -> bool:
         """Load/import a model into BentoML model store."""
         try:
             # BentoML models are typically saved during training
             # This method would import an external model
-            raise NotImplementedError(
+            msg = (
                 "Model loading in BentoML requires model-specific implementation. "
                 "Use bentoml.save_model() during training or bentoml.import_model() for external models."
             )
+            raise NotImplementedError(
+                msg,
+            )
 
         except Exception as e:
-            raise RuntimeError(f"BentoML model loading failed: {e}")
+            msg = f"BentoML model loading failed: {e}"
+            raise RuntimeError(msg)
 
     async def unload_model(self, model_name: str, version: str | None = None) -> bool:
         """Remove a model from BentoML model store."""
@@ -472,7 +501,8 @@ class BentoMLAdapter(BaseMLModelAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"BentoML model unloading failed: {e}")
+            msg = f"BentoML model unloading failed: {e}"
+            raise RuntimeError(msg)
 
     async def get_metrics(self) -> dict[str, Any]:
         """Get BentoML service metrics."""
@@ -496,7 +526,7 @@ class BentoMLAdapter(BaseMLModelAdapter):
                             for line in metrics_text.split("\n"):
                                 if "bentoml_service_request_total" in line:
                                     bentoml_metrics["total_requests"] = float(
-                                        line.split()[-1]
+                                        line.split()[-1],
                                     )
                                 elif (
                                     "bentoml_service_request_duration_seconds" in line
@@ -521,7 +551,7 @@ class BentoMLAdapter(BaseMLModelAdapter):
                     "bentos_count": len(list(bento_store.list())),
                     "bento_store_uri": self.bentoml_settings.bento_store_uri,
                     "model_store_uri": self.bentoml_settings.model_store_uri,
-                }
+                },
             )
 
             return base_metrics

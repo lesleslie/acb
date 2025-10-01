@@ -45,31 +45,37 @@ class KServeSettings(MLModelSettings):
     # Kubernetes settings
     namespace: str = Field(default="default", description="Kubernetes namespace")
     kubeconfig_path: str | None = Field(
-        default=None, description="Path to kubeconfig file"
+        default=None,
+        description="Path to kubeconfig file",
     )
     in_cluster: bool = Field(
-        default=False, description="Running inside Kubernetes cluster"
+        default=False,
+        description="Running inside Kubernetes cluster",
     )
 
     # KServe settings
     kserve_version: str = Field(default="v1beta1", description="KServe API version")
     inference_service_name: str = Field(
-        default="mlmodel-service", description="InferenceService name"
+        default="mlmodel-service",
+        description="InferenceService name",
     )
 
     # Model settings
     storage_uri: str | None = Field(
-        default=None, description="Model storage URI (s3://, gs://, etc.)"
+        default=None,
+        description="Model storage URI (s3://, gs://, etc.)",
     )
     model_format: str = Field(
         default="tensorflow",
         description="Model format (tensorflow, pytorch, sklearn, etc.)",
     )
     runtime_version: str | None = Field(
-        default=None, description="Runtime/framework version"
+        default=None,
+        description="Runtime/framework version",
     )
     protocol_version: str = Field(
-        default="v1", description="Serving protocol version (v1, v2)"
+        default="v1",
+        description="Serving protocol version (v1, v2)",
     )
 
     # Resource settings
@@ -84,17 +90,20 @@ class KServeSettings(MLModelSettings):
     min_replicas: int = Field(default=1, description="Minimum replicas")
     max_replicas: int = Field(default=5, description="Maximum replicas")
     target_cpu_utilization: int = Field(
-        default=70, description="Target CPU utilization for auto-scaling"
+        default=70,
+        description="Target CPU utilization for auto-scaling",
     )
     scale_to_zero: bool = Field(default=False, description="Enable scale-to-zero")
     scale_to_zero_grace_period: str = Field(
-        default="30s", description="Scale-to-zero grace period"
+        default="30s",
+        description="Scale-to-zero grace period",
     )
 
     # Canary deployment settings
     enable_canary: bool = Field(default=False, description="Enable canary deployment")
     canary_traffic_percent: int = Field(
-        default=10, description="Canary traffic percentage"
+        default=10,
+        description="Canary traffic percentage",
     )
 
     # Advanced settings
@@ -102,7 +111,8 @@ class KServeSettings(MLModelSettings):
     log_url: str | None = Field(default=None, description="Custom log URL")
     enable_explainer: bool = Field(default=False, description="Enable model explainer")
     explainer_type: str | None = Field(
-        default=None, description="Explainer type (lime, shap, etc.)"
+        default=None,
+        description="Explainer type (lime, shap, etc.)",
     )
 
 
@@ -135,8 +145,11 @@ class KServeAdapter(BaseMLModelAdapter):
     async def _create_client(self) -> dict[str, Any]:
         """Create Kubernetes and HTTP clients."""
         if not KUBERNETES_AVAILABLE:
-            raise RuntimeError(
+            msg = (
                 "Kubernetes client not available. Install with: pip install kubernetes"
+            )
+            raise RuntimeError(
+                msg,
             )
 
         # Load Kubernetes configuration
@@ -152,7 +165,7 @@ class KServeAdapter(BaseMLModelAdapter):
 
         # Create HTTP session for inference
         connector = aiohttp.TCPConnector(
-            limit=self.kserve_settings.connection_pool_size
+            limit=self.kserve_settings.connection_pool_size,
         )
         timeout = aiohttp.ClientTimeout(total=self.kserve_settings.timeout)
         headers = {"Content-Type": "application/json"}
@@ -176,12 +189,14 @@ class KServeAdapter(BaseMLModelAdapter):
         if self.kserve_settings.protocol_version == "v2":
             protocol = "https" if self.kserve_settings.use_tls else "http"
             return f"{protocol}://{self.kserve_settings.host}:{self.kserve_settings.port}/v2/models/{model_name}/infer"
-        else:
-            protocol = "https" if self.kserve_settings.use_tls else "http"
-            return f"{protocol}://{self.kserve_settings.host}:{self.kserve_settings.port}/v1/models/{model_name}:predict"
+        protocol = "https" if self.kserve_settings.use_tls else "http"
+        return f"{protocol}://{self.kserve_settings.host}:{self.kserve_settings.port}/v1/models/{model_name}:predict"
 
     def _create_inference_service_spec(
-        self, model_name: str, model_path: str, version: str | None = None
+        self,
+        model_name: str,
+        model_path: str,
+        version: str | None = None,
     ) -> dict[str, Any]:
         """Create InferenceService specification."""
         service_name = f"{model_name}" if not version else f"{model_name}-{version}"
@@ -208,8 +223,8 @@ class KServeAdapter(BaseMLModelAdapter):
                                 "cpu": self.kserve_settings.cpu_limit,
                             },
                         },
-                    }
-                }
+                    },
+                },
             },
         }
 
@@ -267,7 +282,7 @@ class KServeAdapter(BaseMLModelAdapter):
             spec["spec"]["explainer"] = {
                 self.kserve_settings.explainer_type: {
                     "storageUri": model_path,
-                }
+                },
             }
 
         return spec
@@ -296,20 +311,21 @@ class KServeAdapter(BaseMLModelAdapter):
                             "data": [value] if not isinstance(value, list) else value,
                         }
                         for key, value in request.inputs.items()
-                    ]
+                    ],
                 }
             else:
                 # KServe v1 protocol format (TensorFlow Serving compatible)
                 payload = {
                     "instances": [request.inputs]
                     if isinstance(request.inputs, dict)
-                    else request.inputs
+                    else request.inputs,
                 }
 
             async with http_session.post(url, json=payload) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise RuntimeError(f"KServe prediction error: {error_text}")
+                    msg = f"KServe prediction error: {error_text}"
+                    raise RuntimeError(msg)
 
                 result = await response.json()
 
@@ -343,10 +359,12 @@ class KServeAdapter(BaseMLModelAdapter):
 
         except Exception as e:
             self._metrics["errors_total"] = self._metrics.get("errors_total", 0) + 1
-            raise RuntimeError(f"KServe prediction failed: {e}")
+            msg = f"KServe prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def batch_predict(
-        self, request: BatchPredictionRequest
+        self,
+        request: BatchPredictionRequest,
     ) -> BatchPredictionResponse:
         """Perform batch inference using KServe."""
         start_time = time.time()
@@ -361,7 +379,7 @@ class KServeAdapter(BaseMLModelAdapter):
             if self.kserve_settings.protocol_version == "v2":
                 # Combine all inputs into batch format
                 combined_inputs = {}
-                for key in request.inputs[0].keys():
+                for key in request.inputs[0]:
                     combined_inputs[key] = [item[key] for item in request.inputs]
 
                 payload = {
@@ -378,7 +396,7 @@ class KServeAdapter(BaseMLModelAdapter):
                             "data": values,
                         }
                         for key, values in combined_inputs.items()
-                    ]
+                    ],
                 }
             else:
                 payload = {"instances": request.inputs}
@@ -386,7 +404,8 @@ class KServeAdapter(BaseMLModelAdapter):
             async with http_session.post(url, json=payload) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    raise RuntimeError(f"KServe batch prediction error: {error_text}")
+                    msg = f"KServe batch prediction error: {error_text}"
+                    raise RuntimeError(msg)
 
                 result = await response.json()
 
@@ -435,7 +454,8 @@ class KServeAdapter(BaseMLModelAdapter):
             self._metrics["batch_errors_total"] = (
                 self._metrics.get("batch_errors_total", 0) + 1
             )
-            raise RuntimeError(f"KServe batch prediction failed: {e}")
+            msg = f"KServe batch prediction failed: {e}"
+            raise RuntimeError(msg)
 
     async def list_models(self) -> list[ModelInfo]:
         """List InferenceServices from KServe."""
@@ -482,7 +502,8 @@ class KServeAdapter(BaseMLModelAdapter):
                 # Get status information
                 conditions = status.get("conditions", [])
                 ready_condition = next(
-                    (c for c in conditions if c.get("type") == "Ready"), {}
+                    (c for c in conditions if c.get("type") == "Ready"),
+                    {},
                 )
                 model_status = ready_condition.get("status", "Unknown").lower()
 
@@ -504,16 +525,19 @@ class KServeAdapter(BaseMLModelAdapter):
                             "conditions": conditions,
                             "url": status.get("url"),
                         },
-                    )
+                    ),
                 )
 
             return models
 
         except Exception as e:
-            raise RuntimeError(f"Failed to list KServe models: {e}")
+            msg = f"Failed to list KServe models: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_info(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelInfo:
         """Get detailed information about a specific InferenceService."""
         try:
@@ -558,7 +582,8 @@ class KServeAdapter(BaseMLModelAdapter):
             # Get status
             conditions = status.get("conditions", [])
             ready_condition = next(
-                (c for c in conditions if c.get("type") == "Ready"), {}
+                (c for c in conditions if c.get("type") == "Ready"),
+                {},
             )
             model_status = ready_condition.get("status", "Unknown").lower()
 
@@ -585,10 +610,13 @@ class KServeAdapter(BaseMLModelAdapter):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Failed to get KServe model info: {e}")
+            msg = f"Failed to get KServe model info: {e}"
+            raise RuntimeError(msg)
 
     async def get_model_health(
-        self, model_name: str, version: str | None = None
+        self,
+        model_name: str,
+        version: str | None = None,
     ) -> ModelHealth:
         """Get health status of a specific InferenceService."""
         try:
@@ -628,7 +656,10 @@ class KServeAdapter(BaseMLModelAdapter):
             )
 
     async def load_model(
-        self, model_name: str, model_path: str, version: str | None = None
+        self,
+        model_name: str,
+        model_path: str,
+        version: str | None = None,
     ) -> bool:
         """Create and deploy an InferenceService in KServe."""
         try:
@@ -637,7 +668,9 @@ class KServeAdapter(BaseMLModelAdapter):
 
             # Create InferenceService specification
             inference_service = self._create_inference_service_spec(
-                model_name, model_path, version
+                model_name,
+                model_path,
+                version,
             )
 
             # Create the InferenceService
@@ -652,7 +685,8 @@ class KServeAdapter(BaseMLModelAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"KServe model deployment failed: {e}")
+            msg = f"KServe model deployment failed: {e}"
+            raise RuntimeError(msg)
 
     async def unload_model(self, model_name: str, version: str | None = None) -> bool:
         """Delete an InferenceService from KServe."""
@@ -674,10 +708,14 @@ class KServeAdapter(BaseMLModelAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"KServe model unloading failed: {e}")
+            msg = f"KServe model unloading failed: {e}"
+            raise RuntimeError(msg)
 
     async def scale_model(
-        self, model_name: str, replicas: int, version: str | None = None
+        self,
+        model_name: str,
+        replicas: int,
+        version: str | None = None,
     ) -> bool:
         """Scale an InferenceService in KServe."""
         try:
@@ -692,8 +730,8 @@ class KServeAdapter(BaseMLModelAdapter):
                     "predictor": {
                         "minReplicas": min(replicas, self.kserve_settings.min_replicas),
                         "maxReplicas": max(replicas, self.kserve_settings.max_replicas),
-                    }
-                }
+                    },
+                },
             }
 
             custom_api.patch_namespaced_custom_object(
@@ -708,7 +746,8 @@ class KServeAdapter(BaseMLModelAdapter):
             return True
 
         except Exception as e:
-            raise RuntimeError(f"KServe model scaling failed: {e}")
+            msg = f"KServe model scaling failed: {e}"
+            raise RuntimeError(msg)
 
     async def health_check(self) -> bool:
         """Perform KServe health check."""

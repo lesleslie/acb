@@ -124,9 +124,12 @@ class WandbExperiment(BaseExperimentAdapter):
             settings: W&B-specific adapter settings
         """
         if not _wandb_available:
-            raise ImportError(
+            msg = (
                 "Weights & Biases is required for WandbExperiment adapter. "
                 "Install with: pip install wandb>=0.16.0"
+            )
+            raise ImportError(
+                msg,
             )
 
         super().__init__(settings)
@@ -178,7 +181,7 @@ class WandbExperiment(BaseExperimentAdapter):
 
         # Create aiohttp session for async operations
         self._session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=self._settings.timeout)
+            timeout=aiohttp.ClientTimeout(total=self._settings.timeout),
         )
 
         return api
@@ -264,7 +267,7 @@ class WandbExperiment(BaseExperimentAdapter):
                     created_at=project.created_at,
                     updated_at=project.updated_at,
                     tags={},
-                )
+                ),
             )
 
         return results
@@ -273,7 +276,8 @@ class WandbExperiment(BaseExperimentAdapter):
         """Delete an experiment."""
         # W&B doesn't support deleting projects via API
         # This would need to be done through the web interface
-        raise NotImplementedError("W&B doesn't support deleting projects via API")
+        msg = "W&B doesn't support deleting projects via API"
+        raise NotImplementedError(msg)
 
     # Run Management
     async def start_run(
@@ -305,7 +309,9 @@ class WandbExperiment(BaseExperimentAdapter):
         return run.id
 
     async def end_run(
-        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+        self,
+        run_id: str,
+        status: ExperimentStatus = ExperimentStatus.FINISHED,
     ) -> None:
         """End an experiment run."""
         if self._current_run and self._current_run.id == run_id:
@@ -363,7 +369,7 @@ class WandbExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         key: str,
-        value: float | int,
+        value: float,
         step: int | None = None,
         timestamp: datetime | None = None,
     ) -> None:
@@ -461,7 +467,9 @@ class WandbExperiment(BaseExperimentAdapter):
                 break
 
     async def list_artifacts(
-        self, run_id: str, path: str | None = None
+        self,
+        run_id: str,
+        path: str | None = None,
     ) -> list[ArtifactInfo]:
         """List artifacts for a run."""
         api = await self._ensure_api()
@@ -481,7 +489,7 @@ class WandbExperiment(BaseExperimentAdapter):
                     size_bytes=artifact.size,
                     created_at=artifact.created_at,
                     metadata=artifact.metadata or {},
-                )
+                ),
             )
 
         return artifacts

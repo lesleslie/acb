@@ -164,12 +164,10 @@ class Graph(GraphBase):
     async def _commit_transaction(self, transaction: t.Any) -> None:
         """Commit a Neptune transaction."""
         # Neptune auto-commits operations
-        pass
 
     async def _rollback_transaction(self) -> None:
         """Rollback a Neptune transaction."""
         # Neptune transaction rollback would be implemented here
-        pass
 
     async def _execute_query(
         self,
@@ -197,14 +195,17 @@ class Graph(GraphBase):
             )
 
         except Exception as e:
-            self.logger.error(
+            self.logger.exception(
                 "Failed to execute Gremlin query",
                 extra={"error": str(e), "query": query},
             )
             raise
 
     async def _execute_gremlin_traversal(
-        self, g: "GraphTraversalSource", query: str, parameters: dict[str, t.Any]
+        self,
+        g: "GraphTraversalSource",
+        query: str,
+        parameters: dict[str, t.Any],
     ) -> t.Any:
         """Execute a Gremlin traversal."""
         # This is a placeholder for actual Gremlin execution
@@ -213,7 +214,9 @@ class Graph(GraphBase):
         return {"message": "Gremlin query executed", "query": query}
 
     async def _create_node(
-        self, labels: list[str], properties: dict[str, t.Any]
+        self,
+        labels: list[str],
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Create a vertex in Neptune."""
         g = await self._ensure_client()
@@ -277,7 +280,9 @@ class Graph(GraphBase):
             return None
 
     async def _update_node(
-        self, node_id: str, properties: dict[str, t.Any]
+        self,
+        node_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         """Update vertex properties."""
         g = await self._ensure_client()
@@ -377,7 +382,9 @@ class Graph(GraphBase):
             return None
 
     async def _update_edge(
-        self, edge_id: str, properties: dict[str, t.Any]
+        self,
+        edge_id: str,
+        properties: dict[str, t.Any],
     ) -> GraphEdgeModel:
         """Update edge properties."""
         g = await self._ensure_client()
@@ -448,7 +455,7 @@ class Graph(GraphBase):
             nodes = []
             edges = []
 
-            for i, element in enumerate(path):
+            for _i, element in enumerate(path):
                 if hasattr(element, "label"):  # Vertex
                     # Convert vertex to node
                     pass  # Implementation would convert Gremlin vertex to GraphNodeModel
@@ -461,7 +468,7 @@ class Graph(GraphBase):
                     nodes=nodes,
                     edges=edges,
                     length=len(edges),
-                )
+                ),
             )
 
         return result_paths
@@ -534,7 +541,7 @@ class Graph(GraphBase):
 
         # Convert to GraphNodeModel
         result_nodes = []
-        for neighbor in neighbors:
+        for _neighbor in neighbors:
             # Implementation would convert Gremlin vertex to GraphNodeModel
             pass
 
@@ -558,7 +565,10 @@ class Graph(GraphBase):
         )
 
     async def _create_index(
-        self, labels: list[str], properties: list[str], index_type: str
+        self,
+        labels: list[str],
+        properties: list[str],
+        index_type: str,
     ) -> bool:
         """Create an index (Neptune manages indexes automatically)."""
         # Neptune automatically creates indexes
@@ -572,12 +582,14 @@ class Graph(GraphBase):
         """Drop an index (Neptune manages indexes automatically)."""
         # Neptune automatically manages indexes
         self.logger.info(
-            "Neptune manages indexes automatically", extra={"index_name": index_name}
+            "Neptune manages indexes automatically",
+            extra={"index_name": index_name},
         )
         return True
 
     async def _bulk_create_nodes(
-        self, nodes: list[dict[str, t.Any]]
+        self,
+        nodes: list[dict[str, t.Any]],
     ) -> list[GraphNodeModel]:
         """Create multiple vertices in bulk."""
         results = []
@@ -589,7 +601,8 @@ class Graph(GraphBase):
         return results
 
     async def _bulk_create_edges(
-        self, edges: list[dict[str, t.Any]]
+        self,
+        edges: list[dict[str, t.Any]],
     ) -> list[GraphEdgeModel]:
         """Create multiple edges in bulk."""
         results = []

@@ -31,14 +31,14 @@ class AuthProvider(ABC):
     @abstractmethod
     async def authenticate(self, token: str) -> AuthResult:
         """Authenticate a token and return result."""
-        pass
 
     @abstractmethod
     async def validate_scopes(
-        self, result: AuthResult, required_scopes: list[str]
+        self,
+        result: AuthResult,
+        required_scopes: list[str],
     ) -> bool:
         """Validate that auth result has required scopes."""
-        pass
 
 
 class JWTAuthProvider(AuthProvider):
@@ -53,8 +53,7 @@ class JWTAuthProvider(AuthProvider):
         """Authenticate JWT token."""
         try:
             # Remove 'Bearer ' prefix if present
-            if token.startswith("Bearer "):
-                token = token[7:]
+            token = token.removeprefix("Bearer ")
 
             payload = jwt.decode(token, self.secret, algorithms=[self.algorithm])
 
@@ -78,7 +77,9 @@ class JWTAuthProvider(AuthProvider):
             return AuthResult(success=False, error=f"Authentication error: {e}")
 
     async def validate_scopes(
-        self, result: AuthResult, required_scopes: list[str]
+        self,
+        result: AuthResult,
+        required_scopes: list[str],
     ) -> bool:
         """Validate JWT scopes."""
         if not result.success or not required_scopes:
@@ -115,8 +116,7 @@ class APIKeyAuthProvider(AuthProvider):
         try:
             # Remove common prefixes
             for prefix in ["Bearer ", "ApiKey ", "API-Key "]:
-                if token.startswith(prefix):
-                    token = token[len(prefix) :]
+                token = token.removeprefix(prefix)
 
             if token not in self._api_keys:
                 return AuthResult(success=False, error="Invalid API key")
@@ -133,7 +133,9 @@ class APIKeyAuthProvider(AuthProvider):
             return AuthResult(success=False, error=f"API key authentication error: {e}")
 
     async def validate_scopes(
-        self, result: AuthResult, required_scopes: list[str]
+        self,
+        result: AuthResult,
+        required_scopes: list[str],
     ) -> bool:
         """Validate API key scopes."""
         if not result.success or not required_scopes:
@@ -154,8 +156,7 @@ class OAuth2AuthProvider(AuthProvider):
         """Authenticate OAuth2 token."""
         try:
             # Remove 'Bearer ' prefix if present
-            if token.startswith("Bearer "):
-                token = token[7:]
+            token = token.removeprefix("Bearer ")
 
             # Check cache first
             if token in self._token_cache:
@@ -181,7 +182,9 @@ class OAuth2AuthProvider(AuthProvider):
             return AuthResult(success=False, error=f"OAuth2 authentication error: {e}")
 
     async def validate_scopes(
-        self, result: AuthResult, required_scopes: list[str]
+        self,
+        result: AuthResult,
+        required_scopes: list[str],
     ) -> bool:
         """Validate OAuth2 scopes."""
         if not result.success or not required_scopes:
@@ -213,7 +216,9 @@ class AuthenticationMiddleware(GatewayBase):
             self.providers["oauth2"] = OAuth2AuthProvider(self.settings)
 
     async def authenticate_request(
-        self, headers: dict[str, str], required_scopes: list[str] | None = None
+        self,
+        headers: dict[str, str],
+        required_scopes: list[str] | None = None,
     ) -> AuthResult:
         """Authenticate a request using available providers."""
         auth_header = headers.get("Authorization", "")
@@ -230,7 +235,8 @@ class AuthenticationMiddleware(GatewayBase):
                     if required_scopes:
                         if not await provider.validate_scopes(result, required_scopes):
                             return AuthResult(
-                                success=False, error="Insufficient permissions"
+                                success=False,
+                                error="Insufficient permissions",
                             )
 
                     self.record_request(success=True)

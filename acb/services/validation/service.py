@@ -10,9 +10,7 @@ import asyncio
 import time
 import typing as t
 
-from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
 from acb.services._base import ServiceBase, ServiceConfig
 from acb.services.validation._base import (
     ValidationConfig,
@@ -24,9 +22,13 @@ from acb.services.validation._base import (
     ValidationSettings,
 )
 
+if t.TYPE_CHECKING:
+    from acb.config import Config
+    from acb.logger import Logger
+
 # Service metadata for discovery system
 try:
-    from ..discovery import (
+    from acb.services.discovery import (
         ServiceCapability,
         ServiceMetadata,
         ServiceStatus,
@@ -104,7 +106,7 @@ class ValidationService(ServiceBase, ValidationProtocol):
         self._registry = ValidationRegistry()
         self._validation_metrics = ValidationMetrics()
         self._default_config = ValidationConfig(
-            level=self._validation_settings.default_validation_level
+            level=self._validation_settings.default_validation_level,
         )
 
         # Performance monitoring
@@ -134,7 +136,8 @@ class ValidationService(ServiceBase, ValidationProtocol):
         if self._performance_monitoring_enabled:
             self.set_custom_metric("validation_enabled", True)
             self.set_custom_metric(
-                "performance_threshold_ms", self._performance_threshold_ms
+                "performance_threshold_ms",
+                self._performance_threshold_ms,
             )
 
         self.logger.info("ValidationService initialized successfully")
@@ -195,7 +198,6 @@ class ValidationService(ServiceBase, ValidationProtocol):
     async def _register_default_schemas(self) -> None:
         """Register default validation schemas."""
         # This will be expanded with built-in schemas
-        pass
 
     async def validate(
         self,
@@ -226,7 +228,10 @@ class ValidationService(ServiceBase, ValidationProtocol):
                 result = await self._validate_basic(data, validation_config, field_name)
             else:
                 result = await self._validate_with_schema(
-                    data, schema, validation_config, field_name
+                    data,
+                    schema,
+                    validation_config,
+                    field_name,
                 )
 
             # Calculate validation time
@@ -235,7 +240,8 @@ class ValidationService(ServiceBase, ValidationProtocol):
 
             # Record metrics
             self._validation_metrics.record_validation(
-                success=result.is_valid, validation_time_ms=validation_time_ms
+                success=result.is_valid,
+                validation_time_ms=validation_time_ms,
             )
 
             # Update service metrics
@@ -250,18 +256,19 @@ class ValidationService(ServiceBase, ValidationProtocol):
             ):
                 self.logger.warning(
                     f"Validation performance warning: {validation_time_ms:.2f}ms "
-                    f"(threshold: {self._performance_threshold_ms}ms)"
+                    f"(threshold: {self._performance_threshold_ms}ms)",
                 )
 
             return result
 
         except Exception as e:
             validation_time_ms = (time.perf_counter() - start_time) * 1000
-            self.logger.error(f"Validation error: {e}")
+            self.logger.exception(f"Validation error: {e}")
 
             # Record error metrics
             self._validation_metrics.record_validation(
-                success=False, validation_time_ms=validation_time_ms
+                success=False,
+                validation_time_ms=validation_time_ms,
             )
             self.record_error(str(e))
 
@@ -301,11 +308,16 @@ class ValidationService(ServiceBase, ValidationProtocol):
         return await asyncio.gather(*tasks)
 
     async def _validate_basic(
-        self, data: t.Any, config: ValidationConfig, field_name: str | None
+        self,
+        data: t.Any,
+        config: ValidationConfig,
+        field_name: str | None,
     ) -> ValidationResult:
         """Perform basic validation without a specific schema."""
         result = ValidationResult(
-            field_name=field_name, value=data, original_value=data
+            field_name=field_name,
+            value=data,
+            original_value=data,
         )
 
         # Basic type and security validation
@@ -315,7 +327,7 @@ class ValidationService(ServiceBase, ValidationProtocol):
         # Basic size limits
         if isinstance(data, str) and len(data) > config.max_string_length:
             result.add_error(
-                f"String too long: {len(data)} > {config.max_string_length}"
+                f"String too long: {len(data)} > {config.max_string_length}",
             )
 
         elif isinstance(data, list | tuple) and len(data) > config.max_list_length:
@@ -348,7 +360,9 @@ class ValidationService(ServiceBase, ValidationProtocol):
         return result
 
     async def _apply_basic_sanitization(
-        self, result: ValidationResult, config: ValidationConfig
+        self,
+        result: ValidationResult,
+        config: ValidationConfig,
     ) -> None:
         """Apply basic sanitization to validation result."""
         if not isinstance(result.value, str):
@@ -360,7 +374,9 @@ class ValidationService(ServiceBase, ValidationProtocol):
             import re
 
             cleaned_value = re.sub(
-                r"<[^>]*>", "", result.value
+                r"<[^>]*>",
+                "",
+                result.value,
             )  # REGEX OK: XSS prevention
             if cleaned_value != result.value:
                 result.value = cleaned_value
@@ -378,13 +394,17 @@ class ValidationService(ServiceBase, ValidationProtocol):
 
             for pattern in sql_patterns:
                 if re.search(
-                    pattern, result.value, re.IGNORECASE
+                    pattern,
+                    result.value,
+                    re.IGNORECASE,
                 ):  # REGEX OK: SQL injection prevention
                     result.add_warning("Potential SQL injection pattern detected")
                     break
 
     async def _check_dict_depth(
-        self, data: dict[str, t.Any], current_depth: int = 0
+        self,
+        data: dict[str, t.Any],
+        current_depth: int = 0,
     ) -> int:
         """Check dictionary nesting depth."""
         if not isinstance(data, dict):
@@ -446,7 +466,8 @@ class ValidationService(ServiceBase, ValidationProtocol):
 
             # Create instance to validate
             instance = adapter.create_instance(
-                model_class, **data if isinstance(data, dict) else {"value": data}
+                model_class,
+                **data if isinstance(data, dict) else {"value": data},
             )
 
             # Return successful validation

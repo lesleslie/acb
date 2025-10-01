@@ -6,6 +6,7 @@ memory and will be lost on application restart.
 """
 
 import asyncio
+import contextlib
 import heapq
 import logging
 import time
@@ -84,7 +85,7 @@ class MemoryQueueSettings(QueueSettings):
 class PriorityTaskItem:
     """Priority queue item wrapper for tasks."""
 
-    def __init__(self, task: TaskData, scheduled_time: float):
+    def __init__(self, task: TaskData, scheduled_time: float) -> None:
         self.task = task
         self.scheduled_time = scheduled_time
         # Higher priority values have lower sort order
@@ -114,7 +115,7 @@ class PriorityTaskItem:
 class MemoryQueue(QueueBase):
     """Memory-based task queue implementation."""
 
-    def __init__(self, settings: MemoryQueueSettings | None = None):
+    def __init__(self, settings: MemoryQueueSettings | None = None) -> None:
         super().__init__(settings)
         self._settings = settings or MemoryQueueSettings()
 
@@ -143,7 +144,7 @@ class MemoryQueue(QueueBase):
 
         # Start delayed task processor
         self._delayed_task_processor = asyncio.create_task(
-            self._process_delayed_tasks()
+            self._process_delayed_tasks(),
         )
 
         self.logger.info("Memory queue started")
@@ -153,10 +154,8 @@ class MemoryQueue(QueueBase):
         # Stop delayed task processor
         if self._delayed_task_processor:
             self._delayed_task_processor.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._delayed_task_processor
-            except asyncio.CancelledError:
-                pass
 
         await super().stop()
         self.logger.info("Memory queue stopped")
@@ -164,20 +163,24 @@ class MemoryQueue(QueueBase):
     async def enqueue(self, task: TaskData) -> str:
         """Enqueue a task for processing."""
         if not self._running:
-            raise RuntimeError("Queue is not running")
+            msg = "Queue is not running"
+            raise RuntimeError(msg)
 
         # Check memory limits
         if self._memory_usage > self._settings.max_memory_usage:
-            raise RuntimeError("Memory limit exceeded")
+            msg = "Memory limit exceeded"
+            raise RuntimeError(msg)
 
         # Check task count limits
         if len(self._queues[task.queue_name]) >= self._settings.max_tasks_per_queue:
-            raise RuntimeError(f"Queue {task.queue_name} is full")
+            msg = f"Queue {task.queue_name} is full"
+            raise RuntimeError(msg)
 
         # Check rate limiting
         if self._settings.enable_rate_limiting:
             if not await self._check_rate_limit(task.queue_name):
-                raise RuntimeError(f"Rate limit exceeded for queue {task.queue_name}")
+                msg = f"Rate limit exceeded for queue {task.queue_name}"
+                raise RuntimeError(msg)
 
         # Calculate scheduled time
         if task.delay > 0:
@@ -289,11 +292,13 @@ class MemoryQueue(QueueBase):
 
                     # Update metrics
                     self._metrics.pending_tasks = max(
-                        0, self._metrics.pending_tasks - 1
+                        0,
+                        self._metrics.pending_tasks - 1,
                     )
                     self._task_count = max(0, self._task_count - 1)
                     self._memory_usage = max(
-                        0, self._memory_usage - self._estimate_task_size(item.task)
+                        0,
+                        self._memory_usage - self._estimate_task_size(item.task),
                     )
 
                     # Add cancelled result
@@ -316,7 +321,8 @@ class MemoryQueue(QueueBase):
                 # Update metrics
                 self._task_count = max(0, self._task_count - 1)
                 self._memory_usage = max(
-                    0, self._memory_usage - self._estimate_task_size(item.task)
+                    0,
+                    self._memory_usage - self._estimate_task_size(item.task),
                 )
 
                 # Add cancelled result
@@ -358,7 +364,8 @@ class MemoryQueue(QueueBase):
             # Update memory usage
             for item in queue:
                 self._memory_usage = max(
-                    0, self._memory_usage - self._estimate_task_size(item.task)
+                    0,
+                    self._memory_usage - self._estimate_task_size(item.task),
                 )
 
             # Clear queue
@@ -366,7 +373,8 @@ class MemoryQueue(QueueBase):
 
             # Update metrics
             self._metrics.pending_tasks = max(
-                0, self._metrics.pending_tasks - task_count
+                0,
+                self._metrics.pending_tasks - task_count,
             )
             self._task_count = max(0, self._task_count - task_count)
 
@@ -409,7 +417,7 @@ class MemoryQueue(QueueBase):
 
                 if moved_count > 0:
                     self.logger.debug(
-                        f"Moved {moved_count} delayed tasks to main queues"
+                        f"Moved {moved_count} delayed tasks to main queues",
                     )
 
                 # Sleep until next task is ready or timeout
@@ -417,7 +425,8 @@ class MemoryQueue(QueueBase):
                 if self._delayed_tasks:
                     next_task_time = self._delayed_tasks[0].scheduled_time
                     sleep_time = min(
-                        sleep_time, max(0.1, next_task_time - current_time)
+                        sleep_time,
+                        max(0.1, next_task_time - current_time),
                     )
 
                 await asyncio.sleep(sleep_time)
@@ -425,7 +434,7 @@ class MemoryQueue(QueueBase):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Delayed task processor error: {e}")
+                self.logger.exception(f"Delayed task processor error: {e}")
                 await asyncio.sleep(1.0)
 
     async def _check_rate_limit(self, queue_name: str) -> bool:
@@ -458,7 +467,7 @@ class MemoryQueue(QueueBase):
 
         # Find expired tasks
         expired_ids = []
-        for task_id, (task, result) in self._dead_letter_tasks.items():
+        for task_id, (_task, result) in self._dead_letter_tasks.items():
             if result.completed_at and (current_time - result.completed_at) > ttl:
                 expired_ids.append(task_id)
 
@@ -466,7 +475,8 @@ class MemoryQueue(QueueBase):
         for task_id in expired_ids:
             del self._dead_letter_tasks[task_id]
             self._metrics.dead_letter_tasks = max(
-                0, self._metrics.dead_letter_tasks - 1
+                0,
+                self._metrics.dead_letter_tasks - 1,
             )
 
     async def _on_task_completed(self, task: TaskData, result: TaskResult) -> None:

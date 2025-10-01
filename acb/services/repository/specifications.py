@@ -75,7 +75,6 @@ class Specification(ABC):
         Returns:
             Tuple of (where_clause, parameters)
         """
-        pass
 
     @abstractmethod
     def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:
@@ -87,7 +86,6 @@ class Specification(ABC):
         Returns:
             NoSQL filter dictionary
         """
-        pass
 
     @abstractmethod
     def to_dict(self) -> dict[str, Any]:
@@ -96,7 +94,6 @@ class Specification(ABC):
         Returns:
             Dictionary representation of the specification
         """
-        pass
 
     def __and__(self, other: "Specification") -> "AndSpecification":
         """Combine specifications with AND operator."""
@@ -114,7 +111,7 @@ class Specification(ABC):
 class FieldSpecification(Specification):
     """Specification for field-based queries."""
 
-    def __init__(self, field: str, operator: ComparisonOperator, value: Any):
+    def __init__(self, field: str, operator: ComparisonOperator, value: Any) -> None:
         self.field = field
         self.operator = operator
         self.value = value
@@ -131,51 +128,49 @@ class FieldSpecification(Specification):
 
         if self.operator == ComparisonOperator.EQUALS:
             return f"{full_field} = :{param_key}", {param_key: self.value}
-        elif self.operator == ComparisonOperator.NOT_EQUALS:
+        if self.operator == ComparisonOperator.NOT_EQUALS:
             return f"{full_field} != :{param_key}", {param_key: self.value}
-        elif self.operator == ComparisonOperator.GREATER_THAN:
+        if self.operator == ComparisonOperator.GREATER_THAN:
             return f"{full_field} > :{param_key}", {param_key: self.value}
-        elif self.operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
+        if self.operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
             return f"{full_field} >= :{param_key}", {param_key: self.value}
-        elif self.operator == ComparisonOperator.LESS_THAN:
+        if self.operator == ComparisonOperator.LESS_THAN:
             return f"{full_field} < :{param_key}", {param_key: self.value}
-        elif self.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
+        if self.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
             return f"{full_field} <= :{param_key}", {param_key: self.value}
-        elif self.operator == ComparisonOperator.IN:
+        if self.operator == ComparisonOperator.IN:
             if isinstance(self.value, list | tuple):
                 placeholders = ",".join(
                     f":{param_key}_{i}" for i in range(len(self.value))
                 )
                 params = {f"{param_key}_{i}": v for i, v in enumerate(self.value)}
                 return f"{full_field} IN ({placeholders})", params
-            else:
-                return f"{full_field} IN (:{param_key})", {param_key: self.value}
-        elif self.operator == ComparisonOperator.NOT_IN:
+            return f"{full_field} IN (:{param_key})", {param_key: self.value}
+        if self.operator == ComparisonOperator.NOT_IN:
             if isinstance(self.value, list | tuple):
                 placeholders = ",".join(
                     f":{param_key}_{i}" for i in range(len(self.value))
                 )
                 params = {f"{param_key}_{i}": v for i, v in enumerate(self.value)}
                 return f"{full_field} NOT IN ({placeholders})", params
-            else:
-                return f"{full_field} NOT IN (:{param_key})", {param_key: self.value}
-        elif self.operator == ComparisonOperator.LIKE:
+            return f"{full_field} NOT IN (:{param_key})", {param_key: self.value}
+        if self.operator == ComparisonOperator.LIKE:
             return f"{full_field} LIKE :{param_key}", {param_key: self.value}
-        elif self.operator == ComparisonOperator.ILIKE:
+        if self.operator == ComparisonOperator.ILIKE:
             return f"UPPER({full_field}) LIKE UPPER(:{param_key})", {
-                param_key: self.value
+                param_key: self.value,
             }
-        elif self.operator == ComparisonOperator.CONTAINS:
+        if self.operator == ComparisonOperator.CONTAINS:
             return f"{full_field} LIKE :{param_key}", {param_key: f"%{self.value}%"}
-        elif self.operator == ComparisonOperator.STARTS_WITH:
+        if self.operator == ComparisonOperator.STARTS_WITH:
             return f"{full_field} LIKE :{param_key}", {param_key: f"{self.value}%"}
-        elif self.operator == ComparisonOperator.ENDS_WITH:
+        if self.operator == ComparisonOperator.ENDS_WITH:
             return f"{full_field} LIKE :{param_key}", {param_key: f"%{self.value}"}
-        elif self.operator == ComparisonOperator.IS_NULL:
+        if self.operator == ComparisonOperator.IS_NULL:
             return f"{full_field} IS NULL", {}
-        elif self.operator == ComparisonOperator.IS_NOT_NULL:
+        if self.operator == ComparisonOperator.IS_NOT_NULL:
             return f"{full_field} IS NOT NULL", {}
-        elif self.operator == ComparisonOperator.BETWEEN:
+        if self.operator == ComparisonOperator.BETWEEN:
             if isinstance(self.value, list | tuple) and len(self.value) == 2:
                 return (
                     f"{full_field} BETWEEN :{param_key}_start AND :{param_key}_end",
@@ -184,10 +179,10 @@ class FieldSpecification(Specification):
                         f"{param_key}_end": self.value[1],
                     },
                 )
-            else:
-                raise ValueError("BETWEEN operator requires a list/tuple of 2 values")
-        else:
-            raise ValueError(f"Unsupported operator: {self.operator}")
+            msg = "BETWEEN operator requires a list/tuple of 2 values"
+            raise ValueError(msg)
+        msg = f"Unsupported operator: {self.operator}"
+        raise ValueError(msg)
 
     def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:  # noqa: C901
         """Convert to NoSQL filter."""
@@ -195,44 +190,44 @@ class FieldSpecification(Specification):
 
         if self.operator == ComparisonOperator.EQUALS:
             return {field_name: self.value}
-        elif self.operator == ComparisonOperator.NOT_EQUALS:
+        if self.operator == ComparisonOperator.NOT_EQUALS:
             return {field_name: {"$ne": self.value}}
-        elif self.operator == ComparisonOperator.GREATER_THAN:
+        if self.operator == ComparisonOperator.GREATER_THAN:
             return {field_name: {"$gt": self.value}}
-        elif self.operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
+        if self.operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
             return {field_name: {"$gte": self.value}}
-        elif self.operator == ComparisonOperator.LESS_THAN:
+        if self.operator == ComparisonOperator.LESS_THAN:
             return {field_name: {"$lt": self.value}}
-        elif self.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
+        if self.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
             return {field_name: {"$lte": self.value}}
-        elif self.operator == ComparisonOperator.IN:
+        if self.operator == ComparisonOperator.IN:
             return {field_name: {"$in": self.value}}
-        elif self.operator == ComparisonOperator.NOT_IN:
+        if self.operator == ComparisonOperator.NOT_IN:
             return {field_name: {"$nin": self.value}}
-        elif self.operator == ComparisonOperator.LIKE:
+        if self.operator == ComparisonOperator.LIKE:
             # Convert SQL LIKE to regex
             pattern = self.value.replace("%", ".*").replace("_", ".")
             return {field_name: {"$regex": pattern}}
-        elif self.operator == ComparisonOperator.ILIKE:
+        if self.operator == ComparisonOperator.ILIKE:
             pattern = self.value.replace("%", ".*").replace("_", ".")
             return {field_name: {"$regex": pattern, "$options": "i"}}
-        elif self.operator == ComparisonOperator.CONTAINS:
+        if self.operator == ComparisonOperator.CONTAINS:
             return {field_name: {"$regex": f".*{self.value}.*"}}
-        elif self.operator == ComparisonOperator.STARTS_WITH:
+        if self.operator == ComparisonOperator.STARTS_WITH:
             return {field_name: {"$regex": f"^{self.value}"}}
-        elif self.operator == ComparisonOperator.ENDS_WITH:
+        if self.operator == ComparisonOperator.ENDS_WITH:
             return {field_name: {"$regex": f"{self.value}$"}}
-        elif self.operator == ComparisonOperator.IS_NULL:
+        if self.operator == ComparisonOperator.IS_NULL:
             return {field_name: {"$exists": False}}
-        elif self.operator == ComparisonOperator.IS_NOT_NULL:
+        if self.operator == ComparisonOperator.IS_NOT_NULL:
             return {field_name: {"$exists": True}}
-        elif self.operator == ComparisonOperator.BETWEEN:
+        if self.operator == ComparisonOperator.BETWEEN:
             if isinstance(self.value, list | tuple) and len(self.value) == 2:
                 return {field_name: {"$gte": self.value[0], "$lte": self.value[1]}}
-            else:
-                raise ValueError("BETWEEN operator requires a list/tuple of 2 values")
-        else:
-            raise ValueError(f"Unsupported operator for NoSQL: {self.operator}")
+            msg = "BETWEEN operator requires a list/tuple of 2 values"
+            raise ValueError(msg)
+        msg = f"Unsupported operator for NoSQL: {self.operator}"
+        raise ValueError(msg)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
@@ -247,7 +242,7 @@ class FieldSpecification(Specification):
 class AndSpecification(Specification):
     """Specification for AND operations."""
 
-    def __init__(self, specifications: list[Specification]):
+    def __init__(self, specifications: list[Specification]) -> None:
         self.specifications = specifications
 
     def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:
@@ -278,7 +273,7 @@ class AndSpecification(Specification):
 class OrSpecification(Specification):
     """Specification for OR operations."""
 
-    def __init__(self, specifications: list[Specification]):
+    def __init__(self, specifications: list[Specification]) -> None:
         self.specifications = specifications
 
     def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:
@@ -309,7 +304,7 @@ class OrSpecification(Specification):
 class NotSpecification(Specification):
     """Specification for NOT operations."""
 
-    def __init__(self, specification: Specification):
+    def __init__(self, specification: Specification) -> None:
         self.specification = specification
 
     def to_sql_where(self, context: SpecificationContext) -> tuple[str, dict[str, Any]]:
@@ -414,7 +409,9 @@ def date_range(field: str, start_date: date, end_date: date) -> FieldSpecificati
 
 
 def datetime_range(
-    field: str, start_datetime: datetime, end_datetime: datetime
+    field: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
 ) -> FieldSpecification:
     """Create datetime range specification."""
     return between(field, start_datetime, end_datetime)

@@ -119,7 +119,7 @@ class SqlBaseSettings(Settings, SSLConfigMixin):
             ssl_engine_kwargs["pool_timeout"] = self.pool_timeout
         if self.command_timeout:
             ssl_engine_kwargs["connect_args"] = {
-                "command_timeout": str(int(self.command_timeout))
+                "command_timeout": str(int(self.command_timeout)),
             }
         self.engine_kwargs = (
             {
@@ -158,10 +158,8 @@ class SqlBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
         )
 
     async def get_engine(self) -> AsyncEngine:
-        from sqlalchemy.ext.asyncio import AsyncEngine
-
         engine = await self._ensure_client()
-        return t.cast(AsyncEngine, engine)  # type: ignore[no-any-return]
+        return t.cast("AsyncEngine", engine)  # type: ignore[no-any-return]
 
     @property
     def engine(self) -> AsyncEngine:

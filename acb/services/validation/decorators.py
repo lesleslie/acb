@@ -64,7 +64,9 @@ def validate_input(
                 if bound_args.arguments:
                     first_param = next(iter(bound_args.arguments.values()))
                     result = await validation_service.validate(
-                        first_param, schema, config
+                        first_param,
+                        schema,
+                        config,
                     )
                     validation_results.append(result)
 
@@ -72,8 +74,11 @@ def validate_input(
             if validation_results and raise_on_error:
                 report = ValidationReport(results=validation_results)
                 if not report.is_valid:
-                    raise ValidationError(
+                    msg = (
                         f"Input validation failed: {'; '.join(report.get_all_errors())}"
+                    )
+                    raise ValidationError(
+                        msg,
                     )
 
             # Update arguments with validated values
@@ -94,8 +99,7 @@ def validate_input(
         # Return appropriate wrapper based on function type
         if inspect.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
 
@@ -130,12 +134,16 @@ def validate_output(
 
                 # Validate output
                 validation_result = await validation_service.validate(
-                    result, schema, config, "output"
+                    result,
+                    schema,
+                    config,
+                    "output",
                 )
 
                 if raise_on_error and not validation_result.is_valid:
+                    msg = f"Output validation failed: {'; '.join(validation_result.errors)}"
                     raise ValidationError(
-                        f"Output validation failed: {'; '.join(validation_result.errors)}"
+                        msg,
                     )
 
                 # Return validated output
@@ -152,8 +160,7 @@ def validate_output(
         # Return appropriate wrapper based on function type
         if inspect.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
 
@@ -218,8 +225,7 @@ def sanitize_input(
         # Return appropriate wrapper based on function type
         if inspect.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
 
@@ -252,7 +258,8 @@ def validate_schema(
             schema = await validation_service.get_schema(schema_name)
             if schema is None:
                 if raise_on_error:
-                    raise ValidationError(f"Schema '{schema_name}' not found")
+                    msg = f"Schema '{schema_name}' not found"
+                    raise ValidationError(msg)
                 return await func(*args, **kwargs)
 
             # Validate first argument or kwargs
@@ -260,21 +267,24 @@ def validate_schema(
 
             if data_to_validate is not None:
                 result = await validation_service.validate(
-                    data_to_validate, schema, config
+                    data_to_validate,
+                    schema,
+                    config,
                 )
 
                 if raise_on_error and not result.is_valid:
+                    msg = f"Schema validation failed: {'; '.join(result.errors)}"
                     raise ValidationError(
-                        f"Schema validation failed: {'; '.join(result.errors)}"
+                        msg,
                     )
 
                 # Update data with validated values
                 if kwargs:
                     kwargs.update(
-                        result.value if isinstance(result.value, dict) else kwargs
+                        result.value if isinstance(result.value, dict) else kwargs,
                     )
                 elif args:
-                    args = (result.value,) + args[1:]
+                    args = (result.value, *args[1:])
 
             return await func(*args, **kwargs)
 
@@ -287,8 +297,7 @@ def validate_schema(
         # Return appropriate wrapper based on function type
         if inspect.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
 
@@ -329,9 +338,12 @@ def validate_contracts(
                     if param_name in bound_args.arguments:
                         value = bound_args.arguments[param_name]
                         if not isinstance(value, expected_type):
-                            raise ValidationError(
+                            msg = (
                                 f"Input contract violation: {param_name} "
                                 f"expected {expected_type.__name__}, got {type(value).__name__}"
+                            )
+                            raise ValidationError(
+                                msg,
                             )
 
             # Execute function
@@ -344,9 +356,12 @@ def validate_contracts(
                         if field_name in result:
                             value = result[field_name]
                             if not isinstance(value, expected_type):
-                                raise ValidationError(
+                                msg = (
                                     f"Output contract violation: {field_name} "
                                     f"expected {expected_type.__name__}, got {type(value).__name__}"
+                                )
+                                raise ValidationError(
+                                    msg,
                                 )
 
             return result
@@ -360,8 +375,7 @@ def validate_contracts(
         # Return appropriate wrapper based on function type
         if inspect.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
 
@@ -399,7 +413,9 @@ class ValidationDecorators:
         def decorator(method: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             @functools.wraps(method)
             async def async_wrapper(
-                instance: t.Any, *args: t.Any, **kwargs: t.Any
+                instance: t.Any,
+                *args: t.Any,
+                **kwargs: t.Any,
             ) -> t.Any:
                 # Input validation
                 if input_schemas:
@@ -414,12 +430,18 @@ class ValidationDecorators:
                     for param_name, schema in input_schemas.items():
                         if param_name in params:
                             result = await self.validation_service.validate(
-                                params[param_name], schema, None, param_name
+                                params[param_name],
+                                schema,
+                                None,
+                                param_name,
                             )
                             if not result.is_valid:
-                                raise ValidationError(
+                                msg = (
                                     f"Method input validation failed for {param_name}: "
                                     f"{'; '.join(result.errors)}"
+                                )
+                                raise ValidationError(
+                                    msg,
                                 )
                             params[param_name] = result.value
 
@@ -432,12 +454,18 @@ class ValidationDecorators:
                 # Output validation
                 if output_schema:
                     validation_result = await self.validation_service.validate(
-                        result, output_schema, None, "output"
+                        result,
+                        output_schema,
+                        None,
+                        "output",
                     )
                     if not validation_result.is_valid:
-                        raise ValidationError(
+                        msg = (
                             f"Method output validation failed: "
                             f"{'; '.join(validation_result.errors)}"
+                        )
+                        raise ValidationError(
+                            msg,
                         )
                     return validation_result.value
 
@@ -452,8 +480,7 @@ class ValidationDecorators:
             # Return appropriate wrapper based on method type
             if inspect.iscoroutinefunction(method):
                 return async_wrapper
-            else:
-                return sync_wrapper
+            return sync_wrapper
 
         return decorator
 

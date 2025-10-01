@@ -213,7 +213,8 @@ class UsageTracker(GatewayBase):
                     "hourly": max(0, quota.requests_per_hour - usage.hourly_requests),
                     "daily": max(0, quota.requests_per_day - usage.daily_requests),
                     "monthly": max(
-                        0, quota.requests_per_month - usage.monthly_requests
+                        0,
+                        quota.requests_per_month - usage.monthly_requests,
                     ),
                     "daily_bytes": max(0, quota.bytes_per_day - usage.daily_bytes),
                 },
@@ -240,7 +241,8 @@ class UsageAnalytics(GatewayBase):
         self.tracker = tracker
 
     async def get_endpoint_analytics(
-        self, time_range_hours: int = 24
+        self,
+        time_range_hours: int = 24,
     ) -> dict[str, t.Any]:
         """Get analytics for endpoints."""
         if not self.tracker:
@@ -259,7 +261,7 @@ class UsageAnalytics(GatewayBase):
                     "success_rate": 0.0,
                     "error_count": 0,
                     "total_bytes": 0,
-                }
+                },
             )
 
             for metric in recent_metrics:
@@ -314,7 +316,7 @@ class UsageAnalytics(GatewayBase):
                     "total_bytes": 0,
                     "unique_endpoints": set(),
                     "error_count": 0,
-                }
+                },
             )
 
             for metric in recent_metrics:
@@ -412,13 +414,16 @@ class QuotaManager(GatewayBase):
             current_quota = self.tracker.get_user_quota(user_id)
             updated_quota = QuotaConfig(
                 requests_per_hour=updates.get(
-                    "requests_per_hour", current_quota.requests_per_hour
+                    "requests_per_hour",
+                    current_quota.requests_per_hour,
                 ),
                 requests_per_day=updates.get(
-                    "requests_per_day", current_quota.requests_per_day
+                    "requests_per_day",
+                    current_quota.requests_per_day,
                 ),
                 requests_per_month=updates.get(
-                    "requests_per_month", current_quota.requests_per_month
+                    "requests_per_month",
+                    current_quota.requests_per_month,
                 ),
                 bytes_per_day=updates.get("bytes_per_day", current_quota.bytes_per_day),
             )

@@ -81,7 +81,10 @@ class BenchmarkRunner:
     """Run benchmark tests with statistical analysis."""
 
     def __init__(
-        self, warmup_rounds: int = 3, test_rounds: int = 10, collect_memory: bool = True
+        self,
+        warmup_rounds: int = 3,
+        test_rounds: int = 10,
+        collect_memory: bool = True,
     ) -> None:
         self.warmup_rounds = warmup_rounds
         self.test_rounds = test_rounds
@@ -161,12 +164,15 @@ class BenchmarkRunner:
         return result
 
     def compare_benchmarks(
-        self, baseline_name: str, comparison_name: str
+        self,
+        baseline_name: str,
+        comparison_name: str,
     ) -> dict[str, t.Any]:
         """Compare two benchmark results."""
         baseline = next((r for r in self.results if r["name"] == baseline_name), None)
         comparison = next(
-            (r for r in self.results if r["name"] == comparison_name), None
+            (r for r in self.results if r["name"] == comparison_name),
+            None,
         )
 
         if not baseline or not comparison:
@@ -292,7 +298,7 @@ class MetricsCollector:
                 "value": value,
                 "timestamp": timestamp,
                 "tags": tags or {},
-            }
+            },
         )
 
     def get_metric_summary(self, name: str) -> dict[str, t.Any] | None:

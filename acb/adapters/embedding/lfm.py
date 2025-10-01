@@ -21,7 +21,9 @@ from acb.adapters.embedding._base import (
 )
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger
 
 # Liquid AI LFM imports (placeholder - would be actual LFM library)
 try:
@@ -75,41 +77,50 @@ class LiquidLFMEmbeddingSettings(EmbeddingBaseSettings):
 
     model: str = Field(default=EmbeddingModel.LIQUID_EFFICIENT_BASE.value)
     device: str = Field(
-        default="auto", description="Device to run model on (cpu, cuda, edge, auto)"
+        default="auto",
+        description="Device to run model on (cpu, cuda, edge, auto)",
     )
 
     # LFM-specific memory optimization
     memory_limit_mb: int = Field(
-        default=256, description="Memory limit for edge deployment"
+        default=256,
+        description="Memory limit for edge deployment",
     )
     adaptive_precision: bool = Field(
-        default=True, description="Use adaptive precision for memory efficiency"
+        default=True,
+        description="Use adaptive precision for memory efficiency",
     )
     streaming_mode: bool = Field(
-        default=True, description="Enable streaming mode for large inputs"
+        default=True,
+        description="Enable streaming mode for large inputs",
     )
 
     # Edge optimization settings
     edge_optimized: bool = Field(
-        default=True, description="Optimize for edge deployment"
+        default=True,
+        description="Optimize for edge deployment",
     )
     quantization_level: str = Field(
-        default="auto", description="Quantization level (int8, int4, auto)"
+        default="auto",
+        description="Quantization level (int8, int4, auto)",
     )
     compression_ratio: float = Field(default=0.8, description="Model compression ratio")
 
     # Performance settings
     batch_size: int = Field(
-        default=8, description="Smaller batch size for memory efficiency"
+        default=8,
+        description="Smaller batch size for memory efficiency",
     )
     max_seq_length: int = Field(
-        default=256, description="Shorter sequences for edge devices"
+        default=256,
+        description="Shorter sequences for edge devices",
     )
     enable_caching: bool = Field(default=True, description="Enable model caching")
 
     # Serverless optimization
     cold_start_optimization: bool = Field(
-        default=True, description="Optimize for serverless cold starts"
+        default=True,
+        description="Optimize for serverless cold starts",
     )
     model_preloading: bool = Field(default=False, description="Preload models")
     lazy_loading: bool = Field(default=True, description="Enable lazy model loading")
@@ -125,9 +136,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         if not _lfm_available:
             # For now, we'll provide a warning but still allow instantiation
             # This will be updated when actual LFM library is available
-            print(
-                "Warning: Liquid AI LFM library not available. Using simulation mode."
-            )
+            pass
             # raise ImportError(
             #     "Liquid AI LFM library not available. Install with: pip install liquid-ai-lfm"
             # )
@@ -159,7 +168,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
             self._device = await self._determine_optimal_device()
 
             await logger.info(
-                f"Loading Liquid AI LFM model: {self._settings.model} on {self._device}"
+                f"Loading Liquid AI LFM model: {self._settings.model} on {self._device}",
             )
 
             if _lfm_available:
@@ -200,11 +209,11 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                 self.register_resource(self._model)
 
             await logger.info(
-                f"Successfully loaded Liquid AI LFM model with memory limit: {self._settings.memory_limit_mb}MB"
+                f"Successfully loaded Liquid AI LFM model with memory limit: {self._settings.memory_limit_mb}MB",
             )
 
         except Exception as e:
-            await logger.error(f"Error loading Liquid AI LFM model: {e}")
+            await logger.exception(f"Error loading Liquid AI LFM model: {e}")
             raise
 
     async def _load_simulation_model(self) -> None:
@@ -213,7 +222,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
         # Create mock model that simulates LFM behavior
         class MockLFMModel:
-            def __init__(self, dimension: int = 384):
+            def __init__(self, dimension: int = 384) -> None:
                 self.dimension = dimension
                 self.memory_usage = 0
 
@@ -226,7 +235,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                     seed = hash(text) % 10000
                     np.random.seed(seed)
                     embedding = np.random.normal(0, 1, self.dimension).astype(
-                        np.float32
+                        np.float32,
                     )
                     # Normalize
                     embedding = embedding / np.linalg.norm(embedding)
@@ -252,10 +261,9 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
         if memory_limit < 128:
             return "edge"  # Ultra-low memory edge device
-        elif memory_limit < 512:
+        if memory_limit < 512:
             return "cpu"  # CPU with memory constraints
-        else:
-            return "cuda" if self._has_cuda() else "cpu"
+        return "cuda" if self._has_cuda() else "cpu"
 
     def _has_cuda(self) -> bool:
         """Check if CUDA is available (simulation)."""
@@ -293,7 +301,8 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
         # Adaptive batch processing based on memory constraints
         adaptive_batch_size = await self._calculate_adaptive_batch_size(
-            batch_size, texts
+            batch_size,
+            texts,
         )
         batches = self._batch_texts(texts, adaptive_batch_size)
 
@@ -343,11 +352,11 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
                 await logger.debug(
                     f"LFM embeddings batch completed: {len(batch_texts)} texts, "
-                    f"memory usage: {self._get_memory_usage():.1f}MB"
+                    f"memory usage: {self._get_memory_usage():.1f}MB",
                 )
 
             except Exception as e:
-                await logger.error(f"Error generating LFM embeddings: {e}")
+                await logger.exception(f"Error generating LFM embeddings: {e}")
                 raise
 
         processing_time = time.time() - start_time
@@ -362,7 +371,9 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         )
 
     async def _calculate_adaptive_batch_size(
-        self, requested_batch_size: int, texts: list[str]
+        self,
+        requested_batch_size: int,
+        texts: list[str],
     ) -> int:
         """Calculate optimal batch size based on memory constraints and text lengths."""
         if not self._settings.edge_optimized:
@@ -373,11 +384,13 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         memory_per_text = (avg_text_length / 100) * 2  # Rough estimate in MB
 
         max_batch_for_memory = int(
-            self._settings.memory_limit_mb * 0.7 / memory_per_text
+            self._settings.memory_limit_mb * 0.7 / memory_per_text,
         )
 
         return min(
-            requested_batch_size, max_batch_for_memory, 16
+            requested_batch_size,
+            max_batch_for_memory,
+            16,
         )  # Cap at 16 for edge devices
 
     async def _check_memory_usage(self) -> None:
@@ -443,7 +456,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                         "chunk_size": adaptive_chunk_size,
                         "chunk_overlap": chunk_overlap,
                         "memory_optimized": True,
-                    }
+                    },
                 )
 
             batches.append(batch)
@@ -459,14 +472,14 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         """Compute similarity with memory-efficient operations."""
         if method == "cosine":
             return EmbeddingUtils.cosine_similarity(embedding1, embedding2)
-        elif method == "euclidean":
+        if method == "euclidean":
             return EmbeddingUtils.euclidean_distance(embedding1, embedding2)
-        elif method == "dot":
+        if method == "dot":
             return EmbeddingUtils.dot_product(embedding1, embedding2)
-        elif method == "manhattan":
+        if method == "manhattan":
             return EmbeddingUtils.manhattan_distance(embedding1, embedding2)
-        else:
-            raise ValueError(f"Unsupported similarity method: {method}")
+        msg = f"Unsupported similarity method: {method}"
+        raise ValueError(msg)
 
     async def _get_model_info(self, model: str) -> dict[str, t.Any]:
         """Get information about the LFM model."""
@@ -487,7 +500,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                 {
                     "memory_usage": self._memory_monitor["current_usage"],
                     "peak_memory": self._memory_monitor["peak_usage"],
-                }
+                },
             )
 
         return model_info

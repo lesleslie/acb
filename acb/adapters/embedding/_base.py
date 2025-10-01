@@ -1,5 +1,6 @@
 """Base embedding adapter interface for AI/ML embedding operations."""
 
+import contextlib
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -163,7 +164,10 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
     ) -> list[float]:
         """Generate embedding for a single text."""
         result = await self.embed_texts(
-            [text], model=model, normalize=normalize, **kwargs
+            [text],
+            model=model,
+            normalize=normalize,
+            **kwargs,
         )
         return result.results[0].embedding
 
@@ -213,7 +217,8 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
         return await self._compute_similarity(embedding1, embedding2, method)
 
     async def get_model_info(
-        self, model: str | EmbeddingModel | None = None
+        self,
+        model: str | EmbeddingModel | None = None,
     ) -> dict[str, t.Any]:
         """Get information about an embedding model."""
         return await self._get_model_info(model or self._settings.model)
@@ -227,7 +232,6 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
     @abstractmethod
     async def _ensure_client(self) -> t.Any:
         """Ensure client is initialized."""
-        pass
 
     @abstractmethod
     async def _embed_texts(
@@ -239,7 +243,6 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
         **kwargs: t.Any,
     ) -> EmbeddingBatch:
         """Implementation-specific text embedding."""
-        pass
 
     @abstractmethod
     async def _embed_documents(
@@ -251,7 +254,6 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
         **kwargs: t.Any,
     ) -> list[EmbeddingBatch]:
         """Implementation-specific document embedding."""
-        pass
 
     @abstractmethod
     async def _compute_similarity(
@@ -261,22 +263,21 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
         method: str,
     ) -> float:
         """Implementation-specific similarity computation."""
-        pass
 
     @abstractmethod
     async def _get_model_info(self, model: str) -> dict[str, t.Any]:
         """Implementation-specific model information."""
-        pass
 
     @abstractmethod
     async def _list_models(self) -> list[dict[str, t.Any]]:
         """Implementation-specific model listing."""
-        pass
 
     # Utility methods
 
     def _normalize_vector(
-        self, vector: list[float], method: VectorNormalization = VectorNormalization.L2
+        self,
+        vector: list[float],
+        method: VectorNormalization = VectorNormalization.L2,
     ) -> list[float]:
         """Normalize a vector using specified method."""
         if method == VectorNormalization.NONE:
@@ -289,7 +290,7 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
             if norm == 0:
                 return vector
             return (np_vector / norm).tolist()
-        elif method == VectorNormalization.L1:
+        if method == VectorNormalization.L1:
             norm = np.sum(np.abs(np_vector))
             if norm == 0:
                 return vector
@@ -327,10 +328,8 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
             if hasattr(self._client, "close"):
                 await self._client.close()
             elif hasattr(self._client, "__aexit__"):
-                try:
+                with contextlib.suppress(Exception):
                     await self._client.__aexit__(None, None, None)
-                except Exception:
-                    pass
 
         self._client = None
         self._model_cache.clear()

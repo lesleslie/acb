@@ -48,16 +48,19 @@ class EventPublisherSettings(ServiceSettings):
     # Backend configuration
     backend: PublisherBackend = Field(default=PublisherBackend.MEMORY)
     connection_url: str | None = Field(
-        default=None, description="Backend connection URL"
+        default=None,
+        description="Backend connection URL",
     )
 
     # Performance settings
     max_concurrent_events: int = Field(
-        default=100, description="Maximum concurrent event processing"
+        default=100,
+        description="Maximum concurrent event processing",
     )
     batch_size: int = Field(default=10, description="Batch size for bulk operations")
     flush_interval: float = Field(
-        default=1.0, description="Batch flush interval in seconds"
+        default=1.0,
+        description="Batch flush interval in seconds",
     )
 
     # Retry configuration
@@ -172,7 +175,7 @@ class EventPublisher(EventPublisherBase):
         # Processing control
         self._worker_tasks: list[asyncio.Task] = []
         self._processing_semaphore = asyncio.Semaphore(
-            self._settings.max_concurrent_events
+            self._settings.max_concurrent_events,
         )
         self._shutdown_event = asyncio.Event()
 
@@ -190,7 +193,7 @@ class EventPublisher(EventPublisherBase):
     def metrics(self) -> PublisherMetrics:
         """Get publisher metrics."""
         self._metrics.subscriptions_active = len(
-            [s for s in self._subscriptions if s.active]
+            [s for s in self._subscriptions if s.active],
         )
         self._metrics.handlers_registered = len(self._subscriptions)
         self._metrics.queue_size = self._event_queue.qsize()
@@ -251,7 +254,8 @@ class EventPublisher(EventPublisherBase):
             event: Event to publish
         """
         if self._shutdown_event.is_set():
-            raise RuntimeError("Publisher is shutting down")
+            msg = "Publisher is shutting down"
+            raise RuntimeError(msg)
 
         # Apply default settings if not specified
         if not event.metadata.timeout:
@@ -317,9 +321,8 @@ class EventPublisher(EventPublisherBase):
                         type_subs = self._type_subscriptions[removed_sub.event_type]
                         if removed_sub in type_subs:
                             type_subs.remove(removed_sub)
-                    else:
-                        if removed_sub in self._wildcard_subscriptions:
-                            self._wildcard_subscriptions.remove(removed_sub)
+                    elif removed_sub in self._wildcard_subscriptions:
+                        self._wildcard_subscriptions.remove(removed_sub)
 
                     # Cancel any active tasks for this subscription
                     tasks = self._subscription_tasks.get(subscription_id, [])
@@ -338,7 +341,9 @@ class EventPublisher(EventPublisherBase):
         return False
 
     async def publish_and_wait(
-        self, event: Event, timeout: float | None = None
+        self,
+        event: Event,
+        timeout: float | None = None,
     ) -> list[EventHandlerResult]:
         """Publish an event and wait for all handlers to complete.
 
@@ -359,7 +364,7 @@ class EventPublisher(EventPublisherBase):
         tasks = []
         for subscription in matching_subs:
             task = asyncio.create_task(
-                self._process_event_with_handler(event, subscription)
+                self._process_event_with_handler(event, subscription),
             )
             tasks.append(task)
 
@@ -378,7 +383,7 @@ class EventPublisher(EventPublisherBase):
                         EventHandlerResult(
                             success=False,
                             error_message=str(result),
-                        )
+                        ),
                     )
                 else:
                     processed_results.append(result)
@@ -411,7 +416,7 @@ class EventPublisher(EventPublisherBase):
                 # Normal timeout, continue loop
                 continue
             except Exception as e:
-                self._logger.error("Worker %s error: %s", worker_name, e)
+                self._logger.exception("Worker %s error: %s", worker_name, e)
                 await asyncio.sleep(1.0)  # Back off on errors
 
     async def _process_event(self, event: Event) -> None:
@@ -427,7 +432,8 @@ class EventPublisher(EventPublisherBase):
         if not matching_subs:
             if self._settings.log_events:
                 self._logger.debug(
-                    "No handlers for event: %s", event.metadata.event_type
+                    "No handlers for event: %s",
+                    event.metadata.event_type,
                 )
             return
 
@@ -443,7 +449,7 @@ class EventPublisher(EventPublisherBase):
                 continue  # Skip if at concurrency limit
 
             task = asyncio.create_task(
-                self._process_event_with_handler(event, subscription)
+                self._process_event_with_handler(event, subscription),
             )
             tasks.append(task)
             active_tasks.append(task)
@@ -479,7 +485,7 @@ class EventPublisher(EventPublisherBase):
         except Exception as e:
             event.mark_failed(f"Processing error: {e}")
             await self._handle_failed_event(event)
-            self._logger.error("Event processing error: %s", e)
+            self._logger.exception("Event processing error: %s", e)
 
         finally:
             # Clean up completed tasks
@@ -490,18 +496,19 @@ class EventPublisher(EventPublisherBase):
                     active_tasks.remove(task)
 
     async def _process_event_with_handler(
-        self, event: Event, subscription: EventSubscription
+        self,
+        event: Event,
+        subscription: EventSubscription,
     ) -> EventHandlerResult:
         """Process an event with a specific handler."""
         async with self._processing_semaphore:
             try:
                 # Apply subscription timeout if specified
                 timeout = self._settings.subscription_timeout
-                result = await asyncio.wait_for(
+                return await asyncio.wait_for(
                     subscription.handler.handle(event),
                     timeout=timeout,
                 )
-                return result
 
             except TimeoutError:
                 return EventHandlerResult(
@@ -512,7 +519,8 @@ class EventPublisher(EventPublisherBase):
                 return await subscription.handler.handle_error(event, e)
 
     async def _find_matching_subscriptions(
-        self, event: Event
+        self,
+        event: Event,
     ) -> list[EventSubscription]:
         """Find all subscriptions that match the given event."""
         matching = []
