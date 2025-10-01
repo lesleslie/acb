@@ -88,7 +88,7 @@ class ServiceBase(ABC, CleanupMixin):
     """
 
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore[valid-type]
 
     def __init__(
         self,

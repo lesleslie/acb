@@ -51,7 +51,7 @@ def get_calling_module() -> Path | None:
 
 
 @depends.inject
-def patch_record(mod: Path | None, msg: str, logger: Logger = depends()) -> None:
+def patch_record(mod: Path | None, msg: str, logger: Logger = depends()  # type: ignore[valid-type]) -> None:
     with suppress(Exception):
         if mod is not None:
             logger.patch(lambda record: record.update(name=mod.name)).debug(msg)  # type: ignore[no-untyped-call]

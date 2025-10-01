@@ -234,7 +234,7 @@ class HealthReporter(CleanupMixin):
     """
 
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore[valid-type]
 
     def __init__(self, settings: HealthReporterSettings | None = None) -> None:
         super().__init__()

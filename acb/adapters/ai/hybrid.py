@@ -188,6 +188,14 @@ class HybridAI(AIBase):
             "edge_success_rate": [],
         }
 
+    @property
+    def settings(self) -> HybridAISettings:
+        """Get adapter settings with correct type."""
+        if self._settings is None:
+            msg = "Settings not initialized"
+            raise RuntimeError(msg)
+        return self._settings  # type: ignore[return-value]
+
     async def _create_client(self) -> t.Any:
         """Initialize cloud and edge clients."""
         # Initialize cloud adapter

@@ -32,7 +32,7 @@ from acb.adapters.mlmodel._base import (
 
 try:
     import mlflow
-    import mlflow.pyfunc
+    from mlflow import pyfunc as mlflow_pyfunc
     from mlflow.exceptions import MlflowException
     from mlflow.tracking import MlflowClient
 
@@ -437,7 +437,7 @@ class MLflowAdapter(BaseMLModelAdapter):
             # Try to get model signature
             try:
                 model_uri = self._get_model_uri(model_name, model_version.version)
-                model = mlflow.pyfunc.load_model(model_uri)
+                model = mlflow_pyfunc.load_model(model_uri)
                 input_schema = (
                     model.metadata.signature.inputs.to_dict()
                     if model.metadata.signature
@@ -500,7 +500,7 @@ class MLflowAdapter(BaseMLModelAdapter):
             # Try to load model to verify it's working
             try:
                 model_uri = self._get_model_uri(model_name, version)
-                mlflow.pyfunc.load_model(model_uri)
+                mlflow_pyfunc.load_model(model_uri)
                 health_status = "healthy"
             except Exception:
                 health_status = "unhealthy"

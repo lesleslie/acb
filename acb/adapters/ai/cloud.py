@@ -115,6 +115,14 @@ class CloudAI(AIBase):
         self._settings = CloudAISettings(**kwargs)
         self._http_client: httpx.AsyncClient | None = None
 
+    @property
+    def settings(self) -> CloudAISettings:
+        """Get adapter settings with correct type."""
+        if self._settings is None:
+            msg = "Settings not initialized"
+            raise RuntimeError(msg)
+        return self._settings  # type: ignore[return-value]
+
     async def _create_client(self) -> t.Any:
         """Create cloud AI client based on provider."""
         if self.settings.provider == ModelProvider.OPENAI:

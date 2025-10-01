@@ -5,6 +5,7 @@ import re
 import subprocess
 from pathlib import Path
 
+
 def get_files_with_furb107():
     """Get list of files with FURB107 violations."""
     result = subprocess.run(
@@ -20,6 +21,7 @@ def get_files_with_furb107():
             files.add(file_path)
 
     return sorted(files)
+
 
 def add_suppress_import(content: str) -> str:
     """Add suppress import if not present."""
@@ -46,20 +48,20 @@ def add_suppress_import(content: str) -> str:
     lines.insert(import_idx + 1, "from contextlib import suppress")
     return "\n".join(lines)
 
+
 def transform_suppress_pattern(content: str) -> str:
     """Transform try/except pass patterns to suppress()."""
-
     # Pattern 1: Simple single-line try/except
     # try:
     #     some_code()
     # except Exception:
     #     pass
-    pattern1 = re.compile(
+    pattern1 = re.compile(  # REGEX OK: script-specific pattern for refurb suppression
         r"(\s*)try:\n"
         r"(\s+)(.*?)\n"
         r"\1except ([\w, ]+):\n"
         r"\1    pass",
-        re.MULTILINE
+        re.MULTILINE,
     )
 
     def replace_simple(match):
@@ -78,6 +80,7 @@ def transform_suppress_pattern(content: str) -> str:
     # This will require iterative processing
 
     return content
+
 
 def process_file(file_path: str):
     """Process a single file."""
@@ -101,6 +104,7 @@ def process_file(file_path: str):
     else:
         print(f"No changes needed for {file_path}")
 
+
 def main():
     """Main entry point."""
     files = get_files_with_furb107()
@@ -108,6 +112,7 @@ def main():
 
     for file_path in files:
         process_file(file_path)
+
 
 if __name__ == "__main__":
     main()

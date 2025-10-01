@@ -120,6 +120,14 @@ class EdgeAI(AIBase):
         self._model_loaded: bool = False
         self._model_info_cache: dict[str, ModelInfo] = {}
 
+    @property
+    def settings(self) -> EdgeAISettings:
+        """Get adapter settings with correct type."""
+        if self._settings is None:
+            msg = "Settings not initialized"
+            raise RuntimeError(msg)
+        return self._settings  # type: ignore[return-value]
+
     async def _create_client(self) -> t.Any:
         """Create edge AI client based on provider."""
         if self.settings.provider == ModelProvider.OLLAMA:

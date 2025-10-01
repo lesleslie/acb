@@ -44,9 +44,9 @@ class DatabaseTestProvider:
     PROVIDER_METADATA = PROVIDER_METADATA
 
     def __init__(self) -> None:
-        self._test_databases = {}
-        self._fixtures = {}
-        self._migrations = []
+        self._test_databases: dict[str, t.Any] = {}
+        self._fixtures: dict[str, t.Any] = {}
+        self._migrations: list[t.Any] = []
 
     async def create_test_database(
         self,

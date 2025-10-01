@@ -43,16 +43,16 @@ except ImportError:
     LANGCHAIN_AVAILABLE = False
 
     # Mock classes for type hints
-    class LLM:
+    class LLM:  # type: ignore[no-redef]
         pass
 
-    class AsyncCallbackHandler:
+    class AsyncCallbackHandler:  # type: ignore[no-redef]
         pass
 
-    class AgentExecutor:
+    class AgentExecutor:  # type: ignore[no-redef]
         pass
 
-    class ConversationChain:
+    class ConversationChain:  # type: ignore[no-redef]
         pass
 
 

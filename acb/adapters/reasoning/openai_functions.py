@@ -37,17 +37,17 @@ try:
 except ImportError:
     OPENAI_AVAILABLE = False
 
-    # Mock classes for type hints
-    class AsyncOpenAI:
+    # Mock classes for type hints when openai is not installed
+    class AsyncOpenAI:  # type: ignore[no-redef]
         pass
 
-    class ChatCompletion:
+    class ChatCompletion:  # type: ignore[no-redef]
         pass
 
-    class ChatCompletionMessage:
+    class ChatCompletionMessage:  # type: ignore[no-redef]
         pass
 
-    class ChatCompletionMessageToolCall:
+    class ChatCompletionMessageToolCall:  # type: ignore[no-redef]
         pass
 
 

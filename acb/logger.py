@@ -51,13 +51,13 @@ class LoggerSettings(Settings):
 depends.get(Config).logger = LoggerSettings()
 
 
-def _get_logger_adapter() -> type:
+def _get_logger_adapter() -> type[t.Any]:
     """Get the configured logger adapter class."""
     from .adapters import import_adapter
 
     # Import the logger adapter (defaults to loguru)
     try:
-        return import_adapter("logger")
+        return import_adapter("logger")  # type: ignore[no-any-return]
     except Exception:
         # Fallback to loguru adapter directly if import fails
         from .adapters.logger.loguru import Logger as LoguruLogger

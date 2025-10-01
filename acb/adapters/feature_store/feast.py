@@ -643,7 +643,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = FeastAdapter
-FeatureStoreSettings = FeastSettings
+FeatureStoreSettings = FeastSettings  # type: ignore[no-redef]
 
 __all__ = [
     "MODULE_METADATA",

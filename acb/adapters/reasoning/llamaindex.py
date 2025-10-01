@@ -47,29 +47,29 @@ try:
 except ImportError:
     LLAMAINDEX_AVAILABLE = False
 
-    # Mock classes for type hints
-    class VectorStoreIndex:
+    # Mock classes for type hints when llama-index is not installed
+    class VectorStoreIndex:  # type: ignore[no-redef]
         pass
 
-    class BaseQueryEngine:
+    class BaseQueryEngine:  # type: ignore[no-redef]
         pass
 
-    class ReActAgent:
+    class ReActAgent:  # type: ignore[no-redef]
         pass
 
-    class OpenAI:
+    class OpenAI:  # type: ignore[no-redef]
         pass
 
-    class NodeWithScore:
+    class NodeWithScore:  # type: ignore[no-redef]
         pass
 
-    class Document:
+    class Document:  # type: ignore[no-redef]
         pass
 
-    class PromptTemplate:
+    class PromptTemplate:  # type: ignore[no-redef]
         pass
 
-    class SimpleChatEngine:
+    class SimpleChatEngine:  # type: ignore[no-redef]
         pass
 
 

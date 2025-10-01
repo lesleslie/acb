@@ -43,8 +43,8 @@ class MockActionProvider:
     PROVIDER_METADATA = PROVIDER_METADATA
 
     def __init__(self) -> None:
-        self._mock_instances = {}
-        self._call_history = {}
+        self._mock_instances: dict[str, t.Any] = {}
+        self._call_history: dict[str, t.Any] = {}
 
     def create_compress_action_mock(
         self,

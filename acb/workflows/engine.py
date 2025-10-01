@@ -29,7 +29,7 @@ from acb.workflows._base import (
 class BasicWorkflowEngine(WorkflowEngine):
     """Basic workflow engine with dependency resolution and parallel execution."""
 
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore[valid-type]
 
     def __init__(self, max_concurrent_steps: int = 5) -> None:
         self._max_concurrent_steps = max_concurrent_steps

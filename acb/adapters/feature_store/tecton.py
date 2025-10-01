@@ -783,7 +783,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = TectonAdapter
-FeatureStoreSettings = TectonSettings
+FeatureStoreSettings = TectonSettings  # type: ignore[no-redef]
 
 __all__ = [
     "MODULE_METADATA",

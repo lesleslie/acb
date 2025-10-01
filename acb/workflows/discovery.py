@@ -22,16 +22,17 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 # UUID7 support (backport to UUID4 if not available)
+uuid_lib: t.Any
 try:
     import uuid_utils
 
     _uuid7_available = True
-    uuid_lib: t.Any = uuid_utils
+    uuid_lib = uuid_utils
 except ImportError:
     import uuid
 
     _uuid7_available = False
-    uuid_lib: t.Any = uuid
+    uuid_lib = uuid
 
 
 class WorkflowEngineStatus(Enum):

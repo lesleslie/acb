@@ -1007,7 +1007,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = CustomFeatureStoreAdapter
-FeatureStoreSettings = CustomFeatureStoreSettings
+FeatureStoreSettings = CustomFeatureStoreSettings  # type: ignore[no-redef]
 
 __all__ = [
     "MODULE_METADATA",

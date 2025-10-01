@@ -23,16 +23,17 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 # Test provider discovery system imports
+uuid_lib: t.Any
 try:
     import uuid_utils
 
     _uuid7_available = True
-    uuid_lib: t.Any = uuid_utils
+    uuid_lib = uuid_utils
 except ImportError:
     import uuid
 
     _uuid7_available = False
-    uuid_lib: t.Any = uuid
+    uuid_lib = uuid
 
 
 class TestProviderStatus(Enum):

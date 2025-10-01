@@ -86,7 +86,7 @@ class ValidationService(ServiceBase, ValidationProtocol):
     """
 
     config: Config = depends()
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore[valid-type]
 
     def __init__(
         self,

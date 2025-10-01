@@ -43,8 +43,8 @@ class MockServiceProvider:
     PROVIDER_METADATA = PROVIDER_METADATA
 
     def __init__(self) -> None:
-        self._mock_instances = {}
-        self._metrics = {}
+        self._mock_instances: dict[str, t.Any] = {}
+        self._metrics: dict[str, t.Any] = {}
 
     def create_performance_service_mock(
         self,

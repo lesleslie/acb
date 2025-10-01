@@ -45,7 +45,7 @@ class ServiceRegistry:
     with ACB's dependency injection integration.
     """
 
-    logger: Logger = depends()
+    logger: Logger = depends()  # type: ignore[valid-type]
 
     def __init__(self) -> None:
         self._services: dict[str, ServiceBase] = {}
