@@ -232,10 +232,14 @@ class LoggerBase(CleanupMixin):
 
     def _should_log_level(self, level: str, module_name: str) -> bool:
         """Check if message should be logged based on level and module."""
-        target_level = self.settings.level_per_module.get(
-            module_name,
-            self._get_effective_level(),
-        )
+        # Type narrowing: ensure level_per_module is not None
+        if self.settings.level_per_module is None:
+            target_level = self._get_effective_level()
+        else:
+            target_level = self.settings.level_per_module.get(
+                module_name,
+                self._get_effective_level(),
+            )
         if target_level is False:
             return False
 

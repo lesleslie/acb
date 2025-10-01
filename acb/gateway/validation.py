@@ -97,7 +97,7 @@ class BasicSchemaValidator:
         start_time = asyncio.get_event_loop().time()
 
         errors = []
-        warnings = []
+        warnings: list[Any] = []
 
         try:
             # Basic schema validation
@@ -132,7 +132,7 @@ class BasicSchemaValidator:
         field_path: str,
     ) -> list[dict[str, Any]]:
         """Validate data type against schema."""
-        errors = []
+        errors: list[Any] = []
 
         if "type" not in schema:
             return errors
@@ -322,7 +322,7 @@ class PydanticValidator:
         start_time = asyncio.get_event_loop().time()
 
         errors = []
-        warnings = []
+        warnings: list[Any] = []
 
         try:
             # Validate with Pydantic

@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """Security Test Provider for ACB Testing.
 
 Provides security testing utilities, vulnerability scanning,
@@ -44,7 +45,7 @@ class SecurityTestProvider:
     PROVIDER_METADATA = PROVIDER_METADATA
 
     def __init__(self) -> None:
-        self._scan_results = {}
+        self._scan_results: dict[str, t.Any] = {}
         self._vulnerability_patterns = self._load_vulnerability_patterns()
 
     def _load_vulnerability_patterns(self) -> dict[str, list[str]]:
@@ -125,7 +126,7 @@ class SecurityTestProvider:
         }
         return descriptions.get(vuln_type, "Unknown vulnerability type")
 
-    def _calculate_risk_level(self, vulnerabilities: list[dict]) -> str:
+    def _calculate_risk_level(self, vulnerabilities: list[dict[str, Any]]) -> str:
         """Calculate overall risk level."""
         if not vulnerabilities:
             return "LOW"
@@ -180,7 +181,7 @@ class SecurityTestProvider:
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_validate_token(token: str):
+        async def mock_validate_token(token: str) -> None:
             import asyncio
 
             await asyncio.sleep(default_behavior["auth_delay"])
@@ -204,7 +205,7 @@ class SecurityTestProvider:
                 "error_code": "INVALID_TOKEN",
             }
 
-        async def mock_check_permission(user_id: str, permission: str):
+        async def mock_check_permission(user_id: str, permission: str) -> None:
             # Simple permission checking simulation
             admin_permissions = ["read", "write", "admin", "delete"]
             user_permissions = ["read"]
@@ -317,11 +318,11 @@ class SecurityTestProvider:
         assert vuln_type in found_types, f"Vulnerability type {vuln_type} not detected"
 
     @asynccontextmanager
-    async def security_test_context(self, test_name: str):
+    async def security_test_context(self, test_name: str) -> None:
         """Context manager for security testing."""
         scan_results = []
 
-        def record_scan(result) -> None:
+        def  record_scan((result: Any)) -> None:
             scan_results.append(result)
 
         try:

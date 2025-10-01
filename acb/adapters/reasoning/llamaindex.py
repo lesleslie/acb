@@ -404,7 +404,7 @@ Let's work through this:
         tools = []
         for tool_def in request.tools:
 
-            def tool_func(input_str: str, tool_def=tool_def) -> str:
+            def  tool_func((input_str: str, tool_def=tool_def)) -> str:
                 # Placeholder tool execution
                 return f"Tool {tool_def.name} executed with: {input_str}"
 

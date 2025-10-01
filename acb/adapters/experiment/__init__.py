@@ -66,14 +66,14 @@ try:
         MLflowExperimentSettings,
     )
 except ImportError:
-    MLflowExperiment = None
-    MLflowExperimentSettings = None
+    MLflowExperiment = None  # type: ignore[assignment,misc]
+    MLflowExperimentSettings = None  # type: ignore[assignment,misc]
 
 try:
     from acb.adapters.experiment.wandb import WandbExperiment, WandbExperimentSettings
 except ImportError:
-    WandbExperiment = None
-    WandbExperimentSettings = None
+    WandbExperiment = None  # type: ignore[assignment,misc]
+    WandbExperimentSettings = None  # type: ignore[assignment,misc]
 
 try:
     from acb.adapters.experiment.tensorboard import (
@@ -81,8 +81,8 @@ try:
         TensorBoardExperimentSettings,
     )
 except ImportError:
-    TensorBoardExperiment = None
-    TensorBoardExperimentSettings = None
+    TensorBoardExperiment = None  # type: ignore[assignment,misc]
+    TensorBoardExperimentSettings = None  # type: ignore[assignment,misc]
 
 # Export all available classes
 __all__ = [

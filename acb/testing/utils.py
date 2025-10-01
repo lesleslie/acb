@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """ACB Testing Utilities.
 
 Provides utility functions for testing ACB components, adapters,
@@ -116,7 +117,7 @@ def create_test_config(overrides: dict[str, t.Any] | None = None) -> Config:
 
     if overrides:
         # Deep merge overrides
-        def deep_merge(base: dict, override: dict) -> dict:
+        def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
             result = base.copy()
             for key, value in override.items():
                 if (
@@ -279,7 +280,7 @@ async def teardown_test_environment(environment: dict[str, t.Any]) -> None:
 
 
 async def run_acb_test_suite(
-    test_functions: list[t.Callable],
+    test_functions: list[t.Callable[..., Any]],
     environment_config: dict | None = None,
     parallel: bool = False,
 ) -> dict[str, t.Any]:
@@ -299,7 +300,7 @@ async def run_acb_test_suite(
                     tasks.append(test_func())
                 else:
                     # Wrap sync function in async
-                    async def async_wrapper():
+                    async def async_wrapper() -> None:
                         return test_func()
 
                     tasks.append(async_wrapper())
@@ -414,7 +415,7 @@ def create_mock_dependency(
     return mock
 
 
-def assert_dependency_injected(dependency_type: type):
+def assert_dependency_injected(dependency_type: type) -> None:
     """Assert that a dependency is properly injected."""
     instance = depends.get(dependency_type)
     assert instance is not None, f"Dependency {dependency_type.__name__} not injected"

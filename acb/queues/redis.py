@@ -145,8 +145,8 @@ class RedisQueue(QueueBase):
         self._lua_scripts: dict[str, Any] = {}
 
         # Background tasks
-        self._delayed_task_processor: asyncio.Task | None = None
-        self._health_monitor: asyncio.Task | None = None
+        self._delayed_task_processor: asyncio.Task[None] | None = None
+        self._health_monitor: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
         """Start the Redis queue."""

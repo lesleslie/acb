@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """Performance Test Provider for ACB Testing.
 
 Provides performance testing utilities, benchmarking tools, and
@@ -47,9 +48,9 @@ class PerformanceTestProvider:
     PROVIDER_METADATA = PROVIDER_METADATA
 
     def __init__(self) -> None:
-        self._benchmarks = {}
-        self._load_tests = {}
-        self._profiles = {}
+        self._benchmarks: dict[str, t.Any] = {}
+        self._load_tests: dict[str, t.Any] = {}
+        self._profiles: dict[str, t.Any] = {}
 
     class PerformanceTimer:
         """Context manager for measuring execution time."""
@@ -59,19 +60,19 @@ class PerformanceTestProvider:
             self.end_time: float = 0
             self.elapsed: float = 0
 
-        def __enter__(self):
+        def __enter__(self) -> None:
             self.start_time = time.perf_counter()
             return self
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
+        def __exit__(self, exc_type, exc_val, exc_tb) -> None:
             self.end_time = time.perf_counter()
             self.elapsed = self.end_time - self.start_time
 
-        async def __aenter__(self):
+        async def __aenter__(self) -> None:
             self.start_time = time.perf_counter()
             return self
 
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
+        async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
             self.end_time = time.perf_counter()
             self.elapsed = self.end_time - self.start_time
 
@@ -81,11 +82,11 @@ class PerformanceTestProvider:
         def __init__(self, warmup_rounds: int = 3, test_rounds: int = 10) -> None:
             self.warmup_rounds = warmup_rounds
             self.test_rounds = test_rounds
-            self.results = []
+            self.results: list[t.Any] = []
 
         async def run_benchmark(
             self,
-            func: t.Callable,
+            func: t.Callable[..., Any],
             *args,
             **kwargs,
         ) -> dict[str, t.Any]:
@@ -134,7 +135,7 @@ class PerformanceTestProvider:
         def __init__(self, concurrent_users: int = 10, duration: float = 60.0) -> None:
             self.concurrent_users = concurrent_users
             self.duration = duration
-            self.results = []
+            self.results: list[t.Any] = []
 
         async def run_load_test(
             self,
@@ -208,7 +209,7 @@ class PerformanceTestProvider:
         """Collect performance metrics during testing."""
 
         def __init__(self) -> None:
-            self.metrics = {}
+            self.metrics: dict[str, t.Any] = {}
             self.start_time = time.perf_counter()
 
         def record_metric(
@@ -253,13 +254,13 @@ class PerformanceTestProvider:
         """Decorator to measure function execution time."""
         if asyncio.iscoroutinefunction(func):
 
-            async def async_wrapper(*args, **kwargs):
+            async def async_wrapper(*args, **kwargs) -> None:
                 async with self.PerformanceTimer():
                     return await func(*args, **kwargs)
 
             return async_wrapper
 
-        def sync_wrapper(*args, **kwargs):
+        def sync_wrapper(*args, **kwargs) -> None:
             with self.PerformanceTimer():
                 return func(*args, **kwargs)
 
@@ -268,7 +269,7 @@ class PerformanceTestProvider:
     def profile_memory_usage(self, func: t.Callable) -> t.Callable:
         """Decorator to profile memory usage (simplified for testing)."""
 
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> None:
             # Simplified memory profiling simulation
             import os
 
@@ -304,7 +305,7 @@ class PerformanceTestProvider:
             )
 
     @asynccontextmanager
-    async def performance_test_context(self, test_name: str):
+    async def performance_test_context(self, test_name: str) -> None:
         """Context manager for performance testing."""
         metrics = self.MetricsCollector()
         start_time = time.perf_counter()

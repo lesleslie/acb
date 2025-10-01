@@ -1,3 +1,4 @@
+from typing import Any
 """OpenAI function calling reasoning adapter for structured reasoning with tools."""
 
 import json
@@ -190,7 +191,7 @@ class Reasoning(ReasoningBase):
         """Perform reasoning using OpenAI function calling."""
         start_time = time.time()
         function_tracker = FunctionCallTracker(self.logger)
-        reasoning_chain = []
+        reasoning_chain: list[Any] = []
 
         try:
             client = await self._ensure_client()

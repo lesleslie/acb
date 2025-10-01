@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """Base classes for ACB Events System.
 
 Provides the foundation for event-driven architecture with support for
@@ -368,7 +369,7 @@ class EventPublisherBase(ServiceBase):
     def __init__(self) -> None:
         super().__init__()
         self._subscriptions: list[EventSubscription] = []
-        self._active_tasks: dict[UUID, asyncio.Task] = {}
+        self._active_tasks: dict[UUID, asyncio.Task[None]] = {}
 
     @abstractmethod
     async def publish(self, event: Event) -> None:
@@ -480,7 +481,7 @@ def create_subscription(
 def event_handler(
     event_type: str | None = None,
     predicate: t.Callable[[Event], bool] | None = None,
-) -> t.Callable[[t.Callable], FunctionalEventHandler]:
+) -> t.Callable[[t.Callable[..., Any]], FunctionalEventHandler]:
     """Decorator to create an event handler from a function.
 
     Args:

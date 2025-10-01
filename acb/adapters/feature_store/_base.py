@@ -299,7 +299,7 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         self._settings = settings or FeatureStoreSettings()
         self._online_client = None
         self._offline_client = None
-        self._monitoring_task: asyncio.Task | None = None
+        self._monitoring_task: asyncio.Task[None] | None = None
         self._metrics: dict[str, Any] = {}
         self._cache: dict[str, Any] = {}
 
@@ -870,7 +870,7 @@ class BaseFeatureStoreAdapter(CleanupMixin, ABC):
         await self.init()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def  __aexit__((self: Any, exc_type: Any, exc_val: Any, exc_tb: Any)) -> None:
         """Async context manager exit with cleanup."""
         await self.stop_monitoring()
         await self.cleanup()

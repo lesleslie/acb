@@ -205,7 +205,7 @@ class EdgeAI(AIBase):
                 # Run model loading in executor to avoid blocking
                 loop = asyncio.get_event_loop()
 
-                def load():
+                def load() -> None:
                     # Determine quantization settings
                     load_kwargs = {
                         "low_cpu_mem_usage": True,
@@ -337,6 +337,11 @@ class EdgeAI(AIBase):
 
         try:
             if self.settings.provider == ModelProvider.OLLAMA:
+                # Type narrowing: ensure _http_client is not None
+                if self._http_client is None:
+                    self.logger.error("HTTP client not initialized")
+                    return
+
                 # Check if model exists, pull if needed
                 response = await self._http_client.get("/api/tags")
                 if response.status_code == 200:
@@ -510,7 +515,7 @@ class EdgeAI(AIBase):
         # Run inference in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
 
-        def generate():
+        def generate() -> None:
             return client(
                 prompt,
                 max_length=len(prompt.split()) + request.max_tokens,

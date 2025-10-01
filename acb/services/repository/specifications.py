@@ -47,7 +47,7 @@ class SpecificationContext:
     table_alias: str = None
     join_conditions: list[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.field_mappings is None:
             self.field_mappings = {}
         if self.join_conditions is None:

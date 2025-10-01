@@ -500,7 +500,7 @@ class KServeAdapter(BaseMLModelAdapter):
 
                 # Get status information
                 conditions = status.get("conditions", [])
-                ready_condition = next(
+                ready_condition: Any = next(
                     (c for c in conditions if c.get("type") == "Ready"),
                     {},
                 )
@@ -580,7 +580,7 @@ class KServeAdapter(BaseMLModelAdapter):
 
             # Get status
             conditions = status.get("conditions", [])
-            ready_condition = next(
+            ready_condition: Any = next(
                 (c for c in conditions if c.get("type") == "Ready"),
                 {},
             )

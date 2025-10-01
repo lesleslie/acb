@@ -176,8 +176,8 @@ class RabbitMQQueue(QueueBase):
         ] = {}  # dict[str, AbstractQueueIterator] when aio_pika available
 
         # Background tasks
-        self._consumer_task: asyncio.Task | None = None
-        self._health_monitor: asyncio.Task | None = None
+        self._consumer_task: asyncio.Task[None] | None = None
+        self._health_monitor: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
         """Start the RabbitMQ queue."""

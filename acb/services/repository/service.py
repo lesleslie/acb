@@ -117,8 +117,8 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             else None
         )
         self._metrics = RepositoryServiceMetrics()
-        self._health_check_task: asyncio.Task | None = None
-        self._metrics_task: asyncio.Task | None = None
+        self._health_check_task: asyncio.Task[None] | None = None
+        self._metrics_task: asyncio.Task[None] | None = None
 
     async def initialize(self) -> None:
         """Initialize the repository service."""

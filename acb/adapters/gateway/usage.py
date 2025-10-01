@@ -1,3 +1,4 @@
+from typing import Any
 """Usage tracking and analytics for API Gateway."""
 
 import time
@@ -254,7 +255,7 @@ class UsageAnalytics(GatewayBase):
                 m for m in self.tracker.metrics if m.timestamp > cutoff_time
             ]
 
-            endpoint_stats = defaultdict(
+            endpoint_stats: Any = defaultdict(
                 lambda: {
                     "requests": 0,
                     "avg_response_time": 0.0,

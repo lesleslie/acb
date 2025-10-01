@@ -95,7 +95,7 @@ class UnitOfWork(CleanupMixin):
             start_time=datetime.now(UTC),
         )
         self._transaction_context = None
-        self._rollback_operations: list[t.Callable] = []
+        self._rollback_operations: list[t.Callable[..., Any]] = []
 
     @property
     def state(self) -> UnitOfWorkState:
@@ -256,7 +256,7 @@ class UnitOfWork(CleanupMixin):
         )
         self._metrics.operations_count += 1
 
-    def add_rollback_operation(self, operation: t.Callable) -> None:
+    def add_rollback_operation(self, operation: t.Callable[..., Any]) -> None:
         """Add a rollback operation to be executed if transaction fails.
 
         Args:

@@ -68,7 +68,7 @@ class CoordinationTask:
     created_at: datetime
     status: str = "pending"
     error_message: str | None = None
-    compensation_actions: list[Callable] = field(default_factory=list)
+    compensation_actions: list[Callable[..., Any]] = field(default_factory=list[Any])
 
 
 class MultiDatabaseCoordinator(CleanupMixin):
@@ -88,7 +88,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         self._repositories: dict[str, dict[str, RepositoryBase]] = {}
         self._active_tasks: dict[str, CoordinationTask] = {}
         self._completed_tasks: list[CoordinationTask] = []
-        self._event_handlers: dict[str, list[Callable]] = {}
+        self._event_handlers: dict[str, list[Callable[..., Any]]] = {}
         self._uow_manager = UnitOfWorkManager()
 
     def register_database(
@@ -430,7 +430,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
                     completed_steps.append(db_name)
 
                     # Add compensation action
-                    def compensate(db=db_name, repo=repository):
+                    def compensate(db=db_name, repo=repository) -> None:
                         async def _compensate() -> None:
                             # Delete created entity
                             if "id" in task.data:
@@ -460,7 +460,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
 
-                async def create_in_db(db=db_name, repo=repository):
+                async def create_in_db(db=db_name, repo=repository) -> None:
                     try:
                         # In a real implementation, we'd create actual entities
                         await asyncio.sleep(0.01)  # Simulate work
@@ -495,7 +495,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
 
-                async def update_in_db(db=db_name, repo=repository):
+                async def update_in_db(db=db_name, repo=repository) -> None:
                     try:
                         await asyncio.sleep(0.01)  # Simulate work
                         return {"status": "success", "database": db}
@@ -526,7 +526,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
 
-                async def delete_in_db(db=db_name, repo=repository):
+                async def delete_in_db(db=db_name, repo=repository) -> None:
                     try:
                         await asyncio.sleep(0.01)  # Simulate work
                         return {"status": "success", "database": db}

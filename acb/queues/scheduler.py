@@ -67,7 +67,7 @@ class ScheduleRule(BaseModel):
 
     @field_validator("cron_expression")
     @classmethod
-    def validate_cron_expression(cls, v):
+    def validate_cron_expression(cls, v) -> None:
         if v and not CRONITER_AVAILABLE:
             msg = "croniter is required for cron expressions. Install with: pip install croniter"
             raise ImportError(
@@ -86,7 +86,7 @@ class ScheduleRule(BaseModel):
 
     @field_validator("interval_seconds")
     @classmethod
-    def validate_interval(cls, v):
+    def validate_interval(cls, v) -> None:
         if v is not None and v <= 0:
             msg = "Interval must be positive"
             raise ValueError(msg)
@@ -181,7 +181,7 @@ class TaskScheduler:
 
         # Scheduler state
         self._running = False
-        self._scheduler_task: asyncio.Task | None = None
+        self._scheduler_task: asyncio.Task[None] | None = None
         self._shutdown_event = asyncio.Event()
 
         # Configuration
@@ -442,7 +442,7 @@ def scheduled_task(
     queue_name: str = "default",
     priority: TaskPriority = TaskPriority.NORMAL,
     **rule_kwargs: Any,
-) -> Callable[[Callable], Callable]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to register a function as a scheduled task.
 
     Args:
@@ -458,7 +458,7 @@ def scheduled_task(
         Decorator function
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         task_type = func.__name__
         rule_name = name or f"scheduled_{task_type}"
 

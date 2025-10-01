@@ -1,3 +1,4 @@
+from typing import Any
 """Custom rule engine reasoning adapter for logic-based decision making."""
 
 import re
@@ -386,7 +387,7 @@ class Reasoning(ReasoningBase):
     async def _reason(self, request: ReasoningRequest) -> ReasoningResponse:
         """Perform reasoning using custom rule engine."""
         start_time = time.time()
-        reasoning_chain = []
+        reasoning_chain: list[Any] = []
 
         try:
             engine = await self._ensure_client()

@@ -214,8 +214,10 @@ class Logger(_Logger, LoggerBase):
 
     def _setup_level_colors(self) -> None:
         """Configure level-specific colors."""
-        for level, color in self.settings.level_colors.items():
-            self.level(level.upper(), color=f"[{color}]")  # type: ignore[no-untyped-call]
+        # Type narrowing: ensure level_colors is not None
+        if self.settings.level_colors is not None:
+            for level, color in self.settings.level_colors.items():
+                self.level(level.upper(), color=f"[{color}]")  # type: ignore[no-untyped-call]
 
     def _log_debug_levels(self) -> None:
         """Log test messages for all levels if debug enabled."""

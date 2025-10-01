@@ -137,13 +137,13 @@ class SpacyNLP(BaseNLPAdapter):
         """Disconnect from spaCy (unload models)."""
         self._nlp = None
 
-    async def _ensure_nlp(self):
+    async def _ensure_nlp(self) -> None:
         """Ensure spaCy model is loaded."""
         if self._nlp is None:
             self._nlp = await self._create_nlp()
         return self._nlp
 
-    async def _create_nlp(self):
+    async def _create_nlp(self) -> None:
         """Create spaCy NLP pipeline."""
         # Load model in thread pool to avoid blocking
         nlp = await self._run_sync(
@@ -165,7 +165,7 @@ class SpacyNLP(BaseNLPAdapter):
 
         return nlp
 
-    async def _add_extensions(self, nlp) -> None:
+    async def  _add_extensions((self: Any, nlp: Any)) -> None:
         """Add spaCy extensions for additional functionality."""
         try:
             # Add sentiment extension if textblob is available
@@ -178,7 +178,7 @@ class SpacyNLP(BaseNLPAdapter):
         except Exception:
             pass  # Extensions not available
 
-    async def _run_sync(self, func, *args, **kwargs):
+    async def _run_sync(self, func, *args, **kwargs) -> None:
         """Run synchronous function in thread pool."""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, func, *args, **kwargs)
@@ -239,7 +239,7 @@ class SpacyNLP(BaseNLPAdapter):
 
         return await self._extract_sentiment_from_doc(doc)
 
-    async def _extract_sentiment_from_doc(self, doc) -> SentimentResult:
+    async def  _extract_sentiment_from_doc((self: Any, doc: Any)) -> SentimentResult:
         """Extract sentiment from spaCy doc."""
         # Try spacytextblob extension first
         if hasattr(doc._, "blob"):
@@ -428,7 +428,7 @@ class SpacyNLP(BaseNLPAdapter):
 
         return await self._detect_language_from_doc(doc)
 
-    async def _detect_language_from_doc(self, doc) -> LanguageDetectionResult:
+    async def  _detect_language_from_doc((self: Any, doc: Any)) -> LanguageDetectionResult:
         """Detect language from spaCy doc."""
         # spaCy models are language-specific, so we know the language
         lang_info = doc.lang_

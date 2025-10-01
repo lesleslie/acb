@@ -489,7 +489,7 @@ class SecurityValidator:
         request: GatewayRequest,
     ) -> list[SecurityViolation]:
         """Validate request for security issues."""
-        violations = []
+        violations: list[SecurityViolation] = []
 
         if not self._config.enable_request_validation:
             return violations

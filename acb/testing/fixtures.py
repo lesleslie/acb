@@ -152,7 +152,7 @@ def acb_action_mocks() -> dict[str, MagicMock]:
 
 
 @pytest.fixture
-def mock_adapter_registry():
+def mock_adapter_registry() -> None:
     """Provide a clean adapter registry for testing."""
     # Save original state
     original_registry = adapter_registry.get()
@@ -167,7 +167,7 @@ def mock_adapter_registry():
 
 
 @pytest.fixture
-def mock_service_registry():
+def mock_service_registry() -> None:
     """Provide a clean service registry for testing."""
     # Save original state
     original_registry = service_registry.get()
@@ -182,14 +182,14 @@ def mock_service_registry():
 
 
 @pytest.fixture
-def mock_action_registry():
+def mock_action_registry() -> None:
     """Provide a clean action registry for testing."""
     # Actions don't have a registry yet, but this prepares for future implementation
     return {}
 
 
 @pytest.fixture
-async def acb_test_db(acb_config: Config):
+async def acb_test_db(acb_config: Config) -> None:
     """Provide an in-memory test database."""
     try:
         # Import SQLite adapter for testing
@@ -220,7 +220,7 @@ async def acb_test_db(acb_config: Config):
 
 
 @pytest.fixture
-async def acb_temp_storage(tmp_path: Path):
+async def acb_temp_storage(tmp_path: Path) -> None:
     """Provide temporary storage for testing."""
     try:
         # Import file storage adapter for testing
@@ -247,7 +247,7 @@ async def acb_temp_storage(tmp_path: Path):
 
 
 @pytest.fixture
-async def acb_mock_cache():
+async def acb_mock_cache() -> None:
     """Provide an in-memory cache for testing."""
     try:
         # Import memory cache adapter for testing
@@ -270,7 +270,7 @@ async def acb_mock_cache():
 
 
 @pytest.fixture
-def acb_mock_logger():
+def acb_mock_logger() -> None:
     """Provide a mock logger for testing."""
     logger_mock = MagicMock()
     logger_mock.info = MagicMock()
@@ -282,12 +282,12 @@ def acb_mock_logger():
 
 
 @pytest.fixture
-async def cleanup_acb_resources():
+async def cleanup_acb_resources() -> None:
     """Cleanup ACB resources after tests."""
     # Store resources to cleanup
     resources_to_cleanup = []
 
-    def register_cleanup(resource) -> None:
+    def  register_cleanup((resource: Any)) -> None:
         """Register a resource for cleanup."""
         resources_to_cleanup.append(resource)
 
@@ -311,7 +311,7 @@ async def cleanup_acb_resources():
 
 
 @pytest.fixture(autouse=True)
-def reset_dependencies():
+def reset_dependencies() -> None:
     """Reset dependency injection state between tests."""
     # Clear all registered dependencies
     original_instances = depends._instances.copy()
@@ -324,11 +324,11 @@ def reset_dependencies():
 
 
 @pytest.fixture
-def enable_test_adapter():
+def enable_test_adapter() -> None:
     """Helper to enable adapters for testing."""
     enabled_adapters = []
 
-    def _enable_adapter(category: str, name: str | None = None):
+    def _enable_adapter(category: str, name: str | None = None) -> None:
         enable_adapter(category, name)
         enabled_adapters.append(category)
         return category
@@ -342,11 +342,11 @@ def enable_test_adapter():
 
 
 @pytest.fixture
-def enable_test_service():
+def enable_test_service() -> None:
     """Helper to enable services for testing."""
     enabled_services = []
 
-    def _enable_service(category: str, name: str | None = None):
+    def _enable_service(category: str, name: str | None = None) -> None:
         enable_service(category, name)
         enabled_services.append(category)
         return category
@@ -360,11 +360,11 @@ def enable_test_service():
 
 
 @pytest.fixture
-def enable_test_provider_fixture():
+def enable_test_provider_fixture() -> None:
     """Helper to enable test providers for testing."""
     enabled_providers = []
 
-    def _enable_provider(category: str, name: str | None = None):
+    def _enable_provider(category: str, name: str | None = None) -> None:
         enable_test_provider(category, name)
         enabled_providers.append(category)
         return category
@@ -375,7 +375,7 @@ def enable_test_provider_fixture():
 
 
 @pytest.fixture(scope="session")
-def acb_test_environment():
+def acb_test_environment() -> None:
     """Setup ACB test environment once per session."""
     # Initialize all registries
     initialize_adapter_registry()
@@ -402,14 +402,14 @@ def async_test_timeout() -> float:
 
 
 @pytest.fixture
-async def async_context_manager():
+async def async_context_manager() -> None:
     """Provide async context manager for testing."""
 
     class TestAsyncContext:
-        async def __aenter__(self):
+        async def __aenter__(self) -> None:
             return self
 
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
+        async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
             pass
 
     return TestAsyncContext()
@@ -417,7 +417,7 @@ async def async_context_manager():
 
 # Performance testing fixtures
 @pytest.fixture
-def performance_threshold():
+def performance_threshold() -> None:
     """Provide performance thresholds for testing."""
     return {
         "execution_time": 1.0,  # Maximum 1 second
@@ -427,7 +427,7 @@ def performance_threshold():
 
 
 @pytest.fixture
-def benchmark_config():
+def benchmark_config() -> None:
     """Provide benchmark configuration for testing."""
     return {
         "iterations": 10,

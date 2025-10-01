@@ -275,8 +275,16 @@ class HybridAI(AIBase):
 
         try:
             if routing_result.strategy == DeploymentStrategy.CLOUD:
+                # Type narrowing: ensure _cloud_adapter is not None
+                if self._cloud_adapter is None:
+                    msg = "Cloud adapter not initialized"
+                    raise ValueError(msg)
                 return await self._cloud_adapter.generate_text_stream(request)
             if routing_result.strategy == DeploymentStrategy.EDGE:
+                # Type narrowing: ensure _edge_adapter is not None
+                if self._edge_adapter is None:
+                    msg = "Edge adapter not initialized"
+                    raise ValueError(msg)
                 return await self._edge_adapter.generate_text_stream(request)
             msg = f"Unsupported streaming strategy: {routing_result.strategy}"
             raise ValueError(
@@ -296,11 +304,19 @@ class HybridAI(AIBase):
                 fallback_strategy == DeploymentStrategy.CLOUD
                 and self.settings.cloud_fallback_enabled
             ):
+                # Type narrowing: ensure _cloud_adapter is not None
+                if self._cloud_adapter is None:
+                    msg = "Cloud adapter not initialized"
+                    raise ValueError(msg)
                 return await self._cloud_adapter.generate_text_stream(request)
             if (
                 fallback_strategy == DeploymentStrategy.EDGE
                 and self.settings.edge_fallback_enabled
             ):
+                # Type narrowing: ensure _edge_adapter is not None
+                if self._edge_adapter is None:
+                    msg = "Edge adapter not initialized"
+                    raise ValueError(msg)
                 return await self._edge_adapter.generate_text_stream(request)
             raise
 

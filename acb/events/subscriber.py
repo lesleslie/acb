@@ -418,7 +418,7 @@ class EventSubscriber(ServiceBase):
         self._shutdown_event = asyncio.Event()
 
         # Health monitoring
-        self._health_check_task: asyncio.Task | None = None
+        self._health_check_task: asyncio.Task[None] | None = None
 
         self._logger = logging.getLogger(__name__)
 

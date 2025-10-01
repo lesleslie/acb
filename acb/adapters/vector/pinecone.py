@@ -1,3 +1,4 @@
+from typing import Any
 import typing as t
 from uuid import UUID
 
@@ -209,7 +210,7 @@ class Vector(VectorBase):
 
         try:
             # Prepare vectors for upsert
-            vectors = []
+            vectors: list[Any] = []
             document_ids = []
 
             for doc in documents:

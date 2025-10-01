@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """Integration Test Provider for ACB Testing.
 
 Provides integration testing utilities for end-to-end testing
@@ -45,14 +46,14 @@ class IntegrationTestProvider:
     PROVIDER_METADATA = PROVIDER_METADATA
 
     def __init__(self) -> None:
-        self._test_environments = {}
-        self._external_services = {}
-        self._integration_results = {}
+        self._test_environments: dict[str, t.Any] = {}
+        self._external_services: dict[str, t.Any] = {}
+        self._integration_results: dict[str, t.Any] = {}
 
     async def setup_test_environment(
         self,
         environment_name: str,
-        config: dict,
+        config: dict[str, Any],
     ) -> dict[str, t.Any]:
         """Setup an isolated test environment."""
         test_env = {
@@ -94,7 +95,7 @@ class IntegrationTestProvider:
         cache_mock = AsyncMock()
         cache_mock._data = {}
 
-        async def get(key: str):
+        async def get(key: str) -> None:
             await asyncio.sleep(0.001)  # Simulate network delay
             return cache_mock._data.get(key)
 
@@ -103,7 +104,7 @@ class IntegrationTestProvider:
             cache_mock._data[key] = value
             return True
 
-        async def delete(key: str):
+        async def delete(key: str) -> None:
             return cache_mock._data.pop(key, None) is not None
 
         cache_mock.get.side_effect = get
@@ -117,17 +118,17 @@ class IntegrationTestProvider:
         db_mock = AsyncMock()
         db_mock._tables = {}
 
-        async def execute(query: str, params: tuple | None = None):
+        async def execute(query: str, params: tuple | None = None) -> None:
             await asyncio.sleep(0.005)  # Simulate query execution
             result = MagicMock()
             result.rowcount = 1
             return result
 
-        async def fetch_one(query: str, params: tuple | None = None):
+        async def fetch_one(query: str, params: tuple | None = None) -> None:
             await asyncio.sleep(0.005)
             return {"id": 1, "data": "test_data"}
 
-        async def fetch_all(query: str, params: tuple | None = None):
+        async def fetch_all(query: str, params: tuple | None = None) -> None:
             await asyncio.sleep(0.01)
             return [{"id": i, "data": f"test_data_{i}"} for i in range(1, 4)]
 
@@ -142,7 +143,7 @@ class IntegrationTestProvider:
         storage_mock = AsyncMock()
         storage_mock._files = {}
 
-        async def read(path: str):
+        async def read(path: str) -> None:
             await asyncio.sleep(0.01)  # Simulate file I/O
             if path not in storage_mock._files:
                 msg = f"File not found: {path}"
@@ -154,7 +155,7 @@ class IntegrationTestProvider:
             storage_mock._files[path] = data
             return True
 
-        async def exists(path: str):
+        async def exists(path: str) -> None:
             return path in storage_mock._files
 
         storage_mock.read.side_effect = read
@@ -167,7 +168,7 @@ class IntegrationTestProvider:
         """Create a mock external API for integration testing."""
         api_mock = AsyncMock()
 
-        async def make_request(method: str, endpoint: str, data: dict | None = None):
+        async def make_request(method: str, endpoint: str, data: dict | None = None) -> None:
             # Simulate network latency
             await asyncio.sleep(0.1)
 
@@ -417,7 +418,7 @@ class IntegrationTestProvider:
             del self._test_environments[environment_name]
 
     @asynccontextmanager
-    async def integration_test_context(self, environment_name: str, config: dict):
+    async def integration_test_context(self, environment_name: str, config: dict) -> None:
         """Context manager for integration testing."""
         # Setup environment
         env = await self.setup_test_environment(environment_name, config)

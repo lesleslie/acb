@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """Event Publisher implementation for ACB Events System.
 
 Provides a high-performance, async-first event publisher with pub-sub model,
@@ -129,7 +130,7 @@ class EventQueue:
     def __init__(self, max_size: int = 10000) -> None:
         self._queue: asyncio.Queue[Event] = asyncio.Queue(maxsize=max_size)
         self._dead_letter_queue: asyncio.Queue[Event] = asyncio.Queue()
-        self._processing_tasks: dict[UUID, asyncio.Task] = {}
+        self._processing_tasks: dict[UUID, asyncio.Task[None]] = {}
 
     async def put(self, event: Event) -> None:
         """Add event to queue."""
@@ -173,7 +174,7 @@ class EventPublisher(EventPublisherBase):
         self._event_queue = EventQueue(max_size=self._settings.queue_max_size)
 
         # Processing control
-        self._worker_tasks: list[asyncio.Task] = []
+        self._worker_tasks: list[asyncio.Task[None]] = []
         self._processing_semaphore = asyncio.Semaphore(
             self._settings.max_concurrent_events,
         )
@@ -181,7 +182,7 @@ class EventPublisher(EventPublisherBase):
 
         # Subscription management
         self._subscription_lock = asyncio.Lock()
-        self._subscription_tasks: dict[UUID, list[asyncio.Task]] = defaultdict(list)
+        self._subscription_tasks: dict[UUID, list[asyncio.Task[None]]] = defaultdict(list[Any])
 
         # Event routing maps for performance
         self._type_subscriptions: dict[str, list[EventSubscription]] = defaultdict(list)

@@ -226,7 +226,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                 self.dimension = dimension
                 self.memory_usage = 0
 
-            async def encode(self, texts: list[str], **kwargs) -> np.ndarray:
+            async def  encode((self: Any, texts: list[str], **kwargs)) -> np.ndarray:
                 # Simulate memory-efficient encoding
                 len(texts)
                 # Create deterministic embeddings based on text hash

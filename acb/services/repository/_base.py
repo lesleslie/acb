@@ -87,7 +87,7 @@ class PaginationInfo:
     total_items: int | None = None
     total_pages: int | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.total_items is not None and self.total_pages is None:
             self.total_pages = (self.total_items + self.page_size - 1) // self.page_size
 
@@ -136,8 +136,8 @@ class RepositorySettings(Settings):
 
     @field_validator("default_page_size")
     @classmethod
-    def validate_page_size(cls, v, info):
-        values = info.data if hasattr(info, "data") else {}
+    def validate_page_size(cls, v, info) -> None:
+        values: Any = info.data if hasattr(info, "data") else {}
         if "max_page_size" in values and v > values["max_page_size"]:
             msg = "default_page_size cannot exceed max_page_size"
             raise ValueError(msg)
@@ -213,7 +213,7 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         """Build cache key with proper prefix."""
         return f"{self.cache_key_prefix}:{key}"
 
-    async def _get_cache(self):
+    async def _get_cache(self) -> None:
         """Get cache adapter if enabled."""
         if self.settings.cache_enabled and self._cache is None:
             try:

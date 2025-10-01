@@ -238,7 +238,7 @@ class TransformationService(ServiceBase):
         super().__init__()
         self._settings = settings or TransformationSettings()
         self._transformer: DataTransformer | None = None
-        self._active_transformations: dict[str, asyncio.Task] = {}
+        self._active_transformations: dict[str, asyncio.Task[None]] = {}
         self._templates: dict[str, TransformationTemplate] = {}
         self._transformation_semaphore: asyncio.Semaphore | None = None
 

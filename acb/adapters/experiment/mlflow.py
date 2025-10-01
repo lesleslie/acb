@@ -213,7 +213,7 @@ class MLflowExperiment(BaseExperimentAdapter):
 
         return client
 
-    async def _run_sync(self, func, *args, **kwargs):
+    async def _run_sync(self, func, *args, **kwargs) -> None:
         """Run synchronous function in thread pool."""
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, func, *args, **kwargs)

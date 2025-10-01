@@ -1,3 +1,4 @@
+from typing import Any
 """ArangoDB graph database adapter."""
 
 import typing as t
@@ -254,7 +255,7 @@ class Graph(GraphBase):
             records = []
             nodes = []
             edges = []
-            paths = []
+            paths: list[Any] = []
 
             for record in cursor:
                 records.append(record)

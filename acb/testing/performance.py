@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """ACB Performance Testing Utilities.
 
 Provides performance testing tools, benchmarking utilities, and
@@ -62,18 +63,18 @@ class PerformanceTimer:
         self.elapsed = self.end_time - self.start_time
         return self.elapsed
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.stop()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> None:
         self.start()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         self.stop()
 
 
@@ -89,7 +90,7 @@ class BenchmarkRunner:
         self.warmup_rounds = warmup_rounds
         self.test_rounds = test_rounds
         self.collect_memory = collect_memory
-        self.results: list[dict] = []
+        self.results: list[dict[str, Any]] = []
 
     async def run_benchmark(
         self,
@@ -329,7 +330,7 @@ class MetricsCollector:
         }
 
     @contextmanager
-    def measure_operation(self, operation_name: str):
+    def measure_operation(self, operation_name: str) -> None:
         """Context manager to measure an operation."""
         start_time = time.perf_counter()
         try:
@@ -367,13 +368,13 @@ def measure_execution_time(func: t.Callable) -> t.Callable:
     """Decorator to measure function execution time."""
     if asyncio.iscoroutinefunction(func):
 
-        async def async_wrapper(*args, **kwargs):
+        async def async_wrapper(*args, **kwargs) -> None:
             async with PerformanceTimer():
                 return await func(*args, **kwargs)
 
         return async_wrapper
 
-    def sync_wrapper(*args, **kwargs):
+    def sync_wrapper(*args, **kwargs) -> None:
         with PerformanceTimer():
             return func(*args, **kwargs)
 
@@ -383,7 +384,7 @@ def measure_execution_time(func: t.Callable) -> t.Callable:
 def profile_memory_usage(func: t.Callable) -> t.Callable:
     """Decorator to profile memory usage."""
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> None:
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
@@ -398,7 +399,7 @@ def profile_memory_usage(func: t.Callable) -> t.Callable:
 
 
 @asynccontextmanager
-async def performance_monitor(name: str, thresholds: dict | None = None):
+async def performance_monitor(name: str, thresholds: dict | None = None) -> None:
     """Context manager for comprehensive performance monitoring."""
     process = psutil.Process(os.getpid())
     metrics_collector = MetricsCollector()

@@ -662,7 +662,7 @@ class CloudAI(AIBase):
             messages.append({"role": "system", "content": request.system_prompt})
 
         if isinstance(request.prompt, str):
-            content = request.prompt
+            content: str | list[dict[str, t.Any]] = request.prompt
             if request.images:
                 # Multimodal content
                 content = [

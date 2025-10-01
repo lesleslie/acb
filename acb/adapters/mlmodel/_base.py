@@ -260,7 +260,7 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         super().__init__()
         self._settings = settings or MLModelSettings()
         self._client = None
-        self._health_monitor_task: asyncio.Task | None = None
+        self._health_monitor_task: asyncio.Task[None] | None = None
         self._metrics: dict[str, Any] = {}
 
     @property
@@ -541,7 +541,7 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         await self.init()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def  __aexit__((self: Any, exc_type: Any, exc_val: Any, exc_tb: Any)) -> None:
         """Async context manager exit with cleanup."""
         await self.stop_health_monitoring()
         await self.cleanup()

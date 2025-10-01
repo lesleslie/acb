@@ -1,3 +1,4 @@
+from typing import Any
 """Amazon Neptune graph database adapter."""
 
 import typing as t
@@ -451,7 +452,7 @@ class Graph(GraphBase):
         # Convert to GraphPathModel
         result_paths = []
         for path in paths:
-            nodes = []
+            nodes: list[Any] = []
             edges = []
 
             for _i, element in enumerate(path):

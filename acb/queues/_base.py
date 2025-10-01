@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """Base queue system for ACB framework.
 
 This module provides the foundation for ACB's task queue system with
@@ -123,7 +124,7 @@ class TaskData(BaseModel):
 
     @field_validator("scheduled_at", mode="before")
     @classmethod
-    def parse_scheduled_at(cls, v):
+    def parse_scheduled_at(cls, v) -> None:
         if isinstance(v, str):
             return datetime.fromisoformat(v)
         return v
@@ -290,7 +291,7 @@ def task_handler(
     task_type: str,
     on_failure: t.Callable[[TaskData, Exception], t.Awaitable[bool]] | None = None,
     on_success: t.Callable[[TaskData, TaskResult], t.Awaitable[None]] | None = None,
-) -> t.Callable[[t.Callable], FunctionalTaskHandler]:
+) -> t.Callable[[t.Callable[..., Any]], FunctionalTaskHandler]:
     """Decorator to create a task handler from a function.
 
     Args:

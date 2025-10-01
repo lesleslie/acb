@@ -136,7 +136,7 @@ class MemoryQueue(QueueBase):
         self._task_count = 0
 
         # Background tasks
-        self._delayed_task_processor: asyncio.Task | None = None
+        self._delayed_task_processor: asyncio.Task[None] | None = None
 
     async def start(self) -> None:
         """Start the memory queue."""
@@ -343,7 +343,7 @@ class MemoryQueue(QueueBase):
         queue = self._queues[queue_name]
 
         # Count tasks by priority
-        priority_counts = defaultdict(int)
+        priority_counts: defaultdict[str, int] = defaultdict(int)
         for item in queue:
             priority_counts[item.task.priority.name] += 1
 

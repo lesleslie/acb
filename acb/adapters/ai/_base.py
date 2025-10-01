@@ -61,7 +61,7 @@ class ModelInfo:
     capabilities: list[ModelCapability]
     context_length: int
     cost_per_token: float | None = None
-    deployment_strategies: list[DeploymentStrategy] = None
+    deployment_strategies: list[DeploymentStrategy] | None = None
     memory_footprint_mb: int | None = None
     latency_p95_ms: int | None = None
     supports_streaming: bool = True

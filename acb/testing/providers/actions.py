@@ -1,3 +1,4 @@
+from typing import Any, Callable, Dict, List, Set, Tuple
 """Mock Action Provider for ACB Testing.
 
 Provides mock implementations of ACB actions with realistic behavior
@@ -164,7 +165,7 @@ class MockActionProvider:
         self._mock_instances["encode"] = encode_mock
         return encode_mock
 
-    def _mock_json_encode(self, data: t.Any, behavior: dict) -> str:
+    def _mock_json_encode(self, data: t.Any, behavior: dict[str, Any]) -> str:
         """Helper for JSON encoding mock."""
         import json
         import random
@@ -361,7 +362,7 @@ class MockActionProvider:
         self,
         action_type: str,
         method: str,
-        args: tuple,
+        args: tuple[Any, ...],
         kwargs: dict,
     ) -> None:
         """Record a method call for analysis."""
