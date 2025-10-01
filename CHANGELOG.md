@@ -20,6 +20,16 @@ All notable changes to ACB (Asynchronous Component Base) will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2025-10-01
+
+### Changed
+
+- Acb (quality: 73/100) - 2025-10-01 14:13:25
+
+### Fixed
+
+- test: Update 70 files
+
 ## [0.22.1] - 2025-10-01
 
 ### Changed
