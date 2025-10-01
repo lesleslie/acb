@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
+
 """Mock Service Provider for ACB Testing.
 
 Provides mock implementations of ACB services with realistic behavior
@@ -69,7 +70,9 @@ class MockServiceProvider:
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_optimize(target: str, parameters: dict[str, Any] | None = None) -> None:
+        async def mock_optimize(
+            target: str, parameters: dict[str, Any] | None = None
+        ) -> dict[str, Any]:
             import asyncio
 
             await asyncio.sleep(default_behavior["optimization_delay"])
@@ -89,7 +92,7 @@ class MockServiceProvider:
                 "parameters_applied": parameters or {},
             }
 
-        async def mock_get_metrics(category: str | None = None) -> None:
+        async def mock_get_metrics(category: str | None = None) -> dict[str, Any]:
             import asyncio
 
             await asyncio.sleep(default_behavior["metrics_delay"])
@@ -98,7 +101,9 @@ class MockServiceProvider:
                 return {category: perf_mock._metrics.get(category, 0.0)}
             return perf_mock._metrics.copy()
 
-        async def mock_benchmark(operation: str, iterations: int = 10) -> None:
+        async def mock_benchmark(
+            operation: str, iterations: int = 10
+        ) -> dict[str, Any]:
             import asyncio
             import random
 
@@ -144,7 +149,7 @@ class MockServiceProvider:
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_check_health(component: str | None = None) -> None:
+        async def mock_check_health(component: str | None = None) -> dict[str, Any]:
             import asyncio
 
             await asyncio.sleep(default_behavior["check_delay"])
@@ -178,10 +183,10 @@ class MockServiceProvider:
 
             return result
 
-        async def mock_get_status() -> None:
+        async def mock_get_status() -> str:
             return health_mock._status
 
-        async def mock_get_uptime() -> None:
+        async def mock_get_uptime() -> int:
             return health_mock._uptime
 
         # Assign behaviors
@@ -208,7 +213,9 @@ class MockServiceProvider:
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_validate(data: t.Any, schema: dict | None = None) -> None:
+        async def mock_validate(
+            data: t.Any, schema: dict[str, Any] | None = None
+        ) -> dict[str, Any]:
             import asyncio
 
             await asyncio.sleep(default_behavior["validation_delay"])
@@ -234,7 +241,7 @@ class MockServiceProvider:
                 "schema": schema,
             }
 
-        async def mock_sanitize(data: str) -> None:
+        async def mock_sanitize(data: str) -> str:
             if not default_behavior["sanitization_enabled"]:
                 return data
 
@@ -247,7 +254,9 @@ class MockServiceProvider:
             sanitized = sanitized.replace("javascript:", "")
             return sanitized.strip()
 
-        async def mock_validate_schema(data: dict, schema_name: str) -> None:
+        async def mock_validate_schema(
+            data: dict[str, Any], schema_name: str
+        ) -> dict[str, Any]:
             import asyncio
 
             await asyncio.sleep(default_behavior["validation_delay"])
@@ -285,7 +294,7 @@ class MockServiceProvider:
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_get_repository(entity_type: str) -> None:
+        async def mock_get_repository(entity_type: str) -> AsyncMock:
             import asyncio
 
             await asyncio.sleep(default_behavior["operation_delay"])
@@ -296,17 +305,17 @@ class MockServiceProvider:
                 mock_repo._entities = {}
                 mock_repo._next_id = 1
 
-                async def repo_find(entity_id: int) -> None:
+                async def repo_find(entity_id: int) -> dict[str, Any] | None:
                     return mock_repo._entities.get(entity_id)
 
-                async def repo_save(entity: dict) -> None:
+                async def repo_save(entity: dict[str, Any]) -> dict[str, Any]:
                     if "id" not in entity:
                         entity["id"] = mock_repo._next_id
                         mock_repo._next_id += 1
                     mock_repo._entities[entity["id"]] = entity
                     return entity
 
-                async def repo_delete(entity_id: int) -> None:
+                async def repo_delete(entity_id: int) -> bool:
                     return mock_repo._entities.pop(entity_id, None) is not None
 
                 mock_repo.find.side_effect = repo_find
@@ -317,7 +326,7 @@ class MockServiceProvider:
 
             return repo_mock._repositories[entity_type]
 
-        async def mock_begin_transaction() -> None:
+        async def mock_begin_transaction() -> AsyncMock:
             import asyncio
 
             await asyncio.sleep(default_behavior["transaction_delay"])
@@ -370,7 +379,7 @@ class MockServiceProvider:
         self,
         service_type: str,
         behavior: dict[str, t.Any] | None = None,
-    ):
+    ) -> t.AsyncGenerator[AsyncMock]:
         """Context manager for temporary mock service."""
         # Create mock based on type
         if service_type == "performance":

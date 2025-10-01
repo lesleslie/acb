@@ -1,4 +1,5 @@
 from typing import Any
+
 """Amazon Neptune graph database adapter."""
 
 import typing as t

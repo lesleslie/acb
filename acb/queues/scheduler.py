@@ -261,8 +261,8 @@ class TaskScheduler:
                     "rule_id": str(rule.rule_id),
                     "rule_name": rule.name,
                     "scheduled_at": run_time.isoformat(),
-                    **rule.tags,
-                },
+                }
+                | rule.tags,
             )
 
             # Enqueue task
@@ -341,14 +341,16 @@ class TaskScheduler:
 
     def get_next_runs(self, limit: int = 10) -> list[tuple[datetime, ScheduleRule]]:
         """Get the next scheduled runs."""
-        upcoming = []
-
-        for rule in self._rules.values():
-            if rule.enabled and rule.next_run:
-                upcoming.append((rule.next_run, rule))
+        upcoming = [
+            (rule.next_run, rule)
+            for rule in self._rules.values()
+            if rule.enabled and rule.next_run
+        ]
 
         # Sort by next run time
-        upcoming.sort(key=lambda x: x[0])
+        import operator
+
+        upcoming.sort(key=operator.itemgetter(0))
 
         return upcoming[:limit]
 

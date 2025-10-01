@@ -11,7 +11,7 @@ import asyncio
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 import aiohttp
 from pydantic import Field
@@ -43,6 +43,8 @@ except ImportError:
     Run = None
     _wandb_available = False
 
+T = TypeVar("T")
+
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
@@ -51,16 +53,20 @@ MODULE_METADATA = AdapterMetadata(
     provider="wandb",
     version="1.0.0",
     acb_min_version="0.19.0",
+    author="ACB Team",
+    created_date="2024-01-01",
+    last_modified="2025-10-01",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
         AdapterCapability.METADATA_TRACKING,
         AdapterCapability.ARTIFACT_MANAGEMENT,
-        AdapterCapability.BATCH_OPERATIONS,
+        AdapterCapability.BATCHING,
         AdapterCapability.CONNECTION_POOLING,
     ],
     required_packages=["wandb>=0.16.0"],
     description="High-performance W&B experiment tracking with async operations",
+    settings_class="WandbExperimentSettings",
 )
 
 
@@ -186,10 +192,10 @@ class WandbExperiment(BaseExperimentAdapter):
 
         return api
 
-    async def _run_sync(self, func, *args, **kwargs) -> None:
+    async def _run_sync(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         """Run synchronous function in thread pool."""
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, func, *args, **kwargs)
+        return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
     async def health_check(self) -> bool:
         """Check W&B service health."""
@@ -257,20 +263,17 @@ class WandbExperiment(BaseExperimentAdapter):
         )
 
         # Convert projects to experiment info
-        results = []
-        for project in projects[:max_results]:
-            results.append(
-                ExperimentInfo(
-                    experiment_id=project.name,
-                    experiment_name=project.name,
-                    status=ExperimentStatus.RUNNING,
-                    created_at=project.created_at,
-                    updated_at=project.updated_at,
-                    tags={},
-                ),
+        return [
+            ExperimentInfo(
+                experiment_id=project.name,
+                experiment_name=project.name,
+                status=ExperimentStatus.RUNNING,
+                created_at=project.created_at,
+                updated_at=project.updated_at,
+                tags={},
             )
-
-        return results
+            for project in projects[:max_results]
+        ]
 
     async def delete_experiment(self, experiment_id: str) -> None:
         """Delete an experiment."""
@@ -290,7 +293,7 @@ class WandbExperiment(BaseExperimentAdapter):
         project = experiment_id or self._settings.project
 
         # Initialize W&B run
-        run = await self._run_sync(
+        run: Any = await self._run_sync(
             wandb.init,
             project=project,
             entity=self._settings.entity,
@@ -306,7 +309,8 @@ class WandbExperiment(BaseExperimentAdapter):
         )
 
         self._current_run = run
-        return run.id
+        run_id: str = run.id
+        return run_id
 
     async def end_run(
         self,
@@ -393,7 +397,7 @@ class WandbExperiment(BaseExperimentAdapter):
     ) -> None:
         """Log multiple metrics."""
         if self._current_run and self._current_run.id == run_id:
-            log_data = dict(metrics)
+            log_data = metrics.copy()
             if step is not None:
                 log_data["_step"] = step
 
@@ -479,20 +483,17 @@ class WandbExperiment(BaseExperimentAdapter):
             f"{self._settings.entity}/{self._settings.project}/{run_id}",
         )
 
-        artifacts = []
-        for artifact in run.logged_artifacts():
-            artifacts.append(
-                ArtifactInfo(
-                    name=artifact.name,
-                    path=artifact.name,
-                    artifact_type=ArtifactType(artifact.type),
-                    size_bytes=artifact.size,
-                    created_at=artifact.created_at,
-                    metadata=artifact.metadata or {},
-                ),
+        return [
+            ArtifactInfo(
+                name=artifact.name,
+                path=artifact.name,
+                artifact_type=ArtifactType(artifact.type),
+                size_bytes=artifact.size,
+                created_at=artifact.created_at,
+                metadata=artifact.metadata or {},
             )
-
-        return artifacts
+            for artifact in run.logged_artifacts()
+        ]
 
     # Search and Query
     async def search_runs(

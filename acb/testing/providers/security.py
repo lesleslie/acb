@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
+
 """Security Test Provider for ACB Testing.
 
 Provides security testing utilities, vulnerability scanning,
@@ -131,7 +132,12 @@ class SecurityTestProvider:
         if not vulnerabilities:
             return "LOW"
 
-        severity_scores = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+        severity_scores: dict[str, int] = {
+            "LOW": 1,
+            "MEDIUM": 2,
+            "HIGH": 3,
+            "CRITICAL": 4,
+        }
         max_severity = max(
             (severity_scores.get(v["severity"], 1) for v in vulnerabilities),
             default=1,
@@ -171,7 +177,7 @@ class SecurityTestProvider:
         """Create a mock for authentication testing."""
         auth_mock = AsyncMock()
 
-        default_behavior = {
+        default_behavior: dict[str, t.Any] = {
             "valid_tokens": ["valid_token_123", "admin_token_456"],
             "expired_tokens": ["expired_token_789"],
             "invalid_tokens": ["invalid_token_000"],
@@ -181,19 +187,23 @@ class SecurityTestProvider:
         if behavior:
             default_behavior.update(behavior)
 
-        async def mock_validate_token(token: str) -> None:
+        async def mock_validate_token(token: str) -> dict[str, Any]:
             import asyncio
 
-            await asyncio.sleep(default_behavior["auth_delay"])
+            auth_delay = t.cast(float, default_behavior["auth_delay"])
+            valid_tokens = t.cast(list[str], default_behavior["valid_tokens"])
+            expired_tokens = t.cast(list[str], default_behavior["expired_tokens"])
 
-            if token in default_behavior["valid_tokens"]:
+            await asyncio.sleep(auth_delay)
+
+            if token in valid_tokens:
                 return {
                     "valid": True,
                     "user_id": "test_user",
                     "permissions": ["read", "write"],
                     "expires_at": "2024-12-31T23:59:59Z",
                 }
-            if token in default_behavior["expired_tokens"]:
+            if token in expired_tokens:
                 return {
                     "valid": False,
                     "error": "Token expired",
@@ -205,7 +215,7 @@ class SecurityTestProvider:
                 "error_code": "INVALID_TOKEN",
             }
 
-        async def mock_check_permission(user_id: str, permission: str) -> None:
+        async def mock_check_permission(user_id: str, permission: str) -> bool:
             # Simple permission checking simulation
             admin_permissions = ["read", "write", "admin", "delete"]
             user_permissions = ["read"]
@@ -318,11 +328,13 @@ class SecurityTestProvider:
         assert vuln_type in found_types, f"Vulnerability type {vuln_type} not detected"
 
     @asynccontextmanager
-    async def security_test_context(self, test_name: str) -> None:
+    async def security_test_context(
+        self, test_name: str
+    ) -> t.AsyncGenerator[t.Callable[[dict[str, Any]], None]]:
         """Context manager for security testing."""
-        scan_results = []
+        scan_results: list[dict[str, Any]] = []
 
-        def record_scan(result: Any) -> None:
+        def record_scan(result: dict[str, Any]) -> None:
             scan_results.append(result)
 
         try:
@@ -342,7 +354,7 @@ class SecurityTestProvider:
         """Get scan results for a specific test."""
         return self._scan_results.get(test_name)
 
-    def get_all_scan_results(self) -> dict[str, dict]:
+    def get_all_scan_results(self) -> dict[str, dict[str, Any]]:
         """Get all scan results."""
         return self._scan_results.copy()
 

@@ -7,6 +7,7 @@ DynamoDB backends for scalable machine learning feature management.
 
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
@@ -134,10 +135,10 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 msg,
             )
 
-        super().__init__(settings or AWSFeatureStoreSettings())
-        self._sagemaker_client = None
-        self._sagemaker_runtime_client = None
-        self._s3_client = None
+        super().__init__(settings or AWSFeatureStoreSettings(s3_bucket="", role_arn=""))
+        self._sagemaker_client: Any = None
+        self._sagemaker_runtime_client: Any = None
+        self._s3_client: Any = None
         self._feature_groups_cache: dict[str, dict[str, Any]] = {}
 
     @property
@@ -185,7 +186,11 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
     async def _refresh_feature_groups_cache(self) -> None:
         """Refresh the feature groups cache."""
-        try:
+        if self._sagemaker_client is None:
+            return
+
+        with suppress(Exception):
+            # Cache refresh failed, continue with empty cache
             response = self._sagemaker_client.list_feature_groups(
                 NameContains=self.aws_settings.feature_group_prefix,
             )
@@ -199,9 +204,6 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 )
 
                 self._feature_groups_cache[fg_name] = fg_detail
-
-        except Exception:
-            pass  # Cache refresh failed, continue with empty cache
 
     # Feature Serving Methods
     async def get_online_features(
@@ -227,6 +229,9 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 )
 
                 for feature_group, feature_names in features_by_group.items():
+                    if self._sagemaker_runtime_client is None:
+                        continue
+
                     try:
                         # Get record from online store
                         response = self._sagemaker_runtime_client.get_record(
@@ -416,6 +421,14 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             failed_count = 0
             errors = []
 
+            if self._sagemaker_runtime_client is None:
+                return FeatureIngestionResponse(
+                    ingested_count=0,
+                    failed_count=len(request.features),
+                    errors=["Client not initialized"],
+                    latency_ms=(datetime.now() - start_time).total_seconds() * 1000,
+                )
+
             for record in records:
                 try:
                     self._sagemaker_runtime_client.put_record(
@@ -471,6 +484,14 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             ingested_count = 0
             failed_count = 0
             errors = []
+
+            if self._sagemaker_runtime_client is None:
+                return FeatureIngestionResponse(
+                    ingested_count=0,
+                    failed_count=len(records),
+                    errors=["Client not initialized"],
+                    latency_ms=(datetime.now() - start_time).total_seconds() * 1000,
+                )
 
             # AWS Feature Store doesn't have native batch put, so we iterate
             for record in records:
@@ -597,9 +618,12 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
         description: str | None = None,
     ) -> bool:
         """Create a new feature group in AWS Feature Store."""
+        if self._sagemaker_client is None:
+            await self._ensure_online_client()
+
         try:
             # Convert feature definitions to AWS format
-            feature_definitions = []
+            feature_definitions: list[dict[str, str]] = []
             for feature in features:
                 feature_definitions.append(
                     {
@@ -617,7 +641,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
             # Create feature group configuration
-            create_kwargs = {
+            create_kwargs: dict[str, Any] = {
                 "FeatureGroupName": name,
                 "RecordIdentifierFeatureName": "entity_id",
                 "EventTimeFeatureName": "event_time",
@@ -629,7 +653,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
             # Configure online store
             if self.aws_settings.enable_online_store:
-                online_store_config = {"EnableOnlineStore": True}
+                online_store_config: dict[str, Any] = {"EnableOnlineStore": True}
                 if self.aws_settings.online_store_kms_key_id:
                     online_store_config["SecurityConfig"] = {
                         "KmsKeyId": self.aws_settings.online_store_kms_key_id,
@@ -638,7 +662,7 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
             # Configure offline store
             if self.aws_settings.enable_offline_store:
-                offline_store_config = {
+                offline_store_config: dict[str, Any] = {
                     "S3StorageConfig": {
                         "S3Uri": f"s3://{self.aws_settings.s3_bucket}/{self.aws_settings.s3_prefix}/",
                     },
@@ -658,7 +682,8 @@ class AWSFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 create_kwargs["OfflineStoreConfig"] = offline_store_config
 
             # Create the feature group
-            self._sagemaker_client.create_feature_group(**create_kwargs)
+            if self._sagemaker_client is not None:
+                self._sagemaker_client.create_feature_group(**create_kwargs)
 
             # Refresh cache
             await self._refresh_feature_groups_cache()
@@ -812,7 +837,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = AWSFeatureStoreAdapter
-FeatureStoreSettings = AWSFeatureStoreSettings
+FeatureStoreSettings = AWSFeatureStoreSettings  # type: ignore[misc, assignment]
 
 __all__ = [
     "MODULE_METADATA",

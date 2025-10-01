@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
+
 """ACB Testing Utilities.
 
 Provides utility functions for testing ACB components, adapters,
@@ -117,7 +118,9 @@ def create_test_config(overrides: dict[str, t.Any] | None = None) -> Config:
 
     if overrides:
         # Deep merge overrides
-        def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+        def deep_merge(
+            base: dict[str, Any], override: dict[str, Any]
+        ) -> dict[str, Any]:
             result = base.copy()
             for key, value in override.items():
                 if (

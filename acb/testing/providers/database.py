@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
+
 """Database Test Provider for ACB Testing.
 
 Provides database testing utilities, fixtures, and helpers
@@ -74,7 +75,9 @@ class DatabaseTestProvider:
 
         db_mock._config = default_config
 
-        async def mock_execute(query: str, params: tuple | None = None) -> None:
+        async def mock_execute(
+            query: str, params: tuple[Any, ...] | None = None
+        ) -> MagicMock:
             # Simulate query execution
             result_mock = MagicMock()
 
@@ -99,14 +102,18 @@ class DatabaseTestProvider:
 
             return result_mock
 
-        async def mock_fetch_one(query: str, params: tuple | None = None) -> None:
+        async def mock_fetch_one(
+            query: str, params: tuple[Any, ...] | None = None
+        ) -> dict[str, Any]:
             return {
                 "id": 1,
                 "name": "test_record",
                 "created_at": "2024-01-01T12:00:00Z",
             }
 
-        async def mock_fetch_all(query: str, params: tuple | None = None) -> None:
+        async def mock_fetch_all(
+            query: str, params: tuple[Any, ...] | None = None
+        ) -> list[dict[str, Any]]:
             return [
                 {
                     "id": 1,
@@ -120,7 +127,7 @@ class DatabaseTestProvider:
                 },
             ]
 
-        async def mock_begin_transaction() -> None:
+        async def mock_begin_transaction() -> AsyncMock:
             transaction_mock = AsyncMock()
             transaction_mock._id = len(db_mock._transactions)
             transaction_mock._committed = False
@@ -147,7 +154,9 @@ class DatabaseTestProvider:
         self._test_databases[db_type] = db_mock
         return db_mock
 
-    def create_fixtures(self, table_name: str, data: list[dict]) -> dict[str, t.Any]:
+    def create_fixtures(
+        self, table_name: str, data: list[dict[str, Any]]
+    ) -> dict[str, t.Any]:
         """Create test data fixtures."""
         fixture = {
             "table": table_name,
@@ -212,7 +221,7 @@ class DatabaseTestProvider:
             )
             return False
 
-    def get_migration_history(self) -> list[dict]:
+    def get_migration_history(self) -> list[dict[str, Any]]:
         """Get migration execution history."""
         return self._migrations.copy()
 
@@ -225,7 +234,9 @@ class DatabaseTestProvider:
         db._transactions.clear()
 
     @asynccontextmanager
-    async def database_transaction_test(self, db: AsyncMock) -> None:
+    async def database_transaction_test(
+        self, db: AsyncMock
+    ) -> t.AsyncGenerator[AsyncMock]:
         """Context manager for testing database transactions."""
         transaction = await db.begin_transaction()
 
@@ -243,7 +254,7 @@ class DatabaseTestProvider:
         pool_mock._active_connections = 0
         pool_mock._connections = []
 
-        async def acquire_connection() -> None:
+        async def acquire_connection() -> AsyncMock:
             if pool_mock._active_connections < pool_mock._size:
                 conn_mock = AsyncMock()
                 conn_mock._pool = pool_mock
@@ -253,7 +264,7 @@ class DatabaseTestProvider:
             msg = "Connection pool exhausted"
             raise RuntimeError(msg)
 
-        async def release_connection(conn: Any) -> None:
+        async def release_connection(conn: AsyncMock) -> None:
             if conn in pool_mock._connections:
                 pool_mock._active_connections -= 1
                 pool_mock._connections.remove(conn)

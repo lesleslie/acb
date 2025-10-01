@@ -356,7 +356,8 @@ def get_test_provider_class(category: str, name: str | None = None) -> type[t.An
 
     try:
         module = import_module(provider.module)
-        return getattr(module, provider.class_name)
+        cls: type[t.Any] = getattr(module, provider.class_name)
+        return cls
     except (ImportError, AttributeError) as e:
         msg = f"Test provider not available: {provider.module}.{provider.class_name}"
         raise TestNotInstalled(msg) from e
@@ -451,9 +452,9 @@ def register_test_providers(providers_path: str | None = None) -> None:
     # For now, we rely on static registration
 
 
-def get_test_provider_info(provider_class: type) -> dict[str, t.Any]:
+def get_test_provider_info(provider_class: type[t.Any]) -> dict[str, t.Any]:
     """Get information about a test provider class."""
-    info = {
+    info: dict[str, t.Any] = {
         "class_name": provider_class.__name__,
         "module": provider_class.__module__,
         "docstring": provider_class.__doc__,
@@ -461,7 +462,7 @@ def get_test_provider_info(provider_class: type) -> dict[str, t.Any]:
 
     # Check for metadata
     if hasattr(provider_class, "PROVIDER_METADATA"):
-        metadata = provider_class.PROVIDER_METADATA
+        metadata = getattr(provider_class, "PROVIDER_METADATA")
         if isinstance(metadata, TestProviderMetadata):
             info["metadata"] = metadata.model_dump()
 

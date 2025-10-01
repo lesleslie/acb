@@ -130,7 +130,7 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                 msg,
             )
 
-        super().__init__(settings or TectonSettings())
+        super().__init__(settings or TectonSettings(api_key=""))
         self._workspace = None
         self._feature_services: dict[str, FeatureService] = {}
 
@@ -783,7 +783,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = TectonAdapter
-FeatureStoreSettings = TectonSettings  # type: ignore[no-redef]
+FeatureStoreSettings = TectonSettings  # type: ignore[misc, assignment]
 
 __all__ = [
     "MODULE_METADATA",

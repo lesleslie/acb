@@ -663,28 +663,28 @@ class RequestResponseValidator:
         errors = []
 
         # Check required fields
-        for field in rule.required_fields:
-            if field not in data:
-                errors.append(
-                    {
-                        "rule": rule.name,
-                        "field": field,
-                        "message": f"Required field '{field}' is missing",
-                        "error_type": "required_field_missing",
-                    },
-                )
+        errors.extend(
+            {
+                "rule": rule.name,
+                "field": field,
+                "message": f"Required field '{field}' is missing",
+                "error_type": "required_field_missing",
+            }
+            for field in rule.required_fields
+            if field not in data
+        )
 
         # Check forbidden fields
-        for field in rule.forbidden_fields:
-            if field in data:
-                errors.append(
-                    {
-                        "rule": rule.name,
-                        "field": field,
-                        "message": f"Forbidden field '{field}' is present",
-                        "error_type": "forbidden_field_present",
-                    },
-                )
+        errors.extend(
+            {
+                "rule": rule.name,
+                "field": field,
+                "message": f"Forbidden field '{field}' is present",
+                "error_type": "forbidden_field_present",
+            }
+            for field in rule.forbidden_fields
+            if field in data
+        )
 
         # Check field patterns
         for field, pattern_str in rule.field_patterns.items():

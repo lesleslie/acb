@@ -62,7 +62,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
 
     def serialize(self, instance: T) -> dict[str, Any]:
         if ATTRS_AVAILABLE and attrs_lib.has(instance.__class__):
-            return attrs_lib.asdict(instance)  # type: ignore[arg-type,no-any-return]
+            return attrs_lib.asdict(instance)  # type: ignore[no-any-return]
         return self._manual_serialize(instance)
 
     def _manual_serialize(self, instance: T) -> dict[str, Any]:
@@ -79,7 +79,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
                 ):
                     value = getattr(instance, attr_name)
                     result[attr_name] = self._serialize_value(value)
-        return result  # type: ignore  # type: ignore[no-any-return]
+        return result
 
     def _serialize_value(self, value: Any) -> Any:
         if ATTRS_AVAILABLE and attrs_lib.has(value.__class__):
@@ -88,7 +88,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
             return [self._serialize_value(item) for item in value]
         if isinstance(value, dict):
             return {k: self._serialize_value(v) for k, v in value.items()}
-        return value  # type: ignore  # type: ignore[no-any-return]
+        return value
 
     def deserialize(self, data: dict[str, Any]) -> T:
         msg = "Deserialize requires specific model class context"
@@ -99,7 +99,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
             return model_class(**data)
         except Exception:
             filtered_data = self._filter_data_for_model(model_class, data)
-            return model_class(**filtered_data)  # type: ignore  # type: ignore[no-any-return]
+            return model_class(**filtered_data)
 
     def _filter_data_for_model(
         self,
@@ -116,11 +116,11 @@ class AttrsModelAdapter(ModelAdapter[T]):
 
     def get_entity_name(self, model_class: type[T]) -> str:
         if hasattr(model_class, "__tablename__"):
-            return str(model_class.__tablename__)  # type: ignore  # type: ignore[attr-defined]
+            return str(model_class.__tablename__)  # type: ignore[attr-defined]
         if hasattr(model_class, "__collection_name__"):
-            return str(model_class.__collection_name__)  # type: ignore  # type: ignore[attr-defined]
+            return str(model_class.__collection_name__)  # type: ignore[attr-defined]
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
-            for field in attrs_lib.fields(model_class):  # type: ignore[arg-type]
+            for field in attrs_lib.fields(model_class):
                 if hasattr(field, "metadata") and "table_name" in field.metadata:
                     return str(field.metadata["table_name"])
 
@@ -129,7 +129,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
     def get_field_mapping(self, model_class: type[T]) -> dict[str, str]:
         field_mapping = {}
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
-            for field in attrs_lib.fields(model_class):  # type: ignore[arg-type]
+            for field in attrs_lib.fields(model_class):
                 alias = field.name
                 if hasattr(field, "metadata") and "alias" in field.metadata:
                     alias = str(field.metadata["alias"])
@@ -151,7 +151,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
         except Exception:
             filtered_data = self._filter_data_for_model(model_class, data)
             temp_instance = self.deserialize_to_class(model_class, filtered_data)
-            return self.serialize(temp_instance)  # type: ignore  # type: ignore[no-any-return]
+            return self.serialize(temp_instance)
 
     def get_primary_key_field(self, model_class: type[T]) -> str:
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
@@ -162,7 +162,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
 
     def _get_attrs_primary_key(self, model_class: type[T]) -> str:
         common_pk_names = ("id", "pk", "primary_key", "_id")
-        for field in attrs_lib.fields(model_class):  # type: ignore[arg-type]
+        for field in attrs_lib.fields(model_class):
             if hasattr(field, "metadata") and field.metadata.get("primary_key"):
                 return str(field.name)
             if field.name in common_pk_names:
@@ -179,7 +179,8 @@ class AttrsModelAdapter(ModelAdapter[T]):
 
     def get_field_names(self, model_class: type[T]) -> list[str]:
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
-            return [field.name for field in attrs_lib.fields(model_class)]  # type: ignore[no-any-return,arg-type]
+            fields: list[str] = [field.name for field in attrs_lib.fields(model_class)]
+            return fields
         return self._get_field_names_from_annotations(model_class)
 
     def _get_field_names_from_annotations(self, model_class: type[T]) -> list[str]:
@@ -191,9 +192,10 @@ class AttrsModelAdapter(ModelAdapter[T]):
     def get_field_types(self, model_class: type[T]) -> dict[str, type]:
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
             field_dict: dict[str, type] = {}
-            for field in attrs_lib.fields(model_class):  # type: ignore[arg-type]
-                field_type: type = field.type if field.type is not None else Any  # type: ignore[assignment]
-                field_dict[field.name] = field_type  # type: ignore  # type: ignore[no-any-return]
+            for field in attrs_lib.fields(model_class):
+                # Get field type, defaulting to Any if not specified
+                field_type: type = field.type if field.type is not None else type(Any)
+                field_dict[field.name] = field_type
             return field_dict
         return self._get_field_types_from_annotations(model_class)
 
@@ -203,19 +205,21 @@ class AttrsModelAdapter(ModelAdapter[T]):
     ) -> dict[str, type]:
         if hasattr(model_class, "__annotations__"):
             annotations = getattr(model_class, "__annotations__", {})
-            return dict(annotations)  # type: ignore[return-value]
+            return dict(annotations)
         return {}
 
     def get_field_type(self, model_class: type[T], field_name: str) -> type:
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
-            for field in attrs_lib.fields(model_class):  # type: ignore[arg-type]
+            for field in attrs_lib.fields(model_class):
                 if field.name == field_name:
-                    return field.type or Any
+                    return field.type if field.type is not None else type(Any)
         if hasattr(model_class, "__annotations__"):
             annotations = getattr(model_class, "__annotations__", {})
-            return annotations.get(field_name, Any)
+            field_type = annotations.get(field_name, Any)
+            # Return type[Any] for Any, otherwise return the annotation type
+            return type(Any) if field_type is Any else field_type
 
-        return Any  # type: ignore  # type: ignore[no-any-return]
+        return type(Any)
 
     def is_relationship_field(self, model_class: type[T], field_name: str) -> bool:
         field_type = self.get_field_type(model_class, field_name)
@@ -249,13 +253,15 @@ class AttrsModelAdapter(ModelAdapter[T]):
                     and ATTRS_AVAILABLE
                     and attrs_lib.has(args[0])
                 ):
-                    return args[0]  # type: ignore[no-any-return,return-value]
+                    nested_type: type = args[0]
+                    return nested_type
 
         if (
             inspect.isclass(field_type)
             and ATTRS_AVAILABLE
             and attrs_lib.has(field_type)
         ):
-            return field_type  # type: ignore[return-value,no-any-return]
+            result_type: type = field_type
+            return result_type
 
         return None

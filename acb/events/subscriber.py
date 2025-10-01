@@ -646,10 +646,11 @@ class EventSubscriber(ServiceBase):
             try:
                 await asyncio.sleep(self._settings.health_check_interval)
 
-                unhealthy_subs = []
-                for sub_id, managed_sub in self._subscriptions.items():
-                    if not managed_sub.is_healthy():
-                        unhealthy_subs.append(sub_id)
+                unhealthy_subs = [
+                    sub_id
+                    for sub_id, managed_sub in self._subscriptions.items()
+                    if not managed_sub.is_healthy()
+                ]
 
                 if unhealthy_subs:
                     self._logger.warning(
@@ -703,12 +704,11 @@ class EventSubscriber(ServiceBase):
 
     async def get_all_subscription_stats(self) -> list[dict[str, t.Any]]:
         """Get statistics for all subscriptions."""
-        stats = []
-        for sub_id in self._subscriptions:
-            sub_stats = await self.get_subscription_stats(sub_id)
-            if sub_stats:
-                stats.append(sub_stats)
-        return stats
+        return [
+            sub_stats
+            for sub_id in self._subscriptions
+            if (sub_stats := await self.get_subscription_stats(sub_id)) is not None
+        ]
 
     # Context manager support
     async def __aenter__(self) -> "EventSubscriber":

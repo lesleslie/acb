@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from collections.abc import AsyncGenerator
+from typing import Any
+
 """Performance Test Provider for ACB Testing.
 
 Provides performance testing utilities, benchmarking tools, and
@@ -60,19 +62,29 @@ class PerformanceTestProvider:
             self.end_time: float = 0
             self.elapsed: float = 0
 
-        def __enter__(self) -> None:
+        def __enter__(self) -> "PerformanceTestProvider.PerformanceTimer":
             self.start_time = time.perf_counter()
             return self
 
-        def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: Any,
+        ) -> None:
             self.end_time = time.perf_counter()
             self.elapsed = self.end_time - self.start_time
 
-        async def __aenter__(self) -> None:
+        async def __aenter__(self) -> "PerformanceTestProvider.PerformanceTimer":
             self.start_time = time.perf_counter()
             return self
 
-        async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        async def __aexit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: Any,
+        ) -> None:
             self.end_time = time.perf_counter()
             self.elapsed = self.end_time - self.start_time
 
@@ -87,8 +99,8 @@ class PerformanceTestProvider:
         async def run_benchmark(
             self,
             func: t.Callable[..., Any],
-            *args,
-            **kwargs,
+            *args: Any,
+            **kwargs: Any,
         ) -> dict[str, t.Any]:
             """Run a benchmark test."""
             # Warmup rounds
@@ -101,7 +113,8 @@ class PerformanceTestProvider:
             # Test rounds
             times = []
             for _ in range(self.test_rounds):
-                with PerformanceTestProvider.PerformanceTimer() as timer:
+                timer = PerformanceTestProvider.PerformanceTimer()
+                with timer:
                     if asyncio.iscoroutinefunction(func):
                         await func(*args, **kwargs)
                     else:
@@ -139,9 +152,9 @@ class PerformanceTestProvider:
 
         async def run_load_test(
             self,
-            func: t.Callable,
-            *args,
-            **kwargs,
+            func: t.Callable[..., Any],
+            *args: Any,
+            **kwargs: Any,
         ) -> dict[str, t.Any]:
             """Run a load test."""
             start_time = time.perf_counter()
@@ -216,7 +229,7 @@ class PerformanceTestProvider:
             self,
             name: str,
             value: float,
-            tags: dict | None = None,
+            tags: dict[str, Any] | None = None,
         ) -> None:
             """Record a performance metric."""
             timestamp = time.perf_counter() - self.start_time
@@ -246,30 +259,36 @@ class PerformanceTestProvider:
                 "latest": values[-1] if values else 0,
             }
 
-        def get_all_metrics(self) -> dict[str, dict]:
+        def get_all_metrics(self) -> dict[str, dict[str, Any]]:
             """Get all metrics summaries."""
-            return {name: self.get_metric_summary(name) for name in self.metrics}
+            return {
+                name: summary
+                for name in self.metrics
+                if (summary := self.get_metric_summary(name)) is not None
+            }
 
-    def measure_execution_time(self, func: t.Callable) -> t.Callable:
+    def measure_execution_time(
+        self, func: t.Callable[..., Any]
+    ) -> t.Callable[..., Any]:
         """Decorator to measure function execution time."""
         if asyncio.iscoroutinefunction(func):
 
-            async def async_wrapper(*args, **kwargs) -> None:
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 async with self.PerformanceTimer():
                     return await func(*args, **kwargs)
 
             return async_wrapper
 
-        def sync_wrapper(*args, **kwargs) -> None:
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             with self.PerformanceTimer():
                 return func(*args, **kwargs)
 
         return sync_wrapper
 
-    def profile_memory_usage(self, func: t.Callable) -> t.Callable:
+    def profile_memory_usage(self, func: t.Callable[..., Any]) -> t.Callable[..., Any]:
         """Decorator to profile memory usage (simplified for testing)."""
 
-        def wrapper(*args, **kwargs) -> None:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Simplified memory profiling simulation
             import os
 
@@ -281,7 +300,7 @@ class PerformanceTestProvider:
             result = func(*args, **kwargs)
 
             memory_after = process.memory_info().rss
-            memory_after - memory_before
+            _ = memory_after - memory_before  # Memory delta for profiling
 
             return result
 
@@ -305,7 +324,9 @@ class PerformanceTestProvider:
             )
 
     @asynccontextmanager
-    async def performance_test_context(self, test_name: str) -> None:
+    async def performance_test_context(
+        self, test_name: str
+    ) -> AsyncGenerator[MetricsCollector]:
         """Context manager for performance testing."""
         metrics = self.MetricsCollector()
         start_time = time.perf_counter()
@@ -327,7 +348,7 @@ class PerformanceTestProvider:
         """Get benchmark results for a specific test."""
         return self._benchmarks.get(test_name)
 
-    def get_all_benchmark_results(self) -> dict[str, dict]:
+    def get_all_benchmark_results(self) -> dict[str, dict[str, Any]]:
         """Get all benchmark results."""
         return self._benchmarks.copy()
 

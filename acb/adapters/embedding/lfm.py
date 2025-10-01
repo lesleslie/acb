@@ -147,10 +147,10 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
         super().__init__(settings)
         self._settings: LiquidLFMEmbeddingSettings = settings
-        self._model = None
-        self._tokenizer = None
-        self._device = None
-        self._memory_monitor = None
+        self._model: t.Any = None
+        self._tokenizer: t.Any = None
+        self._device: str | None = None
+        self._memory_monitor: dict[str, t.Any] | None = None
 
     async def _ensure_client(self) -> tuple[t.Any, t.Any]:
         """Ensure LFM model and tokenizer are loaded."""
@@ -226,7 +226,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                 self.dimension = dimension
                 self.memory_usage = 0
 
-            async def encode(self: Any, texts: list[str], **kwargs) -> np.ndarray:
+            async def encode(self, texts: list[str], **kwargs: t.Any) -> np.ndarray:
                 # Simulate memory-efficient encoding
                 len(texts)
                 # Create deterministic embeddings based on text hash
@@ -270,7 +270,8 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         try:
             import torch
 
-            return torch.cuda.is_available()
+            result: bool = torch.cuda.is_available()
+            return result
         except ImportError:
             return False
 

@@ -63,14 +63,14 @@ MODULE_METADATA = AdapterMetadata(
 )
 
 
-class Logger(_Logger, LoggerBase):
+class Logger(_Logger, LoggerBase):  # type: ignore[misc]
     """Loguru-based logger adapter."""
 
     def __init__(self) -> None:
         LoggerBase.__init__(self)
         _Logger.__init__(  # type: ignore[no-untyped-call]
             self,
-            core=_Core(),
+            core=_Core(),  # type: ignore[no-untyped-call]
             exception=None,
             depth=0,
             record=False,
@@ -119,9 +119,9 @@ class Logger(_Logger, LoggerBase):
 
     def _bind(self, **context: t.Any) -> "Logger":
         """Implementation of context binding."""
-        new_logger = self.bind(**context)  # type: ignore[no-untyped-call]
+        new_logger: Logger = self.bind(**context)  # type: ignore[no-untyped-call]
         new_logger._bound_context = self._bound_context | context
-        return new_logger  # type: ignore[return-value]
+        return new_logger
 
     def _with_context(self, **context: t.Any) -> "Logger":
         """Implementation of context creation."""
@@ -241,7 +241,7 @@ class InterceptHandler(logging.Handler):
     def emit(self, record: logging.LogRecord, logger: t.Any = depends()) -> None:
         """Emit log record via Loguru."""
         try:
-            level = logger.level(record.levelname).name  # type: ignore[no-untyped-call]
+            level = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
 
@@ -250,7 +250,7 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(  # type: ignore[no-untyped-call]
+        logger.opt(depth=depth, exception=record.exc_info).log(
             level,
             record.getMessage(),
         )

@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
+
 """Mock Action Provider for ACB Testing.
 
 Provides mock implementations of ACB actions with realistic behavior
@@ -186,7 +187,7 @@ class MockActionProvider:
         else:
             return str(data)
 
-    def _mock_json_decode(self, data: str, behavior: dict) -> t.Any:
+    def _mock_json_decode(self, data: str, behavior: dict[str, Any]) -> t.Any:
         """Helper for JSON decoding mock."""
         import json
         import random
@@ -204,7 +205,7 @@ class MockActionProvider:
             msg = f"Invalid JSON: {e}"
             raise ValueError(msg)
 
-    def _mock_yaml_encode(self, data: t.Any, behavior: dict) -> str:
+    def _mock_yaml_encode(self, data: t.Any, behavior: dict[str, Any]) -> str:
         """Helper for YAML encoding mock."""
         import time
 
@@ -218,7 +219,7 @@ class MockActionProvider:
             return "\n".join(lines)
         return str(data)
 
-    def _mock_yaml_decode(self, data: str, behavior: dict) -> t.Any:
+    def _mock_yaml_decode(self, data: str, behavior: dict[str, Any]) -> t.Any:
         """Helper for YAML decoding mock."""
         import time
 
@@ -232,7 +233,7 @@ class MockActionProvider:
                 result[key.strip()] = value.strip()
         return result
 
-    def _mock_toml_encode(self, data: dict, behavior: dict) -> str:
+    def _mock_toml_encode(self, data: dict[str, Any], behavior: dict[str, Any]) -> str:
         """Helper for TOML encoding mock."""
         import time
 
@@ -247,7 +248,7 @@ class MockActionProvider:
                 lines.append(f"{key} = {value}")
         return "\n".join(lines)
 
-    def _mock_msgpack_encode(self, data: t.Any, behavior: dict) -> bytes:
+    def _mock_msgpack_encode(self, data: t.Any, behavior: dict[str, Any]) -> bytes:
         """Helper for msgpack encoding mock."""
         import time
 
@@ -256,7 +257,7 @@ class MockActionProvider:
         # Simple msgpack simulation (just use string representation)
         return f"msgpack:{data}".encode()
 
-    def _mock_msgpack_decode(self, data: bytes, behavior: dict) -> t.Any:
+    def _mock_msgpack_decode(self, data: bytes, behavior: dict[str, Any]) -> t.Any:
         """Helper for msgpack decoding mock."""
         import time
 
@@ -363,7 +364,7 @@ class MockActionProvider:
         action_type: str,
         method: str,
         args: tuple[Any, ...],
-        kwargs: dict,
+        kwargs: dict[str, Any],
     ) -> None:
         """Record a method call for analysis."""
         if action_type not in self._call_history:
@@ -383,7 +384,7 @@ class MockActionProvider:
         self,
         action_type: str,
         behavior: dict[str, t.Any] | None = None,
-    ):
+    ) -> t.Generator[MagicMock]:
         """Context manager for temporary mock action."""
         # Create mock based on type
         if action_type == "compress":

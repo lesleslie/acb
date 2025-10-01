@@ -110,9 +110,11 @@ class ValidationMiddleware(MiddlewareBase):
 
     def __init__(self, settings: GatewaySettings | None = None) -> None:
         super().__init__(settings)
-        self.schemas: dict[str, BaseModel] = {}
+        self.schemas: dict[str, type[BaseModel]] = {}
 
-    def register_schema(self, endpoint: str, method: str, schema: BaseModel) -> None:
+    def register_schema(
+        self, endpoint: str, method: str, schema: type[BaseModel]
+    ) -> None:
         """Register validation schema for an endpoint."""
         key = f"{method.upper()}:{endpoint}"
         self.schemas[key] = schema
@@ -142,7 +144,7 @@ class ValidationMiddleware(MiddlewareBase):
                 # Validate against schema
                 try:
                     validated_data = schema(**body)
-                    request["validated_body"] = validated_data.dict()
+                    request["validated_body"] = validated_data.model_dump()
                 except ValidationError as e:
                     if self.settings.gateway_config.strict_validation:
                         request["validation_error"] = f"Validation failed: {e}"
@@ -227,7 +229,7 @@ class MiddlewareChain(GatewayBase):
         """Add middleware to the chain."""
         self.middleware.append(middleware)
 
-    def remove_middleware(self, middleware_type: type) -> bool:
+    def remove_middleware(self, middleware_type: type[MiddlewareBase]) -> bool:
         """Remove middleware from the chain."""
         for i, middleware in enumerate(self.middleware):
             if isinstance(middleware, middleware_type):
@@ -267,7 +269,9 @@ class MiddlewareChain(GatewayBase):
             response["middleware_error"] = str(e)
             return response
 
-    def get_middleware_by_type(self, middleware_type: type) -> MiddlewareBase | None:
+    def get_middleware_by_type(
+        self, middleware_type: type[MiddlewareBase]
+    ) -> MiddlewareBase | None:
         """Get middleware instance by type."""
         for middleware in self.middleware:
             if isinstance(middleware, middleware_type):

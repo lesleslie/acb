@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
+
 """Integration Test Provider for ACB Testing.
 
 Provides integration testing utilities for end-to-end testing
@@ -56,7 +57,7 @@ class IntegrationTestProvider:
         config: dict[str, Any],
     ) -> dict[str, t.Any]:
         """Setup an isolated test environment."""
-        test_env = {
+        test_env: dict[str, t.Any] = {
             "name": environment_name,
             "config": config,
             "services": {},
@@ -69,19 +70,22 @@ class IntegrationTestProvider:
         await asyncio.sleep(0.1)  # Setup delay
 
         # Initialize mock services based on config
+        adapters = t.cast(dict[str, t.Any], test_env["adapters"])
+        services = t.cast(dict[str, t.Any], test_env["services"])
+
         if "cache" in config.get("adapters", {}):
-            test_env["adapters"]["cache"] = self._create_mock_cache()
+            adapters["cache"] = self._create_mock_cache()
 
         if "database" in config.get("adapters", {}):
-            test_env["adapters"]["database"] = self._create_mock_database()
+            adapters["database"] = self._create_mock_database()
 
         if "storage" in config.get("adapters", {}):
-            test_env["adapters"]["storage"] = self._create_mock_storage()
+            adapters["storage"] = self._create_mock_storage()
 
         # Initialize external services
         if "external_apis" in config:
             for api_name in config["external_apis"]:
-                test_env["services"][api_name] = self._create_mock_external_api(
+                services[api_name] = self._create_mock_external_api(
                     api_name,
                 )
 
@@ -95,7 +99,7 @@ class IntegrationTestProvider:
         cache_mock = AsyncMock()
         cache_mock._data = {}
 
-        async def get(key: str) -> None:
+        async def get(key: str) -> t.Any | None:
             await asyncio.sleep(0.001)  # Simulate network delay
             return cache_mock._data.get(key)
 
@@ -104,7 +108,7 @@ class IntegrationTestProvider:
             cache_mock._data[key] = value
             return True
 
-        async def delete(key: str) -> None:
+        async def delete(key: str) -> bool:
             return cache_mock._data.pop(key, None) is not None
 
         cache_mock.get.side_effect = get
@@ -118,17 +122,23 @@ class IntegrationTestProvider:
         db_mock = AsyncMock()
         db_mock._tables = {}
 
-        async def execute(query: str, params: tuple | None = None) -> None:
+        async def execute(
+            query: str, params: tuple[Any, ...] | None = None
+        ) -> MagicMock:
             await asyncio.sleep(0.005)  # Simulate query execution
             result = MagicMock()
             result.rowcount = 1
             return result
 
-        async def fetch_one(query: str, params: tuple | None = None) -> None:
+        async def fetch_one(
+            query: str, params: tuple[Any, ...] | None = None
+        ) -> dict[str, Any]:
             await asyncio.sleep(0.005)
             return {"id": 1, "data": "test_data"}
 
-        async def fetch_all(query: str, params: tuple | None = None) -> None:
+        async def fetch_all(
+            query: str, params: tuple[Any, ...] | None = None
+        ) -> list[dict[str, Any]]:
             await asyncio.sleep(0.01)
             return [{"id": i, "data": f"test_data_{i}"} for i in range(1, 4)]
 
@@ -143,7 +153,7 @@ class IntegrationTestProvider:
         storage_mock = AsyncMock()
         storage_mock._files = {}
 
-        async def read(path: str) -> None:
+        async def read(path: str) -> bytes:
             await asyncio.sleep(0.01)  # Simulate file I/O
             if path not in storage_mock._files:
                 msg = f"File not found: {path}"
@@ -155,7 +165,7 @@ class IntegrationTestProvider:
             storage_mock._files[path] = data
             return True
 
-        async def exists(path: str) -> None:
+        async def exists(path: str) -> bool:
             return path in storage_mock._files
 
         storage_mock.read.side_effect = read
@@ -168,7 +178,9 @@ class IntegrationTestProvider:
         """Create a mock external API for integration testing."""
         api_mock = AsyncMock()
 
-        async def make_request(method: str, endpoint: str, data: dict | None = None) -> None:
+        async def make_request(
+            method: str, endpoint: str, data: dict[str, Any] | None = None
+        ) -> dict[str, Any] | None:
             # Simulate network latency
             await asyncio.sleep(0.1)
 
@@ -181,7 +193,7 @@ class IntegrationTestProvider:
                 if method == "POST":
                     return {
                         "id": 2,
-                        "name": data.get("name", "New User"),
+                        "name": data.get("name", "New User") if data else "New User",
                         "created": True,
                     }
             elif endpoint.startswith("/api/error"):
@@ -202,9 +214,9 @@ class IntegrationTestProvider:
         self,
         test_name: str,
         environment_name: str,
-        test_function: t.Callable,
-        *args,
-        **kwargs,
+        test_function: t.Callable[..., t.Any],
+        *args: Any,
+        **kwargs: Any,
     ) -> dict[str, t.Any]:
         """Run an integration test in a specific environment."""
         if environment_name not in self._test_environments:
@@ -418,7 +430,9 @@ class IntegrationTestProvider:
             del self._test_environments[environment_name]
 
     @asynccontextmanager
-    async def integration_test_context(self, environment_name: str, config: dict) -> None:
+    async def integration_test_context(
+        self, environment_name: str, config: dict[str, Any]
+    ) -> t.AsyncGenerator[dict[str, t.Any]]:
         """Context manager for integration testing."""
         # Setup environment
         env = await self.setup_test_environment(environment_name, config)
@@ -437,7 +451,7 @@ class IntegrationTestProvider:
         """Get integration test results."""
         return self._integration_results.get(test_name)
 
-    def get_all_integration_results(self) -> dict[str, dict]:
+    def get_all_integration_results(self) -> dict[str, dict[str, t.Any]]:
         """Get all integration test results."""
         return self._integration_results.copy()
 

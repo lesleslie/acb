@@ -75,7 +75,7 @@ class GatewayConfig(BaseModel):
 
     # Middleware
     middleware_enabled: bool = True
-    custom_middleware: list[str] = field(default_factory=list)
+    custom_middleware: list[str] = Field(default_factory=list)
 
     class Config:
         extra = "forbid"

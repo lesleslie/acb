@@ -149,7 +149,9 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
         await self._ensure_client()
         return self
 
-    async def __aexit__(self: Any, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(
+        self: t.Any, exc_type: t.Any, exc_val: t.Any, exc_tb: t.Any
+    ) -> None:
         """Async context manager exit."""
         await self.cleanup()
 
@@ -289,12 +291,14 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
             norm = np.linalg.norm(np_vector)
             if norm == 0:
                 return vector
-            return (np_vector / norm).tolist()
+            normalized: list[float] = (np_vector / norm).tolist()
+            return normalized
         if method == VectorNormalization.L1:
             norm = np.sum(np.abs(np_vector))
             if norm == 0:
                 return vector
-            return (np_vector / norm).tolist()
+            normalized_l1: list[float] = (np_vector / norm).tolist()
+            return normalized_l1
 
         return vector
 

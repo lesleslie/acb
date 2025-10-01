@@ -389,7 +389,8 @@ def get_gateway_class(category: str, name: str | None = None) -> type[t.Any]:
 
     try:
         module = import_module(gateway.module)
-        return getattr(module, gateway.class_name)
+        cls: type[t.Any] = getattr(module, gateway.class_name)
+        return cls
     except (ImportError, AttributeError) as e:
         msg = f"Gateway not available: {gateway.module}.{gateway.class_name}"
         raise GatewayNotInstalled(
@@ -485,7 +486,7 @@ def register_gateways(gateways_path: str | None = None) -> None:
 
 def get_gateway_info(gateway_class: type) -> dict[str, t.Any]:
     """Get information about a gateway class."""
-    info = {
+    info: dict[str, t.Any] = {
         "class_name": gateway_class.__name__,
         "module": gateway_class.__module__,
         "docstring": gateway_class.__doc__,

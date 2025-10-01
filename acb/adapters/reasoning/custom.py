@@ -1,4 +1,5 @@
 from typing import Any
+
 """Custom rule engine reasoning adapter for logic-based decision making."""
 
 import re

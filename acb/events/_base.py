@@ -1,4 +1,3 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
 """Base classes for ACB Events System.
 
 Provides the foundation for event-driven architecture with support for
@@ -22,6 +21,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 from acb.services import ServiceBase, ServiceCapability, ServiceMetadata
+from acb.services.discovery import ServiceStatus
 
 # Event handling imports
 uuid_lib: t.Any
@@ -292,7 +292,15 @@ class FunctionalEventHandler(EventHandler):
         """Handle event using the wrapped function."""
         try:
             if self._is_async:
-                result = await self._handler_func(event)
+                result: EventHandlerResult | t.Awaitable[EventHandlerResult] = (
+                    self._handler_func(event)
+                )
+                # Type narrowing: result is an awaitable in this branch
+                if isinstance(result, EventHandlerResult):
+                    # Already a result, return it
+                    return result
+                # Must be awaitable, await it
+                result = await result
             else:
                 result = self._handler_func(event)
 
@@ -356,7 +364,7 @@ class EventPublisherBase(ServiceBase):
         author="ACB Framework",
         created_date=datetime.now().isoformat(),
         last_modified=datetime.now().isoformat(),
-        status="stable",
+        status=ServiceStatus.STABLE,
         capabilities=[
             ServiceCapability.ASYNC_OPERATIONS,
             ServiceCapability.ERROR_HANDLING,
@@ -481,7 +489,15 @@ def create_subscription(
 def event_handler(
     event_type: str | None = None,
     predicate: t.Callable[[Event], bool] | None = None,
-) -> t.Callable[[t.Callable[..., Any]], FunctionalEventHandler]:
+) -> t.Callable[
+    [
+        t.Callable[
+            [Event],
+            EventHandlerResult | t.Awaitable[EventHandlerResult],
+        ]
+    ],
+    FunctionalEventHandler,
+]:
     """Decorator to create an event handler from a function.
 
     Args:
@@ -492,7 +508,12 @@ def event_handler(
         Decorator function
     """
 
-    def decorator(func: t.Callable) -> FunctionalEventHandler:
+    def decorator(
+        func: t.Callable[
+            [Event],
+            EventHandlerResult | t.Awaitable[EventHandlerResult],
+        ],
+    ) -> FunctionalEventHandler:
         return FunctionalEventHandler(
             handler_func=func,
             event_type=event_type,

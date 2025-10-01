@@ -372,7 +372,8 @@ def get_service_class(category: str, name: str | None = None) -> type[t.Any]:
 
     try:
         module = import_module(service.module)
-        return getattr(module, service.class_name)
+        cls: type[t.Any] = getattr(module, service.class_name)
+        return cls
     except (ImportError, AttributeError) as e:
         msg = f"Service not available: {service.module}.{service.class_name}"
         raise ServiceNotInstalled(
@@ -468,7 +469,7 @@ def register_services(services_path: str | None = None) -> None:
 
 def get_service_info(service_class: type) -> dict[str, t.Any]:
     """Get information about a service class."""
-    info = {
+    info: dict[str, t.Any] = {
         "class_name": service_class.__name__,
         "module": service_class.__module__,
         "docstring": service_class.__doc__,

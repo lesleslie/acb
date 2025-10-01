@@ -9,13 +9,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from datetime import datetime
     from pathlib import Path
+    from types import TracebackType
 
 
 class ExperimentStatus(str, Enum):
@@ -136,12 +137,17 @@ class BaseExperimentAdapter(ABC):
         """Get adapter settings."""
         return self._settings
 
-    async def __aenter__(self) -> None:
+    async def __aenter__(self) -> Self:
         """Async context manager entry."""
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Async context manager exit."""
         await self.disconnect()
 

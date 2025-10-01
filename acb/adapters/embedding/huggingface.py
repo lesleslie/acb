@@ -34,9 +34,9 @@ try:
 
     _transformers_available = True
 except ImportError:
-    AutoModel = None
-    AutoTokenizer = None
-    BatchEncoding = None
+    AutoModel = None  # type: ignore[assignment,misc]
+    AutoTokenizer = None  # type: ignore[assignment,misc]
+    BatchEncoding = None  # type: ignore[assignment,misc]
     F = None
     _transformers_available = False
 
@@ -119,9 +119,9 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
 
         super().__init__(settings)
         self._settings: HuggingFaceEmbeddingSettings = settings
-        self._model = None
-        self._tokenizer = None
-        self._device = None
+        self._model: t.Any = None
+        self._tokenizer: t.Any = None
+        self._device: str | None = None
 
     async def _ensure_client(self) -> tuple[t.Any, t.Any]:
         """Ensure model and tokenizer are loaded."""
@@ -157,9 +157,13 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
             if self._settings.use_auth_token:
                 tokenizer_kwargs["use_auth_token"] = self._settings.use_auth_token
 
+            if AutoTokenizer is None:
+                msg = "AutoTokenizer not available"
+                raise ImportError(msg)
+
             self._tokenizer = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: AutoTokenizer.from_pretrained(
+                lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]
                     self._settings.model,
                     revision="main",  # nosec B615
                     **tokenizer_kwargs,
@@ -185,6 +189,10 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 elif self._settings.torch_dtype == "float32":
                     model_kwargs["torch_dtype"] = torch.float32
 
+            if AutoModel is None:
+                msg = "AutoModel not available"
+                raise ImportError(msg)
+
             self._model = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: AutoModel.from_pretrained(
@@ -195,8 +203,9 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
             )
 
             # Move model to device and set to eval mode
-            self._model.to(self._device)
-            self._model.eval()
+            if self._model is not None:
+                self._model.to(self._device)
+                self._model.eval()
 
             # Enable optimizations
             if self._settings.enable_optimization:

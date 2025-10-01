@@ -175,8 +175,10 @@ def generate_engine_id() -> UUID:
     """
     if _uuid7_available:
         # Convert uuid_utils.UUID to standard uuid.UUID for pydantic compatibility
-        return UUID(str(uuid_lib.uuid7()))
-    return uuid_lib.uuid4()
+        uuid_obj: UUID = UUID(str(uuid_lib.uuid7()))
+        return uuid_obj
+    uuid_obj = uuid_lib.uuid4()
+    return uuid_obj
 
 
 def register_workflow_engine(metadata: WorkflowMetadata) -> None:

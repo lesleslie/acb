@@ -380,7 +380,8 @@ def get_event_handler_class(category: str, name: str | None = None) -> type[t.An
 
     try:
         module = import_module(handler.module)
-        return getattr(module, handler.class_name)
+        cls: type[t.Any] = getattr(module, handler.class_name)
+        return cls
     except (ImportError, AttributeError) as e:
         msg = f"Event handler not available: {handler.module}.{handler.class_name}"
         raise EventHandlerNotInstalled(
@@ -483,7 +484,7 @@ def register_event_handlers(handlers_path: str | None = None) -> None:
 
 def get_event_handler_info(handler_class: type) -> dict[str, t.Any]:
     """Get information about an event handler class."""
-    info = {
+    info: dict[str, t.Any] = {
         "class_name": handler_class.__name__,
         "module": handler_class.__module__,
         "docstring": handler_class.__doc__,

@@ -107,15 +107,15 @@ __all__ = [
 ]
 
 # Create mapping for dynamic adapter loading
-EXPERIMENT_ADAPTERS = {}
+EXPERIMENT_ADAPTERS: dict[str, type[BaseExperimentAdapter]] = {}
 
-if MLflowExperiment:
+if MLflowExperiment is not None:
     EXPERIMENT_ADAPTERS["mlflow"] = MLflowExperiment
 
-if WandbExperiment:
+if WandbExperiment is not None:
     EXPERIMENT_ADAPTERS["wandb"] = WandbExperiment
 
-if TensorBoardExperiment:
+if TensorBoardExperiment is not None:
     EXPERIMENT_ADAPTERS["tensorboard"] = TensorBoardExperiment
 
 

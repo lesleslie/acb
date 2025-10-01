@@ -656,16 +656,15 @@ class CloudAI(AIBase):
 
     def _format_openai_messages(self, request: AIRequest) -> list[dict[str, t.Any]]:
         """Format messages for OpenAI API."""
-        messages = []
+        messages: list[dict[str, t.Any]] = []
 
         if request.system_prompt:
             messages.append({"role": "system", "content": request.system_prompt})
 
         if isinstance(request.prompt, str):
-            content: str | list[dict[str, t.Any]] = request.prompt
             if request.images:
                 # Multimodal content
-                content = [
+                multimodal_content: list[dict[str, t.Any]] = [
                     {"type": "text", "text": request.prompt},
                     *[
                         {
@@ -673,13 +672,15 @@ class CloudAI(AIBase):
                             "image_url": {
                                 "url": img
                                 if isinstance(img, str)
-                                else f"data:image/jpeg;base64,{img}",
+                                else f"data:image/jpeg;base64,{img.decode('utf-8') if isinstance(img, bytes) else str(img)}",
                             },
                         }
                         for img in request.images
                     ],
                 ]
-            messages.append({"role": "user", "content": content})
+                messages.append({"role": "user", "content": multimodal_content})
+            else:
+                messages.append({"role": "user", "content": request.prompt})
         else:
             messages.extend(request.prompt)
 

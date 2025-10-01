@@ -8,6 +8,7 @@ named entity recognition, and question answering with state-of-the-art models.
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
 from typing import Any
 
 from pydantic import Field
@@ -184,7 +185,8 @@ class TransformersNLP(BaseNLPAdapter):
 
     async def _load_pipeline(self, key: str, task: str, model: str) -> None:
         """Load a specific pipeline."""
-        try:
+        with suppress(Exception):
+            # Model loading failed, skip this pipeline
             pipe = await self._run_sync(
                 pipeline,
                 task,
@@ -196,9 +198,6 @@ class TransformersNLP(BaseNLPAdapter):
                 },
             )
             self._pipelines[key] = pipe
-        except Exception:
-            # Model loading failed, skip this pipeline
-            pass
 
     async def _run_sync(self, func, *args, **kwargs) -> None:
         """Run synchronous function in thread pool."""

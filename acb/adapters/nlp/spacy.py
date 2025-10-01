@@ -8,6 +8,7 @@ classification, and linguistic analysis with high performance and accuracy.
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
 from typing import Any
 
 from pydantic import Field
@@ -154,10 +155,9 @@ class SpacyNLP(BaseNLPAdapter):
 
         # Enable GPU if requested
         if self._settings.enable_gpu:
-            try:
+            with suppress(Exception):
+                # GPU not available, continue with CPU
                 await self._run_sync(spacy.require_gpu)
-            except Exception:
-                pass  # GPU not available, continue with CPU
 
         # Add extensions if enabled
         if self._settings.enable_extensions:
@@ -167,16 +167,12 @@ class SpacyNLP(BaseNLPAdapter):
 
     async def _add_extensions(self: Any, nlp: Any) -> None:
         """Add spaCy extensions for additional functionality."""
-        try:
+        with suppress(Exception):
+            # Extensions not available
             # Add sentiment extension if textblob is available
             if self._settings.sentiment_model == "textblob":
-                try:
+                with suppress(ImportError):
                     nlp.add_pipe("spacytextblob")
-                except ImportError:
-                    pass
-
-        except Exception:
-            pass  # Extensions not available
 
     async def _run_sync(self, func, *args, **kwargs) -> None:
         """Run synchronous function in thread pool."""

@@ -34,7 +34,7 @@ from acb.adapters.feature_store._base import (
 )
 
 try:
-    from google.cloud import aiplatform
+    from google.cloud import aiplatform  # type: ignore[attr-defined]
     from google.cloud.aiplatform.featurestore import EntityType, Feature, Featurestore
     from google.oauth2 import service_account
 
@@ -135,9 +135,11 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 msg,
             )
 
-        super().__init__(settings or VertexAIFeatureStoreSettings())
+        super().__init__(
+            settings or VertexAIFeatureStoreSettings(project_id="", featurestore_id="")
+        )
         self._featurestore_client = None
-        self._featurestore = None
+        self._featurestore: Any = None
         self._entity_types_cache: dict[str, EntityType] = {}
 
     @property
@@ -148,9 +150,9 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
     async def _create_online_client(self) -> Any:
         """Create and configure Vertex AI Feature Store client for online serving."""
         # Initialize AI Platform
-        credentials = None
+        credentials: Any = None
         if self.vertex_settings.credentials_path:
-            credentials = service_account.Credentials.from_service_account_file(
+            credentials = service_account.Credentials.from_service_account_file(  # type: ignore[no-untyped-call]
                 self.vertex_settings.credentials_path,
             )
 
@@ -197,6 +199,9 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
 
     async def _refresh_entity_types_cache(self) -> None:
         """Refresh the entity types cache."""
+        if self._featurestore is None:
+            return
+
         try:
             entity_types = self._featurestore.list_entity_types()
             for entity_type in entity_types:
@@ -555,11 +560,16 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
         description: str | None = None,
     ) -> bool:
         """Create a new feature group (Entity Type in Vertex AI)."""
+        if self._featurestore is None:
+            await self._ensure_online_client()
+
         try:
             # Create entity type
             entity_type = EntityType.create(
                 entity_type_id=name,
-                featurestore_name=self._featurestore.resource_name,
+                featurestore_name=self._featurestore.resource_name
+                if self._featurestore
+                else "",
                 description=description,
                 labels=self.vertex_settings.labels,
             )
@@ -758,7 +768,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = VertexAIFeatureStoreAdapter
-FeatureStoreSettings = VertexAIFeatureStoreSettings
+FeatureStoreSettings = VertexAIFeatureStoreSettings  # type: ignore[misc, assignment]
 
 __all__ = [
     "MODULE_METADATA",

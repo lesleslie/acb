@@ -155,11 +155,11 @@ class MigrationValidator:
 
         # Check for required files
         required_files = ["app.yml", "adapters.yml"]
-        missing_files = []
-
-        for required_file in required_files:
-            if not (settings_dir / required_file).exists():
-                missing_files.append(required_file)
+        missing_files = [
+            required_file
+            for required_file in required_files
+            if not (settings_dir / required_file).exists()
+        ]
 
         if missing_files:
             self._add_issue(

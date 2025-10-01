@@ -1,4 +1,3 @@
-from typing import Any
 """Usage tracking and analytics for API Gateway."""
 
 import time
@@ -7,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ._base import GatewayBase, GatewaySettings
 
@@ -36,7 +35,7 @@ class QuotaConfig(BaseModel):
     requests_per_day: int = 10000
     requests_per_month: int = 100000
     bytes_per_day: int = 10 * 1024 * 1024  # 10MB
-    custom_limits: dict[str, int] = field(default_factory=dict)
+    custom_limits: dict[str, int] = Field(default_factory=dict)
 
     class Config:
         extra = "forbid"
@@ -78,7 +77,7 @@ class UsageTracker(GatewayBase):
         """Get quota configuration for a user."""
         return self.user_quotas.get(user_id, self.default_quota)
 
-    async def record_request(
+    async def track_request(
         self,
         user_id: str,
         endpoint: str,
@@ -255,14 +254,17 @@ class UsageAnalytics(GatewayBase):
                 m for m in self.tracker.metrics if m.timestamp > cutoff_time
             ]
 
-            endpoint_stats: Any = defaultdict(
-                lambda: {
+            def _default_endpoint_stats() -> dict[str, t.Any]:
+                return {
                     "requests": 0,
                     "avg_response_time": 0.0,
                     "success_rate": 0.0,
                     "error_count": 0,
                     "total_bytes": 0,
-                },
+                }
+
+            endpoint_stats: defaultdict[str, dict[str, t.Any]] = defaultdict(
+                _default_endpoint_stats,
             )
 
             for metric in recent_metrics:
@@ -310,14 +312,17 @@ class UsageAnalytics(GatewayBase):
                 m for m in self.tracker.metrics if m.timestamp > cutoff_time
             ]
 
-            user_stats = defaultdict(
-                lambda: {
+            def _default_user_stats() -> dict[str, t.Any]:
+                return {
                     "requests": 0,
                     "avg_response_time": 0.0,
                     "total_bytes": 0,
                     "unique_endpoints": set(),
                     "error_count": 0,
-                },
+                }
+
+            user_stats: defaultdict[str, dict[str, t.Any]] = defaultdict(
+                _default_user_stats,
             )
 
             for metric in recent_metrics:
@@ -353,11 +358,12 @@ class UsageAnalytics(GatewayBase):
                     else 0,
                 }
 
-            return {
+            result: dict[str, t.Any] = {
                 "time_range_hours": time_range_hours,
                 "users": formatted_stats,
                 "total_users": len(formatted_stats),
             }
+            return result
 
         except Exception as e:
             self.record_error(f"User analytics error: {e}")

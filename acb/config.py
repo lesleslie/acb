@@ -588,11 +588,14 @@ class _LibraryAppSettings:
 
 _adapter_instances: dict[type, t.Any] = {}
 
+# Use PEP 695 generic function syntax (Python 3.13+)
+
 
 def get_singleton_instance[T](cls: type[T], *args: t.Any, **kwargs: t.Any) -> T:
+    """Get or create a singleton instance of a class."""
     if cls not in _adapter_instances:
         _adapter_instances[cls] = cls(*args, **kwargs)
-    return t.cast("T", _adapter_instances[cls])
+    return t.cast(T, _adapter_instances[cls])
 
 
 @t.runtime_checkable

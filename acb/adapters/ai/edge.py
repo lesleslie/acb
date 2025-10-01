@@ -193,9 +193,9 @@ class EdgeAI(AIBase):
             def __init__(self, model_id: str, settings: EdgeAISettings) -> None:
                 self.model_id = model_id
                 self.settings = settings
-                self._model = None
-                self._tokenizer = None
-                self._models_loaded = {}
+                self._model: t.Any = None
+                self._tokenizer: t.Any = None
+                self._models_loaded: dict[str, str] = {}
 
             async def load_model(self, model_name: str, **config: t.Any) -> str:
                 """Load LFM2 model from HuggingFace."""
@@ -205,9 +205,9 @@ class EdgeAI(AIBase):
                 # Run model loading in executor to avoid blocking
                 loop = asyncio.get_event_loop()
 
-                def load() -> None:
+                def load() -> tuple[t.Any, t.Any]:
                     # Determine quantization settings
-                    load_kwargs = {
+                    load_kwargs: dict[str, t.Any] = {
                         "low_cpu_mem_usage": True,
                         "trust_remote_code": True,
                     }
@@ -219,7 +219,7 @@ class EdgeAI(AIBase):
                             load_kwargs["load_in_4bit"] = True
 
                     # Load tokenizer
-                    tokenizer = AutoTokenizer.from_pretrained(
+                    tokenizer = AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]
                         self.model_id,
                         trust_remote_code=True,
                         revision="main",  # nosec B615
@@ -232,9 +232,10 @@ class EdgeAI(AIBase):
                         **load_kwargs,
                     )
 
-                    return model, tokenizer
+                    return (model, tokenizer)
 
-                self._model, self._tokenizer = await loop.run_in_executor(None, load)
+                result = await loop.run_in_executor(None, load)
+                self._model, self._tokenizer = result
                 self._models_loaded[model_name] = model_name
                 return model_name
 
@@ -253,7 +254,7 @@ class EdgeAI(AIBase):
                 loop = asyncio.get_event_loop()
                 start_time = loop.time()
 
-                def inference():
+                def inference() -> tuple[str, int]:
                     inputs = self._tokenizer(prompt, return_tensors="pt")
                     max_new_tokens = kwargs.get("max_tokens", 512)
                     temperature = kwargs.get("temperature", 0.7)
@@ -275,7 +276,7 @@ class EdgeAI(AIBase):
                     if generated_text.startswith(prompt):
                         generated_text = generated_text[len(prompt) :].strip()
 
-                    return generated_text, len(outputs[0])
+                    return (generated_text, len(outputs[0]))
 
                 text, tokens_used = await loop.run_in_executor(None, inference)
                 latency_ms = int((loop.time() - start_time) * 1000)
@@ -309,26 +310,23 @@ class EdgeAI(AIBase):
         # Create text generation pipeline with optimization
         device = 0 if self.settings.enable_gpu else -1
 
-        pipeline_kwargs = {
-            "task": "text-generation",
-            "device": device,
-            "model_kwargs": {
-                "torch_dtype": "auto",
-                "low_cpu_mem_usage": True,
-            },
-        }
+        model_path = self.settings.local_model_path or "microsoft/DialoGPT-small"
 
-        if self.settings.local_model_path:
-            pipeline_kwargs["model"] = self.settings.local_model_path
-        else:
-            # Default to a small, efficient model for edge
-            pipeline_kwargs["model"] = "microsoft/DialoGPT-small"
+        model_kwargs: dict[str, t.Any] = {
+            "torch_dtype": "auto",
+            "low_cpu_mem_usage": True,
+        }
 
         if self.settings.enable_quantization:
             # Add quantization for memory efficiency
-            pipeline_kwargs["model_kwargs"]["load_in_8bit"] = True
+            model_kwargs["load_in_8bit"] = True
 
-        return pipeline(**pipeline_kwargs)
+        return pipeline(
+            task="text-generation",
+            model=model_path,
+            device=device,
+            model_kwargs=model_kwargs,
+        )
 
     async def _preload_model(self) -> None:
         """Preload model for faster inference."""
@@ -515,8 +513,8 @@ class EdgeAI(AIBase):
         # Run inference in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
 
-        def generate() -> None:
-            return client(
+        def generate() -> list[dict[str, t.Any]]:
+            return client(  # type: ignore[no-any-return]
                 prompt,
                 max_length=len(prompt.split()) + request.max_tokens,
                 temperature=request.temperature,
@@ -527,7 +525,7 @@ class EdgeAI(AIBase):
         results = await loop.run_in_executor(None, generate)
 
         # Extract generated text (remove input prompt)
-        generated_text = results[0]["generated_text"]
+        generated_text: str = results[0]["generated_text"]
         if generated_text.startswith(prompt):
             generated_text = generated_text[len(prompt) :].strip()
 

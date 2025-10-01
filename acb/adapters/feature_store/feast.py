@@ -7,6 +7,7 @@ online and offline feature serving with Redis and BigQuery backends.
 
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -149,10 +150,9 @@ class FeastAdapter(BaseFeatureStoreAdapter):
         feast_store = FeatureStore(config=repo_config)
 
         # Apply any existing feature definitions
-        try:
+        with suppress(Exception):
+            # Store might not be initialized yet
             feast_store.apply([])  # Apply empty list to ensure store is initialized
-        except Exception:
-            pass  # Store might not be initialized yet
 
         return feast_store
 
@@ -643,7 +643,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = FeastAdapter
-FeatureStoreSettings = FeastSettings  # type: ignore[no-redef]
+FeatureStoreSettings = FeastSettings  # type: ignore[misc]
 
 __all__ = [
     "MODULE_METADATA",

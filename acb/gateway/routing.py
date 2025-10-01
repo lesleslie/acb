@@ -452,13 +452,14 @@ class RoutingEngine:
             return None
 
         # Filter by circuit breaker
-        available_upstreams = []
-        for upstream in healthy_upstreams:
+        available_upstreams = [
+            upstream
+            for upstream in healthy_upstreams
             if await self._circuit_breaker.check_circuit_breaker(
                 upstream,
                 routing_config,
-            ):
-                available_upstreams.append(upstream)
+            )
+        ]
 
         if not available_upstreams:
             return None
@@ -492,9 +493,9 @@ class RoutingEngine:
         # Build query string
         query_string = ""
         if request.query_params:
-            query_parts = []
-            for key, value in request.query_params.items():
-                query_parts.append(f"{key}={value}")
+            query_parts = [
+                f"{key}={value}" for key, value in request.query_params.items()
+            ]
             query_string = "?" + "&".join(query_parts)
 
         # Combine URL
@@ -599,21 +600,20 @@ class RoutingEngine:
         if not route:
             return {}
 
-        upstream_metrics = []
-        for upstream in route.upstreams:
-            upstream_metrics.append(
-                {
-                    "id": upstream.id,
-                    "url": upstream.url,
-                    "status": upstream.status.value,
-                    "active_connections": upstream.active_connections,
-                    "total_requests": upstream.total_requests,
-                    "average_response_time": upstream.average_response_time,
-                    "consecutive_failures": upstream.consecutive_failures,
-                    "consecutive_successes": upstream.consecutive_successes,
-                    "circuit_breaker_open": upstream.circuit_breaker_open,
-                },
-            )
+        upstream_metrics = [
+            {
+                "id": upstream.id,
+                "url": upstream.url,
+                "status": upstream.status.value,
+                "active_connections": upstream.active_connections,
+                "total_requests": upstream.total_requests,
+                "average_response_time": upstream.average_response_time,
+                "consecutive_failures": upstream.consecutive_failures,
+                "consecutive_successes": upstream.consecutive_successes,
+                "circuit_breaker_open": upstream.circuit_breaker_open,
+            }
+            for upstream in route.upstreams
+        ]
 
         return {
             "route_id": route.id,

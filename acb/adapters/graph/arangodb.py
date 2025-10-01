@@ -1,4 +1,5 @@
 from typing import Any
+
 """ArangoDB graph database adapter."""
 
 import typing as t

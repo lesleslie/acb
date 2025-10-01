@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import Field
 from acb.adapters import (
@@ -28,6 +28,11 @@ from acb.adapters.experiment._base import (
     ExperimentStatus,
 )
 
+if TYPE_CHECKING:
+    from torch.utils.tensorboard import SummaryWriter as SummaryWriterType
+else:
+    SummaryWriterType = Any
+
 try:
     import numpy as np
     import torch
@@ -37,8 +42,10 @@ try:
 except ImportError:
     SummaryWriter = None
     torch = None
-    np = None
+    np = None  # type: ignore[assignment]
     _tensorboard_available = False
+
+T = TypeVar("T")
 
 
 MODULE_METADATA = AdapterMetadata(
@@ -48,14 +55,18 @@ MODULE_METADATA = AdapterMetadata(
     provider="tensorboard",
     version="1.0.0",
     acb_min_version="0.19.0",
+    author="ACB Team",
+    created_date="2024-01-01",
+    last_modified="2025-10-01",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
         AdapterCapability.METADATA_TRACKING,
-        AdapterCapability.BATCH_OPERATIONS,
+        AdapterCapability.BATCHING,
     ],
     required_packages=["torch>=2.0.0", "tensorboard>=2.14.0", "numpy>=1.24.0"],
     description="TensorBoard experiment tracking with async operations",
+    settings_class="TensorBoardExperimentSettings",
 )
 
 
@@ -121,7 +132,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         self._settings: TensorBoardExperimentSettings = (
             settings or TensorBoardExperimentSettings()
         )
-        self._writers: dict[str, SummaryWriter] = {}
+        self._writers: dict[str, Any] = {}
         self._experiments: dict[str, ExperimentInfo] = {}
         self._runs: dict[str, dict[str, Any]] = {}
 
@@ -137,10 +148,10 @@ class TensorBoardExperiment(BaseExperimentAdapter):
             await self._run_sync(writer.close)
         self._writers.clear()
 
-    async def _run_sync(self, func, *args, **kwargs) -> None:
+    async def _run_sync(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         """Run synchronous function in thread pool."""
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, func, *args, **kwargs)
+        return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
     async def health_check(self) -> bool:
         """Check TensorBoard health (log directory accessibility)."""
@@ -234,9 +245,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
 
         # Close associated writers
         writers_to_close = [
-            run_id
-            for run_id, writer in self._writers.items()
-            if run_id.startswith(f"{experiment_id}_")
+            run_id for run_id in self._writers if run_id.startswith(f"{experiment_id}_")
         ]
         for run_id in writers_to_close:
             await self._run_sync(self._writers[run_id].close)
@@ -355,13 +364,13 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         await self._run_sync(
             writer.add_scalar,
             key,
-            float(value),
+            value,
             step,
         )
 
         # Update run metrics
         if run_id in self._runs:
-            self._runs[run_id]["metrics"][key] = float(value)
+            self._runs[run_id]["metrics"][key] = value
 
     async def log_metrics(
         self,
@@ -523,7 +532,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
             ]
 
         # Sort if order_by provided
-        if order_by and order_by[0] in ["start_time", "run_name"]:
+        if order_by and order_by[0] in ("start_time", "run_name"):
             reverse = order_by[0].startswith("-")
             sort_key = order_by[0].lstrip("-")
             runs.sort(key=lambda x: x.get(sort_key, ""), reverse=reverse)

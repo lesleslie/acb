@@ -3,6 +3,7 @@
 import time
 import typing as t
 from dataclasses import dataclass, field
+from datetime import datetime
 from uuid import uuid4
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
@@ -16,10 +17,10 @@ from .rate_limit import RateLimitMiddleware, RateLimitStatus
 from .usage import QuotaManager, UsageAnalytics, UsageTracker
 
 try:
-    from uuid import uuid7
+    from uuid import uuid7 as _uuid7  # type: ignore[attr-defined]
 
     def generate_adapter_id() -> str:
-        return str(uuid7())
+        return str(_uuid7())
 
 except ImportError:
 
@@ -29,12 +30,15 @@ except ImportError:
 
 # Module metadata for discovery system
 MODULE_METADATA = AdapterMetadata(
-    module_id=generate_adapter_id(),
+    module_id=generate_adapter_id(),  # type: ignore[arg-type]
     name="API Gateway",
     category="gateway",
     provider="acb",
     version="1.0.0",
     acb_min_version="0.19.1",
+    author="ACB Framework",
+    created_date=datetime.now().isoformat(),
+    last_modified=datetime.now().isoformat(),
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
@@ -137,7 +141,8 @@ class RequestProcessor(GatewayBase):
             }
 
             # 1. Process through middleware chain
-            request_dict = await self.middleware_chain.process_request(request_dict)
+            if self.middleware_chain is not None:
+                request_dict = await self.middleware_chain.process_request(request_dict)
 
             # Check for validation errors
             if "validation_error" in request_dict:
@@ -147,7 +152,10 @@ class RequestProcessor(GatewayBase):
 
             # 2. Authentication (if enabled)
             auth_result: AuthResult | None = None
-            if self.settings.gateway_config.auth_enabled:
+            if (
+                self.settings.gateway_config.auth_enabled
+                and self.auth_middleware is not None
+            ):
                 auth_result = await self.auth_middleware.authenticate_request(
                     request.headers,
                     required_scopes,
@@ -159,7 +167,10 @@ class RequestProcessor(GatewayBase):
                     return await self._finalize_response(request, response, start_time)
 
             # 3. Rate limiting (if enabled)
-            if self.settings.gateway_config.rate_limiting_enabled:
+            if (
+                self.settings.gateway_config.rate_limiting_enabled
+                and self.rate_limit_middleware is not None
+            ):
                 user_id = auth_result.user_id if auth_result else None
                 rate_limit_key = self.rate_limit_middleware.get_rate_limit_key(
                     user_id,
@@ -188,7 +199,12 @@ class RequestProcessor(GatewayBase):
                 )
 
             # 4. Quota checking (if usage tracking enabled)
-            if self.settings.gateway_config.usage_tracking_enabled and auth_result:
+            if (
+                self.settings.gateway_config.usage_tracking_enabled
+                and auth_result is not None
+                and auth_result.user_id is not None
+                and self.usage_tracker is not None
+            ):
                 quota_ok, quota_error = await self.usage_tracker.check_quota(
                     auth_result.user_id,
                 )
@@ -207,8 +223,13 @@ class RequestProcessor(GatewayBase):
             }
 
             # Record successful usage
-            if self.settings.gateway_config.usage_tracking_enabled and auth_result:
-                await self.usage_tracker.record_request(
+            if (
+                self.settings.gateway_config.usage_tracking_enabled
+                and auth_result is not None
+                and auth_result.user_id is not None
+                and self.usage_tracker is not None
+            ):
+                await self.usage_tracker.track_request(
                     user_id=auth_result.user_id,
                     endpoint=request.path,
                     method=request.method,
@@ -249,11 +270,18 @@ class RequestProcessor(GatewayBase):
             }
 
             # Process through middleware chain
-            response_dict = await self.middleware_chain.process_response(response_dict)
+            if self.middleware_chain is not None:
+                response_dict = await self.middleware_chain.process_response(
+                    response_dict,
+                )
 
             # Update response from processed dict
-            response.headers = response_dict.get("headers", response.headers)
-            response.metadata = response_dict.get("metadata", response.metadata)
+            headers = response_dict.get("headers")
+            if isinstance(headers, dict):
+                response.headers = headers
+            metadata = response_dict.get("metadata")
+            if isinstance(metadata, dict):
+                response.metadata = metadata
 
             # Record metrics
             self.record_request(

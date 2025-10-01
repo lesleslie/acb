@@ -13,32 +13,30 @@ Available providers:
 
 from acb.adapters.feature_store._base import (
     BaseFeatureStoreAdapter,
-    DataQualityResult,
     FeatureDefinition,
     FeatureExperiment,
-    FeatureGroup,
+    FeatureIngestionRequest,
+    FeatureIngestionResponse,
     FeatureLineage,
-    FeatureMonitoringMetrics,
+    FeatureMonitoring,
     FeatureServingRequest,
     FeatureServingResponse,
     FeatureStoreSettings,
     FeatureValue,
     FeatureVector,
-    FeatureView,
 )
 
 __all__ = [
     "BaseFeatureStoreAdapter",
-    "DataQualityResult",
     "FeatureDefinition",
     "FeatureExperiment",
-    "FeatureGroup",
+    "FeatureIngestionRequest",
+    "FeatureIngestionResponse",
     "FeatureLineage",
-    "FeatureMonitoringMetrics",
+    "FeatureMonitoring",
     "FeatureServingRequest",
     "FeatureServingResponse",
     "FeatureStoreSettings",
     "FeatureValue",
     "FeatureVector",
-    "FeatureView",
 ]

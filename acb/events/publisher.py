@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any
+
 """Event Publisher implementation for ACB Events System.
 
 Provides a high-performance, async-first event publisher with pub-sub model,
@@ -182,7 +183,9 @@ class EventPublisher(EventPublisherBase):
 
         # Subscription management
         self._subscription_lock = asyncio.Lock()
-        self._subscription_tasks: dict[UUID, list[asyncio.Task[None]]] = defaultdict(list[Any])
+        self._subscription_tasks: dict[UUID, list[asyncio.Task[None]]] = defaultdict(
+            list[Any]
+        )
 
         # Event routing maps for performance
         self._type_subscriptions: dict[str, list[EventSubscription]] = defaultdict(list)

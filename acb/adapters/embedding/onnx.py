@@ -34,7 +34,7 @@ try:
     _onnx_available = True
 except ImportError:
     ort = None
-    AutoTokenizer = None
+    AutoTokenizer = None  # type: ignore[assignment,misc]
     _onnx_available = False
 
 MODULE_METADATA = AdapterMetadata(
@@ -121,16 +121,17 @@ class ONNXEmbedding(EmbeddingAdapter):
 
         depends.get("config")
         if settings is None:
-            settings = ONNXEmbeddingSettings()
+            msg = "ONNXEmbeddingSettings must be provided with model_path"
+            raise ValueError(msg)
 
         super().__init__(settings)
         self._settings: ONNXEmbeddingSettings = settings
-        self._session: ort.InferenceSession | None = None
-        self._tokenizer: AutoTokenizer | None = None
+        self._session: t.Any = None
+        self._tokenizer: t.Any = None
         self._input_names: list[str] = []
         self._output_names: list[str] = []
 
-    async def _ensure_client(self) -> tuple[ort.InferenceSession, AutoTokenizer]:
+    async def _ensure_client(self) -> tuple[t.Any, t.Any]:
         """Ensure ONNX session and tokenizer are initialized."""
         if self._session is None or self._tokenizer is None:
             await self._load_model()
@@ -145,12 +146,20 @@ class ONNXEmbedding(EmbeddingAdapter):
             await logger.info(f"Loading ONNX model from: {self._settings.model_path}")
 
             # Load tokenizer
+            if AutoTokenizer is None:
+                msg = "AutoTokenizer not available"
+                raise ImportError(msg)
             self._tokenizer = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: AutoTokenizer.from_pretrained(self._settings.tokenizer_name),
+                lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]
+                    self._settings.tokenizer_name
+                ),
             )
 
             # Configure ONNX session options
+            if ort is None:
+                msg = "ONNX Runtime not available"
+                raise ImportError(msg)
             session_options = ort.SessionOptions()
             session_options.enable_cpu_mem_arena = self._settings.enable_cpu_mem_arena
             session_options.enable_mem_pattern = self._settings.enable_mem_pattern
@@ -194,12 +203,13 @@ class ONNXEmbedding(EmbeddingAdapter):
             )
 
             # Get input/output names
-            self._input_names = [
-                input_node.name for input_node in self._session.get_inputs()
-            ]
-            self._output_names = [
-                output_node.name for output_node in self._session.get_outputs()
-            ]
+            if self._session is not None:
+                self._input_names = [
+                    input_node.name for input_node in self._session.get_inputs()
+                ]
+                self._output_names = [
+                    output_node.name for output_node in self._session.get_outputs()
+                ]
 
             # Register for cleanup
             self.register_resource(self._session)
@@ -236,6 +246,9 @@ class ONNXEmbedding(EmbeddingAdapter):
         for batch_texts in batches:
             try:
                 # Tokenize batch
+                if not callable(tokenizer):
+                    msg = "Tokenizer is not callable"
+                    raise TypeError(msg)
                 inputs = await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: tokenizer(
@@ -283,12 +296,20 @@ class ONNXEmbedding(EmbeddingAdapter):
 
                 # Create results
                 for i, embedding in enumerate(embeddings):
+                    # Compute token count
+                    token_count = None
+                    if hasattr(tokenizer, "encode"):
+                        try:
+                            token_count = len(tokenizer.encode(batch_texts[i]))
+                        except Exception:
+                            pass
+
                     result = EmbeddingResult(
                         text=batch_texts[i],
                         embedding=embedding.tolist(),
                         model=model,
                         dimensions=len(embedding),
-                        tokens=len(tokenizer.encode(batch_texts[i])),
+                        tokens=token_count,
                         metadata={
                             "pooling_strategy": self._settings.pooling_strategy.value,
                             "providers": self._settings.providers,
@@ -324,6 +345,7 @@ class ONNXEmbedding(EmbeddingAdapter):
         strategy: PoolingStrategy,
     ) -> np.ndarray:
         """Apply pooling strategy to token embeddings."""
+        result: np.ndarray
         if strategy == PoolingStrategy.MEAN:
             # Mean pooling with attention mask
             input_mask_expanded = np.expand_dims(attention_mask, axis=-1)
@@ -339,7 +361,8 @@ class ONNXEmbedding(EmbeddingAdapter):
                 a_min=1e-9,
                 a_max=None,
             )
-            return sum_embeddings / sum_mask
+            result = t.cast(np.ndarray, sum_embeddings / sum_mask)
+            return result
 
         if strategy == PoolingStrategy.MAX:
             # Max pooling
@@ -355,11 +378,13 @@ class ONNXEmbedding(EmbeddingAdapter):
                 -1e9,
                 token_embeddings,
             )
-            return np.max(token_embeddings, axis=1)
+            result = np.max(token_embeddings, axis=1)
+            return result
 
         if strategy == PoolingStrategy.CLS:
             # CLS token pooling (first token)
-            return token_embeddings[:, 0]
+            result = token_embeddings[:, 0]
+            return result
 
         if strategy == PoolingStrategy.WEIGHTED_MEAN:
             # Weighted mean (simple implementation)
@@ -367,7 +392,11 @@ class ONNXEmbedding(EmbeddingAdapter):
             weighted_embeddings = token_embeddings * weights
             sum_embeddings = np.sum(weighted_embeddings, axis=1)
             sum_weights = np.sum(weights, axis=1)
-            return sum_embeddings / np.clip(sum_weights, a_min=1e-9, a_max=None)
+            result = t.cast(
+                np.ndarray,
+                sum_embeddings / np.clip(sum_weights, a_min=1e-9, a_max=None),
+            )
+            return result
 
         msg = f"Unsupported pooling strategy: {strategy}"
         raise ValueError(msg)
@@ -376,7 +405,8 @@ class ONNXEmbedding(EmbeddingAdapter):
         """Normalize embeddings using L2 normalization."""
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
         norms = np.clip(norms, a_min=1e-12, a_max=None)
-        return embeddings / norms
+        result: np.ndarray = embeddings / norms
+        return result
 
     async def _embed_documents(
         self,
@@ -549,12 +579,18 @@ class ONNXEmbedding(EmbeddingAdapter):
 
 
 # Factory function for dependency injection
-async def create_onnx_embedding(config: Config | None = None) -> ONNXEmbedding:
+async def create_onnx_embedding(
+    config: Config | None = None, model_path: str = ""
+) -> ONNXEmbedding:
     """Create ONNX embedding adapter instance."""
     if config is None:
         config = depends.get("config")
 
-    settings = ONNXEmbeddingSettings()
+    if not model_path:
+        msg = "model_path is required for ONNX embedding"
+        raise ValueError(msg)
+
+    settings = ONNXEmbeddingSettings(model_path=model_path)
     return ONNXEmbedding(settings)
 
 

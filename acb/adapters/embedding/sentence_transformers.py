@@ -3,6 +3,7 @@
 import asyncio
 import time
 import typing as t
+from contextlib import suppress
 from datetime import datetime
 
 from pydantic import Field
@@ -117,7 +118,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
         super().__init__(settings)
         self._settings: SentenceTransformersSettings = settings
         self._model: SentenceTransformer | None = None
-        self._device = None
+        self._device: str | None = None
 
     async def _ensure_client(self) -> SentenceTransformer:
         """Ensure Sentence Transformer model is loaded."""
@@ -159,7 +160,11 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
             )
 
             # Apply optimizations
-            if self._settings.precision == "float16" and self._device == "cuda":
+            if (
+                self._settings.precision == "float16"
+                and self._device == "cuda"
+                and self._model is not None
+            ):
                 self._model.half()
 
             # Register for cleanup
@@ -347,7 +352,8 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
         }
 
         if self._model:
-            try:
+            with suppress(Exception):
+                # Some models may not have these attributes
                 model_info.update(
                     {
                         "max_seq_length": self._model.max_seq_length,
@@ -357,8 +363,6 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
                         else None,
                     },
                 )
-            except Exception:
-                pass  # Some models may not have these attributes
 
         return model_info
 

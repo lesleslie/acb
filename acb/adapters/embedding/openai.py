@@ -5,7 +5,7 @@ import time
 import typing as t
 from datetime import datetime
 
-from pydantic import Field, SecretStr
+from pydantic import Field
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -28,7 +28,7 @@ try:
 
     _openai_available = True
 except ImportError:
-    AsyncOpenAI = None  # type: ignore[misc,assignment]
+    AsyncOpenAI = None
     _openai_available = False
 
 MODULE_METADATA = AdapterMetadata(
@@ -61,16 +61,8 @@ MODULE_METADATA = AdapterMetadata(
 class OpenAIEmbeddingSettings(EmbeddingBaseSettings):
     """OpenAI-specific embedding settings."""
 
-    api_key: SecretStr | None = Field(default=None, description="OpenAI API key")
+    # OpenAI-specific settings
     organization: str | None = Field(default=None, description="OpenAI organization ID")
-    base_url: str | None = Field(
-        default="https://api.openai.com/v1",
-        description="OpenAI API base URL",
-    )
-    model: str = Field(default=EmbeddingModel.TEXT_EMBEDDING_3_SMALL.value)
-    max_retries: int = Field(default=3)
-    timeout: float = Field(default=30.0)
-    batch_size: int = Field(default=100)  # OpenAI supports up to 2048 inputs
     dimensions: int | None = Field(
         default=None,
         description="Embedding dimensions (for v3 models)",
@@ -83,6 +75,10 @@ class OpenAIEmbeddingSettings(EmbeddingBaseSettings):
     # Rate limiting
     requests_per_minute: int = Field(default=3000)
     tokens_per_minute: int = Field(default=1000000)
+
+    # Override base settings defaults
+    model: str = Field(default=EmbeddingModel.TEXT_EMBEDDING_3_SMALL.value)
+    batch_size: int = Field(default=100)  # OpenAI supports up to 2048 inputs
 
     class Config:
         env_prefix = "OPENAI_"
@@ -113,11 +109,13 @@ class OpenAIEmbedding(EmbeddingAdapter):
             if AsyncOpenAI is None:
                 msg = "OpenAI library not available"
                 raise ImportError(msg)
+            # Cast settings to access OpenAI-specific fields
+            settings = t.cast(OpenAIEmbeddingSettings, self._settings)
             self._client = AsyncOpenAI(
                 api_key=self._settings.api_key.get_secret_value()
                 if self._settings.api_key
                 else "",
-                organization=self._settings.organization,
+                organization=settings.organization,
                 base_url=self._settings.base_url,
                 timeout=self._settings.timeout,
                 max_retries=self._settings.max_retries,
@@ -151,15 +149,16 @@ class OpenAIEmbedding(EmbeddingAdapter):
                 await self._apply_rate_limit()
 
                 # Prepare request parameters
+                settings = t.cast(OpenAIEmbeddingSettings, self._settings)
                 request_params: dict[str, t.Any] = {
                     "input": batch_texts,
                     "model": model,
-                    "encoding_format": self._settings.encoding_format,
+                    "encoding_format": settings.encoding_format,
                 }
 
                 # Add dimensions for v3 models
-                if self._settings.dimensions and model.startswith("text-embedding-3"):
-                    request_params["dimensions"] = self._settings.dimensions
+                if settings.dimensions and model.startswith("text-embedding-3"):
+                    request_params["dimensions"] = settings.dimensions
 
                 # Make API request
                 response: t.Any = await client.embeddings.create(
@@ -323,11 +322,12 @@ class OpenAIEmbedding(EmbeddingAdapter):
 
     async def _apply_rate_limit(self) -> None:
         """Apply rate limiting to API requests."""
+        settings = t.cast(OpenAIEmbeddingSettings, self._settings)
         current_time = time.time()
         time_since_last = current_time - self._last_request_time
 
         # Simple rate limiting - ensure minimum time between requests
-        min_interval = 60.0 / self._settings.requests_per_minute
+        min_interval = 60.0 / settings.requests_per_minute
         if time_since_last < min_interval:
             await asyncio.sleep(min_interval - time_since_last)
 

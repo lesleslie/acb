@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import asyncio
 import os
+from contextlib import suppress
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import aiohttp
 from pydantic import Field
@@ -47,6 +48,8 @@ except ImportError:
     MlflowException = Exception
     _mlflow_available = False
 
+T = TypeVar("T")
+
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
@@ -55,16 +58,20 @@ MODULE_METADATA = AdapterMetadata(
     provider="mlflow",
     version="1.0.0",
     acb_min_version="0.19.0",
+    author="ACB Team",
+    created_date="2024-01-01",
+    last_modified="2025-10-01",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
         AdapterCapability.METADATA_TRACKING,
         AdapterCapability.ARTIFACT_MANAGEMENT,
-        AdapterCapability.BATCH_OPERATIONS,
+        AdapterCapability.BATCHING,
         AdapterCapability.CONNECTION_POOLING,
     ],
     required_packages=["mlflow>=2.0.0"],
     description="High-performance MLflow experiment tracking with async operations",
+    settings_class="MLflowExperimentSettings",
 )
 
 
@@ -201,22 +208,20 @@ class MLflowExperiment(BaseExperimentAdapter):
 
         # Create default experiment if configured
         if self._settings.create_experiments_on_init:
-            try:
+            with suppress(MlflowException):
+                # Experiment might already exist
                 await self._run_sync(
                     client.create_experiment,
                     self._settings.default_experiment_name,
                     artifact_location=self._settings.default_artifact_root,
                 )
-            except MlflowException:
-                # Experiment might already exist
-                pass
 
         return client
 
-    async def _run_sync(self, func, *args, **kwargs) -> None:
+    async def _run_sync(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         """Run synchronous function in thread pool."""
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, func, *args, **kwargs)
+        return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
     async def health_check(self) -> bool:
         """Check MLflow tracking server health."""
@@ -241,12 +246,13 @@ class MLflowExperiment(BaseExperimentAdapter):
         if description:
             experiment_tags["description"] = description
 
-        return await self._run_sync(
+        result: str = await self._run_sync(
             client.create_experiment,
             name,
             artifact_location=self._settings.default_artifact_root,
             tags=experiment_tags,
         )
+        return result
 
     async def get_experiment(self, experiment_id: str) -> ExperimentInfo:
         """Get experiment information."""
@@ -319,13 +325,14 @@ class MLflowExperiment(BaseExperimentAdapter):
                     self._settings.default_experiment_name,
                 )
 
-        run = await self._run_sync(
+        run: Any = await self._run_sync(
             client.create_run,
             experiment_id=experiment_id,
             run_name=run_name,
             tags=tags,
         )
-        return run.info.run_id
+        run_id: str = run.info.run_id
+        return run_id
 
     async def end_run(
         self,
@@ -394,7 +401,7 @@ class MLflowExperiment(BaseExperimentAdapter):
             client.log_metric,
             run_id,
             key,
-            float(value),
+            value,
             timestamp=timestamp_ms,
             step=step,
         )

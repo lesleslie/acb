@@ -1,4 +1,5 @@
 from typing import Any
+
 """Neo4j graph database adapter."""
 
 import typing as t
@@ -459,7 +460,9 @@ class Graph(GraphBase):
         # Get node labels
         node_query = "CALL db.labels() YIELD label RETURN collect(label) as labels"
         node_result = await self._execute_query(node_query)
-        node_types: Any = node_result.records[0]["labels"] if node_result.records else []
+        node_types: Any = (
+            node_result.records[0]["labels"] if node_result.records else []
+        )
 
         # Get relationship types
         edge_query = "CALL db.relationshipTypes() YIELD relationshipType RETURN collect(relationshipType) as types"

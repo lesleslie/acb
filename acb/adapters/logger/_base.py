@@ -234,13 +234,19 @@ class LoggerBase(CleanupMixin):
         """Check if message should be logged based on level and module."""
         # Type narrowing: ensure level_per_module is not None
         if self.settings.level_per_module is None:
-            target_level = self._get_effective_level()
+            target_level: str | None = self._get_effective_level()
         else:
             target_level = self.settings.level_per_module.get(
                 module_name,
                 self._get_effective_level(),
             )
-        if target_level is False:
+        # Check if logging is disabled for this module (None or False)
+        if target_level is None:
+            return False
+        # Type narrowing: target_level is str | None at this point, check for False-like values
+        if not target_level or (
+            isinstance(target_level, str) and target_level.upper() == "FALSE"
+        ):
             return False
 
         # Basic level comparison (could be enhanced with actual level objects)

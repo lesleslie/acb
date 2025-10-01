@@ -247,9 +247,9 @@ class CacheKeyGenerator:
 
         # Add sorted query parameters
         if request.query_params:
-            query_parts = []
-            for key, value in sorted(request.query_params.items()):
-                query_parts.append(f"{key}={value}")
+            query_parts = [
+                f"{key}={value}" for key, value in sorted(request.query_params.items())
+            ]
             key_parts.append("?" + "&".join(query_parts))
 
         return self._hash_key(":".join(key_parts))
@@ -264,9 +264,9 @@ class CacheKeyGenerator:
 
         # Add query parameters
         if request.query_params:
-            query_parts = []
-            for key, value in sorted(request.query_params.items()):
-                query_parts.append(f"{key}={value}")
+            query_parts = [
+                f"{key}={value}" for key, value in sorted(request.query_params.items())
+            ]
             key_parts.append("?" + "&".join(query_parts))
 
         # Add specific headers
@@ -292,9 +292,9 @@ class CacheKeyGenerator:
 
         # Add query parameters
         if request.query_params:
-            query_parts = []
-            for key, value in sorted(request.query_params.items()):
-                query_parts.append(f"{key}={value}")
+            query_parts = [
+                f"{key}={value}" for key, value in sorted(request.query_params.items())
+            ]
             key_parts.append("?" + "&".join(query_parts))
 
         return self._hash_key(":".join(key_parts))
@@ -310,9 +310,9 @@ class CacheKeyGenerator:
 
         # Add query parameters
         if request.query_params:
-            query_parts = []
-            for key, value in sorted(request.query_params.items()):
-                query_parts.append(f"{key}={value}")
+            query_parts = [
+                f"{key}={value}" for key, value in sorted(request.query_params.items())
+            ]
             key_parts.append("?" + "&".join(query_parts))
 
         return self._hash_key(":".join(key_parts))

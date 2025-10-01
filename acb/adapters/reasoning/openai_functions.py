@@ -1,4 +1,5 @@
 from typing import Any
+
 """OpenAI function calling reasoning adapter for structured reasoning with tools."""
 
 import json
@@ -154,7 +155,9 @@ class Reasoning(ReasoningBase):
     ) -> None:
         super().__init__(**kwargs)
         # Always initialized, override base class type
-        self._settings: OpenAIFunctionReasoningSettings = settings or OpenAIFunctionReasoningSettings()  # type: ignore[assignment]
+        self._settings: OpenAIFunctionReasoningSettings = (
+            settings or OpenAIFunctionReasoningSettings()
+        )  # type: ignore[assignment]
         self._client: AsyncOpenAI | None = None
         self._conversation_histories: dict[str, list[dict[str, t.Any]]] = {}
 

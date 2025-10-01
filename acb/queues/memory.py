@@ -466,10 +466,11 @@ class MemoryQueue(QueueBase):
         ttl = timedelta(seconds=self._settings.dead_letter_ttl)
 
         # Find expired tasks
-        expired_ids = []
-        for task_id, (_task, result) in self._dead_letter_tasks.items():
-            if result.completed_at and (current_time - result.completed_at) > ttl:
-                expired_ids.append(task_id)
+        expired_ids = [
+            task_id
+            for task_id, (_task, result) in self._dead_letter_tasks.items()
+            if result.completed_at and (current_time - result.completed_at) > ttl
+        ]
 
         # Remove expired tasks
         for task_id in expired_ids:
@@ -599,14 +600,11 @@ class MemoryQueue(QueueBase):
             return count
 
         current_time = datetime.now(tz=UTC)
-        expired_ids = []
-
-        for task_id, result in self._completed_tasks.items():
-            if (
-                result.completed_at
-                and (current_time - result.completed_at) > older_than
-            ):
-                expired_ids.append(task_id)
+        expired_ids = [
+            task_id
+            for task_id, result in self._completed_tasks.items()
+            if result.completed_at and (current_time - result.completed_at) > older_than
+        ]
 
         for task_id in expired_ids:
             del self._completed_tasks[task_id]

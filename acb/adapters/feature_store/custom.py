@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -122,7 +123,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
         super().__init__(settings or CustomFeatureStoreSettings())
         self._storage_path = Path(self.custom_settings.storage_path)
         self._database_path = Path(self.custom_settings.database_path)
-        self._db_connection = None
+        self._db_connection: sqlite3.Connection | None = None
         self._feature_cache: dict[str, Any] = {}
         self._metadata_cache: dict[str, FeatureDefinition] = {}
 
@@ -245,13 +246,11 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             metadata_dir = self._storage_path / "metadata"
             if metadata_dir.exists():
                 for metadata_file in metadata_dir.glob("*.json"):
-                    try:
+                    with suppress(Exception):
                         with open(metadata_file) as f:
                             data = json.load(f)
                             feature_def = FeatureDefinition(**data)
                             self._metadata_cache[feature_def.name] = feature_def
-                    except Exception:
-                        continue
 
     # Feature Serving Methods
     async def get_online_features(
@@ -409,7 +408,8 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     )
 
                     if feature_file.exists():
-                        try:
+                        with suppress(Exception):
+                            # Feature file corrupted or format issue
                             feature_df = pd.read_parquet(feature_file)
                             # Merge with entity_df on entity_id and timestamp
                             merged_df = pd.merge_asof(
@@ -421,8 +421,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                                 direction="backward",
                             )
                             result_df[feature_name] = merged_df["value"]
-                        except Exception:
-                            # Feature file corrupted or format issue
+                        if feature_name not in result_df:
                             result_df[feature_name] = None
                     else:
                         result_df[feature_name] = None
@@ -474,7 +473,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
             feature_file = self._storage_path / "features" / f"{feature_name}.parquet"
 
             if feature_file.exists():
-                try:
+                with suppress(Exception):
                     df = pd.read_parquet(feature_file)
                     entity_data = df[df["entity_id"] == entity_id]
 
@@ -484,8 +483,6 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     if not entity_data.empty:
                         latest_row = entity_data.sort_values("timestamp").iloc[-1]
                         return latest_row["value"]
-                except Exception:
-                    pass
 
             return None
 
@@ -703,7 +700,7 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
     async def list_feature_groups(self) -> list[str]:
         """List available feature groups."""
         try:
-            feature_groups = set()
+            feature_groups: set[str] = set()
 
             if self.custom_settings.storage_type == "sqlite" and self._db_connection:
                 cursor = self._db_connection.cursor()
@@ -715,12 +712,10 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 metadata_dir = self._storage_path / "metadata"
                 if metadata_dir.exists():
                     for metadata_file in metadata_dir.glob("*.json"):
-                        try:
+                        with suppress(Exception):
                             with open(metadata_file) as f:
                                 data = json.load(f)
                                 feature_groups.add(data.get("feature_group", "default"))
-                        except Exception:
-                            continue
 
             return sorted(feature_groups)
 
@@ -736,12 +731,11 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
         try:
             await self._load_metadata_cache()
 
-            features = []
-            for feature_def in self._metadata_cache.values():
-                if feature_group is None or feature_def.feature_group == feature_group:
-                    features.append(feature_def)
-
-            return features
+            return [
+                feature_def
+                for feature_def in self._metadata_cache.values()
+                if feature_group is None or feature_def.feature_group == feature_group
+            ]
 
         except Exception as e:
             msg = f"Failed to list features: {e}"
@@ -769,14 +763,12 @@ class CustomFeatureStoreAdapter(BaseFeatureStoreAdapter):
         """Search features by query and filters."""
         all_features = await self.list_features()
 
-        matching_features = []
-        for feature in all_features:
-            if query.lower() in feature.name.lower() or (
-                feature.description and query.lower() in feature.description.lower()
-            ):
-                matching_features.append(feature)
-
-        return matching_features
+        return [
+            feature
+            for feature in all_features
+            if query.lower() in feature.name.lower()
+            or (feature.description and query.lower() in feature.description.lower())
+        ]
 
     # Feature Engineering Methods
     async def create_feature_group(
@@ -1007,7 +999,7 @@ MODULE_METADATA = AdapterMetadata(
 
 # Export adapter class and settings
 FeatureStore = CustomFeatureStoreAdapter
-FeatureStoreSettings = CustomFeatureStoreSettings  # type: ignore[no-redef]
+FeatureStoreSettings = CustomFeatureStoreSettings  # type: ignore[misc]
 
 __all__ = [
     "MODULE_METADATA",

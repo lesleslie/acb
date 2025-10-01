@@ -57,7 +57,7 @@ class StructlogSettings(LoggerBaseSettings):
         if not structlog:
             return []
 
-        processors = []
+        processors: list[t.Any] = []
 
         # Add timestamp
         if self.add_timestamp:
