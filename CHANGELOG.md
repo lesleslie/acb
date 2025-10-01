@@ -1,9 +1,40 @@
+---
+id: 01K6GMG1PZM9E1PEE10W5AW8NN
+---
 # Changelog
 
 All notable changes to ACB (Asynchronous Component Base) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.22.1] - 2025-10-01
+
+### Changed
+
+- Acb (quality: 73/100) - 2025-09-29 14:51:36
+- Acb (quality: 73/100) - 2025-09-29 16:41:59
+- Acb (quality: 73/100) - 2025-09-30 01:31:52
+- Acb (quality: 73/100) - 2025-09-30 11:22:32
+- Acb (quality: 73/100) - 2025-09-30 17:56:04
+- Acb (quality: 73/100) - 2025-09-30 21:05:14
+- Acb (quality: 73/100) - 2025-09-30 23:56:39
+- Acb (quality: 73/100) - 2025-10-01 00:05:06
+- Acb (quality: 73/100) - 2025-10-01 02:34:58
+- Acb (quality: 73/100) - 2025-10-01 02:55:37
+- Acb (quality: 73/100) - 2025-10-01 03:06:35
+- Acb (quality: 73/100) - 2025-10-01 04:48:09
+- Acb (quality: 73/100) - 2025-10-01 08:35:14
+- Acb (quality: 73/100) - 2025-10-01 09:22:58
+- Acb (quality: 73/100) - 2025-10-01 09:53:14
+- Acb (quality: 73/100) - 2025-10-01 12:02:22
+- Acb (quality: 73/100) - 2025-10-01 12:13:41
+- Acb (quality: 73/100) - 2025-10-01 12:32:17
+
+### Fixed
+
+- deps: Update dependencies for Python 3.13 compatibility
+- test: Update 202 files
 
 ## [0.22.0] - 2025-09-28
 
