@@ -24,7 +24,7 @@ from acb.config import Config
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    from acb.logger import Logger
+    pass
 
 try:
     import torch
@@ -110,9 +110,9 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
                 msg,
             )
 
-        config: Config = depends.get("config")
+        depends.get("config")
         if settings is None:
-            settings = SentenceTransformersSettings.from_config(config)
+            settings = SentenceTransformersSettings()
 
         super().__init__(settings)
         self._settings: SentenceTransformersSettings = settings
@@ -128,7 +128,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
 
     async def _load_model(self) -> None:
         """Load the Sentence Transformer model."""
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         try:
             # Determine device
@@ -184,7 +184,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
         """Generate embeddings for multiple texts using Sentence Transformers."""
         start_time = time.time()
         model_obj = await self._ensure_client()
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         try:
             # Generate embeddings
@@ -398,8 +398,8 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
         ]
 
         return [
-            {
-                **model_info,
+            model_info
+            | {
                 "provider": "sentence_transformers",
                 "type": "embedding",
             }
@@ -449,7 +449,7 @@ async def create_sentence_transformers_embedding(
     if config is None:
         config = depends.get("config")
 
-    settings = SentenceTransformersSettings.from_config(config)
+    settings = SentenceTransformersSettings()
     return SentenceTransformersEmbedding(settings)
 
 

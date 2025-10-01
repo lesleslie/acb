@@ -1,6 +1,54 @@
 ---
-id: 01K6EYSRJNKKY6PENSWQPM4FB4
+id: 01K6F8HFDYNE081QXQA05NGG1W
 ---
+______________________________________________________________________
+
+## id: 01K6F85RFFN5WNSK9252286XMX
+
+______________________________________________________________________
+
+## id: 01K6F6ZG4QAV0Y73C3BF4ZX7MA
+
+______________________________________________________________________
+
+## id: 01K6F6Y55XRDKEP6AM8QA9RAYF
+
+______________________________________________________________________
+
+## id: 01K6F0QEGCGXA9P9ZVWA2XZ8KT
+
+______________________________________________________________________
+
+## id: 01K6F05ZDZ5WE4WZYHWTWFA5KJ
+
+______________________________________________________________________
+
+## id: 01K6EZZRC0NDS4BD1467N0W5ZZ
+
+______________________________________________________________________
+
+## id: 01K6EZZ3VRQYV5EDYPHJ9ZEBR1
+
+______________________________________________________________________
+
+## id: 01K6EZMW3WYZ4D46VFSQ485PFB
+
+______________________________________________________________________
+
+## id: 01K6EZM28F757HWX0J00585ADK
+
+______________________________________________________________________
+
+## id: 01K6EZ6RCS8Q24DM6T0ED1R5B2
+
+______________________________________________________________________
+
+## id: 01K6EZ641D7CF7ACWEEMS0DQET
+
+______________________________________________________________________
+
+## id: 01K6EYSRJNKKY6PENSWQPM4FB4
+
 # ACB Migration Guide
 
 This guide provides comprehensive instructions for migrating ACB installations between versions.
@@ -41,7 +89,7 @@ else:
 # Test migration without making changes
 result = await manager.migrate(
     target_version="0.20.0",
-    dry_run=True  # Simulate without actual changes
+    dry_run=True,  # Simulate without actual changes
 )
 
 print(f"Would modify {len(result.metrics.files_modified)} files")
@@ -51,10 +99,7 @@ print(f"Would modify {len(result.metrics.files_modified)} files")
 
 ```python
 # Disable auto-rollback for manual control
-result = await manager.migrate(
-    target_version="0.20.0",
-    auto_rollback=False
-)
+result = await manager.migrate(target_version="0.20.0", auto_rollback=False)
 
 if result.failed:
     # Manually review and rollback if needed
@@ -71,10 +116,7 @@ Before migrating, assess requirements and compatibility:
 from acb.migration import assess_migration
 
 # Assess migration to specific version
-assessment = await assess_migration(
-    target_version="0.20.0",
-    config_dir=Path.cwd()
-)
+assessment = await assess_migration(target_version="0.20.0", config_dir=Path.cwd())
 
 print(f"Current version: {assessment.current_version}")
 print(f"Target version: {assessment.target_version}")
@@ -158,7 +200,7 @@ By default, migrations create backup points and rollback on error:
 ```python
 result = await manager.migrate(
     target_version="0.20.0",
-    auto_rollback=True  # Default
+    auto_rollback=True,  # Default
 )
 
 if result.status == "rolled_back":
@@ -235,9 +277,9 @@ compat.old_cache_interface("get_or_set")  # Warns about deprecated method
 ACB includes several built-in migration scripts:
 
 1. **configuration_migration**: Migrates config files to `settings/` directory
-2. **adapter_migration**: Creates/updates `settings/adapters.yml`
-3. **dependency_update**: Guides dependency updates via `uv sync`
-4. **major_version_upgrade**: Handles breaking changes for major versions
+1. **adapter_migration**: Creates/updates `settings/adapters.yml`
+1. **dependency_update**: Guides dependency updates via `uv sync`
+1. **major_version_upgrade**: Handles breaking changes for major versions
 
 ### Custom Migration Scripts
 
@@ -247,11 +289,11 @@ Create custom migration scripts for project-specific needs:
 from acb.migration.scripts import MigrationScript, register_migration_script
 from pathlib import Path
 
+
 class CustomMigrationScript(MigrationScript):
     def __init__(self):
         super().__init__(
-            name="custom_migration",
-            description="Custom project-specific migration"
+            name="custom_migration", description="Custom project-specific migration"
         )
 
     async def execute(self, project_root: Path, config: MigrationConfig) -> None:
@@ -266,6 +308,7 @@ class CustomMigrationScript(MigrationScript):
 
         # Track modified files
         self.files_modified += 1
+
 
 # Register custom script
 register_migration_script("custom_migration", CustomMigrationScript)
@@ -284,8 +327,7 @@ validator = MigrationValidator()
 
 # Validate migration results
 result = await validator.validate_migration(
-    project_root=Path.cwd(),
-    config=migration_config
+    project_root=Path.cwd(), config=migration_config
 )
 
 if result.success:
@@ -328,33 +370,34 @@ class CustomValidator(MigrationValidator):
 ### Before Migration
 
 1. **Backup Your Project**: Create a backup before migrating
+
    ```bash
    tar -czf project-backup.tar.gz /path/to/project
    ```
 
-2. **Review Breaking Changes**: Check CHANGELOG.md for version-specific changes
+1. **Review Breaking Changes**: Check CHANGELOG.md for version-specific changes
 
-3. **Test in Development**: Test migration in development environment first
+1. **Test in Development**: Test migration in development environment first
 
-4. **Run Assessment**: Use `assess_migration()` to understand requirements
+1. **Run Assessment**: Use `assess_migration()` to understand requirements
 
 ### During Migration
 
 1. **Use Dry Run**: Test migration with `dry_run=True` first
 
-2. **Monitor Progress**: Watch migration logs for issues
+1. **Monitor Progress**: Watch migration logs for issues
 
-3. **Keep Rollback Enabled**: Use `auto_rollback=True` for safety
+1. **Keep Rollback Enabled**: Use `auto_rollback=True` for safety
 
 ### After Migration
 
 1. **Validate Results**: Check migration validation results
 
-2. **Run Tests**: Run your test suite to verify functionality
+1. **Run Tests**: Run your test suite to verify functionality
 
-3. **Update Dependencies**: Run `uv sync` to update dependencies
+1. **Update Dependencies**: Run `uv sync` to update dependencies
 
-4. **Review Warnings**: Address any deprecation warnings
+1. **Review Warnings**: Address any deprecation warnings
 
 ## Troubleshooting
 
@@ -367,6 +410,7 @@ Error: Python 3.12 is not supported. ACB requires Python 3.13+
 ```
 
 **Solution**: Upgrade to Python 3.13 or later:
+
 ```bash
 uv python install 3.13
 uv venv --python 3.13
@@ -379,6 +423,7 @@ Error: settings/adapters.yml not found
 ```
 
 **Solution**: Create configuration files manually or run migration:
+
 ```bash
 mkdir -p settings
 touch settings/adapters.yml settings/app.yml
@@ -391,6 +436,7 @@ Error: Failed to move config.yaml: File is in use
 ```
 
 **Solution**: Close applications using config files and retry:
+
 ```bash
 lsof | grep config.yaml  # Find processes using file
 # Close the applications, then retry migration
@@ -403,6 +449,7 @@ Error: Rollback point not found: abc123
 ```
 
 **Solution**: List available rollback points:
+
 ```python
 points = manager.list_rollback_points()
 if points:
@@ -443,6 +490,7 @@ from acb.migration import (
 )
 from acb.logger import logger
 
+
 async def migrate_project():
     """Complete migration workflow example."""
 
@@ -451,10 +499,7 @@ async def migrate_project():
     logger.info(f"Current ACB version: {current}")
 
     # 2. Assess migration requirements
-    assessment = await assess_migration(
-        target_version="0.20.0",
-        config_dir=Path.cwd()
-    )
+    assessment = await assess_migration(target_version="0.20.0", config_dir=Path.cwd())
 
     logger.info(f"Compatibility: {assessment.compatibility_status}")
     logger.info(f"Estimated duration: {assessment.estimated_duration}s")
@@ -468,10 +513,7 @@ async def migrate_project():
 
     # 3. Run dry-run first
     manager = MigrationManager()
-    dry_result = await manager.migrate(
-        target_version="0.20.0",
-        dry_run=True
-    )
+    dry_result = await manager.migrate(target_version="0.20.0", dry_run=True)
 
     logger.info(f"Dry run completed: {dry_result.status}")
     logger.info(f"Would modify {dry_result.metrics.files_modified} files")
@@ -482,10 +524,7 @@ async def migrate_project():
     #     return False
 
     # 5. Run actual migration
-    result = await manager.migrate(
-        target_version="0.20.0",
-        auto_rollback=True
-    )
+    result = await manager.migrate(target_version="0.20.0", auto_rollback=True)
 
     if result.success:
         logger.info("✓ Migration completed successfully")
@@ -507,9 +546,11 @@ async def migrate_project():
 
         return False
 
+
 # Run migration
 if __name__ == "__main__":
     import asyncio
+
     success = asyncio.run(migrate_project())
     exit(0 if success else 1)
 ```

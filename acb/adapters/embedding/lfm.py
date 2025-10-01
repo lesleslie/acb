@@ -23,7 +23,7 @@ from acb.config import Config
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    from acb.logger import Logger
+    pass
 
 # Liquid AI LFM imports (placeholder - would be actual LFM library)
 try:
@@ -141,9 +141,9 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
             #     "Liquid AI LFM library not available. Install with: pip install liquid-ai-lfm"
             # )
 
-        config: Config = depends.get("config")
+        depends.get("config")
         if settings is None:
-            settings = LiquidLFMEmbeddingSettings.from_config(config)
+            settings = LiquidLFMEmbeddingSettings()
 
         super().__init__(settings)
         self._settings: LiquidLFMEmbeddingSettings = settings
@@ -161,7 +161,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
     async def _load_model(self) -> None:
         """Load the Liquid AI LFM model with memory-efficient settings."""
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         try:
             # Determine optimal device based on constraints
@@ -295,7 +295,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         """Generate embeddings using Liquid AI LFM with memory optimization."""
         start_time = time.time()
         model_obj, tokenizer = await self._ensure_client()
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         results = []
 
@@ -413,7 +413,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
     async def _optimize_memory(self) -> None:
         """Optimize memory usage when approaching limits."""
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
         await logger.info("Memory limit approached, optimizing...")
 
         # LFM-specific memory optimization strategies would go here
@@ -525,8 +525,8 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         ]
 
         return [
-            {
-                **model_info,
+            model_info
+            | {
                 "provider": "liquid_ai_lfm",
                 "type": "embedding",
             }
@@ -596,7 +596,7 @@ async def create_lfm_embedding(config: Config | None = None) -> LiquidLFMEmbeddi
     if config is None:
         config = depends.get("config")
 
-    settings = LiquidLFMEmbeddingSettings.from_config(config)
+    settings = LiquidLFMEmbeddingSettings()
     return LiquidLFMEmbedding(settings)
 
 

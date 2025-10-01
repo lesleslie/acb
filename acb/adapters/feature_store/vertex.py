@@ -35,7 +35,6 @@ from acb.adapters.feature_store._base import (
 
 try:
     from google.cloud import aiplatform
-    from google.cloud.aiplatform import featurestore
     from google.cloud.aiplatform.featurestore import EntityType, Feature, Featurestore
     from google.oauth2 import service_account
 

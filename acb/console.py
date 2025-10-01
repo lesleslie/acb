@@ -1,5 +1,6 @@
 import asyncio
 import os
+from contextlib import suppress
 
 from aioconsole import aprint
 from rich.console import Console
@@ -20,11 +21,9 @@ class RichConsole(Console):
                 try:
                     # Try to get existing event loop first
                     loop = None
-                    try:
-                        loop = asyncio.get_running_loop()
-                    except RuntimeError:
+                    with suppress(RuntimeError):
                         # No running loop, safe to use asyncio.run
-                        pass
+                        loop = asyncio.get_running_loop()
 
                     if loop is not None:
                         # Event loop is running, schedule the coroutine

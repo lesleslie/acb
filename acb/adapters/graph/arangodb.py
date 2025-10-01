@@ -24,7 +24,6 @@ from acb.adapters.graph._base import (
 )
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
 
 if t.TYPE_CHECKING:
     from arango import ArangoClient
@@ -39,6 +38,9 @@ MODULE_METADATA = AdapterMetadata(
     provider="arangodb",
     version="1.0.0",
     acb_min_version="0.19.0",
+    author="ACB Development Team",
+    created_date="2025-09-30",
+    last_modified="2025-09-30",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.CONNECTION_POOLING,
@@ -56,6 +58,7 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["python-arango>=7.0.0"],
     description="High-performance ArangoDB multi-model database adapter with AQL query support",
+    settings_class="ArangoDBSettings",
 )
 
 
@@ -63,8 +66,8 @@ class ArangoDBSettings(GraphBaseSettings):
     """ArangoDB-specific settings."""
 
     # ArangoDB connection settings
-    host: str = "127.0.0.1"  # type: ignore[assignment]
-    port: int = 8529
+    host: str | None = "127.0.0.1"
+    port: int | None = 8529
     protocol: str = "http"
     database: str = "_system"
 
@@ -89,7 +92,7 @@ class Graph(GraphBase):
     """ArangoDB graph database adapter."""
 
     config: Config = depends()
-    logger: Logger = depends()
+    logger: t.Any = depends()
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)

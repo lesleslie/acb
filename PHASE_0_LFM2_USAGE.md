@@ -1,6 +1,53 @@
 ---
-id: 01K6EMS4DRZQW8K9VT3YC1XBNM
+id: 01K6F8HF7YZANKJCMA7YZR7MNQ
 ---
+______________________________________________________________________
+
+## id: 01K6F85R9JNQD37JWC3GQRXD27
+
+______________________________________________________________________
+
+## id: 01K6F6ZFVJ371Y2GQSQHB5NHX6
+
+______________________________________________________________________
+
+## id: 01K6F6Y4XT9T8E6H8AH37H74C0
+
+______________________________________________________________________
+
+## id: 01K6F0QE3G2NQSRMG2TSK0VVKR
+
+______________________________________________________________________
+
+## id: 01K6F05Z2BNN5A4WRRW0JR4HDC
+
+______________________________________________________________________
+
+## id: 01K6EZZR5YCF50NTQCT0D1QYMB
+
+______________________________________________________________________
+
+## id: 01K6EZZ3KW9K1PTA0HBYMEB8X6
+
+______________________________________________________________________
+
+## id: 01K6EZMVV3T60W202MS1M67R8S
+
+______________________________________________________________________
+
+## id: 01K6EZM1FCPCE09HKNSZ4XPSHW
+
+______________________________________________________________________
+
+## id: 01K6EZ6QTM74GF5YZ6EJHCW5AN
+
+______________________________________________________________________
+
+## id: 01K6EZ63W3T20FRX4AKHBACBHS
+
+______________________________________________________________________
+
+## id: 01K6EMS4DRZQW8K9VT3YC1XBNM
 
 # Phase 0: LFM2 Integration Usage Guide
 
@@ -108,6 +155,7 @@ from acb.adapters.ai import AIRequest
 # Import the AI adapter
 Ai = import_adapter("ai")
 
+
 async def generate_text():
     """Generate text using LFM2."""
     # Get AI adapter instance
@@ -117,7 +165,7 @@ async def generate_text():
     request = AIRequest(
         prompt="Write a short poem about artificial intelligence",
         max_tokens=100,
-        temperature=0.7
+        temperature=0.7,
     )
 
     # Generate response
@@ -126,6 +174,7 @@ async def generate_text():
     print(f"Generated text: {response.content}")
     print(f"Tokens used: {response.tokens_used}")
     print(f"Latency: {response.latency_ms}ms")
+
 
 # Run
 asyncio.run(generate_text())
@@ -141,7 +190,7 @@ async def generate_streaming():
     request = AIRequest(
         prompt="Explain quantum computing in simple terms",
         max_tokens=200,
-        temperature=0.8
+        temperature=0.8,
     )
 
     # Get streaming response
@@ -151,6 +200,7 @@ async def generate_streaming():
     async for chunk in stream:
         print(chunk, end="", flush=True)
     print()
+
 
 asyncio.run(generate_streaming())
 ```
@@ -165,13 +215,14 @@ async def generate_with_system_prompt():
     request = AIRequest(
         prompt="What are the key benefits of edge AI?",
         system_prompt="You are an expert in edge computing and AI deployment. "
-                     "Provide technical but accessible explanations.",
+        "Provide technical but accessible explanations.",
         max_tokens=150,
-        temperature=0.6
+        temperature=0.6,
     )
 
     response = await ai.generate_text(request)
     print(response.content)
+
 
 asyncio.run(generate_with_system_prompt())
 ```
@@ -204,6 +255,7 @@ async def show_model_info():
     print(f"\nCurrent memory usage:")
     print(f"  RSS: {memory['rss_mb']}MB")
     print(f"  Usage: {memory['usage_percent']:.1f}%")
+
 
 asyncio.run(show_model_info())
 ```
@@ -285,7 +337,7 @@ settings = EdgeAISettings(
     max_tokens_per_request=256,
     cold_start_optimization=True,
     model_preload=True,
-    lfm_deployment_target="edge"
+    lfm_deployment_target="edge",
 )
 ```
 
@@ -302,7 +354,7 @@ settings = EdgeAISettings(
     max_context_length=4096,
     max_tokens_per_request=1024,
     model_preload=True,
-    lfm_deployment_target="server"
+    lfm_deployment_target="server",
 )
 ```
 
@@ -313,17 +365,20 @@ ______________________________________________________________________
 ### Out of Memory Errors
 
 **Solution 1: Use smaller model**
+
 ```yaml
 default_model: lfm2-350m  # Instead of 700m or 1.2b
 ```
 
 **Solution 2: Enable quantization**
+
 ```yaml
 enable_quantization: true
 quantization_bits: 8  # Or 4 for extreme savings
 ```
 
 **Solution 3: Reduce context length**
+
 ```yaml
 max_context_length: 2048  # Instead of 4096
 max_tokens_per_request: 256  # Instead of 512
@@ -332,17 +387,20 @@ max_tokens_per_request: 256  # Instead of 512
 ### Slow Inference
 
 **Solution 1: Preload model**
+
 ```yaml
 model_preload: true
 keep_alive_minutes: 30
 ```
 
 **Solution 2: Reduce precision** (if quality allows)
+
 ```yaml
 lfm_precision: int8  # Instead of fp16
 ```
 
 **Solution 3: Limit concurrent requests**
+
 ```yaml
 max_concurrent_requests: 2  # Instead of 4
 ```
@@ -350,17 +408,16 @@ max_concurrent_requests: 2  # Instead of 4
 ### Model Download Issues
 
 **Manual download:**
+
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Download manually
 model = AutoModelForCausalLM.from_pretrained(
-    "liquid-ai/lfm2-350m",
-    cache_dir="/path/to/cache"
+    "liquid-ai/lfm2-350m", cache_dir="/path/to/cache"
 )
 tokenizer = AutoTokenizer.from_pretrained(
-    "liquid-ai/lfm2-350m",
-    cache_dir="/path/to/cache"
+    "liquid-ai/lfm2-350m", cache_dir="/path/to/cache"
 )
 ```
 

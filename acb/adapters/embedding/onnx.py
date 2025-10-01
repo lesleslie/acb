@@ -25,7 +25,7 @@ from acb.config import Config
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    from acb.logger import Logger
+    pass
 
 try:
     import onnxruntime as ort
@@ -119,9 +119,9 @@ class ONNXEmbedding(EmbeddingAdapter):
                 msg,
             )
 
-        config: Config = depends.get("config")
+        depends.get("config")
         if settings is None:
-            settings = ONNXEmbeddingSettings.from_config(config)
+            settings = ONNXEmbeddingSettings()
 
         super().__init__(settings)
         self._settings: ONNXEmbeddingSettings = settings
@@ -139,7 +139,7 @@ class ONNXEmbedding(EmbeddingAdapter):
 
     async def _load_model(self) -> None:
         """Load the ONNX model and tokenizer."""
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         try:
             await logger.info(f"Loading ONNX model from: {self._settings.model_path}")
@@ -226,7 +226,7 @@ class ONNXEmbedding(EmbeddingAdapter):
         """Generate embeddings for multiple texts using ONNX Runtime."""
         start_time = time.time()
         session, tokenizer = await self._ensure_client()
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         results = []
 
@@ -476,8 +476,8 @@ class ONNXEmbedding(EmbeddingAdapter):
         ]
 
         return [
-            {
-                **model_info,
+            model_info
+            | {
                 "provider": "onnx",
                 "type": "embedding",
             }
@@ -554,7 +554,7 @@ async def create_onnx_embedding(config: Config | None = None) -> ONNXEmbedding:
     if config is None:
         config = depends.get("config")
 
-    settings = ONNXEmbeddingSettings.from_config(config)
+    settings = ONNXEmbeddingSettings()
     return ONNXEmbedding(settings)
 
 

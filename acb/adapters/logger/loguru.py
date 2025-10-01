@@ -236,7 +236,7 @@ class InterceptHandler(logging.Handler):
     """Handler to intercept standard library logging and route to Loguru."""
 
     @depends.inject
-    def emit(self, record: logging.LogRecord, logger: Logger = depends()) -> None:
+    def emit(self, record: logging.LogRecord, logger: t.Any = depends()) -> None:
         """Emit log record via Loguru."""
         try:
             level = logger.level(record.levelname).name  # type: ignore[no-untyped-call]

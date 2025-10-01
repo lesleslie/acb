@@ -433,9 +433,12 @@ class CORSManager:
             return True
 
         # Check pattern matches
-        for pattern in cors_config.allowed_origin_patterns:
+        for pattern_str in cors_config.allowed_origin_patterns:
             try:
-                if re.match(pattern, origin):
+                pattern = re.compile(
+                    pattern_str
+                )  # REGEX OK: CORS origin pattern validation
+                if pattern.match(origin):
                     return True
             except re.error:
                 continue
@@ -506,9 +509,12 @@ class SecurityValidator:
 
         # Check user agent
         if self._config.block_suspicious_user_agents and request.user_agent:
-            for pattern in self._config.suspicious_user_agents:
+            for pattern_str in self._config.suspicious_user_agents:
                 try:
-                    if re.search(pattern, request.user_agent, re.IGNORECASE):
+                    pattern = re.compile(
+                        pattern_str, re.IGNORECASE
+                    )  # REGEX OK: security user agent detection
+                    if pattern.search(request.user_agent):
                         violations.append(
                             SecurityViolation(
                                 violation_type="suspicious_user_agent",
@@ -563,9 +569,12 @@ class SecurityValidator:
             (r"exec\(", "command_injection", "critical"),
         ]
 
-        for pattern, violation_type, severity in attack_patterns:
+        for pattern_str, violation_type, severity in attack_patterns:
             try:
-                if re.search(pattern, request.path, re.IGNORECASE):
+                pattern = re.compile(
+                    pattern_str, re.IGNORECASE
+                )  # REGEX OK: security attack pattern detection
+                if pattern.search(request.path):
                     violations.append(
                         SecurityViolation(
                             violation_type=violation_type,

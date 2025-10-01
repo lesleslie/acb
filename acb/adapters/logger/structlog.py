@@ -234,7 +234,7 @@ class Logger(LoggerBase):
 
     def _log_with_context(
         self,
-        log_method: t.Callable,
+        log_method: t.Callable[..., t.Any],
         msg: str,
         *args: t.Any,
         **kwargs: t.Any,

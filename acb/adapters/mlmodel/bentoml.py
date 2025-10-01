@@ -32,7 +32,6 @@ from acb.adapters.mlmodel._base import (
 
 try:
     import bentoml
-    from bentoml._internal.configuration import get_global_config
 
     BENTOML_AVAILABLE = True
 except ImportError:
@@ -285,7 +284,7 @@ class BentoMLAdapter(BaseMLModelAdapter):
                         # Fall back to individual predictions
                         msg = "Batch endpoint not available"
                         raise RuntimeError(msg)
-            except:
+            except Exception:
                 # Process individually if batch endpoint not available
                 all_predictions = []
                 for input_data in request.inputs:
@@ -432,7 +431,7 @@ class BentoMLAdapter(BaseMLModelAdapter):
             try:
                 async with http_session.get(health_url) as response:
                     service_healthy = response.status == 200
-            except:
+            except Exception:
                 service_healthy = False
 
             return ModelHealth(
@@ -537,7 +536,7 @@ class BentoMLAdapter(BaseMLModelAdapter):
                                     )
 
                             base_metrics.update(bentoml_metrics)
-                except:
+                except Exception:
                     pass
 
             # Add BentoML specific metrics

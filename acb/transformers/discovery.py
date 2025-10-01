@@ -95,31 +95,38 @@ class TransformerMetadata(BaseModel):
     version: str = Field(..., description="Transformer version")
     acb_min_version: str = Field(default="0.19.0", description="Minimum ACB version")
     status: TransformerStatus = Field(
-        default=TransformerStatus.STABLE, description="Transformer status",
+        default=TransformerStatus.STABLE,
+        description="Transformer status",
     )
     capabilities: list[TransformerCapability] = Field(
-        default_factory=list, description="Supported capabilities",
+        default_factory=list,
+        description="Supported capabilities",
     )
     description: str = Field(default="", description="Transformer description")
     performance_hints: dict[str, t.Any] = Field(
-        default_factory=dict, description="Performance optimization hints",
+        default_factory=dict,
+        description="Performance optimization hints",
     )
     required_packages: list[str] = Field(
-        default_factory=list, description="Required Python packages",
+        default_factory=list,
+        description="Required Python packages",
     )
     optional_packages: list[str] = Field(
-        default_factory=list, description="Optional enhancement packages",
+        default_factory=list,
+        description="Optional enhancement packages",
     )
 
 
 # Transformer registry using ContextVar for thread safety
 _transformer_registry: ContextVar[dict[str, type["DataTransformer"]]] = ContextVar(
-    "_transformer_registry", default={},
+    "_transformer_registry",
+    default={},
 )
 
 
 def register_transformer(
-    transformer_type: str, transformer_class: type["DataTransformer"],
+    transformer_type: str,
+    transformer_class: type["DataTransformer"],
 ) -> None:
     """Register a data transformer implementation.
 

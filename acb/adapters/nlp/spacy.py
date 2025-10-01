@@ -171,8 +171,6 @@ class SpacyNLP(BaseNLPAdapter):
             # Add sentiment extension if textblob is available
             if self._settings.sentiment_model == "textblob":
                 try:
-                    from spacytextblob.spacytextblob import SpacyTextBlob
-
                     nlp.add_pipe("spacytextblob")
                 except ImportError:
                     pass

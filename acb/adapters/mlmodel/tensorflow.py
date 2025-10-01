@@ -35,8 +35,6 @@ from acb.adapters.mlmodel._base import (
 try:
     from tensorflow.core.framework import tensor_pb2, types_pb2
     from tensorflow_serving.apis import (
-        model_management_pb2,
-        model_service_pb2,
         predict_pb2,
         prediction_service_pb2_grpc,
     )

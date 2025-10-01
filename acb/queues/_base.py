@@ -11,7 +11,7 @@ import time
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -254,8 +254,8 @@ class FunctionalTaskHandler(TaskHandler):
                 task_id=task.task_id,
                 status=TaskStatus.COMPLETED,
                 result=result,
-                started_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
+                started_at=datetime.now(tz=UTC),
+                completed_at=datetime.now(tz=UTC),
                 execution_time=time.time() - start_time,
                 queue_name=task.queue_name,
             )
@@ -265,8 +265,8 @@ class FunctionalTaskHandler(TaskHandler):
                 task_id=task.task_id,
                 status=TaskStatus.FAILED,
                 error=str(e),
-                started_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
+                started_at=datetime.now(tz=UTC),
+                completed_at=datetime.now(tz=UTC),
                 execution_time=time.time() - start_time,
                 queue_name=task.queue_name,
             )
@@ -616,8 +616,8 @@ class QueueBase(ABC, CleanupMixin):
                 task_id=task.task_id,
                 status=TaskStatus.FAILED,
                 error=str(e),
-                started_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
+                started_at=datetime.now(tz=UTC),
+                completed_at=datetime.now(tz=UTC),
                 execution_time=time.time() - start_time,
                 worker_id=worker_id,
                 queue_name=task.queue_name,
@@ -688,7 +688,7 @@ class QueueBase(ABC, CleanupMixin):
         """
         self._metrics.completed_tasks += 1
         self._metrics.worker_metrics.tasks_processed += 1
-        self._metrics.last_task_processed = datetime.utcnow()
+        self._metrics.last_task_processed = datetime.now(tz=UTC)
 
         # Update average processing time
         if result.execution_time:

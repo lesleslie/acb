@@ -21,7 +21,6 @@ MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b80fef01e7c2")
 MODULE_STATUS = AdapterStatus.STABLE
 from pydantic import Field
 from acb.depends import depends
-from acb.logger import Logger
 
 from ._base import FileInfo, FtpdBase, FtpdBaseSettings
 
@@ -52,7 +51,7 @@ class Ftpd(FtpdBase):
         return SFTPHandler
 
     @depends.inject
-    async def start(self, logger: Logger = depends()) -> None:
+    async def start(self, logger: t.Any = depends()) -> None:
         try:
             Path(self.config.ftpd.root_dir).mkdir(parents=True, exist_ok=True)
             self._server_acceptor = await asyncssh.create_server(
@@ -97,7 +96,7 @@ class Ftpd(FtpdBase):
         process.exit(0)
 
     @depends.inject
-    async def stop(self, logger: Logger = depends()) -> None:
+    async def stop(self, logger: t.Any = depends()) -> None:
         try:
             if self._server and self._server_acceptor:
                 self._server_acceptor.close()

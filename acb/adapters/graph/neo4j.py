@@ -23,7 +23,6 @@ from acb.adapters.graph._base import (
 )
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
 
 if t.TYPE_CHECKING:
     from neo4j import AsyncDriver, AsyncTransaction
@@ -36,6 +35,9 @@ MODULE_METADATA = AdapterMetadata(
     provider="neo4j",
     version="1.0.0",
     acb_min_version="0.19.0",
+    author="ACB Development Team",
+    created_date="2025-09-30",
+    last_modified="2025-09-30",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.CONNECTION_POOLING,
@@ -53,6 +55,7 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["neo4j>=5.0.0"],
     description="High-performance Neo4j graph database adapter with full Cypher query support",
+    settings_class="Neo4jSettings",
 )
 
 
@@ -60,8 +63,8 @@ class Neo4jSettings(GraphBaseSettings):
     """Neo4j-specific settings."""
 
     # Neo4j connection settings
-    host: str = "127.0.0.1"  # type: ignore[assignment]
-    port: int = 7687
+    host: str | None = "127.0.0.1"
+    port: int | None = 7687
     scheme: str = "bolt"
     database: str = "neo4j"
 
@@ -82,7 +85,7 @@ class Graph(GraphBase):
     """Neo4j graph database adapter."""
 
     config: Config = depends()
-    logger: Logger = depends()
+    logger: t.Any = depends()
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)

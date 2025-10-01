@@ -47,8 +47,7 @@ class ValidationResult(BaseModel):
     def has_errors(self) -> bool:
         """Check if validation has errors."""
         return any(
-            issue.severity
-            in (MigrationSeverity.ERROR, MigrationSeverity.CRITICAL)
+            issue.severity in (MigrationSeverity.ERROR, MigrationSeverity.CRITICAL)
             for issue in self.issues
         )
 

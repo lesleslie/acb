@@ -23,19 +23,12 @@ from acb.adapters.embedding._base import (
 from acb.config import Config
 from acb.depends import depends
 
-if t.TYPE_CHECKING:
-    from acb.logger import Logger
-
 try:
-    import openai
     from openai import AsyncOpenAI
-    from openai.types import CreateEmbeddingResponse
 
     _openai_available = True
 except ImportError:
-    openai = None
-    AsyncOpenAI = None
-    CreateEmbeddingResponse = None
+    AsyncOpenAI = None  # type: ignore[misc,assignment]
     _openai_available = False
 
 MODULE_METADATA = AdapterMetadata(
@@ -68,9 +61,9 @@ MODULE_METADATA = AdapterMetadata(
 class OpenAIEmbeddingSettings(EmbeddingBaseSettings):
     """OpenAI-specific embedding settings."""
 
-    api_key: SecretStr = Field(description="OpenAI API key")
+    api_key: SecretStr | None = Field(default=None, description="OpenAI API key")
     organization: str | None = Field(default=None, description="OpenAI organization ID")
-    base_url: str = Field(
+    base_url: str | None = Field(
         default="https://api.openai.com/v1",
         description="OpenAI API base URL",
     )
@@ -105,21 +98,25 @@ class OpenAIEmbedding(EmbeddingAdapter):
                 msg,
             )
 
-        config: Config = depends.get("config")
         if settings is None:
-            settings = OpenAIEmbeddingSettings.from_config(config)
+            settings = OpenAIEmbeddingSettings()
 
         super().__init__(settings)
-        self._settings: OpenAIEmbeddingSettings = settings
+        self._settings = settings
         self._client: AsyncOpenAI | None = None
         self._rate_limiter = None
         self._last_request_time = 0.0
 
-    async def _ensure_client(self) -> AsyncOpenAI:
+    async def _ensure_client(self) -> t.Any:
         """Ensure OpenAI client is initialized."""
         if self._client is None:
+            if AsyncOpenAI is None:
+                msg = "OpenAI library not available"
+                raise ImportError(msg)
             self._client = AsyncOpenAI(
-                api_key=self._settings.api_key.get_secret_value(),
+                api_key=self._settings.api_key.get_secret_value()
+                if self._settings.api_key
+                else "",
                 organization=self._settings.organization,
                 base_url=self._settings.base_url,
                 timeout=self._settings.timeout,
@@ -140,7 +137,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
         """Generate embeddings for multiple texts using OpenAI."""
         start_time = time.time()
         client = await self._ensure_client()
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         results = []
         total_tokens = 0
@@ -165,7 +162,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
                     request_params["dimensions"] = self._settings.dimensions
 
                 # Make API request
-                response: CreateEmbeddingResponse = await client.embeddings.create(
+                response: t.Any = await client.embeddings.create(
                     **request_params,
                 )
 
@@ -274,7 +271,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
 
     async def _get_model_info(self, model: str) -> dict[str, t.Any]:
         """Get information about an OpenAI embedding model."""
-        model_info = {
+        model_info: dict[str, t.Any] = {
             "name": model,
             "provider": "openai",
             "type": "embedding",
@@ -364,7 +361,7 @@ async def create_openai_embedding(config: Config | None = None) -> OpenAIEmbeddi
     if config is None:
         config = depends.get("config")
 
-    settings = OpenAIEmbeddingSettings.from_config(config)
+    settings = OpenAIEmbeddingSettings()
     return OpenAIEmbedding(settings)
 
 

@@ -56,8 +56,6 @@ dependencies = [
     "tomli-w>=1.2",
     "uuid-utils>=0.11",
     "uvicorn>=0.30",
-    "leap-ai>=0.1.0",
-    "transformers>=4.56.2",
 ]
 
 [project.license]
@@ -450,6 +448,7 @@ exclude-deps = [
     "attrs",
     "google-crc32c",
     "hatchling",
+    "toml",
 ]
 
 [tool.refurb]

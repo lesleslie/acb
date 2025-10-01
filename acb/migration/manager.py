@@ -107,7 +107,8 @@ class MigrationManager:
                 return MigrationResult(
                     status=MigrationStatus.FAILED,
                     source_version=assessment.current_version,
-                    target_version=assessment.target_version or VersionInfo.from_string(
+                    target_version=assessment.target_version
+                    or VersionInfo.from_string(
                         target_version,
                     ),
                     metrics=metrics,

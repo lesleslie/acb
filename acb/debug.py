@@ -60,12 +60,10 @@ def patch_record(mod: Path | None, msg: str, logger: Logger = depends()) -> None
 
 
 def colorized_stderr_print(s: str) -> None:
-    try:
+    with suppress(ImportError):
         colored = colorize(s)
         with supportTerminalColorsInWindows(), suppress(Exception):
             asyncio.run(aprint(colored, use_stderr=True))
-    except ImportError:
-        pass
 
 
 def print_debug_info(msg: str) -> t.Any:

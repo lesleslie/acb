@@ -93,7 +93,9 @@ class ConfigurationMigrationScript(MigrationScript):
                 new_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(old_path), str(new_path))
                 self.files_modified += 1
-                logger.info(f"Migrated: {old_file} -> {new_path.relative_to(project_root)}")
+                logger.info(
+                    f"Migrated: {old_file} -> {new_path.relative_to(project_root)}"
+                )
 
 
 class AdapterMigrationScript(MigrationScript):

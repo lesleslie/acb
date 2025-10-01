@@ -5,7 +5,6 @@ from uuid import UUID
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
-from acb.logger import Logger
 
 from ._base import DnsBase, DnsBaseSettings, DnsRecord
 
@@ -131,7 +130,7 @@ class Dns(DnsBase):
             raise RuntimeError(msg) from e
 
     @depends.inject
-    async def init(self, logger: Logger = depends()) -> None:
+    async def init(self, logger: t.Any = depends()) -> None:
         """Initialize the Route53 DNS adapter."""
         if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
             from unittest.mock import MagicMock

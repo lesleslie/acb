@@ -8,7 +8,7 @@ and complex scheduling rules.
 import asyncio
 import logging
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -100,7 +100,7 @@ class ScheduleRule(BaseModel):
         if not self.enabled:
             return None
 
-        base_time = from_time or datetime.utcnow()
+        base_time = from_time or datetime.now(tz=UTC)
 
         # Check if we've exceeded max runs
         if self.max_runs is not None and self.run_count >= self.max_runs:
@@ -143,7 +143,7 @@ class ScheduleRule(BaseModel):
         if not self.enabled:
             return False
 
-        current_time = current_time or datetime.utcnow()
+        current_time = current_time or datetime.now(tz=UTC)
 
         # Check max runs
         if self.max_runs is not None and self.run_count >= self.max_runs:
@@ -161,7 +161,7 @@ class ScheduleRule(BaseModel):
 
     def mark_run(self, run_time: datetime | None = None) -> None:
         """Mark the rule as having run."""
-        run_time = run_time or datetime.utcnow()
+        run_time = run_time or datetime.now(tz=UTC)
         self.last_run = run_time
         self.run_count += 1
         self.calculate_next_run(run_time)
@@ -219,7 +219,7 @@ class TaskScheduler:
         """Main scheduler loop."""
         while self._running and not self._shutdown_event.is_set():
             try:
-                current_time = datetime.utcnow()
+                current_time = datetime.now(tz=UTC)
                 tasks_scheduled = 0
 
                 # Check all rules
@@ -531,7 +531,7 @@ def parse_cron_expression(expression: str) -> dict[str, Any]:
 
         # Get next few runs
         next_runs = []
-        datetime.utcnow()
+        datetime.now(tz=UTC)
         for _ in range(5):
             next_time = cron.get_next(datetime)
             next_runs.append(next_time.isoformat())

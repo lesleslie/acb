@@ -422,8 +422,7 @@ class APIGateway(GatewayBase):
         """Comprehensive health check."""
         base_health = await super().health_check()
 
-        return {
-            **base_health,
+        return base_health | {
             "components": {
                 "processor": self.processor.status.value
                 if self.processor

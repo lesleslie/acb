@@ -10,7 +10,6 @@ from acb.config import Config, Settings
 from acb.core.cleanup import CleanupMixin
 from acb.core.ssl_config import SSLConfigMixin
 from acb.depends import depends
-from acb.logger import Logger
 
 
 class GraphQueryLanguage(str, Enum):
@@ -197,7 +196,7 @@ class GraphBase(CleanupMixin, ABC):
     """Base class for graph database adapters."""
 
     config: Config = depends()
-    logger: Logger = depends()
+    logger: t.Any = depends()
 
     def __init__(self, **kwargs: t.Any) -> None:
         CleanupMixin.__init__(self)

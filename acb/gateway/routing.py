@@ -210,14 +210,20 @@ class Route(BaseModel):
             return path.startswith(self.path_pattern)
         if self.route_type == RouteType.REGEX:
             try:
-                return bool(re.match(self.path_pattern, path))
+                pattern = re.compile(
+                    self.path_pattern
+                )  # REGEX OK: dynamic route pattern matching
+                return bool(pattern.match(path))
             except re.error:
                 return False
         elif self.route_type == RouteType.WILDCARD:
             # Simple wildcard matching (* and ?)
-            pattern = self.path_pattern.replace("*", ".*").replace("?", ".")
+            pattern_str = self.path_pattern.replace("*", ".*").replace("?", ".")
             try:
-                return bool(re.match(f"^{pattern}$", path))
+                pattern = re.compile(
+                    f"^{pattern_str}$"
+                )  # REGEX OK: wildcard route pattern matching
+                return bool(pattern.match(path))
             except re.error:
                 return False
         else:

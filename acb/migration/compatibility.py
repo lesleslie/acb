@@ -140,6 +140,7 @@ class CompatibilityLayer:
 
 # Version-specific compatibility layers
 
+
 class V018CompatibilityLayer(CompatibilityLayer):
     """Compatibility layer for ACB 0.18.x -> 0.19.x migration."""
 
@@ -249,7 +250,8 @@ def get_compatibility_layer(version: str | VersionInfo) -> CompatibilityLayer:
 
 
 def register_compatibility_layer(
-    version: str, layer_class: type[CompatibilityLayer],
+    version: str,
+    layer_class: type[CompatibilityLayer],
 ) -> None:
     """Register custom compatibility layer for specific version.
 

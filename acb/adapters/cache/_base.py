@@ -9,7 +9,6 @@ from acb.config import Config, Settings
 from acb.core.cleanup import CleanupMixin
 from acb.core.ssl_config import SSLConfigMixin
 from acb.depends import depends
-from acb.logger import Logger
 
 
 class CacheBaseSettings(Settings, SSLConfigMixin):
@@ -113,7 +112,7 @@ class CacheProtocol(t.Protocol):
 
 class CacheBase(BaseCache, CleanupMixin):  # type: ignore[misc]
     config: Config = depends()
-    logger: Logger = depends()
+    logger: t.Any = depends()
 
     def __init__(self, **kwargs: t.Any) -> None:
         BaseCache.__init__(self)

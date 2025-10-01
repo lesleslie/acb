@@ -11,7 +11,7 @@ import heapq
 import logging
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -306,7 +306,7 @@ class MemoryQueue(QueueBase):
                         task_id=task_id,
                         status=TaskStatus.CANCELLED,
                         queue_name=queue_name,
-                        completed_at=datetime.utcnow(),
+                        completed_at=datetime.now(tz=UTC),
                     )
 
                     self.logger.debug(f"Cancelled task {task_id}")
@@ -330,7 +330,7 @@ class MemoryQueue(QueueBase):
                     task_id=task_id,
                     status=TaskStatus.CANCELLED,
                     queue_name=item.task.queue_name,
-                    completed_at=datetime.utcnow(),
+                    completed_at=datetime.now(tz=UTC),
                 )
 
                 self.logger.debug(f"Cancelled delayed task {task_id}")
@@ -462,7 +462,7 @@ class MemoryQueue(QueueBase):
         if not self._settings.enable_dead_letter:
             return
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(tz=UTC)
         ttl = timedelta(seconds=self._settings.dead_letter_ttl)
 
         # Find expired tasks
@@ -513,12 +513,12 @@ class MemoryQueue(QueueBase):
         self._metrics.queue_depth = total_pending
 
         # Update worker metrics
-        self._metrics.worker_metrics.last_activity = datetime.utcnow()
+        self._metrics.worker_metrics.last_activity = datetime.now(tz=UTC)
 
         # Calculate throughput
         if self._metrics.last_task_processed:
             time_since_last = (
-                datetime.utcnow() - self._metrics.last_task_processed
+                datetime.now(tz=UTC) - self._metrics.last_task_processed
             ).total_seconds()
             if time_since_last > 0:
                 recent_tasks = self._metrics.worker_metrics.tasks_processed
@@ -598,7 +598,7 @@ class MemoryQueue(QueueBase):
             self._completed_tasks.clear()
             return count
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(tz=UTC)
         expired_ids = []
 
         for task_id, result in self._completed_tasks.items():

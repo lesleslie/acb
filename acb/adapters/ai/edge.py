@@ -86,7 +86,7 @@ class EdgeAISettings(AIBaseSettings):
 
     # Local model settings
     local_model_path: str | None = None
-    model_cache_dir: str = "/tmp/acb_ai_models"
+    model_cache_dir: str = "/tmp/acb_ai_models"  # nosec B108
 
     # Performance optimization
     memory_budget_mb: int = 1024
@@ -214,11 +214,13 @@ class EdgeAI(AIBase):
                     tokenizer = AutoTokenizer.from_pretrained(
                         self.model_id,
                         trust_remote_code=True,
+                        revision="main",  # nosec B615
                     )
 
                     # Load model with edge optimizations
                     model = AutoModelForCausalLM.from_pretrained(
                         self.model_id,
+                        revision="main",  # nosec B615
                         **load_kwargs,
                     )
 

@@ -9,7 +9,7 @@ import json
 import logging
 import time
 import typing as t
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -518,7 +518,7 @@ class RedisQueue(QueueBase):
                 result = TaskResult(
                     task_id=task_id,
                     status=TaskStatus.CANCELLED,
-                    completed_at=datetime.utcnow(),
+                    completed_at=datetime.now(tz=UTC),
                 )
 
                 result_key = self._task_result_key.format(task_id=task_id)
@@ -746,7 +746,7 @@ class RedisQueue(QueueBase):
             self._metrics.queue_depth = self._metrics.pending_tasks
 
             # Update last activity
-            self._metrics.last_task_processed = datetime.utcnow()
+            self._metrics.last_task_processed = datetime.now(tz=UTC)
 
         except Exception as e:
             self.logger.exception(f"Failed to update Redis metrics: {e}")

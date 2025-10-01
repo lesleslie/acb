@@ -360,7 +360,7 @@ class MLflowAdapter(BaseMLModelAdapter):
                         run = mlflow_client.get_run(run_id)
                         metrics = run.data.metrics
                         params = run.data.params
-                    except:
+                    except Exception:
                         metrics = {}
                         params = {}
 
@@ -429,7 +429,7 @@ class MLflowAdapter(BaseMLModelAdapter):
                 metrics = run.data.metrics
                 params = run.data.params
                 artifacts = mlflow_client.list_artifacts(run_id)
-            except:
+            except Exception:
                 metrics = {}
                 params = {}
                 artifacts = []
@@ -448,7 +448,7 @@ class MLflowAdapter(BaseMLModelAdapter):
                     if model.metadata.signature
                     else None
                 )
-            except:
+            except Exception:
                 input_schema = None
                 output_schema = None
 
@@ -602,7 +602,7 @@ class MLflowAdapter(BaseMLModelAdapter):
                             experiment_ids=[experiment.experiment_id],
                         )
                         mlflow_metrics["experiment_runs_count"] = len(runs)
-                except:
+                except Exception:
                     pass
 
             base_metrics.update(mlflow_metrics)

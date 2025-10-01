@@ -30,8 +30,7 @@ class RollbackManager:
     Example:
         >>> manager = RollbackManager()
         >>> point = await manager.create_rollback_point(
-        ...     version="0.19.1",
-        ...     description="Pre-migration backup"
+        ...     version="0.19.1", description="Pre-migration backup"
         ... )
         >>> # If migration fails:
         >>> await manager.rollback(point.id)
@@ -85,7 +84,10 @@ class RollbackManager:
                     file_count += 1
                 elif file_path.is_dir():
                     shutil.copytree(
-                        file_path, target_path, dirs_exist_ok=True, symlinks=True,
+                        file_path,
+                        target_path,
+                        dirs_exist_ok=True,
+                        symlinks=True,
                     )
                     # Count files in directory
                     file_count += sum(1 for _ in target_path.rglob("*") if _.is_file())

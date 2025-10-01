@@ -4,7 +4,7 @@ import time
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 import jwt
 
@@ -59,7 +59,7 @@ class JWTAuthProvider(AuthProvider):
 
             # Check expiration
             if "exp" in payload:
-                if datetime.utcnow().timestamp() > payload["exp"]:
+                if datetime.now(tz=UTC).timestamp() > payload["exp"]:
                     return AuthResult(success=False, error="Token expired")
 
             return AuthResult(

@@ -1,6 +1,54 @@
 ---
-id: 01K6EYVJ6B32MZG6WDXBCKK9S4
+id: 01K6F8HJGK4V1A5YG75T10SM01
 ---
+______________________________________________________________________
+
+## id: 01K6F85WQRTFK4B8YYBZF4DZB6
+
+______________________________________________________________________
+
+## id: 01K6F6ZJDZJ1X6RA3AXNYP6R88
+
+______________________________________________________________________
+
+## id: 01K6F6Y7R6R16JV6G867PZX009
+
+______________________________________________________________________
+
+## id: 01K6F0QH125WFFBPAMQBZM5600
+
+______________________________________________________________________
+
+## id: 01K6F060VK34YNE8PJAEEX1PFQ
+
+______________________________________________________________________
+
+## id: 01K6EZZT3PJKY4J7GRH5JM7T98
+
+______________________________________________________________________
+
+## id: 01K6EZZ6TWMQ38AB7N8FVMBKHA
+
+______________________________________________________________________
+
+## id: 01K6EZMYG7MD01SPRSFNJV4T4V
+
+______________________________________________________________________
+
+## id: 01K6EZM4JHX0400CPBBP7WZMQ2
+
+______________________________________________________________________
+
+## id: 01K6EZ6T9WZ47WJAHYN0R5QBVJ
+
+______________________________________________________________________
+
+## id: 01K6EZ65R462FQ4F4WEWS058AN
+
+______________________________________________________________________
+
+## id: 01K6EYVJ6B32MZG6WDXBCKK9S4
+
 # Migration Guide: ACB 0.19.0
 
 This guide provides specific instructions for migrating to ACB 0.19.0.
@@ -23,6 +71,7 @@ ACB 0.19.0 introduces significant architectural simplifications and modernizatio
 **Change**: ACB now requires Python 3.13 or later.
 
 **Migration**:
+
 ```bash
 # Install Python 3.13
 uv python install 3.13
@@ -38,6 +87,7 @@ uv sync
 **Change**: Configuration files moved to `settings/` directory with standardized naming.
 
 **Old Structure**:
+
 ```
 project/
 ├── config.yaml
@@ -46,6 +96,7 @@ project/
 ```
 
 **New Structure**:
+
 ```
 project/
 └── settings/
@@ -58,6 +109,7 @@ project/
 ```
 
 **Migration**:
+
 ```bash
 # Automatic migration
 python -c "
@@ -84,6 +136,7 @@ mv .env settings/secrets/.env
 **Change**: Adapter selection now configured in `settings/adapters.yml`.
 
 **Example Configuration**:
+
 ```yaml
 # settings/adapters.yml
 cache: redis        # or: memory
@@ -95,6 +148,7 @@ ftpd: sftp          # or: ftp
 ```
 
 **Migration**:
+
 ```bash
 # Create default adapters.yml
 cat > settings/adapters.yml << EOF
@@ -111,8 +165,10 @@ EOF
 **Change**: Pydantic models now use `model_config = ConfigDict()` instead of `class Config:`.
 
 **Old Pattern**:
+
 ```python
 from pydantic import BaseModel
+
 
 class MyModel(BaseModel):
     field: str
@@ -123,19 +179,19 @@ class MyModel(BaseModel):
 ```
 
 **New Pattern**:
+
 ```python
 from pydantic import BaseModel, ConfigDict
+
 
 class MyModel(BaseModel):
     field: str
 
-    model_config = ConfigDict(
-        extra="forbid",
-        frozen=True
-    )
+    model_config = ConfigDict(extra="forbid", frozen=True)
 ```
 
 **Migration**: Automatic migration script handles this pattern in ACB codebase. For your code:
+
 ```bash
 # Use ACB's migration system
 from acb.migration import MigrationManager
@@ -150,6 +206,7 @@ result = await manager.migrate(target_version="0.19.0")
 **Change**: Complex cleanup systems replaced with simple CleanupMixin.
 
 **Old Pattern** (removed):
+
 ```python
 # Complex enterprise patterns removed
 class ComplexAdapter(ResourceManager, HealthCheckable):
@@ -159,8 +216,10 @@ class ComplexAdapter(ResourceManager, HealthCheckable):
 ```
 
 **New Pattern**:
+
 ```python
 from acb.core.cleanup import CleanupMixin
+
 
 class SimpleAdapter(CleanupMixin):
     def __init__(self):
@@ -178,6 +237,7 @@ class SimpleAdapter(CleanupMixin):
 **Change**: Cache adapters provide simple, reliable interface.
 
 **Example**:
+
 ```python
 from acb.depends import depends
 from acb.adapters import import_adapter
@@ -207,6 +267,7 @@ async with cache:
 **Change**: Basic configuration monitoring built into config system.
 
 **Usage**:
+
 ```python
 from acb.config import Config, enable_config_hot_reload
 
@@ -278,10 +339,7 @@ from acb.migration import assess_migration
 from pathlib import Path
 
 # Assess migration requirements
-assessment = await assess_migration(
-    target_version="0.19.0",
-    config_dir=Path.cwd()
-)
+assessment = await assess_migration(target_version="0.19.0", config_dir=Path.cwd())
 
 print(f"Compatibility: {assessment.compatibility_status}")
 print(f"Required steps: {len(assessment.required_steps)}")
@@ -306,7 +364,7 @@ manager = MigrationManager()
 # Run migration with automatic rollback
 result = await manager.migrate(
     target_version="0.19.0",
-    auto_rollback=True  # Rollback on error
+    auto_rollback=True,  # Rollback on error
 )
 
 if result.success:
@@ -330,8 +388,10 @@ class MyModel(BaseModel):
     class Config:
         extra = "forbid"
 
+
 # After
 from pydantic import ConfigDict
+
 
 class MyModel(BaseModel):
     field: str
@@ -348,8 +408,10 @@ class MyAdapter(ResourceManager):
         # Complex health checking
         pass
 
+
 # After (simple cleanup)
 from acb.core.cleanup import CleanupMixin
+
 
 class MyAdapter(CleanupMixin):
     def __init__(self):
@@ -418,8 +480,7 @@ validator = MigrationValidator()
 
 # Validate migration results
 result = await validator.validate_migration(
-    project_root=Path.cwd(),
-    config=migration_config
+    project_root=Path.cwd(), config=migration_config
 )
 
 if result.success:
@@ -509,6 +570,7 @@ After migration, verify:
 **Symptom**: `Python 3.12 is not supported`
 
 **Solution**:
+
 ```bash
 uv python install 3.13
 uv venv --python 3.13
@@ -520,6 +582,7 @@ uv sync
 **Symptom**: `settings/adapters.yml not found`
 
 **Solution**:
+
 ```bash
 mkdir -p settings
 cat > settings/adapters.yml << EOF
@@ -533,8 +596,10 @@ EOF
 **Symptom**: `class Config is deprecated`
 
 **Solution**: Update models to use ConfigDict:
+
 ```python
 from pydantic import ConfigDict
+
 
 class MyModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -545,8 +610,10 @@ class MyModel(BaseModel):
 **Symptom**: `Cannot import name 'ResourceManager'`
 
 **Solution**: Complex features removed - use simple patterns:
+
 ```python
 from acb.core.cleanup import CleanupMixin
+
 
 class MyAdapter(CleanupMixin):
     pass

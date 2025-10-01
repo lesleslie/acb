@@ -8,7 +8,7 @@ import asyncio
 import logging
 import time
 import typing as t
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -564,8 +564,8 @@ class RabbitMQQueue(QueueBase):
             task_id=task.task_id,
             status=TaskStatus.FAILED,
             error=str(error),
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=datetime.now(tz=UTC),
+            completed_at=datetime.now(tz=UTC),
             execution_time=time.time() - start_time,
             worker_id=worker_id,
             queue_name=task.queue_name,
@@ -692,7 +692,7 @@ class RabbitMQQueue(QueueBase):
                 # Check connection
                 if self._connection and not self._connection.is_closed:
                     # Connection is healthy
-                    self._metrics.last_task_processed = datetime.utcnow()
+                    self._metrics.last_task_processed = datetime.now(tz=UTC)
                 else:
                     # Try to reconnect
                     self.logger.warning(

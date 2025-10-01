@@ -156,7 +156,7 @@ class PromptTemplate(BaseModel):
     def render(self, **kwargs: t.Any) -> str:
         """Render template with provided variables."""
         # Merge default values with provided kwargs
-        render_vars = {**self.default_values, **kwargs}
+        render_vars = self.default_values | kwargs
 
         # Validate all required variables are provided
         missing_vars = set(self.variables) - set(render_vars.keys())

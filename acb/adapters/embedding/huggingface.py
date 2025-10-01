@@ -3,6 +3,7 @@
 import asyncio
 import time
 import typing as t
+from contextlib import suppress
 from datetime import datetime
 
 import torch
@@ -25,7 +26,7 @@ from acb.config import Config
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    from acb.logger import Logger
+    pass
 
 try:
     import torch.nn.functional as F
@@ -113,9 +114,8 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 msg,
             )
 
-        config: Config = depends.get("config")
         if settings is None:
-            settings = HuggingFaceEmbeddingSettings.from_config(config)
+            settings = HuggingFaceEmbeddingSettings()
 
         super().__init__(settings)
         self._settings: HuggingFaceEmbeddingSettings = settings
@@ -132,7 +132,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
 
     async def _load_model(self) -> None:
         """Load the HuggingFace model and tokenizer."""
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         try:
             # Determine device
@@ -161,6 +161,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 None,
                 lambda: AutoTokenizer.from_pretrained(
                     self._settings.model,
+                    revision="main",  # nosec B615
                     **tokenizer_kwargs,
                 ),
             )
@@ -188,6 +189,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 None,
                 lambda: AutoModel.from_pretrained(
                     self._settings.model,
+                    revision="main",  # nosec B615
                     **model_kwargs,
                 ),
             )
@@ -199,11 +201,9 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
             # Enable optimizations
             if self._settings.enable_optimization:
                 if hasattr(torch, "jit") and hasattr(torch.jit, "script"):
-                    try:
+                    with suppress(Exception):
                         # Try to optimize with TorchScript (may not work for all models)
                         self._model = torch.jit.script(self._model)
-                    except Exception:
-                        pass  # Optimization failed, continue with regular model
 
             # Register for cleanup
             self.register_resource(self._model)
@@ -227,7 +227,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
         """Generate embeddings for multiple texts using HuggingFace."""
         start_time = time.time()
         model_obj, tokenizer = await self._ensure_client()
-        logger: Logger = depends.get("logger")
+        logger: t.Any = depends.get("logger")
 
         results = []
 
@@ -505,7 +505,7 @@ async def create_huggingface_embedding(
     if config is None:
         config = depends.get("config")
 
-    settings = HuggingFaceEmbeddingSettings.from_config(config)
+    settings = HuggingFaceEmbeddingSettings()
     return HuggingFaceEmbedding(settings)
 
 

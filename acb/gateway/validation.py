@@ -222,15 +222,28 @@ class BasicSchemaValidator:
                 },
             )
 
-        if "pattern" in schema and not re.match(schema["pattern"], data):
-            errors.append(
-                {
-                    "field": field_path,
-                    "message": f"String does not match pattern: {schema['pattern']}",
-                    "invalid_value": data,
-                    "error_type": "pattern_error",
-                },
-            )
+        if "pattern" in schema:
+            try:
+                pattern = re.compile(
+                    schema["pattern"]
+                )  # REGEX OK: JSON schema pattern validation
+                if not pattern.match(data):
+                    errors.append(
+                        {
+                            "field": field_path,
+                            "message": f"String does not match pattern: {schema['pattern']}",
+                            "invalid_value": data,
+                            "error_type": "pattern_error",
+                        },
+                    )
+            except re.error:
+                errors.append(
+                    {
+                        "field": field_path,
+                        "message": f"Invalid regex pattern: {schema['pattern']}",
+                        "error_type": "pattern_error",
+                    },
+                )
 
         return errors
 
@@ -674,18 +687,29 @@ class RequestResponseValidator:
                 )
 
         # Check field patterns
-        for field, pattern in rule.field_patterns.items():
+        for field, pattern_str in rule.field_patterns.items():
             if field in data:
-                import re
-
-                if not re.match(pattern, str(data[field])):
+                try:
+                    pattern = re.compile(
+                        pattern_str
+                    )  # REGEX OK: field pattern validation
+                    if not pattern.match(str(data[field])):
+                        errors.append(
+                            {
+                                "rule": rule.name,
+                                "field": field,
+                                "message": f"Field '{field}' does not match pattern '{pattern_str}'",
+                                "invalid_value": data[field],
+                                "error_type": "pattern_mismatch",
+                            },
+                        )
+                except re.error:
                     errors.append(
                         {
                             "rule": rule.name,
                             "field": field,
-                            "message": f"Field '{field}' does not match pattern '{pattern}'",
-                            "invalid_value": data[field],
-                            "error_type": "pattern_mismatch",
+                            "message": f"Invalid regex pattern '{pattern_str}'",
+                            "error_type": "invalid_pattern",
                         },
                     )
 

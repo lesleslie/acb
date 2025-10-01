@@ -898,7 +898,7 @@ class ConfigHotReload:
 
     async def _reload_config(self) -> None:
         """Reload the configuration."""
-        try:
+        with suppress(Exception):
             # Create a new config instance and replace the old one
             new_config = Config()
 
@@ -907,13 +907,8 @@ class ConfigHotReload:
             # to update specific attributes rather than replace the whole object
             for attr in dir(new_config):
                 if not attr.startswith("_") and hasattr(self.config, attr):
-                    try:
+                    with suppress(AttributeError):
                         setattr(self.config, attr, getattr(new_config, attr))
-                    except AttributeError:
-                        continue
-
-        except Exception:
-            pass
 
 
 # Global hot-reload instance (optional)

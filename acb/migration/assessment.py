@@ -33,7 +33,9 @@ class MigrationAssessment(BaseModel):
     @property
     def has_critical_issues(self) -> bool:
         """Check if assessment has critical issues."""
-        return any(issue.severity == MigrationSeverity.CRITICAL for issue in self.issues)
+        return any(
+            issue.severity == MigrationSeverity.CRITICAL for issue in self.issues
+        )
 
     @property
     def requires_migration(self) -> bool:
@@ -150,7 +152,8 @@ def _check_adapter_config(settings_dir: Path) -> list[MigrationIssue]:
 
 
 def _get_migration_steps(
-    current: VersionInfo, target: VersionInfo,
+    current: VersionInfo,
+    target: VersionInfo,
 ) -> list[MigrationStep]:
     """Generate migration steps based on version gap."""
     steps = []
@@ -209,7 +212,8 @@ def _get_migration_steps(
 
 
 async def assess_migration(
-    target_version: str | None = None, config_dir: Path | None = None,
+    target_version: str | None = None,
+    config_dir: Path | None = None,
 ) -> MigrationAssessment:
     """Assess migration requirements for ACB installation.
 

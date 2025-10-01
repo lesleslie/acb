@@ -10,7 +10,6 @@ from aioftp import AsyncPathIO, Client, Permission, Server, User
 from anyio import Path as AsyncPath
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
-from acb.logger import Logger
 
 from ._base import FileInfo, FtpdBase, FtpdBaseSettings
 
@@ -101,7 +100,7 @@ class Ftpd(FtpdBase):
         return Server(**server_kwargs)
 
     @depends.inject
-    async def start(self, logger: Logger = depends()) -> None:
+    async def start(self, logger: t.Any = depends()) -> None:
         try:
             await self.server.start()
             logger.info(  # type: ignore[no-untyped-call]
@@ -113,7 +112,7 @@ class Ftpd(FtpdBase):
             raise
 
     @depends.inject
-    async def stop(self, logger: Logger = depends()) -> None:
+    async def stop(self, logger: t.Any = depends()) -> None:
         try:
             await self.server.close()
             logger.info("FTP server stopped")  # type: ignore[no-untyped-call]

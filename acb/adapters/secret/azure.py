@@ -4,7 +4,6 @@ from uuid import UUID
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
-from acb.logger import Logger
 
 from ._base import SecretBase, SecretBaseSettings
 
@@ -121,7 +120,7 @@ class Secret(SecretBase):
         return extracted.replace("-", "_")
 
     @depends.inject
-    async def init(self, logger: Logger = depends()) -> None:
+    async def init(self, logger: t.Any = depends()) -> None:
         try:
             await self.get_client()
             # Test connection by attempting to list secrets

@@ -1,6 +1,54 @@
 ---
-id: 01K6EKRTSAVTHBGA2DP3SPENN2
+id: 01K6F8HF3PMCRKGF8G8FPWE1K9
 ---
+______________________________________________________________________
+
+## id: 01K6F85QS7CZ11V5A5RS0R96Z6
+
+______________________________________________________________________
+
+## id: 01K6F6ZFMKZ1MNXN0G2D85N4KN
+
+______________________________________________________________________
+
+## id: 01K6F6Y4SFACS9F1FXVSZX086D
+
+______________________________________________________________________
+
+## id: 01K6F0QE5WJVQT2GY6BSXVP7KN
+
+______________________________________________________________________
+
+## id: 01K6F05YZJWADDGPP5J03NR62W
+
+______________________________________________________________________
+
+## id: 01K6EZZQWPVP3V0MHY48CRPJST
+
+______________________________________________________________________
+
+## id: 01K6EZZ3DKCHBZVF9J6EEGZ3Y4
+
+______________________________________________________________________
+
+## id: 01K6EZMVR36KEDSNPAQ74YP2SG
+
+______________________________________________________________________
+
+## id: 01K6EZM17TW876FR45G04FNAJ1
+
+______________________________________________________________________
+
+## id: 01K6EZ6QFBKB37KBQ22756C976
+
+______________________________________________________________________
+
+## id: 01K6EZ63GSN7B3D3GMKHSQ7RT3
+
+______________________________________________________________________
+
+## id: 01K6EKRTSAVTHBGA2DP3SPENN2
+
 # Phase 0: LFM Prototype & Validation Plan
 
 **Purpose**: Validate Liquid AI LFM integration assumptions before Phase 5 AI/ML implementation
@@ -8,7 +56,7 @@ id: 01K6EKRTSAVTHBGA2DP3SPENN2
 **Priority**: CRITICAL - Must complete before Phase 5 work begins
 **Date Created**: 2025-09-30
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
@@ -19,11 +67,13 @@ This phase validates the technical feasibility and performance characteristics o
 ### Model Specifications (Released July 2025)
 
 **Available Sizes:**
+
 - **LFM2-350M**: 350 million parameters - smartphones, embedded devices
 - **LFM2-700M**: 700 million parameters - laptops, mid-range devices
 - **LFM2-1.2B**: 1.2 billion parameters - high-end edge devices, vehicles
 
 **Architecture Highlights:**
+
 - Hybrid Liquid model with multiplicative gates and short convolutions
 - 16 blocks total: 10 double-gated short-range convolution + 6 grouped query attention
 - **200% faster decode/prefill than Qwen3 and Gemma3 on CPU**
@@ -32,9 +82,9 @@ This phase validates the technical feasibility and performance characteristics o
 **Performance Benchmarks:**
 | Model | MMLU (5-shot) | GSM8K (0-shot) | Deployment Target |
 |-------|---------------|----------------|-------------------|
-| 350M  | 43.43         | 30.1           | Smartphones, IoT  |
-| 700M  | 49.9          | 46.4           | Laptops, tablets  |
-| 1.2B  | 55.23         | 58.3           | Vehicles, high-end |
+| 350M | 43.43 | 30.1 | Smartphones, IoT |
+| 700M | 49.9 | 46.4 | Laptops, tablets |
+| 1.2B | 55.23 | 58.3 | Vehicles, high-end |
 
 ### Liquid Nanos (Released September 2025)
 
@@ -43,48 +93,57 @@ This phase validates the technical feasibility and performance characteristics o
 - Available on LEAP (Liquid Edge AI Platform)
 - OS- and model-agnostic deployment
 
----
+______________________________________________________________________
 
 ## Validation Objectives
 
 ### 1. Technical Feasibility ✅
+
 **Goal**: Confirm LFM2 can be integrated into ACB's adapter pattern
 
 **Tasks:**
+
 - [ ] Install LFM2 models via LEAP platform
 - [ ] Create minimal `acb/adapters/ai/lfm.py` adapter
 - [ ] Verify model loading and basic inference
 - [ ] Test adapter pattern compatibility
 
 **Success Criteria:**
+
 - LFM2 adapter follows ACB adapter conventions
 - Model loads successfully on target hardware
 - Basic inference works with < 5s cold start
 
 ### 2. Edge Device Compatibility 🔬
+
 **Goal**: Validate performance on target hardware configurations
 
 **Target Devices:**
+
 - **Tier 1**: MacBook Pro M3 (developer baseline)
 - **Tier 2**: Raspberry Pi 5 (edge device simulation)
 - **Tier 3**: iPhone 15 Pro (mobile deployment)
 
 **Tasks:**
+
 - [ ] Benchmark LFM2-350M on all tiers
 - [ ] Test memory footprint under load
 - [ ] Measure cold start times
 - [ ] Verify CPU/NPU utilization
 
 **Success Criteria:**
-- MacBook Pro: <100ms inference latency
-- Raspberry Pi 5: <500ms inference latency
-- iPhone 15 Pro: <300ms inference latency
-- Memory: <2GB RAM usage for 350M model
+
+- MacBook Pro: \<100ms inference latency
+- Raspberry Pi 5: \<500ms inference latency
+- iPhone 15 Pro: \<300ms inference latency
+- Memory: \<2GB RAM usage for 350M model
 
 ### 3. Performance Benchmarking 📊
+
 **Goal**: Validate claimed 2-3x improvement vs transformer baselines
 
 **Baseline Comparisons:**
+
 - **Qwen3-500M**: Industry standard edge transformer
 - **Gemma3-500M**: Google's edge model
 - **LFM2-350M**: Liquid AI's model (closest size match)
@@ -95,10 +154,11 @@ This phase validates the technical feasibility and performance characteristics o
 | Decode Speed | 2-3x faster | Tokens/second benchmark |
 | Prefill Speed | 2-3x faster | Time to first token |
 | Memory Footprint | 50-70% reduction | Peak RAM measurement |
-| Inference Latency | <100ms P95 | 256-token input benchmark |
-| Cold Start | <5s | Model load to ready |
+| Inference Latency | \<100ms P95 | 256-token input benchmark |
+| Cold Start | \<5s | Model load to ready |
 
 **Tasks:**
+
 - [ ] Set up benchmarking harness
 - [ ] Run Qwen3 baseline tests
 - [ ] Run Gemma3 baseline tests
@@ -106,56 +166,66 @@ This phase validates the technical feasibility and performance characteristics o
 - [ ] Generate performance comparison report
 
 **Success Criteria:**
+
 - LFM2 achieves 2x+ speedup on decode
 - Memory reduction of 50%+ confirmed
-- P95 latency <100ms on edge devices
+- P95 latency \<100ms on edge devices
 
 ### 4. Hybrid Deployment Patterns 🔄
+
 **Goal**: Test cloud-edge switching and failover scenarios
 
 **Scenarios:**
+
 1. **Edge-First**: Process on device, fallback to cloud on failure
-2. **Cloud-First**: Cloud processing with edge caching
-3. **Hybrid Load Balancing**: Route based on workload complexity
-4. **Offline Mode**: Full edge operation without connectivity
+1. **Cloud-First**: Cloud processing with edge caching
+1. **Hybrid Load Balancing**: Route based on workload complexity
+1. **Offline Mode**: Full edge operation without connectivity
 
 **Tasks:**
+
 - [ ] Implement edge-cloud routing logic
 - [ ] Test network failure scenarios
 - [ ] Measure failover latency
 - [ ] Validate data consistency across modes
 
 **Success Criteria:**
-- Seamless failover <1s
+
+- Seamless failover \<1s
 - Edge mode handles 80% of requests
 - No data loss during mode switches
 - Offline mode fully functional
 
 ### 5. Memory Optimization Validation 💾
+
 **Goal**: Confirm 50-70% memory footprint reduction claims
 
 **Test Cases:**
+
 - **Baseline**: GPT-3.5-like transformer (175B parameters) memory profile
 - **LFM2**: Equivalent capability in 350M-1.2B parameters
 
 **Tasks:**
+
 - [ ] Profile memory usage during inference
 - [ ] Test with varying context lengths (256, 512, 1024 tokens)
 - [ ] Measure peak memory under load
 - [ ] Test memory pressure scenarios
 
 **Success Criteria:**
+
 - 50%+ memory reduction vs comparable transformers
 - Stable memory usage across context lengths
 - No memory leaks in long-running processes
 
----
+______________________________________________________________________
 
 ## Implementation Plan
 
 ### Week 1: Environment Setup & Basic Integration
 
 **Day 1-2: LEAP Platform Setup**
+
 ```bash
 # Install LEAP CLI
 pip install leap-ai
@@ -171,6 +241,7 @@ leap models list
 ```
 
 **Day 3-4: Minimal Adapter Creation**
+
 ```python
 # acb/adapters/ai/lfm.py
 from acb.adapters import AdapterMetadata, AdapterStatus, AdapterCapability
@@ -191,12 +262,14 @@ MODULE_METADATA = AdapterMetadata(
     description="Liquid Foundation Models adapter for edge AI",
 )
 
+
 class LFMAdapter:
     """Minimal LFM2 integration adapter."""
 
     async def _create_client(self):
         """Initialize LFM2 client."""
         from leap import Client
+
         return Client(model="lfm2-350m")
 
     async def generate(self, prompt: str, max_tokens: int = 256):
@@ -206,6 +279,7 @@ class LFMAdapter:
 ```
 
 **Day 5: Basic Validation**
+
 - Run hello world inference test
 - Measure cold start time
 - Verify adapter pattern works
@@ -213,12 +287,14 @@ class LFMAdapter:
 ### Week 2: Edge Device Testing
 
 **Day 6-8: Hardware Tier Testing**
+
 - Set up Raspberry Pi 5 test environment
 - Deploy LFM2-350M to each tier
 - Run basic inference tests
 - Document hardware requirements
 
 **Day 9-10: Performance Profiling**
+
 - Memory profiling with `memory_profiler`
 - CPU/NPU utilization tracking
 - Latency measurement across tiers
@@ -227,11 +303,13 @@ class LFMAdapter:
 ### Week 3: Benchmarking Campaign
 
 **Day 11-13: Baseline Comparisons**
+
 ```python
 # benchmarks/lfm_vs_transformers.py
 import time
 import numpy as np
 from transformers import AutoModel
+
 
 def benchmark_model(model, prompts, iterations=100):
     """Benchmark inference speed and memory."""
@@ -250,6 +328,7 @@ def benchmark_model(model, prompts, iterations=100):
         "tokens_per_second": 256 / np.mean(latencies),
     }
 
+
 # Test Qwen3, Gemma3, LFM2
 results = {
     "qwen3": benchmark_model(qwen3_model, test_prompts),
@@ -259,6 +338,7 @@ results = {
 ```
 
 **Day 14-15: Analysis & Reporting**
+
 - Generate comparison charts
 - Document performance gaps
 - Identify optimization opportunities
@@ -266,6 +346,7 @@ results = {
 ### Week 4: Hybrid Deployment & Documentation
 
 **Day 16-18: Cloud-Edge Patterns**
+
 ```python
 # acb/adapters/ai/hybrid.py
 class HybridLFMRouter:
@@ -280,11 +361,12 @@ class HybridLFMRouter:
 ```
 
 **Day 19-20: Findings Documentation**
+
 - Create `PHASE_0_FINDINGS.md`
 - Document architectural recommendations
 - Update Phase 5 plan based on results
 
----
+______________________________________________________________________
 
 ## Success Metrics Summary
 
@@ -292,30 +374,33 @@ class HybridLFMRouter:
 |--------|--------|-----------|
 | Inference Speed | 2-3x vs Qwen3/Gemma3 | ✅ Yes |
 | Memory Reduction | 50-70% vs transformers | ✅ Yes |
-| Edge Latency | <100ms P95 | ✅ Yes |
-| Cold Start | <5s | ⚠️ High Priority |
+| Edge Latency | \<100ms P95 | ✅ Yes |
+| Cold Start | \<5s | ⚠️ High Priority |
 | Device Compatibility | All 3 tiers pass | ✅ Yes |
-| Hybrid Failover | <1s | ⚠️ High Priority |
+| Hybrid Failover | \<1s | ⚠️ High Priority |
 
 **Pass Criteria**: 5/6 critical metrics must meet targets
 
----
+______________________________________________________________________
 
 ## Risk Assessment
 
 ### High Risks 🔴
 
 1. **LFM2 Model Access**
+
    - **Risk**: LEAP platform access issues or licensing constraints
    - **Mitigation**: Engage Liquid AI enterprise support early
    - **Contingency**: Use open-source LFM2 if available
 
-2. **Hardware Compatibility**
+1. **Hardware Compatibility**
+
    - **Risk**: Raspberry Pi 5 may not meet performance targets
    - **Mitigation**: Test on multiple edge devices
    - **Contingency**: Adjust minimum hardware requirements
 
-3. **Integration Complexity**
+1. **Integration Complexity**
+
    - **Risk**: LFM2 API may not fit ACB adapter pattern
    - **Mitigation**: Design flexible adapter interface
    - **Contingency**: Implement wrapper layer
@@ -323,65 +408,72 @@ class HybridLFMRouter:
 ### Medium Risks 🟡
 
 4. **Benchmark Accuracy**
+
    - **Risk**: Comparison may not be apples-to-apples
    - **Mitigation**: Use standardized benchmarks (MMLU, GSM8K)
    - **Contingency**: Document methodology limitations
 
-5. **Timeline Overrun**
+1. **Timeline Overrun**
+
    - **Risk**: 4 weeks may be insufficient
    - **Mitigation**: Prioritize critical validations first
    - **Contingency**: Extend to 5 weeks if needed
 
----
+______________________________________________________________________
 
 ## Deliverables
 
 ### Code Artifacts
+
 1. ✅ `acb/adapters/ai/lfm.py` - LFM2 adapter implementation
-2. ✅ `acb/adapters/ai/hybrid.py` - Hybrid routing logic
-3. ✅ `benchmarks/lfm_vs_transformers.py` - Performance benchmarking suite
-4. ✅ `tests/adapters/ai/test_lfm.py` - Validation tests
+1. ✅ `acb/adapters/ai/hybrid.py` - Hybrid routing logic
+1. ✅ `benchmarks/lfm_vs_transformers.py` - Performance benchmarking suite
+1. ✅ `tests/adapters/ai/test_lfm.py` - Validation tests
 
 ### Documentation
+
 1. ✅ `PHASE_0_FINDINGS.md` - Complete validation results
-2. ✅ Device compatibility matrix with performance data
-3. ✅ Architectural recommendations for Phase 5
-4. ✅ Updated `ACB_UNIFIED_PLAN.md` with Phase 5 adjustments
+1. ✅ Device compatibility matrix with performance data
+1. ✅ Architectural recommendations for Phase 5
+1. ✅ Updated `ACB_UNIFIED_PLAN.md` with Phase 5 adjustments
 
 ### Reports
-1. ✅ Performance benchmark comparison (LFM2 vs Qwen3 vs Gemma3)
-2. ✅ Memory profiling results across device tiers
-3. ✅ Hybrid deployment pattern analysis
-4. ✅ Risk assessment and mitigation strategies
 
----
+1. ✅ Performance benchmark comparison (LFM2 vs Qwen3 vs Gemma3)
+1. ✅ Memory profiling results across device tiers
+1. ✅ Hybrid deployment pattern analysis
+1. ✅ Risk assessment and mitigation strategies
+
+______________________________________________________________________
 
 ## Phase 5 Integration Points
 
 **If validation succeeds:**
+
 - Proceed with Phase 5 AI/ML adapter implementation
 - Use LFM2 as primary edge AI model
 - Implement hybrid cloud-edge architecture
 - Build on validated performance baselines
 
 **If validation fails:**
+
 - Reassess edge deployment strategy
 - Consider cloud-only AI approach
 - Evaluate alternative edge models (Qwen3, Gemma3)
 - Adjust Phase 5 timeline and scope
 
----
+______________________________________________________________________
 
 ## Next Steps
 
 1. **Immediate**: Set up LEAP platform access
-2. **Week 1**: Create minimal LFM adapter and validate basic integration
-3. **Week 2-3**: Execute performance benchmarking campaign
-4. **Week 4**: Document findings and update Phase 5 plan
+1. **Week 1**: Create minimal LFM adapter and validate basic integration
+1. **Week 2-3**: Execute performance benchmarking campaign
+1. **Week 4**: Document findings and update Phase 5 plan
 
 **Critical Decision Point**: End of Week 3 - Go/No-Go decision on LFM2 integration for Phase 5
 
----
+______________________________________________________________________
 
 ## Appendix: Reference Architecture
 
@@ -409,7 +501,7 @@ class HybridLFMRouter:
    - Tier 3: iPhone (700M)
 ```
 
----
+______________________________________________________________________
 
 **Status**: ✅ Plan Complete - Ready for Implementation
 **Next**: Begin Week 1 - LEAP Platform Setup & Minimal Adapter Creation
