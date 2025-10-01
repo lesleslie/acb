@@ -153,7 +153,8 @@ class Reasoning(ReasoningBase):
         **kwargs: t.Any,
     ) -> None:
         super().__init__(**kwargs)
-        self._settings = settings or OpenAIFunctionReasoningSettings()
+        # Always initialized, override base class type
+        self._settings: OpenAIFunctionReasoningSettings = settings or OpenAIFunctionReasoningSettings()  # type: ignore[assignment]
         self._client: AsyncOpenAI | None = None
         self._conversation_histories: dict[str, list[dict[str, t.Any]]] = {}
 
@@ -168,17 +169,19 @@ class Reasoning(ReasoningBase):
 
     async def _create_client(self) -> AsyncOpenAI:
         """Create OpenAI async client."""
+        api_key: str
         if self._settings.api_key:
             api_key = self._settings.api_key.get_secret_value()
         else:
             import os
 
-            api_key = os.getenv("OPENAI_API_KEY")
-            if not api_key:
+            env_key = os.getenv("OPENAI_API_KEY")
+            if not env_key:
                 msg = "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
                 raise ValueError(
                     msg,
                 )
+            api_key = env_key
 
         return AsyncOpenAI(
             api_key=api_key,

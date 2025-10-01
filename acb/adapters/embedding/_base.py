@@ -149,7 +149,7 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
         await self._ensure_client()
         return self
 
-    async def  __aexit__((self: Any, exc_type: Any, exc_val: Any, exc_tb: Any)) -> None:
+    async def __aexit__(self: Any, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.cleanup()
 

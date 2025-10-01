@@ -1505,7 +1505,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.39.2"
+version = "0.39.3"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "aiofiles" },
@@ -1559,9 +1559,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/65/8e/c5c67c1c31553e7c2550cf5d90fcc6123e9369b6bb27ffe2ee4a1cf2da32/crackerjack-0.39.2.tar.gz", hash = "sha256:12dd2ac7efcdacbbeb68bf3d71472d8b89d3f7526a4a248f323aac11e1641559", size = 1443639, upload-time = "2025-10-01T07:22:32.316Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/66/f352844c05afcc9019e8108f26b7c84b9534a3c1799dda13045735f20dff/crackerjack-0.39.3.tar.gz", hash = "sha256:a3aa20e76a81203b3606582c5c963b424216d78f1cacb1800330a7d1842cd58c", size = 1323987, upload-time = "2025-10-01T09:49:53.386Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5b/6f/71bd70a7c92dad7f08ff183804df966f661bf634e311cb2171e364d107cc/crackerjack-0.39.2-py3-none-any.whl", hash = "sha256:73fc8e75c30388a47d7950138b8dfcc52fef08a0ec7e75c68cb62237cca8a866", size = 839585, upload-time = "2025-10-01T07:22:28.756Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/93/e28b054052fc1cd5cb7ed7bc9dd0e9ac304743110026eb993a3ceb4ee431/crackerjack-0.39.3-py3-none-any.whl", hash = "sha256:96b5637d82adf452af0d6f630bb44251663dd4b9d8c761e0625257c8b3bf01f7", size = 825324, upload-time = "2025-10-01T09:49:49.609Z" },
 ]
 
 [[package]]
@@ -3572,14 +3572,14 @@ wheels = [
 
 [[package]]
 name = "neo4j"
-version = "6.0.0"
+version = "6.0.1"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "pytz" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7a/8f/22ddbaf7928e9ab7f20581fe10c616db0832a6bbb06ba3f9e0d4e32721dc/neo4j-6.0.0.tar.gz", hash = "sha256:d49bbf0d5047fbfa495da7fc62e869e728e29bebb01140ec32ac0c1aeb56b9db", size = 239954, upload-time = "2025-09-30T11:23:49.1Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/78/d3/a968699e344752d588374f434d1ef1e078f0e228c3fbfd953045d7d6f575/neo4j-6.0.1.tar.gz", hash = "sha256:180f67938a7ace1d0a8b9f6b939e872acff99b455cde7ad3b0d7b06c5482c5cf", size = 240084, upload-time = "2025-10-01T07:54:36.589Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/de/51209c1d47bc4b2384d9e698d4f8a23eb0f24417312e067185f9e2ed12b2/neo4j-6.0.0-py3-none-any.whl", hash = "sha256:708bf2ad34d470fe56f7e8d27164d5a44c6aa9345de28f0356c83040dd75e0f4", size = 325612, upload-time = "2025-09-30T11:23:47.082Z" },
+    { url = "https://files.pythonhosted.org/packages/30/6f/fb39288c3d7ca884a77b11567165af5323cf630f8f1e200a68d222f86e58/neo4j-6.0.1-py3-none-any.whl", hash = "sha256:a4bb2a691ea03062c5b83217df34676790144d75821c615321a80b64e3775903", size = 325691, upload-time = "2025-10-01T07:54:34.674Z" },
 ]
 
 [[package]]
@@ -5518,7 +5518,7 @@ sqlalchemy = [
 
 [[package]]
 name = "session-mgmt-mcp"
-version = "0.5.0"
+version = "0.5.1"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "crackerjack" },
@@ -5536,9 +5536,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/82/0221cd00389d3a4c6057cf0652fcfd80e0479dad66a7658834fa8692f370/session_mgmt_mcp-0.5.0.tar.gz", hash = "sha256:8a694c57703a34c41e7a1fc5356970a4fe4aa905b2e9fcaddada5b323a76c78c", size = 626240, upload-time = "2025-10-01T07:10:28.627Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/f9/0ab7c9d9feb8749d5ea75c6a18e1b394dcf7740a69432e0dda2de6ea2d00/session_mgmt_mcp-0.5.1.tar.gz", hash = "sha256:d446b6e585e068b2787541b7c9ca9f743c68d2bfc09b0bb7d716f2daab13db64", size = 626257, upload-time = "2025-10-01T10:00:50.182Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/cd/c757b6d9be86715156306da34da41ec1f7412043eac377838b3869a549d8/session_mgmt_mcp-0.5.0-py3-none-any.whl", hash = "sha256:ee2b436723d1908b8547a1d18e72a8ca653e28e9dbc4dc7371e61c623809c54a", size = 244674, upload-time = "2025-10-01T07:10:26.168Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/e7/c8c2a80bfff55fb40837f494d5ab8eb04160170a89cba8689b4a10373c6f/session_mgmt_mcp-0.5.1-py3-none-any.whl", hash = "sha256:e5dfe1e75422f67e6fc7ef64c56e2c1c2fe3b370025402e401fcdacaf922d4aa", size = 244675, upload-time = "2025-10-01T10:00:48.097Z" },
 ]
 
 [[package]]

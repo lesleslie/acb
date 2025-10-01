@@ -148,7 +148,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         """Build cache key for entity."""
         return f"{self.cache_settings.key_prefix}:entity:{self.entity_name.lower()}:{entity_id}"
 
-    def  _build_query_key((self: Any, operation: str, **kwargs)) -> str:
+    def _build_query_key(self: Any, operation: str, **kwargs) -> str:
         """Build cache key for query operation."""
         # Create deterministic key from operation parameters
         key_data = {

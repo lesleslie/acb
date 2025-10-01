@@ -175,11 +175,11 @@ class LangChainCallback(AsyncCallbackHandler):
         """Called when a tool errors."""
         self.logger.error(f"Tool error: {error}")
 
-    async def  on_agent_action((self: Any, action: Any, **kwargs: t.Any)) -> None:
+    async def on_agent_action(self: Any, action: Any, **kwargs: t.Any) -> None:
         """Called when an agent takes an action."""
         self.logger.debug(f"Agent action: {action.tool} - {action.tool_input}")
 
-    async def  on_agent_finish((self: Any, finish: Any, **kwargs: t.Any)) -> None:
+    async def on_agent_finish(self: Any, finish: Any, **kwargs: t.Any) -> None:
         """Called when an agent finishes."""
         self.logger.debug(f"Agent finished: {finish.return_values}")
 
@@ -357,7 +357,7 @@ Reasoning:
         langchain_tools = []
         for tool_def in request.tools:
 
-            def  tool_func((input_str: str, tool_def=tool_def)) -> str:
+            def tool_func(input_str: str, tool_def=tool_def) -> str:
                 # This is a placeholder - in practice, you'd implement actual tool execution
                 return f"Tool {tool_def.name} executed with input: {input_str}"
 

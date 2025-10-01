@@ -165,7 +165,7 @@ class SpacyNLP(BaseNLPAdapter):
 
         return nlp
 
-    async def  _add_extensions((self: Any, nlp: Any)) -> None:
+    async def _add_extensions(self: Any, nlp: Any) -> None:
         """Add spaCy extensions for additional functionality."""
         try:
             # Add sentiment extension if textblob is available
@@ -239,7 +239,7 @@ class SpacyNLP(BaseNLPAdapter):
 
         return await self._extract_sentiment_from_doc(doc)
 
-    async def  _extract_sentiment_from_doc((self: Any, doc: Any)) -> SentimentResult:
+    async def _extract_sentiment_from_doc(self: Any, doc: Any) -> SentimentResult:
         """Extract sentiment from spaCy doc."""
         # Try spacytextblob extension first
         if hasattr(doc._, "blob"):
@@ -428,7 +428,7 @@ class SpacyNLP(BaseNLPAdapter):
 
         return await self._detect_language_from_doc(doc)
 
-    async def  _detect_language_from_doc((self: Any, doc: Any)) -> LanguageDetectionResult:
+    async def _detect_language_from_doc(self: Any, doc: Any) -> LanguageDetectionResult:
         """Detect language from spaCy doc."""
         # spaCy models are language-specific, so we know the language
         lang_info = doc.lang_

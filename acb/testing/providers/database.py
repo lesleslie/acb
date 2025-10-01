@@ -253,7 +253,7 @@ class DatabaseTestProvider:
             msg = "Connection pool exhausted"
             raise RuntimeError(msg)
 
-        async def  release_connection((conn: Any)) -> None:
+        async def release_connection(conn: Any) -> None:
             if conn in pool_mock._connections:
                 pool_mock._active_connections -= 1
                 pool_mock._connections.remove(conn)

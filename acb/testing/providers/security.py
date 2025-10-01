@@ -322,7 +322,7 @@ class SecurityTestProvider:
         """Context manager for security testing."""
         scan_results = []
 
-        def  record_scan((result: Any)) -> None:
+        def record_scan(result: Any) -> None:
             scan_results.append(result)
 
         try:

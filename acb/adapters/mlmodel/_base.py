@@ -541,7 +541,7 @@ class BaseMLModelAdapter(CleanupMixin, ABC):
         await self.init()
         return self
 
-    async def  __aexit__((self: Any, exc_type: Any, exc_val: Any, exc_tb: Any)) -> None:
+    async def __aexit__(self: Any, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit with cleanup."""
         await self.stop_health_monitoring()
         await self.cleanup()

@@ -287,7 +287,7 @@ async def cleanup_acb_resources() -> None:
     # Store resources to cleanup
     resources_to_cleanup = []
 
-    def  register_cleanup((resource: Any)) -> None:
+    def register_cleanup(resource: Any) -> None:
         """Register a resource for cleanup."""
         resources_to_cleanup.append(resource)
 
