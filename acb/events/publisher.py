@@ -75,6 +75,13 @@ class EventPublisherSettings(ServiceSettings):
 class PublisherMetrics(BaseModel):
     """Metrics for event publisher monitoring."""
 
+    # ServiceMetrics base fields
+    initialized_at: float | None = None
+    requests_handled: int = 0
+    errors_count: int = 0
+    last_error: str | None = None
+
+    # Publisher-specific metrics
     events_published: int = 0
     events_processed: int = 0
     events_failed: int = 0
@@ -247,15 +254,20 @@ class EventPublisher(EventPublisherBase):
             "high": MessagePriority.HIGH,
             "critical": MessagePriority.CRITICAL,
         }
-        queue_priority = priority_map.get(
-            event.metadata.priority.value, MessagePriority.NORMAL
+        # Handle both EventPriority enum and string (after serialization)
+        priority_value = (
+            event.metadata.priority.value
+            if hasattr(event.metadata.priority, "value")
+            else event.metadata.priority
         )
+        queue_priority = priority_map.get(priority_value, MessagePriority.NORMAL)
 
         # Create topic from event type
         topic = f"{self._settings.event_topic_prefix}.{event.metadata.event_type}"
 
-        # Serialize event payload
-        payload = msgpack.packb(event.model_dump())
+        # Serialize event payload (convert UUIDs to strings for msgpack)
+        event_dict = event.model_dump(mode="json")
+        payload = msgpack.packb(event_dict)
 
         # Publish to queue
         await self._queue.publish(

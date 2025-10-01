@@ -23,7 +23,6 @@ from acb.events import (
     EventSubscriber,
     EventPublisherSettings,
     SubscriberSettings,
-    PublisherBackend,
     SubscriptionMode,
     create_event_publisher,
     create_event_subscriber,
