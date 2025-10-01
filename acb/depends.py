@@ -2,7 +2,18 @@ import typing as t
 from contextlib import suppress
 from functools import lru_cache
 
-from bevy import auto_inject, get_container, injectable
+from bevy import Inject, auto_inject, get_container
+
+
+# Sentinel object for dependency injection markers
+class _DependencyMarker:
+    """Sentinel object to mark parameters for dependency injection."""
+
+    def __repr__(self) -> str:
+        return "<DependencyMarker>"
+
+
+_DEPENDENCY_SENTINEL = _DependencyMarker()
 
 
 @t.runtime_checkable
@@ -32,10 +43,16 @@ class Depends:
 
     @staticmethod
     def set(class_: t.Any, instance: t.Any = None) -> t.Any:
-        """Register a class/instance in the dependency container."""
+        """Register a class/instance in the dependency container.
+
+        Returns the instance that was registered.
+        """
         if instance is None:
-            return get_container().add(class_, class_())
-        return get_container().add(class_, instance)
+            instance = class_()
+            get_container().add(class_, instance)
+            return instance
+        get_container().add(class_, instance)
+        return instance
 
     @staticmethod
     def get(category: t.Any) -> t.Any:
@@ -79,8 +96,12 @@ class Depends:
         return get_container().get(category)
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        """Support using depends as a callable for bevy compatibility."""
-        return injectable()
+        """Support using depends as a callable for backward compatibility.
+
+        Returns a sentinel marker that can be used as a default parameter value.
+        For new code, prefer using Inject[T] type annotations instead.
+        """
+        return _DEPENDENCY_SENTINEL
 
 
 def _get_dependency_sync(category: t.Any) -> t.Any:
@@ -112,6 +133,9 @@ async def _get_adapter_class_async(category: str) -> t.Any:
 
 
 depends = Depends()
+
+# Export Inject for type annotations
+__all__ = ["depends", "fast_depends", "Inject", "Depends"]
 
 
 def fast_depends(category: t.Any) -> t.Any:

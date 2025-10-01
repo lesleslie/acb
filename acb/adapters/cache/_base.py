@@ -7,7 +7,7 @@ from pydantic import SecretStr
 from acb.actions.compress import compress, decompress
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.ssl_config import SSLConfigMixin
 
 
@@ -39,7 +39,7 @@ class CacheBaseSettings(Settings, SSLConfigMixin):
     retry_on_timeout: bool | None = True
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         # Extract SSL configuration parameters
         ssl_enabled = values.pop("ssl_enabled", False)
         ssl_cert_path = values.pop("ssl_cert_path", None)
@@ -111,8 +111,8 @@ class CacheProtocol(t.Protocol):
 
 
 class CacheBase(BaseCache, CleanupMixin):  # type: ignore[misc]
-    config: Config = depends()
-    logger: t.Any = depends()
+    config: Inject[Config]
+    logger: Inject[t.Any]
 
     def __init__(self, **kwargs: t.Any) -> None:
         BaseCache.__init__(self)

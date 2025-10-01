@@ -15,7 +15,7 @@ from acb.adapters import import_adapter
 from acb.cleanup import CleanupMixin
 from acb.config import AdapterBase, Config, Settings, gen_password
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.ssl_config import SSLConfigMixin
 
 
@@ -74,7 +74,7 @@ class SqlBaseSettings(Settings, SSLConfigMixin):
         return ssl_params
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         if self.cloudsql_proxy:
             self.port = self.cloudsql_proxy_port if not config.deployed else self.port

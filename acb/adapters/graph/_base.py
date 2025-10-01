@@ -8,7 +8,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, SecretStr
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.ssl_config import SSLConfigMixin
 
 
@@ -123,7 +123,7 @@ class GraphBaseSettings(Settings, SSLConfigMixin):
     tls_version: str = "TLSv1.2"
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         # Extract SSL configuration parameters
         ssl_enabled = values.pop("ssl_enabled", False)
         ssl_cert_path = values.pop("ssl_cert_path", None)
@@ -195,8 +195,8 @@ class GraphProtocol(t.Protocol):
 class GraphBase(CleanupMixin, ABC):
     """Base class for graph database adapters."""
 
-    config: Config = depends()
-    logger: t.Any = depends()
+    config: Inject[Config]
+    logger: Inject[t.Any]
 
     def __init__(self, **kwargs: t.Any) -> None:
         CleanupMixin.__init__(self)

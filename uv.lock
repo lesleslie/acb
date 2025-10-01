@@ -427,7 +427,7 @@ requires-dist = [
     { name = "azure-keyvault-secrets", marker = "extra == 'secret'", specifier = ">=4.8" },
     { name = "babel", marker = "extra == 'sql'", specifier = ">=2.17" },
     { name = "beanie", marker = "extra == 'nosql'", specifier = ">=1.30" },
-    { name = "bevy", specifier = ">=2.0.2" },
+    { name = "bevy", specifier = ">=3.1.0b9" },
     { name = "blake3", specifier = ">=1.0.5" },
     { name = "boto3", marker = "extra == 'ai'", specifier = ">=1.35" },
     { name = "boto3", marker = "extra == 'dns'", specifier = ">=1.35" },

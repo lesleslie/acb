@@ -1,7 +1,7 @@
 """Simple tests for the depends module."""
 
 import pytest
-from acb.depends import depends, fast_depends
+from acb.depends import Inject, depends, fast_depends
 
 
 class SampleService:
@@ -60,7 +60,7 @@ class TestDepends:
         depends.set(SampleService, service)
 
         @depends.inject
-        def test_function(service: SampleService = depends()) -> str:
+        def test_function(service: Inject[SampleService]) -> str:
             return service.name
 
         result = test_function()
@@ -73,7 +73,7 @@ class TestDepends:
         depends.set(SampleService, service)
 
         @depends.inject
-        async def test_async_function(service: SampleService = depends()) -> str:
+        async def test_async_function(service: Inject[SampleService]) -> str:
             return service.name
 
         result = await test_async_function()
@@ -89,7 +89,7 @@ class TestDepends:
         def test_function(
             arg1: str,
             arg2: str,
-            service: SampleService = depends(),
+            service: Inject[SampleService],
         ) -> str:
             return f"{arg1}_{arg2}_{service.name}"
 
@@ -106,7 +106,7 @@ class TestDepends:
         def test_function(
             arg1: str,
             arg2: str | None = None,
-            service: SampleService = depends(),
+            service: Inject[SampleService] = None,  # type: ignore[assignment]
         ) -> str:
             return f"{arg1}_{arg2}_{service.name}"
 
@@ -129,8 +129,8 @@ class TestDepends:
 
         @depends.inject
         def test_function(
-            service1: SampleService = depends(),
-            service2: AnotherService = depends(),
+            service1: Inject[SampleService],
+            service2: Inject[AnotherService],
         ) -> str:
             return f"{service1.name}_{service2.name}"
 

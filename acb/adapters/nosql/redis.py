@@ -8,7 +8,7 @@ from pydantic import field_validator
 from redis_om import HashModel, Migrator, get_redis_connection
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import NosqlBase, NosqlBaseSettings
 
@@ -66,7 +66,7 @@ class NosqlSettings(NosqlBaseSettings):
         return 0
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         if not self.connection_string:
             host = self.host.get_secret_value()

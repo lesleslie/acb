@@ -8,7 +8,7 @@ from acb.adapters import get_adapter, tmp_path
 from acb.cleanup import CleanupMixin
 from acb.config import AdapterBase, Config, Settings
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 class StorageBaseSettings(Settings):
@@ -23,7 +23,7 @@ class StorageBaseSettings(Settings):
     memory_fs: bool | None = False
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         self.prefix = self.prefix or (config.app.name if config.app else "") or ""
         self.user_project = (
@@ -82,7 +82,7 @@ class StorageBucket:
     client: t.Any
     bucket: str
     prefix: str | None = None
-    config: Config = depends()
+    config: Inject[Config]
 
     def __init__(self, client: t.Any, bucket: str, prefix: str | None = None) -> None:
         self.client = client

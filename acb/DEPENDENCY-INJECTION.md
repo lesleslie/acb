@@ -1,6 +1,17 @@
+---
+id: 01K6GSR88R7ZPA0ZT60DVDB4NG
+---
+______________________________________________________________________
+
+## id: 01K6GSM2PFN4343Q747YAZ9NDV
+
+______________________________________________________________________
+
+## id: 01K6GS7PE54NJ2ST2EWYZ24JDG
+
 # Dependency Injection Documentation
 
-> **ACB Documentation**: [Main](../README.md) | [Core Systems](./README.md) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
+> **ACB Documentation**: \[[README|Main]\] | \[[acb/README|Core Systems]\] | \[[acb/actions/README|Actions]\] | \[[acb/adapters/README|Adapters]\]
 
 ## Overview
 
@@ -13,7 +24,7 @@ ACB's dependency injection system is built on the [bevy](https://github.com/bevy
 The central dependency injection interface provides three main functions:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 # Register a dependency
 depends.set(MyClass, instance)
@@ -24,7 +35,7 @@ instance = depends.get(MyClass)
 
 # Inject dependencies into functions
 @depends.inject
-async def my_function(config: Config = depends()):
+async def my_function(config: Inject[Config]):
     # Dependencies automatically provided
     pass
 ```
@@ -42,7 +53,7 @@ from acb.logger import Logger
 
 
 @depends.inject
-async def my_function(config: Config = depends(), logger: Logger = depends()):
+async def my_function(config: Inject[Config], logger: Inject[Logger]):
     logger.info(f"App: {config.app.name}")
 ```
 
@@ -51,7 +62,7 @@ async def my_function(config: Config = depends(), logger: Logger = depends()):
 Register your own components:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 class MyService:
@@ -69,7 +80,7 @@ depends.set(MyService, service)
 
 # Now it's available for injection
 @depends.inject
-async def use_service(service: MyService = depends()):
+async def use_service(service: Inject[MyService]):
     result = await service.do_work()
     return result
 ```
@@ -90,7 +101,7 @@ Storage = import_adapter("storage")
 
 
 @depends.inject
-async def process_data(cache: Cache = depends(), storage: Storage = depends()):
+async def process_data(cache: Inject[Cache], storage: Inject[Storage]):
     # Adapters are injected based on configuration
     pass
 ```
@@ -102,14 +113,14 @@ async def process_data(cache: Cache = depends(), storage: Storage = depends()):
 The most common pattern using the `@depends.inject` decorator:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 import typing as t
 
 
 @depends.inject
 async def process_user_data(
-    user_id: str, config: Config = depends(), cache: Cache = depends()
+    user_id: str, config: Inject[Config], cache: Inject[Cache]
 ) -> dict[str, t.Any]:
     """Process user data with injected dependencies."""
     app_name = config.app.name
@@ -130,7 +141,7 @@ async def process_user_data(
 For cases where decorator injection isn't suitable:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
@@ -149,7 +160,7 @@ async def manual_retrieval():
 For service classes:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
@@ -171,12 +182,12 @@ class UserService:
 ### Conditional Dependencies
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
 @depends.inject
-async def conditional_processing(data: dict, config: Config = depends()):
+async def conditional_processing(data: dict, config: Inject[Config]):
     if config.debug.enabled:
         logger = depends.get("logger")
         logger.debug(f"Processing data: {data}")
@@ -187,13 +198,13 @@ async def conditional_processing(data: dict, config: Config = depends()):
 ### Factory Pattern
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 class ServiceFactory:
     @staticmethod
     @depends.inject
-    def create_service(config: Config = depends()) -> "MyService":
+    def create_service(config: Inject[Config]) -> "MyService":
         if config.app.environment == "production":
             return ProductionService(config)
         return DevelopmentService(config)
@@ -209,20 +220,20 @@ depends.set(MyService, service)
 ```python
 class DatabaseService:
     @depends.inject
-    def __init__(self, config: Config = depends()):
+    def __init__(self, config: Inject[Config]):
         self.config = config
         self.connection = None
 
 
 class UserRepository:
     @depends.inject
-    def __init__(self, db: DatabaseService = depends()):
+    def __init__(self, db: Inject[DatabaseService]):
         self.db = db
 
 
 class UserService:
     @depends.inject
-    def __init__(self, repo: UserRepository = depends()):
+    def __init__(self, repo: Inject[UserRepository]):
         self.repo = repo
 
 
@@ -238,7 +249,7 @@ depends.set(UserService)
 
 ```python
 import typing as t
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 # Import adapter types
@@ -249,8 +260,8 @@ Storage = import_adapter("storage")
 @depends.inject
 async def typed_function(
     user_id: str,
-    cache: Cache = depends(),  # Type-safe injection
-    storage: Storage = depends(),
+    cache: Inject[Cache],  # Type-safe injection
+    storage: Inject[Storage],
 ) -> dict[str, t.Any]:
     # IDE will provide proper autocomplete
     await cache.set("key", "value")
@@ -262,13 +273,13 @@ async def typed_function(
 
 ```python
 import typing as t
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 T = t.TypeVar("T")
 
 
 @depends.inject
-async def generic_processor(data: T, config: Config = depends()) -> T:
+async def generic_processor(data: T, config: Inject[Config]) -> T:
     # Process data while maintaining type
     return data
 ```
@@ -280,7 +291,7 @@ async def generic_processor(data: T, config: Config = depends()) -> T:
 ```python
 import pytest
 from unittest.mock import AsyncMock
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 @pytest.fixture
@@ -307,7 +318,7 @@ async def test_function_with_mocks(mock_cache):
 
 ```python
 import pytest
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 @pytest.fixture(autouse=True)
@@ -348,7 +359,7 @@ class UserServiceInterface(Protocol):
 # Implement services
 class UserService:
     @depends.inject
-    def __init__(self, db: Database = depends(), cache: Cache = depends()):
+    def __init__(self, db: Inject[Database], cache: Inject[Cache]):
         self.db = db
         self.cache = cache
 
@@ -362,7 +373,7 @@ depends.set(UserServiceInterface, UserService())
 
 
 @depends.inject
-async def api_handler(user_id: str, user_service: UserServiceInterface = depends()):
+async def api_handler(user_id: str, user_service: Inject[UserServiceInterface]):
     return await user_service.get_user(user_id)
 ```
 
@@ -370,7 +381,7 @@ async def api_handler(user_id: str, user_service: UserServiceInterface = depends
 
 ```python
 @depends.inject
-def create_storage_adapter(config: Config = depends()):
+def create_storage_adapter(config: Inject[Config]):
     """Create storage adapter based on configuration."""
     if config.storage.provider == "s3":
         return S3Storage(config.storage)

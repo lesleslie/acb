@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pydantic import SecretStr
 from acb.cleanup import CleanupMixin
 from acb.config import AdapterBase, Config, Settings
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.ssl_config import SSLConfigMixin
 
 
@@ -32,7 +32,7 @@ class NosqlBaseSettings(Settings, SSLConfigMixin):
     pool_timeout: float | None = 30.0
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         if not self.database:
             self.database = config.app.name if config.app else "default"

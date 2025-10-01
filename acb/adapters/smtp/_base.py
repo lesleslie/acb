@@ -3,7 +3,7 @@ import typing as t
 from anyio import Path as AsyncPath
 from pydantic import EmailStr, SecretStr
 from acb.config import AdapterBase, Config, Settings, gen_password
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 class SmtpBaseSettings(Settings):
@@ -25,7 +25,7 @@ class SmtpBaseSettings(Settings):
     }
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         if "domain" not in values and config.app:
             self.domain = f"mail.{config.app.domain}"

@@ -7,7 +7,7 @@ from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from sentry_sdk.integrations.gcp import GcpIntegration
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import MonitoringBase, MonitoringBaseSettings
 
@@ -58,7 +58,7 @@ class MonitoringSettings(MonitoringBaseSettings):
         return v
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         if "sample_rate" not in values:
             self.sample_rate = self.sample_rate if config.deployed else 1.0

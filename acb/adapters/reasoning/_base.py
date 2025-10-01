@@ -9,7 +9,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, SecretStr
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 from acb.ssl_config import SSLConfigMixin
 
@@ -228,7 +228,7 @@ class ReasoningBaseSettings(Settings, SSLConfigMixin):
     vector_adapter_name: str = "vector"
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         # Extract SSL configuration
         ssl_enabled = values.pop("ssl_enabled", False)
         ssl_cert_path = values.pop("ssl_cert_path", None)

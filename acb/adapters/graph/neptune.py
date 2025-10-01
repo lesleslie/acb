@@ -24,7 +24,7 @@ from acb.adapters.graph._base import (
     GraphTraversalDirection,
 )
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject
 
 if t.TYPE_CHECKING:
     from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
@@ -86,8 +86,8 @@ class NeptuneSettings(GraphBaseSettings):
 class Graph(GraphBase):
     """Amazon Neptune graph database adapter."""
 
-    config: Config = depends()
-    logger: t.Any = depends()
+    config: Inject[Config]
+    logger: Inject[t.Any]
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)

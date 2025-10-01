@@ -20,7 +20,7 @@ Example:
     Basic usage with Redis caching:
 
     ```python
-    from acb.depends import depends
+    from acb.depends import Inject, depends
     from acb.adapters import import_adapter
 
     Cache = import_adapter("cache")
@@ -49,7 +49,7 @@ from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 # Removed complex mixins - simplified Redis cache implementation
 from acb.config import Config
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.ssl_config import SSLConfigMixin
 
 from ._base import CacheBase, CacheBaseSettings
@@ -121,7 +121,7 @@ class CacheSettings(CacheBaseSettings):
     cluster: bool | None = False
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         self.host: SecretStr = (
             SecretStr(self.local_host) if not config.deployed else self.host

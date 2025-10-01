@@ -1,6 +1,17 @@
+---
+id: 01K6GSRBW3614PWJM5W7G43CY2
+---
+______________________________________________________________________
+
+## id: 01K6GSM6G3YTYFZ85KJ35X1FN0
+
+______________________________________________________________________
+
+## id: 01K6GSB67W9YAFTAFCJGKBTSD7
+
 # Debug Documentation
 
-> **ACB Documentation**: [Main](../README.md) | [Core Systems](./README.md) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
+> **ACB Documentation**: \[[README|Main]\] | \[[acb/README|Core Systems]\] | \[[acb/actions/README|Actions]\] | \[[acb/adapters/README|Adapters]\]
 
 ## Overview
 
@@ -127,7 +138,7 @@ Get information about calling modules:
 
 ```python
 from acb.debug import get_calling_module, patch_record
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
@@ -148,12 +159,12 @@ Enable debugging based on conditions:
 
 ```python
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
 @depends.inject
-async def conditional_debug(data: dict, config: Config = depends()):
+async def conditional_debug(data: dict, config: Inject[Config]):
     if config.debug.enabled and config.debug.cache:
         debug(f"Cache operation: {data}")
 
@@ -198,12 +209,12 @@ Debug output can be routed through the logging system:
 
 ```python
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @depends.inject
-async def debug_with_logging(data: dict, logger: Logger = depends()):
+async def debug_with_logging(data: dict, logger: Inject[Logger]):
     # Debug output in development goes to stderr
     # In production, it's routed to the logger
     debug(f"Processing data: {len(data)} items")
@@ -218,12 +229,12 @@ Combine debug output with structured logging:
 
 ```python
 from acb.debug import debug, pprint
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @depends.inject
-async def structured_debugging(operation: str, data: dict, logger: Logger = depends()):
+async def structured_debugging(operation: str, data: dict, logger: Inject[Logger]):
     # Quick debug for development
     debug(f"Operation: {operation}")
 
@@ -245,12 +256,12 @@ async def structured_debugging(operation: str, data: dict, logger: Logger = depe
 
 ```python
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
 @depends.inject
-async def environment_aware_debug(config: Config = depends()):
+async def environment_aware_debug(config: Inject[Config]):
     if not config.debug.production:
         # Verbose debugging in development
         debug("Detailed development information")
@@ -264,7 +275,7 @@ async def environment_aware_debug(config: Config = depends()):
 
 ```python
 from acb.debug import debug, timeit
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
@@ -367,7 +378,7 @@ debug:
 ```python
 from fastapi import FastAPI, Depends
 from acb.debug import debug, timeit
-from acb.depends import depends as acb_depends
+from acb.depends import Inject, depends as acb_depends
 
 app = FastAPI()
 

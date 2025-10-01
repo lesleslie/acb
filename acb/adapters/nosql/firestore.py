@@ -8,7 +8,7 @@ from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import NosqlBase, NosqlBaseSettings
 
@@ -64,7 +64,7 @@ class NosqlSettings(NosqlBaseSettings):
                 os.environ["FIRESTORE_EMULATOR_SSL_CA"] = self.ssl_ca_path
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         if not self.project_id:
             self.project_id = config.app.project if config.app else ""

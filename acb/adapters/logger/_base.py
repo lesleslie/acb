@@ -6,7 +6,7 @@ from abc import abstractmethod
 from pydantic import SecretStr
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
-from acb.depends import depends
+from acb.depends import Inject
 
 
 class LoggerBaseSettings(Settings):
@@ -96,7 +96,7 @@ class LoggerProtocol(t.Protocol):
 class LoggerBase(CleanupMixin):
     """Base class for all logger adapters."""
 
-    config: Config = depends()
+    config: Inject[Config]
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__()

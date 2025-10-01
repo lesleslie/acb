@@ -3,7 +3,7 @@ from uuid import UUID
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import SqlBase, SqlBaseSettings
 
@@ -69,7 +69,7 @@ class SqlSettings(SqlBaseSettings):
         return dict(ssl_config.to_postgresql_kwargs())
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         pgsql_ssl_params = self._build_ssl_params()
         if pgsql_ssl_params:

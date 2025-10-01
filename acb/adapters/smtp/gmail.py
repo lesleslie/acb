@@ -21,7 +21,7 @@ from acb.adapters import (
 from acb.adapters.dns._base import DnsProtocol, DnsRecord
 from acb.config import Config
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import SmtpBase, SmtpBaseSettings
 
@@ -70,7 +70,7 @@ class SmtpSettings(SmtpBaseSettings):
     ]
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         self.mx_servers = [
             "1 aspmx.l.google.com.",

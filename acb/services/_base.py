@@ -15,7 +15,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class ServiceSettings(Settings):
     health_check_interval: float = 60.0
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
 
 
@@ -86,8 +86,8 @@ class ServiceBase(ABC, CleanupMixin):
     dependency injection, configuration, and resource cleanup.
     """
 
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore[valid-type]
+    config: Inject[Config]
+    logger: Inject[Logger]
 
     def __init__(
         self,

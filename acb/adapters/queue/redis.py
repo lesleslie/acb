@@ -21,7 +21,7 @@ Example:
     Basic task queue usage:
 
     ```python
-    from acb.depends import depends
+    from acb.depends import Inject, depends
     from acb.adapters import import_adapter
 
     Queue = import_adapter("queue")
@@ -67,7 +67,7 @@ from contextlib import asynccontextmanager
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import (
     QueueBackend,
@@ -171,7 +171,7 @@ class RedisQueueSettings(QueueSettings):
     dead_letter_ttl: int = 604800  # 7 days
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
 
 

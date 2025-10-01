@@ -7,7 +7,7 @@ from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import NosqlBase, NosqlBaseSettings
 
@@ -76,7 +76,7 @@ class NosqlSettings(NosqlBaseSettings):
         return timeouts
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         ssl_options = self._build_ssl_options()
         self.connection_options = ssl_options | self.connection_options

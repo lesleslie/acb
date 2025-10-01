@@ -24,7 +24,7 @@ from acb.adapters.graph._base import (
     GraphTraversalDirection,
 )
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject
 
 if t.TYPE_CHECKING:
     from neo4j import AsyncDriver, AsyncTransaction
@@ -86,8 +86,8 @@ class Neo4jSettings(GraphBaseSettings):
 class Graph(GraphBase):
     """Neo4j graph database adapter."""
 
-    config: Config = depends()
-    logger: t.Any = depends()
+    config: Inject[Config]
+    logger: Inject[t.Any]
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
