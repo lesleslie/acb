@@ -31,15 +31,15 @@ def tf_adapter(tf_settings):
 
 class MockAsyncResponse:
     """Mock aiohttp response."""
-    
+
     def __init__(self, status=200, json_data=None, text_data=""):
         self.status = status
         self._json_data = json_data or {}
         self._text_data = text_data
-    
+
     async def json(self):
         return self._json_data
-    
+
     async def text(self):
         return self._text_data
 
@@ -51,7 +51,7 @@ class TestTensorFlowServingSettings:
     def test_default_settings(self):
         """Test default settings."""
         settings = TensorFlowServingSettings()
-        
+
         assert settings.use_grpc is True
         assert settings.grpc_port == 8500
         assert settings.rest_port == 8501
@@ -65,7 +65,7 @@ class TestTensorFlowServingSettings:
             rest_port=9001,
             model_signature_name="custom_signature",
         )
-        
+
         assert settings.use_grpc is False
         assert settings.grpc_port == 9000
         assert settings.rest_port == 9001
@@ -80,7 +80,7 @@ class TestTensorFlowServingAdapter:
     async def test_adapter_initialization(self, tf_settings):
         """Test adapter initialization."""
         adapter = TensorFlowServingAdapter(tf_settings)
-        
+
         assert adapter.tf_settings == tf_settings
         assert adapter._http_session is None
 
@@ -90,9 +90,9 @@ class TestTensorFlowServingAdapter:
         """Test client creation."""
         mock_session = AsyncMock()
         mock_session_class.return_value = mock_session
-        
+
         client = await tf_adapter._create_client()
-        
+
         assert "http" in client
         assert tf_adapter._http_session is not None
 
@@ -100,7 +100,7 @@ class TestTensorFlowServingAdapter:
         """Test REST URL generation."""
         url = tf_adapter._get_rest_url("my_model")
         assert url == "http://localhost:8501/v1/models/my_model:predict"
-        
+
         url_with_version = tf_adapter._get_rest_url("my_model", "123")
         assert url_with_version == "http://localhost:8501/v1/models/my_model/versions/123:predict"
 
@@ -114,17 +114,17 @@ class TestTensorFlowServingAdapter:
             json_data={"outputs": {"prediction": [[0.1, 0.9]]}}
         )
         mock_post.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         request = ModelPredictionRequest(
             inputs={"input_1": [[1.0, 2.0]]},
             model_name="test_model",
         )
-        
+
         response = await tf_adapter.predict(request)
-        
+
         assert response.model_name == "test_model"
         assert response.predictions == {"prediction": [[0.1, 0.9]]}
         assert response.latency_ms > 0
@@ -139,15 +139,15 @@ class TestTensorFlowServingAdapter:
             text_data="Model not found"
         )
         mock_post.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         request = ModelPredictionRequest(
             inputs={"input_1": [[1.0, 2.0]]},
             model_name="nonexistent_model",
         )
-        
+
         with pytest.raises(RuntimeError, match="TensorFlow Serving prediction failed"):
             await tf_adapter.predict(request)
 
@@ -161,10 +161,10 @@ class TestTensorFlowServingAdapter:
             json_data={"outputs": {"prediction": [[0.1, 0.9], [0.8, 0.2]]}}
         )
         mock_post.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         request = BatchPredictionRequest(
             inputs=[
                 {"input_1": [1.0, 2.0]},
@@ -172,9 +172,9 @@ class TestTensorFlowServingAdapter:
             ],
             model_name="test_model",
         )
-        
+
         response = await tf_adapter.batch_predict(request)
-        
+
         assert response.model_name == "test_model"
         assert response.batch_size == 2
         assert len(response.predictions) == 2
@@ -200,12 +200,12 @@ class TestTensorFlowServingAdapter:
             }
         )
         mock_get.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         models = await tf_adapter.list_models()
-        
+
         assert len(models) == 2
         assert models[0].name == "model1"
         assert models[0].framework == "tensorflow"
@@ -229,12 +229,12 @@ class TestTensorFlowServingAdapter:
             }
         )
         mock_get.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         info = await tf_adapter.get_model_info("test_model")
-        
+
         assert info.name == "test_model"
         assert info.framework == "tensorflow"
         assert info.input_schema is not None
@@ -257,12 +257,12 @@ class TestTensorFlowServingAdapter:
             }
         )
         mock_get.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         health = await tf_adapter.get_model_health("test_model")
-        
+
         assert health.model_name == "test_model"
         assert health.status == "healthy"
 
@@ -273,10 +273,10 @@ class TestTensorFlowServingAdapter:
         # Mock response
         mock_response = MockAsyncResponse(status=200)
         mock_get.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         healthy = await tf_adapter.health_check()
         assert healthy is True
 
@@ -287,10 +287,10 @@ class TestTensorFlowServingAdapter:
         # Mock error response
         mock_response = MockAsyncResponse(status=500)
         mock_get.return_value.__aenter__.return_value = mock_response
-        
+
         # Mock client creation
         tf_adapter._http_session = AsyncMock()
-        
+
         healthy = await tf_adapter.health_check()
         assert healthy is False
 
@@ -300,9 +300,9 @@ class TestTensorFlowServingAdapter:
         # Mock sessions
         tf_adapter._http_session = AsyncMock()
         tf_adapter._grpc_channel = AsyncMock()
-        
+
         await tf_adapter.cleanup()
-        
+
         tf_adapter._http_session.close.assert_called_once()
         tf_adapter._grpc_channel.close.assert_called_once()
 
@@ -318,24 +318,24 @@ class TestTensorFlowServingIntegration:
         with patch('aiohttp.ClientSession') as mock_session_class:
             mock_session = AsyncMock()
             mock_session_class.return_value = mock_session
-            
+
             # Mock list models
             mock_session.get.return_value.__aenter__.return_value = MockAsyncResponse(
                 status=200,
                 json_data={"models": [{"name": "test_model", "version_labels": {"1": {"state": "AVAILABLE"}}}]}
             )
-            
+
             # Mock prediction
             mock_session.post.return_value.__aenter__.return_value = MockAsyncResponse(
                 status=200,
                 json_data={"outputs": {"prediction": [[0.9, 0.1]]}}
             )
-            
+
             async with tf_adapter as adapter:
                 # List models
                 models = await adapter.list_models()
                 assert len(models) > 0
-                
+
                 # Prediction
                 request = ModelPredictionRequest(
                     inputs={"input_1": [[1.0, 2.0]]},

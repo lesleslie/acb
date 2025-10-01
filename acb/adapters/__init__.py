@@ -166,6 +166,13 @@ class AdapterCapability(str, Enum):
     LANGUAGE_DETECTION = "language_detection"
     TEXT_SIMILARITY = "text_similarity"
 
+    # API Gateway-specific capabilities
+    AUTHENTICATION = "authentication"
+    RATE_LIMITING = "rate_limiting"
+    USAGE_TRACKING = "usage_tracking"
+    MONITORING = "monitoring"
+    VALIDATION = "validation"
+
 
 class AdapterMetadata(BaseModel):
     module_id: UUID = Field(
@@ -606,6 +613,7 @@ STATIC_ADAPTER_MAPPINGS = {
     "experiment.tensorboard": ("acb.adapters.experiment.tensorboard", "Experiment"),
     "nlp.spacy": ("acb.adapters.nlp.spacy", "NLP"),
     "nlp.transformers": ("acb.adapters.nlp.transformers", "NLP"),
+    "gateway": ("acb.adapters.gateway", "APIGateway"),
 }
 
 

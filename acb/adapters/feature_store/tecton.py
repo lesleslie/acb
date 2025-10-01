@@ -36,7 +36,7 @@ from acb.adapters.feature_store._base import (
 try:
     import tecton
     from tecton import FeatureService, get_workspace
-    
+
     TECTON_AVAILABLE = True
 except ImportError:
     TECTON_AVAILABLE = False
@@ -46,48 +46,76 @@ class TectonSettings(FeatureStoreSettings):
     """Tecton-specific settings."""
 
     # Tecton workspace settings
-    workspace_name: str = Field(default="production", description="Tecton workspace name")
+    workspace_name: str = Field(
+        default="production", description="Tecton workspace name"
+    )
     api_key: str = Field(description="Tecton API key")
-    cluster_endpoint: str | None = Field(default=None, description="Tecton cluster endpoint")
-    
+    cluster_endpoint: str | None = Field(
+        default=None, description="Tecton cluster endpoint"
+    )
+
     # Feature serving settings
-    feature_service_name: str | None = Field(default=None, description="Default feature service")
-    enable_streaming: bool = Field(default=True, description="Enable streaming features")
-    
+    feature_service_name: str | None = Field(
+        default=None, description="Default feature service"
+    )
+    enable_streaming: bool = Field(
+        default=True, description="Enable streaming features"
+    )
+
     # Real-time settings
-    real_time_endpoint: str | None = Field(default=None, description="Real-time serving endpoint")
-    batch_endpoint: str | None = Field(default=None, description="Batch serving endpoint")
-    
+    real_time_endpoint: str | None = Field(
+        default=None, description="Real-time serving endpoint"
+    )
+    batch_endpoint: str | None = Field(
+        default=None, description="Batch serving endpoint"
+    )
+
     # Monitoring and observability
-    enable_feature_monitoring: bool = Field(default=True, description="Enable feature monitoring")
-    enable_data_quality_monitoring: bool = Field(default=True, description="Enable data quality monitoring")
-    enable_drift_detection: bool = Field(default=True, description="Enable drift detection")
-    
+    enable_feature_monitoring: bool = Field(
+        default=True, description="Enable feature monitoring"
+    )
+    enable_data_quality_monitoring: bool = Field(
+        default=True, description="Enable data quality monitoring"
+    )
+    enable_drift_detection: bool = Field(
+        default=True, description="Enable drift detection"
+    )
+
     # Performance settings
-    materialization_parallelism: int = Field(default=10, description="Materialization parallelism")
-    serving_timeout_ms: int = Field(default=5000, description="Serving timeout in milliseconds")
-    
+    materialization_parallelism: int = Field(
+        default=10, description="Materialization parallelism"
+    )
+    serving_timeout_ms: int = Field(
+        default=5000, description="Serving timeout in milliseconds"
+    )
+
     # Advanced settings
-    enable_push_features: bool = Field(default=True, description="Enable push feature sources")
-    enable_feature_logging: bool = Field(default=True, description="Enable feature logging")
+    enable_push_features: bool = Field(
+        default=True, description="Enable push feature sources"
+    )
+    enable_feature_logging: bool = Field(
+        default=True, description="Enable feature logging"
+    )
 
 
 class TectonAdapter(BaseFeatureStoreAdapter):
     """Tecton feature store adapter implementation.
-    
+
     This adapter provides enterprise-grade feature store capabilities using Tecton,
     including real-time streaming, advanced monitoring, and comprehensive MLOps integration.
     """
 
     def __init__(self, settings: TectonSettings | None = None) -> None:
         """Initialize Tecton adapter.
-        
+
         Args:
             settings: Tecton-specific configuration settings
         """
         if not TECTON_AVAILABLE:
-            raise ImportError("Tecton not available. Install with: uv add 'tecton>=0.10.0'")
-            
+            raise ImportError(
+                "Tecton not available. Install with: uv add 'tecton>=0.10.0'"
+            )
+
         super().__init__(settings or TectonSettings())
         self._workspace = None
         self._feature_services: dict[str, FeatureService] = {}
@@ -104,10 +132,10 @@ class TectonAdapter(BaseFeatureStoreAdapter):
             api_key=self.tecton_settings.api_key,
             cluster_endpoint=self.tecton_settings.cluster_endpoint,
         )
-        
+
         # Get workspace
         workspace = get_workspace(self.tecton_settings.workspace_name)
-        
+
         # Cache feature services for faster access
         try:
             feature_services = workspace.list_feature_services()
@@ -115,7 +143,7 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                 self._feature_services[fs.name] = fs
         except Exception:
             pass  # Feature services might not be available yet
-            
+
         return workspace
 
     async def _create_offline_client(self) -> Any:
@@ -130,18 +158,20 @@ class TectonAdapter(BaseFeatureStoreAdapter):
         return self._workspace
 
     # Feature Serving Methods
-    async def get_online_features(self, request: FeatureServingRequest) -> FeatureServingResponse:
+    async def get_online_features(
+        self, request: FeatureServingRequest
+    ) -> FeatureServingResponse:
         """Get features from Tecton online store for real-time serving."""
         start_time = datetime.now()
         workspace = await self._ensure_workspace()
-        
+
         try:
             # Get feature service
             feature_service_name = (
-                request.metadata.get("feature_service") or 
-                self.tecton_settings.feature_service_name
+                request.metadata.get("feature_service")
+                or self.tecton_settings.feature_service_name
             )
-            
+
             if feature_service_name and feature_service_name in self._feature_services:
                 feature_service = self._feature_services[feature_service_name]
             else:
@@ -153,86 +183,95 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                         feature_views.append(fv)
                     except Exception:
                         continue
-                
+
                 if not feature_views:
                     raise ValueError("No valid feature views found")
-                
+
                 # Use first available feature view for simplicity
                 feature_service = feature_views[0]
-            
+
             # Prepare entity keys
             entity_keys = []
             for entity_id in request.entity_ids:
                 entity_keys.append({"entity_id": entity_id})
-            
+
             # Get online features
             feature_vectors_result = feature_service.get_online_features(
                 join_keys=entity_keys,
                 request_context_map=request.metadata,
             )
-            
+
             # Convert response to ACB format
             feature_vectors = []
             for i, entity_id in enumerate(request.entity_ids):
                 features = {}
-                if hasattr(feature_vectors_result, 'to_dict'):
+                if hasattr(feature_vectors_result, "to_dict"):
                     result_dict = feature_vectors_result.to_dict()
                     for feature_name in request.feature_names:
                         if feature_name in result_dict:
                             values = result_dict[feature_name]
-                            features[feature_name] = values[i] if i < len(values) else None
-                
-                feature_vectors.append(FeatureVector(
-                    entity_id=entity_id,
-                    features=features,
-                    timestamp=request.timestamp or datetime.now(),
-                ))
-            
+                            features[feature_name] = (
+                                values[i] if i < len(values) else None
+                            )
+
+                feature_vectors.append(
+                    FeatureVector(
+                        entity_id=entity_id,
+                        features=features,
+                        timestamp=request.timestamp or datetime.now(),
+                    )
+                )
+
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
-            
+
             return FeatureServingResponse(
                 feature_vectors=feature_vectors,
                 latency_ms=latency_ms,
                 cache_hit_ratio=0.8,  # Mock data - Tecton provides this
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get online features: {e}")
 
-    async def get_offline_features(self, request: FeatureServingRequest) -> FeatureServingResponse:
+    async def get_offline_features(
+        self, request: FeatureServingRequest
+    ) -> FeatureServingResponse:
         """Get features from Tecton offline store for batch processing."""
         start_time = datetime.now()
         await self._ensure_workspace()
-        
+
         try:
             # Create spine DataFrame for batch feature retrieval
-            spine_df = pd.DataFrame({
-                "entity_id": request.entity_ids,
-                "timestamp": [request.timestamp or datetime.now()] * len(request.entity_ids),
-            })
-            
+            spine_df = pd.DataFrame(
+                {
+                    "entity_id": request.entity_ids,
+                    "timestamp": [request.timestamp or datetime.now()]
+                    * len(request.entity_ids),
+                }
+            )
+
             # Get feature service or create from feature names
             feature_service_name = (
-                request.metadata.get("feature_service") or 
-                self.tecton_settings.feature_service_name
+                request.metadata.get("feature_service")
+                or self.tecton_settings.feature_service_name
             )
-            
+
             if feature_service_name and feature_service_name in self._feature_services:
                 feature_service = self._feature_services[feature_service_name]
-                
+
                 # Get offline features
                 feature_dataset = feature_service.get_historical_features(
                     spine=spine_df,
                     from_source=True,
                 )
-                
+
                 training_df = feature_dataset.to_pandas()
             else:
                 # Fallback to direct feature view access
                 training_df = spine_df.copy()
                 for feature_name in request.feature_names:
                     training_df[feature_name] = f"mock_{feature_name}_value"
-            
+
             # Convert response to ACB format
             feature_vectors = []
             for _, row in training_df.iterrows():
@@ -240,48 +279,50 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                 for feature_name in request.feature_names:
                     if feature_name in row:
                         features[feature_name] = row[feature_name]
-                
-                feature_vectors.append(FeatureVector(
-                    entity_id=str(row.get("entity_id", "")),
-                    features=features,
-                    timestamp=row.get("timestamp"),
-                ))
-            
+
+                feature_vectors.append(
+                    FeatureVector(
+                        entity_id=str(row.get("entity_id", "")),
+                        features=features,
+                        timestamp=row.get("timestamp"),
+                    )
+                )
+
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
-            
+
             return FeatureServingResponse(
                 feature_vectors=feature_vectors,
                 latency_ms=latency_ms,
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get offline features: {e}")
 
     async def get_historical_features(
-        self, 
-        entity_df: pd.DataFrame, 
+        self,
+        entity_df: pd.DataFrame,
         feature_names: list[str],
-        timestamp_column: str = "timestamp"
+        timestamp_column: str = "timestamp",
     ) -> pd.DataFrame:
         """Get historical features for training dataset creation."""
         await self._ensure_workspace()
-        
+
         try:
             # Ensure timestamp column is present
             if timestamp_column not in entity_df.columns:
                 entity_df[timestamp_column] = datetime.now()
-            
+
             # Get feature service or use feature names directly
             feature_service_name = self.tecton_settings.feature_service_name
-            
+
             if feature_service_name and feature_service_name in self._feature_services:
                 feature_service = self._feature_services[feature_service_name]
-                
+
                 feature_dataset = feature_service.get_historical_features(
                     spine=entity_df,
                     from_source=True,
                 )
-                
+
                 return feature_dataset.to_pandas()
             else:
                 # Fallback implementation
@@ -289,15 +330,17 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                 for feature_name in feature_names:
                     result_df[feature_name] = f"historical_{feature_name}_value"
                 return result_df
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get historical features: {e}")
 
     # Feature Ingestion Methods
-    async def ingest_features(self, request: FeatureIngestionRequest) -> FeatureIngestionResponse:
+    async def ingest_features(
+        self, request: FeatureIngestionRequest
+    ) -> FeatureIngestionResponse:
         """Ingest features into Tecton feature store."""
         start_time = datetime.now()
-        
+
         try:
             # Convert ACB format to DataFrame
             rows = []
@@ -308,18 +351,18 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                     feature_value.feature_name: feature_value.value,
                 }
                 rows.append(row)
-            
+
             df = pd.DataFrame(rows)
-            
+
             # Use batch ingestion method
             response = await self.ingest_batch_features(
                 feature_group=request.feature_group,
                 df=df,
                 mode=request.mode,
             )
-            
+
             return response
-            
+
         except Exception as e:
             return FeatureIngestionResponse(
                 ingested_count=0,
@@ -329,19 +372,16 @@ class TectonAdapter(BaseFeatureStoreAdapter):
             )
 
     async def ingest_batch_features(
-        self, 
-        feature_group: str, 
-        df: pd.DataFrame,
-        mode: str = "append"
+        self, feature_group: str, df: pd.DataFrame, mode: str = "append"
     ) -> FeatureIngestionResponse:
         """Ingest batch features from DataFrame."""
         start_time = datetime.now()
         await self._ensure_workspace()
-        
+
         try:
             # For Tecton, ingestion is typically done through push sources
             # or scheduled materialization jobs
-            
+
             if self.tecton_settings.enable_push_features:
                 # Use push feature source if available
                 try:
@@ -351,16 +391,16 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                     pass
                 except Exception:
                     pass
-            
+
             ingested_count = len(df)
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
-            
+
             return FeatureIngestionResponse(
                 ingested_count=ingested_count,
                 failed_count=0,
                 latency_ms=latency_ms,
             )
-            
+
         except Exception as e:
             return FeatureIngestionResponse(
                 ingested_count=0,
@@ -373,86 +413,94 @@ class TectonAdapter(BaseFeatureStoreAdapter):
     async def list_feature_groups(self) -> list[str]:
         """List available feature groups (Feature Views in Tecton)."""
         workspace = await self._ensure_workspace()
-        
+
         try:
             feature_views = workspace.list_feature_views()
             return [fv.name for fv in feature_views]
         except Exception as e:
             raise RuntimeError(f"Failed to list feature groups: {e}")
 
-    async def list_features(self, feature_group: str | None = None) -> list[FeatureDefinition]:
+    async def list_features(
+        self, feature_group: str | None = None
+    ) -> list[FeatureDefinition]:
         """List available features."""
         workspace = await self._ensure_workspace()
-        
+
         try:
             feature_views = workspace.list_feature_views()
             features = []
-            
+
             for fv in feature_views:
                 if feature_group is None or fv.name == feature_group:
                     # Get feature definitions from feature view
                     try:
                         fv_features = fv.get_features()
                         for feature in fv_features:
-                            features.append(FeatureDefinition(
-                                name=f"{fv.name}:{feature.name}",
-                                feature_group=fv.name,
-                                data_type=str(feature.data_type),
-                                description=getattr(fv, 'description', None),
-                                tags=getattr(fv, 'tags', {}),
-                                owner=getattr(fv, 'owner', None),
-                                created_at=getattr(fv, 'created_at', None),
-                            ))
+                            features.append(
+                                FeatureDefinition(
+                                    name=f"{fv.name}:{feature.name}",
+                                    feature_group=fv.name,
+                                    data_type=str(feature.data_type),
+                                    description=getattr(fv, "description", None),
+                                    tags=getattr(fv, "tags", {}),
+                                    owner=getattr(fv, "owner", None),
+                                    created_at=getattr(fv, "created_at", None),
+                                )
+                            )
                     except Exception:
                         # Fallback for feature views without direct feature access
-                        features.append(FeatureDefinition(
-                            name=fv.name,
-                            feature_group=fv.name,
-                            data_type="unknown",
-                            description=getattr(fv, 'description', None),
-                        ))
-            
+                        features.append(
+                            FeatureDefinition(
+                                name=fv.name,
+                                feature_group=fv.name,
+                                data_type="unknown",
+                                description=getattr(fv, "description", None),
+                            )
+                        )
+
             return features
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to list features: {e}")
 
     async def get_feature_definition(self, feature_name: str) -> FeatureDefinition:
         """Get feature definition and metadata."""
         workspace = await self._ensure_workspace()
-        
+
         try:
             # Parse feature name (format: feature_view:feature_name)
             if ":" in feature_name:
                 fv_name, feat_name = feature_name.split(":", 1)
             else:
                 fv_name, _feat_name = feature_name, feature_name
-            
+
             feature_view = workspace.get_feature_view(fv_name)
-            
+
             return FeatureDefinition(
                 name=feature_name,
                 feature_group=fv_name,
                 data_type="unknown",  # Tecton feature type detection
-                description=getattr(feature_view, 'description', None),
-                tags=getattr(feature_view, 'tags', {}),
-                owner=getattr(feature_view, 'owner', None),
-                created_at=getattr(feature_view, 'created_at', None),
+                description=getattr(feature_view, "description", None),
+                tags=getattr(feature_view, "tags", {}),
+                owner=getattr(feature_view, "owner", None),
+                created_at=getattr(feature_view, "created_at", None),
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get feature definition: {e}")
 
-    async def search_features(self, query: str, filters: dict[str, Any] | None = None) -> list[FeatureDefinition]:
+    async def search_features(
+        self, query: str, filters: dict[str, Any] | None = None
+    ) -> list[FeatureDefinition]:
         """Search features by query and filters."""
         # Get all features and filter by query
         all_features = await self.list_features()
-        
+
         matching_features = []
         for feature in all_features:
-            if (query.lower() in feature.name.lower() or 
-                (feature.description and query.lower() in feature.description.lower())):
-                
+            if query.lower() in feature.name.lower() or (
+                feature.description and query.lower() in feature.description.lower()
+            ):
                 # Apply additional filters if provided
                 if filters:
                     match = True
@@ -467,15 +515,15 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                         matching_features.append(feature)
                 else:
                     matching_features.append(feature)
-        
+
         return matching_features
 
     # Feature Engineering Methods
     async def create_feature_group(
-        self, 
-        name: str, 
+        self,
+        name: str,
         features: list[FeatureDefinition],
-        description: str | None = None
+        description: str | None = None,
     ) -> bool:
         """Create a new feature group (Feature View in Tecton)."""
         # Feature View creation in Tecton is typically done through declarative configuration
@@ -496,11 +544,11 @@ class TectonAdapter(BaseFeatureStoreAdapter):
     async def get_feature_monitoring(self, feature_name: str) -> FeatureMonitoring:
         """Get feature monitoring metrics from Tecton."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton provides comprehensive monitoring capabilities
             # This would integrate with Tecton's monitoring APIs
-            
+
             return FeatureMonitoring(
                 feature_name=feature_name,
                 drift_score=0.05,  # From Tecton drift detection
@@ -510,31 +558,33 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                 anomaly_count=2,
                 last_updated=datetime.now(),
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get feature monitoring: {e}")
 
-    async def detect_feature_drift(self, feature_name: str, reference_window: int = 7) -> float:
+    async def detect_feature_drift(
+        self, feature_name: str, reference_window: int = 7
+    ) -> float:
         """Detect feature drift using Tecton's drift detection."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton provides built-in drift detection
             # This would use Tecton's drift detection APIs
             return 0.05  # Mock drift score
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to detect feature drift: {e}")
 
     async def validate_feature_quality(self, feature_name: str) -> float:
         """Validate feature data quality using Tecton's monitoring."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton provides comprehensive data quality monitoring
             # This would use Tecton's data quality APIs
             return 0.98  # Mock quality score
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to validate feature quality: {e}")
 
@@ -542,24 +592,21 @@ class TectonAdapter(BaseFeatureStoreAdapter):
     async def get_feature_versions(self, feature_name: str) -> list[str]:
         """Get available versions of a feature."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton supports feature versioning
             # This would query Tecton's versioning system
             return ["v1.0", "v1.1", "v2.0"]  # Mock versions
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get feature versions: {e}")
 
     async def get_feature_at_timestamp(
-        self, 
-        feature_name: str, 
-        entity_id: str, 
-        timestamp: datetime
+        self, feature_name: str, entity_id: str, timestamp: datetime
     ) -> FeatureValue | None:
         """Get feature value at specific timestamp using Tecton's time travel."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton supports point-in-time feature retrieval
             return FeatureValue(
@@ -568,7 +615,7 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                 timestamp=timestamp,
                 entity_id=entity_id,
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get feature at timestamp: {e}")
 
@@ -576,28 +623,25 @@ class TectonAdapter(BaseFeatureStoreAdapter):
     async def create_feature_experiment(self, experiment: FeatureExperiment) -> bool:
         """Create a new feature A/B testing experiment."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton supports feature experimentation
             # This would create an experiment using Tecton's APIs
             return True
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to create feature experiment: {e}")
 
     async def get_feature_for_experiment(
-        self, 
-        feature_name: str, 
-        entity_id: str, 
-        experiment_id: str
+        self, feature_name: str, entity_id: str, experiment_id: str
     ) -> Any:
         """Get feature value for A/B testing experiment."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton supports feature experimentation with traffic splitting
             return "experiment_variant_value"
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get feature for experiment: {e}")
 
@@ -605,7 +649,7 @@ class TectonAdapter(BaseFeatureStoreAdapter):
     async def get_feature_lineage(self, feature_name: str) -> FeatureLineage:
         """Get feature lineage and dependencies."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton provides comprehensive lineage tracking
             return FeatureLineage(
@@ -615,14 +659,14 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                 data_sources=["source_table_1", "streaming_source_1"],
                 transformations=["aggregation", "window_function"],
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get feature lineage: {e}")
 
     async def trace_feature_dependencies(self, feature_name: str) -> dict[str, Any]:
         """Trace feature dependencies and impact analysis."""
         await self._ensure_workspace()
-        
+
         try:
             # Tecton provides impact analysis
             return {
@@ -635,7 +679,7 @@ class TectonAdapter(BaseFeatureStoreAdapter):
                     "affected_models": ["model1", "model2"],
                 },
             }
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to trace feature dependencies: {e}")
 
@@ -698,4 +742,10 @@ MODULE_METADATA = AdapterMetadata(
 FeatureStore = TectonAdapter
 FeatureStoreSettings = TectonSettings
 
-__all__ = ["TectonAdapter", "TectonSettings", "FeatureStore", "FeatureStoreSettings", "MODULE_METADATA"]
+__all__ = [
+    "TectonAdapter",
+    "TectonSettings",
+    "FeatureStore",
+    "FeatureStoreSettings",
+    "MODULE_METADATA",
+]

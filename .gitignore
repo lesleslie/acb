@@ -21,3 +21,6 @@
 /.coverage
 /complexipy.json
 /coverage.json
+/NOTES.md
+/.obsidian/
+/.smart-env/

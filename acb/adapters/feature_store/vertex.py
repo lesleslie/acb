@@ -38,7 +38,7 @@ try:
     from google.cloud.aiplatform import featurestore
     from google.cloud.aiplatform.featurestore import EntityType, Feature, Featurestore
     from google.oauth2 import service_account
-    
+
     VERTEX_AVAILABLE = True
 except ImportError:
     VERTEX_AVAILABLE = False
@@ -50,53 +50,79 @@ class VertexAIFeatureStoreSettings(FeatureStoreSettings):
     # Google Cloud Configuration
     project_id: str = Field(description="Google Cloud project ID")
     location: str = Field(default="us-central1", description="Google Cloud region")
-    credentials_path: str | None = Field(default=None, description="Path to service account key file")
-    
+    credentials_path: str | None = Field(
+        default=None, description="Path to service account key file"
+    )
+
     # Vertex AI Feature Store settings
     featurestore_id: str = Field(description="Vertex AI Featurestore ID")
-    create_featurestore_if_not_exists: bool = Field(default=False, description="Create featurestore if it doesn't exist")
-    
+    create_featurestore_if_not_exists: bool = Field(
+        default=False, description="Create featurestore if it doesn't exist"
+    )
+
     # Online serving settings
-    enable_online_serving: bool = Field(default=True, description="Enable online serving")
-    online_serving_config: dict[str, Any] = Field(default_factory=dict, description="Online serving configuration")
-    
+    enable_online_serving: bool = Field(
+        default=True, description="Enable online serving"
+    )
+    online_serving_config: dict[str, Any] = Field(
+        default_factory=dict, description="Online serving configuration"
+    )
+
     # BigQuery settings for offline store
-    bigquery_dataset_id: str | None = Field(default=None, description="BigQuery dataset for offline features")
-    bigquery_table_prefix: str = Field(default="features", description="BigQuery table prefix")
-    
+    bigquery_dataset_id: str | None = Field(
+        default=None, description="BigQuery dataset for offline features"
+    )
+    bigquery_table_prefix: str = Field(
+        default="features", description="BigQuery table prefix"
+    )
+
     # Security settings
-    enable_encryption: bool = Field(default=True, description="Enable encryption at rest")
+    enable_encryption: bool = Field(
+        default=True, description="Enable encryption at rest"
+    )
     kms_key_name: str | None = Field(default=None, description="KMS key for encryption")
-    
+
     # Performance settings
-    batch_serving_capacity: int = Field(default=100, description="Batch serving capacity")
-    online_serving_capacity: int = Field(default=10, description="Online serving capacity")
-    
+    batch_serving_capacity: int = Field(
+        default=100, description="Batch serving capacity"
+    )
+    online_serving_capacity: int = Field(
+        default=10, description="Online serving capacity"
+    )
+
     # Monitoring settings
-    enable_feature_monitoring: bool = Field(default=True, description="Enable feature monitoring")
-    monitoring_interval_hours: int = Field(default=24, description="Monitoring interval in hours")
-    
+    enable_feature_monitoring: bool = Field(
+        default=True, description="Enable feature monitoring"
+    )
+    monitoring_interval_hours: int = Field(
+        default=24, description="Monitoring interval in hours"
+    )
+
     # Labeling and organization
     labels: dict[str, str] = Field(default_factory=dict, description="Resource labels")
-    entity_type_prefix: str = Field(default="acb", description="Entity type name prefix")
+    entity_type_prefix: str = Field(
+        default="acb", description="Entity type name prefix"
+    )
 
 
 class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
     """Vertex AI Feature Store adapter implementation.
-    
+
     This adapter provides managed feature store capabilities using Google Cloud's
     Vertex AI Feature Store with BigQuery integration and AI Platform services.
     """
 
     def __init__(self, settings: VertexAIFeatureStoreSettings | None = None) -> None:
         """Initialize Vertex AI Feature Store adapter.
-        
+
         Args:
             settings: Vertex AI-specific configuration settings
         """
         if not VERTEX_AVAILABLE:
-            raise ImportError("Vertex AI not available. Install with: uv add 'google-cloud-aiplatform>=1.25.0'")
-            
+            raise ImportError(
+                "Vertex AI not available. Install with: uv add 'google-cloud-aiplatform>=1.25.0'"
+            )
+
         super().__init__(settings or VertexAIFeatureStoreSettings())
         self._featurestore_client = None
         self._featurestore = None
@@ -115,13 +141,13 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
             credentials = service_account.Credentials.from_service_account_file(
                 self.vertex_settings.credentials_path
             )
-        
+
         aiplatform.init(
             project=self.vertex_settings.project_id,
             location=self.vertex_settings.location,
             credentials=credentials,
         )
-        
+
         # Get or create featurestore
         try:
             featurestore_client = Featurestore(
@@ -140,13 +166,15 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     encryption_spec_kms_key_name=self.vertex_settings.kms_key_name,
                 )
             else:
-                raise RuntimeError(f"Featurestore {self.vertex_settings.featurestore_id} not found")
-        
+                raise RuntimeError(
+                    f"Featurestore {self.vertex_settings.featurestore_id} not found"
+                )
+
         self._featurestore = featurestore_client
-        
+
         # Cache entity types for faster access
         await self._refresh_entity_types_cache()
-        
+
         return featurestore_client
 
     async def _create_offline_client(self) -> Any:
@@ -164,76 +192,87 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
             pass  # Cache refresh failed, continue with empty cache
 
     # Feature Serving Methods
-    async def get_online_features(self, request: FeatureServingRequest) -> FeatureServingResponse:
+    async def get_online_features(
+        self, request: FeatureServingRequest
+    ) -> FeatureServingResponse:
         """Get features from Vertex AI Feature Store online serving."""
         start_time = datetime.now()
-        
+
         if not self.vertex_settings.enable_online_serving:
             raise RuntimeError("Online serving is not enabled")
-        
+
         try:
             feature_vectors = []
-            
+
             # Group features by entity type
-            features_by_entity = self._group_features_by_entity_type(request.feature_names)
-            
+            features_by_entity = self._group_features_by_entity_type(
+                request.feature_names
+            )
+
             for entity_id in request.entity_ids:
                 features = {}
-                
+
                 for entity_type_name, feature_names in features_by_entity.items():
                     if entity_type_name in self._entity_types_cache:
                         entity_type = self._entity_types_cache[entity_type_name]
-                        
+
                         try:
                             # Read features from online store
                             feature_values = entity_type.read(
                                 entity_ids=[entity_id],
                                 feature_ids=feature_names,
                             )
-                            
+
                             # Extract feature values
                             for feature_id, value in feature_values.items():
                                 if value is not None:
                                     features[feature_id] = value
-                                    
+
                         except Exception:
                             # Entity or features not found, continue
                             continue
-                
-                feature_vectors.append(FeatureVector(
-                    entity_id=entity_id,
-                    features=features,
-                    timestamp=request.timestamp or datetime.now(),
-                ))
-            
+
+                feature_vectors.append(
+                    FeatureVector(
+                        entity_id=entity_id,
+                        features=features,
+                        timestamp=request.timestamp or datetime.now(),
+                    )
+                )
+
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
-            
+
             return FeatureServingResponse(
                 feature_vectors=feature_vectors,
                 latency_ms=latency_ms,
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get online features: {e}")
 
-    async def get_offline_features(self, request: FeatureServingRequest) -> FeatureServingResponse:
+    async def get_offline_features(
+        self, request: FeatureServingRequest
+    ) -> FeatureServingResponse:
         """Get features from Vertex AI Feature Store offline serving (BigQuery)."""
         start_time = datetime.now()
-        
+
         try:
             # Create entity DataFrame for batch feature retrieval
-            entity_df = pd.DataFrame({
-                "entity_id": request.entity_ids,
-                "feature_timestamp": [request.timestamp or datetime.now()] * len(request.entity_ids),
-            })
-            
+            entity_df = pd.DataFrame(
+                {
+                    "entity_id": request.entity_ids,
+                    "feature_timestamp": [request.timestamp or datetime.now()]
+                    * len(request.entity_ids),
+                }
+            )
+
             # Use historical features method
             training_df = await self.get_historical_features(
                 entity_df=entity_df,
                 feature_names=request.feature_names,
                 timestamp_column="feature_timestamp",
             )
-            
+
             # Convert response to ACB format
             feature_vectors = []
             for _, row in training_df.iterrows():
@@ -241,58 +280,62 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 for feature_name in request.feature_names:
                     if feature_name in row:
                         features[feature_name] = row[feature_name]
-                
-                feature_vectors.append(FeatureVector(
-                    entity_id=str(row.get("entity_id", "")),
-                    features=features,
-                    timestamp=row.get("feature_timestamp"),
-                ))
-            
+
+                feature_vectors.append(
+                    FeatureVector(
+                        entity_id=str(row.get("entity_id", "")),
+                        features=features,
+                        timestamp=row.get("feature_timestamp"),
+                    )
+                )
+
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
-            
+
             return FeatureServingResponse(
                 feature_vectors=feature_vectors,
                 latency_ms=latency_ms,
             )
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get offline features: {e}")
 
     async def get_historical_features(
-        self, 
-        entity_df: pd.DataFrame, 
+        self,
+        entity_df: pd.DataFrame,
         feature_names: list[str],
-        timestamp_column: str = "timestamp"
+        timestamp_column: str = "timestamp",
     ) -> pd.DataFrame:
         """Get historical features for training dataset creation."""
         try:
             # For Vertex AI, historical features are accessed via BigQuery
             # This would typically involve querying the BigQuery offline store
-            
+
             result_df = entity_df.copy()
-            
+
             # Group features by entity type
             features_by_entity = self._group_features_by_entity_type(feature_names)
-            
+
             # For each entity type, simulate querying BigQuery
             for entity_type_name, features in features_by_entity.items():
                 for feature_name in features:
                     # In practice, this would execute BigQuery queries
                     result_df[feature_name] = f"historical_{feature_name}_value"
-            
+
             return result_df
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get historical features: {e}")
 
-    def _group_features_by_entity_type(self, feature_names: list[str]) -> dict[str, list[str]]:
+    def _group_features_by_entity_type(
+        self, feature_names: list[str]
+    ) -> dict[str, list[str]]:
         """Group feature names by their entity type."""
         features_by_entity: dict[str, list[str]] = {}
-        
+
         for feature_name in feature_names:
             # Find which entity type contains this feature
             entity_type_name = self._find_entity_type_for_feature(feature_name)
-            
+
             if entity_type_name:
                 if entity_type_name not in features_by_entity:
                     features_by_entity[entity_type_name] = []
@@ -303,7 +346,7 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 if default_entity not in features_by_entity:
                     features_by_entity[default_entity] = []
                 features_by_entity[default_entity].append(feature_name)
-        
+
         return features_by_entity
 
     def _find_entity_type_for_feature(self, feature_name: str) -> str | None:
@@ -319,10 +362,12 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
         return None
 
     # Feature Ingestion Methods
-    async def ingest_features(self, request: FeatureIngestionRequest) -> FeatureIngestionResponse:
+    async def ingest_features(
+        self, request: FeatureIngestionRequest
+    ) -> FeatureIngestionResponse:
         """Ingest features into Vertex AI Feature Store."""
         start_time = datetime.now()
-        
+
         try:
             # Convert ACB format to DataFrame
             rows = []
@@ -333,18 +378,18 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     feature_value.feature_name: feature_value.value,
                 }
                 rows.append(row)
-            
+
             df = pd.DataFrame(rows)
-            
+
             # Use batch ingestion method
             response = await self.ingest_batch_features(
                 feature_group=request.feature_group,
                 df=df,
                 mode=request.mode,
             )
-            
+
             return response
-            
+
         except Exception as e:
             return FeatureIngestionResponse(
                 ingested_count=0,
@@ -354,37 +399,34 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
             )
 
     async def ingest_batch_features(
-        self, 
-        feature_group: str, 
-        df: pd.DataFrame,
-        mode: str = "append"
+        self, feature_group: str, df: pd.DataFrame, mode: str = "append"
     ) -> FeatureIngestionResponse:
         """Ingest batch features from DataFrame."""
         start_time = datetime.now()
-        
+
         try:
             # For Vertex AI, ingestion is typically done through import jobs
             # This would create an import job to ingest the data
-            
+
             if feature_group in self._entity_types_cache:
                 self._entity_types_cache[feature_group]
-                
+
                 # Create import job (simplified - in practice would use actual import)
                 # import_job = entity_type.batch_create_features(df)
-                
+
                 ingested_count = len(df)
             else:
                 # Entity type not found
                 ingested_count = 0
-            
+
             latency_ms = (datetime.now() - start_time).total_seconds() * 1000
-            
+
             return FeatureIngestionResponse(
                 ingested_count=ingested_count,
                 failed_count=0 if ingested_count > 0 else len(df),
                 latency_ms=latency_ms,
             )
-            
+
         except Exception as e:
             return FeatureIngestionResponse(
                 ingested_count=0,
@@ -402,32 +444,36 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
         except Exception as e:
             raise RuntimeError(f"Failed to list feature groups: {e}")
 
-    async def list_features(self, feature_group: str | None = None) -> list[FeatureDefinition]:
+    async def list_features(
+        self, feature_group: str | None = None
+    ) -> list[FeatureDefinition]:
         """List available features."""
         try:
             await self._refresh_entity_types_cache()
             features = []
-            
+
             for entity_type_name, entity_type in self._entity_types_cache.items():
                 if feature_group is None or entity_type_name == feature_group:
                     try:
                         feature_list = entity_type.list_features()
-                        
+
                         for feature in feature_list:
-                            features.append(FeatureDefinition(
-                                name=feature.display_name,
-                                feature_group=entity_type_name,
-                                data_type=str(feature.value_type),
-                                description=feature.description,
-                                tags=dict(feature.labels) if feature.labels else {},
-                                created_at=feature.create_time,
-                            ))
+                            features.append(
+                                FeatureDefinition(
+                                    name=feature.display_name,
+                                    feature_group=entity_type_name,
+                                    data_type=str(feature.value_type),
+                                    description=feature.description,
+                                    tags=dict(feature.labels) if feature.labels else {},
+                                    created_at=feature.create_time,
+                                )
+                            )
                     except Exception:
                         # Continue if unable to list features for this entity type
                         continue
-            
+
             return features
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to list features: {e}")
 
@@ -435,7 +481,7 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
         """Get feature definition and metadata."""
         try:
             await self._refresh_entity_types_cache()
-            
+
             for entity_type_name, entity_type in self._entity_types_cache.items():
                 try:
                     features = entity_type.list_features()
@@ -451,30 +497,33 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                             )
                 except Exception:
                     continue
-            
+
             raise ValueError(f"Feature {feature_name} not found")
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to get feature definition: {e}")
 
-    async def search_features(self, query: str, filters: dict[str, Any] | None = None) -> list[FeatureDefinition]:
+    async def search_features(
+        self, query: str, filters: dict[str, Any] | None = None
+    ) -> list[FeatureDefinition]:
         """Search features by query and filters."""
         all_features = await self.list_features()
-        
+
         matching_features = []
         for feature in all_features:
-            if (query.lower() in feature.name.lower() or 
-                (feature.description and query.lower() in feature.description.lower())):
+            if query.lower() in feature.name.lower() or (
+                feature.description and query.lower() in feature.description.lower()
+            ):
                 matching_features.append(feature)
-        
+
         return matching_features
 
     # Feature Engineering Methods
     async def create_feature_group(
-        self, 
-        name: str, 
+        self,
+        name: str,
         features: list[FeatureDefinition],
-        description: str | None = None
+        description: str | None = None,
     ) -> bool:
         """Create a new feature group (Entity Type in Vertex AI)."""
         try:
@@ -485,7 +534,7 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                 description=description,
                 labels=self.vertex_settings.labels,
             )
-            
+
             # Create features in the entity type
             for feature_def in features:
                 Feature.create(
@@ -495,12 +544,12 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     description=feature_def.description,
                     labels=feature_def.tags,
                 )
-            
+
             # Refresh cache
             await self._refresh_entity_types_cache()
-            
+
             return True
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to create feature group: {e}")
 
@@ -509,7 +558,7 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
         try:
             if feature.feature_group in self._entity_types_cache:
                 entity_type = self._entity_types_cache[feature.feature_group]
-                
+
                 Feature.create(
                     feature_id=feature.name,
                     entity_type_name=entity_type.resource_name,
@@ -517,11 +566,11 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                     description=feature.description,
                     labels=feature.tags,
                 )
-                
+
                 return True
             else:
                 raise ValueError(f"Feature group {feature.feature_group} not found")
-                
+
         except Exception as e:
             raise RuntimeError(f"Failed to register feature: {e}")
 
@@ -538,9 +587,9 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
                             return True
                 except Exception:
                     continue
-            
+
             return False
-            
+
         except Exception as e:
             raise RuntimeError(f"Failed to delete feature: {e}")
 
@@ -556,7 +605,9 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
             last_updated=datetime.now(),
         )
 
-    async def detect_feature_drift(self, feature_name: str, reference_window: int = 7) -> float:
+    async def detect_feature_drift(
+        self, feature_name: str, reference_window: int = 7
+    ) -> float:
         """Detect feature drift compared to reference window."""
         return 0.06
 
@@ -570,10 +621,7 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
         return ["v1.0", "v1.1", "v2.0"]
 
     async def get_feature_at_timestamp(
-        self, 
-        feature_name: str, 
-        entity_id: str, 
-        timestamp: datetime
+        self, feature_name: str, entity_id: str, timestamp: datetime
     ) -> FeatureValue | None:
         """Get feature value at specific timestamp."""
         return FeatureValue(
@@ -589,10 +637,7 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
         return True
 
     async def get_feature_for_experiment(
-        self, 
-        feature_name: str, 
-        entity_id: str, 
-        experiment_id: str
+        self, feature_name: str, entity_id: str, experiment_id: str
     ) -> Any:
         """Get feature value for A/B testing experiment."""
         return "experiment_value"
@@ -604,7 +649,9 @@ class VertexAIFeatureStoreAdapter(BaseFeatureStoreAdapter):
             feature_name=feature_name,
             upstream_features=[],
             downstream_features=[],
-            data_sources=[f"bigquery://{self.vertex_settings.project_id}.{self.vertex_settings.bigquery_dataset_id}"],
+            data_sources=[
+                f"bigquery://{self.vertex_settings.project_id}.{self.vertex_settings.bigquery_dataset_id}"
+            ],
         )
 
     async def trace_feature_dependencies(self, feature_name: str) -> dict[str, Any]:
@@ -673,4 +720,10 @@ MODULE_METADATA = AdapterMetadata(
 FeatureStore = VertexAIFeatureStoreAdapter
 FeatureStoreSettings = VertexAIFeatureStoreSettings
 
-__all__ = ["VertexAIFeatureStoreAdapter", "VertexAIFeatureStoreSettings", "FeatureStore", "FeatureStoreSettings", "MODULE_METADATA"]
+__all__ = [
+    "VertexAIFeatureStoreAdapter",
+    "VertexAIFeatureStoreSettings",
+    "FeatureStore",
+    "FeatureStoreSettings",
+    "MODULE_METADATA",
+]

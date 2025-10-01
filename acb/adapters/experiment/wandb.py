@@ -8,17 +8,19 @@ lifecycle management with comprehensive W&B API support.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import aiohttp
 from pydantic import Field
-
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus, generate_adapter_id
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
 from acb.adapters.experiment._base import (
     ArtifactInfo,
     ArtifactType,
@@ -26,13 +28,12 @@ from acb.adapters.experiment._base import (
     ExperimentInfo,
     ExperimentSettings,
     ExperimentStatus,
-    MetricEntry,
-    MetricType,
 )
 
 try:
     import wandb
-    from wandb.apis.public import Api as WandbApi, Project, Run
+    from wandb.apis.public import Api as WandbApi
+    from wandb.apis.public import Project, Run
 
     _wandb_available = True
 except ImportError:
@@ -71,15 +72,15 @@ class WandbExperimentSettings(ExperimentSettings):
         default="default-project",
         description="W&B project name",
     )
-    entity: Optional[str] = Field(
+    entity: str | None = Field(
         default=None,
         description="W&B entity (team/user)",
     )
-    api_key: Optional[str] = Field(
+    api_key: str | None = Field(
         default=None,
         description="W&B API key",
     )
-    base_url: Optional[str] = Field(
+    base_url: str | None = Field(
         default=None,
         description="W&B server base URL (for private instances)",
     )
@@ -93,7 +94,7 @@ class WandbExperimentSettings(ExperimentSettings):
         default=True,
         description="Save code snapshots",
     )
-    resume: Optional[str] = Field(
+    resume: str | None = Field(
         default=None,
         description="Resume strategy (allow, must, never, auto)",
     )
@@ -116,7 +117,7 @@ class WandbExperimentSettings(ExperimentSettings):
 class WandbExperiment(BaseExperimentAdapter):
     """Weights & Biases experiment tracking adapter."""
 
-    def __init__(self, settings: Optional[WandbExperimentSettings] = None) -> None:
+    def __init__(self, settings: WandbExperimentSettings | None = None) -> None:
         """Initialize W&B experiment adapter.
 
         Args:
@@ -130,9 +131,9 @@ class WandbExperiment(BaseExperimentAdapter):
 
         super().__init__(settings)
         self._settings: WandbExperimentSettings = settings or WandbExperimentSettings()
-        self._api: Optional[WandbApi] = None
-        self._current_run: Optional[Any] = None
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._api: WandbApi | None = None
+        self._current_run: Any | None = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def connect(self) -> None:
         """Connect to W&B service."""
@@ -203,8 +204,8 @@ class WandbExperiment(BaseExperimentAdapter):
     async def create_experiment(
         self,
         name: str,
-        tags: Optional[Dict[str, str]] = None,
-        description: Optional[str] = None,
+        tags: dict[str, str] | None = None,
+        description: str | None = None,
     ) -> str:
         """Create a new experiment (project in W&B)."""
         # W&B projects are created automatically when first run is created
@@ -243,7 +244,7 @@ class WandbExperiment(BaseExperimentAdapter):
         self,
         max_results: int = 100,
         view_type: str = "ACTIVE_ONLY",
-    ) -> List[ExperimentInfo]:
+    ) -> list[ExperimentInfo]:
         """List experiments (projects in W&B)."""
         api = await self._ensure_api()
 
@@ -277,9 +278,9 @@ class WandbExperiment(BaseExperimentAdapter):
     # Run Management
     async def start_run(
         self,
-        experiment_id: Optional[str] = None,
-        run_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        experiment_id: str | None = None,
+        run_name: str | None = None,
+        tags: dict[str, str] | None = None,
     ) -> str:
         """Start a new experiment run."""
         project = experiment_id or self._settings.project
@@ -303,7 +304,9 @@ class WandbExperiment(BaseExperimentAdapter):
         self._current_run = run
         return run.id
 
-    async def end_run(self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED) -> None:
+    async def end_run(
+        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+    ) -> None:
         """End an experiment run."""
         if self._current_run and self._current_run.id == run_id:
             exit_code = 0
@@ -316,7 +319,7 @@ class WandbExperiment(BaseExperimentAdapter):
             # Can't end runs that aren't current in W&B
             pass
 
-    async def get_run(self, run_id: str) -> Dict[str, Any]:
+    async def get_run(self, run_id: str) -> dict[str, Any]:
         """Get run information."""
         api = await self._ensure_api()
 
@@ -332,7 +335,9 @@ class WandbExperiment(BaseExperimentAdapter):
             "start_time": run.created_at,
             "end_time": run.updated_at,
             "params": dict(run.config),
-            "metrics": {k: v for k, v in run.summary.items() if isinstance(v, (int, float))},
+            "metrics": {
+                k: v for k, v in run.summary.items() if isinstance(v, int | float)
+            },
             "tags": run.tags or [],
             "artifact_uri": f"wandb://{run.entity}/{run.project}/{run.id}",
         }
@@ -346,7 +351,7 @@ class WandbExperiment(BaseExperimentAdapter):
             # Can't log to non-current runs
             pass
 
-    async def log_params(self, run_id: str, params: Dict[str, Any]) -> None:
+    async def log_params(self, run_id: str, params: dict[str, Any]) -> None:
         """Log multiple parameters."""
         if self._current_run and self._current_run.id == run_id:
             await self._run_sync(wandb.config.update, params)
@@ -358,9 +363,9 @@ class WandbExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         key: str,
-        value: Union[float, int],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        value: float | int,
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log a metric."""
         if self._current_run and self._current_run.id == run_id:
@@ -376,9 +381,9 @@ class WandbExperiment(BaseExperimentAdapter):
     async def log_metrics(
         self,
         run_id: str,
-        metrics: Dict[str, Union[float, int]],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        metrics: dict[str, float | int],
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log multiple metrics."""
         if self._current_run and self._current_run.id == run_id:
@@ -395,8 +400,8 @@ class WandbExperiment(BaseExperimentAdapter):
     async def log_artifact(
         self,
         run_id: str,
-        local_path: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_path: str | Path,
+        artifact_path: str | None = None,
         artifact_type: ArtifactType = ArtifactType.OTHER,
     ) -> None:
         """Log an artifact."""
@@ -417,8 +422,8 @@ class WandbExperiment(BaseExperimentAdapter):
     async def log_artifacts(
         self,
         run_id: str,
-        local_dir: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_dir: str | Path,
+        artifact_path: str | None = None,
     ) -> None:
         """Log multiple artifacts from directory."""
         if self._current_run and self._current_run.id == run_id:
@@ -439,7 +444,7 @@ class WandbExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         artifact_path: str,
-        local_path: Union[str, Path],
+        local_path: str | Path,
     ) -> None:
         """Download an artifact."""
         api = await self._ensure_api()
@@ -455,7 +460,9 @@ class WandbExperiment(BaseExperimentAdapter):
                 await self._run_sync(artifact.download, str(local_path))
                 break
 
-    async def list_artifacts(self, run_id: str, path: Optional[str] = None) -> List[ArtifactInfo]:
+    async def list_artifacts(
+        self, run_id: str, path: str | None = None
+    ) -> list[ArtifactInfo]:
         """List artifacts for a run."""
         api = await self._ensure_api()
 
@@ -482,17 +489,19 @@ class WandbExperiment(BaseExperimentAdapter):
     # Search and Query
     async def search_runs(
         self,
-        experiment_ids: Optional[List[str]] = None,
-        filter_string: Optional[str] = None,
-        order_by: Optional[List[str]] = None,
+        experiment_ids: list[str] | None = None,
+        filter_string: str | None = None,
+        order_by: list[str] | None = None,
         max_results: int = 1000,
-        page_token: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        page_token: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Search experiment runs."""
         api = await self._ensure_api()
 
         # Use first experiment ID or default project
-        project = (experiment_ids[0] if experiment_ids else None) or self._settings.project
+        project = (
+            experiment_ids[0] if experiment_ids else None
+        ) or self._settings.project
 
         runs = await self._run_sync(
             api.runs,
@@ -510,7 +519,9 @@ class WandbExperiment(BaseExperimentAdapter):
                 "start_time": run.created_at,
                 "end_time": run.updated_at,
                 "params": dict(run.config),
-                "metrics": {k: v for k, v in run.summary.items() if isinstance(v, (int, float))},
+                "metrics": {
+                    k: v for k, v in run.summary.items() if isinstance(v, int | float)
+                },
                 "tags": run.tags or [],
                 "artifact_uri": f"wandb://{run.entity}/{run.project}/{run.id}",
             }

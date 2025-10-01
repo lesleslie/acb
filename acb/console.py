@@ -18,7 +18,21 @@ class RichConsole(Console):
             if self._buffer_index == 0:
                 text = self._render_buffer(self._buffer[:])
                 try:
-                    asyncio.run(aprint(text))
+                    # Try to get existing event loop first
+                    loop = None
+                    try:
+                        loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        # No running loop, safe to use asyncio.run
+                        pass
+
+                    if loop is not None:
+                        # Event loop is running, schedule the coroutine
+                        # and use synchronous print as fallback
+                        print(text, file=self.file)
+                    else:
+                        # No running loop, safe to use asyncio.run
+                        asyncio.run(aprint(text))
                 except UnicodeEncodeError as error:
                     error.reason = f"{error.reason}\n*** You may need to add PYTHONIOENCODING=utf-8 to your environment ***"
                     raise

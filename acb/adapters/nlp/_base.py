@@ -7,16 +7,16 @@ and other natural language processing tasks across different NLP frameworks.
 
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class SentimentLabel(str, Enum):
     """Sentiment analysis labels."""
+
     POSITIVE = "positive"
     NEGATIVE = "negative"
     NEUTRAL = "neutral"
@@ -25,6 +25,7 @@ class SentimentLabel(str, Enum):
 
 class EntityType(str, Enum):
     """Named entity types."""
+
     PERSON = "PERSON"
     ORGANIZATION = "ORG"
     LOCATION = "LOC"
@@ -43,6 +44,7 @@ class EntityType(str, Enum):
 
 class TaskType(str, Enum):
     """NLP task types."""
+
     TEXT_ANALYSIS = "text_analysis"
     SENTIMENT_ANALYSIS = "sentiment_analysis"
     NAMED_ENTITY_RECOGNITION = "named_entity_recognition"
@@ -57,15 +59,17 @@ class TaskType(str, Enum):
 
 class SentimentResult(BaseModel):
     """Sentiment analysis result."""
+
     model_config = ConfigDict(extra="allow")
 
     label: SentimentLabel
     confidence: float = Field(ge=0.0, le=1.0)
-    scores: Dict[str, float] = Field(default_factory=dict)
+    scores: dict[str, float] = Field(default_factory=dict)
 
 
 class NamedEntity(BaseModel):
     """Named entity recognition result."""
+
     model_config = ConfigDict(extra="allow")
 
     text: str
@@ -77,34 +81,38 @@ class NamedEntity(BaseModel):
 
 class TranslationResult(BaseModel):
     """Language translation result."""
+
     model_config = ConfigDict(extra="allow")
 
     text: str
-    source_language: Optional[str] = None
+    source_language: str | None = None
     target_language: str
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
 
 
 class ClassificationResult(BaseModel):
     """Text classification result."""
+
     model_config = ConfigDict(extra="allow")
 
     label: str
     confidence: float = Field(ge=0.0, le=1.0)
-    scores: Dict[str, float] = Field(default_factory=dict)
+    scores: dict[str, float] = Field(default_factory=dict)
 
 
 class LanguageDetectionResult(BaseModel):
     """Language detection result."""
+
     model_config = ConfigDict(extra="allow")
 
     language: str
     confidence: float = Field(ge=0.0, le=1.0)
-    iso_code: Optional[str] = None
+    iso_code: str | None = None
 
 
 class KeywordResult(BaseModel):
     """Keyword extraction result."""
+
     model_config = ConfigDict(extra="allow")
 
     keyword: str
@@ -114,6 +122,7 @@ class KeywordResult(BaseModel):
 
 class SimilarityResult(BaseModel):
     """Text similarity result."""
+
     model_config = ConfigDict(extra="allow")
 
     similarity: float = Field(ge=0.0, le=1.0)
@@ -122,11 +131,12 @@ class SimilarityResult(BaseModel):
 
 class NLPSettings(BaseModel):
     """Base NLP adapter settings."""
+
     model_config = ConfigDict(extra="allow")
 
     # Model settings
-    model_name: Optional[str] = None
-    model_path: Optional[str] = None
+    model_name: str | None = None
+    model_path: str | None = None
     device: str = "cpu"  # cpu, cuda, mps
 
     # Processing settings
@@ -136,7 +146,7 @@ class NLPSettings(BaseModel):
 
     # Language settings
     default_language: str = "en"
-    supported_languages: List[str] = Field(default_factory=lambda: ["en"])
+    supported_languages: list[str] = Field(default_factory=lambda: ["en"])
 
     # Performance settings
     cache_results: bool = True
@@ -146,7 +156,7 @@ class NLPSettings(BaseModel):
 class BaseNLPAdapter(ABC):
     """Base class for NLP adapters."""
 
-    def __init__(self, settings: Optional[NLPSettings] = None) -> None:
+    def __init__(self, settings: NLPSettings | None = None) -> None:
         """Initialize the NLP adapter.
 
         Args:
@@ -191,9 +201,9 @@ class BaseNLPAdapter(ABC):
     async def analyze_text(
         self,
         text: str,
-        tasks: Optional[List[TaskType]] = None,
-        language: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        tasks: list[TaskType] | None = None,
+        language: str | None = None,
+    ) -> dict[str, Any]:
         """Perform comprehensive text analysis.
 
         Args:
@@ -210,7 +220,7 @@ class BaseNLPAdapter(ABC):
     async def analyze_sentiment(
         self,
         text: str,
-        language: Optional[str] = None,
+        language: str | None = None,
     ) -> SentimentResult:
         """Analyze sentiment of text.
 
@@ -227,9 +237,9 @@ class BaseNLPAdapter(ABC):
     async def extract_entities(
         self,
         text: str,
-        entity_types: Optional[List[EntityType]] = None,
-        language: Optional[str] = None,
-    ) -> List[NamedEntity]:
+        entity_types: list[EntityType] | None = None,
+        language: str | None = None,
+    ) -> list[NamedEntity]:
         """Extract named entities from text.
 
         Args:
@@ -247,7 +257,7 @@ class BaseNLPAdapter(ABC):
         self,
         text: str,
         target_language: str,
-        source_language: Optional[str] = None,
+        source_language: str | None = None,
     ) -> TranslationResult:
         """Translate text to target language.
 
@@ -265,8 +275,8 @@ class BaseNLPAdapter(ABC):
     async def classify_text(
         self,
         text: str,
-        labels: Optional[List[str]] = None,
-        model: Optional[str] = None,
+        labels: list[str] | None = None,
+        model: str | None = None,
     ) -> ClassificationResult:
         """Classify text into categories.
 
@@ -297,8 +307,8 @@ class BaseNLPAdapter(ABC):
         self,
         text: str,
         max_keywords: int = 10,
-        language: Optional[str] = None,
-    ) -> List[KeywordResult]:
+        language: str | None = None,
+    ) -> list[KeywordResult]:
         """Extract keywords from text.
 
         Args:
@@ -333,9 +343,9 @@ class BaseNLPAdapter(ABC):
     # Batch Processing
     async def analyze_sentiment_batch(
         self,
-        texts: List[str],
-        language: Optional[str] = None,
-    ) -> List[SentimentResult]:
+        texts: list[str],
+        language: str | None = None,
+    ) -> list[SentimentResult]:
         """Analyze sentiment for multiple texts.
 
         Args:
@@ -353,10 +363,10 @@ class BaseNLPAdapter(ABC):
 
     async def extract_entities_batch(
         self,
-        texts: List[str],
-        entity_types: Optional[List[EntityType]] = None,
-        language: Optional[str] = None,
-    ) -> List[List[NamedEntity]]:
+        texts: list[str],
+        entity_types: list[EntityType] | None = None,
+        language: str | None = None,
+    ) -> list[list[NamedEntity]]:
         """Extract entities from multiple texts.
 
         Args:
@@ -375,10 +385,10 @@ class BaseNLPAdapter(ABC):
 
     async def translate_text_batch(
         self,
-        texts: List[str],
+        texts: list[str],
         target_language: str,
-        source_language: Optional[str] = None,
-    ) -> List[TranslationResult]:
+        source_language: str | None = None,
+    ) -> list[TranslationResult]:
         """Translate multiple texts.
 
         Args:
@@ -396,7 +406,7 @@ class BaseNLPAdapter(ABC):
         return results
 
     # Utility Methods
-    async def get_supported_languages(self) -> List[str]:
+    async def get_supported_languages(self) -> list[str]:
         """Get list of supported languages.
 
         Returns:
@@ -404,7 +414,7 @@ class BaseNLPAdapter(ABC):
         """
         return self._settings.supported_languages
 
-    async def get_supported_tasks(self) -> List[TaskType]:
+    async def get_supported_tasks(self) -> list[TaskType]:
         """Get list of supported NLP tasks.
 
         Returns:

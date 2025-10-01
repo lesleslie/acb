@@ -8,17 +8,19 @@ management with comprehensive MLflow Tracking Server support.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import aiohttp
 from pydantic import Field
-
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus, generate_adapter_id
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
 from acb.adapters.experiment._base import (
     ArtifactInfo,
     ArtifactType,
@@ -26,8 +28,6 @@ from acb.adapters.experiment._base import (
     ExperimentInfo,
     ExperimentSettings,
     ExperimentStatus,
-    MetricEntry,
-    MetricType,
 )
 
 try:
@@ -70,37 +70,37 @@ class MLflowExperimentSettings(ExperimentSettings):
     """MLflow-specific experiment tracking settings."""
 
     # MLflow-specific settings
-    mlflow_tracking_uri: Optional[str] = Field(
+    mlflow_tracking_uri: str | None = Field(
         default=None,
         description="MLflow tracking server URI",
     )
-    registry_uri: Optional[str] = Field(
+    registry_uri: str | None = Field(
         default=None,
         description="MLflow model registry URI",
     )
-    s3_endpoint_url: Optional[str] = Field(
+    s3_endpoint_url: str | None = Field(
         default=None,
         description="S3 endpoint URL for artifact storage",
     )
-    aws_access_key_id: Optional[str] = Field(
+    aws_access_key_id: str | None = Field(
         default=None,
         description="AWS access key ID",
     )
-    aws_secret_access_key: Optional[str] = Field(
+    aws_secret_access_key: str | None = Field(
         default=None,
         description="AWS secret access key",
     )
 
     # Authentication
-    mlflow_username: Optional[str] = Field(
+    mlflow_username: str | None = Field(
         default=None,
         description="MLflow server username",
     )
-    mlflow_password: Optional[str] = Field(
+    mlflow_password: str | None = Field(
         default=None,
         description="MLflow server password",
     )
-    mlflow_token: Optional[str] = Field(
+    mlflow_token: str | None = Field(
         default=None,
         description="MLflow authentication token",
     )
@@ -110,7 +110,7 @@ class MLflowExperimentSettings(ExperimentSettings):
         default=True,
         description="Create default experiment on initialization",
     )
-    default_artifact_root: Optional[str] = Field(
+    default_artifact_root: str | None = Field(
         default=None,
         description="Default artifact storage location",
     )
@@ -119,7 +119,7 @@ class MLflowExperimentSettings(ExperimentSettings):
 class MLflowExperiment(BaseExperimentAdapter):
     """MLflow experiment tracking adapter."""
 
-    def __init__(self, settings: Optional[MLflowExperimentSettings] = None) -> None:
+    def __init__(self, settings: MLflowExperimentSettings | None = None) -> None:
         """Initialize MLflow experiment adapter.
 
         Args:
@@ -132,9 +132,11 @@ class MLflowExperiment(BaseExperimentAdapter):
             )
 
         super().__init__(settings)
-        self._settings: MLflowExperimentSettings = settings or MLflowExperimentSettings()
-        self._client: Optional[MlflowClient] = None
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._settings: MLflowExperimentSettings = (
+            settings or MLflowExperimentSettings()
+        )
+        self._client: MlflowClient | None = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def connect(self) -> None:
         """Connect to MLflow tracking server."""
@@ -182,7 +184,9 @@ class MLflowExperiment(BaseExperimentAdapter):
 
         # Create MLflow client
         tracking_uri = self._settings.mlflow_tracking_uri or self._settings.tracking_uri
-        client = MlflowClient(tracking_uri=tracking_uri, registry_uri=self._settings.registry_uri)
+        client = MlflowClient(
+            tracking_uri=tracking_uri, registry_uri=self._settings.registry_uri
+        )
 
         # Create aiohttp session for async operations
         self._session = aiohttp.ClientSession(
@@ -221,8 +225,8 @@ class MLflowExperiment(BaseExperimentAdapter):
     async def create_experiment(
         self,
         name: str,
-        tags: Optional[Dict[str, str]] = None,
-        description: Optional[str] = None,
+        tags: dict[str, str] | None = None,
+        description: str | None = None,
     ) -> str:
         """Create a new experiment."""
         client = await self._ensure_client()
@@ -247,9 +251,13 @@ class MLflowExperiment(BaseExperimentAdapter):
         return ExperimentInfo(
             experiment_id=experiment.experiment_id,
             experiment_name=experiment.name,
-            status=ExperimentStatus.RUNNING if experiment.lifecycle_stage == "active" else ExperimentStatus.FINISHED,
+            status=ExperimentStatus.RUNNING
+            if experiment.lifecycle_stage == "active"
+            else ExperimentStatus.FINISHED,
             created_at=datetime.fromtimestamp(experiment.creation_time / 1000),
-            updated_at=datetime.fromtimestamp(experiment.last_update_time / 1000) if experiment.last_update_time else None,
+            updated_at=datetime.fromtimestamp(experiment.last_update_time / 1000)
+            if experiment.last_update_time
+            else None,
             tags=experiment.tags or {},
         )
 
@@ -257,7 +265,7 @@ class MLflowExperiment(BaseExperimentAdapter):
         self,
         max_results: int = 100,
         view_type: str = "ACTIVE_ONLY",
-    ) -> List[ExperimentInfo]:
+    ) -> list[ExperimentInfo]:
         """List experiments."""
         client = await self._ensure_client()
         experiments = await self._run_sync(
@@ -270,9 +278,13 @@ class MLflowExperiment(BaseExperimentAdapter):
             ExperimentInfo(
                 experiment_id=exp.experiment_id,
                 experiment_name=exp.name,
-                status=ExperimentStatus.RUNNING if exp.lifecycle_stage == "active" else ExperimentStatus.FINISHED,
+                status=ExperimentStatus.RUNNING
+                if exp.lifecycle_stage == "active"
+                else ExperimentStatus.FINISHED,
                 created_at=datetime.fromtimestamp(exp.creation_time / 1000),
-                updated_at=datetime.fromtimestamp(exp.last_update_time / 1000) if exp.last_update_time else None,
+                updated_at=datetime.fromtimestamp(exp.last_update_time / 1000)
+                if exp.last_update_time
+                else None,
                 tags=exp.tags or {},
             )
             for exp in experiments
@@ -286,9 +298,9 @@ class MLflowExperiment(BaseExperimentAdapter):
     # Run Management
     async def start_run(
         self,
-        experiment_id: Optional[str] = None,
-        run_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        experiment_id: str | None = None,
+        run_name: str | None = None,
+        tags: dict[str, str] | None = None,
     ) -> str:
         """Start a new experiment run."""
         client = await self._ensure_client()
@@ -310,7 +322,9 @@ class MLflowExperiment(BaseExperimentAdapter):
         )
         return run.info.run_id
 
-    async def end_run(self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED) -> None:
+    async def end_run(
+        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+    ) -> None:
         """End an experiment run."""
         client = await self._ensure_client()
 
@@ -323,7 +337,7 @@ class MLflowExperiment(BaseExperimentAdapter):
 
         await self._run_sync(client.set_terminated, run_id, status=mlflow_status)
 
-    async def get_run(self, run_id: str) -> Dict[str, Any]:
+    async def get_run(self, run_id: str) -> dict[str, Any]:
         """Get run information."""
         client = await self._ensure_client()
         run = await self._run_sync(client.get_run, run_id)
@@ -333,7 +347,9 @@ class MLflowExperiment(BaseExperimentAdapter):
             "experiment_id": run.info.experiment_id,
             "status": run.info.status,
             "start_time": datetime.fromtimestamp(run.info.start_time / 1000),
-            "end_time": datetime.fromtimestamp(run.info.end_time / 1000) if run.info.end_time else None,
+            "end_time": datetime.fromtimestamp(run.info.end_time / 1000)
+            if run.info.end_time
+            else None,
             "params": dict(run.data.params),
             "metrics": dict(run.data.metrics),
             "tags": dict(run.data.tags),
@@ -346,7 +362,7 @@ class MLflowExperiment(BaseExperimentAdapter):
         client = await self._ensure_client()
         await self._run_sync(client.log_param, run_id, key, str(value))
 
-    async def log_params(self, run_id: str, params: Dict[str, Any]) -> None:
+    async def log_params(self, run_id: str, params: dict[str, Any]) -> None:
         """Log multiple parameters."""
         client = await self._ensure_client()
         params_str = {k: str(v) for k, v in params.items()}
@@ -356,9 +372,9 @@ class MLflowExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         key: str,
-        value: Union[float, int],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        value: float | int,
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log a metric."""
         client = await self._ensure_client()
@@ -379,9 +395,9 @@ class MLflowExperiment(BaseExperimentAdapter):
     async def log_metrics(
         self,
         run_id: str,
-        metrics: Dict[str, Union[float, int]],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        metrics: dict[str, float | int],
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log multiple metrics."""
         client = await self._ensure_client()
@@ -391,8 +407,7 @@ class MLflowExperiment(BaseExperimentAdapter):
             timestamp_ms = int(timestamp.timestamp() * 1000)
 
         metrics_list = [
-            (key, float(value), timestamp_ms, step)
-            for key, value in metrics.items()
+            (key, float(value), timestamp_ms, step) for key, value in metrics.items()
         ]
         await self._run_sync(client.log_batch, run_id, metrics=metrics_list)
 
@@ -400,8 +415,8 @@ class MLflowExperiment(BaseExperimentAdapter):
     async def log_artifact(
         self,
         run_id: str,
-        local_path: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_path: str | Path,
+        artifact_path: str | None = None,
         artifact_type: ArtifactType = ArtifactType.OTHER,
     ) -> None:
         """Log an artifact."""
@@ -416,8 +431,8 @@ class MLflowExperiment(BaseExperimentAdapter):
     async def log_artifacts(
         self,
         run_id: str,
-        local_dir: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_dir: str | Path,
+        artifact_path: str | None = None,
     ) -> None:
         """Log multiple artifacts from directory."""
         client = await self._ensure_client()
@@ -432,7 +447,7 @@ class MLflowExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         artifact_path: str,
-        local_path: Union[str, Path],
+        local_path: str | Path,
     ) -> None:
         """Download an artifact."""
         client = await self._ensure_client()
@@ -443,7 +458,9 @@ class MLflowExperiment(BaseExperimentAdapter):
             str(local_path),
         )
 
-    async def list_artifacts(self, run_id: str, path: Optional[str] = None) -> List[ArtifactInfo]:
+    async def list_artifacts(
+        self, run_id: str, path: str | None = None
+    ) -> list[ArtifactInfo]:
         """List artifacts for a run."""
         client = await self._ensure_client()
         artifacts = await self._run_sync(client.list_artifacts, run_id, path)
@@ -453,7 +470,9 @@ class MLflowExperiment(BaseExperimentAdapter):
                 name=artifact.path.split("/")[-1],
                 path=artifact.path,
                 artifact_type=ArtifactType.OTHER,
-                size_bytes=artifact.file_size if hasattr(artifact, 'file_size') else None,
+                size_bytes=artifact.file_size
+                if hasattr(artifact, "file_size")
+                else None,
             )
             for artifact in artifacts
         ]
@@ -461,12 +480,12 @@ class MLflowExperiment(BaseExperimentAdapter):
     # Search and Query
     async def search_runs(
         self,
-        experiment_ids: Optional[List[str]] = None,
-        filter_string: Optional[str] = None,
-        order_by: Optional[List[str]] = None,
+        experiment_ids: list[str] | None = None,
+        filter_string: str | None = None,
+        order_by: list[str] | None = None,
         max_results: int = 1000,
-        page_token: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        page_token: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Search experiment runs."""
         client = await self._ensure_client()
 
@@ -485,7 +504,9 @@ class MLflowExperiment(BaseExperimentAdapter):
                 "experiment_id": run.info.experiment_id,
                 "status": run.info.status,
                 "start_time": datetime.fromtimestamp(run.info.start_time / 1000),
-                "end_time": datetime.fromtimestamp(run.info.end_time / 1000) if run.info.end_time else None,
+                "end_time": datetime.fromtimestamp(run.info.end_time / 1000)
+                if run.info.end_time
+                else None,
                 "params": dict(run.data.params),
                 "metrics": dict(run.data.metrics),
                 "tags": dict(run.data.tags),

@@ -8,17 +8,17 @@ experiment management with TensorBoard SummaryWriter support.
 from __future__ import annotations
 
 import asyncio
-import json
-import os
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
-import aiohttp
 from pydantic import Field
-
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus, generate_adapter_id
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
 from acb.adapters.experiment._base import (
     ArtifactInfo,
     ArtifactType,
@@ -26,14 +26,12 @@ from acb.adapters.experiment._base import (
     ExperimentInfo,
     ExperimentSettings,
     ExperimentStatus,
-    MetricEntry,
-    MetricType,
 )
 
 try:
-    from torch.utils.tensorboard import SummaryWriter
-    import torch
     import numpy as np
+    import torch
+    from torch.utils.tensorboard import SummaryWriter
 
     _tensorboard_available = True
 except ImportError:
@@ -69,7 +67,7 @@ class TensorBoardExperimentSettings(ExperimentSettings):
         default="./runs",
         description="TensorBoard log directory",
     )
-    purge_step: Optional[int] = Field(
+    purge_step: int | None = Field(
         default=None,
         description="Purge events older than this step",
     )
@@ -104,7 +102,7 @@ class TensorBoardExperimentSettings(ExperimentSettings):
 class TensorBoardExperiment(BaseExperimentAdapter):
     """TensorBoard experiment tracking adapter."""
 
-    def __init__(self, settings: Optional[TensorBoardExperimentSettings] = None) -> None:
+    def __init__(self, settings: TensorBoardExperimentSettings | None = None) -> None:
         """Initialize TensorBoard experiment adapter.
 
         Args:
@@ -117,10 +115,12 @@ class TensorBoardExperiment(BaseExperimentAdapter):
             )
 
         super().__init__(settings)
-        self._settings: TensorBoardExperimentSettings = settings or TensorBoardExperimentSettings()
-        self._writers: Dict[str, SummaryWriter] = {}
-        self._experiments: Dict[str, ExperimentInfo] = {}
-        self._runs: Dict[str, Dict[str, Any]] = {}
+        self._settings: TensorBoardExperimentSettings = (
+            settings or TensorBoardExperimentSettings()
+        )
+        self._writers: dict[str, SummaryWriter] = {}
+        self._experiments: dict[str, ExperimentInfo] = {}
+        self._runs: dict[str, dict[str, Any]] = {}
 
     async def connect(self) -> None:
         """Connect to TensorBoard (initialize log directory)."""
@@ -151,8 +151,8 @@ class TensorBoardExperiment(BaseExperimentAdapter):
     async def create_experiment(
         self,
         name: str,
-        tags: Optional[Dict[str, str]] = None,
-        description: Optional[str] = None,
+        tags: dict[str, str] | None = None,
+        description: str | None = None,
     ) -> str:
         """Create a new experiment (subdirectory in TensorBoard)."""
         experiment_id = name
@@ -192,7 +192,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         self,
         max_results: int = 100,
         view_type: str = "ACTIVE_ONLY",
-    ) -> List[ExperimentInfo]:
+    ) -> list[ExperimentInfo]:
         """List experiments (subdirectories in log directory)."""
         log_dir = Path(self._settings.log_dir)
         if not log_dir.exists():
@@ -222,6 +222,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         experiment_dir = Path(self._settings.log_dir) / experiment_id
         if experiment_dir.exists():
             import shutil
+
             await self._run_sync(shutil.rmtree, str(experiment_dir))
 
         if experiment_id in self._experiments:
@@ -229,7 +230,8 @@ class TensorBoardExperiment(BaseExperimentAdapter):
 
         # Close associated writers
         writers_to_close = [
-            run_id for run_id, writer in self._writers.items()
+            run_id
+            for run_id, writer in self._writers.items()
             if run_id.startswith(f"{experiment_id}_")
         ]
         for run_id in writers_to_close:
@@ -239,21 +241,27 @@ class TensorBoardExperiment(BaseExperimentAdapter):
     # Run Management
     async def start_run(
         self,
-        experiment_id: Optional[str] = None,
-        run_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        experiment_id: str | None = None,
+        run_name: str | None = None,
+        tags: dict[str, str] | None = None,
     ) -> str:
         """Start a new experiment run."""
         # Use current experiment or default
         if experiment_id is None:
-            experiment_id = self._current_experiment_id or self._settings.default_experiment_name
+            experiment_id = (
+                self._current_experiment_id or self._settings.default_experiment_name
+            )
 
         # Generate run ID
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         run_id = f"{experiment_id}_{run_name or 'run'}_{timestamp}"
 
         # Create log directory for this run
-        run_dir = Path(self._settings.log_dir) / experiment_id / (run_name or f"run_{timestamp}")
+        run_dir = (
+            Path(self._settings.log_dir)
+            / experiment_id
+            / (run_name or f"run_{timestamp}")
+        )
         run_dir.mkdir(parents=True, exist_ok=True)
 
         # Create TensorBoard writer
@@ -282,7 +290,9 @@ class TensorBoardExperiment(BaseExperimentAdapter):
 
         return run_id
 
-    async def end_run(self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED) -> None:
+    async def end_run(
+        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+    ) -> None:
         """End an experiment run."""
         if run_id in self._writers:
             await self._run_sync(self._writers[run_id].close)
@@ -292,7 +302,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
             self._runs[run_id]["status"] = status.value.upper()
             self._runs[run_id]["end_time"] = datetime.now()
 
-    async def get_run(self, run_id: str) -> Dict[str, Any]:
+    async def get_run(self, run_id: str) -> dict[str, Any]:
         """Get run information."""
         if run_id not in self._runs:
             raise ValueError(f"Run {run_id} not found")
@@ -315,7 +325,7 @@ class TensorBoardExperiment(BaseExperimentAdapter):
                 0,
             )
 
-    async def log_params(self, run_id: str, params: Dict[str, Any]) -> None:
+    async def log_params(self, run_id: str, params: dict[str, Any]) -> None:
         """Log multiple parameters."""
         for key, value in params.items():
             await self.log_param(run_id, key, value)
@@ -324,9 +334,9 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         self,
         run_id: str,
         key: str,
-        value: Union[float, int],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        value: float | int,
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log a metric."""
         if run_id not in self._writers:
@@ -349,9 +359,9 @@ class TensorBoardExperiment(BaseExperimentAdapter):
     async def log_metrics(
         self,
         run_id: str,
-        metrics: Dict[str, Union[float, int]],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        metrics: dict[str, float | int],
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log multiple metrics."""
         if run_id not in self._writers:
@@ -377,8 +387,8 @@ class TensorBoardExperiment(BaseExperimentAdapter):
     async def log_artifact(
         self,
         run_id: str,
-        local_path: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_path: str | Path,
+        artifact_path: str | None = None,
         artifact_type: ArtifactType = ArtifactType.OTHER,
     ) -> None:
         """Log an artifact (copy to log directory)."""
@@ -396,13 +406,14 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         dest_path = artifacts_dir / dest_name
 
         import shutil
+
         await self._run_sync(shutil.copy2, str(local_file), str(dest_path))
 
     async def log_artifacts(
         self,
         run_id: str,
-        local_dir: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_dir: str | Path,
+        artifact_path: str | None = None,
     ) -> None:
         """Log multiple artifacts from directory."""
         if run_id not in self._runs:
@@ -422,13 +433,14 @@ class TensorBoardExperiment(BaseExperimentAdapter):
                 dest_path.parent.mkdir(parents=True, exist_ok=True)
 
                 import shutil
+
                 await self._run_sync(shutil.copy2, str(file_path), str(dest_path))
 
     async def download_artifact(
         self,
         run_id: str,
         artifact_path: str,
-        local_path: Union[str, Path],
+        local_path: str | Path,
     ) -> None:
         """Download an artifact."""
         if run_id not in self._runs:
@@ -440,9 +452,12 @@ class TensorBoardExperiment(BaseExperimentAdapter):
 
         if artifact_file.exists():
             import shutil
+
             await self._run_sync(shutil.copy2, str(artifact_file), str(local_path))
 
-    async def list_artifacts(self, run_id: str, path: Optional[str] = None) -> List[ArtifactInfo]:
+    async def list_artifacts(
+        self, run_id: str, path: str | None = None
+    ) -> list[ArtifactInfo]:
         """List artifacts for a run."""
         if run_id not in self._runs:
             return []
@@ -475,12 +490,12 @@ class TensorBoardExperiment(BaseExperimentAdapter):
     # Search and Query
     async def search_runs(
         self,
-        experiment_ids: Optional[List[str]] = None,
-        filter_string: Optional[str] = None,
-        order_by: Optional[List[str]] = None,
+        experiment_ids: list[str] | None = None,
+        filter_string: str | None = None,
+        order_by: list[str] | None = None,
         max_results: int = 1000,
-        page_token: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        page_token: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Search experiment runs."""
         # Filter runs by experiment IDs if provided
         runs = []
@@ -493,7 +508,8 @@ class TensorBoardExperiment(BaseExperimentAdapter):
         # Simple filtering by run name if filter_string provided
         if filter_string:
             runs = [
-                run for run in runs
+                run
+                for run in runs
                 if filter_string.lower() in (run.get("run_name", "") or "").lower()
             ]
 

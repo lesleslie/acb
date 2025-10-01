@@ -7,18 +7,18 @@ lifecycle across different platforms like MLflow, W&B, and TensorBoard.
 
 from __future__ import annotations
 
-import json
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExperimentStatus(str, Enum):
     """Experiment status enum."""
+
     RUNNING = "running"
     FINISHED = "finished"
     FAILED = "failed"
@@ -27,6 +27,7 @@ class ExperimentStatus(str, Enum):
 
 class MetricType(str, Enum):
     """Metric type enum."""
+
     SCALAR = "scalar"
     HISTOGRAM = "histogram"
     IMAGE = "image"
@@ -35,6 +36,7 @@ class MetricType(str, Enum):
 
 class ArtifactType(str, Enum):
     """Artifact type enum."""
+
     MODEL = "model"
     DATASET = "dataset"
     IMAGE = "image"
@@ -45,54 +47,58 @@ class ArtifactType(str, Enum):
 
 class ExperimentInfo(BaseModel):
     """Experiment information model."""
+
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
     experiment_id: str
     experiment_name: str
     status: ExperimentStatus
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    tags: Dict[str, str] = Field(default_factory=dict)
-    parameters: Dict[str, Any] = Field(default_factory=dict)
-    metrics: Dict[str, float] = Field(default_factory=dict)
-    artifacts: List[str] = Field(default_factory=list)
+    updated_at: datetime | None = None
+    tags: dict[str, str] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    metrics: dict[str, float] = Field(default_factory=dict)
+    artifacts: list[str] = Field(default_factory=list)
 
 
 class MetricEntry(BaseModel):
     """Metric entry model."""
+
     model_config = ConfigDict(extra="allow")
 
     name: str
-    value: Union[float, int, str]
-    step: Optional[int] = None
-    timestamp: Optional[datetime] = None
+    value: float | int | str
+    step: int | None = None
+    timestamp: datetime | None = None
     metric_type: MetricType = MetricType.SCALAR
 
 
 class ArtifactInfo(BaseModel):
     """Artifact information model."""
+
     model_config = ConfigDict(extra="allow")
 
     name: str
     path: str
     artifact_type: ArtifactType
-    size_bytes: Optional[int] = None
-    created_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    size_bytes: int | None = None
+    created_at: datetime | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ExperimentSettings(BaseModel):
     """Base experiment tracking adapter settings."""
+
     model_config = ConfigDict(extra="allow")
 
     # Connection settings
-    tracking_uri: Optional[str] = None
-    registry_uri: Optional[str] = None
+    tracking_uri: str | None = None
+    registry_uri: str | None = None
 
     # Authentication
-    username: Optional[str] = None
-    password: Optional[str] = None
-    token: Optional[str] = None
+    username: str | None = None
+    password: str | None = None
+    token: str | None = None
 
     # Default experiment settings
     default_experiment_name: str = "default"
@@ -113,7 +119,7 @@ class ExperimentSettings(BaseModel):
 class BaseExperimentAdapter(ABC):
     """Base class for experiment tracking adapters."""
 
-    def __init__(self, settings: Optional[ExperimentSettings] = None) -> None:
+    def __init__(self, settings: ExperimentSettings | None = None) -> None:
         """Initialize the experiment adapter.
 
         Args:
@@ -121,7 +127,7 @@ class BaseExperimentAdapter(ABC):
         """
         self._settings = settings or ExperimentSettings()
         self._client = None
-        self._current_experiment_id: Optional[str] = None
+        self._current_experiment_id: str | None = None
 
     @property
     def settings(self) -> ExperimentSettings:
@@ -158,8 +164,8 @@ class BaseExperimentAdapter(ABC):
     async def create_experiment(
         self,
         name: str,
-        tags: Optional[Dict[str, str]] = None,
-        description: Optional[str] = None,
+        tags: dict[str, str] | None = None,
+        description: str | None = None,
     ) -> str:
         """Create a new experiment.
 
@@ -190,7 +196,7 @@ class BaseExperimentAdapter(ABC):
         self,
         max_results: int = 100,
         view_type: str = "ACTIVE_ONLY",
-    ) -> List[ExperimentInfo]:
+    ) -> list[ExperimentInfo]:
         """List experiments.
 
         Args:
@@ -215,9 +221,9 @@ class BaseExperimentAdapter(ABC):
     @abstractmethod
     async def start_run(
         self,
-        experiment_id: Optional[str] = None,
-        run_name: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        experiment_id: str | None = None,
+        run_name: str | None = None,
+        tags: dict[str, str] | None = None,
     ) -> str:
         """Start a new experiment run.
 
@@ -232,7 +238,9 @@ class BaseExperimentAdapter(ABC):
         pass
 
     @abstractmethod
-    async def end_run(self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED) -> None:
+    async def end_run(
+        self, run_id: str, status: ExperimentStatus = ExperimentStatus.FINISHED
+    ) -> None:
         """End an experiment run.
 
         Args:
@@ -242,7 +250,7 @@ class BaseExperimentAdapter(ABC):
         pass
 
     @abstractmethod
-    async def get_run(self, run_id: str) -> Dict[str, Any]:
+    async def get_run(self, run_id: str) -> dict[str, Any]:
         """Get run information.
 
         Args:
@@ -266,7 +274,7 @@ class BaseExperimentAdapter(ABC):
         pass
 
     @abstractmethod
-    async def log_params(self, run_id: str, params: Dict[str, Any]) -> None:
+    async def log_params(self, run_id: str, params: dict[str, Any]) -> None:
         """Log multiple parameters.
 
         Args:
@@ -280,9 +288,9 @@ class BaseExperimentAdapter(ABC):
         self,
         run_id: str,
         key: str,
-        value: Union[float, int],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        value: float | int,
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log a metric.
 
@@ -299,9 +307,9 @@ class BaseExperimentAdapter(ABC):
     async def log_metrics(
         self,
         run_id: str,
-        metrics: Dict[str, Union[float, int]],
-        step: Optional[int] = None,
-        timestamp: Optional[datetime] = None,
+        metrics: dict[str, float | int],
+        step: int | None = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """Log multiple metrics.
 
@@ -318,8 +326,8 @@ class BaseExperimentAdapter(ABC):
     async def log_artifact(
         self,
         run_id: str,
-        local_path: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_path: str | Path,
+        artifact_path: str | None = None,
         artifact_type: ArtifactType = ArtifactType.OTHER,
     ) -> None:
         """Log an artifact.
@@ -336,8 +344,8 @@ class BaseExperimentAdapter(ABC):
     async def log_artifacts(
         self,
         run_id: str,
-        local_dir: Union[str, Path],
-        artifact_path: Optional[str] = None,
+        local_dir: str | Path,
+        artifact_path: str | None = None,
     ) -> None:
         """Log multiple artifacts from directory.
 
@@ -353,7 +361,7 @@ class BaseExperimentAdapter(ABC):
         self,
         run_id: str,
         artifact_path: str,
-        local_path: Union[str, Path],
+        local_path: str | Path,
     ) -> None:
         """Download an artifact.
 
@@ -365,7 +373,9 @@ class BaseExperimentAdapter(ABC):
         pass
 
     @abstractmethod
-    async def list_artifacts(self, run_id: str, path: Optional[str] = None) -> List[ArtifactInfo]:
+    async def list_artifacts(
+        self, run_id: str, path: str | None = None
+    ) -> list[ArtifactInfo]:
         """List artifacts for a run.
 
         Args:
@@ -381,12 +391,12 @@ class BaseExperimentAdapter(ABC):
     @abstractmethod
     async def search_runs(
         self,
-        experiment_ids: Optional[List[str]] = None,
-        filter_string: Optional[str] = None,
-        order_by: Optional[List[str]] = None,
+        experiment_ids: list[str] | None = None,
+        filter_string: str | None = None,
+        order_by: list[str] | None = None,
         max_results: int = 1000,
-        page_token: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        page_token: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Search experiment runs.
 
         Args:

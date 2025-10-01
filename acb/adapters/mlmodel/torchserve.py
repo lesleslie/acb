@@ -7,15 +7,18 @@ monitoring capabilities.
 
 from __future__ import annotations
 
-import json
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import aiohttp
 import pandas as pd
 from pydantic import Field
-
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus, generate_adapter_id
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
 from acb.adapters.mlmodel._base import (
     BaseMLModelAdapter,
     BatchPredictionRequest,
@@ -35,15 +38,15 @@ class TorchServeSettings(MLModelSettings):
     inference_port: int = Field(default=8080, description="Inference API port")
     management_port: int = Field(default=8081, description="Management API port")
     metrics_port: int = Field(default=8082, description="Metrics API port")
-    
+
     # Model settings
-    model_store: Optional[str] = Field(
+    model_store: str | None = Field(
         default=None, description="Path to model store directory"
     )
-    workflow_store: Optional[str] = Field(
+    workflow_store: str | None = Field(
         default=None, description="Path to workflow store directory"
     )
-    
+
     # Performance settings
     initial_workers: int = Field(
         default=1, description="Initial number of workers per model"
@@ -51,106 +54,100 @@ class TorchServeSettings(MLModelSettings):
     max_workers: int = Field(
         default=4, description="Maximum number of workers per model"
     )
-    batch_size: int = Field(
-        default=1, description="Default batch size for models"
-    )
+    batch_size: int = Field(default=1, description="Default batch size for models")
     max_batch_delay: int = Field(
         default=100, description="Maximum batch delay in milliseconds"
     )
     response_timeout: int = Field(
         default=120, description="Response timeout in seconds"
     )
-    
+
     # Auto-scaling settings
     enable_auto_scaling: bool = Field(
         default=False, description="Enable automatic scaling"
     )
-    min_workers: int = Field(
-        default=1, description="Minimum workers for auto-scaling"
-    )
+    min_workers: int = Field(default=1, description="Minimum workers for auto-scaling")
     scale_up_threshold: float = Field(
         default=0.8, description="CPU threshold to scale up (0.0-1.0)"
     )
     scale_down_threshold: float = Field(
         default=0.3, description="CPU threshold to scale down (0.0-1.0)"
     )
-    
+
     # Advanced settings
     enable_model_api: bool = Field(
         default=True, description="Enable model management API"
     )
-    enable_workflow_api: bool = Field(
-        default=False, description="Enable workflow API"
-    )
-    log_location: Optional[str] = Field(
-        default=None, description="Custom log location"
-    )
+    enable_workflow_api: bool = Field(default=False, description="Enable workflow API")
+    log_location: str | None = Field(default=None, description="Custom log location")
 
 
 class TorchServeAdapter(BaseMLModelAdapter):
     """TorchServe adapter for PyTorch model serving.
-    
+
     This adapter provides comprehensive integration with TorchServe including
     model management, auto-scaling, health monitoring, and performance optimization
     for production PyTorch model deployment.
     """
 
-    def __init__(self, settings: Optional[TorchServeSettings] = None) -> None:
+    def __init__(self, settings: TorchServeSettings | None = None) -> None:
         """Initialize TorchServe adapter.
-        
+
         Args:
             settings: TorchServe specific settings
         """
         self._ts_settings = settings or TorchServeSettings()
         super().__init__(self._ts_settings)
-        self._inference_session: Optional[aiohttp.ClientSession] = None
-        self._management_session: Optional[aiohttp.ClientSession] = None
-        self._metrics_session: Optional[aiohttp.ClientSession] = None
+        self._inference_session: aiohttp.ClientSession | None = None
+        self._management_session: aiohttp.ClientSession | None = None
+        self._metrics_session: aiohttp.ClientSession | None = None
 
     @property
     def ts_settings(self) -> TorchServeSettings:
         """Get TorchServe specific settings."""
         return self._ts_settings
 
-    async def _create_client(self) -> Dict[str, aiohttp.ClientSession]:
+    async def _create_client(self) -> dict[str, aiohttp.ClientSession]:
         """Create TorchServe HTTP clients."""
         connector = aiohttp.TCPConnector(limit=self.ts_settings.connection_pool_size)
         timeout = aiohttp.ClientTimeout(total=self.ts_settings.timeout)
         headers = {"Content-Type": "application/json"}
         headers.update(self.ts_settings.custom_headers)
-        
+
         # Inference API client
         self._inference_session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
             headers=headers,
         )
-        
+
         # Management API client
         self._management_session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
             headers=headers,
         )
-        
+
         # Metrics API client
         self._metrics_session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
             headers=headers,
         )
-        
+
         return {
             "inference": self._inference_session,
             "management": self._management_session,
             "metrics": self._metrics_session,
         }
 
-    def _get_inference_url(self, model_name: str, version: Optional[str] = None) -> str:
+    def _get_inference_url(self, model_name: str, version: str | None = None) -> str:
         """Get inference API URL for model."""
         protocol = "https" if self.ts_settings.use_tls else "http"
-        base_url = f"{protocol}://{self.ts_settings.host}:{self.ts_settings.inference_port}"
-        
+        base_url = (
+            f"{protocol}://{self.ts_settings.host}:{self.ts_settings.inference_port}"
+        )
+
         if version:
             return f"{base_url}/predictions/{model_name}/{version}"
         else:
@@ -159,25 +156,29 @@ class TorchServeAdapter(BaseMLModelAdapter):
     def _get_management_url(self, endpoint: str = "") -> str:
         """Get management API URL."""
         protocol = "https" if self.ts_settings.use_tls else "http"
-        base_url = f"{protocol}://{self.ts_settings.host}:{self.ts_settings.management_port}"
+        base_url = (
+            f"{protocol}://{self.ts_settings.host}:{self.ts_settings.management_port}"
+        )
         return f"{base_url}{endpoint}"
 
     def _get_metrics_url(self, endpoint: str = "") -> str:
         """Get metrics API URL."""
         protocol = "https" if self.ts_settings.use_tls else "http"
-        base_url = f"{protocol}://{self.ts_settings.host}:{self.ts_settings.metrics_port}"
+        base_url = (
+            f"{protocol}://{self.ts_settings.host}:{self.ts_settings.metrics_port}"
+        )
         return f"{base_url}{endpoint}"
 
     async def predict(self, request: ModelPredictionRequest) -> ModelPredictionResponse:
         """Perform real-time inference using TorchServe."""
         start_time = time.time()
-        
+
         try:
             client = await self._ensure_client()
             inference_session = client["inference"]
-            
+
             url = self._get_inference_url(request.model_name, request.model_version)
-            
+
             # Prepare data based on input format
             if isinstance(request.inputs, dict):
                 # JSON input
@@ -185,37 +186,41 @@ class TorchServeAdapter(BaseMLModelAdapter):
                     if response.status != 200:
                         error_text = await response.text()
                         raise RuntimeError(f"TorchServe prediction error: {error_text}")
-                    
+
                     predictions = await response.json()
             else:
                 # File/binary input
                 data = aiohttp.FormData()
                 for key, value in request.inputs.items():
                     data.add_field(key, value)
-                
+
                 async with inference_session.post(url, data=data) as response:
                     if response.status != 200:
                         error_text = await response.text()
                         raise RuntimeError(f"TorchServe prediction error: {error_text}")
-                    
+
                     predictions = await response.json()
-            
+
             latency_ms = (time.time() - start_time) * 1000
-            
+
             # Update metrics
-            self._metrics["predictions_total"] = self._metrics.get("predictions_total", 0) + 1
+            self._metrics["predictions_total"] = (
+                self._metrics.get("predictions_total", 0) + 1
+            )
             self._metrics["avg_latency_ms"] = (
                 self._metrics.get("avg_latency_ms", 0) * 0.9 + latency_ms * 0.1
             )
-            
+
             return ModelPredictionResponse(
-                predictions=predictions if isinstance(predictions, dict) else {"output": predictions},
+                predictions=predictions
+                if isinstance(predictions, dict)
+                else {"output": predictions},
                 model_name=request.model_name,
                 model_version=request.model_version or "1.0",
                 latency_ms=latency_ms,
                 metadata=request.metadata,
             )
-            
+
         except Exception as e:
             self._metrics["errors_total"] = self._metrics.get("errors_total", 0) + 1
             raise RuntimeError(f"TorchServe prediction failed: {e}")
@@ -225,12 +230,12 @@ class TorchServeAdapter(BaseMLModelAdapter):
     ) -> BatchPredictionResponse:
         """Perform batch inference using TorchServe."""
         start_time = time.time()
-        
+
         try:
             # TorchServe handles batching internally, so we send individual requests
             # but can optimize by configuring batch_size and max_batch_delay
             all_predictions = []
-            
+
             for input_data in request.inputs:
                 pred_request = ModelPredictionRequest(
                     inputs=input_data,
@@ -239,13 +244,13 @@ class TorchServeAdapter(BaseMLModelAdapter):
                     timeout=request.timeout,
                     metadata=request.metadata,
                 )
-                
+
                 pred_response = await self.predict(pred_request)
                 all_predictions.append(pred_response.predictions)
-            
+
             total_latency_ms = (time.time() - start_time) * 1000
             avg_latency_ms = total_latency_ms / len(request.inputs)
-            
+
             return BatchPredictionResponse(
                 predictions=all_predictions,
                 model_name=request.model_name,
@@ -255,43 +260,47 @@ class TorchServeAdapter(BaseMLModelAdapter):
                 avg_latency_ms=avg_latency_ms,
                 metadata=request.metadata,
             )
-            
+
         except Exception as e:
-            self._metrics["batch_errors_total"] = self._metrics.get("batch_errors_total", 0) + 1
+            self._metrics["batch_errors_total"] = (
+                self._metrics.get("batch_errors_total", 0) + 1
+            )
             raise RuntimeError(f"TorchServe batch prediction failed: {e}")
 
-    async def list_models(self) -> List[ModelInfo]:
+    async def list_models(self) -> list[ModelInfo]:
         """List available models from TorchServe."""
         try:
             client = await self._ensure_client()
             management_session = client["management"]
-            
+
             url = self._get_management_url("/models")
-            
+
             async with management_session.get(url) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     raise RuntimeError(f"Failed to list models: {error_text}")
-                
+
                 result = await response.json()
                 models = []
-                
+
                 for model_data in result.get("models", []):
                     model_name = model_data.get("modelName", "")
                     model_url = model_data.get("modelUrl", "")
-                    
+
                     # Get detailed model info
                     detail_url = self._get_management_url(f"/models/{model_name}")
                     async with management_session.get(detail_url) as detail_response:
                         if detail_response.status == 200:
                             detail_result = await detail_response.json()
-                            
+
                             for worker_info in detail_result:
                                 models.append(
                                     ModelInfo(
                                         name=model_name,
                                         version=worker_info.get("modelVersion", "1.0"),
-                                        status=worker_info.get("status", "unknown").lower(),
+                                        status=worker_info.get(
+                                            "status", "unknown"
+                                        ).lower(),
                                         framework="pytorch",
                                         description=f"TorchServe model from {model_url}",
                                         metadata={
@@ -299,40 +308,44 @@ class TorchServeAdapter(BaseMLModelAdapter):
                                             "model_url": model_url,
                                             "worker_id": worker_info.get("workerId"),
                                             "gpu": worker_info.get("gpu"),
-                                            "memory_usage": worker_info.get("memoryUsage"),
+                                            "memory_usage": worker_info.get(
+                                                "memoryUsage"
+                                            ),
                                         },
                                     )
                                 )
-                
+
                 return models
-                
+
         except Exception as e:
             raise RuntimeError(f"Failed to list TorchServe models: {e}")
 
-    async def get_model_info(self, model_name: str, version: Optional[str] = None) -> ModelInfo:
+    async def get_model_info(
+        self, model_name: str, version: str | None = None
+    ) -> ModelInfo:
         """Get detailed information about a specific model."""
         try:
             client = await self._ensure_client()
             management_session = client["management"]
-            
+
             url = self._get_management_url(f"/models/{model_name}")
-            
+
             async with management_session.get(url) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     raise RuntimeError(f"Model not found: {error_text}")
-                
+
                 result = await response.json()
-                
+
                 if result:
                     worker_info = result[0]  # Get first worker info
-                    
+
                     return ModelInfo(
                         name=model_name,
                         version=worker_info.get("modelVersion", version or "1.0"),
                         status=worker_info.get("status", "unknown").lower(),
                         framework="pytorch",
-                        description=f"TorchServe PyTorch model",
+                        description="TorchServe PyTorch model",
                         metadata={
                             "platform": "torchserve",
                             "worker_id": worker_info.get("workerId"),
@@ -342,22 +355,24 @@ class TorchServeAdapter(BaseMLModelAdapter):
                         },
                     )
                 else:
-                    raise RuntimeError(f"No worker information found for model {model_name}")
-                
+                    raise RuntimeError(
+                        f"No worker information found for model {model_name}"
+                    )
+
         except Exception as e:
             raise RuntimeError(f"Failed to get TorchServe model info: {e}")
 
     async def get_model_health(
-        self, model_name: str, version: Optional[str] = None
+        self, model_name: str, version: str | None = None
     ) -> ModelHealth:
         """Get health status of a specific model."""
         try:
             # Get model metrics
             client = await self._ensure_client()
             metrics_session = client["metrics"]
-            
+
             metrics_url = self._get_metrics_url("/metrics")
-            
+
             async with metrics_session.get(metrics_url) as response:
                 if response.status != 200:
                     return ModelHealth(
@@ -366,26 +381,30 @@ class TorchServeAdapter(BaseMLModelAdapter):
                         status="unhealthy",
                         last_check=pd.Timestamp.now().isoformat(),
                     )
-                
+
                 metrics_text = await response.text()
-                
+
                 # Parse Prometheus metrics for model-specific data
                 latency_p95 = None
                 error_rate = 0.0
                 throughput_qps = None
-                
-                for line in metrics_text.split('\n'):
+
+                for line in metrics_text.split("\n"):
                     if f'model_name="{model_name}"' in line:
-                        if 'inference_latency' in line and 'quantile="0.95"' in line:
-                            latency_p95 = float(line.split()[-1]) * 1000  # Convert to ms
-                        elif 'inference_requests_total' in line:
+                        if "inference_latency" in line and 'quantile="0.95"' in line:
+                            latency_p95 = (
+                                float(line.split()[-1]) * 1000
+                            )  # Convert to ms
+                        elif "inference_requests_total" in line:
                             # Calculate throughput and error rate from request metrics
                             pass
-                
+
                 # Get model status from management API
                 model_info = await self.get_model_info(model_name, version)
-                health_status = "healthy" if model_info.status == "ready" else "unhealthy"
-                
+                health_status = (
+                    "healthy" if model_info.status == "ready" else "unhealthy"
+                )
+
                 return ModelHealth(
                     model_name=model_name,
                     model_version=version or "1.0",
@@ -401,7 +420,7 @@ class TorchServeAdapter(BaseMLModelAdapter):
                         "gpu": model_info.metadata.get("gpu"),
                     },
                 )
-                
+
         except Exception as e:
             return ModelHealth(
                 model_name=model_name,
@@ -412,122 +431,126 @@ class TorchServeAdapter(BaseMLModelAdapter):
             )
 
     async def load_model(
-        self, model_name: str, model_path: str, version: Optional[str] = None
+        self, model_name: str, model_path: str, version: str | None = None
     ) -> bool:
         """Load a model into TorchServe."""
         try:
             client = await self._ensure_client()
             management_session = client["management"]
-            
+
             url = self._get_management_url("/models")
-            
+
             params = {
                 "model_name": model_name,
                 "url": model_path,
                 "initial_workers": self.ts_settings.initial_workers,
                 "synchronous": "true",
             }
-            
+
             if version:
                 params["model_version"] = version
-                
+
             if self.ts_settings.batch_size > 1:
                 params["batch_size"] = self.ts_settings.batch_size
                 params["max_batch_delay"] = self.ts_settings.max_batch_delay
-            
+
             async with management_session.post(url, params=params) as response:
                 if response.status in (200, 201):
                     return True
                 else:
                     error_text = await response.text()
                     raise RuntimeError(f"Failed to load model: {error_text}")
-                    
+
         except Exception as e:
             raise RuntimeError(f"TorchServe model loading failed: {e}")
 
-    async def unload_model(
-        self, model_name: str, version: Optional[str] = None
-    ) -> bool:
+    async def unload_model(self, model_name: str, version: str | None = None) -> bool:
         """Unload a model from TorchServe."""
         try:
             client = await self._ensure_client()
             management_session = client["management"]
-            
+
             if version:
                 url = self._get_management_url(f"/models/{model_name}/{version}")
             else:
                 url = self._get_management_url(f"/models/{model_name}")
-            
+
             async with management_session.delete(url) as response:
                 if response.status in (200, 202):
                     return True
                 else:
                     error_text = await response.text()
                     raise RuntimeError(f"Failed to unload model: {error_text}")
-                    
+
         except Exception as e:
             raise RuntimeError(f"TorchServe model unloading failed: {e}")
 
     async def scale_model(
-        self, model_name: str, replicas: int, version: Optional[str] = None
+        self, model_name: str, replicas: int, version: str | None = None
     ) -> bool:
         """Scale model serving replicas in TorchServe."""
         try:
             client = await self._ensure_client()
             management_session = client["management"]
-            
+
             if version:
                 url = self._get_management_url(f"/models/{model_name}/{version}")
             else:
                 url = self._get_management_url(f"/models/{model_name}")
-            
+
             params = {
                 "min_worker": min(replicas, self.ts_settings.min_workers),
                 "max_worker": min(replicas, self.ts_settings.max_workers),
                 "synchronous": "true",
             }
-            
+
             async with management_session.put(url, params=params) as response:
                 if response.status == 200:
                     return True
                 else:
                     error_text = await response.text()
                     raise RuntimeError(f"Failed to scale model: {error_text}")
-                    
+
         except Exception as e:
             raise RuntimeError(f"TorchServe model scaling failed: {e}")
 
-    async def get_metrics(self) -> Dict[str, Any]:
+    async def get_metrics(self) -> dict[str, Any]:
         """Get comprehensive TorchServe metrics."""
         try:
             base_metrics = await super().get_metrics()
-            
+
             client = await self._ensure_client()
             metrics_session = client["metrics"]
-            
+
             # Get Prometheus metrics
             metrics_url = self._get_metrics_url("/metrics")
-            
+
             async with metrics_session.get(metrics_url) as response:
                 if response.status == 200:
                     metrics_text = await response.text()
-                    
+
                     # Parse key metrics
                     torchserve_metrics = {}
-                    for line in metrics_text.split('\n'):
-                        if line.startswith('# '):
+                    for line in metrics_text.split("\n"):
+                        if line.startswith("# "):
                             continue
-                        if 'inference_requests_total' in line:
-                            torchserve_metrics["total_requests"] = float(line.split()[-1])
-                        elif 'inference_latency' in line and 'quantile="0.5"' in line:
-                            torchserve_metrics["median_latency_ms"] = float(line.split()[-1]) * 1000
-                        elif 'queue_time' in line:
-                            torchserve_metrics["queue_time_ms"] = float(line.split()[-1]) * 1000
-                    
+                        if "inference_requests_total" in line:
+                            torchserve_metrics["total_requests"] = float(
+                                line.split()[-1]
+                            )
+                        elif "inference_latency" in line and 'quantile="0.5"' in line:
+                            torchserve_metrics["median_latency_ms"] = (
+                                float(line.split()[-1]) * 1000
+                            )
+                        elif "queue_time" in line:
+                            torchserve_metrics["queue_time_ms"] = (
+                                float(line.split()[-1]) * 1000
+                            )
+
                     base_metrics.update(torchserve_metrics)
-            
+
             return base_metrics
-            
+
         except Exception:
             return await super().get_metrics()
 
@@ -535,33 +558,37 @@ class TorchServeAdapter(BaseMLModelAdapter):
         """Perform TorchServe health check."""
         try:
             client = await self._ensure_client()
-            
+
             # Check inference API
             inference_session = client["inference"]
             ping_url = f"{'https' if self.ts_settings.use_tls else 'http'}://{self.ts_settings.host}:{self.ts_settings.inference_port}/ping"
-            
+
             async with inference_session.get(ping_url) as response:
                 if response.status != 200:
                     return False
-            
+
             # Check management API
             management_session = client["management"]
             models_url = self._get_management_url("/models")
-            
+
             async with management_session.get(models_url) as response:
                 return response.status == 200
-                
+
         except Exception:
             return False
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
         await super().cleanup()
-        
-        for session in [self._inference_session, self._management_session, self._metrics_session]:
+
+        for session in [
+            self._inference_session,
+            self._management_session,
+            self._metrics_session,
+        ]:
             if session:
                 await session.close()
-        
+
         self._inference_session = None
         self._management_session = None
         self._metrics_session = None

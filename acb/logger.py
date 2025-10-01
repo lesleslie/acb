@@ -85,9 +85,15 @@ except Exception:
 class InterceptHandler(logging.Handler):
     """Handler to intercept standard library logging."""
 
-    @depends.inject
-    def emit(self, record: logging.LogRecord, logger: Logger = depends()) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         """Emit log record via the configured logger adapter."""
+        # Get logger instance from dependency container
+        try:
+            logger = depends.get(Logger)
+        except Exception:
+            # Fallback to basic logging if logger not available
+            return
+
         try:
             # Try to get level from logger if it has the method
             if hasattr(logger, "level"):

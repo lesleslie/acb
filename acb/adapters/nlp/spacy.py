@@ -8,11 +8,15 @@ classification, and linguistic analysis with high performance and accuracy.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import Field
-
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus, generate_adapter_id
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
 from acb.adapters.nlp._base import (
     BaseNLPAdapter,
     ClassificationResult,
@@ -75,7 +79,7 @@ class SpacyNLPSettings(NLPSettings):
     )
 
     # Processing settings
-    disable_components: List[str] = Field(
+    disable_components: list[str] = Field(
         default_factory=list,
         description="Components to disable for performance",
     )
@@ -91,13 +95,13 @@ class SpacyNLPSettings(NLPSettings):
     )
 
     # NER settings
-    custom_ner_model: Optional[str] = Field(
+    custom_ner_model: str | None = Field(
         default=None,
         description="Path to custom NER model",
     )
 
     # Classification settings
-    classification_model: Optional[str] = Field(
+    classification_model: str | None = Field(
         default=None,
         description="Path to text classification model",
     )
@@ -106,7 +110,7 @@ class SpacyNLPSettings(NLPSettings):
 class SpacyNLP(BaseNLPAdapter):
     """spaCy NLP adapter."""
 
-    def __init__(self, settings: Optional[SpacyNLPSettings] = None) -> None:
+    def __init__(self, settings: SpacyNLPSettings | None = None) -> None:
         """Initialize spaCy NLP adapter.
 
         Args:
@@ -165,6 +169,7 @@ class SpacyNLP(BaseNLPAdapter):
             if self._settings.sentiment_model == "textblob":
                 try:
                     from spacytextblob.spacytextblob import SpacyTextBlob
+
                     nlp.add_pipe("spacytextblob")
                 except ImportError:
                     pass
@@ -191,9 +196,9 @@ class SpacyNLP(BaseNLPAdapter):
     async def analyze_text(
         self,
         text: str,
-        tasks: Optional[List[TaskType]] = None,
-        language: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        tasks: list[TaskType] | None = None,
+        language: str | None = None,
+    ) -> dict[str, Any]:
         """Perform comprehensive text analysis."""
         nlp = await self._ensure_nlp()
         doc = await self._run_sync(nlp, text)
@@ -225,7 +230,7 @@ class SpacyNLP(BaseNLPAdapter):
     async def analyze_sentiment(
         self,
         text: str,
-        language: Optional[str] = None,
+        language: str | None = None,
     ) -> SentimentResult:
         """Analyze sentiment using spaCy."""
         nlp = await self._ensure_nlp()
@@ -254,10 +259,31 @@ class SpacyNLP(BaseNLPAdapter):
 
         else:
             # Fallback to simple rule-based sentiment
-            positive_words = {"good", "great", "excellent", "amazing", "wonderful", "fantastic", "love", "like"}
-            negative_words = {"bad", "terrible", "awful", "hate", "horrible", "worst", "dislike"}
+            positive_words = {
+                "good",
+                "great",
+                "excellent",
+                "amazing",
+                "wonderful",
+                "fantastic",
+                "love",
+                "like",
+            }
+            negative_words = {
+                "bad",
+                "terrible",
+                "awful",
+                "hate",
+                "horrible",
+                "worst",
+                "dislike",
+            }
 
-            tokens = [token.text.lower() for token in doc if not token.is_stop and not token.is_punct]
+            tokens = [
+                token.text.lower()
+                for token in doc
+                if not token.is_stop and not token.is_punct
+            ]
             pos_count = sum(1 for token in tokens if token in positive_words)
             neg_count = sum(1 for token in tokens if token in negative_words)
 
@@ -286,9 +312,9 @@ class SpacyNLP(BaseNLPAdapter):
     async def extract_entities(
         self,
         text: str,
-        entity_types: Optional[List[EntityType]] = None,
-        language: Optional[str] = None,
-    ) -> List[NamedEntity]:
+        entity_types: list[EntityType] | None = None,
+        language: str | None = None,
+    ) -> list[NamedEntity]:
         """Extract named entities using spaCy."""
         nlp = await self._ensure_nlp()
         doc = await self._run_sync(nlp, text)
@@ -298,8 +324,8 @@ class SpacyNLP(BaseNLPAdapter):
     async def _extract_entities_from_doc(
         self,
         doc,
-        entity_types: Optional[List[EntityType]] = None,
-    ) -> List[NamedEntity]:
+        entity_types: list[EntityType] | None = None,
+    ) -> list[NamedEntity]:
         """Extract entities from spaCy doc."""
         entities = []
 
@@ -347,25 +373,32 @@ class SpacyNLP(BaseNLPAdapter):
         self,
         text: str,
         target_language: str,
-        source_language: Optional[str] = None,
+        source_language: str | None = None,
     ) -> TranslationResult:
         """Translate text (spaCy doesn't have built-in translation)."""
         # spaCy doesn't have built-in translation
         # This would need integration with external translation service
-        raise NotImplementedError("Translation not available in base spaCy. Use a specialized translation adapter.")
+        raise NotImplementedError(
+            "Translation not available in base spaCy. Use a specialized translation adapter."
+        )
 
     async def classify_text(
         self,
         text: str,
-        labels: Optional[List[str]] = None,
-        model: Optional[str] = None,
+        labels: list[str] | None = None,
+        model: str | None = None,
     ) -> ClassificationResult:
         """Classify text using spaCy."""
         nlp = await self._ensure_nlp()
 
         # Check if text classification component is available
-        if "textcat" not in nlp.pipe_names and "textcat_multilabel" not in nlp.pipe_names:
-            raise NotImplementedError("Text classification component not available in spaCy model")
+        if (
+            "textcat" not in nlp.pipe_names
+            and "textcat_multilabel" not in nlp.pipe_names
+        ):
+            raise NotImplementedError(
+                "Text classification component not available in spaCy model"
+            )
 
         doc = await self._run_sync(nlp, text)
 
@@ -421,23 +454,30 @@ class SpacyNLP(BaseNLPAdapter):
         self,
         text: str,
         max_keywords: int = 10,
-        language: Optional[str] = None,
-    ) -> List[KeywordResult]:
+        language: str | None = None,
+    ) -> list[KeywordResult]:
         """Extract keywords using spaCy."""
         nlp = await self._ensure_nlp()
         doc = await self._run_sync(nlp, text)
 
         return await self._extract_keywords_from_doc(doc, max_keywords)
 
-    async def _extract_keywords_from_doc(self, doc, max_keywords: int = 10) -> List[KeywordResult]:
+    async def _extract_keywords_from_doc(
+        self, doc, max_keywords: int = 10
+    ) -> list[KeywordResult]:
         """Extract keywords from spaCy doc."""
         # Extract important tokens (nouns, adjectives, proper nouns)
         keywords = {}
 
         for token in doc:
             # Skip stop words, punctuation, spaces
-            if (token.is_stop or token.is_punct or token.is_space or
-                len(token.text) < 3 or token.pos_ in ["DET", "PRON", "ADP", "CONJ", "PART"]):
+            if (
+                token.is_stop
+                or token.is_punct
+                or token.is_space
+                or len(token.text) < 3
+                or token.pos_ in ["DET", "PRON", "ADP", "CONJ", "PART"]
+            ):
                 continue
 
             # Focus on important parts of speech
@@ -452,7 +492,9 @@ class SpacyNLP(BaseNLPAdapter):
                     }
                 keywords[key]["count"] += 1
                 # Score based on POS and position
-                pos_weight = {"PROPN": 3, "NOUN": 2, "ADJ": 1.5, "VERB": 1}.get(token.pos_, 1)
+                pos_weight = {"PROPN": 3, "NOUN": 2, "ADJ": 1.5, "VERB": 1}.get(
+                    token.pos_, 1
+                )
                 keywords[key]["score"] += pos_weight
 
         # Sort by score and return top keywords
@@ -492,7 +534,7 @@ class SpacyNLP(BaseNLPAdapter):
             method="spacy_vectors",
         )
 
-    async def get_supported_tasks(self) -> List[TaskType]:
+    async def get_supported_tasks(self) -> list[TaskType]:
         """Get supported NLP tasks."""
         return [
             TaskType.TEXT_ANALYSIS,

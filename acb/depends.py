@@ -2,7 +2,7 @@ import typing as t
 from contextlib import suppress
 from functools import lru_cache
 
-from bevy import get_registry, get_container, injectable, auto_inject
+from bevy import auto_inject, get_container, injectable
 
 
 @t.runtime_checkable

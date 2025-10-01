@@ -8,11 +8,15 @@ named entity recognition, and question answering with state-of-the-art models.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import Field
-
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus, generate_adapter_id
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
 from acb.adapters.nlp._base import (
     BaseNLPAdapter,
     ClassificationResult,
@@ -100,7 +104,7 @@ class TransformersNLPSettings(NLPSettings):
         default=True,
         description="Use GPU if available",
     )
-    model_cache_dir: Optional[str] = Field(
+    model_cache_dir: str | None = Field(
         default=None,
         description="Model cache directory",
     )
@@ -113,7 +117,7 @@ class TransformersNLPSettings(NLPSettings):
 class TransformersNLP(BaseNLPAdapter):
     """Transformers NLP adapter."""
 
-    def __init__(self, settings: Optional[TransformersNLPSettings] = None) -> None:
+    def __init__(self, settings: TransformersNLPSettings | None = None) -> None:
         """Initialize Transformers NLP adapter.
 
         Args:
@@ -127,7 +131,7 @@ class TransformersNLP(BaseNLPAdapter):
 
         super().__init__(settings)
         self._settings: TransformersNLPSettings = settings or TransformersNLPSettings()
-        self._pipelines: Dict[str, Any] = {}
+        self._pipelines: dict[str, Any] = {}
         self._device = None
 
     async def connect(self) -> None:
@@ -143,7 +147,11 @@ class TransformersNLP(BaseNLPAdapter):
         """Setup compute device."""
         if self._settings.use_gpu and torch.cuda.is_available():
             self._device = 0  # First GPU
-        elif self._settings.use_gpu and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        elif (
+            self._settings.use_gpu
+            and hasattr(torch.backends, "mps")
+            and torch.backends.mps.is_available()
+        ):
             self._device = "mps"  # Apple Silicon
         else:
             self._device = -1  # CPU
@@ -199,10 +207,7 @@ class TransformersNLP(BaseNLPAdapter):
         try:
             # Test at least one pipeline
             if "sentiment" in self._pipelines:
-                result = await self._run_sync(
-                    self._pipelines["sentiment"],
-                    "test"
-                )
+                result = await self._run_sync(self._pipelines["sentiment"], "test")
                 return result is not None
             return len(self._pipelines) > 0
         except Exception:
@@ -212,9 +217,9 @@ class TransformersNLP(BaseNLPAdapter):
     async def analyze_text(
         self,
         text: str,
-        tasks: Optional[List[TaskType]] = None,
-        language: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        tasks: list[TaskType] | None = None,
+        language: str | None = None,
+    ) -> dict[str, Any]:
         """Perform comprehensive text analysis."""
         results = {}
 
@@ -231,8 +236,13 @@ class TransformersNLP(BaseNLPAdapter):
                 if task == TaskType.SENTIMENT_ANALYSIS:
                     results["sentiment"] = await self.analyze_sentiment(text, language)
                 elif task == TaskType.NAMED_ENTITY_RECOGNITION:
-                    results["entities"] = await self.extract_entities(text, language=language)
-                elif task == TaskType.TEXT_CLASSIFICATION and "classification" in self._pipelines:
+                    results["entities"] = await self.extract_entities(
+                        text, language=language
+                    )
+                elif (
+                    task == TaskType.TEXT_CLASSIFICATION
+                    and "classification" in self._pipelines
+                ):
                     # Would need labels for zero-shot classification
                     pass
             except Exception as e:
@@ -243,7 +253,7 @@ class TransformersNLP(BaseNLPAdapter):
     async def analyze_sentiment(
         self,
         text: str,
-        language: Optional[str] = None,
+        language: str | None = None,
     ) -> SentimentResult:
         """Analyze sentiment using Transformers."""
         if "sentiment" not in self._pipelines:
@@ -281,9 +291,9 @@ class TransformersNLP(BaseNLPAdapter):
     async def extract_entities(
         self,
         text: str,
-        entity_types: Optional[List[EntityType]] = None,
-        language: Optional[str] = None,
-    ) -> List[NamedEntity]:
+        entity_types: list[EntityType] | None = None,
+        language: str | None = None,
+    ) -> list[NamedEntity]:
         """Extract named entities using Transformers."""
         if "ner" not in self._pipelines:
             raise ValueError("NER pipeline not available")
@@ -334,7 +344,7 @@ class TransformersNLP(BaseNLPAdapter):
         self,
         text: str,
         target_language: str,
-        source_language: Optional[str] = None,
+        source_language: str | None = None,
     ) -> TranslationResult:
         """Translate text using Transformers."""
         # Load translation pipeline if not already loaded
@@ -365,8 +375,8 @@ class TransformersNLP(BaseNLPAdapter):
     async def classify_text(
         self,
         text: str,
-        labels: Optional[List[str]] = None,
-        model: Optional[str] = None,
+        labels: list[str] | None = None,
+        model: str | None = None,
     ) -> ClassificationResult:
         """Classify text using Transformers."""
         if "classification" not in self._pipelines:
@@ -406,8 +416,8 @@ class TransformersNLP(BaseNLPAdapter):
         self,
         text: str,
         max_keywords: int = 10,
-        language: Optional[str] = None,
-    ) -> List[KeywordResult]:
+        language: str | None = None,
+    ) -> list[KeywordResult]:
         """Extract keywords using Transformers."""
         # This would require a keyword extraction model or use NER results
         entities = await self.extract_entities(text, language=language)
@@ -447,7 +457,7 @@ class TransformersNLP(BaseNLPAdapter):
             method="word_overlap",
         )
 
-    async def get_supported_tasks(self) -> List[TaskType]:
+    async def get_supported_tasks(self) -> list[TaskType]:
         """Get supported NLP tasks."""
         tasks = []
 
@@ -463,11 +473,13 @@ class TransformersNLP(BaseNLPAdapter):
         if "translation" in self._pipelines:
             tasks.append(TaskType.LANGUAGE_TRANSLATION)
 
-        tasks.extend([
-            TaskType.TEXT_ANALYSIS,
-            TaskType.KEYWORD_EXTRACTION,
-            TaskType.TEXT_SIMILARITY,
-        ])
+        tasks.extend(
+            [
+                TaskType.TEXT_ANALYSIS,
+                TaskType.KEYWORD_EXTRACTION,
+                TaskType.TEXT_SIMILARITY,
+            ]
+        )
 
         return tasks
 

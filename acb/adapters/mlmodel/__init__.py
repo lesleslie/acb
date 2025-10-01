@@ -22,13 +22,13 @@ Key Features:
 
 from ._base import (
     BaseMLModelAdapter,
-    MLModelSettings,
-    ModelPredictionRequest,
-    ModelPredictionResponse,
     BatchPredictionRequest,
     BatchPredictionResponse,
-    ModelInfo,
+    MLModelSettings,
     ModelHealth,
+    ModelInfo,
+    ModelPredictionRequest,
+    ModelPredictionResponse,
 )
 
 __all__ = [

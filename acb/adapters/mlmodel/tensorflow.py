@@ -7,18 +7,20 @@ versioning, health monitoring, and performance optimization.
 
 from __future__ import annotations
 
-import json
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import aiohttp
 import grpc
 import numpy as np
 import pandas as pd
-from google.protobuf import json_format
 from pydantic import Field
-
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus, generate_adapter_id
+from acb.adapters import (
+    AdapterCapability,
+    AdapterMetadata,
+    AdapterStatus,
+    generate_adapter_id,
+)
 from acb.adapters.mlmodel._base import (
     BaseMLModelAdapter,
     BatchPredictionRequest,
@@ -31,11 +33,12 @@ from acb.adapters.mlmodel._base import (
 )
 
 try:
+    import tensorflow_serving.apis.model_management_pb2 as model_management_pb2
+    import tensorflow_serving.apis.model_service_pb2 as model_service_pb2
     import tensorflow_serving.apis.predict_pb2 as predict_pb2
     import tensorflow_serving.apis.prediction_service_pb2_grpc as prediction_service_pb2_grpc
-    import tensorflow_serving.apis.model_service_pb2 as model_service_pb2
-    import tensorflow_serving.apis.model_management_pb2 as model_management_pb2
     from tensorflow.core.framework import tensor_pb2, types_pb2
+
     TENSORFLOW_SERVING_AVAILABLE = True
 except ImportError:
     TENSORFLOW_SERVING_AVAILABLE = False
@@ -50,20 +53,18 @@ class TensorFlowServingSettings(MLModelSettings):
     )
     grpc_port: int = Field(default=8500, description="gRPC port")
     rest_port: int = Field(default=8501, description="REST API port")
-    
+
     # Model settings
     model_signature_name: str = Field(
         default="serving_default", description="Model signature name"
     )
-    
+
     # Performance settings
     enable_model_warmup: bool = Field(
         default=True, description="Enable model warmup on startup"
     )
-    warmup_requests: int = Field(
-        default=5, description="Number of warmup requests"
-    )
-    
+    warmup_requests: int = Field(default=5, description="Number of warmup requests")
+
     # gRPC specific settings
     grpc_max_receive_message_length: int = Field(
         default=4 * 1024 * 1024, description="Max gRPC message size (4MB)"
@@ -75,173 +76,199 @@ class TensorFlowServingSettings(MLModelSettings):
 
 class TensorFlowServingAdapter(BaseMLModelAdapter):
     """TensorFlow Serving adapter for ML model inference.
-    
+
     This adapter provides high-performance model serving using TensorFlow Serving
     with support for both REST and gRPC protocols, model versioning, and
     production-ready features like health monitoring and performance optimization.
     """
 
-    def __init__(self, settings: Optional[TensorFlowServingSettings] = None) -> None:
+    def __init__(self, settings: TensorFlowServingSettings | None = None) -> None:
         """Initialize TensorFlow Serving adapter.
-        
+
         Args:
             settings: TensorFlow Serving specific settings
         """
         self._tf_settings = settings or TensorFlowServingSettings()
         super().__init__(self._tf_settings)
-        self._grpc_channel: Optional[grpc.aio.Channel] = None
+        self._grpc_channel: grpc.aio.Channel | None = None
         self._grpc_stub = None
-        self._http_session: Optional[aiohttp.ClientSession] = None
+        self._http_session: aiohttp.ClientSession | None = None
 
     @property
     def tf_settings(self) -> TensorFlowServingSettings:
         """Get TensorFlow Serving specific settings."""
         return self._tf_settings
 
-    async def _create_client(self) -> Dict[str, Any]:
+    async def _create_client(self) -> dict[str, Any]:
         """Create TensorFlow Serving client(s)."""
         clients = {}
-        
+
         if self.tf_settings.use_grpc and TENSORFLOW_SERVING_AVAILABLE:
             # Create gRPC channel and stub
             grpc_options = [
-                ("grpc.max_receive_message_length", self.tf_settings.grpc_max_receive_message_length),
-                ("grpc.max_send_message_length", self.tf_settings.grpc_max_send_message_length),
+                (
+                    "grpc.max_receive_message_length",
+                    self.tf_settings.grpc_max_receive_message_length,
+                ),
+                (
+                    "grpc.max_send_message_length",
+                    self.tf_settings.grpc_max_send_message_length,
+                ),
             ]
-            
+
             grpc_target = f"{self.tf_settings.host}:{self.tf_settings.grpc_port}"
             if self.tf_settings.use_tls:
-                self._grpc_channel = grpc.aio.secure_channel(grpc_target, grpc.ssl_channel_credentials(), options=grpc_options)
+                self._grpc_channel = grpc.aio.secure_channel(
+                    grpc_target, grpc.ssl_channel_credentials(), options=grpc_options
+                )
             else:
-                self._grpc_channel = grpc.aio.insecure_channel(grpc_target, options=grpc_options)
-                
-            self._grpc_stub = prediction_service_pb2_grpc.PredictionServiceStub(self._grpc_channel)
+                self._grpc_channel = grpc.aio.insecure_channel(
+                    grpc_target, options=grpc_options
+                )
+
+            self._grpc_stub = prediction_service_pb2_grpc.PredictionServiceStub(
+                self._grpc_channel
+            )
             clients["grpc"] = self._grpc_stub
-        
+
         # Create HTTP session for REST API
         connector = aiohttp.TCPConnector(limit=self.tf_settings.connection_pool_size)
         timeout = aiohttp.ClientTimeout(total=self.tf_settings.timeout)
         headers = {"Content-Type": "application/json"}
         headers.update(self.tf_settings.custom_headers)
-        
+
         self._http_session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
             headers=headers,
         )
         clients["http"] = self._http_session
-        
+
         return clients
 
-    def _get_rest_url(self, model_name: str, version: Optional[str] = None) -> str:
+    def _get_rest_url(self, model_name: str, version: str | None = None) -> str:
         """Get REST API URL for model."""
         protocol = "https" if self.tf_settings.use_tls else "http"
         base_url = f"{protocol}://{self.tf_settings.host}:{self.tf_settings.rest_port}"
-        
+
         if version:
             return f"{base_url}/v1/models/{model_name}/versions/{version}:predict"
         else:
             return f"{base_url}/v1/models/{model_name}:predict"
 
     def _prepare_grpc_request(
-        self, model_name: str, inputs: Dict[str, Any], version: Optional[str] = None
+        self, model_name: str, inputs: dict[str, Any], version: str | None = None
     ) -> predict_pb2.PredictRequest:
         """Prepare gRPC prediction request."""
         if not TENSORFLOW_SERVING_AVAILABLE:
             raise RuntimeError("TensorFlow Serving gRPC libraries not available")
-            
+
         request = predict_pb2.PredictRequest()
         request.model_spec.name = model_name
         request.model_spec.signature_name = self.tf_settings.model_signature_name
-        
+
         if version:
             request.model_spec.version.value = int(version)
-        
+
         # Convert inputs to tensor format
         for input_name, input_data in inputs.items():
             tensor = tensor_pb2.TensorProto()
-            
-            if isinstance(input_data, (list, np.ndarray)):
+
+            if isinstance(input_data, list | np.ndarray):
                 input_array = np.array(input_data)
                 tensor.dtype = types_pb2.DT_FLOAT
                 tensor.tensor_shape.CopyFrom(
                     tensor_pb2.TensorShapeProto(
-                        dim=[tensor_pb2.TensorShapeProto.Dim(size=s) for s in input_array.shape]
+                        dim=[
+                            tensor_pb2.TensorShapeProto.Dim(size=s)
+                            for s in input_array.shape
+                        ]
                     )
                 )
                 tensor.float_val.extend(input_array.flatten().astype(float))
             else:
                 # Handle other data types as needed
                 tensor.dtype = types_pb2.DT_STRING
-                tensor.string_val.append(str(input_data).encode('utf-8'))
-            
+                tensor.string_val.append(str(input_data).encode("utf-8"))
+
             request.inputs[input_name].CopyFrom(tensor)
-        
+
         return request
 
     def _process_grpc_response(
-        self, response: predict_pb2.PredictResponse, model_name: str, version: Optional[str]
-    ) -> Dict[str, Any]:
+        self,
+        response: predict_pb2.PredictResponse,
+        model_name: str,
+        version: str | None,
+    ) -> dict[str, Any]:
         """Process gRPC prediction response."""
         outputs = {}
-        
+
         for output_name, tensor in response.outputs.items():
             if tensor.dtype == types_pb2.DT_FLOAT:
                 shape = [dim.size for dim in tensor.tensor_shape.dim]
-                outputs[output_name] = np.array(tensor.float_val).reshape(shape).tolist()
+                outputs[output_name] = (
+                    np.array(tensor.float_val).reshape(shape).tolist()
+                )
             elif tensor.dtype == types_pb2.DT_STRING:
-                outputs[output_name] = [s.decode('utf-8') for s in tensor.string_val]
+                outputs[output_name] = [s.decode("utf-8") for s in tensor.string_val]
             else:
                 # Handle other data types
                 outputs[output_name] = tensor.string_val
-        
+
         return outputs
 
     async def predict(self, request: ModelPredictionRequest) -> ModelPredictionResponse:
         """Perform real-time inference using TensorFlow Serving."""
         start_time = time.time()
-        
+
         try:
             client = await self._ensure_client()
-            
-            if self.tf_settings.use_grpc and TENSORFLOW_SERVING_AVAILABLE and "grpc" in client:
+
+            if (
+                self.tf_settings.use_grpc
+                and TENSORFLOW_SERVING_AVAILABLE
+                and "grpc" in client
+            ):
                 # Use gRPC for better performance
                 grpc_request = self._prepare_grpc_request(
                     request.model_name, request.inputs, request.model_version
                 )
-                
+
                 response = await self._grpc_stub.Predict(
                     grpc_request, timeout=request.timeout or self.tf_settings.timeout
                 )
-                
+
                 predictions = self._process_grpc_response(
                     response, request.model_name, request.model_version
                 )
-                
+
             else:
                 # Use REST API
                 url = self._get_rest_url(request.model_name, request.model_version)
                 payload = {
                     "signature_name": self.tf_settings.model_signature_name,
-                    "inputs": request.inputs
+                    "inputs": request.inputs,
                 }
-                
+
                 async with self._http_session.post(url, json=payload) as response:
                     if response.status != 200:
                         error_text = await response.text()
                         raise RuntimeError(f"TensorFlow Serving error: {error_text}")
-                    
+
                     result = await response.json()
                     predictions = result.get("outputs", {})
-            
+
             latency_ms = (time.time() - start_time) * 1000
-            
+
             # Update metrics
-            self._metrics["predictions_total"] = self._metrics.get("predictions_total", 0) + 1
+            self._metrics["predictions_total"] = (
+                self._metrics.get("predictions_total", 0) + 1
+            )
             self._metrics["avg_latency_ms"] = (
                 self._metrics.get("avg_latency_ms", 0) * 0.9 + latency_ms * 0.1
             )
-            
+
             return ModelPredictionResponse(
                 predictions=predictions,
                 model_name=request.model_name,
@@ -249,7 +276,7 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                 latency_ms=latency_ms,
                 metadata=request.metadata,
             )
-            
+
         except Exception as e:
             self._metrics["errors_total"] = self._metrics.get("errors_total", 0) + 1
             raise RuntimeError(f"TensorFlow Serving prediction failed: {e}")
@@ -259,20 +286,23 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
     ) -> BatchPredictionResponse:
         """Perform batch inference using TensorFlow Serving."""
         start_time = time.time()
-        
+
         try:
             # Process in batches to optimize performance
-            batch_size = min(request.batch_size or self.tf_settings.max_batch_size, len(request.inputs))
+            batch_size = min(
+                request.batch_size or self.tf_settings.max_batch_size,
+                len(request.inputs),
+            )
             all_predictions = []
-            
+
             for i in range(0, len(request.inputs), batch_size):
-                batch_inputs = request.inputs[i:i + batch_size]
-                
+                batch_inputs = request.inputs[i : i + batch_size]
+
                 # Combine batch inputs for efficient processing
                 combined_inputs = {}
                 for key in batch_inputs[0].keys():
                     combined_inputs[key] = [item[key] for item in batch_inputs]
-                
+
                 # Create prediction request for batch
                 pred_request = ModelPredictionRequest(
                     inputs=combined_inputs,
@@ -281,9 +311,9 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                     timeout=request.timeout,
                     metadata=request.metadata,
                 )
-                
+
                 pred_response = await self.predict(pred_request)
-                
+
                 # Split batch predictions back to individual predictions
                 batch_predictions = []
                 for j in range(len(batch_inputs)):
@@ -294,12 +324,12 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                         else:
                             individual_pred[output_name] = output_values
                     batch_predictions.append(individual_pred)
-                
+
                 all_predictions.extend(batch_predictions)
-            
+
             total_latency_ms = (time.time() - start_time) * 1000
             avg_latency_ms = total_latency_ms / len(request.inputs)
-            
+
             return BatchPredictionResponse(
                 predictions=all_predictions,
                 model_name=request.model_name,
@@ -309,32 +339,34 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                 avg_latency_ms=avg_latency_ms,
                 metadata=request.metadata,
             )
-            
+
         except Exception as e:
-            self._metrics["batch_errors_total"] = self._metrics.get("batch_errors_total", 0) + 1
+            self._metrics["batch_errors_total"] = (
+                self._metrics.get("batch_errors_total", 0) + 1
+            )
             raise RuntimeError(f"TensorFlow Serving batch prediction failed: {e}")
 
-    async def list_models(self) -> List[ModelInfo]:
+    async def list_models(self) -> list[ModelInfo]:
         """List available models from TensorFlow Serving."""
         try:
-            client = await self._ensure_client()
-            
+            await self._ensure_client()
+
             # Use REST API to get model metadata
             protocol = "https" if self.tf_settings.use_tls else "http"
             url = f"{protocol}://{self.tf_settings.host}:{self.tf_settings.rest_port}/v1/models"
-            
+
             async with self._http_session.get(url) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     raise RuntimeError(f"Failed to list models: {error_text}")
-                
+
                 result = await response.json()
                 models = []
-                
+
                 for model_info in result.get("models", []):
                     model_name = model_info.get("name", "")
                     versions = model_info.get("version_labels", {})
-                    
+
                     # Get detailed info for each version
                     for version, status in versions.items():
                         models.append(
@@ -345,35 +377,39 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                                 framework="tensorflow",
                                 metadata={
                                     "platform": "tensorflow_serving",
-                                    "protocol": "grpc" if self.tf_settings.use_grpc else "rest",
+                                    "protocol": "grpc"
+                                    if self.tf_settings.use_grpc
+                                    else "rest",
                                 },
                             )
                         )
-                
+
                 return models
-                
+
         except Exception as e:
             raise RuntimeError(f"Failed to list TensorFlow Serving models: {e}")
 
-    async def get_model_info(self, model_name: str, version: Optional[str] = None) -> ModelInfo:
+    async def get_model_info(
+        self, model_name: str, version: str | None = None
+    ) -> ModelInfo:
         """Get detailed information about a specific model."""
         try:
             # Use REST API to get model metadata
             protocol = "https" if self.tf_settings.use_tls else "http"
-            
+
             if version:
                 url = f"{protocol}://{self.tf_settings.host}:{self.tf_settings.rest_port}/v1/models/{model_name}/versions/{version}/metadata"
             else:
                 url = f"{protocol}://{self.tf_settings.host}:{self.tf_settings.rest_port}/v1/models/{model_name}/metadata"
-            
+
             async with self._http_session.get(url) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     raise RuntimeError(f"Model not found: {error_text}")
-                
+
                 result = await response.json()
                 metadata = result.get("metadata", {})
-                
+
                 return ModelInfo(
                     name=model_name,
                     version=version or str(result.get("model_version", "latest")),
@@ -387,23 +423,23 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                         "signature_def": metadata.get("signature_def"),
                     },
                 )
-                
+
         except Exception as e:
             raise RuntimeError(f"Failed to get TensorFlow Serving model info: {e}")
 
     async def get_model_health(
-        self, model_name: str, version: Optional[str] = None
+        self, model_name: str, version: str | None = None
     ) -> ModelHealth:
         """Get health status of a specific model."""
         try:
             # Use model status endpoint
             protocol = "https" if self.tf_settings.use_tls else "http"
-            
+
             if version:
                 url = f"{protocol}://{self.tf_settings.host}:{self.tf_settings.rest_port}/v1/models/{model_name}/versions/{version}"
             else:
                 url = f"{protocol}://{self.tf_settings.host}:{self.tf_settings.rest_port}/v1/models/{model_name}"
-            
+
             async with self._http_session.get(url) as response:
                 if response.status != 200:
                     return ModelHealth(
@@ -412,17 +448,17 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                         status="unhealthy",
                         last_check=pd.Timestamp.now().isoformat(),
                     )
-                
+
                 result = await response.json()
                 model_version_status = result.get("model_version_status", [])
-                
+
                 if model_version_status:
                     status_info = model_version_status[0]
                     state = status_info.get("state", "unknown").lower()
                     health_status = "healthy" if state == "available" else "unhealthy"
                 else:
                     health_status = "unknown"
-                
+
                 # Get performance metrics from adapter metrics
                 return ModelHealth(
                     model_name=model_name,
@@ -436,7 +472,7 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
                         "platform": "tensorflow_serving",
                     },
                 )
-                
+
         except Exception as e:
             return ModelHealth(
                 model_name=model_name,
@@ -449,26 +485,26 @@ class TensorFlowServingAdapter(BaseMLModelAdapter):
     async def health_check(self) -> bool:
         """Perform adapter health check."""
         try:
-            client = await self._ensure_client()
-            
+            await self._ensure_client()
+
             # Check TensorFlow Serving health
             protocol = "https" if self.tf_settings.use_tls else "http"
             url = f"{protocol}://{self.tf_settings.host}:{self.tf_settings.rest_port}/v1/models"
-            
+
             async with self._http_session.get(url) as response:
                 return response.status == 200
-                
+
         except Exception:
             return False
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
         await super().cleanup()
-        
+
         if self._grpc_channel:
             await self._grpc_channel.close()
             self._grpc_channel = None
-            
+
         if self._http_session:
             await self._http_session.close()
             self._http_session = None
