@@ -3,56 +3,25 @@
 This module provides backward compatibility while delegating to the new
 logger adapter system. It imports the configured logger adapter and
 exposes it as the main Logger class.
+
+The actual logger implementations are in acb.adapters.logger (Loguru, Structlog).
+This module serves as a convenience import shim.
 """
 
-import logging
+import os
+import sys
 import typing as t
-from inspect import currentframe
 
-# Import from the adapter system
-from .adapters.logger import LoggerProtocol
-from .config import Config, Settings
-from .depends import depends
-
-
-class LoggerSettings(Settings):
-    """Backward compatibility logger settings."""
-
-    verbose: bool = False
-    deployed_level: str = "WARNING"
-    log_level: str | None = "INFO"
-    serialize: bool | None = False
-    format: dict[str, str] | None = {
-        "time": "<b><e>[</e> <w>{time:YYYY-MM-DD HH:mm:ss.SSS}</w> <e>]</e></b>",
-        "level": " <level>{level:>8}</level>",
-        "sep": " <b><w>in</w></b> ",
-        "name": "<b>{extra[mod_name]:>20}</b>",
-        "line": "<b><e>[</e><w>{line:^5}</w><e>]</e></b>",
-        "message": "  <level>{message}</level>",
-    }
-    level_per_module: dict[str, str | None] | None = {}
-    level_colors: dict[str, str] | None = {}
-    settings: dict[str, t.Any] | None = {}
-
-    def __init__(self, **values: t.Any) -> None:
-        super().__init__(**values)
-        self.settings = {
-            "format": "".join(self.format.values() if self.format else []),
-            "enqueue": True,
-            "backtrace": False,
-            "catch": False,
-            "serialize": self.serialize,
-            "diagnose": False,
-            "colorize": True,
-        }
-
-
-# Set up logger settings for backward compatibility
-depends.get(Config).logger = LoggerSettings()
+# Import protocol and base from the adapter system
+from .adapters.logger import LoggerBaseSettings, LoggerProtocol
 
 
 def _get_logger_adapter() -> type[t.Any]:
-    """Get the configured logger adapter class."""
+    """Get the configured logger adapter class.
+
+    This function lazily imports the logger adapter to avoid
+    circular dependencies during module initialization.
+    """
     from .adapters import import_adapter
 
     # Import the logger adapter (defaults to loguru)
@@ -65,65 +34,47 @@ def _get_logger_adapter() -> type[t.Any]:
         return LoguruLogger
 
 
+def _initialize_logger() -> None:
+    """Initialize the logger and register it with the dependency container.
+
+    This is called automatically when the module is imported, unless in testing mode.
+    """
+    from .depends import depends
+
+    # Check if we're in testing mode
+    if "pytest" in sys.modules or os.getenv("TESTING", "False").lower() == "true":
+        return
+
+    # Get logger class
+    logger_class = _get_logger_adapter()
+
+    # Check if already registered
+    try:
+        depends.get(logger_class)
+        return  # Already initialized
+    except Exception:
+        pass
+
+    # Create and initialize logger instance
+    try:
+        logger_instance = logger_class()
+        if hasattr(logger_instance, "init"):
+            logger_instance.init()
+        depends.set(logger_class, logger_instance)
+    except Exception:
+        # Silently fail initialization - logger will be lazily initialized on first use
+        pass
+
+
 # Create Logger class that delegates to the adapter
+# This is imported by other modules as: from acb.logger import Logger
 Logger = _get_logger_adapter()
-# Initialize the logger
-try:
-    logger_instance = depends.get(Logger)
-    if hasattr(logger_instance, "init"):
-        logger_instance.init()
-    depends.set(Logger, logger_instance)
-except Exception:
-    # Fallback initialization
-    from .adapters.logger.loguru import Logger as LoguruLogger
 
-    logger_instance = LoguruLogger()
-    logger_instance.init()
-    depends.set(Logger, logger_instance)
+# Initialize logger on module import (unless in testing mode)
+_initialize_logger()
 
-
-class InterceptHandler(logging.Handler):
-    """Handler to intercept standard library logging."""
-
-    def emit(self, record: logging.LogRecord) -> None:
-        """Emit log record via the configured logger adapter."""
-        # Get logger instance from dependency container
-        try:
-            logger = depends.get(Logger)
-        except Exception:
-            # Fallback to basic logging if logger not available
-            return
-
-        try:
-            # Try to get level from logger if it has the method
-            if hasattr(logger, "level"):
-                level = logger.level(record.levelname).name  # type: ignore[no-untyped-call]
-            else:
-                level = record.levelno
-        except (ValueError, AttributeError):
-            level = record.levelno
-
-        frame, depth = (currentframe(), 0)
-        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
-            frame = frame.f_back
-            depth += 1
-
-        # Use the logger's appropriate method based on its capabilities
-        if hasattr(logger, "opt") and hasattr(logger, "log"):
-            # Loguru-style logging
-            logger.opt(depth=depth, exception=record.exc_info).log(  # type: ignore[no-untyped-call]
-                level,
-                record.getMessage(),
-            )
-        else:
-            # Fallback to basic logging methods
-            level_name = record.levelname.lower()
-            log_method = getattr(logger, level_name, logger.info)
-            log_method(record.getMessage())
-
-
-# Configure stdlib logging interception
-logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+# Backward compatibility alias for settings
+LoggerSettings = LoggerBaseSettings
 
 # Export for backward compatibility
-__all__ = ["InterceptHandler", "Logger", "LoggerProtocol", "LoggerSettings"]
+__all__ = ["Logger", "LoggerProtocol", "LoggerSettings", "LoggerBaseSettings"]

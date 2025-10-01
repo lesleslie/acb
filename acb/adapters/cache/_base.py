@@ -5,10 +5,10 @@ from aiocache.serializers import BaseSerializer
 from msgspec import msgpack
 from pydantic import SecretStr
 from acb.actions.compress import compress, decompress
-from acb.config import Config, Settings
 from acb.cleanup import CleanupMixin
-from acb.ssl_config import SSLConfigMixin
+from acb.config import Config, Settings
 from acb.depends import depends
+from acb.ssl_config import SSLConfigMixin
 
 
 class CacheBaseSettings(Settings, SSLConfigMixin):

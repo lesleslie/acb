@@ -8,8 +8,8 @@ from enum import Enum
 
 import numpy as np
 from pydantic import BaseModel, Field, SecretStr
-from acb.config import AdapterBase, Settings
 from acb.cleanup import CleanupMixin
+from acb.config import AdapterBase, Settings
 from acb.ssl_config import SSLConfigMixin
 
 

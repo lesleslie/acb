@@ -492,6 +492,7 @@ def get_installed_adapters() -> list[Adapter]:
 STATIC_ADAPTER_MAPPINGS = {
     "cache.memory": ("acb.adapters.cache.memory", "Cache"),
     "cache.redis": ("acb.adapters.cache.redis", "Cache"),
+    "logger": ("acb.adapters.logger.loguru", "Logger"),  # Default logger (loguru)
     "logger.loguru": ("acb.adapters.logger.loguru", "Logger"),
     "logger.structlog": ("acb.adapters.logger.structlog", "Logger"),
     "sql.mysql": ("acb.adapters.sql.mysql", "Sql"),

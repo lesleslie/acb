@@ -3,10 +3,10 @@ from abc import abstractmethod
 from contextlib import asynccontextmanager
 
 from pydantic import SecretStr
-from acb.config import AdapterBase, Config, Settings
 from acb.cleanup import CleanupMixin
-from acb.ssl_config import SSLConfigMixin
+from acb.config import AdapterBase, Config, Settings
 from acb.depends import depends
+from acb.ssl_config import SSLConfigMixin
 
 
 class NosqlBaseSettings(Settings, SSLConfigMixin):

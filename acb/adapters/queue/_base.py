@@ -22,8 +22,8 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from acb.config import Config
 from acb.cleanup import CleanupMixin
+from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
 

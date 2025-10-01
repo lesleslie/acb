@@ -15,8 +15,8 @@ from functools import wraps
 from weakref import WeakSet
 
 from pydantic import Field
-from acb.config import Config
 from acb.cleanup import CleanupMixin
+from acb.config import Config
 from acb.depends import depends
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 

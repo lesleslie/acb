@@ -48,9 +48,9 @@ from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 
 # Removed complex mixins - simplified Redis cache implementation
 from acb.config import Config
-from acb.ssl_config import SSLConfigMixin
 from acb.debug import debug
 from acb.depends import depends
+from acb.ssl_config import SSLConfigMixin
 
 from ._base import CacheBase, CacheBaseSettings
 

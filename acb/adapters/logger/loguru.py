@@ -237,12 +237,18 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
 class InterceptHandler(logging.Handler):
     """Handler to intercept standard library logging and route to Loguru."""
 
-    @depends.inject
-    def emit(self, record: logging.LogRecord, logger: t.Any = depends()) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
         """Emit log record via Loguru."""
+        # Get logger from dependency container
         try:
-            level = logger.level(record.levelname).name
-        except ValueError:
+            logger_instance = depends.get(Logger)
+        except Exception:
+            # Fallback to basic logging if logger not available
+            return
+
+        try:
+            level = logger_instance.level(record.levelname).name  # type: ignore[no-untyped-call]
+        except (ValueError, AttributeError):
             level = record.levelno
 
         frame, depth = (currentframe(), 0)
@@ -250,7 +256,7 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(
+        logger_instance.opt(depth=depth, exception=record.exc_info).log(  # type: ignore[no-untyped-call]
             level,
             record.getMessage(),
         )

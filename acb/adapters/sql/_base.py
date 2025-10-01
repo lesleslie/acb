@@ -10,13 +10,13 @@ from sqlalchemy_utils import create_database, database_exists
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from acb.adapters import import_adapter
-from acb.config import AdapterBase, Config, Settings, gen_password
 
 # Removed complex enterprise mixins - simplified SQL adapters
 from acb.cleanup import CleanupMixin
-from acb.ssl_config import SSLConfigMixin
+from acb.config import AdapterBase, Config, Settings, gen_password
 from acb.debug import debug
 from acb.depends import depends
+from acb.ssl_config import SSLConfigMixin
 
 
 class SqlBaseSettings(Settings, SSLConfigMixin):
