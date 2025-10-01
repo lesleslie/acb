@@ -127,10 +127,10 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         self.wrapped = wrapped_repository
         self.cache_settings = cache_settings or depends.get(RepositoryCacheSettings)
         self._cache = None
-        self._metrics = CacheMetrics()
+        self._metrics: CacheMetrics = CacheMetrics()
         self._query_cache: dict[str, tuple[Any, datetime]] = {}
 
-    async def _ensure_cache(self) -> None:
+    async def _ensure_cache(self) -> Any | None:
         """Ensure cache adapter is available."""
         if self._cache is None:
             try:
@@ -140,7 +140,6 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
                 self._cache = depends.get(Cache)
             except ImportError:
                 # Cache not available, disable caching
-                self.cache_settings.strategy = None
                 return None
         return self._cache
 
@@ -148,7 +147,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         """Build cache key for entity."""
         return f"{self.cache_settings.key_prefix}:entity:{self.entity_name.lower()}:{entity_id}"
 
-    def _build_query_key(self: Any, operation: str, **kwargs) -> str:
+    def _build_query_key(self, operation: str, **kwargs: Any) -> str:
         """Build cache key for query operation."""
         # Create deterministic key from operation parameters
         key_data = {

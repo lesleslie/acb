@@ -86,8 +86,6 @@ from .discovery import (
 from .publisher import (
     EventPublisher,
     EventPublisherSettings,
-    EventQueue,
-    PublisherBackend,
     PublisherMetrics,
     create_event_publisher,
     event_publisher_context,
@@ -127,7 +125,6 @@ __all__ = [
     "EventPublisher",
     "EventPublisherBase",
     "EventPublisherSettings",
-    "EventQueue",
     "EventRouter",
     "EventStatus",
     # Subscriber classes
@@ -138,7 +135,6 @@ __all__ = [
     "EventsServiceSettings",
     "FunctionalEventHandler",
     "ManagedSubscription",
-    "PublisherBackend",
     "PublisherMetrics",
     "SubscriberSettings",
     "SubscriptionMode",
@@ -192,7 +188,7 @@ class EventsServiceSettings(ServiceSettings):
 
     # Publisher settings
     enable_publisher: bool = True
-    publisher_backend: PublisherBackend = PublisherBackend.MEMORY
+    event_topic_prefix: str = "events"  # Topic prefix for queue adapter
     max_concurrent_events: int = 100
 
     # Subscriber settings
@@ -253,10 +249,8 @@ class EventsService(ServiceBase):
         # Start publisher if enabled
         if self._settings.enable_publisher:
             publisher_settings = EventPublisherSettings(
-                backend=self._settings.publisher_backend,
+                event_topic_prefix=self._settings.event_topic_prefix,
                 max_concurrent_events=self._settings.max_concurrent_events,
-                enable_health_checks=self._settings.enable_health_checks,
-                enable_retries=self._settings.enable_retries,
                 default_max_retries=self._settings.max_retries,
                 default_retry_delay=self._settings.retry_delay,
             )

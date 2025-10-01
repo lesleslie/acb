@@ -1,14 +1,53 @@
+---
+id: 01K6G68CNCRTWXMZXJEHCS7Q4P
+---
+______________________________________________________________________
+
+## id: 01K6G5HWQR7HRQB12K1A46503K
+
+______________________________________________________________________
+
+## id: 01K6G58NP7VVD8GQ0ZGYTMJQST
+
+______________________________________________________________________
+
+## id: 01K6G4MMMKS3Z00WPGZF5QGNY7
+
+______________________________________________________________________
+
+## id: 01K6G3RCK29QEVJX9PM5AYG0B4
+
+______________________________________________________________________
+
+## id: 01K6G399PH280SJJEW0QRRM96Q
+
+______________________________________________________________________
+
+## id: 01K6FZP8DW67E13PT0ATMTF8NS
+
+______________________________________________________________________
+
+## id: 01K6FY3WB0EGJYESBDVYCHYCN5
+
+______________________________________________________________________
+
+## id: 01K6FVEBAD0X204NYV1TR4DN80
+
+______________________________________________________________________
+
+## id: 01K6FV1E371JSRE4SJZAAEQYAC
+
 <p align="center">
 <img src="./images/acb-logo.png" alt="ACB Logo">
 </p>
 
-> **ACB Documentation**: [Main](./README.md) | [Core Systems](./acb/README.md) | [Actions](./acb/actions/README.md) | [Adapters](./acb/adapters/README.md)
+> **ACB Documentation**: \[[README|Main]\] | \[[acb/README|Core Systems]\] | \[[acb/actions/README|Actions]\] | \[[acb/adapters/README|Adapters]\]
 
 # <u>A</u>synchronous <u>C</u>omponent <u>B</u>ase (ACB)
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-56.8%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-42.3%25-red)
 
 ## What is ACB?
 
@@ -47,28 +86,28 @@ If you're new to ACB, here are the key concepts to understand:
 
 ## Table of Contents
 
-- [Key Concepts](#key-concepts)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Architecture Overview](#architecture-overview)
-- [Core Components](#core-components)
-  - [Actions](#actions)
-  - [Adapters](#adapters)
-  - [Universal Query Interface](#universal-query-interface)
-  - [Configuration System](#configuration-system)
-  - [Dependency Injection](#dependency-injection)
-- [Common Patterns](#common-patterns)
-- [Use Cases](#use-cases)
-- [Built-in Components](#built-in-components)
-- [Security Features](#security-features)
-- [Basic Monitoring](#basic-monitoring)
-- [Debugging](#debugging)
-- [Advanced Usage](#advanced-usage)
-- [Documentation](#documentation)
-- [Acknowledgements](#acknowledgements)
-- [License](#license)
-- [Projects Using ACB](#projects-using-acb)
-- [Contributing](#contributing)
+- \[[#key-concepts|Key Concepts]\]
+- \[[#installation|Installation]\]
+- \[[#quick-start|Quick Start]\]
+- \[[#architecture-overview|Architecture Overview]\]
+- \[[#core-components|Core Components]\]
+  - \[[#actions|Actions]\]
+  - \[[#adapters|Adapters]\]
+  - \[[#universal-query-interface|Universal Query Interface]\]
+  - \[[#configuration-system|Configuration System]\]
+  - \[[#dependency-injection|Dependency Injection]\]
+- \[[#common-patterns|Common Patterns]\]
+- \[[#use-cases|Use Cases]\]
+- \[[#built-in-components|Built-in Components]\]
+- \[[#security-features|Security Features]\]
+- \[[#basic-monitoring|Basic Monitoring]\]
+- \[[#debugging|Debugging]\]
+- \[[#advanced-usage|Advanced Usage]\]
+- \[[#documentation|Documentation]\]
+- \[[#acknowledgements|Acknowledgements]\]
+- \[[#license|License]\]
+- \[[#projects-using-acb|Projects Using ACB]\]
+- \[[#contributing|Contributing]\]
 
 ## Installation
 
@@ -200,7 +239,7 @@ checksum = await hash.crc32c(file_content)
 print(f"Checksum: {checksum}")
 ```
 
-For more detailed documentation on actions, see the [Actions README](./acb/actions/README.md).
+For more detailed documentation on actions, see the \[[acb/actions/README|Actions README]\].
 
 ### Adapters
 
@@ -290,7 +329,7 @@ cache: redis
 
 Your application code remains exactly the same!
 
-For more detailed documentation on adapters, see the [Adapters README](./acb/adapters/README.md).
+For more detailed documentation on adapters, see the \[[acb/adapters/README|Adapters README]\].
 
 ### Universal Query Interface
 
@@ -488,7 +527,7 @@ nosql_query = ACBQuery(database_adapter_name="nosql", model_adapter_name="pydant
 activity = await nosql_query.for_model(UserActivity).simple.all()
 ```
 
-For comprehensive documentation and examples, see the [Models Adapter Documentation](./acb/adapters/models/README.md).
+For comprehensive documentation and examples, see the \[[acb/adapters/models/README|Models Adapter Documentation]\].
 
 ### MCP Server
 
@@ -548,7 +587,7 @@ Once configured, AI assistants can:
 1. Orchestrate complex workflows that combine multiple operations
 1. Monitor system health and access real-time metrics
 
-For more details on the MCP server implementation, see the [MCP Server Documentation](./acb/mcp/README.md) and [example configurations](./examples/claude_desktop_config.json).
+For more details on the MCP server implementation, see the \[[acb/mcp/README|MCP Server Documentation]\] and \[[claude_desktop_config.json|example configurations]\].
 
 ### Configuration System
 
@@ -1110,7 +1149,7 @@ asyncio.run(benchmark_cache_operations())
 
 ## Debugging
 
-ACB provides a comprehensive debugging system that helps you troubleshoot your applications effectively. While a brief overview is provided in the [Built-in Components](#built-in-components) section, this section offers a more detailed look at ACB's debugging capabilities.
+ACB provides a comprehensive debugging system that helps you troubleshoot your applications effectively. While a brief overview is provided in the \[[#built-in-components|Built-in Components]\] section, this section offers a more detailed look at ACB's debugging capabilities.
 
 ### Debug Module Features
 
@@ -1400,7 +1439,7 @@ logger = depends.get(Logger)
 patch_record(module, "Debug message with module context")
 ```
 
-For more detailed information about debugging in ACB, see the [Core Systems documentation](./acb/README.md#3-debugging-tools).
+For more detailed information about debugging in ACB, see the \[[acb/README#3-debugging-tools|Core Systems documentation]\].
 
 ## Advanced Usage
 
@@ -1502,12 +1541,12 @@ class Stripe(PaymentBase):
 
 For more detailed documentation about ACB components:
 
-- [**Core Systems**](./acb/README.md): Configuration, dependency injection, debugging, and logging
-- [**Actions**](./acb/actions/README.md): Detailed guide to built-in actions and creating custom ones
-- [**Adapters**](./acb/adapters/README.md): Comprehensive documentation on adapter system and implementations
-  - [**Cache Adapter**](./acb/adapters/cache/README.md): Memory and Redis caching
-  - [**SQL Adapter**](./acb/adapters/sql/README.md): SQL database connections
-  - [**Storage Adapter**](./acb/adapters/storage/README.md): File and object storage
+- \[\[acb/README|**Core Systems**\]\]: Configuration, dependency injection, debugging, and logging
+- \[\[acb/actions/README|**Actions**\]\]: Detailed guide to built-in actions and creating custom ones
+- \[\[acb/adapters/README|**Adapters**\]\]: Comprehensive documentation on adapter system and implementations
+  - \[\[acb/adapters/cache/README|**Cache Adapter**\]\]: Memory and Redis caching
+  - \[\[acb/adapters/sql/README|**SQL Adapter**\]\]: SQL database connections
+  - \[\[acb/adapters/storage/README|**Storage Adapter**\]\]: File and object storage
 
 ## Acknowledgements
 

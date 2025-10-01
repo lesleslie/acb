@@ -558,7 +558,7 @@ class StateManagerService(ServiceBase):
             name="State Management Service",
             state_manager=self._settings,
         )
-        self._metrics = StateManagerMetrics()
+        self._metrics: StateManagerMetrics = StateManagerMetrics()
 
         # State managers
         self._memory_manager = InMemoryStateManager(self._settings)

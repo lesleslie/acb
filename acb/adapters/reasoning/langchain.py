@@ -21,7 +21,11 @@ from acb.adapters.reasoning._base import (
     ReasoningStrategy,
     calculate_confidence_score,
 )
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import LoggerType
+else:
+    from acb.logger import Logger as LoggerType
 
 # Conditional imports for LangChain
 try:
@@ -117,10 +121,10 @@ class LangChainReasoningSettings(ReasoningBaseSettings):
     stream_callback_timeout: float = 1.0
 
 
-class LangChainCallback(AsyncCallbackHandler):
+class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
     """Async callback handler for LangChain operations."""
 
-    def __init__(self, logger: Logger) -> None:
+    def __init__(self, logger: LoggerType) -> None:
         self.logger = logger
         self.steps: list[ReasoningStep] = []
         self.current_step: ReasoningStep | None = None
@@ -175,11 +179,11 @@ class LangChainCallback(AsyncCallbackHandler):
         """Called when a tool errors."""
         self.logger.error(f"Tool error: {error}")
 
-    async def on_agent_action(self: Any, action: Any, **kwargs: t.Any) -> None:
+    async def on_agent_action(self: t.Any, action: t.Any, **kwargs: t.Any) -> None:
         """Called when an agent takes an action."""
         self.logger.debug(f"Agent action: {action.tool} - {action.tool_input}")
 
-    async def on_agent_finish(self: Any, finish: Any, **kwargs: t.Any) -> None:
+    async def on_agent_finish(self: t.Any, finish: t.Any, **kwargs: t.Any) -> None:
         """Called when an agent finishes."""
         self.logger.debug(f"Agent finished: {finish.return_values}")
 
@@ -210,8 +214,13 @@ class Reasoning(ReasoningBase):
 
     async def _create_client(self) -> LLM:
         """Create LangChain LLM client."""
-        if self._settings.api_key:
-            api_key = self._settings.api_key.get_secret_value()
+        settings = self._settings
+        if settings is None:
+            msg = "Settings not initialized"
+            raise ValueError(msg)
+
+        if settings.api_key:
+            api_key = settings.api_key.get_secret_value()
         else:
             import os
 
@@ -224,13 +233,13 @@ class Reasoning(ReasoningBase):
 
         # Create ChatOpenAI instance for better chat capabilities
         return ChatOpenAI(
-            model=self._settings.model,
-            temperature=self._settings.temperature,
-            max_tokens=self._settings.max_tokens_per_step,
+            model=settings.model,
+            temperature=settings.temperature,
+            max_tokens=settings.max_tokens_per_step,
             openai_api_key=api_key,
-            base_url=self._settings.base_url,
-            timeout=self._settings.timeout_seconds,
-            streaming=self._settings.enable_streaming,
+            base_url=settings.base_url,
+            timeout=settings.timeout_seconds,
+            streaming=getattr(settings, "enable_streaming", False),
         )
 
     async def _reason(self, request: ReasoningRequest) -> ReasoningResponse:
@@ -324,10 +333,13 @@ Reasoning:
         prompt = PromptTemplate(template=prompt_template, input_variables=["question"])
 
         # Create chain
+        settings = self._settings
+        verbose = getattr(settings, "verbose", False) if settings else False
+
         chain = LLMChain(
             llm=llm,
             prompt=prompt,
-            verbose=self._settings.verbose,
+            verbose=verbose,
             callbacks=[callback],
         )
 
@@ -342,7 +354,7 @@ Reasoning:
             confidence_score=0.8,  # Default confidence
         )
 
-    async def _react_reasoning(
+    async def _react_reasoning(  # type: ignore[override]
         self,
         request: ReasoningRequest,
         llm: LLM,
@@ -357,24 +369,32 @@ Reasoning:
         langchain_tools = []
         for tool_def in request.tools:
 
-            def tool_func(input_str: str, tool_def=tool_def) -> str:
+            def tool_func(input_str: str, tool_def: t.Any = tool_def) -> str:
                 # This is a placeholder - in practice, you'd implement actual tool execution
                 return f"Tool {tool_def.name} executed with input: {input_str}"
+
+            settings = self._settings
+            return_direct = (
+                getattr(settings, "tool_return_direct", False) if settings else False
+            )
 
             langchain_tool = Tool(
                 name=tool_def.name,
                 description=tool_def.description,
                 func=tool_func,
-                return_direct=self._settings.tool_return_direct,
+                return_direct=return_direct,
             )
             langchain_tools.append(langchain_tool)
 
         # Create ReAct agent
+        settings = self._settings
+        verbose = getattr(settings, "verbose", False) if settings else False
+
         agent = initialize_agent(
             tools=langchain_tools,
             llm=llm,
             agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            verbose=self._settings.verbose,
+            verbose=verbose,
             max_iterations=request.max_steps,
             callbacks=[callback],
         )
@@ -436,10 +456,13 @@ Answer:
             )
 
             # Create chain
+            settings = self._settings
+            verbose = getattr(settings, "verbose", False) if settings else False
+
             chain = LLMChain(
                 llm=llm,
                 prompt=prompt,
-                verbose=self._settings.verbose,
+                verbose=verbose,
                 callbacks=[callback],
             )
 
@@ -501,10 +524,13 @@ Rules-based Analysis:
         )
 
         # Create chain
+        settings = self._settings
+        verbose = getattr(settings, "verbose", False) if settings else False
+
         chain = LLMChain(
             llm=llm,
             prompt=prompt,
-            verbose=self._settings.verbose,
+            verbose=verbose,
             callbacks=[callback],
         )
 
@@ -522,7 +548,12 @@ Rules-based Analysis:
     async def _update_memory(self, session_id: str, query: str, response: str) -> None:
         """Update conversation memory."""
         if session_id not in self._memories:
-            if self._settings.memory_type == "summary":
+            settings = self._settings
+            memory_type = (
+                getattr(settings, "memory_type", "buffer") if settings else "buffer"
+            )
+
+            if memory_type == "summary":
                 llm = await self._ensure_client()
                 self._memories[session_id] = ConversationSummaryMemory(llm=llm)
             else:
@@ -605,10 +636,13 @@ Original Question: {request.query}
 Please synthesize the insights from all paths and provide the best possible answer:
 """
 
+        settings = self._settings
+        verbose = getattr(settings, "verbose", False) if settings else False
+
         synthesis_chain = LLMChain(
             llm=llm,
             prompt=PromptTemplate(template=synthesis_prompt, input_variables=[]),
-            verbose=self._settings.verbose,
+            verbose=verbose,
         )
 
         final_answer = await synthesis_chain.arun()

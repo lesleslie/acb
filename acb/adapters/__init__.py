@@ -113,66 +113,6 @@ class AdapterCapability(str, Enum):
     POOLING_STRATEGIES = "pooling_strategies"
     MEMORY_EFFICIENT_PROCESSING = "memory_efficient_processing"
 
-    # ML Model-specific capabilities
-    MODEL_SERVING = "model_serving"
-    BATCH_INFERENCE = "batch_inference"
-    REAL_TIME_INFERENCE = "real_time_inference"
-    MODEL_VERSIONING = "model_versioning"
-    A_B_TESTING = "a_b_testing"
-    CANARY_DEPLOYMENT = "canary_deployment"
-    MODEL_MONITORING = "model_monitoring"
-    DRIFT_DETECTION = "drift_detection"
-    AUTO_SCALING = "auto_scaling"
-    FEATURE_ENGINEERING = "feature_engineering"
-    OUTPUT_POSTPROCESSING = "output_postprocessing"
-    MODEL_REGISTRY = "model_registry"
-    ARTIFACT_MANAGEMENT = "artifact_management"
-    METADATA_TRACKING = "metadata_tracking"
-    DEPLOYMENT_TRACKING = "deployment_tracking"
-    PERFORMANCE_BENCHMARKING = "performance_benchmarking"
-    RESOURCE_MANAGEMENT = "resource_management"
-    GRPC_SERVING = "grpc_serving"
-    REST_SERVING = "rest_serving"
-    KUBERNETES_NATIVE = "kubernetes_native"
-
-    # Feature Store-specific capabilities
-    FEATURE_SERVING = "feature_serving"
-    FEATURE_MONITORING = "feature_monitoring"
-    ONLINE_OFFLINE_STORE = "online_offline_store"
-    FEATURE_DISCOVERY = "feature_discovery"
-    FEATURE_LINEAGE = "feature_lineage"
-    TIME_TRAVEL = "time_travel"
-    FEATURE_VALIDATION = "feature_validation"
-    PERFORMANCE_MONITORING = "performance_monitoring"
-    FEATURE_SHARING = "feature_sharing"
-
-    # Experiment Tracking-specific capabilities
-    EXPERIMENT_TRACKING = "experiment_tracking"
-    METRICS_LOGGING = "metrics_logging"
-    PARAMETER_TRACKING = "parameter_tracking"
-    ARTIFACT_STORAGE = "artifact_storage"
-    RUN_MANAGEMENT = "run_management"
-    EXPERIMENT_SEARCH = "experiment_search"
-
-    # NLP-specific capabilities
-    TEXT_ANALYSIS = "text_analysis"
-    SENTIMENT_ANALYSIS = "sentiment_analysis"
-    NAMED_ENTITY_RECOGNITION = "named_entity_recognition"
-    LANGUAGE_TRANSLATION = "language_translation"
-    TEXT_CLASSIFICATION = "text_classification"
-    QUESTION_ANSWERING = "question_answering"
-    TEXT_SUMMARIZATION = "text_summarization"
-    KEYWORD_EXTRACTION = "keyword_extraction"
-    LANGUAGE_DETECTION = "language_detection"
-    TEXT_SIMILARITY = "text_similarity"
-
-    # API Gateway-specific capabilities
-    AUTHENTICATION = "authentication"
-    RATE_LIMITING = "rate_limiting"
-    USAGE_TRACKING = "usage_tracking"
-    MONITORING = "monitoring"
-    VALIDATION = "validation"
-
 
 class AdapterMetadata(BaseModel):
     module_id: UUID = Field(
@@ -588,6 +528,9 @@ STATIC_ADAPTER_MAPPINGS = {
     "graph.neo4j": ("acb.adapters.graph.neo4j", "Graph"),
     "graph.neptune": ("acb.adapters.graph.neptune", "Graph"),
     "graph.arangodb": ("acb.adapters.graph.arangodb", "Graph"),
+    "queue.memory": ("acb.adapters.queue.memory", "Queue"),
+    "queue.redis": ("acb.adapters.queue.redis", "Queue"),
+    "queue.rabbitmq": ("acb.adapters.queue.rabbitmq", "Queue"),
     "ai.cloud": ("acb.adapters.ai.cloud", "CloudAI"),
     "ai.edge": ("acb.adapters.ai.edge", "EdgeAI"),
     "ai.hybrid": ("acb.adapters.ai.hybrid", "HybridAI"),
@@ -606,22 +549,6 @@ STATIC_ADAPTER_MAPPINGS = {
         "acb.adapters.reasoning.openai_functions",
         "Reasoning",
     ),
-    "mlmodel.tensorflow": ("acb.adapters.mlmodel.tensorflow", "MLModel"),
-    "mlmodel.torchserve": ("acb.adapters.mlmodel.torchserve", "MLModel"),
-    "mlmodel.mlflow": ("acb.adapters.mlmodel.mlflow", "MLModel"),
-    "mlmodel.kserve": ("acb.adapters.mlmodel.kserve", "MLModel"),
-    "mlmodel.bentoml": ("acb.adapters.mlmodel.bentoml", "MLModel"),
-    "feature_store.feast": ("acb.adapters.feature_store.feast", "FeatureStore"),
-    "feature_store.tecton": ("acb.adapters.feature_store.tecton", "FeatureStore"),
-    "feature_store.aws": ("acb.adapters.feature_store.aws", "FeatureStore"),
-    "feature_store.vertex": ("acb.adapters.feature_store.vertex", "FeatureStore"),
-    "feature_store.custom": ("acb.adapters.feature_store.custom", "FeatureStore"),
-    "experiment.mlflow": ("acb.adapters.experiment.mlflow", "Experiment"),
-    "experiment.wandb": ("acb.adapters.experiment.wandb", "Experiment"),
-    "experiment.tensorboard": ("acb.adapters.experiment.tensorboard", "Experiment"),
-    "nlp.spacy": ("acb.adapters.nlp.spacy", "NLP"),
-    "nlp.transformers": ("acb.adapters.nlp.transformers", "NLP"),
-    "gateway": ("acb.adapters.gateway", "APIGateway"),
 }
 
 

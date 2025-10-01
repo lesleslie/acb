@@ -1,6 +1,42 @@
 ---
-id: 01K6FSHDG3S7WNZP1XKDPX2E1T
+id: 01K6G6837QCZNPKMPMGBD48366
 ---
+______________________________________________________________________
+
+## id: 01K6G5HN7415KMRGE6163T4VP2
+
+______________________________________________________________________
+
+## id: 01K6G58DE7MPHADP1JJ0N6N83Q
+
+______________________________________________________________________
+
+## id: 01K6G4MDCG9S3W0HRTM03WZ106
+
+______________________________________________________________________
+
+## id: 01K6G3R9VG06PXVY4XKP2MD76J
+
+______________________________________________________________________
+
+## id: 01K6G395NB6THCKTFVNGFN3PRY
+
+______________________________________________________________________
+
+## id: 01K6FZP356AAY1CBB2QT8H7Q49
+
+______________________________________________________________________
+
+## id: 01K6FY3QBSH7653WW0CGCXBXRH
+
+______________________________________________________________________
+
+## id: 01K6FVE6T5K1P52D10J52CDCAD
+
+______________________________________________________________________
+
+## id: 01K6FSHDG3S7WNZP1XKDPX2E1T
+
 ______________________________________________________________________
 
 ## id: 01K6FSGCGENVM1TR14DW87D6QC
@@ -301,7 +337,7 @@ ______________________________________________________________________
 
 ## Project Structure & Module Organization
 
-- `acb/` holds production code; `actions/`, `adapters/`, `core/`, `services/`, and `gateway/` supply reusable primitives, IO bridges, orchestration, and transport helpers.
+- `acb/` holds production code; `actions/`, `adapters/`, `core/`, and `services/` supply reusable primitives, IO bridges, orchestration, and transport helpers.
 - Runtime glue lives in `config.py`, `depends.py`, and `context.py`; follow `CONFIGURATION.md` when wiring new packages or environment layers.
 - Tests mirror the package under `tests/`; reference material stays in `docs/`, sample flows in `examples/`, and generated build outputs in `build/`—avoid hand-editing generated assets.
 

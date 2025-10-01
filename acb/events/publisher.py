@@ -1,15 +1,12 @@
-from typing import Any
-
 """Event Publisher implementation for ACB Events System.
 
-Provides a high-performance, async-first event publisher with pub-sub model,
-message queues integration, and streaming platform support. Follows ACB's
-service patterns with dependency injection and health monitoring.
+Provides a high-performance, async-first event publisher using the unified queue
+adapter backend. Supports pub-sub patterns, event ordering, and delivery guarantees
+through pluggable queue backends (memory, Redis, RabbitMQ).
 
 Features:
-- In-memory pub-sub with async handling
-- Integration with external message queues (Redis, RabbitMQ)
-- Streaming platform support (Kafka, Apache Pulsar)
+- Unified queue adapter backend integration
+- In-memory and distributed messaging support
 - Event ordering and delivery guarantees
 - Automatic retries and error handling
 - Metrics collection and health monitoring
@@ -19,11 +16,13 @@ import asyncio
 import logging
 import typing as t
 from collections import defaultdict
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from enum import Enum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
+from acb.adapters import import_adapter
+from acb.depends import depends
 from acb.services import ServiceSettings
 
 from ._base import (
@@ -34,24 +33,13 @@ from ._base import (
 )
 
 
-class PublisherBackend(Enum):
-    """Supported event publisher backends."""
-
-    MEMORY = "memory"
-    REDIS = "redis"
-    RABBITMQ = "rabbitmq"
-    KAFKA = "kafka"
-    PULSAR = "pulsar"
-
-
 class EventPublisherSettings(ServiceSettings):
     """Settings for event publisher configuration."""
 
-    # Backend configuration
-    backend: PublisherBackend = Field(default=PublisherBackend.MEMORY)
-    connection_url: str | None = Field(
-        default=None,
-        description="Backend connection URL",
+    # Queue backend configuration (uses queue adapter from settings/adapters.yml)
+    event_topic_prefix: str = Field(
+        default="events",
+        description="Prefix for event topics",
     )
 
     # Performance settings
@@ -82,8 +70,6 @@ class EventPublisherSettings(ServiceSettings):
     # Monitoring
     enable_metrics: bool = Field(default=True)
     log_events: bool = Field(default=False)
-
-    model_config = ConfigDict(use_enum_values=True)
 
 
 class PublisherMetrics(BaseModel):
@@ -125,54 +111,20 @@ class PublisherMetrics(BaseModel):
         self.events_retried += 1
 
 
-class EventQueue:
-    """Internal event queue for managing event processing."""
-
-    def __init__(self, max_size: int = 10000) -> None:
-        self._queue: asyncio.Queue[Event] = asyncio.Queue(maxsize=max_size)
-        self._dead_letter_queue: asyncio.Queue[Event] = asyncio.Queue()
-        self._processing_tasks: dict[UUID, asyncio.Task[None]] = {}
-
-    async def put(self, event: Event) -> None:
-        """Add event to queue."""
-        await self._queue.put(event)
-
-    async def get(self) -> Event:
-        """Get next event from queue."""
-        return await self._queue.get()
-
-    async def put_dead_letter(self, event: Event) -> None:
-        """Add event to dead letter queue."""
-        await self._dead_letter_queue.put(event)
-
-    def qsize(self) -> int:
-        """Get current queue size."""
-        return self._queue.qsize()
-
-    def dead_letter_qsize(self) -> int:
-        """Get dead letter queue size."""
-        return self._dead_letter_queue.qsize()
-
-    def task_done(self) -> None:
-        """Mark queue task as done."""
-        self._queue.task_done()
-
-    async def join(self) -> None:
-        """Wait for all tasks to complete."""
-        await self._queue.join()
-
-
 class EventPublisher(EventPublisherBase):
-    """High-performance event publisher with pub-sub model."""
+    """High-performance event publisher using queue adapter backend."""
 
     def __init__(self, settings: EventPublisherSettings | None = None) -> None:
         super().__init__()
         self._settings = settings or EventPublisherSettings()
         self._metrics = PublisherMetrics()
 
+        # Queue adapter integration
+        Queue = import_adapter("queue")
+        self._queue = depends.get(Queue)
+
         # Event routing
         self._subscriptions: list[EventSubscription] = []
-        self._event_queue = EventQueue(max_size=self._settings.queue_max_size)
 
         # Processing control
         self._worker_tasks: list[asyncio.Task[None]] = []
@@ -184,7 +136,7 @@ class EventPublisher(EventPublisherBase):
         # Subscription management
         self._subscription_lock = asyncio.Lock()
         self._subscription_tasks: dict[UUID, list[asyncio.Task[None]]] = defaultdict(
-            list[Any]
+            list
         )
 
         # Event routing maps for performance
@@ -200,13 +152,17 @@ class EventPublisher(EventPublisherBase):
             [s for s in self._subscriptions if s.active],
         )
         self._metrics.handlers_registered = len(self._subscriptions)
-        self._metrics.queue_size = self._event_queue.qsize()
-        self._metrics.dead_letter_queue_size = self._event_queue.dead_letter_qsize()
+        # Queue metrics are managed by the queue adapter
+        self._metrics.queue_size = 0  # Would need queue adapter API for this
+        self._metrics.dead_letter_queue_size = (
+            0  # Would need queue adapter API for this
+        )
         return self._metrics
 
-    async def start(self) -> None:
-        """Start the event publisher."""
-        await super().start()
+    async def _initialize(self) -> None:
+        """Initialize the event publisher (ServiceBase requirement)."""
+        # Connect to queue backend
+        await self._queue.connect()
 
         # Start worker tasks
         num_workers = min(self._settings.max_concurrent_events, 10)
@@ -217,8 +173,8 @@ class EventPublisher(EventPublisherBase):
         if self._settings.log_events:
             self._logger.info("Event publisher started with %d workers", num_workers)
 
-    async def stop(self) -> None:
-        """Stop the event publisher."""
+    async def _shutdown(self) -> None:
+        """Shutdown the event publisher (ServiceBase requirement)."""
         self._shutdown_event.set()
 
         # Cancel all worker tasks
@@ -246,10 +202,19 @@ class EventPublisher(EventPublisherBase):
         self._worker_tasks.clear()
         self._subscription_tasks.clear()
 
-        await super().stop()
+        # Disconnect from queue backend
+        await self._queue.disconnect()
 
         if self._settings.log_events:
             self._logger.info("Event publisher stopped")
+
+    async def start(self) -> None:
+        """Start the event publisher (public API)."""
+        await self.initialize()
+
+    async def stop(self) -> None:
+        """Stop the event publisher (public API)."""
+        await self.shutdown()
 
     async def publish(self, event: Event) -> None:
         """Publish an event to all matching subscribers.
@@ -271,7 +236,36 @@ class EventPublisher(EventPublisherBase):
         if event.metadata.retry_delay == 1.0:  # Default value
             event.metadata.retry_delay = self._settings.default_retry_delay
 
-        await self._event_queue.put(event)
+        # Serialize event and publish via queue adapter
+        import msgpack
+        from acb.adapters.queue import MessagePriority
+
+        # Map event priority to queue priority
+        priority_map = {
+            "low": MessagePriority.LOW,
+            "normal": MessagePriority.NORMAL,
+            "high": MessagePriority.HIGH,
+            "critical": MessagePriority.CRITICAL,
+        }
+        queue_priority = priority_map.get(
+            event.metadata.priority.value, MessagePriority.NORMAL
+        )
+
+        # Create topic from event type
+        topic = f"{self._settings.event_topic_prefix}.{event.metadata.event_type}"
+
+        # Serialize event payload
+        payload = msgpack.packb(event.model_dump())
+
+        # Publish to queue
+        await self._queue.publish(
+            topic=topic,
+            payload=payload,
+            priority=queue_priority,
+            headers=event.metadata.headers,
+            correlation_id=str(event.metadata.event_id),
+        )
+
         self._metrics.record_event_published()
 
         if self._settings.log_events:
@@ -404,21 +398,41 @@ class EventPublisher(EventPublisherBase):
 
     async def _event_worker(self, worker_name: str) -> None:
         """Worker task for processing events from the queue."""
+        import msgpack
+
+        # Subscribe to all event topics
+        topic_pattern = f"{self._settings.event_topic_prefix}.*"
+
         while not self._shutdown_event.is_set():
             try:
-                # Get next event with timeout
-                event = await asyncio.wait_for(
-                    self._event_queue.get(),
-                    timeout=1.0,  # Check shutdown every second
-                )
+                # Subscribe to event messages via queue adapter
+                async with self._queue.subscribe(topic_pattern) as messages:
+                    async for queue_message in messages:
+                        if self._shutdown_event.is_set():
+                            break
 
-                # Process the event
-                await self._process_event(event)
-                self._event_queue.task_done()
+                        try:
+                            # Deserialize event
+                            event_data = msgpack.unpackb(queue_message.payload)
+                            event = Event.model_validate(event_data)
 
-            except TimeoutError:
-                # Normal timeout, continue loop
-                continue
+                            # Process the event
+                            await self._process_event(event)
+
+                            # Acknowledge message
+                            await self._queue.acknowledge(queue_message)
+
+                        except Exception as e:
+                            self._logger.exception(
+                                "Worker %s failed to process message: %s",
+                                worker_name,
+                                e,
+                            )
+                            # Reject message (will go to DLQ if configured)
+                            await self._queue.reject(queue_message, requeue=False)
+
+            except asyncio.CancelledError:
+                break
             except Exception as e:
                 self._logger.exception("Worker %s error: %s", worker_name, e)
                 await asyncio.sleep(1.0)  # Back off on errors
@@ -544,6 +558,9 @@ class EventPublisher(EventPublisherBase):
 
     async def _handle_failed_event(self, event: Event) -> None:
         """Handle a failed event (retry or dead letter)."""
+        import msgpack
+        from acb.adapters.queue import MessagePriority
+
         self._metrics.record_event_failed()
 
         if event.can_retry():
@@ -556,56 +573,59 @@ class EventPublisher(EventPublisherBase):
             event.mark_retrying()
             self._metrics.record_event_retried()
 
-            # Schedule retry
-            await asyncio.sleep(delay)
-            await self._event_queue.put(event)
+            # Re-publish with delay for retry
+            topic = f"{self._settings.event_topic_prefix}.{event.metadata.event_type}"
+            payload = msgpack.packb(event.model_dump())
+
+            await self._queue.enqueue(
+                topic=topic,
+                payload=payload,
+                priority=MessagePriority.NORMAL,
+                delay_seconds=delay,
+            )
 
             if self._settings.log_events:
                 self._logger.debug(
-                    "Retrying event %s (attempt %d/%d)",
+                    "Retrying event %s (attempt %d/%d) after %0.2fs",
                     event.metadata.event_id,
                     event.retry_count,
                     event.metadata.max_retries,
+                    delay,
                 )
         else:
-            # Send to dead letter queue
-            if self._settings.dead_letter_queue:
-                await self._event_queue.put_dead_letter(event)
-
+            # Failed events that can't retry will go to dead letter queue via queue adapter
             if self._settings.log_events:
                 self._logger.warning(
-                    "Event %s moved to dead letter queue: %s",
+                    "Event %s exhausted retries (will go to DLQ): %s",
                     event.metadata.event_id,
                     event.error_message,
                 )
+            # The queue adapter will handle DLQ when message is rejected
 
-    # Context manager support
+    # Context manager support (delegating to ServiceBase)
     async def __aenter__(self) -> "EventPublisher":
-        await self.start()
+        await self.initialize()
         return self
 
     async def __aexit__(self, exc_type: t.Any, exc_val: t.Any, exc_tb: t.Any) -> None:
-        await self.stop()
+        await self.shutdown()
 
 
 # Factory function for creating event publishers
 def create_event_publisher(
-    backend: PublisherBackend = PublisherBackend.MEMORY,
     **settings_kwargs: t.Any,
 ) -> EventPublisher:
-    """Create an event publisher with specified backend.
+    """Create an event publisher with specified settings.
+
+    The queue backend is determined by settings/adapters.yml configuration.
 
     Args:
-        backend: Publisher backend type
         **settings_kwargs: Additional settings
 
     Returns:
         Configured EventPublisher instance
     """
-    settings = EventPublisherSettings(
-        backend=backend,
-        **settings_kwargs,
-    )
+    settings = EventPublisherSettings(**settings_kwargs)
     return EventPublisher(settings)
 
 
@@ -613,7 +633,7 @@ def create_event_publisher(
 @asynccontextmanager
 async def event_publisher_context(
     settings: EventPublisherSettings | None = None,
-) -> t.AsyncGenerator[EventPublisher]:
+) -> AsyncGenerator[EventPublisher]:
     """Context manager for event publisher lifecycle.
 
     Args:
@@ -624,7 +644,7 @@ async def event_publisher_context(
     """
     publisher = EventPublisher(settings)
     try:
-        await publisher.start()
+        await publisher.initialize()
         yield publisher
     finally:
-        await publisher.stop()
+        await publisher.shutdown()

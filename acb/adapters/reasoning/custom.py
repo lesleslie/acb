@@ -1,5 +1,3 @@
-from typing import Any
-
 """Custom rule engine reasoning adapter for logic-based decision making."""
 
 import re
@@ -8,6 +6,7 @@ import typing as t
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from acb.adapters import (
     AdapterCapability,
@@ -25,7 +24,11 @@ from acb.adapters.reasoning._base import (
     ReasoningStrategy,
     calculate_confidence_score,
 )
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import LoggerType
+else:
+    from acb.logger import Logger as LoggerType
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
@@ -158,7 +161,7 @@ class CustomReasoningSettings(ReasoningBaseSettings):
 class RuleEngine:
     """Core rule engine for evaluating complex rules."""
 
-    def __init__(self, settings: CustomReasoningSettings, logger: Logger) -> None:
+    def __init__(self, settings: CustomReasoningSettings, logger: LoggerType) -> None:
         self.settings = settings
         self.logger = logger
         self.rules: dict[str, EnhancedRule] = {}
@@ -227,7 +230,7 @@ class RuleEngine:
                     result * weight for result, weight in condition_results
                 )
                 total_weight = sum(weight for _, weight in condition_results)
-                confidence = weighted_sum / total_weight if total_weight > 0 else 0.0
+                confidence = (weighted_sum / total_weight) if total_weight > 0 else 0.0
                 matched = confidence >= self.settings.confidence_threshold
 
             # Determine triggered actions
@@ -237,7 +240,7 @@ class RuleEngine:
             explanation = f"Rule '{rule.name}' evaluation:\n" + "\n".join(explanations)
             explanation += f"\nOverall confidence: {confidence:.2f}, Matched: {matched}"
 
-            result = RuleEvaluationResult(
+            result: RuleEvaluationResult = RuleEvaluationResult(
                 rule_name=rule.name,
                 matched=matched,
                 confidence=confidence,
@@ -253,7 +256,7 @@ class RuleEngine:
             # Update stats
             if rule.name not in self.execution_stats:
                 self.execution_stats[rule.name] = []
-            self.execution_stats[rule.name].append(result.execution_time_ms)
+            self.execution_stats[rule.name].append(float(result.execution_time_ms))
 
             if self.settings.log_rule_evaluations:
                 self.logger.debug(
@@ -506,7 +509,8 @@ class Reasoning(ReasoningBase):
             confidence = best_rule.confidence
 
             # Include explanation if enabled
-            if self._settings.enable_explanation:
+            settings = self._settings
+            if settings and getattr(settings, "enable_explanation", False):
                 final_answer += f"\n\nExplanation:\n{best_rule.explanation}"
         else:
             final_answer = "No matching rules found for the given input"
@@ -613,9 +617,9 @@ class Reasoning(ReasoningBase):
             confidence_score=overall_confidence,
         )
 
-    async def _extract_input_data(self, request: ReasoningRequest) -> dict[str, t.Any]:
+    async def _extract_input_data(self, request: ReasoningRequest) -> dict[str, Any]:
         """Extract structured data from reasoning request."""
-        data = {
+        data: dict[str, Any] = {
             "query": request.query,
             "query_length": len(request.query),
             "has_context": request.context is not None,
@@ -624,17 +628,16 @@ class Reasoning(ReasoningBase):
         }
 
         if request.context:
-            data.update(
-                {
-                    "session_id": request.context.session_id,
-                    "user_id": request.context.user_id,
-                    "has_conversation_history": bool(
-                        request.context.conversation_history,
-                    ),
-                    "has_knowledge_base": bool(request.context.knowledge_base),
-                    "has_retrieved_contexts": bool(request.context.retrieved_contexts),
-                },
-            )
+            context_data = {
+                "session_id": request.context.session_id,
+                "user_id": request.context.user_id,
+                "has_conversation_history": bool(
+                    request.context.conversation_history,
+                ),
+                "has_knowledge_base": bool(request.context.knowledge_base),
+                "has_retrieved_contexts": bool(request.context.retrieved_contexts),
+            }
+            data.update(context_data)
 
         # Try to extract entities from query
         data.update(await self._extract_entities_from_text(request.query))
@@ -654,9 +657,9 @@ class Reasoning(ReasoningBase):
 
         return data
 
-    async def _extract_entities_from_text(self, text: str) -> dict[str, t.Any]:
+    async def _extract_entities_from_text(self, text: str) -> dict[str, Any]:
         """Extract entities from text using simple patterns."""
-        entities = {}
+        entities: dict[str, Any] = {}
 
         # Extract numbers
         numbers = re.findall(
@@ -750,36 +753,38 @@ class Reasoning(ReasoningBase):
     async def _execute_actions(
         self,
         actions: list[RuleAction],
-        data: dict[str, t.Any],
-    ) -> dict[str, t.Any]:
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
         """Execute rule actions."""
-        results = {"executed_actions": [], "final_result": ""}
+        results: dict[str, Any] = {"executed_actions": [], "final_result": ""}
+        executed_actions: list[str] = []
 
         for action in actions:
             try:
                 if action.action_type == ActionType.RETURN_VALUE:
                     value = action.parameters.get("value", "")
                     results["final_result"] = str(value)
-                    results["executed_actions"].append(f"Returned value: {value}")
+                    executed_actions.append(f"Returned value: {value}")
 
                 elif action.action_type == ActionType.SET_VARIABLE:
                     var_name = action.parameters.get("variable")
                     var_value = action.parameters.get("value")
-                    data[var_name] = var_value
-                    results["executed_actions"].append(f"Set {var_name} = {var_value}")
+                    if var_name is not None:
+                        data[var_name] = var_value
+                    executed_actions.append(f"Set {var_name} = {var_value}")
 
                 elif action.action_type == ActionType.LOG_MESSAGE:
                     message = action.parameters.get("message", "")
                     self.logger.info(f"Rule action log: {message}")
-                    results["executed_actions"].append(f"Logged: {message}")
+                    executed_actions.append(f"Logged: {message}")
 
                 elif action.action_type == ActionType.RAISE_ALERT:
                     alert_message = action.parameters.get("message", "Alert triggered")
                     self.logger.warning(f"Rule alert: {alert_message}")
-                    results["executed_actions"].append(f"Alert: {alert_message}")
+                    executed_actions.append(f"Alert: {alert_message}")
 
                 else:
-                    results["executed_actions"].append(
+                    executed_actions.append(
                         f"Unknown action type: {action.action_type}",
                     )
 
@@ -787,10 +792,11 @@ class Reasoning(ReasoningBase):
                 self.logger.exception(
                     f"Error executing action {action.action_type}: {e}"
                 )
-                results["executed_actions"].append(
+                executed_actions.append(
                     f"Error in {action.action_type}: {e}",
                 )
 
+        results["executed_actions"] = executed_actions
         return results
 
     # Additional methods for rule management
@@ -840,10 +846,11 @@ class Reasoning(ReasoningBase):
         engine = await self._ensure_client()
         engine.remove_rule(rule_name)
 
-    async def get_rule_statistics(self) -> dict[str, t.Any]:
+    async def get_rule_statistics(self) -> dict[str, Any]:
         """Get execution statistics for all rules."""
         engine = await self._ensure_client()
-        return engine.get_rule_statistics()
+        stats = engine.get_rule_statistics()
+        return dict(stats)
 
 
 # Export the adapter class

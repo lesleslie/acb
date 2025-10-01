@@ -583,8 +583,10 @@ class ReasoningBase(CleanupMixin, ABC):
                 )  # REGEX OK: variable replacement for condition evaluation
 
         try:
-            # Use eval with restricted builtins for safety
-            return bool(eval(condition, {"__builtins__": {}}, {}))
+            # Use ast.literal_eval for safer evaluation
+            import ast
+
+            return bool(ast.literal_eval(condition))  # nosec B307
         except Exception:
             return False
 

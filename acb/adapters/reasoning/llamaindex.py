@@ -22,7 +22,11 @@ from acb.adapters.reasoning._base import (
     calculate_confidence_score,
 )
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import LoggerType
+else:
+    from acb.logger import Logger as LoggerType
 
 # Conditional imports for LlamaIndex
 try:
@@ -141,7 +145,7 @@ class LlamaIndexReasoningSettings(ReasoningBaseSettings):
 class LlamaIndexCallback:
     """Callback handler for LlamaIndex operations."""
 
-    def __init__(self, logger: Logger) -> None:
+    def __init__(self, logger: LoggerType) -> None:
         self.logger = logger
         self.steps: list[ReasoningStep] = []
         self.step_counter = 0
@@ -225,8 +229,13 @@ class Reasoning(ReasoningBase):
 
     async def _create_client(self) -> OpenAI:
         """Create LlamaIndex OpenAI LLM client."""
-        if self._settings.api_key:
-            api_key = self._settings.api_key.get_secret_value()
+        settings = self._settings
+        if settings is None:
+            msg = "Settings not initialized"
+            raise ValueError(msg)
+
+        if settings.api_key:
+            api_key = settings.api_key.get_secret_value()
         else:
             import os
 
@@ -239,18 +248,18 @@ class Reasoning(ReasoningBase):
 
         # Create OpenAI LLM
         llm = OpenAI(
-            model=self._settings.model,
-            temperature=self._settings.temperature,
-            max_tokens=self._settings.max_tokens_per_step,
+            model=settings.model,
+            temperature=settings.temperature,
+            max_tokens=settings.max_tokens_per_step,
             api_key=api_key,
-            api_base=self._settings.base_url,
-            timeout=self._settings.timeout_seconds,
+            api_base=settings.base_url,
+            timeout=settings.timeout_seconds,
         )
 
         # Configure global settings
         Settings.llm = llm
-        Settings.chunk_size = self._settings.chunk_size
-        Settings.chunk_overlap = self._settings.chunk_overlap
+        Settings.chunk_size = getattr(settings, "chunk_size", 512)
+        Settings.chunk_overlap = getattr(settings, "chunk_overlap", 50)
 
         return llm
 
@@ -283,7 +292,12 @@ class Reasoning(ReasoningBase):
                 )
 
             # Add citation information
-            if self._settings.enable_citation_tracking and callback.retrieval_info:
+            settings = self._settings
+            if (
+                settings
+                and getattr(settings, "enable_citation_tracking", False)
+                and callback.retrieval_info
+            ):
                 response.sources_cited = callback.retrieval_info
 
             return response
@@ -388,7 +402,7 @@ Let's work through this:
             confidence_score=0.8,
         )
 
-    async def _react_reasoning(
+    async def _react_reasoning(  # type: ignore[override]
         self,
         request: ReasoningRequest,
         callback: LlamaIndexCallback,
@@ -404,7 +418,7 @@ Let's work through this:
         tools = []
         for tool_def in request.tools:
 
-            def tool_func(input_str: str, tool_def=tool_def) -> str:
+            def tool_func(input_str: str, tool_def: t.Any = tool_def) -> str:
                 # Placeholder tool execution
                 return f"Tool {tool_def.name} executed with: {input_str}"
 
@@ -416,11 +430,15 @@ Let's work through this:
             tools.append(llamaindex_tool)
 
         # Create ReAct agent
+        settings = self._settings
+        verbose = getattr(settings, "verbose", False) if settings else False
+        max_calls = getattr(settings, "max_function_calls", 10) if settings else 10
+
         agent = ReActAgent.from_tools(
             tools=tools,
             llm=llm,
-            verbose=self._settings.verbose,
-            max_function_calls=self._settings.max_function_calls,
+            verbose=verbose,
+            max_function_calls=max_calls,
         )
 
         # Execute agent
@@ -459,9 +477,11 @@ Let's work through this:
                 index = VectorStoreIndex.from_documents(docs)
 
                 # Persist index if enabled
-                if self._settings.persist_index:
+                settings = self._settings
+                if settings and getattr(settings, "persist_index", False):
+                    cache_dir = getattr(settings, "index_cache_dir", "./index_cache")
                     index.storage_context.persist(
-                        persist_dir=f"{self._settings.index_cache_dir}/{knowledge_base_name}",
+                        persist_dir=f"{cache_dir}/{knowledge_base_name}",
                     )
 
                 self._indices[knowledge_base_name] = index
@@ -511,16 +531,23 @@ Let's work through this:
         if knowledge_base_name in self._query_engines:
             return self._query_engines[knowledge_base_name]
 
+        settings = self._settings
+        top_k = getattr(settings, "similarity_top_k", 5) if settings else 5
+        response_mode = (
+            getattr(settings, "response_mode", "compact") if settings else "compact"
+        )
+        streaming = getattr(settings, "streaming", False) if settings else False
+
         # Create retriever
         retriever = VectorIndexRetriever(
             index=index,
-            similarity_top_k=self._settings.similarity_top_k,
+            similarity_top_k=top_k,
         )
 
         # Create response synthesizer
         response_synthesizer = get_response_synthesizer(
-            response_mode=self._settings.response_mode,
-            streaming=self._settings.streaming,
+            response_mode=response_mode,
+            streaming=streaming,
         )
 
         # Create query engine
@@ -541,11 +568,17 @@ Let's work through this:
         # Create empty index for simple querying
         index = VectorStoreIndex.from_documents([])
 
+        settings = self._settings
+        response_mode = (
+            getattr(settings, "response_mode", "compact") if settings else "compact"
+        )
+        streaming = getattr(settings, "streaming", False) if settings else False
+
         # Create query engine
         query_engine = index.as_query_engine(
             llm=llm,
-            response_mode=self._settings.response_mode,
-            streaming=self._settings.streaming,
+            response_mode=response_mode,
+            streaming=streaming,
         )
 
         if template:
@@ -566,22 +599,28 @@ Let's work through this:
 
         llm = await self._ensure_client()
 
+        settings = self._settings
+        token_limit = (
+            getattr(settings, "chat_memory_token_limit", 3000) if settings else 3000
+        )
+        streaming = getattr(settings, "streaming", False) if settings else False
+
         if knowledge_base:
             # Create chat engine with knowledge base
             index = await self._get_or_create_index(knowledge_base)
             chat_engine = index.as_chat_engine(
                 llm=llm,
                 memory=ChatMemoryBuffer.from_defaults(
-                    token_limit=self._settings.chat_memory_token_limit,
+                    token_limit=token_limit,
                 ),
-                streaming=self._settings.streaming,
+                streaming=streaming,
             )
         else:
             # Create simple chat engine
             chat_engine = SimpleChatEngine.from_defaults(
                 llm=llm,
                 memory=ChatMemoryBuffer.from_defaults(
-                    token_limit=self._settings.chat_memory_token_limit,
+                    token_limit=token_limit,
                 ),
             )
 

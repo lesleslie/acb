@@ -1,28 +1,31 @@
 """Event Subscriber and Routing System.
 
 Provides subscriber management, event routing, and subscription lifecycle
-for the ACB Events System. Supports both pull and push subscription models
-with advanced filtering and routing capabilities.
+for the ACB Events System using the unified queue adapter backend. Supports
+both pull and push subscription models with advanced filtering and routing.
 
 Features:
+- Queue adapter backend integration
 - Event subscription management
 - Advanced event filtering and routing
 - Pull and push subscription models
 - Event buffering and batching
 - Subscription health monitoring
-- Integration with message queues
 """
 
 import asyncio
 import logging
 import typing as t
 from collections import defaultdict, deque
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+from acb.adapters import import_adapter
+from acb.depends import depends
 from acb.services import ServiceBase, ServiceSettings
 
 from ._base import (
@@ -74,14 +77,11 @@ class SubscriberSettings(ServiceSettings):
 
     # Health monitoring
     enable_health_checks: bool = Field(default=True)
-    health_check_interval: float = Field(default=60.0)
 
     # Retry configuration
     enable_retries: bool = Field(default=True)
     max_retries: int = Field(default=3)
     retry_delay: float = Field(default=1.0)
-
-    model_config = ConfigDict(use_enum_values=True)
 
 
 class EventFilter(BaseModel):
@@ -403,13 +403,17 @@ class EventRouter:
 
 
 class EventSubscriber(ServiceBase):
-    """Event subscriber with routing and subscription management."""
+    """Event subscriber with routing and subscription management using queue adapter."""
 
     def __init__(self, settings: SubscriberSettings | None = None) -> None:
         super().__init__()
         self._settings = settings or SubscriberSettings()
         self._router = EventRouter()
         self._subscriptions: dict[UUID, ManagedSubscription] = {}
+
+        # Queue adapter integration
+        Queue = import_adapter("queue")
+        self._queue = depends.get(Queue)
 
         # Processing control
         self._processing_semaphore = asyncio.Semaphore(
@@ -422,18 +426,16 @@ class EventSubscriber(ServiceBase):
 
         self._logger = logging.getLogger(__name__)
 
-    async def start(self) -> None:
-        """Start the event subscriber."""
-        await super().start()
-
+    async def _initialize(self) -> None:
+        """Initialize the event subscriber (ServiceBase requirement)."""
         # Start health monitoring if enabled
         if self._settings.enable_health_checks:
             self._health_check_task = asyncio.create_task(self._health_check_worker())
 
         self._logger.info("Event subscriber started")
 
-    async def stop(self) -> None:
-        """Stop the event subscriber."""
+    async def _shutdown(self) -> None:
+        """Shutdown the event subscriber (ServiceBase requirement)."""
         self._shutdown_event.set()
 
         # Stop health monitoring
@@ -442,8 +444,15 @@ class EventSubscriber(ServiceBase):
             with suppress(asyncio.CancelledError):
                 await self._health_check_task
 
-        await super().stop()
         self._logger.info("Event subscriber stopped")
+
+    async def start(self) -> None:
+        """Start the event subscriber (public API)."""
+        await self.initialize()
+
+    async def stop(self) -> None:
+        """Stop the event subscriber (public API)."""
+        await self.shutdown()
 
     async def subscribe(
         self,
@@ -578,8 +587,14 @@ class EventSubscriber(ServiceBase):
                         success=False,
                         error_message=str(result),
                     )
-                else:
+                elif isinstance(result, EventHandlerResult):
                     results[sub_id] = result
+                else:
+                    # Handle unexpected result type
+                    results[sub_id] = EventHandlerResult(
+                        success=False,
+                        error_message="Unexpected result type",
+                    )
 
         return results
 
@@ -710,13 +725,13 @@ class EventSubscriber(ServiceBase):
             if (sub_stats := await self.get_subscription_stats(sub_id)) is not None
         ]
 
-    # Context manager support
+    # Context manager support (delegating to ServiceBase)
     async def __aenter__(self) -> "EventSubscriber":
-        await self.start()
+        await self.initialize()
         return self
 
     async def __aexit__(self, exc_type: t.Any, exc_val: t.Any, exc_tb: t.Any) -> None:
-        await self.stop()
+        await self.shutdown()
 
 
 # Factory function
@@ -737,7 +752,7 @@ def create_event_subscriber(**settings_kwargs: t.Any) -> EventSubscriber:
 @asynccontextmanager
 async def event_subscriber_context(
     settings: SubscriberSettings | None = None,
-) -> t.AsyncGenerator[EventSubscriber]:
+) -> AsyncGenerator[EventSubscriber]:
     """Context manager for event subscriber lifecycle.
 
     Args:
@@ -748,7 +763,7 @@ async def event_subscriber_context(
     """
     subscriber = EventSubscriber(settings)
     try:
-        await subscriber.start()
+        await subscriber.initialize()
         yield subscriber
     finally:
-        await subscriber.stop()
+        await subscriber.shutdown()

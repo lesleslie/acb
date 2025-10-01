@@ -31,7 +31,7 @@ try:
         generate_service_id,
     )
 
-    SERVICE_METADATA = ServiceMetadata(
+    SERVICE_METADATA: ServiceMetadata | None = ServiceMetadata(
         service_id=generate_service_id(),
         name="Repository Service",
         category="repository",
@@ -59,7 +59,7 @@ try:
     )
 except ImportError:
     # Discovery system not available
-    SERVICE_METADATA = None
+    SERVICE_METADATA: ServiceMetadata | None = None
 
 
 EntityType = TypeVar("EntityType")
@@ -106,9 +106,18 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
     - Cache management integration
     """
 
-    def __init__(self, name: str = "RepositoryService") -> None:
-        super().__init__(name)
-        self.settings = depends.get(RepositoryServiceSettings)
+    def __init__(self, settings: RepositoryServiceSettings | None = None) -> None:
+        self.settings = settings or depends.get(RepositoryServiceSettings)
+
+        # Create service config from settings
+        from acb.services._base import ServiceConfig
+
+        service_config = ServiceConfig(
+            service_id="repository_service",
+            name="RepositoryService",
+        )
+
+        super().__init__(service_config, self.settings)
         self.registry = get_registry()
         self.uow_manager = UnitOfWorkManager()
         self.coordinator = (
@@ -116,7 +125,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             if self.settings.enable_coordination
             else None
         )
-        self._metrics = RepositoryServiceMetrics()
+        self._repo_metrics: RepositoryServiceMetrics = RepositoryServiceMetrics()
         self._health_check_task: asyncio.Task[None] | None = None
         self._metrics_task: asyncio.Task[None] | None = None
 

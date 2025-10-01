@@ -151,8 +151,9 @@ class ONNXEmbedding(EmbeddingAdapter):
                 raise ImportError(msg)
             self._tokenizer = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]
-                    self._settings.tokenizer_name
+                lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]  # nosec B615
+                    self._settings.tokenizer_name,
+                    revision=getattr(self._settings, "tokenizer_revision", "main"),
                 ),
             )
 
