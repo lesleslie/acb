@@ -24,3 +24,9 @@
 /NOTES.md
 /.obsidian/
 /.smart-env/
+
+# SQLite databases and test artifacts
+*.db
+*.db-*
+/data/
+sqlite+*/

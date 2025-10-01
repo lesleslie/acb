@@ -12,9 +12,9 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.config import Config, Settings
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 from acb.logger import Logger
 
@@ -63,6 +63,8 @@ class ServiceSettings(Settings):
 class ServiceConfig(BaseModel):
     """Configuration model for services."""
 
+    model_config = ConfigDict(extra="forbid")
+
     service_id: str = Field(description="Unique service identifier")
     name: str = Field(description="Human-readable service name")
     version: str = Field(default="1.0.0", description="Service version")
@@ -75,9 +77,6 @@ class ServiceConfig(BaseModel):
         default=100,
         description="Service initialization priority (lower = earlier)",
     )
-
-    class Config:
-        extra = "forbid"
 
 
 class ServiceBase(ABC, CleanupMixin):

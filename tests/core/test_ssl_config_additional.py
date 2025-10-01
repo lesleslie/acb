@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from unittest.mock import Mock, patch
 
-from acb.core.ssl_config import (
+from acb.ssl_config import (
     SSLConfig,
     SSLConfigMixin,
     SSLMode,

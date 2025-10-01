@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from acb.config import Config, Settings
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 from acb.logger import Logger
 

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 
 
 class TestCleanupMixin:

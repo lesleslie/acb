@@ -12,7 +12,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from statistics import mean, median
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.config import Config
 from acb.depends import depends
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
@@ -85,6 +85,8 @@ class MetricsSummary:
 class PerformanceMetrics(BaseModel):
     """Performance metrics data model."""
 
+    model_config = ConfigDict(extra="forbid")
+
     response_times: list[float] = Field(default_factory=list)
     error_rates: list[float] = Field(default_factory=list)
     throughput: list[float] = Field(default_factory=list)
@@ -92,9 +94,6 @@ class PerformanceMetrics(BaseModel):
     database_query_times: list[float] = Field(default_factory=list)
     memory_usage: list[float] = Field(default_factory=list)
     custom_metrics: dict[str, list[float]] = Field(default_factory=dict)
-
-    class Config:
-        extra = "forbid"
 
 
 class MetricsCollectorSettings(ServiceSettings):

@@ -23,7 +23,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 from acb.config import Config
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 from acb.logger import Logger
 

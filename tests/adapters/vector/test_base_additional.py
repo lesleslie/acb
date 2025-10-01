@@ -433,7 +433,7 @@ class TestVectorBaseEdgeCases:
 
     def test_vector_base_settings_ssl_config_mixin(self) -> None:
         """Test that VectorBaseSettings inherits from SSLConfigMixin."""
-        from acb.core.ssl_config import SSLConfigMixin
+        from acb.ssl_config import SSLConfigMixin
         assert issubclass(VectorBaseSettings, SSLConfigMixin)
 
     def test_vector_base_settings_secrets(self) -> None:

@@ -16,7 +16,7 @@ from weakref import WeakSet
 
 from pydantic import Field
 from acb.config import Config
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 

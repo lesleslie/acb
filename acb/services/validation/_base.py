@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from acb.config import Settings
 
 
@@ -58,6 +58,8 @@ class ValidationResult:
 class ValidationConfig(BaseModel):
     """Configuration for validation operations."""
 
+    model_config = ConfigDict(extra="forbid")
+
     level: ValidationLevel = ValidationLevel.STRICT
     max_validation_time_ms: float = 10.0
     enable_coercion: bool = True
@@ -78,9 +80,6 @@ class ValidationConfig(BaseModel):
     enable_schema_caching: bool = True
     cache_ttl_seconds: int = 3600
     max_cache_size: int = 1000
-
-    class Config:
-        extra = "forbid"
 
 
 class ValidationSettings(Settings):

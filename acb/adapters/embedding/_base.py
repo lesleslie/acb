@@ -9,8 +9,8 @@ from enum import Enum
 import numpy as np
 from pydantic import BaseModel, Field, SecretStr
 from acb.config import AdapterBase, Settings
-from acb.core.cleanup import CleanupMixin
-from acb.core.ssl_config import SSLConfigMixin
+from acb.cleanup import CleanupMixin
+from acb.ssl_config import SSLConfigMixin
 
 
 class EmbeddingModel(str, Enum):

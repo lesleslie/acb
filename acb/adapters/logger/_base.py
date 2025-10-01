@@ -5,7 +5,7 @@ from abc import abstractmethod
 
 from pydantic import SecretStr
 from acb.config import Config, Settings
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 
 

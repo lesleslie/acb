@@ -6,8 +6,8 @@ from msgspec import msgpack
 from pydantic import SecretStr
 from acb.actions.compress import compress, decompress
 from acb.config import Config, Settings
-from acb.core.cleanup import CleanupMixin
-from acb.core.ssl_config import SSLConfigMixin
+from acb.cleanup import CleanupMixin
+from acb.ssl_config import SSLConfigMixin
 from acb.depends import depends
 
 
@@ -54,7 +54,7 @@ class CacheBaseSettings(Settings, SSLConfigMixin):
         # Configure SSL if enabled
         if ssl_enabled:
             # Map verify mode string to enum
-            from acb.core.ssl_config import SSLVerifyMode
+            from acb.ssl_config import SSLVerifyMode
 
             verify_mode_map = {
                 "none": SSLVerifyMode.NONE,

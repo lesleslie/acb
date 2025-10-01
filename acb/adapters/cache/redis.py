@@ -48,7 +48,7 @@ from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 
 # Removed complex mixins - simplified Redis cache implementation
 from acb.config import Config
-from acb.core.ssl_config import SSLConfigMixin
+from acb.ssl_config import SSLConfigMixin
 from acb.debug import debug
 from acb.depends import depends
 
@@ -169,7 +169,7 @@ class Cache(CacheBase, SSLConfigMixin):
         """Update SSL configuration from cache settings."""
         if hasattr(cache_settings, "ssl_enabled") and cache_settings.ssl_enabled:
             # Configure SSL based on cache settings
-            from acb.core.ssl_config import SSLVerifyMode
+            from acb.ssl_config import SSLVerifyMode
 
             verify_mode_map = {
                 "none": SSLVerifyMode.NONE,
@@ -198,7 +198,7 @@ class Cache(CacheBase, SSLConfigMixin):
             cache_settings = self.config.cache
             if hasattr(cache_settings, "ssl_enabled") and cache_settings.ssl_enabled:
                 # Create SSL config dynamically from current settings
-                from acb.core.ssl_config import SSLConfig, SSLVerifyMode
+                from acb.ssl_config import SSLConfig, SSLVerifyMode
 
                 # Map verify mode string to enum
                 verify_mode_map = {

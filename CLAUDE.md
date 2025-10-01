@@ -1,6 +1,10 @@
 ---
-id: 01K6G689DFF8R27Q77W17HVGEP
+id: 01K6GGMBV709ZMJPKJ0RVGG8FF
 ---
+______________________________________________________________________
+
+## id: 01K6G689DFF8R27Q77W17HVGEP
+
 ______________________________________________________________________
 
 ## id: 01K6G5HVJAF5NQ8CKM2VE912KR
@@ -429,9 +433,6 @@ acb/
 │   ├── compress/     # Compression utilities (gzip, brotli)
 │   ├── encode/       # Encoding/decoding (JSON, YAML, TOML, MsgPack)
 │   └── hash/         # Hashing utilities (blake3, crc32c, md5)
-├── core/             # Essential adapter infrastructure
-│   ├── ssl_config.py # SSL/TLS configuration
-│   └── cleanup.py    # Simple resource cleanup patterns
 ├── adapters/         # External system integrations
 │   ├── cache/        # Memory, Redis caching (simplified)
 │   │   ├── memory.py
@@ -452,12 +453,14 @@ acb/
 │   ├── dns/          # DNS management (Cloud DNS, Cloudflare, Route53)
 │   ├── ftpd/         # File transfer (FTP, SFTP)
 │   └── ...
+├── cleanup.py        # Simple resource cleanup patterns
 ├── config.py         # Configuration system with simple hot-reloading
+├── console.py        # Console utilities
 ├── context.py        # Centralized context management (v0.19.1+)
+├── debug.py          # Debugging utilities
 ├── depends.py        # Dependency injection framework
 ├── logger.py         # Logging system
-├── debug.py          # Debugging utilities
-└── console.py        # Console utilities
+└── ssl_config.py     # SSL/TLS configuration
 ```
 
 ### Adapter Implementation Pattern
@@ -544,7 +547,7 @@ ACB has been significantly simplified to focus on its core mission: providing cl
 All adapters now use a simplified cleanup pattern:
 
 ```python
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 
 
 class SimpleAdapter(CleanupMixin):

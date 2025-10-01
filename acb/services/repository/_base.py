@@ -16,7 +16,7 @@ from typing import Any, TypeVar
 
 from pydantic import Field, field_validator
 from acb.config import Settings
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 
 # Type variables for generic repository

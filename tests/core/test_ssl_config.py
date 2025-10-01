@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import ValidationError
 
-from acb.core.ssl_config import (
+from acb.ssl_config import (
     SSLConfig,
     SSLConfigMixin,
     SSLMode,

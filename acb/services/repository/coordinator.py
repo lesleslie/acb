@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, TypeVar
 
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 
 from ._base import RepositoryBase, RepositoryError
 from .unit_of_work import UnitOfWorkManager

@@ -7,8 +7,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, SecretStr
 from acb.config import Config, Settings
-from acb.core.cleanup import CleanupMixin
-from acb.core.ssl_config import SSLConfigMixin
+from acb.cleanup import CleanupMixin
+from acb.ssl_config import SSLConfigMixin
 from acb.depends import depends
 
 
@@ -137,7 +137,7 @@ class GraphBaseSettings(Settings, SSLConfigMixin):
 
         # Configure SSL if enabled
         if ssl_enabled:
-            from acb.core.ssl_config import SSLVerifyMode
+            from acb.ssl_config import SSLVerifyMode
 
             verify_mode_map = {
                 "none": SSLVerifyMode.NONE,

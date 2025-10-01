@@ -13,8 +13,8 @@ from acb.adapters import import_adapter
 from acb.config import AdapterBase, Config, Settings, gen_password
 
 # Removed complex enterprise mixins - simplified SQL adapters
-from acb.core.cleanup import CleanupMixin
-from acb.core.ssl_config import SSLConfigMixin
+from acb.cleanup import CleanupMixin
+from acb.ssl_config import SSLConfigMixin
 from acb.debug import debug
 from acb.depends import depends
 

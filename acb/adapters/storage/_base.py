@@ -6,7 +6,7 @@ from fsspec.asyn import AsyncFileSystem
 from google.cloud.exceptions import NotFound
 from acb.adapters import get_adapter, tmp_path
 from acb.config import AdapterBase, Config, Settings
-from acb.core.cleanup import CleanupMixin
+from acb.cleanup import CleanupMixin
 from acb.debug import debug
 from acb.depends import depends
 

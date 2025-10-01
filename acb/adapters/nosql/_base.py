@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 
 from pydantic import SecretStr
 from acb.config import AdapterBase, Config, Settings
-from acb.core.cleanup import CleanupMixin
-from acb.core.ssl_config import SSLConfigMixin
+from acb.cleanup import CleanupMixin
+from acb.ssl_config import SSLConfigMixin
 from acb.depends import depends
 
 

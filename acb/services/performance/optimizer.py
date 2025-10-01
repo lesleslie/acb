@@ -11,7 +11,7 @@ import typing as t
 from dataclasses import dataclass, field
 from functools import wraps
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
@@ -76,6 +76,8 @@ class OptimizationResult:
 class OptimizationConfig(BaseModel):
     """Configuration for performance optimization."""
 
+    model_config = ConfigDict(extra="forbid")
+
     # Cache optimization
     cache_enabled: bool = True
     cache_ttl_seconds: int = 3600
@@ -93,9 +95,6 @@ class OptimizationConfig(BaseModel):
 
     # Web framework integration (can be extended by web frameworks)
     web_framework_integration: bool = False
-
-    class Config:
-        extra = "forbid"
 
 
 class PerformanceOptimizerSettings(ServiceSettings):

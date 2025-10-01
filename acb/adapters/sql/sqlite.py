@@ -138,7 +138,13 @@ class SqlSettings(SqlBaseSettings):
             db_path = self.database_url[10:]
         else:
             db_path = self.database_url
-        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
+        # Only create directories for actual file paths, not for :memory: or invalid paths
+        if db_path != ":memory:" and not db_path.endswith(":"):
+            # Validate it's a proper file path (not a driver name)
+            if "/" in db_path or "\\" in db_path or db_path.endswith(".db"):
+                Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
         query_params = {}
         if self.wal_mode:
             query_params["journal_mode"] = "WAL"
