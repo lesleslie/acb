@@ -1,3 +1,6 @@
+---
+id: 01K6EJ91TCFJXTKB7DJTQ4ZRKQ
+---
 # Testing ACB
 
 This document provides information about running tests for the ACB project.
@@ -187,10 +190,10 @@ uv run python -m crackerjack
 
 ### Using the AI Agent
 
-The `--ai-agent` flag enables AI assistance when running tests:
+The `--ai-fix` flag enables AI assistance when running tests:
 
 ```bash
-python -m crackerjack --ai-agent
+python -m crackerjack --ai-fix
 ```
 
 This will provide AI-powered analysis of test failures and suggestions for fixes.
@@ -206,7 +209,7 @@ python -m crackerjack -s
 You can combine this with the AI agent flag:
 
 ```bash
-python -m crackerjack --ai-agent -s
+python -m crackerjack --ai-fix -s
 ```
 
 ### Running Specific Tests
@@ -215,7 +218,7 @@ Crackerjack accepts command line arguments for specific options, but doesn't dir
 
 ```bash
 # Run with AI agent assistance
-python -m crackerjack --ai-agent
+python -m crackerjack --ai-fix
 
 # Show output during test execution
 python -m crackerjack -s

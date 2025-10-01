@@ -1,3 +1,6 @@
+---
+id: 01K6EJ91ARWEAW14WK9N8540MZ
+---
 # GEMINI.md
 
 This file provides guidance to Gemini when working with code in this repository.
@@ -42,7 +45,7 @@ pyright
 # Full quality workflow with crackerjack
 python -m crackerjack -x -t -p <version> -c    # Clean, test, bump version, commit
 python -m crackerjack -a <version>             # Alternative automated workflow
-python -m crackerjack -t --ai-agent            # Test and quality verification (AI-optimized output)
+python -m crackerjack -t --ai-fix            # Test and quality verification (AI-optimized output)
 python -m crackerjack -t                       # Test and quality verification (human-friendly output)
 ```
 
@@ -665,7 +668,7 @@ Self-contained utility functions automatically discovered and registered:
 1. **Code**: Follow adapter patterns and async interfaces
 1. **Test**: Write tests with proper mocking
 1. **Quality**: Use ruff for formatting and pyright for type checking
-1. **Verification**: **MANDATORY** - Run `python -m crackerjack -t --ai-agent` before task completion
+1. **Verification**: **MANDATORY** - Run `python -m crackerjack -t --ai-fix` before task completion
 1. **Automation**: Use crackerjack for comprehensive workflows
 
 ## Code Quality Compliance
@@ -1041,7 +1044,7 @@ ACB maintains a detailed changelog tracking all significant changes:
 
 **MANDATORY: Before marking any task as complete, AI assistants MUST:**
 
-1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-agent` to run all quality checks and tests with AI-optimized output
+1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-fix` to run all quality checks and tests with AI-optimized output
 1. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
 1. **Re-run verification**: Ensure crackerjack passes completely (all hooks pass, all tests pass)
 1. **Document verification**: Mention that crackerjack verification was completed successfully
@@ -1059,17 +1062,17 @@ ACB maintains a detailed changelog tracking all significant changes:
 
 Each adapter category has its own detailed README with usage examples and configuration:
 
-- **[Cache](./acb/adapters/cache/README.md)**: Memory and Redis caching with aiocache interface
-- **[DNS](./acb/adapters/dns/README.md)**: Domain management (Cloud DNS, Cloudflare, Route53)
-- **[FTPD](./acb/adapters/ftpd/README.md)**: File transfer protocols (FTP, SFTP)
-- **[Models](./acb/adapters/models/README.md)**: Universal query interface for multiple ORMs
-- **[Monitoring](./acb/adapters/monitoring/README.md)**: Error tracking (Sentry, Logfire)
-- **[NoSQL](./acb/adapters/nosql/README.md)**: Document databases (MongoDB, Firestore, Redis)
-- **[Requests](./acb/adapters/requests/README.md)**: HTTP clients (HTTPX, Niquests)
-- **[Secret](./acb/adapters/secret/README.md)**: Secret management (Infisical, GCP, Azure, Cloudflare)
-- **[SMTP](./acb/adapters/smtp/README.md)**: Email sending (Gmail, Mailgun)
-- **[SQL](./acb/adapters/sql/README.md)**: Relational databases (MySQL, PostgreSQL, SQLite)
-- **[Storage](./acb/adapters/storage/README.md)**: File storage (S3, GCS, Azure, local)
+- **[[acb/adapters/cache/README|Cache]]**: Memory and Redis caching with aiocache interface
+- **[[acb/adapters/dns/README|DNS]]**: Domain management (Cloud DNS, Cloudflare, Route53)
+- **[[acb/adapters/ftpd/README|FTPD]]**: File transfer protocols (FTP, SFTP)
+- **[[acb/adapters/models/README|Models]]**: Universal query interface for multiple ORMs
+- **[[acb/adapters/monitoring/README|Monitoring]]**: Error tracking (Sentry, Logfire)
+- **[[acb/adapters/nosql/README|NoSQL]]**: Document databases (MongoDB, Firestore, Redis)
+- **[[acb/adapters/requests/README|Requests]]**: HTTP clients (HTTPX, Niquests)
+- **[[acb/adapters/secret/README|Secret]]**: Secret management (Infisical, GCP, Azure, Cloudflare)
+- **[[acb/adapters/smtp/README|SMTP]]**: Email sending (Gmail, Mailgun)
+- **[[acb/adapters/sql/README|SQL]]**: Relational databases (MySQL, PostgreSQL, SQLite)
+- **[[acb/adapters/storage/README|Storage]]**: File storage (S3, GCS, Azure, local)
 
 ## Documentation and Testing Audit Requirements
 

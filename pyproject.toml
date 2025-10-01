@@ -9,7 +9,6 @@ name = "acb"
 version = "0.22.0"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
-license.text = "BSD-3-CLAUSE"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -59,147 +58,151 @@ dependencies = [
     "uvicorn>=0.30",
 ]
 
-optional-dependencies.ai = [
+[project.license]
+text = "BSD-3-CLAUSE"
+
+[project.optional-dependencies]
+ai = [
     "aiohttp>=3.9",
     "anthropic>=0.5",
     "boto3>=1.35",
     "google-cloud-aiplatform>=1.40",
-    "httpx[http2]>=0.27.2,<0.28",
+    "httpx[http2]>=0.28.1",
     "ollama>=0.1",
-    "onnx>=1.14",
-    "onnxruntime>=1.16",
+    "onnx>=1.14; python_version<'3.13'",
+    "onnxruntime>=1.16; python_version<'3.13'",
     "openai>=1",
-    "psutil>=5.9.6,<6",
-    "torch>=2",
+    "psutil>=6.1",
+    "torch>=2; python_version<'3.13'",
     "transformers>=4.30",
 ]
-optional-dependencies.all = [
+all = [
     "acb[ai,cache,dns,embedding,feature-store,ftpd,mlmodel,models,monitoring,nosql,reasoning,requests,secret,smtp,sql,storage,vector,mcp]",
 ]
-optional-dependencies.api = [
+api = [
     "acb[cache,nosql,requests,monitoring,secret]",
 ]
-optional-dependencies.cache = [
+cache = [
     "aiocache[redis]>=0.12.3",
     "coredis>=4.24",
     "logfire[redis]>=3.24",
 ]
-optional-dependencies.cloud-native = [
+cloud-native = [
     "acb[cache,sql,storage,secret,monitoring,dns]",
 ]
-optional-dependencies.dataplatform = [
+dataplatform = [
     "acb[sql,nosql,storage,monitoring]",
 ]
-optional-dependencies.demo = [
+demo = [
     "faker>=37.4",
 ]
-optional-dependencies.dns = [
+dns = [
     "boto3>=1.35",
     "google-cloud-dns>=0.35.1",
     "python-cloudflare>=1.0.1",
     "validators>=0.35",
 ]
-optional-dependencies.embedding = [
-    "numpy>=1.24",
-    "onnx>=1.14",
-    "onnxruntime>=1.16",
+embedding = [
+    "numpy>=2.1",
+    "onnx>=1.14; python_version<'3.13'",
+    "onnxruntime>=1.16; python_version<'3.13'",
     "openai>=1",
-    "sentence-transformers>=2",
-    "torch>=2",
+    "sentence-transformers>=2; python_version<'3.13'",
+    "torch>=2; python_version<'3.13'",
     "transformers>=4",
 ]
-optional-dependencies.feature_store = [
+feature_store = [
     "boto3>=1.26",
-    "feast>=0.34",
+    "feast>=0.34; python_version<'3.13'",
     "google-cloud-aiplatform>=1.25",
-    "numpy>=1.24",
+    "numpy>=2.1",
     "pandas>=2",
     "pyarrow>=12",
     "scikit-learn>=1.3",
 ]
-optional-dependencies.ftpd = [
+ftpd = [
     "aioftp>=0.26.2",
     "asyncssh>=2.21",
 ]
-optional-dependencies.gcp = [
+gcp = [
     "acb[dns,secret,nosql,storage]",
 ]
-optional-dependencies.graph = [
+graph = [
     "boto3>=1.26",
     "neo4j>=5",
     "py2neo>=2021",
     "python-arango>=7",
 ]
-optional-dependencies.mcp = [
+mcp = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
 ]
-optional-dependencies.microservice = [
+microservice = [
     "acb[cache,requests,monitoring,secret]",
 ]
-optional-dependencies.minimal = [
+minimal = [
     "acb[cache,requests]",
 ]
-optional-dependencies.mlmodel = [
+mlmodel = [
     "aiohttp>=3.9",
     "bentoml>=1",
     "grpcio>=1.50",
     "grpcio-tools>=1.50",
-    "httpx>=0.27.2,<0.28",
-    "kserve>=0.15; python_version<'3.12'",
+    "httpx>=0.28.1",
+    "kserve>=0.15; python_version<'3.13'",
     "kubernetes>=25",
-    "mlflow>=2",
-    "numpy>=1.24",
+    "mlflow>=2; python_version<'3.13'",
+    "numpy>=2.1",
     "pandas>=2",
     "prometheus-client>=0.17",
     "scikit-learn>=1.3",
-    "tensorflow-serving-api>=2.11; python_version<'3.12'",
-    "torchserve>=0.8",
+    "tensorflow-serving-api>=2.11; python_version<'3.13'",
+    "torchserve>=0.8; python_version<'3.13'",
 ]
-optional-dependencies.models = [
+models = [
     "attrs>=25.3",
     "msgspec>=0.19",
     "redis-om>=0.3.5",
     "sqlalchemy>=2.0.41",
     "sqlmodel>=0.0.24",
 ]
-optional-dependencies.monitoring = [
+monitoring = [
     "logfire[system-metrics]>=3.24",
     "sentry-sdk[loguru]>=2.32",
 ]
-optional-dependencies.nosql = [
+nosql = [
     "beanie>=1.30",
     "google-cloud-firestore>=2.21",
     "motor>=3.7.1",
     "redis-om>=0.3.5",
 ]
-optional-dependencies.reasoning = [
-    "langchain>=0.1",
-    "langchain-community>=0.0.20",
-    "langchain-openai>=0.1",
-    "llama-index>=0.9",
-    "llama-index-llms-openai>=0.1",
+reasoning = [
+    "langchain>=0.1; python_version<'3.13'",
+    "langchain-community>=0.0.20; python_version<'3.13'",
+    "langchain-openai>=0.1; python_version<'3.13'",
+    "llama-index>=0.9; python_version<'3.13'",
+    "llama-index-llms-openai>=0.1; python_version<'3.13'",
     "openai>=1",
     "pydantic>=2",
     "tiktoken>=0.5",
 ]
-optional-dependencies.requests = [
-    "httpx[http2]>=0.27.2,<0.28",
+requests = [
+    "httpx[http2]>=0.28.1",
     "logfire[httpx]>=3.24",
     "niquests>=3.14.1",
     "sentry-sdk[httpx]>=2.32",
 ]
-optional-dependencies.secret = [
+secret = [
     "azure-identity>=1.15",
     "azure-keyvault-secrets>=4.8",
     "cloudflare>=3",
     "google-cloud-secret-manager>=2.24",
     "infisicalsdk>=1.0.9",
 ]
-optional-dependencies.smtp = [
+smtp = [
     "mailgun>=1.1",
 ]
-optional-dependencies.sql = [
+sql = [
     "aiomysql>=0.2",
     "aiosqlite>=0.21",
     "babel>=2.17",
@@ -212,35 +215,36 @@ optional-dependencies.sql = [
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",
 ]
-optional-dependencies.storage = [
+storage = [
     "adlfs>=2024.12",
     "fsspec>=2025.1",
     "gcsfs>=2025.5.1",
     "s3fs>=2025.5.1",
 ]
-optional-dependencies.vector = [
+vector = [
     "duckdb>=0.10.2",
     "pinecone-client>=3",
     "qdrant-client>=1.7",
     "weaviate-client>=4",
 ]
-optional-dependencies.webapp = [
+webapp = [
     "acb[cache,sql,storage,requests,monitoring]",
 ]
-optional-dependencies.webapp-plus = [
+webapp-plus = [
     "acb[cache,sql,storage,requests,monitoring,vector]",
 ]
-urls.Documentation = "https://github.com/lesleslie/acb"
-urls.Homepage = "https://github.com/lesleslie/acb"
-urls.Repository = "https://github.com/lesleslie/acb"
+
+[project.urls]
+Documentation = "https://github.com/lesleslie/acb"
+Homepage = "https://github.com/lesleslie/acb"
+Repository = "https://github.com/lesleslie/acb"
 
 [dependency-groups]
 dev = [
     "complexipy>=3.2",
-    "crackerjack>=0.22.8",
-    "detect-secrets>=1.5",
+    "crackerjack>=0.31",
+    "excalidraw-mcp>=0.34.0",
     "pre-commit>=4.2",
-    "pyproject-fmt>=2.6",
     "pytest>=8.4.1",
     "pytest-asyncio>=1",
     "pytest-benchmark>=5.1",
@@ -250,6 +254,7 @@ dev = [
     "pyyaml>=6.0.2",
     "refurb>=2.1",
     "ruff>=0.12.3",
+    "session-mgmt-mcp>=0.3",
 ]
 
 [tool.ruff]
@@ -265,15 +270,18 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-format.docstring-code-format = true
-lint.extend-select = [
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-lint.ignore = [
+ignore = [
     "D100",
     "D101",
     "D102",
@@ -286,15 +294,21 @@ lint.ignore = [
     "F821",
     "UP040",
 ]
-lint.fixable = [
+fixable = [
     "ALL",
 ]
-lint.unfixable = [  ]
-lint.isort.no-lines-before = [
+unfixable = []
+
+[tool.ruff.lint.isort]
+no-lines-before = [
     "first-party",
 ]
-lint.mccabe.max-complexity = 15
-lint.pydocstyle.convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.codespell]
 skip = "*/data/*,tests/*,.git/*,.mypy_cache/*,htmlcov/*,test_*.py,*_test.py"
@@ -380,10 +394,10 @@ include = [
     "acb",
 ]
 exclude = [
-    "dist",
+    "scratch",
     "build",
     ".venv",
-    "scratch",
+    "dist",
 ]
 extraPaths = [
     ".venv/lib/python3.13/site-packages/",
@@ -410,30 +424,30 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "nest-asyncio",
-    "pytest-xdist",
-    "autotyping",
-    "pytest",
-    "pyyaml",
     "uvicorn",
-    "google-api-python-client",
-    "pydantic-settings",
-    "pytest-asyncio",
-    "pytest-benchmark",
-    "pytest-timeout",
-    "pytest-mock",
-    "uv",
-    "inflection",
-    "hatchling",
-    "keyring",
-    "attrs",
-    "tomli-w",
-    "pytest-cov",
-    "uuid-utils",
-    "pyleak",
-    "google-crc32c",
     "pre-commit",
+    "pytest-mock",
+    "nest-asyncio",
+    "pytest",
+    "google-api-python-client",
+    "pyyaml",
     "pyfiglet",
+    "pytest-timeout",
+    "uv",
+    "pytest-cov",
+    "pytest-xdist",
+    "pytest-asyncio",
+    "uuid-utils",
+    "pytest-benchmark",
+    "inflection",
+    "keyring",
+    "tomli-w",
+    "pyleak",
+    "pydantic-settings",
+    "autotyping",
+    "attrs",
+    "google-crc32c",
+    "hatchling",
 ]
 
 [tool.refurb]
@@ -451,17 +465,17 @@ target = [
     "acb",
 ]
 skips = [
+    "B311",
+    "B704",
+    "B301",
+    "B403",
+    "B404",
     "B105",
     "B106",
     "B101",
     "B603",
     "B602",
     "B607",
-    "B311",
-    "B704",
-    "B301",
-    "B403",
-    "B404",
 ]
 exclude_dirs = [
     "tests/",
@@ -499,10 +513,3 @@ exclude_patterns = [
 ]
 max_complexity = 15
 
-[tool.autotyping]
-exclude = [
-    "*/conftest.py",
-    "tests/data/*",
-]
-safe = true
-aggressive = true
