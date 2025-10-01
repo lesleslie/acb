@@ -587,7 +587,7 @@ class EventPublisher(EventPublisherBase):
 
             # Re-publish with delay for retry
             topic = f"{self._settings.event_topic_prefix}.{event.metadata.event_type}"
-            payload = msgpack.packb(event.model_dump())
+            payload = msgpack.packb(event.model_dump(mode="json"))
 
             await self._queue.enqueue(
                 topic=topic,

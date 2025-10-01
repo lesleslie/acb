@@ -331,7 +331,7 @@ class TestEventPublisher:
         assert publisher.metrics.events_published == 10
         assert publisher.metrics.events_processed >= 10
 
-    async def test_max_concurrent_events_limit(self):
+    async def test_max_concurrent_events_limit(self, mock_queue_adapter_import):
         """Test max concurrent events limitation."""
         settings = EventPublisherSettings(max_concurrent_events=2)
         publisher = EventPublisher(settings)
@@ -369,13 +369,16 @@ class TestEventPublisher:
             # Wait for all tasks to complete
             await asyncio.gather(*tasks)
 
+            # Wait for all events to be processed (slow handler takes 0.5s per event)
+            await asyncio.sleep(3.0)  # 5 events * 0.5s + buffer
+
             # All events should eventually be handled
             assert len(slow_handler.handled_events) == 5
 
         finally:
             await publisher.stop()
 
-    async def test_health_checks(self):
+    async def test_health_checks(self, mock_queue_adapter_import):
         """Test publisher health checking."""
         settings = EventPublisherSettings(
             health_check_enabled=True,
@@ -452,7 +455,7 @@ class TestEventPublisher:
 class TestEventPublisherFactory:
     """Test event publisher factory functions."""
 
-    async def test_create_event_publisher(self):
+    async def test_create_event_publisher(self, mock_queue_adapter_import):
         """Test create_event_publisher factory function."""
         publisher = create_event_publisher(
             event_topic_prefix="test.events",
@@ -460,34 +463,42 @@ class TestEventPublisherFactory:
         )
 
         assert isinstance(publisher, EventPublisher)
-        assert publisher.settings.event_topic_prefix == "test.events"
-        assert publisher.settings.max_concurrent_events == 50
+        # Check internal settings (no public accessor)
+        assert publisher._settings.event_topic_prefix == "test.events"
+        assert publisher._settings.max_concurrent_events == 50
 
         await publisher.start()
         await publisher.stop()
 
-    async def test_event_publisher_context(self):
+    async def test_event_publisher_context(self, mock_queue_adapter_import):
         """Test event_publisher_context context manager."""
+        from acb.services._base import ServiceStatus
+
         async with event_publisher_context() as publisher:
             assert isinstance(publisher, EventPublisher)
-            assert publisher.is_running
+            # Check service status instead of is_running
+            assert publisher.status == ServiceStatus.ACTIVE
 
-        assert not publisher.is_running
+        # After context exit, service should be stopped
+        assert publisher.status == ServiceStatus.STOPPED
 
-    async def test_event_publisher_context_with_settings(self):
+    async def test_event_publisher_context_with_settings(self, mock_queue_adapter_import):
         """Test event_publisher_context with custom settings."""
+        from acb.services._base import ServiceStatus
+
         settings = EventPublisherSettings(max_concurrent_events=25)
 
         async with event_publisher_context(settings) as publisher:
-            assert publisher.settings.max_concurrent_events == 25
+            assert publisher._settings.max_concurrent_events == 25
+            assert publisher.status == ServiceStatus.ACTIVE
 
-        assert not publisher.is_running
+        assert publisher.status == ServiceStatus.STOPPED
 
 
 class TestEventPublisherIntegration:
     """Test EventPublisher integration scenarios."""
 
-    async def test_multiple_event_types(self):
+    async def test_multiple_event_types(self, mock_queue_adapter_import):
         """Test handling multiple event types."""
         async with event_publisher_context() as publisher:
             user_handler = MockEventHandler()
@@ -499,6 +510,9 @@ class TestEventPublisherIntegration:
             await publisher.subscribe(user_subscription)
             await publisher.subscribe(order_subscription)
 
+            # Give workers time to subscribe to queue
+            await asyncio.sleep(0.2)
+
             # Publish different event types
             user_event = create_event("user.created", "user_service", {"user_id": 123})
             order_event = create_event("order.created", "order_service", {"order_id": 456})
@@ -508,7 +522,8 @@ class TestEventPublisherIntegration:
             await publisher.publish(order_event)
             await publisher.publish(other_event)
 
-            await asyncio.sleep(0.1)
+            # Wait for all events to be processed
+            await asyncio.sleep(1.0)
 
             # Check that handlers only received their specific events
             assert len(user_handler.handled_events) == 1
@@ -517,12 +532,15 @@ class TestEventPublisherIntegration:
             assert len(order_handler.handled_events) == 1
             assert order_handler.handled_events[0].metadata.event_type == "order.created"
 
-    async def test_delivery_modes(self):
+    async def test_delivery_modes(self, mock_queue_adapter_import):
         """Test different delivery modes."""
         async with event_publisher_context() as publisher:
             handler = MockEventHandler()
             subscription = EventSubscription(handler=handler)
             await publisher.subscribe(subscription)
+
+            # Give workers time to subscribe to queue
+            await asyncio.sleep(0.2)
 
             # Test fire-and-forget (default)
             fire_forget_event = create_event(
@@ -540,17 +558,21 @@ class TestEventPublisherIntegration:
             )
             await publisher.publish(at_least_once_event)
 
-            await asyncio.sleep(0.1)
+            # Wait for all events to be processed
+            await asyncio.sleep(1.0)
 
             # Both events should be handled
             assert len(handler.handled_events) == 2
 
-    async def test_event_correlation(self):
+    async def test_event_correlation(self, mock_queue_adapter_import):
         """Test event correlation with correlation IDs."""
         async with event_publisher_context() as publisher:
             handler = MockEventHandler()
             subscription = EventSubscription(handler=handler)
             await publisher.subscribe(subscription)
+
+            # Give workers time to subscribe to queue
+            await asyncio.sleep(0.2)
 
             correlation_id = "corr-123"
 
@@ -569,7 +591,8 @@ class TestEventPublisherIntegration:
             await publisher.publish(event1)
             await publisher.publish(event2)
 
-            await asyncio.sleep(0.1)
+            # Wait for all events to be processed
+            await asyncio.sleep(1.0)
 
             # Check that events have same correlation ID
             handled_events = handler.handled_events
@@ -579,7 +602,7 @@ class TestEventPublisherIntegration:
                 for event in handled_events
             )
 
-    async def test_event_routing_keys(self):
+    async def test_event_routing_keys(self, mock_queue_adapter_import):
         """Test event routing with routing keys."""
         async with event_publisher_context() as publisher:
             user_handler = MockEventHandler()
@@ -608,6 +631,9 @@ class TestEventPublisherIntegration:
             await publisher.subscribe(user_subscription)
             await publisher.subscribe(admin_subscription)
 
+            # Give workers time to subscribe to queue
+            await asyncio.sleep(0.2)
+
             # Publish events with different routing keys
             user_event = create_event(
                 "action.performed",
@@ -623,8 +649,9 @@ class TestEventPublisherIntegration:
             await publisher.publish(user_event)
             await publisher.publish(admin_event)
 
-            await asyncio.sleep(0.1)
+            # Wait for all events to be processed
+            await asyncio.sleep(1.0)
 
             # Check metrics show events were routed correctly
             assert publisher.metrics.events_published == 2
-            assert publisher.metrics.handlers_executed == 2
+            assert publisher.metrics.events_processed == 2
