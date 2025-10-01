@@ -244,7 +244,7 @@ class EventPublisher(EventPublisherBase):
             event.metadata.retry_delay = self._settings.default_retry_delay
 
         # Serialize event and publish via queue adapter
-        import msgpack
+        from msgspec import msgpack
         from acb.adapters.queue import MessagePriority
 
         # Map event priority to queue priority
@@ -410,7 +410,7 @@ class EventPublisher(EventPublisherBase):
 
     async def _event_worker(self, worker_name: str) -> None:
         """Worker task for processing events from the queue."""
-        import msgpack
+        from msgspec import msgpack
 
         # Subscribe to all event topics
         topic_pattern = f"{self._settings.event_topic_prefix}.*"
@@ -570,7 +570,7 @@ class EventPublisher(EventPublisherBase):
 
     async def _handle_failed_event(self, event: Event) -> None:
         """Handle a failed event (retry or dead letter)."""
-        import msgpack
+        from msgspec import msgpack
         from acb.adapters.queue import MessagePriority
 
         self._metrics.record_event_failed()
