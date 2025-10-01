@@ -29,6 +29,7 @@ dependencies = [
     { name = "devtools" },
     { name = "dill" },
     { name = "fastapi" },
+    { name = "fastmcp" },
     { name = "fsspec" },
     { name = "gcsfs" },
     { name = "google-api-python-client" },
@@ -96,7 +97,7 @@ all = [
     { name = "cloudflare" },
     { name = "coredis" },
     { name = "duckdb" },
-    { name = "fastapi" },
+    { name = "fastmcp" },
     { name = "fsspec" },
     { name = "gcsfs" },
     { name = "google-cloud-aiplatform" },
@@ -129,7 +130,6 @@ all = [
     { name = "sqlmodel" },
     { name = "tiktoken" },
     { name = "transformers" },
-    { name = "uvicorn" },
     { name = "validators" },
     { name = "weaviate-client" },
 ]
@@ -248,8 +248,7 @@ graph = [
     { name = "python-arango" },
 ]
 mcp = [
-    { name = "fastapi" },
-    { name = "uvicorn" },
+    { name = "fastmcp" },
 ]
 microservice = [
     { name = "aiocache", extra = ["redis"] },
@@ -441,7 +440,8 @@ requires-dist = [
     { name = "duckdb", marker = "extra == 'vector'", specifier = ">=0.10.2" },
     { name = "faker", marker = "extra == 'demo'", specifier = ">=37.4" },
     { name = "fastapi", specifier = ">=0.115" },
-    { name = "fastapi", marker = "extra == 'mcp'", specifier = ">=0.115" },
+    { name = "fastmcp", specifier = ">=2.0.0" },
+    { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=2.0.0" },
     { name = "fsspec", marker = "extra == 'storage'", specifier = ">=2025.1" },
     { name = "gcsfs", marker = "extra == 'storage'", specifier = ">=2025.5.1" },
     { name = "google-api-python-client", specifier = ">=2.176" },
@@ -521,7 +521,6 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'embedding'", specifier = ">=4" },
     { name = "uuid-utils", specifier = ">=0.11" },
     { name = "uvicorn", specifier = ">=0.30" },
-    { name = "uvicorn", marker = "extra == 'mcp'", specifier = ">=0.30" },
     { name = "validators", marker = "extra == 'dns'", specifier = ">=0.35" },
     { name = "weaviate-client", marker = "extra == 'vector'", specifier = ">=4" },
 ]

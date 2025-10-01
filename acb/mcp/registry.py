@@ -13,20 +13,37 @@ class ComponentRegistry:
 
     def __init__(self) -> None:
         """Initialize the component registry."""
-        self.config: Config = depends.get(Config)
-        self.logger: Logger = depends.get(Logger)
         self._actions: dict[str, Any] = {}
         self._adapters: dict[str, Any] = {}
         self._services: dict[str, Any] = {}
         self._events: dict[str, Any] = {}
         self._initialized = False
+        self._config: Config | None = None
+        self._logger: Logger | None = None
+
+    @property
+    def config(self) -> Config:
+        """Lazy-initialize config."""
+        if self._config is None:
+            self._config = depends.get(Config)
+        return self._config
+
+    @property
+    def logger(self) -> Logger:
+        """Lazy-initialize logger."""
+        if self._logger is None:
+            self._logger = depends.get(Logger)
+        return self._logger
 
     async def initialize(self) -> None:
         """Initialize the component registry."""
         if self._initialized:
             return
 
-        self.logger.info("Initializing ACB Component Registry")
+        try:
+            self.logger.info("Initializing ACB Component Registry")
+        except Exception:
+            pass
 
         # Register built-in actions
         await self._register_builtin_actions()
@@ -38,7 +55,10 @@ class ComponentRegistry:
         await self._register_services()
 
         self._initialized = True
-        self.logger.info("ACB Component Registry initialized")
+        try:
+            self.logger.info("ACB Component Registry initialized")
+        except Exception:
+            pass
 
     async def _register_builtin_actions(self) -> None:
         """Register built-in ACB actions."""
@@ -59,9 +79,8 @@ class ComponentRegistry:
             self._actions["hash"] = hash
 
             # Add more actions as needed
-            self.logger.debug(f"Registered {len(self._actions)} action categories")
-        except Exception as e:
-            self.logger.warning(f"Failed to register some actions: {e}")
+        except Exception:
+            pass  # Silent failure for action registration
 
     async def _register_configured_adapters(self) -> None:
         """Register adapters configured in the system."""
@@ -74,19 +93,16 @@ class ComponentRegistry:
                     adapter_class = import_adapter(adapter_name)
                     adapter_instance = depends.get(adapter_class)
                     self._adapters[adapter_name] = adapter_instance
-                except Exception as e:
-                    self.logger.warning(
-                        f"Failed to register adapter {adapter_name}: {e}",
-                    )
+                except Exception:
+                    pass  # Silent failure for individual adapters
 
-            self.logger.debug(f"Registered {len(self._adapters)} adapters")
-        except Exception as e:
-            self.logger.warning(f"Failed to register adapters: {e}")
+        except Exception:
+            pass  # Silent failure for adapter registration
 
     async def _register_services(self) -> None:
         """Register services (placeholder for future implementation)."""
         # When services are implemented, register them here
-        self.logger.debug("Services registration placeholder")
+        pass
 
     def get_actions(self) -> dict[str, Any]:
         """Get all registered actions."""
@@ -127,4 +143,7 @@ class ComponentRegistry:
         self._services.clear()
         self._events.clear()
         self._initialized = False
-        self.logger.info("ACB Component Registry cleaned up")
+        try:
+            self.logger.info("ACB Component Registry cleaned up")
+        except Exception:
+            pass

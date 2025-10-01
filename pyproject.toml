@@ -57,6 +57,7 @@ dependencies = [
     "uuid-utils>=0.11",
     "uvicorn>=0.30",
     "msgpack>=1.1.1",
+    "fastmcp>=2.0.0",
 ]
 
 [project.license]
@@ -126,8 +127,7 @@ graph = [
     "python-arango>=7",
 ]
 mcp = [
-    "fastapi>=0.115",
-    "uvicorn>=0.30",
+    "fastmcp>=2.0.0",
 ]
 microservice = [
     "acb[cache,requests,monitoring,secret]",
