@@ -256,7 +256,11 @@ class AIBase(CleanupMixin, ABC):
         self._client: t.Any = None
         self._models_cache: dict[str, ModelInfo] = {}
         self._template_cache: dict[str, PromptTemplate] = {}
-        self.logger = depends.get(Logger)
+        # Get logger if available, otherwise None (for testing)
+        try:
+            self.logger = depends.get(Logger)
+        except Exception:
+            self.logger = None
 
     @property
     def settings(self) -> AIBaseSettings:
@@ -276,6 +280,27 @@ class AIBase(CleanupMixin, ABC):
             self._client = await self._create_client()
             self.register_resource(self._client)
         return self._client
+
+    # Safe logging helpers (logger may be None in tests)
+    def _log_info(self, msg: str) -> None:
+        """Log info message if logger available."""
+        if self.logger:
+            self.logger.info(msg)  # type: ignore[attr-defined]
+
+    def _log_warning(self, msg: str) -> None:
+        """Log warning message if logger available."""
+        if self.logger:
+            self.logger.warning(msg)  # type: ignore[attr-defined]
+
+    def _log_error(self, msg: str) -> None:
+        """Log error message if logger available."""
+        if self.logger:
+            self.logger.error(msg)  # type: ignore[attr-defined]
+
+    def _log_exception(self, msg: str) -> None:
+        """Log exception message if logger available."""
+        if self.logger:
+            self.logger.exception(msg)  # type: ignore[attr-defined]
 
     # Public interface methods
     async def generate_text(self, request: AIRequest) -> AIResponse:
@@ -323,7 +348,7 @@ class AIBase(CleanupMixin, ABC):
         """Default multimodal processing - can be overridden."""
         # Default implementation falls back to text-only processing
         if request.images or request.audio:
-            self.logger.warning(
+            self._log_warning(
                 "Multimodal processing not supported, falling back to text-only",
             )
         return await self._generate_text(request)

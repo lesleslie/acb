@@ -337,7 +337,7 @@ class EdgeAI(AIBase):
             if self.settings.provider == ModelProvider.OLLAMA:
                 # Type narrowing: ensure _http_client is not None
                 if self._http_client is None:
-                    self.logger.error("HTTP client not initialized")
+                    self._log_error("HTTP client not initialized")
                     return
 
                 # Check if model exists, pull if needed
@@ -348,7 +348,7 @@ class EdgeAI(AIBase):
 
                     if self.settings.default_model not in model_names:
                         # Pull model
-                        self.logger.info(
+                        self._log_info(
                             f"Pulling model: {self.settings.default_model}",
                         )
                         pull_response = await self._http_client.post(
@@ -357,7 +357,7 @@ class EdgeAI(AIBase):
                             timeout=600.0,  # Model pulling can take time
                         )
                         if pull_response.status_code != 200:
-                            self.logger.error(
+                            self._log_error(
                                 f"Failed to pull model: {pull_response.text}",
                             )
 
@@ -372,10 +372,10 @@ class EdgeAI(AIBase):
                     },
                 )
                 self._model_loaded = True
-                self.logger.info(f"Model preloaded: {self.settings.default_model}")
+                self._log_info(f"Model preloaded: {self.settings.default_model}")
 
         except Exception as e:
-            self.logger.warning(f"Model preload failed: {e}")
+            self._log_warning(f"Model preload failed: {e}")
 
     async def _generate_text(self, request: AIRequest) -> AIResponse:
         """Generate text using edge provider."""
@@ -407,7 +407,7 @@ class EdgeAI(AIBase):
             return response
 
         except Exception as e:
-            self.logger.exception(f"Edge text generation failed: {e}")
+            self._log_exception(f"Edge text generation failed: {e}")
             raise
 
     async def _generate_text_stream(self, request: AIRequest) -> StreamingResponse:
@@ -636,7 +636,7 @@ class EdgeAI(AIBase):
             return models
 
         except Exception as e:
-            self.logger.exception(f"Failed to get Ollama models: {e}")
+            self._log_exception(f"Failed to get Ollama models: {e}")
             return []
 
     async def _get_liquid_ai_models(self) -> list[ModelInfo]:

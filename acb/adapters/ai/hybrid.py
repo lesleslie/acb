@@ -234,7 +234,7 @@ class HybridAI(AIBase):
         # Make routing decision
         routing_result = await self._route_request(criteria, request)
 
-        self.logger.info(
+        self._log_info(
             f"Routing decision: {routing_result.decision} "
             f"(confidence: {routing_result.confidence:.2f}) - {routing_result.reasoning}",
         )
@@ -271,7 +271,7 @@ class HybridAI(AIBase):
         criteria = self._extract_routing_criteria(request)
         routing_result = await self._route_request(criteria, request)
 
-        self.logger.info(f"Streaming routing: {routing_result.decision}")
+        self._log_info(f"Streaming routing: {routing_result.decision}")
 
         try:
             if routing_result.strategy == DeploymentStrategy.CLOUD:
@@ -293,7 +293,7 @@ class HybridAI(AIBase):
 
         except Exception as e:
             # Fallback for streaming
-            self.logger.warning(f"Streaming failed, attempting fallback: {e}")
+            self._log_warning(f"Streaming failed, attempting fallback: {e}")
             fallback_strategy = (
                 DeploymentStrategy.EDGE
                 if routing_result.strategy == DeploymentStrategy.CLOUD
@@ -668,13 +668,13 @@ class HybridAI(AIBase):
         error: Exception,
     ) -> AIResponse:
         """Handle fallback when primary strategy fails."""
-        self.logger.warning(f"Primary strategy {routing.strategy} failed: {error}")
+        self._log_warning(f"Primary strategy {routing.strategy} failed: {error}")
 
         if (
             routing.strategy == DeploymentStrategy.CLOUD
             and self.settings.edge_fallback_enabled
         ):
-            self.logger.info("Falling back to edge deployment")
+            self._log_info("Falling back to edge deployment")
             edge_routing = RoutingResult(
                 decision=RoutingDecision.FALLBACK_TO_EDGE,
                 strategy=DeploymentStrategy.EDGE,
@@ -688,7 +688,7 @@ class HybridAI(AIBase):
             routing.strategy == DeploymentStrategy.EDGE
             and self.settings.cloud_fallback_enabled
         ):
-            self.logger.info("Falling back to cloud deployment")
+            self._log_info("Falling back to cloud deployment")
             cloud_routing = RoutingResult(
                 decision=RoutingDecision.FALLBACK_TO_CLOUD,
                 strategy=DeploymentStrategy.CLOUD,

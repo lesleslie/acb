@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from anyio import Path as AsyncPath
+from acb.adapters.logger.loguru import LoguruSettings
 from acb.logger import (
     Logger,
     LoggerProtocol,
@@ -95,21 +96,34 @@ class TestLoggerProtocol:
 class TestLogger:
     @pytest.fixture
     def mock_config(self) -> t.Generator[MagicMock]:
-        with patch("acb.logger.depends.get") as mock_get:
-            mock_config: MagicMock = MagicMock(spec=Config)
-            mock_config.logger = LoggerSettings()
-            mock_config.deployed = False
-            mock_config.debug = MagicMock()
-            mock_config.debug.production = False
-            mock_config.debug.logger = False
-            mock_config.root_path = "/test/path"
+        from acb.depends import depends
 
-            mock_get.return_value = mock_config
+        mock_config: MagicMock = MagicMock(spec=Config)
+        mock_config.logger = LoggerSettings()
+        mock_config.deployed = False
+        mock_config.debug = MagicMock()
+        mock_config.debug.production = False
+        mock_config.debug.logger = False
+        mock_config.root_path = "/test/path"
 
-            yield mock_config
+        # Store original config if it exists
+        original_config = None
+        try:
+            original_config = depends.get(Config)
+        except Exception:
+            pass
+
+        # Register mock config in the container
+        depends.set(Config, mock_config)
+
+        yield mock_config
+
+        # Restore original config
+        if original_config is not None:
+            depends.set(Config, original_config)
 
     def test_init(self, mock_config: MagicMock) -> None:
-        with patch("acb.logger._Logger.__init__") as mock_init:
+        with patch("acb.adapters.logger.loguru._Logger.__init__") as mock_init:
             Logger()
 
             mock_init.assert_called_once()
@@ -127,7 +141,7 @@ class TestLogger:
 
     @pytest.mark.asyncio
     async def test_async_sink(self) -> None:
-        with patch("acb.logger.aprint", new_callable=AsyncMock) as mock_aprint:
+        with patch("acb.adapters.logger.loguru.aprint", new_callable=AsyncMock) as mock_aprint:
             await Logger.async_sink("Test message")
 
             mock_aprint.assert_called_once_with("Test message", end="")
@@ -233,8 +247,11 @@ class TestLoggerInternals:
         """Test _configure_logger in production debug mode."""
         logger = Logger()
         mock_config_setup.debug.production = True
-        mock_config_setup.logger.deployed_level = "ERROR"
         logger.config = mock_config_setup
+
+        # Mock the logger settings to have ERROR as deployed level
+        mock_settings = LoguruSettings(deployed_level="ERROR")
+        logger._settings = mock_settings
 
         with patch.object(logger, "remove"), patch.object(logger, "configure"):
             logger._configure_logger()
