@@ -15,6 +15,9 @@ import typing as t
 # Import protocol and base from the adapter system
 from .adapters.logger import LoggerBaseSettings, LoggerProtocol
 
+# Import InterceptHandler from loguru adapter for backward compatibility
+from .adapters.logger.loguru import InterceptHandler
+
 
 def _get_logger_adapter() -> type[t.Any]:
     """Get the configured logger adapter class.
@@ -77,4 +80,10 @@ _initialize_logger()
 LoggerSettings = LoggerBaseSettings
 
 # Export for backward compatibility
-__all__ = ["Logger", "LoggerProtocol", "LoggerSettings", "LoggerBaseSettings"]
+__all__ = [
+    "Logger",
+    "LoggerProtocol",
+    "LoggerSettings",
+    "LoggerBaseSettings",
+    "InterceptHandler",
+]

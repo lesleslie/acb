@@ -8,18 +8,24 @@ The server exposes:
 - Resources: Component registry, system metrics, and configuration
 """
 
+from .orchestrator import WorkflowOrchestrator
 from .registry import ComponentRegistry
+from .resources import ACBMCPResources
 from .server import (
     ACBMCPServer,
     ACMCPServer,  # Backwards compatibility
     create_mcp_server,
     mcp,  # Direct access to FastMCP instance
 )
+from .tools import ACBMCPTools
 
 __all__ = [
+    "ACBMCPResources",
     "ACBMCPServer",
+    "ACBMCPTools",
     "ACMCPServer",
     "ComponentRegistry",
+    "WorkflowOrchestrator",
     "create_mcp_server",
     "mcp",
 ]
