@@ -357,7 +357,7 @@ class MockActionProvider:
 
     def get_call_history(self, action_type: str) -> list[t.Any]:
         """Get call history for a specific action type."""
-        return self._call_history.get(action_type, [])
+        return list(self._call_history.get(action_type, []))
 
     def record_call(
         self,

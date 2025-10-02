@@ -158,7 +158,7 @@ class IntegrationTestProvider:
             if path not in storage_mock._files:
                 msg = f"File not found: {path}"
                 raise FileNotFoundError(msg)
-            return storage_mock._files[path]
+            return bytes(storage_mock._files[path])
 
         async def write(path: str, data: bytes) -> bool:
             await asyncio.sleep(0.02)  # Simulate file I/O

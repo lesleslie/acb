@@ -1,5 +1,3 @@
-from typing import Any
-
 """ACB Performance Testing Utilities.
 
 Provides performance testing tools, benchmarking utilities, and
@@ -64,18 +62,28 @@ class PerformanceTimer:
         self.elapsed = self.end_time - self.start_time
         return self.elapsed
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> "PerformanceTimer":
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: t.Any,
+    ) -> None:
         self.stop()
 
-    async def __aenter__(self) -> None:
+    async def __aenter__(self) -> "PerformanceTimer":
         self.start()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: t.Any,
+    ) -> None:
         self.stop()
 
 
@@ -91,14 +99,14 @@ class BenchmarkRunner:
         self.warmup_rounds = warmup_rounds
         self.test_rounds = test_rounds
         self.collect_memory = collect_memory
-        self.results: list[dict[str, Any]] = []
+        self.results: list[dict[str, t.Any]] = []
 
     async def run_benchmark(
         self,
-        func: t.Callable,
-        *args,
+        func: t.Callable[..., t.Any],
+        *args: t.Any,
         name: str | None = None,
-        **kwargs,
+        **kwargs: t.Any,
     ) -> dict[str, t.Any]:
         """Run a benchmark test with statistical analysis."""
         test_name = name or func.__name__
@@ -204,14 +212,14 @@ class LoadTestRunner:
     def __init__(self, concurrent_users: int = 10, duration: float = 60.0) -> None:
         self.concurrent_users = concurrent_users
         self.duration = duration
-        self.results: list[dict] = []
+        self.results: list[dict[str, t.Any]] = []
 
     async def run_load_test(
         self,
-        func: t.Callable,
-        *args,
+        func: t.Callable[..., t.Any],
+        *args: t.Any,
         name: str | None = None,
-        **kwargs,
+        **kwargs: t.Any,
     ) -> dict[str, t.Any]:
         """Run a load test with concurrent operations."""
         test_name = name or func.__name__
@@ -286,10 +294,12 @@ class MetricsCollector:
     """Collect and analyze performance metrics."""
 
     def __init__(self) -> None:
-        self.metrics: dict[str, list[float]] = {}
+        self.metrics: dict[str, list[dict[str, t.Any]]] = {}
         self.start_time = time.perf_counter()
 
-    def record_metric(self, name: str, value: float, tags: dict | None = None) -> None:
+    def record_metric(
+        self, name: str, value: float, tags: dict[str, t.Any] | None = None
+    ) -> None:
         """Record a performance metric."""
         if name not in self.metrics:
             self.metrics[name] = []
@@ -322,16 +332,17 @@ class MetricsCollector:
             "latest": values[-1],
         }
 
-    def get_all_metrics(self) -> dict[str, dict]:
+    def get_all_metrics(self) -> dict[str, dict[str, t.Any]]:
         """Get all metrics summaries."""
-        return {
-            name: self.get_metric_summary(name)
-            for name in self.metrics
-            if self.get_metric_summary(name)
-        }
+        summaries = {}
+        for name in self.metrics:
+            summary = self.get_metric_summary(name)
+            if summary is not None:
+                summaries[name] = summary
+        return summaries
 
     @contextmanager
-    def measure_operation(self, operation_name: str) -> None:
+    def measure_operation(self, operation_name: str) -> t.Iterator[None]:
         """Context manager to measure an operation."""
         start_time = time.perf_counter()
         try:
@@ -365,34 +376,34 @@ def assert_performance_threshold(
         )
 
 
-def measure_execution_time(func: t.Callable) -> t.Callable:
+def measure_execution_time(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
     """Decorator to measure function execution time."""
     if asyncio.iscoroutinefunction(func):
 
-        async def async_wrapper(*args, **kwargs) -> None:
+        async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             async with PerformanceTimer():
                 return await func(*args, **kwargs)
 
         return async_wrapper
 
-    def sync_wrapper(*args, **kwargs) -> None:
+    def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         with PerformanceTimer():
             return func(*args, **kwargs)
 
     return sync_wrapper
 
 
-def profile_memory_usage(func: t.Callable) -> t.Callable:
+def profile_memory_usage(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
     """Decorator to profile memory usage."""
 
-    def wrapper(*args, **kwargs) -> None:
+    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         process = psutil.Process(os.getpid())
         memory_before = process.memory_info().rss
 
         result = func(*args, **kwargs)
 
         memory_after = process.memory_info().rss
-        memory_after - memory_before
+        _memory_delta = memory_after - memory_before  # Store for potential logging
 
         return result
 
@@ -400,7 +411,9 @@ def profile_memory_usage(func: t.Callable) -> t.Callable:
 
 
 @asynccontextmanager
-async def performance_monitor(name: str, thresholds: dict | None = None) -> None:
+async def performance_monitor(
+    name: str, thresholds: dict[str, t.Any] | None = None
+) -> t.AsyncIterator[MetricsCollector]:
     """Context manager for comprehensive performance monitoring."""
     process = psutil.Process(os.getpid())
     metrics_collector = MetricsCollector()
@@ -421,7 +434,8 @@ async def performance_monitor(name: str, thresholds: dict | None = None) -> None
         memory_after = process.memory_info().rss
         cpu_after = process.cpu_percent()
 
-        {
+        # Store performance report (could be logged or returned)
+        _performance_report = {
             "name": name,
             "execution_time": execution_time,
             "memory_before_mb": memory_before / 1024 / 1024,

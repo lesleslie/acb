@@ -544,7 +544,8 @@ def _load_service_settings() -> dict[str, t.Any]:
         for settings_path in settings_paths:
             if settings_path.exists():
                 content = settings_path.read_text()
-                return yaml.safe_load(content) or {}
+                loaded = yaml.safe_load(content)
+                return dict(loaded) if loaded else {}
 
     except (ImportError, FileNotFoundError, Exception):
         # Silently ignore if settings can't be loaded

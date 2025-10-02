@@ -10,13 +10,12 @@ from datetime import datetime
 from types import TracebackType
 from typing import Any
 
-from acb.adapters.models._pydantic import PydanticModelAdapter
-
 # Import the agnostic query interface
 from acb.adapters.models._query import QueryBuilder, registry
-from acb.adapters.models._sqlmodel import SQLModelAdapter
 from acb.adapters.nosql._query import NoSqlDatabaseAdapter
 from acb.adapters.sql._query import SqlDatabaseAdapter
+from acb.adapters.models._pydantic import PydanticModelAdapter
+from acb.adapters.models._sqlmodel import SQLModelAdapter
 
 # Example models using different frameworks
 try:

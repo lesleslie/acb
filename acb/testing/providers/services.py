@@ -99,7 +99,7 @@ class MockServiceProvider:
 
             if category:
                 return {category: perf_mock._metrics.get(category, 0.0)}
-            return perf_mock._metrics.copy()
+            return dict(perf_mock._metrics)
 
         async def mock_benchmark(
             operation: str, iterations: int = 10
@@ -184,10 +184,10 @@ class MockServiceProvider:
             return result
 
         async def mock_get_status() -> str:
-            return health_mock._status
+            return str(health_mock._status)
 
         async def mock_get_uptime() -> int:
-            return health_mock._uptime
+            return int(health_mock._uptime)
 
         # Assign behaviors
         health_mock.check.side_effect = mock_check_health
@@ -306,7 +306,8 @@ class MockServiceProvider:
                 mock_repo._next_id = 1
 
                 async def repo_find(entity_id: int) -> dict[str, Any] | None:
-                    return mock_repo._entities.get(entity_id)
+                    result = mock_repo._entities.get(entity_id)
+                    return dict(result) if result else None
 
                 async def repo_save(entity: dict[str, Any]) -> dict[str, Any]:
                     if "id" not in entity:
@@ -324,7 +325,7 @@ class MockServiceProvider:
 
                 repo_mock._repositories[entity_type] = mock_repo
 
-            return repo_mock._repositories[entity_type]
+            return t.cast(AsyncMock, repo_mock._repositories[entity_type])
 
         async def mock_begin_transaction() -> AsyncMock:
             import asyncio

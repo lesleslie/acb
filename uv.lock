@@ -28,7 +28,6 @@ dependencies = [
     { name = "coredis" },
     { name = "devtools" },
     { name = "dill" },
-    { name = "fastapi" },
     { name = "fastmcp" },
     { name = "fsspec" },
     { name = "gcsfs" },
@@ -438,7 +437,6 @@ requires-dist = [
     { name = "dill", specifier = ">=0.3,<0.4.dev0" },
     { name = "duckdb", marker = "extra == 'vector'", specifier = ">=0.10.2" },
     { name = "faker", marker = "extra == 'demo'", specifier = ">=37.4" },
-    { name = "fastapi", specifier = ">=0.115" },
     { name = "fastmcp", specifier = ">=2.0.0" },
     { name = "fastmcp", marker = "extra == 'mcp'", specifier = ">=2.0.0" },
     { name = "fsspec", marker = "extra == 'storage'", specifier = ">=2025.1" },
@@ -1360,7 +1358,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.39.4"
+version = "0.39.5"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "aiofiles" },
@@ -1414,9 +1412,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/ba/500899a43e2ac7f5bf8e5c789aa18db503599355c75311053cf2231e9a04/crackerjack-0.39.4.tar.gz", hash = "sha256:2acf4f284791a354b07ed62f57ea435fe2b52ac06a9133ceffc91fa421a3c687", size = 1324064, upload-time = "2025-10-02T05:12:07.267Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/78/5c/1c7e947ddff06f101002cac0b2f026c9fb9aad03bf6c2c7382335633f2c9/crackerjack-0.39.5.tar.gz", hash = "sha256:1d22c8d5c65081d4c0b577e64c9289e24476ee8aaf913f65e33d6201d85b0a10", size = 1324166, upload-time = "2025-10-02T07:19:46.398Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/cb/be9c470de0d2b929033055133bcee43b6b113b61c75de10405ead30a1e9d/crackerjack-0.39.4-py3-none-any.whl", hash = "sha256:6c8ec533ea8913004e67dbea41825ebc0a861f5a6353a8d9f6d253f17ce545e2", size = 825323, upload-time = "2025-10-02T05:12:03.661Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/c5/69aaed6ba3992c80e5e871f204c9bd3d2888dc48166124ec87f633951fb0/crackerjack-0.39.5-py3-none-any.whl", hash = "sha256:4ade5237001eb3061d55f9fe7f7f4e721a5e1fce06cbfba05b9d4375686b278c", size = 825327, upload-time = "2025-10-02T07:19:43.674Z" },
 ]
 
 [[package]]
@@ -5148,7 +5146,7 @@ sqlalchemy = [
 
 [[package]]
 name = "session-mgmt-mcp"
-version = "0.5.2"
+version = "0.5.3"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "crackerjack" },
@@ -5166,9 +5164,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/4e/f67548ebd23f9ca41726509f03ea5285fcdde848ee4893696289be3e9c50/session_mgmt_mcp-0.5.2.tar.gz", hash = "sha256:46b9ecab5057b1b360d718ad01e4047065b0118dbf74abcab5abe385a44afc92", size = 627543, upload-time = "2025-10-01T23:08:01.546Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/4b/19928021784718331404e33bd97f19808134f1d134bab90c39e32b1519b5/session_mgmt_mcp-0.5.3.tar.gz", hash = "sha256:2773c481825d42beefd297550b8feadc6dd67bda59d545e853f432f877de8a29", size = 640568, upload-time = "2025-10-02T07:10:55.602Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/cf/fa5dc75c02f5e0642bc20a32bd491d8b660cae12c323852e62924f6a21a3/session_mgmt_mcp-0.5.2-py3-none-any.whl", hash = "sha256:8cf55d98adf1b13eefa221f046497770e4b55bdd87a64a95c07858aab31515e6", size = 244715, upload-time = "2025-10-01T23:07:59.486Z" },
+    { url = "https://files.pythonhosted.org/packages/54/38/eee4dd2469375df7e32d7ca8f7eda1ea4947bb2a2b787736625954e87081/session_mgmt_mcp-0.5.3-py3-none-any.whl", hash = "sha256:358d693d9ec56de142cfafb4bd5e99da898881daa025a4b58371db4425118109", size = 252451, upload-time = "2025-10-02T07:10:53.758Z" },
 ]
 
 [[package]]
@@ -5750,16 +5748,16 @@ wheels = [
 
 [[package]]
 name = "urllib3-future"
-version = "2.14.900"
+version = "2.14.901"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "h11" },
     { name = "jh2" },
     { name = "qh3", marker = "(platform_machine == 'AMD64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'ARM64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'arm64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'armv7l' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'i686' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'ppc64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'ppc64le' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 's390x' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'x86' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (platform_machine == 'AMD64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'ARM64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'arm64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'armv7l' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'i686' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'ppc64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'ppc64le' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 's390x' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'x86' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (platform_machine == 'AMD64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'ARM64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'arm64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'armv7l' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'i686' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'ppc64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'ppc64le' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 's390x' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'x86' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'win32')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/76/c31cbfd230a33f0d66fb9a64aa30ce87fc783c1f1729c8fc4941129f4ef3/urllib3_future-2.14.900.tar.gz", hash = "sha256:b9e048fe6848fa3dbaa5b74085c303b5c800a81b079812d39bbc89689a1aa379", size = 1103264, upload-time = "2025-09-21T06:22:24.941Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/4a/4c0bf09799cc4f8c6acf4c1b3d75a726b8df1436f0a14068130d747be83f/urllib3_future-2.14.901.tar.gz", hash = "sha256:b3ad3c49b13fc516eda1cfdea2edc7ad5f6dcd7b9d01d1877d6ac6aeb0015417", size = 1103436, upload-time = "2025-10-02T05:54:12.531Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/6d/881aaf7c275483f06a333aac80625cc0a1f864249c53879b63a6dada9fb0/urllib3_future-2.14.900-py3-none-any.whl", hash = "sha256:3e1d4db651c4d6965507362f8589a4993306f4a6ea7abc2c617b8e7c23677690", size = 675375, upload-time = "2025-09-21T06:22:22.671Z" },
+    { url = "https://files.pythonhosted.org/packages/10/a9/c2043971a572115e25669ff4da06105da8b4b22d9d5b62fd4381b0fb2452/urllib3_future-2.14.901-py3-none-any.whl", hash = "sha256:a0749f38dd32ad5b862bc22a56bbf7b33eef9e3158369e3a47da72721a31f1d5", size = 675419, upload-time = "2025-10-02T05:54:10.633Z" },
 ]
 
 [[package]]
