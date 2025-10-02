@@ -3,6 +3,7 @@
 import asyncio
 import time
 import typing as t
+from contextlib import suppress
 from datetime import datetime
 
 import numpy as np
@@ -300,10 +301,8 @@ class ONNXEmbedding(EmbeddingAdapter):
                     # Compute token count
                     token_count = None
                     if hasattr(tokenizer, "encode"):
-                        try:
+                        with suppress(Exception):
                             token_count = len(tokenizer.encode(batch_texts[i]))
-                        except Exception:
-                            pass
 
                     result = EmbeddingResult(
                         text=batch_texts[i],

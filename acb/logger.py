@@ -11,6 +11,7 @@ This module serves as a convenience import shim.
 import os
 import sys
 import typing as t
+from contextlib import suppress
 
 # Import protocol and base from the adapter system
 from .adapters.logger import LoggerBaseSettings, LoggerProtocol
@@ -52,21 +53,16 @@ def _initialize_logger() -> None:
     logger_class = _get_logger_adapter()
 
     # Check if already registered
-    try:
+    with suppress(Exception):
         depends.get(logger_class)
         return  # Already initialized
-    except Exception:
-        pass
 
     # Create and initialize logger instance
-    try:
+    with suppress(Exception):
         logger_instance = logger_class()
         if hasattr(logger_instance, "init"):
             logger_instance.init()
         depends.set(logger_class, logger_instance)
-    except Exception:
-        # Silently fail initialization - logger will be lazily initialized on first use
-        pass
 
 
 # Create Logger class that delegates to the adapter

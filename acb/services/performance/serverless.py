@@ -649,13 +649,11 @@ class AdaptiveConnectionPool:
 
     async def _close_connection(self, connection: t.Any) -> None:
         """Close a connection safely."""
-        try:
+        with suppress(Exception):
             if hasattr(connection, "close"):
                 await connection.close()
             elif hasattr(connection, "disconnect"):
                 await connection.disconnect()
-        except Exception:
-            pass  # Ignore close errors
 
     async def _record_usage(self, event: str) -> None:
         """Record usage statistics."""
@@ -708,26 +706,22 @@ class ServerlessTieredCache:
             del self._memory_cache[key]
 
         # Try Redis
-        try:
+        with suppress(Exception):
             # This would integrate with ACB's Redis adapter
             value = await self._get_from_redis(key)
             if value is not None:
                 self._cache_stats["redis_hits"] += 1
                 await self._store_in_memory(key, value)
                 return value
-        except Exception:
-            pass  # Redis not available
 
         # Try storage
-        try:
+        with suppress(Exception):
             value = await self._get_from_storage(key)
             if value is not None:
                 self._cache_stats["storage_hits"] += 1
                 await self._store_in_memory(key, value)
                 await self._store_in_redis(key, value)
                 return value
-        except Exception:
-            pass  # Storage not available
 
         self._cache_stats["misses"] += 1
         return None
@@ -738,17 +732,13 @@ class ServerlessTieredCache:
         await self._store_in_memory(key, value)
 
         # Store in Redis with longer TTL
-        try:
+        with suppress(Exception):
             await self._store_in_redis(key, value, ttl or self._redis_ttl)
-        except Exception:
-            pass  # Redis not available
 
         # Store in object storage for longest persistence
         if ttl is None or ttl > 3600:  # Only for long-term storage
-            try:
+            with suppress(Exception):
                 await self._store_in_storage(key, value)
-            except Exception:
-                pass  # Storage not available
 
     async def _store_in_memory(self, key: str, value: t.Any) -> None:
         """Store value in memory cache with size management."""
@@ -993,7 +983,7 @@ class MemoryEfficientProcessor:
 
     async def _check_memory_usage(self) -> None:
         """Monitor memory usage and warn if approaching limits."""
-        try:
+        with suppress(ImportError):
             import psutil
 
             process = psutil.Process()
@@ -1007,8 +997,6 @@ class MemoryEfficientProcessor:
                 logging.getLogger(__name__).warning(
                     f"High memory usage: {memory_mb:.1f}MB / {self._max_memory_mb}MB",
                 )
-        except ImportError:
-            pass  # psutil not available
 
     def get_processing_stats(self) -> dict[str, t.Any]:
         """Get processing statistics."""

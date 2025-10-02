@@ -151,8 +151,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 "revision": self._settings.revision,
                 "cache_dir": self._settings.cache_dir,
                 "local_files_only": self._settings.local_files_only,
-                **self._settings.tokenizer_kwargs,
-            }
+            } | self._settings.tokenizer_kwargs
 
             if self._settings.use_auth_token:
                 tokenizer_kwargs["use_auth_token"] = self._settings.use_auth_token
@@ -176,8 +175,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
                 "revision": self._settings.revision,
                 "cache_dir": self._settings.cache_dir,
                 "local_files_only": self._settings.local_files_only,
-                **self._settings.model_kwargs,
-            }
+            } | self._settings.model_kwargs
 
             if self._settings.use_auth_token:
                 model_kwargs["use_auth_token"] = self._settings.use_auth_token
