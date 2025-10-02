@@ -13,7 +13,9 @@ from acb.adapters import (
     AdapterMetadata,
     AdapterStatus,
 )
-from acb.config import debug
+
+# Lazy import to avoid circular dependency with config
+# from acb.config import debug
 from acb.depends import depends
 
 from ._base import LoggerBase, LoggerBaseSettings
@@ -170,6 +172,9 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         )
 
         # Configure per-module levels
+        # Lazy import to avoid circular dependency
+        from acb.config import debug
+
         self.config.logger.level_per_module = {
             m: "DEBUG" if v else self.config.logger.log_level for m, v in debug.items()
         }
@@ -263,4 +268,11 @@ class InterceptHandler(logging.Handler):
 
 
 # Configure stdlib logging interception
-logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+# Deferred initialization to avoid import-time side effects
+def configure_stdlib_logging_interception() -> None:
+    """Configure standard library logging to route through Loguru."""
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+
+
+# Note: Call configure_stdlib_logging_interception() after app initialization
+# to enable standard library logging interception

@@ -8,10 +8,6 @@
       "url": "http://localhost:8676/mcp",
       "type": "http"
     },
-    "jetbrains": {
-      "type": "sse",
-      "url": "http://localhost:64342/sse"
-    },
     "macos_automator": {
       "command": "npx",
       "args": [
@@ -67,23 +63,6 @@
     "mermaid": {
       "url": "http://localhost:3033/mcp",
       "type": "http"
-    },
-    "qwen-code": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "qwen-mcp-tool"
-      ],
-      "env": {},
-      "type": "stdio"
-    },
-    "gemini-cli": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "gemini-mcp-tool@1.1.4"
-      ],
-      "type": "stdio"
     },
     "context7": {
       "command": "npx",
