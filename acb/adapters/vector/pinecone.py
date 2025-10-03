@@ -1,5 +1,4 @@
 import typing as t
-from typing import Any
 from uuid import UUID
 
 from pydantic import SecretStr
@@ -199,6 +198,53 @@ class Vector(VectorBase):
         """Insert documents with vectors into Pinecone."""
         return await self.upsert(collection, documents, **kwargs)
 
+    def _prepare_pinecone_vector(
+        self, doc: VectorDocument, index: int
+    ) -> tuple[str, dict[str, t.Any]]:
+        """Prepare a single document as Pinecone vector. Returns (doc_id, vector_data)."""
+        doc_id = doc.id or f"vec_{index}"
+
+        vector_data: dict[str, t.Any] = {
+            "id": doc_id,
+            "values": doc.vector,
+        }
+
+        if doc.metadata:
+            vector_data["metadata"] = doc.metadata  # type: ignore[assignment]
+
+        return doc_id, vector_data
+
+    def _prepare_all_vectors(
+        self, documents: list[VectorDocument]
+    ) -> tuple[list[str], list[dict[str, t.Any]]]:
+        """Prepare all documents as Pinecone vectors. Returns (doc_ids, vectors)."""
+        document_ids: list[str] = []
+        vectors: list[dict[str, t.Any]] = []
+
+        for idx, doc in enumerate(documents):
+            doc_id, vector_data = self._prepare_pinecone_vector(doc, idx)
+            document_ids.append(doc_id)
+            vectors.append(vector_data)
+
+        return document_ids, vectors
+
+    async def _upsert_batch(
+        self,
+        index: t.Any,
+        batch: list[dict[str, t.Any]],
+        namespace: str | None,
+        batch_num: int,
+    ) -> None:
+        """Upsert a single batch to Pinecone."""
+        upsert_params: dict[str, t.Any] = {"vectors": batch}
+        if namespace:
+            upsert_params["namespace"] = namespace  # type: ignore[assignment]
+
+        response = index.upsert(**upsert_params)
+
+        if not response.get("upserted_count"):
+            self.logger.warning(f"Upsert batch {batch_num} failed")
+
     async def upsert(
         self,
         collection: str,
@@ -210,22 +256,7 @@ class Vector(VectorBase):
 
         try:
             # Prepare vectors for upsert
-            vectors: list[Any] = []
-            document_ids = []
-
-            for doc in documents:
-                doc_id = doc.id or f"vec_{len(vectors)}"
-                document_ids.append(doc_id)
-
-                vector_data = {
-                    "id": doc_id,
-                    "values": doc.vector,
-                }
-
-                if doc.metadata:
-                    vector_data["metadata"] = doc.metadata  # type: ignore[assignment]
-
-                vectors.append(vector_data)
+            document_ids, vectors = self._prepare_all_vectors(documents)
 
             # Batch upsert
             batch_size = self.config.vector.upsert_batch_size
@@ -233,15 +264,7 @@ class Vector(VectorBase):
 
             for i in range(0, len(vectors), batch_size):
                 batch = vectors[i : i + batch_size]
-
-                upsert_params = {"vectors": batch}
-                if namespace:
-                    upsert_params["namespace"] = namespace  # type: ignore[assignment]
-
-                response = index.upsert(**upsert_params)
-
-                if not response.get("upserted_count"):
-                    self.logger.warning(f"Upsert batch {i // batch_size + 1} failed")
+                await self._upsert_batch(index, batch, namespace, i // batch_size + 1)
 
             return document_ids
 

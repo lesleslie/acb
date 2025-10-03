@@ -328,51 +328,63 @@ class EdgeAI(AIBase):
             model_kwargs=model_kwargs,
         )
 
+    async def _check_and_pull_ollama_model(self, client: t.Any) -> bool:
+        """Check if Ollama model exists and pull if needed. Returns success status."""
+        response = await client.get("/api/tags")
+        if response.status_code != 200:
+            return False
+
+        models = response.json().get("models", [])
+        model_names = [m["name"] for m in models]
+
+        if self.settings.default_model in model_names:
+            return True
+
+        # Pull model if missing
+        self._log_info(f"Pulling model: {self.settings.default_model}")
+        pull_response = await client.post(
+            "/api/pull",
+            json={"name": self.settings.default_model},
+            timeout=600.0,  # Model pulling can take time
+        )
+
+        if pull_response.status_code != 200:
+            self._log_error(f"Failed to pull model: {pull_response.text}")
+            return False
+
+        return True
+
+    async def _load_ollama_model_into_memory(self, client: t.Any) -> None:
+        """Load Ollama model into memory with keep-alive."""
+        await client.post(
+            "/api/generate",
+            json={
+                "model": self.settings.default_model,
+                "prompt": "Hello",
+                "stream": False,
+                "keep_alive": f"{self.settings.keep_alive_minutes}m",
+            },
+        )
+        self._model_loaded = True
+        self._log_info(f"Model preloaded: {self.settings.default_model}")
+
     async def _preload_model(self) -> None:
         """Preload model for faster inference."""
         if self._model_loaded:
             return
 
+        if self.settings.provider != ModelProvider.OLLAMA:
+            return
+
+        if self._http_client is None:
+            self._log_error("HTTP client not initialized")
+            return
+
         try:
-            if self.settings.provider == ModelProvider.OLLAMA:
-                # Type narrowing: ensure _http_client is not None
-                if self._http_client is None:
-                    self._log_error("HTTP client not initialized")
-                    return
-
-                # Check if model exists, pull if needed
-                response = await self._http_client.get("/api/tags")
-                if response.status_code == 200:
-                    models = response.json().get("models", [])
-                    model_names = [m["name"] for m in models]
-
-                    if self.settings.default_model not in model_names:
-                        # Pull model
-                        self._log_info(
-                            f"Pulling model: {self.settings.default_model}",
-                        )
-                        pull_response = await self._http_client.post(
-                            "/api/pull",
-                            json={"name": self.settings.default_model},
-                            timeout=600.0,  # Model pulling can take time
-                        )
-                        if pull_response.status_code != 200:
-                            self._log_error(
-                                f"Failed to pull model: {pull_response.text}",
-                            )
-
+            # Check and pull model if needed
+            if await self._check_and_pull_ollama_model(self._http_client):
                 # Load model into memory
-                await self._http_client.post(
-                    "/api/generate",
-                    json={
-                        "model": self.settings.default_model,
-                        "prompt": "Hello",
-                        "stream": False,
-                        "keep_alive": f"{self.settings.keep_alive_minutes}m",
-                    },
-                )
-                self._model_loaded = True
-                self._log_info(f"Model preloaded: {self.settings.default_model}")
+                await self._load_ollama_model_into_memory(self._http_client)
 
         except Exception as e:
             self._log_warning(f"Model preload failed: {e}")
@@ -537,12 +549,8 @@ class EdgeAI(AIBase):
             tokens_used=len(generated_text.split()),  # Rough estimate
         )
 
-    async def _ollama_stream(
-        self,
-        client: httpx.AsyncClient,
-        request: AIRequest,
-    ) -> t.AsyncGenerator[str]:
-        """Stream text generation from Ollama."""
+    def _build_ollama_prompt(self, request: AIRequest) -> str:
+        """Build Ollama prompt with optional system prompt."""
         prompt = (
             request.prompt if isinstance(request.prompt, str) else str(request.prompt)
         )
@@ -550,7 +558,13 @@ class EdgeAI(AIBase):
         if request.system_prompt:
             prompt = f"System: {request.system_prompt}\n\nUser: {prompt}"
 
-        payload = {
+        return prompt
+
+    def _build_ollama_payload(
+        self, request: AIRequest, prompt: str
+    ) -> dict[str, t.Any]:
+        """Build Ollama API payload."""
+        return {
             "model": request.model or self.settings.default_model,
             "prompt": prompt,
             "stream": True,
@@ -561,19 +575,37 @@ class EdgeAI(AIBase):
             "keep_alive": f"{self.settings.keep_alive_minutes}m",
         }
 
+    def _process_ollama_stream_line(self, line: str) -> tuple[str | None, bool]:
+        """Process a single Ollama streaming line. Returns (text, is_done)."""
+        if not line.strip():
+            return None, False
+
+        try:
+            data = json.loads(line)
+            text = data.get("response")
+            is_done = data.get("done", False)
+            return text, is_done
+        except json.JSONDecodeError:
+            return None, False
+
+    async def _ollama_stream(
+        self,
+        client: httpx.AsyncClient,
+        request: AIRequest,
+    ) -> t.AsyncGenerator[str]:
+        """Stream text generation from Ollama."""
+        prompt = self._build_ollama_prompt(request)
+        payload = self._build_ollama_payload(request, prompt)
+
         async with client.stream("POST", "/api/generate", json=payload) as response:
             response.raise_for_status()
 
             async for line in response.aiter_lines():
-                if line.strip():
-                    try:
-                        data = json.loads(line)
-                        if "response" in data:
-                            yield data["response"]
-                        if data.get("done"):
-                            break
-                    except json.JSONDecodeError:
-                        continue
+                text, is_done = self._process_ollama_stream_line(line)
+                if text:
+                    yield text
+                if is_done:
+                    break
 
     async def _liquid_ai_stream(
         self,

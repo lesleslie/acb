@@ -480,7 +480,7 @@ class DictValidationSchema(ValidationSchema):
             result.add_error(f"Expected dict, got {type(data).__name__}")
             return result
 
-        validated_data = {}
+        validated_data: dict[str, t.Any] = {}
 
         # Check required fields
         self._check_required_fields(data, result)
