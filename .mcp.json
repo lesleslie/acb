@@ -75,7 +75,7 @@
     "logfire": {
       "command": "uvx",
       "args": [
-        "logfire-mcp@latest"
+        "logfire-mcp@0.6.0"
       ],
       "type": "stdio"
     },
@@ -87,7 +87,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "mcp-turso-cloud"
+        "mcp-turso-cloud@0.0.10"
       ],
       "type": "stdio"
     },
@@ -95,7 +95,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@upstash/mcp-server",
+        "@upstash/mcp-server@0.2.0",
         "run"
       ],
       "type": "stdio"
