@@ -420,6 +420,47 @@ class DictValidationSchema(ValidationSchema):
         for schema in self.field_schemas.values():
             await schema._ensure_compiled()
 
+    def _check_required_fields(
+        self,
+        data: dict[str, t.Any],
+        result: ValidationResult,
+    ) -> None:
+        """Check for missing required fields."""
+        for field in self.required_fields:
+            if field not in data:
+                result.add_error(f"Required field '{field}' is missing")
+
+    async def _validate_field_with_schema(
+        self,
+        field: str,
+        value: t.Any,
+        result: ValidationResult,
+        validated_data: dict[str, t.Any],
+    ) -> None:
+        """Validate a field using its specific schema."""
+        field_result = await self.field_schemas[field].validate(value, field)
+
+        if not field_result.is_valid:
+            for error in field_result.errors:
+                result.add_error(f"Field '{field}': {error}")
+        else:
+            validated_data[field] = field_result.value
+            for warning in field_result.warnings:
+                result.add_warning(f"Field '{field}': {warning}")
+
+    def _handle_extra_field(
+        self,
+        field: str,
+        value: t.Any,
+        result: ValidationResult,
+        validated_data: dict[str, t.Any],
+    ) -> None:
+        """Handle a field without a specific schema."""
+        if not self.allow_extra_fields:
+            result.add_error(f"Unexpected field '{field}'")
+        else:
+            validated_data[field] = value
+
     async def validate(
         self,
         data: t.Any,
@@ -442,27 +483,16 @@ class DictValidationSchema(ValidationSchema):
         validated_data = {}
 
         # Check required fields
-        for field in self.required_fields:
-            if field not in data:
-                result.add_error(f"Required field '{field}' is missing")
+        self._check_required_fields(data, result)
 
         # Validate each field
         for field, value in data.items():
             if field in self.field_schemas:
-                # Use specific schema for this field
-                field_result = await self.field_schemas[field].validate(value, field)
-                if not field_result.is_valid:
-                    for error in field_result.errors:
-                        result.add_error(f"Field '{field}': {error}")
-                else:
-                    validated_data[field] = field_result.value
-                    for warning in field_result.warnings:
-                        result.add_warning(f"Field '{field}': {warning}")
-            elif not self.allow_extra_fields:
-                result.add_error(f"Unexpected field '{field}'")
+                await self._validate_field_with_schema(
+                    field, value, result, validated_data
+                )
             else:
-                # Keep field as-is
-                validated_data[field] = value
+                self._handle_extra_field(field, value, result, validated_data)
 
         if result.is_valid:
             result.value = validated_data

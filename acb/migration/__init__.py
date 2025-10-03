@@ -21,6 +21,7 @@ Usage:
     result = await manager.migrate(target_version="0.20.0")
 """
 
+from acb.migration._base import MigrationStatus
 from acb.migration.assessment import (
     MigrationAssessment,
     assess_migration,
@@ -30,7 +31,6 @@ from acb.migration.compatibility import CompatibilityLayer, get_compatibility_la
 from acb.migration.manager import (
     MigrationManager,
     MigrationResult,
-    MigrationStatus,  # noqa: TCH001 - needed for runtime
 )
 from acb.migration.rollback import RollbackManager, RollbackPoint
 from acb.migration.validator import MigrationValidator, ValidationResult

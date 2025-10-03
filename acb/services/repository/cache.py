@@ -127,7 +127,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         self.wrapped = wrapped_repository
         self.cache_settings = cache_settings or depends.get(RepositoryCacheSettings)
         self._cache = None
-        self._metrics: CacheMetrics = CacheMetrics()
+        self._metrics: CacheMetrics = CacheMetrics()  # type: ignore[assignment]
         self._query_cache: dict[str, tuple[Any, datetime]] = {}
 
     async def _ensure_cache(self) -> Any | None:

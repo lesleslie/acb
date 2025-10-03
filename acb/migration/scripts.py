@@ -226,7 +226,7 @@ def get_migration_script(
     """
     script_class = _MIGRATION_SCRIPTS.get(name)
     if script_class:
-        return script_class()
+        return script_class()  # type: ignore[call-arg]
 
     logger.warning(f"Migration script not found: {name}")
     return None

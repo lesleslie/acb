@@ -224,7 +224,7 @@ class Reasoning(ReasoningBase):
         else:
             import os
 
-            api_key = os.getenv("OPENAI_API_KEY")
+            api_key = os.getenv("OPENAI_API_KEY")  # type: ignore[assignment]
             if not api_key:
                 msg = "OpenAI API key required. Set OPENAI_API_KEY or provide api_key in settings."
                 raise ValueError(

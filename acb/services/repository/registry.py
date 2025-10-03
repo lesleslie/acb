@@ -63,7 +63,9 @@ class RepositoryRegistry(CleanupMixin):
         super().__init__()
         self._registrations: dict[type[Any], RepositoryRegistration] = {}
         self._instances: dict[type[Any], RepositoryBase[Any, Any]] = {}
-        self._scoped_instances: dict[str, dict[type[Any], RepositoryBase[Any, Any]]] = {}
+        self._scoped_instances: dict[
+            str, dict[type[Any], RepositoryBase[Any, Any]]
+        ] = {}
         self._current_scope: str | None = None
 
     def register(
@@ -85,7 +87,9 @@ class RepositoryRegistry(CleanupMixin):
             existing = self._registrations[entity_type]
             if existing.repository_type != repository_type:
                 entity_name = getattr(entity_type, "__name__", str(entity_type))
-                existing_name = getattr(existing.repository_type, "__name__", str(existing.repository_type))
+                existing_name = getattr(
+                    existing.repository_type, "__name__", str(existing.repository_type)
+                )
                 repo_name = getattr(repository_type, "__name__", str(repository_type))
                 msg = (
                     f"Repository for {entity_name} already registered with different type: "
@@ -346,7 +350,9 @@ class RepositoryRegistry(CleanupMixin):
 
         return instance
 
-    def _create_instance(self, registration: RepositoryRegistration) -> RepositoryBase[Any, Any]:
+    def _create_instance(
+        self, registration: RepositoryRegistration
+    ) -> RepositoryBase[Any, Any]:
         """Create repository instance."""
         if registration.factory:
             return registration.factory()

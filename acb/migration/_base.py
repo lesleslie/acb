@@ -137,7 +137,7 @@ class VersionInfo(BaseModel):
         """Less than or equal comparison."""
         if not isinstance(other, VersionInfo):
             return NotImplemented
-        return self < other or self == other
+        return self < other or self == other  # type: ignore[comparison-overlap]
 
     def __gt__(self, other: VersionInfo) -> bool:
         """Greater than comparison."""

@@ -242,7 +242,7 @@ def get_compatibility_layer(version: str | VersionInfo) -> CompatibilityLayer:
     layer_class = _COMPATIBILITY_LAYERS.get(version_key)
 
     if layer_class:
-        return layer_class()
+        return layer_class(version_info)
 
     # Fallback to generic compatibility layer
     logger.debug(f"No specific compatibility layer for {version_key}, using generic")

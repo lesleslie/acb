@@ -101,51 +101,52 @@ class BenchmarkRunner:
         self.collect_memory = collect_memory
         self.results: list[dict[str, t.Any]] = []
 
-    async def run_benchmark(
+    async def _execute_function(
+        self, func: t.Callable[..., t.Any], *args: t.Any, **kwargs: t.Any
+    ) -> None:
+        """Execute function (async or sync)."""
+        if asyncio.iscoroutinefunction(func):
+            await func(*args, **kwargs)
+        else:
+            func(*args, **kwargs)
+
+    async def _run_warmup_rounds(
+        self, func: t.Callable[..., t.Any], *args: t.Any, **kwargs: t.Any
+    ) -> None:
+        """Run warmup rounds before benchmark."""
+        for _ in range(self.warmup_rounds):
+            await self._execute_function(func, *args, **kwargs)
+
+    async def _execute_test_round(
         self,
         func: t.Callable[..., t.Any],
+        process: psutil.Process,
+        baseline_memory: int,
+        execution_times: list[float],
+        memory_deltas: list[int],
+        memory_peaks: list[int],
         *args: t.Any,
-        name: str | None = None,
         **kwargs: t.Any,
+    ) -> None:
+        """Execute a single test round and collect metrics."""
+        memory_before = process.memory_info().rss if self.collect_memory else 0
+
+        with PerformanceTimer() as timer:
+            await self._execute_function(func, *args, **kwargs)
+
+        memory_after = process.memory_info().rss if self.collect_memory else 0
+        memory_peak = memory_after  # Simplified peak detection
+
+        execution_times.append(timer.elapsed)
+        if self.collect_memory:
+            memory_deltas.append(memory_after - memory_before)
+            memory_peaks.append(memory_peak - baseline_memory)
+
+    def _calculate_execution_stats(
+        self, test_name: str, execution_times: list[float]
     ) -> dict[str, t.Any]:
-        """Run a benchmark test with statistical analysis."""
-        test_name = name or func.__name__
-        process = psutil.Process(os.getpid())
-
-        # Warmup rounds
-        for _ in range(self.warmup_rounds):
-            if asyncio.iscoroutinefunction(func):
-                await func(*args, **kwargs)
-            else:
-                func(*args, **kwargs)
-
-        # Collect baseline memory
-        baseline_memory = process.memory_info().rss if self.collect_memory else 0
-
-        # Test rounds
-        execution_times = []
-        memory_deltas = []
-        memory_peaks = []
-
-        for _ in range(self.test_rounds):
-            memory_before = process.memory_info().rss if self.collect_memory else 0
-
-            with PerformanceTimer() as timer:
-                if asyncio.iscoroutinefunction(func):
-                    await func(*args, **kwargs)
-                else:
-                    func(*args, **kwargs)
-
-            memory_after = process.memory_info().rss if self.collect_memory else 0
-            memory_peak = memory_after  # Simplified peak detection
-
-            execution_times.append(timer.elapsed)
-            if self.collect_memory:
-                memory_deltas.append(memory_after - memory_before)
-                memory_peaks.append(memory_peak - baseline_memory)
-
-        # Calculate statistics
-        result = {
+        """Calculate execution statistics."""
+        return {
             "name": test_name,
             "warmup_rounds": self.warmup_rounds,
             "test_rounds": self.test_rounds,
@@ -161,6 +162,13 @@ class BenchmarkRunner:
             "timestamp": time.time(),
         }
 
+    def _add_memory_stats(
+        self,
+        result: dict[str, t.Any],
+        memory_deltas: list[int],
+        memory_peaks: list[int],
+    ) -> None:
+        """Add memory statistics to result."""
         if self.collect_memory and memory_deltas:
             result["memory_stats"] = {
                 "mean_delta_mb": mean(memory_deltas) / 1024 / 1024,
@@ -169,6 +177,44 @@ class BenchmarkRunner:
                 "max_delta_mb": max(memory_deltas) / 1024 / 1024,
                 "mean_peak_mb": mean(memory_peaks) / 1024 / 1024,
             }
+
+    async def run_benchmark(
+        self,
+        func: t.Callable[..., t.Any],
+        *args: t.Any,
+        name: str | None = None,
+        **kwargs: t.Any,
+    ) -> dict[str, t.Any]:
+        """Run a benchmark test with statistical analysis."""
+        test_name = name or func.__name__
+        process = psutil.Process(os.getpid())
+
+        # Warmup rounds
+        await self._run_warmup_rounds(func, *args, **kwargs)
+
+        # Collect baseline memory
+        baseline_memory = process.memory_info().rss if self.collect_memory else 0
+
+        # Test rounds
+        execution_times: list[float] = []
+        memory_deltas: list[int] = []
+        memory_peaks: list[int] = []
+
+        for _ in range(self.test_rounds):
+            await self._execute_test_round(
+                func,
+                process,
+                baseline_memory,
+                execution_times,
+                memory_deltas,
+                memory_peaks,
+                *args,
+                **kwargs,
+            )
+
+        # Calculate statistics
+        result = self._calculate_execution_stats(test_name, execution_times)
+        self._add_memory_stats(result, memory_deltas, memory_peaks)
 
         self.results.append(result)
         return result

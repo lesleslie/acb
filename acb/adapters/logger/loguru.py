@@ -41,7 +41,7 @@ class LoguruSettings(LoggerBaseSettings):
     colorize: bool = True
 
     # Type annotation for settings dict created in __init__
-    settings: dict[str, t.Any]
+    settings: dict[str, t.Any] = {}
 
 
 MODULE_METADATA = AdapterMetadata(

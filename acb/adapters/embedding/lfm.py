@@ -238,7 +238,9 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                         np.float32,
                     )
                     # Normalize
-                    embedding = embedding / np.linalg.norm(embedding)
+                    embedding = (embedding / np.linalg.norm(embedding)).astype(
+                        np.float32
+                    )
                     embeddings.append(embedding)
 
                 return np.array(embeddings)
