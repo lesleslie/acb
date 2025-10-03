@@ -66,7 +66,7 @@ Created: 2025-10-01
 import asyncio
 import time
 import typing as t
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager, suppress
 
 from pydantic import Field
@@ -752,12 +752,12 @@ class RabbitMQQueue(QueueBackend):
                 original_error=e,
             ) from e
 
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore[arg-type]
     async def _subscribe(
         self,
         topic: str,
         prefetch: int | None = None,
-    ) -> AsyncGenerator[AsyncGenerator[QueueMessage]]:
+    ) -> AsyncIterator[AsyncGenerator[QueueMessage]]:
         """Subscribe to topic (private implementation).
 
         Args:

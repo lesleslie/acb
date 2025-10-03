@@ -29,7 +29,7 @@ from acb.adapters.reasoning._base import (
 if t.TYPE_CHECKING:
     from acb.logger import Logger as LoggerType
 else:
-    LoggerType = t.Any
+    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
 
 # Conditional imports for OpenAI
 try:
@@ -116,7 +116,7 @@ class OpenAIFunctionReasoningSettings(ReasoningBaseSettings):
 class FunctionCallTracker:
     """Tracks function calls during reasoning."""
 
-    def __init__(self, logger: LoggerType) -> None:
+    def __init__(self, logger: t.Any) -> None:
         self.logger = logger
         self.calls: list[dict[str, t.Any]] = []
         self.call_count = 0
@@ -575,7 +575,7 @@ Available tools will be provided as function calls. Use them when you need to ga
                     {
                         "role": "assistant",
                         "content": message.content,
-                        "tool_calls": [
+                        "tool_calls": [  # type: ignore[dict-item]
                             {
                                 "id": tool_call.id,
                                 "type": tool_call.type,
@@ -700,7 +700,7 @@ Available tools will be provided as function calls. Use them when you need to ga
             }
 
             if tool.required_parameters:
-                function_def["function"]["parameters"]["required"] = (
+                function_def["function"]["parameters"]["required"] = list(  # type: ignore[index]
                     tool.required_parameters
                 )
 

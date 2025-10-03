@@ -219,14 +219,14 @@ def validate_input(
                 case dict():
                     results = await _validate_dict_schema(
                         validation_service,
-                        schema,
+                        schema,  # type: ignore[arg-type]
                         bound_args,
                         config,
                     )
                 case ValidationSchema():
                     results = await _validate_single_schema(
                         validation_service,
-                        schema,
+                        schema,  # type: ignore[arg-type]
                         bound_args,
                         config,
                     )

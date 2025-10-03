@@ -14,17 +14,21 @@ Both high-complexity embedding adapter functions have been successfully refactor
 | ONNX | `_embed_texts` | **23** | **0** | ≤13 | ✅ **PASSED** |
 
 ### Global Complexity Check
+
 ```bash
 uv run complexipy --max-complexity 13 acb/
 ```
+
 **Result:** ✅ No functions above threshold
 
 ## 🔧 Optimization Techniques Applied
 
 ### 1. Method Extraction Pattern
+
 Extracted complex logic into focused helper methods:
 
 **HuggingFace:**
+
 - `_tokenize_batch()` - Tokenization logic
 - `_generate_embeddings()` - Model inference and pooling
 - `_create_embedding_result()` - Result object creation
@@ -32,6 +36,7 @@ Extracted complex logic into focused helper methods:
 - `_process_all_batches()` - Batch coordination
 
 **ONNX:**
+
 - `_tokenize_batch()` - Tokenization with validation
 - `_prepare_onnx_inputs()` - ONNX input preparation
 - `_count_tokens_safe()` - Safe token counting
@@ -40,6 +45,7 @@ Extracted complex logic into focused helper methods:
 - `_process_all_batches()` - Batch coordination
 
 ### 2. Modern Python Patterns
+
 - **List comprehensions** for result creation
 - **Generator expressions** for memory efficiency
 - **Type hints** on all parameters and returns
@@ -47,6 +53,7 @@ Extracted complex logic into focused helper methods:
 - **Async/await** patterns preserved throughout
 
 ### 3. Code Organization
+
 ```
 Main Method (Complexity: 0)
 ├── Setup phase
@@ -62,16 +69,20 @@ Main Method (Complexity: 0)
 ## 📈 Quality Improvements
 
 ### Complexity Distribution
+
 **Before:**
+
 - 2 functions with complexity >20
 - Concentrated complexity in main processing methods
 
 **After:**
+
 - 0 functions with complexity >13
 - Distributed complexity across focused helpers
 - Maximum helper complexity: 4
 
 ### Code Metrics
+
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
 | Main method complexity | 27/23 | 0/0 | 100% |
@@ -82,24 +93,30 @@ Main Method (Complexity: 0)
 ## 🧪 Verification
 
 ### Complexity Check ✅
+
 ```bash
 uv run complexipy acb/adapters/embedding/
 ```
+
 - ✅ HuggingFace `_embed_texts`: 0 (was 27)
 - ✅ ONNX `_embed_texts`: 0 (was 23)
 - ✅ All helper methods ≤4 complexity
 
 ### Code Quality ✅
+
 ```bash
 uv run refurb acb/adapters/embedding/huggingface.py acb/adapters/embedding/onnx.py
 ```
+
 - ✅ No refurb issues detected
 - ✅ Modern Python patterns verified
 
 ### Type Safety ✅
+
 ```bash
 uv run pyright acb/adapters/embedding/
 ```
+
 - ⚠️ Expected warnings for missing torch/transformers dependencies
 - ✅ No type errors in refactored code
 - ✅ All type hints properly defined
@@ -107,12 +124,14 @@ uv run pyright acb/adapters/embedding/
 ## 💾 Memory Impact
 
 ### Optimization Benefits
+
 1. **Reduced stack depth** - Flatter call hierarchy
-2. **Generator expressions** - Lazy evaluation where possible
-3. **Explicit cleanup** - Helper methods manage resources
-4. **Fewer intermediate variables** - Direct transformations
+1. **Generator expressions** - Lazy evaluation where possible
+1. **Explicit cleanup** - Helper methods manage resources
+1. **Fewer intermediate variables** - Direct transformations
 
 ### Memory Profile
+
 - **Same or better** baseline memory usage
 - **Improved** GC efficiency (smaller scope per function)
 - **Cleaner** resource cleanup patterns
@@ -120,17 +139,20 @@ uv run pyright acb/adapters/embedding/
 ## 🔒 Backward Compatibility
 
 ### ✅ Zero Breaking Changes
+
 - Public API unchanged
 - Same input/output contracts
 - Same error handling behavior
 - Same embedding quality
 
 ### Migration Required
+
 **None** - This is a pure internal refactoring with no external impact.
 
 ## 📚 Code Quality Principles Applied
 
 ### SOLID Principles
+
 - ✅ **Single Responsibility** - Each helper has one purpose
 - ✅ **Open/Closed** - Easy to extend without modifying
 - ✅ **Liskov Substitution** - Helpers are interchangeable
@@ -138,12 +160,14 @@ uv run pyright acb/adapters/embedding/
 - ✅ **Dependency Inversion** - Depends on abstractions
 
 ### Clean Code Philosophy
+
 - ✅ **DRY** - No duplicate logic
 - ✅ **YAGNI** - No speculative features
 - ✅ **KISS** - Simple, clear solutions
 - ✅ **Self-documenting** - Clear names and structure
 
 ### ACB Standards
+
 - ✅ **Async-first** - All I/O is async
 - ✅ **Type-safe** - Full type hint coverage
 - ✅ **Protocol-based** - Clean interfaces
@@ -152,13 +176,16 @@ uv run pyright acb/adapters/embedding/
 ## 📝 Documentation
 
 ### Docstrings Added
+
 All new helper methods include clear docstrings:
+
 - Purpose description
 - Parameter types and meanings
 - Return value documentation
 - Usage examples where appropriate
 
 ### Code Self-Documentation
+
 - Descriptive method names
 - Clear variable names
 - Logical flow structure
@@ -169,18 +196,21 @@ All new helper methods include clear docstrings:
 ### Additional Optimization Opportunities
 
 1. **HuggingFace `_load_model` (Complexity: 27)**
+
    - Extract device detection
    - Extract tokenizer loading
    - Extract model loading
    - Extract optimization setup
    - **Target:** Reduce to ≤13
 
-2. **ONNX `_load_model` (Complexity: 13)**
+1. **ONNX `_load_model` (Complexity: 13)**
+
    - Currently at threshold
    - Monitor for future complexity growth
    - Consider refactoring if modified
 
 ### Testing Enhancements
+
 - Unit tests for new helper methods
 - Integration tests for end-to-end workflows
 - Performance benchmarks for memory usage
@@ -188,13 +218,15 @@ All new helper methods include clear docstrings:
 ## 📦 Deliverables
 
 ### Files Modified ✅
+
 1. `/acb/adapters/embedding/huggingface.py` - Optimized
-2. `/acb/adapters/embedding/onnx.py` - Optimized
+1. `/acb/adapters/embedding/onnx.py` - Optimized
 
 ### Documentation Created ✅
+
 1. `EMBEDDING_OPTIMIZATION_PLAN.md` - Initial strategy
-2. `EMBEDDING_OPTIMIZATION_RESULTS.md` - Detailed analysis
-3. `EMBEDDING_OPTIMIZATION_FINAL.md` - This summary
+1. `EMBEDDING_OPTIMIZATION_RESULTS.md` - Detailed analysis
+1. `EMBEDDING_OPTIMIZATION_FINAL.md` - This summary
 
 ## ✅ Completion Checklist
 
@@ -214,10 +246,10 @@ All new helper methods include clear docstrings:
 The embedding adapter optimization successfully achieved all goals:
 
 1. ✅ **Complexity reduced to 0** for both target functions (from 27 and 23)
-2. ✅ **Quality improved** with better organization and testability
-3. ✅ **Memory optimized** with efficient patterns and resource cleanup
-4. ✅ **Type safety enhanced** with comprehensive type hints
-5. ✅ **Backward compatible** with zero breaking changes
+1. ✅ **Quality improved** with better organization and testability
+1. ✅ **Memory optimized** with efficient patterns and resource cleanup
+1. ✅ **Type safety enhanced** with comprehensive type hints
+1. ✅ **Backward compatible** with zero breaking changes
 
 The refactored code is **production-ready** and represents a significant improvement in code quality while maintaining all functionality and performance characteristics.
 

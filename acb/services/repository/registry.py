@@ -62,8 +62,8 @@ class RepositoryRegistry(CleanupMixin):
     def __init__(self) -> None:
         super().__init__()
         self._registrations: dict[type[Any], RepositoryRegistration] = {}
-        self._instances: dict[type[Any], RepositoryBase] = {}
-        self._scoped_instances: dict[str, dict[type[Any], RepositoryBase]] = {}
+        self._instances: dict[type[Any], RepositoryBase[Any, Any]] = {}
+        self._scoped_instances: dict[str, dict[type[Any], RepositoryBase[Any, Any]]] = {}
         self._current_scope: str | None = None
 
     def register(
@@ -71,7 +71,7 @@ class RepositoryRegistry(CleanupMixin):
         entity_type: type[EntityType],
         repository_type: type[RepositoryBase[EntityType, Any]],
         scope: RepositoryScope = RepositoryScope.SINGLETON,
-        factory: t.Callable[[], RepositoryBase] | None = None,
+        factory: t.Callable[[], RepositoryBase[Any, Any]] | None = None,
     ) -> None:
         """Register a repository for an entity type.
 
@@ -84,13 +84,16 @@ class RepositoryRegistry(CleanupMixin):
         if entity_type in self._registrations:
             existing = self._registrations[entity_type]
             if existing.repository_type != repository_type:
+                entity_name = getattr(entity_type, "__name__", str(entity_type))
+                existing_name = getattr(existing.repository_type, "__name__", str(existing.repository_type))
+                repo_name = getattr(repository_type, "__name__", str(repository_type))
                 msg = (
-                    f"Repository for {entity_type.__name__} already registered with different type: "
-                    f"{existing.repository_type.__name__} vs {repository_type.__name__}"
+                    f"Repository for {entity_name} already registered with different type: "
+                    f"{existing_name} vs {repo_name}"
                 )
                 raise RepositoryRegistryError(
                     msg,
-                    entity_type=entity_type.__name__,
+                    entity_type=entity_name,
                 )
 
         registration = RepositoryRegistration(
@@ -144,10 +147,11 @@ class RepositoryRegistry(CleanupMixin):
             RepositoryRegistryError: If repository not registered
         """
         if entity_type not in self._registrations:
-            msg = f"No repository registered for entity type: {entity_type.__name__}"
+            entity_name = getattr(entity_type, "__name__", str(entity_type))
+            msg = f"No repository registered for entity type: {entity_name}"
             raise RepositoryRegistryError(
                 msg,
-                entity_type=entity_type.__name__,
+                entity_type=entity_name,
             )
 
         registration = self._registrations[entity_type]
@@ -158,13 +162,14 @@ class RepositoryRegistry(CleanupMixin):
             return self._get_scoped_instance(registration)
         if registration.scope == RepositoryScope.TRANSIENT:
             return self._create_instance(registration)
+        entity_name = getattr(entity_type, "__name__", str(entity_type))
         msg = f"Unsupported repository scope: {registration.scope}"
         raise RepositoryRegistryError(
             msg,
-            entity_type=entity_type.__name__,
+            entity_type=entity_name,
         )
 
-    def get_by_name(self, entity_name: str) -> RepositoryBase:
+    def get_by_name(self, entity_name: str) -> RepositoryBase[Any, Any]:
         """Get repository by entity name.
 
         Args:
@@ -286,7 +291,7 @@ class RepositoryRegistry(CleanupMixin):
         """
         self._current_scope = scope_id
 
-    def clear_scope(self, scope_id: str) -> None:
+    async def clear_scope(self, scope_id: str) -> None:
         """Clear all instances for a scope.
 
         Args:
@@ -297,14 +302,14 @@ class RepositoryRegistry(CleanupMixin):
             for instance in self._scoped_instances[scope_id].values():
                 if hasattr(instance, "cleanup"):
                     with contextlib.suppress(Exception):
-                        instance.cleanup()
+                        await instance.cleanup()
 
             del self._scoped_instances[scope_id]
 
     def _get_singleton_instance(
         self,
         registration: RepositoryRegistration,
-    ) -> RepositoryBase:
+    ) -> RepositoryBase[Any, Any]:
         """Get singleton repository instance."""
         if registration.repository_instance:
             return registration.repository_instance
@@ -323,7 +328,7 @@ class RepositoryRegistry(CleanupMixin):
     def _get_scoped_instance(
         self,
         registration: RepositoryRegistration,
-    ) -> RepositoryBase:
+    ) -> RepositoryBase[Any, Any]:
         """Get scoped repository instance."""
         scope_id = self._current_scope or "default"
 
@@ -341,7 +346,7 @@ class RepositoryRegistry(CleanupMixin):
 
         return instance
 
-    def _create_instance(self, registration: RepositoryRegistration) -> RepositoryBase:
+    def _create_instance(self, registration: RepositoryRegistration) -> RepositoryBase[Any, Any]:
         """Create repository instance."""
         if registration.factory:
             return registration.factory()
@@ -355,7 +360,7 @@ class RepositoryRegistry(CleanupMixin):
 
     def _extract_entity_type(
         self,
-        repository_class: type[RepositoryBase],
+        repository_class: type[RepositoryBase[Any, Any]],
     ) -> type[Any] | None:
         """Extract entity type from repository class annotations."""
         # Try to get generic type arguments

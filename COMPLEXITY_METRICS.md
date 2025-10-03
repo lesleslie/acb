@@ -9,6 +9,7 @@ Successfully reduced cognitive complexity from **135 to 39** (71% reduction) whi
 ### 1. Event Handler Discovery
 
 **Before** (Complexity: 45):
+
 ```python
 def import_event_handler(handler_categories: str | list[str] | None = None) -> t.Any:
     # 72 lines of complex logic:
@@ -27,6 +28,7 @@ def import_event_handler(handler_categories: str | list[str] | None = None) -> t
 ```
 
 **After** (Complexity: 0):
+
 ```python
 def import_event_handler(handler_categories: str | list[str] | None = None) -> t.Any:
     """Import event handler(s) dynamically.
@@ -50,6 +52,7 @@ def import_event_handler(handler_categories: str | list[str] | None = None) -> t
 ### 2. Service Discovery
 
 **Before** (Complexity: 45):
+
 ```python
 def import_service(service_categories: str | list[str] | None = None) -> t.Any:
     # Identical 72-line pattern to event handler
@@ -61,6 +64,7 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
 ```
 
 **After** (Complexity: 0):
+
 ```python
 def import_service(service_categories: str | list[str] | None = None) -> t.Any:
     """Import service(s) dynamically.
@@ -84,6 +88,7 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
 ### 3. Test Provider Discovery
 
 **Before** (Complexity: 45):
+
 ```python
 def import_test_provider(provider_categories: str | list[str] | None = None) -> t.Any:
     # Identical 72-line pattern to event handler and service
@@ -91,6 +96,7 @@ def import_test_provider(provider_categories: str | list[str] | None = None) -> 
 ```
 
 **After** (Complexity: 0):
+
 ```python
 def import_test_provider(provider_categories: str | list[str] | None = None) -> t.Any:
     """Import test provider(s) dynamically.
@@ -280,6 +286,7 @@ def _match_variable_to_category(
 ## Complexity Distribution
 
 ### Before Refactoring
+
 ```
 import_event_handler:    45 ████████████████████████████████████████████████
 import_service:          45 ████████████████████████████████████████████████
@@ -289,6 +296,7 @@ Total:                  135
 ```
 
 ### After Refactoring
+
 ```
 import_event_handler:     0
 import_service:           0
@@ -306,21 +314,25 @@ Total:                   39 (71% reduction)
 ## Key Improvements
 
 ### 1. Complexity Decomposition
+
 - **Monolithic functions broken down**: Each helper has single responsibility
 - **Early returns reduce nesting**: Simplified control flow
 - **Clear separation of concerns**: Import logic separated from configuration
 
 ### 2. Code Reuse
+
 - **216 duplicate lines eliminated**: Single implementation shared
 - **DRY principle achieved**: One place to fix bugs
 - **Consistent behavior**: All discovery systems use same logic
 
 ### 3. Maintainability
+
 - **Easier to understand**: Small, focused functions
 - **Easier to test**: Each helper testable independently
 - **Easier to extend**: Add new registry types without duplication
 
 ### 4. Type Safety
+
 - **Protocol-based design**: Clear contracts
 - **Full type coverage**: All parameters and returns typed
 - **Zero type errors**: Passes pyright strict mode
@@ -328,6 +340,7 @@ Total:                   39 (71% reduction)
 ## Performance Impact
 
 **Zero performance degradation**:
+
 - Same number of operations
 - No additional overhead
 - Lazy evaluation preserved

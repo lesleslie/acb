@@ -3,17 +3,20 @@
 ## Current Complexity Analysis
 
 ### HuggingFace `_embed_texts` (Complexity: 27)
+
 **Location:** `adapters/embedding/huggingface.py::226-315`
 
 **Complexity Sources:**
+
 1. Nested loop with batch processing (for loop)
-2. Complex input preparation (tokenization + device movement)
-3. Inline output processing and pooling
-4. Mixed error handling and logging within loop
-5. Result object construction inline
-6. Token counting embedded in result creation
+1. Complex input preparation (tokenization + device movement)
+1. Inline output processing and pooling
+1. Mixed error handling and logging within loop
+1. Result object construction inline
+1. Token counting embedded in result creation
 
 **Refactoring Strategy:**
+
 - Extract tokenization logic → `_tokenize_batch()`
 - Extract embedding generation → `_generate_embeddings()`
 - Extract result creation → `_create_embedding_results()`
@@ -21,17 +24,20 @@
 - Apply early returns for error cases
 
 ### ONNX `_embed_batch` (Complexity: 23)
+
 **Location:** `adapters/embedding/onnx.py::230-339`
 
 **Complexity Sources:**
+
 1. Nested loop with batch processing
-2. Complex ONNX input preparation (multiple input types)
-3. Conditional input construction for token_type_ids
-4. Inline token counting with error suppression
-5. Result object construction inline
-6. Mixed normalization and pooling logic
+1. Complex ONNX input preparation (multiple input types)
+1. Conditional input construction for token_type_ids
+1. Inline token counting with error suppression
+1. Result object construction inline
+1. Mixed normalization and pooling logic
 
 **Refactoring Strategy:**
+
 - Extract ONNX input preparation → `_prepare_onnx_inputs()`
 - Extract tokenization logic → `_tokenize_batch()`
 - Extract token counting → `_count_tokens()`
@@ -43,12 +49,9 @@
 ### Phase 1: Extract Helper Methods
 
 #### HuggingFace Helpers
+
 ```python
-async def _tokenize_batch(
-    self,
-    texts: list[str],
-    tokenizer: t.Any
-) -> dict[str, t.Any]:
+async def _tokenize_batch(self, texts: list[str], tokenizer: t.Any) -> dict[str, t.Any]:
     """Tokenize batch of texts with standard parameters."""
     return await asyncio.get_event_loop().run_in_executor(
         None,
@@ -60,6 +63,7 @@ async def _tokenize_batch(
             return_tensors="pt",
         ),
     )
+
 
 async def _generate_embeddings(
     self,
@@ -80,6 +84,7 @@ async def _generate_embeddings(
     )
 
     return embeddings
+
 
 def _create_embedding_result(
     self,
@@ -104,6 +109,7 @@ def _create_embedding_result(
 ```
 
 #### ONNX Helpers
+
 ```python
 async def _tokenize_batch(
     self,
@@ -122,6 +128,7 @@ async def _tokenize_batch(
         ),
     )
 
+
 def _prepare_onnx_inputs(
     self,
     tokenized: dict[str, np.ndarray],
@@ -139,6 +146,7 @@ def _prepare_onnx_inputs(
 
     return onnx_inputs
 
+
 def _count_tokens_safe(
     self,
     text: str,
@@ -152,6 +160,7 @@ def _count_tokens_safe(
         return len(tokenizer.encode(text))
 
     return None
+
 
 def _create_embedding_result(
     self,
@@ -179,6 +188,7 @@ def _create_embedding_result(
 ### Phase 2: Refactor Main Methods
 
 #### HuggingFace `_embed_texts` (Target Complexity ≤13)
+
 ```python
 async def _embed_texts(
     self,
@@ -216,6 +226,7 @@ async def _embed_texts(
         batch_size=len(results),
     )
 
+
 async def _process_all_batches(
     self,
     texts: list[str],
@@ -245,6 +256,7 @@ async def _process_all_batches(
         )
 
     return results
+
 
 async def _process_single_batch(
     self,
@@ -277,6 +289,7 @@ async def _process_single_batch(
 ```
 
 #### ONNX `_embed_texts` (Target Complexity ≤13)
+
 ```python
 async def _embed_texts(
     self,
@@ -314,6 +327,7 @@ async def _embed_texts(
         batch_size=len(results),
     )
 
+
 async def _process_all_batches(
     self,
     texts: list[str],
@@ -338,11 +352,10 @@ async def _process_all_batches(
         )
         results.extend(batch_results)
 
-        await logger.debug(
-            f"ONNX embeddings batch completed: {len(batch_texts)} texts"
-        )
+        await logger.debug(f"ONNX embeddings batch completed: {len(batch_texts)} texts")
 
     return results
+
 
 async def _process_single_batch(
     self,
@@ -391,18 +404,21 @@ async def _process_single_batch(
 ## Expected Improvements
 
 ### Complexity Reduction
+
 - **HuggingFace**: 27 → ~12 (55% reduction)
 - **ONNX**: 23 → ~11 (52% reduction)
 
 ### Code Quality Benefits
+
 1. **Single Responsibility**: Each helper method has one clear purpose
-2. **Testability**: Helper methods can be unit tested independently
-3. **Maintainability**: Changes to tokenization/processing are localized
-4. **Readability**: Main flow is now clear and concise
-5. **Memory Efficiency**: Generator expressions and list comprehensions
-6. **Type Safety**: All helper methods have proper type hints
+1. **Testability**: Helper methods can be unit tested independently
+1. **Maintainability**: Changes to tokenization/processing are localized
+1. **Readability**: Main flow is now clear and concise
+1. **Memory Efficiency**: Generator expressions and list comprehensions
+1. **Type Safety**: All helper methods have proper type hints
 
 ### Memory Impact
+
 - **Reduced**: Eliminated intermediate variables in hot loops
 - **Optimized**: Generator expressions for result creation
 - **Improved**: Explicit resource cleanup in helper methods
@@ -410,6 +426,7 @@ async def _process_single_batch(
 ## Verification Strategy
 
 ### Unit Tests
+
 ```python
 @pytest.mark.asyncio
 async def test_tokenize_batch_huggingface():
@@ -419,6 +436,7 @@ async def test_tokenize_batch_huggingface():
     result = await adapter._tokenize_batch(texts, mock_tokenizer)
     assert "input_ids" in result
     assert "attention_mask" in result
+
 
 @pytest.mark.asyncio
 async def test_prepare_onnx_inputs():
@@ -431,12 +449,14 @@ async def test_prepare_onnx_inputs():
 ```
 
 ### Integration Tests
+
 - Verify end-to-end embedding generation still works
 - Check memory usage with large batches
 - Validate embedding accuracy unchanged
 - Test error handling paths
 
 ### Performance Benchmarks
+
 - Compare processing time before/after
 - Measure memory usage with memory_profiler
 - Verify no regression in embedding quality

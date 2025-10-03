@@ -55,6 +55,8 @@ class SpecificationContext:
 
     def get_field_name(self, logical_name: str) -> str:
         """Get actual field name from logical name."""
+        if self.field_mappings is None:
+            return logical_name
         return self.field_mappings.get(logical_name, logical_name)
 
 
@@ -157,9 +159,9 @@ class FieldSpecification(Specification):
                 return self._sql_is_not_null(field_name)
             case ComparisonOperator.BETWEEN:
                 return self._sql_between(field_name, param_key)
-            case _:
-                msg = f"Unsupported operator: {self.operator}"
-                raise ValueError(msg)
+
+        msg = f"Unsupported operator: {self.operator}"
+        raise ValueError(msg)
 
     def to_nosql_filter(self, context: SpecificationContext) -> dict[str, Any]:  # noqa: C901
         """Convert to NoSQL filter using match statement for operator dispatch.
@@ -201,9 +203,9 @@ class FieldSpecification(Specification):
                 return {field_name: {"$exists": True}}
             case ComparisonOperator.BETWEEN:
                 return self._nosql_between(field_name)
-            case _:
-                msg = f"Unsupported operator for NoSQL: {self.operator}"
-                raise ValueError(msg)
+
+        msg = f"Unsupported operator for NoSQL: {self.operator}"
+        raise ValueError(msg)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
@@ -226,64 +228,64 @@ class FieldSpecification(Specification):
         return f"param_{abs(hash(f'{self.field}_{self.operator.value}_{self.value}'))}"
 
     # SQL operator handlers
-    def _sql_equals(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_equals(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} = :{param_key}", {param_key: self.value}
 
-    def _sql_not_equals(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_not_equals(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} != :{param_key}", {param_key: self.value}
 
-    def _sql_greater_than(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_greater_than(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} > :{param_key}", {param_key: self.value}
 
     def _sql_greater_than_or_equal(
         self, field_name: str, param_key: str
-    ) -> tuple[str, dict]:
+    ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} >= :{param_key}", {param_key: self.value}
 
-    def _sql_less_than(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_less_than(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} < :{param_key}", {param_key: self.value}
 
     def _sql_less_than_or_equal(
         self, field_name: str, param_key: str
-    ) -> tuple[str, dict]:
+    ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} <= :{param_key}", {param_key: self.value}
 
-    def _sql_in(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_in(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         if isinstance(self.value, list | tuple):
             placeholders = ",".join(f":{param_key}_{i}" for i in range(len(self.value)))
             params = {f"{param_key}_{i}": v for i, v in enumerate(self.value)}
             return f"{field_name} IN ({placeholders})", params
         return f"{field_name} IN (:{param_key})", {param_key: self.value}
 
-    def _sql_not_in(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_not_in(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         if isinstance(self.value, list | tuple):
             placeholders = ",".join(f":{param_key}_{i}" for i in range(len(self.value)))
             params = {f"{param_key}_{i}": v for i, v in enumerate(self.value)}
             return f"{field_name} NOT IN ({placeholders})", params
         return f"{field_name} NOT IN (:{param_key})", {param_key: self.value}
 
-    def _sql_like(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_like(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} LIKE :{param_key}", {param_key: self.value}
 
-    def _sql_ilike(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_ilike(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"UPPER({field_name}) LIKE UPPER(:{param_key})", {param_key: self.value}
 
-    def _sql_contains(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_contains(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} LIKE :{param_key}", {param_key: f"%{self.value}%"}
 
-    def _sql_starts_with(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_starts_with(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} LIKE :{param_key}", {param_key: f"{self.value}%"}
 
-    def _sql_ends_with(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_ends_with(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} LIKE :{param_key}", {param_key: f"%{self.value}"}
 
-    def _sql_is_null(self, field_name: str) -> tuple[str, dict]:
+    def _sql_is_null(self, field_name: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} IS NULL", {}
 
-    def _sql_is_not_null(self, field_name: str) -> tuple[str, dict]:
+    def _sql_is_not_null(self, field_name: str) -> tuple[str, dict[str, Any]]:
         return f"{field_name} IS NOT NULL", {}
 
-    def _sql_between(self, field_name: str, param_key: str) -> tuple[str, dict]:
+    def _sql_between(self, field_name: str, param_key: str) -> tuple[str, dict[str, Any]]:
         if not isinstance(self.value, list | tuple) or len(self.value) != 2:
             msg = "BETWEEN operator requires a list/tuple of 2 values"
             raise ValueError(msg)

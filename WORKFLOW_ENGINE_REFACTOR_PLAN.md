@@ -3,13 +3,15 @@
 ## Current Complexity Analysis
 
 ### Critical Functions
+
 1. **`execute_step` (line 248)**: Simple function with low complexity - actually **NOT** the problem
-2. **`_execute_step_with_retry` (line 204)**: Complexity ~18 - needs refactoring
-3. **`execute` (line 53)**: Main workflow execution - likely complexity 42+ due to nested loops and conditionals
+1. **`_execute_step_with_retry` (line 204)**: Complexity ~18 - needs refactoring
+1. **`execute` (line 53)**: Main workflow execution - likely complexity 42+ due to nested loops and conditionals
 
 ### Actual Complexity Sources
 
 **`execute` method complexity breakdown:**
+
 - Main while loop with multiple nested conditions (line 79)
 - Step completion tracking logic (lines 88-101)
 - Step task execution loop (lines 104-109)
@@ -18,6 +20,7 @@
 - Multiple exception handlers
 
 **`_execute_step_with_retry` complexity breakdown:**
+
 - Retry loop with conditional logic (line 213)
 - Nested try-except blocks (lines 214-238)
 - State checking and error handling
@@ -62,6 +65,7 @@ class RetryHandler:
 ### 3. State Machine Pattern
 
 **Step lifecycle states:**
+
 ```python
 class StepExecutionPhase(Enum):
     INITIALIZING = "initializing"
@@ -74,6 +78,7 @@ class StepExecutionPhase(Enum):
 ### 4. Early Returns and Guard Clauses
 
 Replace nested conditionals with early returns:
+
 - Check for empty ready steps → return early
 - Check for workflow failure → break early
 - Check for deadlock → break early
@@ -81,20 +86,23 @@ Replace nested conditionals with early returns:
 ## Implementation Plan
 
 ### Step 1: Extract `execute` method phases
+
 1. `_initialize_workflow_execution` - Setup result and tracking
-2. `_find_and_execute_ready_steps` - Get ready steps and create tasks
-3. `_wait_for_step_completion` - Await tasks and collect results
-4. `_handle_step_failure` - Process failed steps
-5. `_check_workflow_deadlock` - Detect and handle deadlocks
-6. `_finalize_workflow_result` - Set final state and timing
+1. `_find_and_execute_ready_steps` - Get ready steps and create tasks
+1. `_wait_for_step_completion` - Await tasks and collect results
+1. `_handle_step_failure` - Process failed steps
+1. `_check_workflow_deadlock` - Detect and handle deadlocks
+1. `_finalize_workflow_result` - Set final state and timing
 
 ### Step 2: Refactor `_execute_step_with_retry`
+
 1. Extract retry loop into separate method
-2. Create `_execute_single_step_attempt` method
-3. Extract backoff calculation
-4. Simplify error handling with early returns
+1. Create `_execute_single_step_attempt` method
+1. Extract backoff calculation
+1. Simplify error handling with early returns
 
 ### Step 3: Verify complexity
+
 - Run complexity analysis on all methods
 - Ensure all methods ≤13 complexity
 - Maintain test coverage
@@ -102,10 +110,12 @@ Replace nested conditionals with early returns:
 ## Expected Complexity Reduction
 
 ### Before:
+
 - `execute`: ~42 complexity
 - `_execute_step_with_retry`: ~18 complexity
 
 ### After (target):
+
 - `execute`: ≤10 complexity (main orchestration only)
 - `_initialize_workflow_execution`: ≤5
 - `_find_and_execute_ready_steps`: ≤8
@@ -120,10 +130,10 @@ Replace nested conditionals with early returns:
 ## Quality Assurance
 
 1. **Type Safety**: Add comprehensive type hints for all extracted methods
-2. **Test Coverage**: Run existing tests to ensure behavior preserved
-3. **Async Patterns**: Maintain proper async/await usage
-4. **Error Handling**: Preserve all error handling semantics
-5. **Performance**: No performance regression from refactoring
+1. **Test Coverage**: Run existing tests to ensure behavior preserved
+1. **Async Patterns**: Maintain proper async/await usage
+1. **Error Handling**: Preserve all error handling semantics
+1. **Performance**: No performance regression from refactoring
 
 ## Success Criteria
 

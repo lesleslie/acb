@@ -19,9 +19,9 @@ try:
 
     REDIS_AVAILABLE = True
 except ImportError:
-    redis = None
-    Redis = None
-    ConnectionPool = None
+    redis = None  # type: ignore[assignment]
+    Redis = None  # type: ignore[assignment,no-redef]
+    ConnectionPool = None  # type: ignore[assignment,no-redef]
     REDIS_AVAILABLE = False
 
 import contextlib
@@ -190,7 +190,7 @@ class RedisQueue(QueueBase):
 
         self.logger.info("Redis queue stopped")
 
-    async def _ensure_redis(self) -> Redis:
+    async def _ensure_redis(self) -> t.Any:
         """Ensure Redis connection is available."""
         if self._redis is None:
             # Create connection pool

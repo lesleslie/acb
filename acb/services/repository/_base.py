@@ -136,7 +136,7 @@ class RepositorySettings(Settings):
 
     @field_validator("default_page_size")
     @classmethod
-    def validate_page_size(cls, v, info) -> int:
+    def validate_page_size(cls, v: int, info: t.Any) -> int:
         values: Any = info.data if hasattr(info, "data") else {}
         if "max_page_size" in values and v > values["max_page_size"]:
             msg = "default_page_size cannot exceed max_page_size"
@@ -144,7 +144,7 @@ class RepositorySettings(Settings):
         return v
 
 
-class RepositoryProtocol(t.Protocol[EntityType, IDType]):
+class RepositoryProtocol(t.Protocol[EntityType, IDType]):  # type: ignore[misc]
     """Protocol defining repository interface."""
 
     async def create(self, entity: EntityType) -> EntityType:
@@ -199,10 +199,10 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
     ) -> None:
         super().__init__()
         self.entity_type = entity_type
-        self.entity_name = entity_type.__name__
+        self.entity_name = getattr(entity_type, "__name__", str(entity_type))
         self.settings = settings or depends.get(RepositorySettings)
         self._cache = None
-        self._metrics = {}
+        self._metrics: dict[str, t.Any] = {}
 
     @property
     def cache_key_prefix(self) -> str:

@@ -95,9 +95,9 @@ try:
 
     REDIS_AVAILABLE = True
 except ImportError:
-    RedisQueue = None  # type: ignore[assignment]
-    RedisQueueSettings = None  # type: ignore[assignment]
-    create_redis_queue: t.Callable[..., t.Any] | None = None
+    RedisQueue = None  # type: ignore[assignment,no-redef]
+    RedisQueueSettings = None  # type: ignore[assignment,no-redef]
+    create_redis_queue: t.Callable[..., t.Any] | None = None  # type: ignore[no-redef]
     REDIS_AVAILABLE = False
 
 try:
@@ -109,9 +109,9 @@ try:
 
     RABBITMQ_AVAILABLE = True
 except ImportError:
-    RabbitMQQueue = None  # type: ignore[assignment]
-    RabbitMQQueueSettings = None  # type: ignore[assignment]
-    create_rabbitmq_queue: t.Callable[..., t.Any] | None = None
+    RabbitMQQueue = None  # type: ignore[assignment,no-redef]
+    RabbitMQQueueSettings = None  # type: ignore[assignment,no-redef]
+    create_rabbitmq_queue: t.Callable[..., t.Any] | None = None  # type: ignore[no-redef]
     RABBITMQ_AVAILABLE = False
 
 # Task scheduling

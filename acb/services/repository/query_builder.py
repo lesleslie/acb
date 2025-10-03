@@ -47,7 +47,7 @@ class QueryResult:
     execution_time: float | None = None
     query_type: QueryType = QueryType.SELECT
     cache_hit: bool = False
-    metadata: dict[str, Any] = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.metadata is None:
@@ -448,6 +448,7 @@ class QueryBuilder:
 
         try:
             # Determine query type
+            result_data: Any
             if self._aggregates:
                 query_type = QueryType.AGGREGATE
                 result_data = await self._execute_aggregate()
@@ -533,7 +534,7 @@ class QueryBuilder:
             page_size = self._limit or 50
             pagination = PaginationInfo(page=page, page_size=page_size)
 
-        return await self.repository.list(filters, sort_criteria, pagination)
+        return await self.repository.list(filters, sort_criteria, pagination)  # type: ignore[return-value]
 
     async def _execute_aggregate(self) -> dict[str, Any]:
         """Execute aggregate query."""
@@ -541,7 +542,7 @@ class QueryBuilder:
         # In a full implementation, this would generate appropriate SQL/NoSQL queries
         filters = self._build_filters()
 
-        results = {}
+        results: dict[str, int | None] = {}
 
         # Get count for COUNT aggregates
         count_aggregates = [

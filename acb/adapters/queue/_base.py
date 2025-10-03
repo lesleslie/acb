@@ -15,7 +15,7 @@ Key Design Principles:
 import asyncio
 import typing as t
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
 from enum import Enum
@@ -29,7 +29,7 @@ from acb.depends import depends
 if t.TYPE_CHECKING:
     from acb.logger import Logger as LoggerType
 else:
-    LoggerType = t.Any
+    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
 
 # Re-export common types for convenience
 __all__ = [
@@ -245,7 +245,7 @@ class QueueBackend(ABC, CleanupMixin):
 
         # Injected dependencies
         self.config: Config = depends.get(Config)
-        self.logger: LoggerType = depends.get("logger")
+        self.logger: t.Any = depends.get("logger")
 
         # Settings
         self._settings = settings or QueueSettings()
@@ -485,6 +485,7 @@ class QueueBackend(ABC, CleanupMixin):
                     await process_message(message)
                     await queue.acknowledge(message)
         """
+        message_stream: AsyncGenerator[QueueMessage]
         async with self._subscribe(topic, prefetch) as message_stream:
             yield message_stream
 
@@ -762,12 +763,12 @@ class QueueBackend(ABC, CleanupMixin):
         ...
 
     @abstractmethod
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore[arg-type]
     async def _subscribe(
         self,
         topic: str,
         prefetch: int | None = None,
-    ) -> AsyncGenerator[AsyncGenerator[QueueMessage]]:
+    ) -> AsyncIterator[AsyncGenerator[QueueMessage]]:
         """Subscribe to topic (private implementation).
 
         Args:
@@ -777,7 +778,8 @@ class QueueBackend(ABC, CleanupMixin):
         Yields:
             Async generator of messages
         """
-        ...
+        yield  # type: ignore[misc]
+        ...  # Concrete implementations must override this
 
     @abstractmethod
     async def _create_queue(

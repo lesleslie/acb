@@ -263,13 +263,13 @@ class SchemaValidator:
         """Find the schema that best matches the data."""
         best_schema = None
         best_result = None
-        best_score = -1
+        best_score: float = -1.0
 
         for schema in schemas:
             result = await schema.validate(data)
 
             # Calculate a score based on validation success and warnings
-            score = 0
+            score: float = 0.0
             if result.is_valid:
                 score += 100  # Base score for valid result
                 score -= len(result.warnings)  # Subtract for warnings

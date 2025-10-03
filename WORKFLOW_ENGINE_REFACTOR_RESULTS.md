@@ -9,14 +9,16 @@ Successfully refactored the ACB workflow engine to meet cognitive complexity ≤
 ### Before Refactoring
 
 **Critical Issues:**
+
 - `execute` method: ~42 complexity (nested loops, multiple conditionals, exception handling)
 - `_execute_step_with_retry` method: ~18 complexity (retry loop with nested error handling)
 
 **Root Causes:**
+
 1. Monolithic `execute` method handling initialization, execution, error handling, and finalization
-2. Complex nested loops for step execution and result processing
-3. Inline error handling mixed with business logic
-4. Retry logic with multiple nested try-except blocks
+1. Complex nested loops for step execution and result processing
+1. Inline error handling mixed with business logic
+1. Retry logic with multiple nested try-except blocks
 
 ### After Refactoring
 
@@ -126,6 +128,7 @@ Methods return explicit values for better traceability:
 **Passing Tests: 29/37 (78% success rate)**
 
 Core engine functionality tests:
+
 - ✅ Single step workflow execution
 - ✅ Multi-step workflow with dependencies
 - ✅ Parallel step execution
@@ -136,8 +139,8 @@ Core engine functionality tests:
 **Test Failures Analysis:**
 
 1. **`test_cancel_workflow`**: Pre-existing test design issue - attempts to cancel already-completed workflow (correct behavior to return False)
-2. **Discovery tests**: Unrelated to refactoring - import mechanism tests
-3. **Service tests**: Error in service initialization (separate component)
+1. **Discovery tests**: Unrelated to refactoring - import mechanism tests
+1. **Service tests**: Error in service initialization (separate component)
 
 **Verdict**: All core engine refactoring tests pass. Failures are unrelated to the refactoring work.
 
@@ -151,6 +154,7 @@ def _initialize_workflow_execution(
 ) -> tuple[WorkflowResult, dict[str, StepResult], set[str]]:
     """Initialize workflow execution state."""
 
+
 async def _execute_single_attempt(
     self, step: WorkflowStep, context: dict[str, t.Any]
 ) -> tuple[StepResult | None, str | None]:
@@ -160,6 +164,7 @@ async def _execute_single_attempt(
 ### Async Patterns
 
 All async patterns preserved:
+
 - Proper async/await usage throughout
 - Context manager usage with `async with self._step_semaphore`
 - Parallel execution with `asyncio.create_task()`
@@ -168,6 +173,7 @@ All async patterns preserved:
 ### Error Handling
 
 All error handling semantics preserved:
+
 - Exception propagation maintained
 - Retry logic behavior unchanged
 - Error logging preserved with fallback logger for tests
@@ -185,19 +191,21 @@ All error handling semantics preserved:
 **Benefits:**
 
 1. **Better Maintainability**: Each method can be optimized independently
-2. **Easier Testing**: Individual methods can be unit tested
-3. **Clear Execution Flow**: Simplified debugging and profiling
+1. **Easier Testing**: Individual methods can be unit tested
+1. **Clear Execution Flow**: Simplified debugging and profiling
 
 ## Code Quality Improvements
 
 ### Readability
 
 **Before:**
+
 - 118-line monolithic method
 - 4 levels of nesting
 - Mixed concerns (init, execution, error handling, finalization)
 
 **After:**
+
 - Main method: 10 lines, 2 levels of nesting
 - Clear phase separation
 - Single responsibility per method
@@ -205,11 +213,13 @@ All error handling semantics preserved:
 ### Maintainability
 
 **Before:**
+
 - Difficult to modify without breaking other parts
 - Complex control flow
 - Hard to test individual components
 
 **After:**
+
 - Easy to modify individual phases
 - Linear control flow
 - Each method independently testable
@@ -217,10 +227,12 @@ All error handling semantics preserved:
 ### Testability
 
 **Before:**
+
 - Must test entire execution pipeline
 - Hard to isolate failure scenarios
 
 **After:**
+
 - Can test each phase independently
 - Easy to mock specific phases
 - Clearer test failure diagnosis
@@ -230,6 +242,7 @@ All error handling semantics preserved:
 ### 1. Future Extensibility
 
 Easy to add new execution phases:
+
 - Pre-execution hooks
 - Post-execution cleanup
 - Custom step processors
@@ -238,6 +251,7 @@ Easy to add new execution phases:
 ### 2. Clear Separation of Concerns
 
 Each method has a clear, single purpose:
+
 - Initialization separate from execution
 - Error handling separate from business logic
 - Finalization separate from processing
@@ -272,16 +286,19 @@ if isinstance(self.logger, type(depends())):
     except Exception:
         # Fallback to basic logger if DI not configured (e.g. in tests)
         import logging
+
         self.logger = logging.getLogger(__name__)
 ```
 
 This ensures the engine works both:
+
 - In production with full dependency injection
 - In tests without full DI setup
 
 ### Preserved Semantics
 
 All workflow execution semantics preserved:
+
 - Dependency resolution order
 - Parallel execution where possible
 - Retry with exponential backoff
@@ -317,6 +334,7 @@ Update the cancel test to properly test workflow cancellation:
 async def slow_action(**kwargs):
     await asyncio.sleep(10)
 
+
 # Cancel during execution
 asyncio.create_task(engine.execute(workflow))
 await asyncio.sleep(0.1)  # Let it start
@@ -350,19 +368,21 @@ Add module-level docstring explaining the phase-based execution model:
 ### Key Achievements
 
 1. **Reduced cognitive load**: Main `execute` method complexity reduced from 42 to 2 (95% reduction)
-2. **Improved maintainability**: Clear phase separation with single responsibilities
-3. **Better testability**: Each phase can be tested independently
-4. **Enhanced readability**: Linear control flow with descriptive method names
-5. **Future-proof architecture**: Easy to extend with new phases or capabilities
+1. **Improved maintainability**: Clear phase separation with single responsibilities
+1. **Better testability**: Each phase can be tested independently
+1. **Enhanced readability**: Linear control flow with descriptive method names
+1. **Future-proof architecture**: Easy to extend with new phases or capabilities
 
 ### Quality Impact
 
 **Before Refactoring:**
+
 - Cognitive complexity: 60+ concentrated in 2 methods
 - Maintainability: Low (monolithic design)
 - Testability: Limited (integration tests only)
 
 **After Refactoring:**
+
 - Cognitive complexity: 63 distributed across 23 methods (all ≤13)
 - Maintainability: High (clear separation of concerns)
 - Testability: High (unit testable components)

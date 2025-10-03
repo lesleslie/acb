@@ -257,7 +257,7 @@ async def setup_services(enable_health_monitoring: bool = True) -> ServiceRegist
             "query_optimizer",
         ]
         for service_name in performance_services:
-            with suppress((ServiceNotFound, ServiceNotInstalled)):
+            with suppress(ServiceNotFound, ServiceNotInstalled):
                 service_cls = get_service_class("performance", service_name)
                 service_instance = service_cls()
                 await registry.register_service(service_instance)

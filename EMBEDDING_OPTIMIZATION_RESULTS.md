@@ -5,6 +5,7 @@
 ### ✅ Mission Accomplished - All Functions Below Target (≤13)
 
 #### HuggingFace Adapter
+
 | Function | Before | After | Reduction |
 |----------|--------|-------|-----------|
 | `_embed_texts` | **27** | **0** | **100%** ✨ |
@@ -15,6 +16,7 @@
 | `_process_all_batches` | N/A | **2** | New helper |
 
 #### ONNX Adapter
+
 | Function | Before | After | Reduction |
 |----------|--------|-------|-----------|
 | `_embed_texts` | **23** | **0** | **100%** ✨ |
@@ -30,6 +32,7 @@
 ### 1. Extracted Helper Methods
 
 **HuggingFace Helpers:**
+
 - `_tokenize_batch()`: Handles tokenization logic (complexity: 0)
 - `_generate_embeddings()`: Manages model inference and pooling (complexity: 0)
 - `_create_embedding_result()`: Creates result objects (complexity: 0)
@@ -37,6 +40,7 @@
 - `_process_all_batches()`: Coordinates multiple batches (complexity: 2)
 
 **ONNX Helpers:**
+
 - `_tokenize_batch()`: Handles tokenization with type checking (complexity: 2)
 - `_prepare_onnx_inputs()`: Prepares ONNX-specific inputs (complexity: 4)
 - `_count_tokens_safe()`: Safe token counting with error handling (complexity: 2)
@@ -47,6 +51,7 @@
 ### 2. Simplified Main Methods
 
 Both `_embed_texts` methods now follow this clean pattern:
+
 ```python
 async def _embed_texts(...) -> EmbeddingBatch:
     """Generate embeddings - clean entry point."""
@@ -69,7 +74,9 @@ async def _embed_texts(...) -> EmbeddingBatch:
 ## Code Quality Benefits
 
 ### ✅ Single Responsibility Principle
+
 Each helper method has one clear, focused purpose:
+
 - Tokenization
 - Embedding generation
 - Result creation
@@ -77,7 +84,9 @@ Each helper method has one clear, focused purpose:
 - Batch coordination
 
 ### ✅ Enhanced Testability
+
 Helper methods can now be unit tested independently:
+
 ```python
 @pytest.mark.asyncio
 async def test_tokenize_batch():
@@ -85,6 +94,7 @@ async def test_tokenize_batch():
     adapter = HuggingFaceEmbedding()
     result = await adapter._tokenize_batch(["test"], mock_tokenizer)
     assert "input_ids" in result
+
 
 def test_prepare_onnx_inputs():
     """Test ONNX input preparation."""
@@ -94,19 +104,24 @@ def test_prepare_onnx_inputs():
 ```
 
 ### ✅ Improved Maintainability
+
 Changes are now localized to specific helper methods:
+
 - Update tokenization → modify `_tokenize_batch()`
 - Change result format → modify `_create_embedding_result()`
 - Adjust pooling → modify `_generate_embeddings()`
 
 ### ✅ Better Readability
+
 Main flow is now crystal clear:
+
 1. Setup
-2. Process batches
-3. Aggregate
-4. Return
+1. Process batches
+1. Aggregate
+1. Return
 
 ### ✅ Memory Efficiency
+
 - List comprehensions instead of loops with append
 - Generator expressions for result creation
 - Explicit resource cleanup in helper methods
@@ -114,27 +129,32 @@ Main flow is now crystal clear:
 ## Performance Impact
 
 ### Memory Usage
+
 - **Reduced**: Eliminated intermediate variables in hot loops
 - **Optimized**: Generator expressions for result creation
 - **Improved**: Explicit resource cleanup
 
 ### CPU Efficiency
+
 - **Same or better**: No performance regression
 - **Cleaner call stack**: Better for profiling and debugging
 - **Optimized**: Early returns prevent unnecessary processing
 
 ### Cache Friendliness
+
 - Smaller, focused functions improve code cache utilization
 - Better locality of reference in helper methods
 
 ## Verification Results
 
 ### Complexity Check ✅
+
 ```bash
 uv run complexipy acb/adapters/embedding/
 ```
 
 **Results:**
+
 - ✅ All functions ≤13 complexity (target met)
 - ✅ Main `_embed_texts` methods: 0 complexity each
 - ✅ No high-complexity functions remaining
@@ -142,11 +162,13 @@ uv run complexipy acb/adapters/embedding/
 ### Code Quality Metrics
 
 **Overall Cognitive Complexity:**
+
 - Previous: ~50 (concentrated in 2 functions)
 - Current: 110 (distributed across 40+ functions)
 - **Better distribution**: No single function dominates complexity
 
 **Function Distribution:**
+
 - 0 complexity: 9 functions ✨
 - 1-3 complexity: 17 functions ✅
 - 4-6 complexity: 3 functions ✅
@@ -157,12 +179,14 @@ uv run complexipy acb/adapters/embedding/
 ### HuggingFace `_embed_texts` Evolution
 
 **Before (Complexity: 27):**
+
 - 90 lines of nested logic
 - Mixed concerns: tokenization, inference, pooling, result creation
 - Inline error handling and logging
 - Complex loop with multiple transformations
 
 **After (Complexity: 0):**
+
 - 18 lines of clean delegation
 - Single responsibility: coordinate batch processing
 - Clear separation of concerns
@@ -171,12 +195,14 @@ uv run complexipy acb/adapters/embedding/
 ### ONNX `_embed_texts` Evolution
 
 **Before (Complexity: 23):**
+
 - 110 lines of nested logic
 - Complex ONNX input preparation inline
 - Token counting with suppressed exceptions inline
 - Mixed normalization and result creation
 
 **After (Complexity: 0):**
+
 - 18 lines of clean delegation
 - Identical structure to HuggingFace adapter
 - Concerns properly separated into helpers
@@ -187,24 +213,28 @@ uv run complexipy acb/adapters/embedding/
 ### ⚠️ One Function Still Above Target
 
 **HuggingFace `_load_model`** (Complexity: 27)
+
 - Model loading logic
 - Configuration complexity
 - Device selection
 - Optimization setup
 
 **Recommended Approach:**
+
 1. Extract device detection → `_detect_device()`
-2. Extract tokenizer loading → `_load_tokenizer()`
-3. Extract model loading → `_load_model_core()`
-4. Extract optimization setup → `_apply_model_optimizations()`
+1. Extract tokenizer loading → `_load_tokenizer()`
+1. Extract model loading → `_load_model_core()`
+1. Extract optimization setup → `_apply_model_optimizations()`
 
 **ONNX `_load_model`** (Complexity: 13)
+
 - Currently at target threshold
 - Monitor for future complexity growth
 
 ## Testing Strategy
 
 ### Unit Tests Required
+
 - ✅ `test_tokenize_batch_*()` - Test tokenization helpers
 - ✅ `test_prepare_onnx_inputs()` - Test ONNX input preparation
 - ✅ `test_count_tokens_safe()` - Test safe token counting
@@ -212,6 +242,7 @@ uv run complexipy acb/adapters/embedding/
 - ✅ `test_process_single_batch_*()` - Test batch processing
 
 ### Integration Tests Required
+
 - ✅ `test_embed_texts_end_to_end()` - Verify full workflow
 - ✅ `test_batch_processing_accuracy()` - Ensure embedding accuracy
 - ✅ `test_memory_usage()` - Validate memory optimization
@@ -220,11 +251,13 @@ uv run complexipy acb/adapters/embedding/
 ## Documentation Updates
 
 ### Docstrings Added
+
 - All new helper methods have clear, concise docstrings
 - Main methods updated to reflect new architecture
 - Type hints on all parameters and returns
 
 ### Code Comments
+
 - Removed inline comments (code is now self-documenting)
 - Section comments in main methods for clarity
 - Complex logic explained in helper method docstrings
@@ -232,12 +265,14 @@ uv run complexipy acb/adapters/embedding/
 ## Migration Impact
 
 ### ✅ No Breaking Changes
+
 - Public API unchanged
 - Internal refactoring only
 - All existing tests should pass
 - No configuration changes required
 
 ### ✅ Backward Compatible
+
 - Same inputs, same outputs
 - Same error handling behavior
 - Same performance characteristics
@@ -246,6 +281,7 @@ uv run complexipy acb/adapters/embedding/
 ## Quality Metrics Achievement
 
 ### Primary Goals Met ✅
+
 - ✅ All target functions ≤13 complexity
 - ✅ HuggingFace `_embed_texts`: 27 → 0 (100% reduction)
 - ✅ ONNX `_embed_texts`: 23 → 0 (100% reduction)
@@ -255,6 +291,7 @@ uv run complexipy acb/adapters/embedding/
 - ✅ Added comprehensive type hints
 
 ### Secondary Benefits Achieved ✅
+
 - ✅ Improved testability
 - ✅ Enhanced maintainability
 - ✅ Better code organization
@@ -266,19 +303,19 @@ uv run complexipy acb/adapters/embedding/
 The embedding adapter optimization was **highly successful**, achieving:
 
 1. **100% complexity reduction** for both target functions
-2. **Zero breaking changes** - fully backward compatible
-3. **Enhanced code quality** - better organization and testability
-4. **Improved maintainability** - localized changes and clear responsibilities
-5. **Memory optimization** - generator expressions and efficient patterns
+1. **Zero breaking changes** - fully backward compatible
+1. **Enhanced code quality** - better organization and testability
+1. **Improved maintainability** - localized changes and clear responsibilities
+1. **Memory optimization** - generator expressions and efficient patterns
 
 The refactored code follows **modern Python best practices** and aligns perfectly with **ACB's clean code philosophy** of simplicity, clarity, and efficiency.
 
 ### Next Steps
 
 1. ✅ Run comprehensive test suite
-2. ✅ Verify crackerjack quality checks pass
-3. ✅ Benchmark memory usage (optional)
-4. ⚠️ Consider optimizing `_load_model` methods (future work)
-5. ✅ Update related documentation (if needed)
+1. ✅ Verify crackerjack quality checks pass
+1. ✅ Benchmark memory usage (optional)
+1. ⚠️ Consider optimizing `_load_model` methods (future work)
+1. ✅ Update related documentation (if needed)
 
 **Status: READY FOR PRODUCTION** ✨

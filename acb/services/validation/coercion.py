@@ -265,7 +265,7 @@ class TypeCoercer:
             # Try to parse JSON-like string
             import json
 
-            with suppress((json.JSONDecodeError, ValueError)):
+            with suppress(json.JSONDecodeError, ValueError):
                 parsed = json.loads(data)
                 if isinstance(parsed, dict):
                     return parsed

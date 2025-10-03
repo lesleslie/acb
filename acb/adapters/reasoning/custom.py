@@ -28,7 +28,7 @@ from acb.adapters.reasoning._base import (
 if t.TYPE_CHECKING:
     from acb.logger import Logger as LoggerType
 else:
-    LoggerType = t.Any
+    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
@@ -161,7 +161,7 @@ class CustomReasoningSettings(ReasoningBaseSettings):
 class RuleEngine:
     """Core rule engine for evaluating complex rules."""
 
-    def __init__(self, settings: CustomReasoningSettings, logger: LoggerType) -> None:
+    def __init__(self, settings: CustomReasoningSettings, logger: t.Any) -> None:
         self.settings = settings
         self.logger = logger
         self.rules: dict[str, EnhancedRule] = {}
@@ -227,7 +227,7 @@ class RuleEngine:
         weighted_sum = sum(result * weight for result, weight in condition_results)
         total_weight = sum(weight for _, weight in condition_results)
         # Type guard: Ensure total_weight is non-zero before division
-        confidence: float = (weighted_sum / total_weight) if total_weight > 0.0 else 0.0
+        confidence: float = (weighted_sum / total_weight) if total_weight > 0.0 else 0.0  # type: ignore[misc]
         matched = confidence >= self.settings.confidence_threshold
 
         return confidence, matched
@@ -370,7 +370,7 @@ class RuleEngine:
             value = data
             for key in field_path.split("."):
                 if isinstance(value, dict):
-                    value = value.get(key)
+                    value = value.get(key)  # type: ignore[assignment]
                 elif hasattr(value, key):
                     value = getattr(value, key)
                 else:

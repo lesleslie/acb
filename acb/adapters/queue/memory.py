@@ -25,7 +25,7 @@ import heapq
 import time
 import typing as t
 from collections import defaultdict, deque
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
@@ -510,12 +510,12 @@ class MemoryQueue(QueueBackend):
                 self._memory_usage = max(0, self._memory_usage - message_size)
                 self._total_messages = max(0, self._total_messages - 1)
 
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore[arg-type]
     async def _subscribe(
         self,
         topic: str,
         prefetch: int | None = None,
-    ) -> AsyncGenerator[AsyncGenerator[QueueMessage]]:
+    ) -> AsyncIterator[AsyncGenerator[QueueMessage]]:
         """Subscribe to a topic and stream messages.
 
         Args:

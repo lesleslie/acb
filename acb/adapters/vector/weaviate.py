@@ -238,7 +238,7 @@ class Vector(VectorBase):
                 result = VectorSearchResult(
                     id=str(obj.uuid),
                     score=score,
-                    metadata=obj.properties or {},
+                    metadata=obj.properties or t.cast(dict[str, t.Any], {}),
                     vector=obj.vector.get("default")
                     if include_vectors and obj.vector
                     else None,
@@ -408,7 +408,7 @@ class Vector(VectorBase):
                             vector=obj.vector.get("default", [])
                             if include_vectors and obj.vector
                             else [],
-                            metadata=obj.properties or {},
+                            metadata=obj.properties or t.cast(dict[str, t.Any], {}),
                         )
                         documents.append(doc)
 
@@ -533,7 +533,7 @@ class Vector(VectorBase):
                 result = VectorSearchResult(
                     id=str(obj.uuid),
                     score=score,
-                    metadata=obj.properties or {},
+                    metadata=obj.properties or t.cast(dict[str, t.Any], {}),
                     vector=None,  # Text search doesn't return vectors
                 )
                 results.append(result)

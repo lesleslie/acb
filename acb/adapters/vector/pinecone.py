@@ -223,7 +223,7 @@ class Vector(VectorBase):
                 }
 
                 if doc.metadata:
-                    vector_data["metadata"] = doc.metadata
+                    vector_data["metadata"] = doc.metadata  # type: ignore[assignment]
 
                 vectors.append(vector_data)
 
@@ -236,7 +236,7 @@ class Vector(VectorBase):
 
                 upsert_params = {"vectors": batch}
                 if namespace:
-                    upsert_params["namespace"] = namespace
+                    upsert_params["namespace"] = namespace  # type: ignore[assignment]
 
                 response = index.upsert(**upsert_params)
 
@@ -261,7 +261,7 @@ class Vector(VectorBase):
         try:
             delete_params = {"ids": ids}
             if collection and collection != "default":
-                delete_params["namespace"] = collection
+                delete_params["namespace"] = collection  # type: ignore[assignment]
 
             index.delete(**delete_params)
             return True  # Pinecone delete doesn't return detailed status

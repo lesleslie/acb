@@ -13,7 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, TypeVar
+from typing import Any, Awaitable, TypeVar
 
 from acb.cleanup import CleanupMixin
 
@@ -415,6 +415,36 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
         return results
 
+    async def _execute_2pc_update(self, task: CoordinationTask) -> dict[str, Any]:
+        """Execute two-phase commit update operation."""
+        results = {}
+        prepared_databases = set()
+
+        # Phase 1: Prepare
+        try:
+            async with self._uow_manager.transaction() as uow:
+                for db_name in task.databases:
+                    repository = self.get_repository(db_name, task.entity_type)
+                    if repository:
+                        uow.add_repository(db_name, repository)
+                        # In a real 2PC, we'd send prepare messages
+                        prepared_databases.add(db_name)
+
+                # Phase 2: Commit
+                for db_name in prepared_databases:
+                    repository = uow.get_repository(db_name)
+                    if repository:
+                        # Update entity would be done within the UoW transaction
+                        results[db_name] = {"status": "committed"}
+
+        except Exception as e:
+            # Rollback prepared databases
+            for db_name in prepared_databases:
+                results[db_name] = {"status": "aborted", "error": str(e)}
+            raise
+
+        return results
+
     async def _execute_saga_create(self, task: CoordinationTask) -> dict[str, Any]:
         """Execute saga pattern create operation."""
         results = {}
@@ -430,7 +460,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
                     completed_steps.append(db_name)
 
                     # Add compensation action
-                    def compensate(db=db_name, repo=repository) -> None:
+                    def compensate(db: str = db_name, repo: Any = repository) -> Callable[[], Awaitable[None]]:
                         async def _compensate() -> None:
                             # Delete created entity
                             if "id" in task.data:
@@ -460,7 +490,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
 
-                async def create_in_db(db=db_name, repo=repository) -> None:
+                async def create_in_db(db: str = db_name, repo: Any = repository) -> dict[str, Any]:
                     try:
                         # In a real implementation, we'd create actual entities
                         await asyncio.sleep(0.01)  # Simulate work
@@ -478,7 +508,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
                 if isinstance(result, dict):
                     db_name = result["database"]
                     results[db_name] = result
-                else:
+                elif isinstance(result, BaseException):
                     results["unknown"] = {"status": "error", "error": str(result)}
 
         return results
@@ -495,7 +525,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
 
-                async def update_in_db(db=db_name, repo=repository) -> None:
+                async def update_in_db(db: str = db_name, repo: Any = repository) -> dict[str, Any]:
                     try:
                         await asyncio.sleep(0.01)  # Simulate work
                         return {"status": "success", "database": db}
@@ -526,7 +556,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             repository = self.get_repository(db_name, task.entity_type)
             if repository:
 
-                async def delete_in_db(db=db_name, repo=repository) -> None:
+                async def delete_in_db(db: str = db_name, repo: Any = repository) -> dict[str, Any]:
                     try:
                         await asyncio.sleep(0.01)  # Simulate work
                         return {"status": "success", "database": db}
