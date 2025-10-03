@@ -385,62 +385,66 @@ class MultiDatabaseCoordinator(CleanupMixin):
             self._active_tasks.pop(task_id, None)
             self._completed_tasks.append(task)
 
+    def _prepare_2pc_databases(
+        self, task: CoordinationTask, uow: Any, prepared_databases: set[str]
+    ) -> None:
+        """Phase 1: Prepare databases for two-phase commit."""
+        for db_name in task.databases:
+            repository = self.get_repository(db_name, task.entity_type)
+            if repository:
+                uow.add_repository(db_name, repository)
+                # In a real 2PC, we'd send prepare messages
+                prepared_databases.add(db_name)
+
+    def _commit_2pc_databases(
+        self, uow: Any, prepared_databases: set[str], results: dict[str, Any]
+    ) -> None:
+        """Phase 2: Commit prepared databases."""
+        for db_name in prepared_databases:
+            repository = uow.get_repository(db_name)
+            if repository:
+                # Entity operation would be done within the UoW transaction
+                results[db_name] = {"status": "committed"}
+
+    def _abort_2pc_databases(
+        self, prepared_databases: set[str], results: dict[str, Any], error: Exception
+    ) -> None:
+        """Rollback prepared databases on error."""
+        for db_name in prepared_databases:
+            results[db_name] = {"status": "aborted", "error": str(error)}
+
     async def _execute_2pc_create(self, task: CoordinationTask) -> dict[str, Any]:
         """Execute two-phase commit create operation."""
-        results = {}
-        prepared_databases = set()
+        results: dict[str, Any] = {}
+        prepared_databases: set[str] = set()
 
-        # Phase 1: Prepare
         try:
             async with self._uow_manager.transaction() as uow:
-                for db_name in task.databases:
-                    repository = self.get_repository(db_name, task.entity_type)
-                    if repository:
-                        uow.add_repository(db_name, repository)
-                        # In a real 2PC, we'd send prepare messages
-                        prepared_databases.add(db_name)
-
+                # Phase 1: Prepare
+                self._prepare_2pc_databases(task, uow, prepared_databases)
                 # Phase 2: Commit
-                for db_name in prepared_databases:
-                    repository = uow.get_repository(db_name)
-                    if repository:
-                        # Create entity would be done within the UoW transaction
-                        results[db_name] = {"status": "committed"}
+                self._commit_2pc_databases(uow, prepared_databases, results)
 
         except Exception as e:
-            # Rollback prepared databases
-            for db_name in prepared_databases:
-                results[db_name] = {"status": "aborted", "error": str(e)}
+            self._abort_2pc_databases(prepared_databases, results, e)
             raise
 
         return results
 
     async def _execute_2pc_update(self, task: CoordinationTask) -> dict[str, Any]:
         """Execute two-phase commit update operation."""
-        results = {}
-        prepared_databases = set()
+        results: dict[str, Any] = {}
+        prepared_databases: set[str] = set()
 
-        # Phase 1: Prepare
         try:
             async with self._uow_manager.transaction() as uow:
-                for db_name in task.databases:
-                    repository = self.get_repository(db_name, task.entity_type)
-                    if repository:
-                        uow.add_repository(db_name, repository)
-                        # In a real 2PC, we'd send prepare messages
-                        prepared_databases.add(db_name)
-
+                # Phase 1: Prepare
+                self._prepare_2pc_databases(task, uow, prepared_databases)
                 # Phase 2: Commit
-                for db_name in prepared_databases:
-                    repository = uow.get_repository(db_name)
-                    if repository:
-                        # Update entity would be done within the UoW transaction
-                        results[db_name] = {"status": "committed"}
+                self._commit_2pc_databases(uow, prepared_databases, results)
 
         except Exception as e:
-            # Rollback prepared databases
-            for db_name in prepared_databases:
-                results[db_name] = {"status": "aborted", "error": str(e)}
+            self._abort_2pc_databases(prepared_databases, results, e)
             raise
 
         return results
