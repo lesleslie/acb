@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import sys
+from contextlib import suppress
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -61,16 +62,14 @@ def detect_version() -> VersionInfo:
         return VersionInfo.from_string(version_str)
     except importlib.metadata.PackageNotFoundError:
         # Fallback to checking __version__ in acb module
-        try:
+        with suppress(ImportError):
             import acb
 
             if hasattr(acb, "__version__"):
                 return VersionInfo.from_string(acb.__version__)
-        except ImportError:
-            pass
 
         # Last resort: check pyproject.toml
-        try:
+        with suppress(Exception):
             import tomllib
 
             pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
@@ -79,8 +78,6 @@ def detect_version() -> VersionInfo:
                     data = tomllib.load(f)
                     version_str = data["project"]["version"]
                     return VersionInfo.from_string(version_str)
-        except Exception:
-            pass
 
         msg = "Could not detect ACB version"
         raise RuntimeError(msg)
@@ -172,24 +169,23 @@ def _get_migration_steps(
 
     # Minor version migrations (breaking changes)
     if target.minor > current.minor or target.major > current.major:
-        steps.append(
-            MigrationStep(
-                name="configuration_migration",
-                description="Migrate configuration files to new structure",
-                required=True,
-                reversible=True,
-                estimated_duration=60,
-            ),
-        )
-
-        steps.append(
-            MigrationStep(
-                name="adapter_migration",
-                description="Update adapter configurations and imports",
-                required=True,
-                reversible=True,
-                estimated_duration=120,
-            ),
+        steps.extend(
+            (
+                MigrationStep(
+                    name="configuration_migration",
+                    description="Migrate configuration files to new structure",
+                    required=True,
+                    reversible=True,
+                    estimated_duration=60,
+                ),
+                MigrationStep(
+                    name="adapter_migration",
+                    description="Update adapter configurations and imports",
+                    required=True,
+                    reversible=True,
+                    estimated_duration=120,
+                ),
+            )
         )
 
     # Patch version (usually safe)

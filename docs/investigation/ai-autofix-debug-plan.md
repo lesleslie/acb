@@ -5,13 +5,14 @@
 **Created**: October 3, 2025
 **Status**: Ready for execution
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
 The AI auto-fix feature in crackerjack is partially implemented but not fully functional. The workflow correctly identifies when AI fixing is needed (hook failures), but the AI agent never executes iterations to fix the code.
 
 **Evidence**:
+
 - ✅ `--ai-fix` flag is recognized
 - ✅ Environment setup occurs (`setup_ai_agent_env()`)
 - ✅ `_determine_ai_fixing_needed()` returns `True` on failures
@@ -21,7 +22,7 @@ The AI auto-fix feature in crackerjack is partially implemented but not fully fu
 
 **Hypothesis**: The `options.ai_fix` flag is not properly checked before executing the AI fixing workflow, OR there's a gate condition inside `_execute_ai_fixing_workflow()` preventing agent execution.
 
----
+______________________________________________________________________
 
 ## Phase 1: Investigation & Root Cause Analysis
 
@@ -75,6 +76,7 @@ grep -A10 "WorkflowOrchestrator" crackerjack/__main__.py
 ### 1.3 Check Agent Coordinator Initialization
 
 **Files**:
+
 - `../crackerjack/crackerjack/core/autofix_coordinator.py`
 - `../crackerjack/crackerjack/agents/coordinator.py`
 
@@ -111,7 +113,7 @@ grep -n "iteration\|AI.*fix\|agent.*start" crackerjack/core/workflow_orchestrato
 
 **Red Flag**: If loop exists but never executes, or agent methods never called
 
----
+______________________________________________________________________
 
 ## Phase 2: Diagnosis - Key Questions
 
@@ -120,6 +122,7 @@ Work through these questions systematically:
 ### Q1: Is `options.ai_fix` checked before AI workflow execution?
 
 **Test**:
+
 ```python
 # In workflow_orchestrator.py, find this pattern:
 def _execute_ai_fixing_workflow(...):
@@ -135,10 +138,11 @@ def _execute_ai_fixing_workflow(...):
 ### Q2: Is the agent coordinator properly initialized?
 
 **Test**:
+
 ```python
 # Look for this pattern in _execute_ai_fixing_workflow:
 coordinator = AgentCoordinator(...)  # Does this succeed?
-issues = self._collect_issues()      # Are issues collected?
+issues = self._collect_issues()  # Are issues collected?
 
 # Check for error handling
 try:
@@ -155,6 +159,7 @@ except Exception as e:
 ### Q3: Are the agent execution conditions met?
 
 **Test**:
+
 ```python
 # Look for conditions like:
 if issues and coordinator:
@@ -172,6 +177,7 @@ else:
 ### Q4: Is the MCP connection required and failing?
 
 **Test**:
+
 ```bash
 # Check if agent needs MCP client
 grep -n "mcp.*client\|MCP.*Client" crackerjack/agents/coordinator.py
@@ -185,6 +191,7 @@ grep -n "localhost:8676\|websocket\|connect" crackerjack/agents/*.py
 ### Q5: Are there any silent exceptions?
 
 **Test**:
+
 ```python
 # Look for broad exception handlers:
 try:
@@ -201,7 +208,7 @@ except:  # <-- Even worse, bare except!
 
 **If found**: This is definitely the bug.
 
----
+______________________________________________________________________
 
 ## Phase 3: Common Fix Patterns
 
@@ -212,6 +219,7 @@ Based on investigation, here are likely fixes:
 **Location**: `crackerjack/core/workflow_orchestrator.py:_execute_ai_fixing_workflow()`
 
 **Current Code** (likely):
+
 ```python
 async def _execute_ai_fixing_workflow(self, options, iteration: int):
     """Execute AI-powered fixing workflow."""
@@ -222,11 +230,12 @@ async def _execute_ai_fixing_workflow(self, options, iteration: int):
 ```
 
 **Fixed Code**:
+
 ```python
 async def _execute_ai_fixing_workflow(self, options, iteration: int):
     """Execute AI-powered fixing workflow."""
     # Add guard clause
-    if not getattr(options, 'ai_fix', False):
+    if not getattr(options, "ai_fix", False):
         self.logger.debug("AI fix not enabled, skipping agent workflow")
         return
 
@@ -239,6 +248,7 @@ async def _execute_ai_fixing_workflow(self, options, iteration: int):
 **Location**: `crackerjack/core/workflow_orchestrator.py:_setup_ai_fixing_workflow()`
 
 **Current Code** (likely):
+
 ```python
 async def _setup_ai_fixing_workflow(self):
     try:
@@ -251,6 +261,7 @@ async def _setup_ai_fixing_workflow(self):
 ```
 
 **Fixed Code**:
+
 ```python
 async def _setup_ai_fixing_workflow(self):
     try:
@@ -269,6 +280,7 @@ async def _setup_ai_fixing_workflow(self):
 **Location**: `crackerjack/core/workflow_orchestrator.py:_execute_ai_fixing_workflow()`
 
 **Current Code** (likely):
+
 ```python
 async def _execute_ai_fixing_workflow(self, options, iteration: int):
     coordinator, issues = await self._setup_ai_fixing_workflow()
@@ -281,6 +293,7 @@ async def _execute_ai_fixing_workflow(self, options, iteration: int):
 ```
 
 **Fixed Code**:
+
 ```python
 async def _execute_ai_fixing_workflow(self, options, iteration: int):
     coordinator, issues = await self._setup_ai_fixing_workflow()
@@ -302,6 +315,7 @@ async def _execute_ai_fixing_workflow(self, options, iteration: int):
 **Location**: `crackerjack/__main__.py:setup_ai_agent_env()`
 
 **Current Code** (likely):
+
 ```python
 def setup_ai_agent_env(ai_fix: bool, debug: bool):
     """Setup environment for AI agents."""
@@ -311,6 +325,7 @@ def setup_ai_agent_env(ai_fix: bool, debug: bool):
 ```
 
 **Fixed Code**:
+
 ```python
 def setup_ai_agent_env(ai_fix: bool, debug: bool):
     """Setup environment for AI agents."""
@@ -327,7 +342,7 @@ def setup_ai_agent_env(ai_fix: bool, debug: bool):
         os.environ["CRACKERJACK_DEBUG"] = "1"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 4: Implementation Steps
 
@@ -357,13 +372,9 @@ code crackerjack/core/workflow_orchestrator.py
 async def _execute_ai_fixing_workflow(self, options, iteration: int):
     """Execute AI-powered fixing workflow."""
     # Add this guard clause
-    if not getattr(options, 'ai_fix', False):
+    if not getattr(options, "ai_fix", False):
         self.logger.debug("AI fix not enabled, skipping agent workflow")
-        return {
-            "success": False,
-            "reason": "ai_fix_not_enabled",
-            "iterations": 0
-        }
+        return {"success": False, "reason": "ai_fix_not_enabled", "iterations": 0}
 
     # Rest of existing code...
 ```
@@ -374,7 +385,7 @@ Add debug logging at key decision points:
 
 ```python
 async def _execute_ai_fixing_workflow(self, options, iteration: int):
-    if not getattr(options, 'ai_fix', False):
+    if not getattr(options, "ai_fix", False):
         self.logger.debug("AI fix not enabled, skipping agent workflow")
         return
 
@@ -413,7 +424,7 @@ python -c "import crackerjack; print(crackerjack.__file__)"
 # Should show: ../crackerjack/crackerjack/__init__.py (not .venv/lib/...)
 ```
 
----
+______________________________________________________________________
 
 ## Phase 5: Testing
 
@@ -485,7 +496,7 @@ python -m crackerjack --ai-fix --run-tests --verbose
 # - All hooks eventually passing
 ```
 
----
+______________________________________________________________________
 
 ## Phase 6: Verification Checklist
 
@@ -498,7 +509,7 @@ python -m crackerjack --ai-fix --run-tests --verbose
 - [ ] **Execution logged**: `~/.crackerjack/intelligence/execution_log.jsonl` has new entries
 - [ ] **Hooks passing**: Final run shows all quality checks pass
 
----
+______________________________________________________________________
 
 ## Phase 7: Documentation & Commit
 
@@ -549,13 +560,14 @@ EOF
 git push origin fix/ai-autofix-engagement
 ```
 
----
+______________________________________________________________________
 
 ## Troubleshooting Guide
 
 ### Issue: "Module 'crackerjack' not found"
 
 **Solution**:
+
 ```bash
 cd ../crackerjack
 uv pip install -e .
@@ -564,6 +576,7 @@ uv pip install -e .
 ### Issue: Still using old code after reinstall
 
 **Solution**:
+
 ```bash
 # Force reinstall
 uv pip uninstall crackerjack
@@ -573,13 +586,15 @@ uv pip install -e ../crackerjack
 ### Issue: Agent runs but doesn't fix anything
 
 **Check**:
+
 1. Is MCP server running? `lsof -i :8676`
-2. Are issues being collected? Check logs for "📋 Found X issues"
-3. Does coordinator.fix_issues() return results?
+1. Are issues being collected? Check logs for "📋 Found X issues"
+1. Does coordinator.fix_issues() return results?
 
 ### Issue: "Permission denied" during testing
 
 **Solution**:
+
 ```bash
 # Ensure test file is writable
 chmod +w test_autofix.py
@@ -591,6 +606,7 @@ git status
 ### Issue: No execution logs written
 
 **Check**:
+
 ```bash
 # Verify directory exists and is writable
 ls -la ~/.crackerjack/intelligence/
@@ -598,21 +614,21 @@ touch ~/.crackerjack/intelligence/test.log
 rm ~/.crackerjack/intelligence/test.log
 ```
 
----
+______________________________________________________________________
 
 ## Success Criteria
 
 ✅ **AI Auto-Fix Functional** when all of these are true:
 
 1. **Flag recognized**: `python -m crackerjack --ai-fix` starts workflow
-2. **Agent engaged**: Console shows "🤖 AI auto-fix enabled"
-3. **Issues detected**: Console shows "📋 Found X issues"
-4. **Iterations run**: Console shows multiple iteration cycles
-5. **Code modified**: `git diff` shows actual changes to source files
-6. **Logs written**: `~/.crackerjack/intelligence/execution_log.jsonl` updated
-7. **Quality achieved**: Final run shows all hooks passing
+1. **Agent engaged**: Console shows "🤖 AI auto-fix enabled"
+1. **Issues detected**: Console shows "📋 Found X issues"
+1. **Iterations run**: Console shows multiple iteration cycles
+1. **Code modified**: `git diff` shows actual changes to source files
+1. **Logs written**: `~/.crackerjack/intelligence/execution_log.jsonl` updated
+1. **Quality achieved**: Final run shows all hooks passing
 
----
+______________________________________________________________________
 
 ## Rollback Procedure
 
@@ -633,16 +649,18 @@ git checkout main
 uv pip install -e .
 ```
 
----
+______________________________________________________________________
 
 ## Additional Resources
 
 **Log Locations**:
+
 - Agent execution: `~/.crackerjack/intelligence/execution_log.jsonl`
 - Agent metrics: `~/.crackerjack/intelligence/agent_metrics.json`
 - Learning insights: `~/.crackerjack/intelligence/learning_insights.json`
 
 **Server Status**:
+
 ```bash
 # Check MCP servers
 lsof -i :8676 :8678
@@ -655,6 +673,7 @@ ps aux | grep crackerjack
 ```
 
 **Debug Output**:
+
 ```bash
 # Maximum verbosity
 python -m crackerjack --ai-fix --ai-debug --verbose --debug
@@ -663,26 +682,27 @@ python -m crackerjack --ai-fix --ai-debug --verbose --debug
 python -m crackerjack --ai-fix --orchestrated --verbose
 ```
 
----
+______________________________________________________________________
 
 ## Next Steps After Success
 
 Once AI auto-fix is working:
 
 1. **Apply to ACB quality issues**:
+
    ```bash
    cd ~/Projects/acb
    python -m crackerjack --ai-fix --run-tests --verbose
    ```
 
-2. **Document the feature**: Update crackerjack README with AI auto-fix usage
+1. **Document the feature**: Update crackerjack README with AI auto-fix usage
 
-3. **Enable by default** (optional): Consider making `--ai-fix` default behavior
+1. **Enable by default** (optional): Consider making `--ai-fix` default behavior
 
-4. **CI/CD integration**: Add AI auto-fix to pre-commit hooks or CI pipeline
+1. **CI/CD integration**: Add AI auto-fix to pre-commit hooks or CI pipeline
 
-5. **Monitor performance**: Track agent success rate and iteration counts
+1. **Monitor performance**: Track agent success rate and iteration counts
 
----
+______________________________________________________________________
 
 **End of Debug Plan**

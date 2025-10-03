@@ -6,14 +6,16 @@
 ## Summary
 
 Two critical issues were identified:
+
 1. **MCP Integration Bug**: The session-mgmt:crackerjack-run tool has an async/await error preventing execution
-2. **AI Auto-Fix Not Engaging**: The `--ai-fix` flag doesn't trigger automatic fixing iterations
+1. **AI Auto-Fix Not Engaging**: The `--ai-fix` flag doesn't trigger automatic fixing iterations
 
 ## Detailed Findings
 
 ### Issue #1: MCP Server Bug in session-mgmt:crackerjack-run
 
 **Error Message**:
+
 ```
 "error": "Async execution error: A function returned None instead of an awaitable.
 object NoneType can't be used in 'await' expression",
@@ -32,28 +34,33 @@ TypeError: object NoneType can't be used in 'await' expression"
 ### Issue #2: AI Auto-Fix Not Engaging
 
 **Observed Behavior**:
+
 - Command: `python -m crackerjack --ai-fix --run-tests --verbose`
 - Expected: AI agent should run iterative fixing for refurb and complexipy failures
 - Actual: No AI iterations occurred, no agent invocations logged, no code changes made
 
 **Evidence**:
+
 1. **No execution logs**: `~/.crackerjack/intelligence/execution_log.jsonl` shows no entries from Oct 3
-2. **No code changes**: `git status` shows only deleted `__pycache__` files, no source code modifications
-3. **No iteration output**: Crackerjack output showed failures but no "Iteration 1", "Iteration 2" messages
-4. **Services running**: MCP server (port 8675) and WebSocket server confirmed running
+1. **No code changes**: `git status` shows only deleted `__pycache__` files, no source code modifications
+1. **No iteration output**: Crackerjack output showed failures but no "Iteration 1", "Iteration 2" messages
+1. **Services running**: MCP server (port 8675) and WebSocket server confirmed running
 
 **Hook Failures Found**:
+
 - **Refurb**: 33 code quality suggestions (FURB108, FURB118, FURB113, FURB138, FURB107, FURB173)
 - **Complexipy**: 6 functions exceeding complexity threshold (16-17 complexity)
 
 ### Issue #3: Coverage Discrepancy Explained
 
 **Three Different Coverage Values**:
+
 1. **77.89%**: Baseline from `.coverage-ratchet.json` (last updated Sept 25, 2025)
-2. **34.43%**: Reported by session-mgmt:crackerjack-run (stale/cached result)
-3. **45.91%**: Actual current coverage from `coverage.json`
+1. **34.43%**: Reported by session-mgmt:crackerjack-run (stale/cached result)
+1. **45.91%**: Actual current coverage from `coverage.json`
 
 **Explanation**:
+
 - The ratchet system uses 77.89% as baseline for regression detection
 - Current actual coverage is 45.91% (significant drop since Sept 25)
 - Crackerjack correctly flagged: "Coverage decreased from 77.89% to 45.91%"
@@ -62,6 +69,7 @@ TypeError: object NoneType can't be used in 'await' expression"
 ### Issue #4: Session-Mgmt vs Direct Execution Discrepancy
 
 **Session-mgmt:crackerjack-run output** (Before MCP error):
+
 ```
 ✅ All Pre-commit Hooks Passed (12/12)
 ✅ Test Suite Passed (166.2s runtime)
@@ -70,6 +78,7 @@ Coverage: 34.43%
 ```
 
 **Direct crackerjack:run output**:
+
 ```
 ✅ Fast Hooks Passed (12/12)
 ✅ Tests Passed (300.2s runtime)
@@ -83,11 +92,13 @@ Coverage: 45.91%
 ## Infrastructure Status
 
 **Confirmed Running**:
+
 - MCP Servers: Multiple instances running (pids 73999, 75713)
 - WebSocket Server: Running on port 8675 (pid 74292)
 - Watchdog Service: Active (pid 74303)
 
 **Not Working**:
+
 - AI auto-fix integration (no agent invocations)
 - MCP session-mgmt:crackerjack-run (async error)
 
@@ -96,10 +107,12 @@ Coverage: 45.91%
 ### Critical (Blocking AI Auto-Fix)
 
 1. **Fix MCP async error** in `crackerjack/mcp/tools/workflow_executor.py:17`
+
    - Ensure `_update_progress()` returns an awaitable
    - Add proper async/await handling
 
-2. **Debug AI auto-fix engagement**
+1. **Debug AI auto-fix engagement**
+
    - Verify `--ai-fix` flag triggers agent initialization
    - Check if agent requires specific MCP connection
    - Add logging to track why agent doesn't engage
@@ -107,6 +120,7 @@ Coverage: 45.91%
 ### High Priority (Code Quality)
 
 3. **Apply refurb fixes** (33 issues)
+
    - Replace boolean chains with `in` operator
    - Use `operator.itemgetter()` instead of lambda
    - Use `.extend()` instead of multiple `.append()`
@@ -114,7 +128,8 @@ Coverage: 45.91%
    - Replace try/except with `contextlib.suppress()`
    - Use dict merge operator `|`
 
-4. **Address complexity issues** (6 functions > 15)
+1. **Address complexity issues** (6 functions > 15)
+
    - Refactor high-complexity functions
    - Extract helper methods
    - Simplify conditional logic
@@ -131,12 +146,13 @@ Coverage: 45.91%
 ### AI Auto-Fix Expected Workflow
 
 Per `/crackerjack:run` slash command documentation:
+
 1. **Pre-execution**: Status check, conflict prevention
-2. **Fast hooks**: Formatting & basic fixes (retry once if fail)
-3. **Full test suite**: Collect ALL test failures
-4. **Comprehensive hooks**: Type checking, security, complexity
-5. **AI analysis**: Batch fix ALL issues in one coordinated pass
-6. **Iterate**: Repeat until all checks pass (max 10 iterations)
+1. **Fast hooks**: Formatting & basic fixes (retry once if fail)
+1. **Full test suite**: Collect ALL test failures
+1. **Comprehensive hooks**: Type checking, security, complexity
+1. **AI analysis**: Batch fix ALL issues in one coordinated pass
+1. **Iterate**: Repeat until all checks pass (max 10 iterations)
 
 ### What's Missing
 
@@ -148,10 +164,10 @@ Per `/crackerjack:run` slash command documentation:
 ## Recommendations
 
 1. **Immediate**: Fix the MCP async error to restore session-mgmt integration
-2. **Short-term**: Debug and fix AI auto-fix engagement mechanism
-3. **Manual workaround**: Apply refurb and complexipy fixes manually until auto-fix works
-4. **Testing**: Add integration tests for AI auto-fix workflow
-5. **Documentation**: Update troubleshooting guide with these findings
+1. **Short-term**: Debug and fix AI auto-fix engagement mechanism
+1. **Manual workaround**: Apply refurb and complexipy fixes manually until auto-fix works
+1. **Testing**: Add integration tests for AI auto-fix workflow
+1. **Documentation**: Update troubleshooting guide with these findings
 
 ## Files for Review
 

@@ -202,9 +202,9 @@ class EventPublisher(EventPublisherBase):
 
     async def _cancel_all_subscription_tasks(self) -> None:
         """Cancel and wait for all subscription tasks."""
-        all_tasks = [
-            task for tasks in self._subscription_tasks.values() for task in tasks
-        ]
+        from itertools import chain
+
+        all_tasks = list(chain.from_iterable(self._subscription_tasks.values()))
         self._cancel_tasks(all_tasks)
         await self._wait_for_tasks(all_tasks)
         self._subscription_tasks.clear()
