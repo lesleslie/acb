@@ -399,36 +399,42 @@ class MemoryQueue(QueueBase):
         # Optionally clean up old dead letter tasks
         await self._cleanup_dead_letter_tasks()
 
+    def _move_ready_delayed_tasks(self, current_time: float) -> int:
+        """Move delayed tasks that are ready to main queues. Returns count moved."""
+        moved_count = 0
+
+        while self._delayed_tasks:
+            if self._delayed_tasks[0].scheduled_time <= current_time:
+                item = heapq.heappop(self._delayed_tasks)
+                heapq.heappush(self._queues[item.task.queue_name], item)
+                moved_count += 1
+            else:
+                break
+
+        if moved_count > 0:
+            self.logger.debug(f"Moved {moved_count} delayed tasks to main queues")
+
+        return moved_count
+
+    def _calculate_next_sleep_time(self, current_time: float) -> float:
+        """Calculate sleep time until next delayed task is ready."""
+        if not self._delayed_tasks:
+            return 1.0
+
+        next_task_time = self._delayed_tasks[0].scheduled_time
+        return min(1.0, max(0.1, next_task_time - current_time))
+
     async def _process_delayed_tasks(self) -> None:
         """Process delayed tasks in background."""
         while self._running and not self._shutdown_event.is_set():
             try:
                 current_time = time.time()
-                moved_count = 0
 
-                # Move ready delayed tasks to main queues
-                while self._delayed_tasks:
-                    if self._delayed_tasks[0].scheduled_time <= current_time:
-                        item = heapq.heappop(self._delayed_tasks)
-                        heapq.heappush(self._queues[item.task.queue_name], item)
-                        moved_count += 1
-                    else:
-                        break
+                # Move ready tasks to main queues
+                self._move_ready_delayed_tasks(current_time)
 
-                if moved_count > 0:
-                    self.logger.debug(
-                        f"Moved {moved_count} delayed tasks to main queues",
-                    )
-
-                # Sleep until next task is ready or timeout
-                sleep_time = 1.0
-                if self._delayed_tasks:
-                    next_task_time = self._delayed_tasks[0].scheduled_time
-                    sleep_time = min(
-                        sleep_time,
-                        max(0.1, next_task_time - current_time),
-                    )
-
+                # Sleep until next task is ready
+                sleep_time = self._calculate_next_sleep_time(current_time)
                 await asyncio.sleep(sleep_time)
 
             except asyncio.CancelledError:
