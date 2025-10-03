@@ -539,6 +539,51 @@ class QueueBase(ABC, CleanupMixin):
         self._metrics.worker_metrics.total_workers = 0
         self.logger.info("Stopped all workers")
 
+    def _mark_worker_idle(self) -> None:
+        """Mark worker as idle in metrics."""
+        self._metrics.worker_metrics.idle_workers += 1
+
+    def _mark_worker_active(self) -> None:
+        """Mark worker as active in metrics (transitions from idle)."""
+        self._metrics.worker_metrics.idle_workers -= 1
+        self._metrics.worker_metrics.active_workers += 1
+
+    def _cleanup_worker_metrics(self) -> None:
+        """Cleanup worker metrics in finally block."""
+        if self._metrics.worker_metrics.active_workers > 0:
+            self._metrics.worker_metrics.active_workers -= 1
+        if self._metrics.worker_metrics.idle_workers > 0:
+            self._metrics.worker_metrics.idle_workers -= 1
+
+    async def _handle_empty_queue(self) -> None:
+        """Handle empty queue by waiting before next dequeue."""
+        await asyncio.sleep(1.0)
+
+    async def _execute_worker_iteration(self, worker_id: str) -> bool:
+        """Execute one worker loop iteration. Returns True if should continue."""
+        try:
+            self._mark_worker_idle()
+
+            # Dequeue a task
+            task = await self.dequeue()
+            if task is None:
+                await self._handle_empty_queue()
+                return True
+
+            # Process the task
+            self._mark_worker_active()
+            await self._process_task(task, worker_id)
+            return True
+
+        except asyncio.CancelledError:
+            return False
+        except Exception as e:
+            self.logger.exception(f"Worker {worker_id} error: {e}")
+            await asyncio.sleep(self._settings.retry_delay)
+            return True
+        finally:
+            self._cleanup_worker_metrics()
+
     async def _worker_loop(self, worker_id: str) -> None:
         """Main worker loop.
 
@@ -549,34 +594,9 @@ class QueueBase(ABC, CleanupMixin):
 
         try:
             while not self._shutdown_event.is_set():
-                try:
-                    # Update worker metrics
-                    self._metrics.worker_metrics.idle_workers += 1
-
-                    # Dequeue a task
-                    task = await self.dequeue()
-                    if task is None:
-                        await asyncio.sleep(1.0)  # No tasks available
-                        continue
-
-                    # Update worker metrics
-                    self._metrics.worker_metrics.idle_workers -= 1
-                    self._metrics.worker_metrics.active_workers += 1
-
-                    # Process the task
-                    await self._process_task(task, worker_id)
-
-                except asyncio.CancelledError:
+                should_continue = await self._execute_worker_iteration(worker_id)
+                if not should_continue:
                     break
-                except Exception as e:
-                    self.logger.exception(f"Worker {worker_id} error: {e}")
-                    await asyncio.sleep(self._settings.retry_delay)
-                finally:
-                    # Update worker metrics
-                    if self._metrics.worker_metrics.active_workers > 0:
-                        self._metrics.worker_metrics.active_workers -= 1
-                    if self._metrics.worker_metrics.idle_workers > 0:
-                        self._metrics.worker_metrics.idle_workers -= 1
 
         except asyncio.CancelledError:
             pass
