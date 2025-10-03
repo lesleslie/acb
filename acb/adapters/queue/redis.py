@@ -531,6 +531,69 @@ class RedisQueue(QueueBackend):
                 original_error=e,
             ) from e
 
+    async def _receive_with_lua_script(
+        self,
+        client: t.Any,
+        queue_key: str,
+        current_time: float,
+        timeout: float,
+    ) -> QueueMessage | None:
+        """Receive message using Lua script for atomic operation."""
+        result = await asyncio.wait_for(
+            client.evalsha(
+                self._lua_scripts["dequeue"],
+                2,
+                queue_key.encode(),
+                self._processing_key.encode(),
+                str(current_time).encode(),
+            ),
+            timeout=timeout,
+        )
+
+        if result is None:
+            return None
+
+        message_key, message_data = result
+        return QueueMessage.from_bytes(message_data)
+
+    async def _receive_with_manual_atomic(
+        self,
+        client: t.Any,
+        queue_key: str,
+        current_time: float,
+        timeout: float,
+    ) -> QueueMessage | None:
+        """Receive message using manual atomic operation with pipeline."""
+        # Get available messages
+        messages = await client.zrangebyscore(
+            queue_key.encode(),
+            b"-inf",
+            str(current_time).encode(),
+            start=0,
+            num=1,
+        )
+
+        if not messages:
+            return None
+
+        message_key = messages[0]
+
+        # Move to processing queue atomically
+        async with client.pipeline() as pipe:
+            await pipe.zrem(queue_key.encode(), message_key)
+            await pipe.zadd(
+                self._processing_key.encode(),
+                {message_key: time.time()},
+            )
+            await pipe.get(message_key)
+            results = await asyncio.wait_for(pipe.execute(), timeout=timeout)
+
+        message_data = results[-1]
+        if message_data:
+            return QueueMessage.from_bytes(message_data)
+
+        return None
+
     async def _receive(
         self,
         topic: str,
@@ -561,53 +624,14 @@ class RedisQueue(QueueBackend):
 
             # Use Lua script for atomic operation if available
             if self._settings.use_lua_scripts and "dequeue" in self._lua_scripts:
-                result = await asyncio.wait_for(
-                    client.evalsha(
-                        self._lua_scripts["dequeue"],
-                        2,
-                        queue_key.encode(),
-                        self._processing_key.encode(),
-                        str(current_time).encode(),
-                    ),
-                    timeout=timeout,
+                return await self._receive_with_lua_script(
+                    client, queue_key, current_time, timeout
                 )
 
-                if result is None:
-                    return None
-
-                message_key, message_data = result
-                return QueueMessage.from_bytes(message_data)
-
-            else:
-                # Manual atomic operation using WATCH
-                messages = await client.zrangebyscore(
-                    queue_key.encode(),
-                    b"-inf",
-                    str(current_time).encode(),
-                    start=0,
-                    num=1,
-                )
-
-                if not messages:
-                    return None
-
-                message_key = messages[0]
-
-                # Move to processing
-                async with client.pipeline() as pipe:
-                    await pipe.zrem(queue_key.encode(), message_key)
-                    await pipe.zadd(
-                        self._processing_key.encode(),
-                        {message_key: time.time()},
-                    )
-                    await pipe.get(message_key)
-                    results = await asyncio.wait_for(pipe.execute(), timeout=timeout)
-
-                message_data = results[-1]
-                if message_data:
-                    return QueueMessage.from_bytes(message_data)
-
-                return None
+            # Manual atomic operation using pipeline
+            return await self._receive_with_manual_atomic(
+                client, queue_key, current_time, timeout
+            )
 
         except TimeoutError:
             return None  # Timeout is expected for blocking receives
@@ -974,6 +998,57 @@ class RedisQueue(QueueBackend):
     # Background Tasks
     # ========================================================================
 
+    async def _get_ready_delayed_messages(
+        self, client: t.Any, current_time: float
+    ) -> list[bytes]:
+        """Get delayed messages that are ready to be processed."""
+        return await client.zrangebyscore(
+            self._delayed_key.encode(),
+            b"-inf",
+            str(current_time).encode(),
+            start=0,
+            num=self._settings.batch_size,
+        )
+
+    async def _move_delayed_message_to_queue(
+        self, client: t.Any, message_key: bytes
+    ) -> None:
+        """Move a single delayed message to its target queue."""
+        try:
+            # Get message data
+            message_data = await client.get(message_key)
+            if not message_data:
+                return
+
+            message = QueueMessage.from_bytes(message_data)
+
+            # Calculate new score and queue key
+            score = time.time() * 1_000_000 - message.priority.value
+            queue_key = self._queue_key.format(topic=message.topic)
+
+            # Move atomically
+            async with client.pipeline() as pipe:
+                await pipe.zrem(self._delayed_key.encode(), message_key)
+                await pipe.zadd(queue_key.encode(), {message_key: score})
+                await pipe.execute()
+
+        except Exception as e:
+            self.logger.warning(f"Failed to process delayed message: {e}")
+
+    async def _process_delayed_batch(self, client: t.Any, current_time: float) -> int:
+        """Process a batch of ready delayed messages. Returns count processed."""
+        messages = await self._get_ready_delayed_messages(client, current_time)
+
+        if not messages:
+            return 0
+
+        # Move messages to appropriate queues
+        for message_key in messages:
+            await self._move_delayed_message_to_queue(client, message_key)
+
+        self.logger.debug(f"Processed {len(messages)} delayed messages to queues")
+        return len(messages)
+
     async def _process_delayed_messages(self) -> None:
         """Background task to process delayed messages."""
         self.logger.debug("Started delayed message processor")
@@ -983,46 +1058,8 @@ class RedisQueue(QueueBackend):
                 client = await self._ensure_client()
                 current_time = time.time() * 1_000_000
 
-                # Get ready delayed messages
-                messages = await client.zrangebyscore(
-                    self._delayed_key.encode(),
-                    b"-inf",
-                    str(current_time).encode(),
-                    start=0,
-                    num=self._settings.batch_size,
-                )
-
-                if messages:
-                    # Move messages to appropriate queues
-                    for message_key in messages:
-                        try:
-                            # Get message data
-                            message_data = await client.get(message_key)
-                            if message_data:
-                                message = QueueMessage.from_bytes(message_data)
-
-                                # Calculate new score
-                                score = time.time() * 1_000_000 - message.priority.value
-                                queue_key = self._queue_key.format(topic=message.topic)
-
-                                # Move atomically
-                                async with client.pipeline() as pipe:
-                                    await pipe.zrem(
-                                        self._delayed_key.encode(), message_key
-                                    )
-                                    await pipe.zadd(
-                                        queue_key.encode(), {message_key: score}
-                                    )
-                                    await pipe.execute()
-
-                        except Exception as e:
-                            self.logger.warning(
-                                f"Failed to process delayed message: {e}"
-                            )
-
-                    self.logger.debug(
-                        f"Processed {len(messages)} delayed messages to queues"
-                    )
+                # Process batch of ready delayed messages
+                await self._process_delayed_batch(client, current_time)
 
                 # Sleep before next check
                 await asyncio.sleep(1.0)

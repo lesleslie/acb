@@ -117,6 +117,50 @@ class OutputValidator:
         else:
             await self._validate_custom_contract(data, contract, result)
 
+    def _check_required_fields_contract(
+        self,
+        data: dict[str, t.Any],
+        contract: OutputContract,
+        result: ValidationResult,
+    ) -> None:
+        """Check for missing required fields."""
+        for field_name in contract.required_fields:
+            if field_name not in data:
+                result.add_error(f"Required field '{field_name}' missing")
+
+    def _check_field_types_contract(
+        self,
+        data: dict[str, t.Any],
+        contract: OutputContract,
+        result: ValidationResult,
+    ) -> None:
+        """Check field types match contract specifications."""
+        for field_name, expected_type in contract.field_types.items():
+            if field_name not in data:
+                continue
+
+            value = data[field_name]
+            if contract.strict_types and not isinstance(value, expected_type):
+                result.add_error(
+                    f"Field '{field_name}' type mismatch: "
+                    f"expected {expected_type.__name__}, got {type(value).__name__}",
+                )
+
+    def _check_extra_fields_contract(
+        self,
+        data: dict[str, t.Any],
+        contract: OutputContract,
+        result: ValidationResult,
+    ) -> None:
+        """Check for unexpected extra fields."""
+        if contract.allow_extra_fields:
+            return
+
+        allowed_fields = set(contract.required_fields + contract.optional_fields)
+        for field_name in data:
+            if field_name not in allowed_fields:
+                result.add_error(f"Unexpected field '{field_name}'")
+
     async def _validate_dict_contract(
         self,
         data: t.Any,
@@ -128,27 +172,9 @@ class OutputValidator:
             result.add_error(f"Expected dict, got {type(data).__name__}")
             return
 
-        # Check required fields
-        for field_name in contract.required_fields:
-            if field_name not in data:
-                result.add_error(f"Required field '{field_name}' missing")
-
-        # Check field types
-        for field_name, expected_type in contract.field_types.items():
-            if field_name in data:
-                value = data[field_name]
-                if contract.strict_types and not isinstance(value, expected_type):
-                    result.add_error(
-                        f"Field '{field_name}' type mismatch: "
-                        f"expected {expected_type.__name__}, got {type(value).__name__}",
-                    )
-
-        # Check for unexpected fields
-        if not contract.allow_extra_fields:
-            allowed_fields = set(contract.required_fields + contract.optional_fields)
-            for field_name in data:
-                if field_name not in allowed_fields:
-                    result.add_error(f"Unexpected field '{field_name}'")
+        self._check_required_fields_contract(data, contract, result)
+        self._check_field_types_contract(data, contract, result)
+        self._check_extra_fields_contract(data, contract, result)
 
     async def _validate_list_contract(
         self,

@@ -278,31 +278,46 @@ class ServiceRegistry:
         self._initialization_order = ordered_services
         self._shutdown_order = ordered_services.copy()
 
-    def _topological_sort(self, service_ids: list[str]) -> list[str]:
-        """Perform topological sort to resolve service dependencies."""
-        # Build dependency graph
+    def _initialize_dependency_graph(
+        self, service_ids: list[str]
+    ) -> tuple[dict[str, set[str]], dict[str, int]]:
+        """Initialize empty dependency graph and in-degree counters."""
         graph: dict[str, set[str]] = {}
         in_degree: dict[str, int] = {}
 
-        # Initialize graph
         for service_id in service_ids:
             graph[service_id] = set()
             in_degree[service_id] = 0
 
-        # Add edges based on dependencies
-        for service_id in service_ids:
-            if service_id in self._service_configs:
-                dependencies = self._service_configs[service_id].dependencies
-                for dep in dependencies:
-                    if dep in graph:
-                        graph[dep].add(service_id)
-                        in_degree[service_id] += 1
-                    else:
-                        self.logger.warning(
-                            f"Service '{service_id}' depends on '{dep}' which is not registered",
-                        )
+        return graph, in_degree
 
-        # Kahn's algorithm for topological sorting
+    def _build_dependency_edges(
+        self,
+        service_ids: list[str],
+        graph: dict[str, set[str]],
+        in_degree: dict[str, int],
+    ) -> None:
+        """Build edges in dependency graph based on service dependencies."""
+        for service_id in service_ids:
+            if service_id not in self._service_configs:
+                continue
+
+            dependencies = self._service_configs[service_id].dependencies
+            for dep in dependencies:
+                if dep in graph:
+                    graph[dep].add(service_id)
+                    in_degree[service_id] += 1
+                else:
+                    self.logger.warning(
+                        f"Service '{service_id}' depends on '{dep}' which is not registered",
+                    )
+
+    def _perform_kahns_algorithm(
+        self,
+        graph: dict[str, set[str]],
+        in_degree: dict[str, int],
+    ) -> list[str]:
+        """Perform Kahn's algorithm for topological sorting."""
         queue = [service_id for service_id, degree in in_degree.items() if degree == 0]
         result = []
 
@@ -315,16 +330,38 @@ class ServiceRegistry:
                 if in_degree[neighbor] == 0:
                     queue.append(neighbor)
 
-        # Check for circular dependencies
-        if len(result) != len(service_ids):
-            remaining = [s for s in service_ids if s not in result]
-            self.logger.error(
-                f"Circular dependency detected among services: {remaining}",
-            )
-            # Add remaining services anyway to prevent complete failure
-            result.extend(remaining)
-
         return result
+
+    def _handle_circular_dependencies(
+        self,
+        result: list[str],
+        service_ids: list[str],
+    ) -> list[str]:
+        """Handle circular dependencies by adding remaining services."""
+        if len(result) == len(service_ids):
+            return result
+
+        remaining = [s for s in service_ids if s not in result]
+        self.logger.error(
+            f"Circular dependency detected among services: {remaining}",
+        )
+        # Add remaining services anyway to prevent complete failure
+        result.extend(remaining)
+        return result
+
+    def _topological_sort(self, service_ids: list[str]) -> list[str]:
+        """Perform topological sort to resolve service dependencies."""
+        # Build dependency graph
+        graph, in_degree = self._initialize_dependency_graph(service_ids)
+
+        # Add edges based on dependencies
+        self._build_dependency_edges(service_ids, graph, in_degree)
+
+        # Kahn's algorithm for topological sorting
+        result = self._perform_kahns_algorithm(graph, in_degree)
+
+        # Check for circular dependencies
+        return self._handle_circular_dependencies(result, service_ids)
 
     async def __aenter__(self) -> "ServiceRegistry":
         """Async context manager entry."""

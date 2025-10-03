@@ -258,6 +258,44 @@ class BasicWorkflowEngine(WorkflowEngine):
         result.duration_ms = (time.time() - start_time) * 1000
         self._workflow_states[workflow.workflow_id] = result
 
+    def _is_step_already_processed(
+        self,
+        step_id: str,
+        completed: dict[str, StepResult],
+        failed: set[str],
+    ) -> bool:
+        """Check if step has already been completed or failed."""
+        return step_id in completed or step_id in failed
+
+    def _check_dependency_status(
+        self,
+        dep_id: str,
+        step: WorkflowStep,
+        completed: dict[str, StepResult],
+    ) -> bool:
+        """Check if a single dependency is satisfied. Returns True if satisfied."""
+        # Dependency must be completed
+        if dep_id not in completed:
+            return False
+
+        # If dependency failed, check if step allows skipping
+        if completed[dep_id].state == StepState.FAILED:
+            return step.skip_on_failure
+
+        return True
+
+    def _are_dependencies_satisfied(
+        self,
+        step: WorkflowStep,
+        completed: dict[str, StepResult],
+    ) -> bool:
+        """Check if all dependencies for a step are satisfied."""
+        for dep_id in step.depends_on:
+            if not self._check_dependency_status(dep_id, step, completed):
+                return False
+
+        return True
+
     def _find_ready_steps(
         self,
         steps: list[WorkflowStep],
@@ -268,24 +306,12 @@ class BasicWorkflowEngine(WorkflowEngine):
         ready = []
 
         for step in steps:
-            # Skip if already completed or failed
-            if step.step_id in completed or step.step_id in failed:
+            # Skip if already processed
+            if self._is_step_already_processed(step.step_id, completed, failed):
                 continue
 
             # Check if dependencies are satisfied
-            dependencies_met = True
-            for dep_id in step.depends_on:
-                if dep_id not in completed:
-                    dependencies_met = False
-                    break
-
-                # Check if dependency failed
-                if completed[dep_id].state == StepState.FAILED:
-                    if not step.skip_on_failure:
-                        dependencies_met = False
-                    break
-
-            if dependencies_met:
+            if self._are_dependencies_satisfied(step, completed):
                 ready.append(step)
 
         return ready
