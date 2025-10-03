@@ -40,6 +40,9 @@ class LoguruSettings(LoggerBaseSettings):
     diagnose: bool = False
     colorize: bool = True
 
+    # Type annotation for settings dict created in __init__
+    settings: dict[str, t.Any]
+
 
 MODULE_METADATA = AdapterMetadata(
     module_id=UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2b1a1"),  # Static UUID7

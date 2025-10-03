@@ -418,62 +418,18 @@ def import_event_handler(handler_categories: str | list[str] | None = None) -> t
 
         # Auto-detect from context
         event_publisher = import_event_handler()  # Detects from variable name
+
+    Complexity: 2
     """
-    if isinstance(handler_categories, str):
-        handler = get_event_handler_descriptor(handler_categories)
-        handler_name = handler.name if handler else None
-        handler_class = try_import_event_handler(handler_categories, handler_name)
-        if handler_class:
-            return handler_class
-        msg = f"Event handler not found or not enabled: {handler_categories}"
-        raise EventHandlerNotFound(
-            msg,
-        )
+    from acb.discovery_common import RegistryConfig, import_from_registry
 
-    if handler_categories is None:
-        # Try to auto-detect from calling context
-        import inspect
-
-        frame = inspect.currentframe()
-        if frame and frame.f_back:
-            code = frame.f_back.f_code
-            # Simple heuristic: look for variable assignment
-            try:
-                line = frame.f_back.f_lineno
-                filename = code.co_filename
-                with open(filename) as f:
-                    lines = f.readlines()
-                    if line <= len(lines):
-                        current_line = lines[line - 1].strip()
-                        if "=" in current_line:
-                            var_name = current_line.split("=")[0].strip().lower()
-                            # Try to match variable name to handler category
-                            for handler in event_handler_registry.get():
-                                if (
-                                    handler.category in var_name
-                                    or handler.name in var_name
-                                ):
-                                    return try_import_event_handler(handler.category)
-            except (OSError, IndexError):
-                pass
-
-        msg = "Could not determine event handler category from context"
-        raise ValueError(msg)
-
-    if isinstance(handler_categories, list):
-        results = []
-        for category in handler_categories:
-            handler_class = try_import_event_handler(category)
-            if not handler_class:
-                msg = f"Event handler not found or not enabled: {category}"
-                raise EventHandlerNotFound(
-                    msg,
-                )
-            results.append(handler_class)
-        return tuple(results) if len(results) > 1 else results[0]
-
-    msg = f"Invalid handler_categories type: {type(handler_categories)}"
-    raise ValueError(msg)
+    config = RegistryConfig(
+        get_descriptor=get_event_handler_descriptor,
+        try_import=try_import_event_handler,
+        get_all_descriptors=event_handler_registry.get,
+        not_found_exception=EventHandlerNotFound,
+    )
+    return import_from_registry(handler_categories, config)
 
 
 def register_event_handlers(handlers_path: str | None = None) -> None:

@@ -35,7 +35,7 @@ try:
         generate_service_id,
     )
 
-    SERVICE_METADATA = ServiceMetadata(
+    SERVICE_METADATA: ServiceMetadata | None = ServiceMetadata(
         service_id=generate_service_id(),
         name="Validation Service",
         category="validation",

@@ -295,89 +295,117 @@ async def run_acb_test_suite(
     parallel: bool = False,
 ) -> dict[str, t.Any]:
     """Run a complete ACB test suite with environment setup and teardown."""
-    # Setup test environment
     environment = await setup_test_environment(environment_config)
-
-    results = []
     start_time = asyncio.get_event_loop().time()
 
     try:
-        if parallel:
-            # Run tests in parallel
-            tasks = []
-            for test_func in test_functions:
-                if asyncio.iscoroutinefunction(test_func):
-                    tasks.append(test_func())
-                else:
-                    # Wrap sync function in async
-                    async def async_wrapper() -> t.Any:
-                        return test_func()
-
-                    tasks.append(async_wrapper())
-
-            test_results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            for i, result in enumerate(test_results):
-                if isinstance(result, BaseException):
-                    results.append(
-                        {
-                            "test": test_functions[i].__name__,
-                            "status": "failed",
-                            "error": str(result),
-                            "error_type": type(result).__name__,
-                        },
-                    )
-                else:
-                    results.append(
-                        {
-                            "test": test_functions[i].__name__,
-                            "status": "passed",
-                            "result": result,
-                        },
-                    )
-
-        else:
-            # Run tests sequentially
-            for test_func in test_functions:
-                try:
-                    if asyncio.iscoroutinefunction(test_func):
-                        result = await test_func()
-                    else:
-                        result = test_func()
-
-                    results.append(
-                        {
-                            "test": test_func.__name__,
-                            "status": "passed",
-                            "result": result,
-                        },
-                    )
-
-                except Exception as e:
-                    results.append(
-                        {
-                            "test": test_func.__name__,
-                            "status": "failed",
-                            "error": str(e),
-                            "error_type": type(e).__name__,
-                        },
-                    )
-
+        results = (
+            await _run_tests_parallel(test_functions)
+            if parallel
+            else await _run_tests_sequential(test_functions)
+        )
     finally:
-        # Always cleanup
         await teardown_test_environment(environment)
 
-    end_time = asyncio.get_event_loop().time()
-    execution_time = end_time - start_time
+    execution_time = asyncio.get_event_loop().time() - start_time
 
-    # Calculate summary
+    return _build_test_summary(
+        test_functions, results, execution_time, parallel, environment_config
+    )
+
+
+async def _run_tests_parallel(
+    test_functions: list[t.Callable[..., t.Any]],
+) -> list[dict[str, t.Any]]:
+    """Run tests in parallel."""
+    tasks = [_wrap_test_function(func) for func in test_functions]
+    test_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    return [
+        _create_test_result(test_functions[i], result)
+        for i, result in enumerate(test_results)
+    ]
+
+
+async def _run_tests_sequential(
+    test_functions: list[t.Callable[..., t.Any]],
+) -> list[dict[str, t.Any]]:
+    """Run tests sequentially."""
+    results = []
+    for test_func in test_functions:
+        try:
+            result = await _execute_test_function(test_func)
+            results.append(_create_success_result(test_func, result))
+        except Exception as e:
+            results.append(_create_failure_result(test_func, e))
+
+    return results
+
+
+async def _wrap_test_function(test_func: t.Callable[..., t.Any]) -> t.Any:
+    """Wrap test function for parallel execution."""
+    if asyncio.iscoroutinefunction(test_func):
+        return await test_func()
+
+    async def async_wrapper() -> t.Any:
+        return test_func()
+
+    return await async_wrapper()
+
+
+async def _execute_test_function(test_func: t.Callable[..., t.Any]) -> t.Any:
+    """Execute a test function (async or sync)."""
+    if asyncio.iscoroutinefunction(test_func):
+        return await test_func()
+    return test_func()
+
+
+def _create_test_result(
+    test_func: t.Callable[..., t.Any], result: t.Any
+) -> dict[str, t.Any]:
+    """Create test result from function and execution result."""
+    if isinstance(result, BaseException):
+        return _create_failure_result(test_func, result)
+    return _create_success_result(test_func, result)
+
+
+def _create_success_result(
+    test_func: t.Callable[..., t.Any], result: t.Any
+) -> dict[str, t.Any]:
+    """Create success result."""
+    return {
+        "test": test_func.__name__,
+        "status": "passed",
+        "result": result,
+    }
+
+
+def _create_failure_result(
+    test_func: t.Callable[..., t.Any], error: BaseException
+) -> dict[str, t.Any]:
+    """Create failure result."""
+    return {
+        "test": test_func.__name__,
+        "status": "failed",
+        "error": str(error),
+        "error_type": type(error).__name__,
+    }
+
+
+def _build_test_summary(
+    test_functions: list[t.Callable[..., t.Any]],
+    results: list[dict[str, t.Any]],
+    execution_time: float,
+    parallel: bool,
+    environment_config: dict[str, t.Any] | None,
+) -> dict[str, t.Any]:
+    """Build test execution summary."""
     passed_tests = [r for r in results if r["status"] == "passed"]
-    failed_tests = [r for r in results if r["status"] == "failed"]
 
     return {
         "total_tests": len(test_functions),
         "passed": len(passed_tests),
-        "failed": len(failed_tests),
+        "failed": len(results) - len(passed_tests),
         "success_rate": len(passed_tests) / len(test_functions)
         if test_functions
         else 1.0,
@@ -442,7 +470,7 @@ def create_temporary_config_file(
     file_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Write config data
-    with open(file_path, "w") as f:
+    with file_path.open("w") as f:
         yaml.dump(config_data, f, default_flow_style=False)
 
     return file_path

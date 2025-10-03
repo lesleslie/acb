@@ -25,7 +25,11 @@ from pydantic import BaseModel, Field
 from acb.cleanup import CleanupMixin
 from acb.config import Config
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger as LoggerType
+else:
+    LoggerType = t.Any
 
 # Re-export common types for convenience
 __all__ = [
@@ -241,7 +245,7 @@ class QueueBackend(ABC, CleanupMixin):
 
         # Injected dependencies
         self.config: Config = depends.get(Config)
-        self.logger: Logger = depends.get(Logger)
+        self.logger: LoggerType = depends.get("logger")
 
         # Settings
         self._settings = settings or QueueSettings()

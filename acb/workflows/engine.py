@@ -37,6 +37,16 @@ class BasicWorkflowEngine(WorkflowEngine):
         self._step_semaphore = asyncio.Semaphore(max_concurrent_steps)
         self._action_registry: dict[str, t.Callable[..., t.Awaitable[t.Any]]] = {}
 
+        # Initialize logger if not already set by dependency injection
+        if isinstance(self.logger, type(depends())):
+            try:
+                self.logger = depends.get(Logger)
+            except Exception:
+                # Fallback to basic logger if DI not configured (e.g. in tests)
+                import logging
+
+                self.logger = logging.getLogger(__name__)  # type: ignore[assignment]
+
     def register_action(
         self,
         name: str,
@@ -59,7 +69,30 @@ class BasicWorkflowEngine(WorkflowEngine):
         start_time = time.time()
         context = context or {}
 
-        # Create workflow result
+        # Initialize workflow execution
+        result, completed_steps, failed_steps = self._initialize_workflow_execution(
+            workflow
+        )
+
+        try:
+            # Execute workflow steps in dependency order
+            await self._execute_workflow_steps(
+                workflow, context, result, completed_steps, failed_steps
+            )
+
+            # Finalize workflow result
+            self._finalize_workflow_result(workflow, result, failed_steps, start_time)
+
+            return result
+
+        except Exception as e:
+            self._handle_workflow_exception(workflow, result, e, start_time)
+            raise
+
+    def _initialize_workflow_execution(
+        self, workflow: WorkflowDefinition
+    ) -> tuple[WorkflowResult, dict[str, StepResult], set[str]]:
+        """Initialize workflow execution state."""
         result = WorkflowResult(
             workflow_id=workflow.workflow_id,
             state=WorkflowState.RUNNING,
@@ -67,107 +100,163 @@ class BasicWorkflowEngine(WorkflowEngine):
             metadata=workflow.metadata.copy(),
         )
 
-        # Store initial state
         self._workflow_states[workflow.workflow_id] = result
 
-        try:
-            # Track completed and failed steps
-            completed_steps: dict[str, StepResult] = {}
-            failed_steps: set[str] = set()
+        completed_steps: dict[str, StepResult] = {}
+        failed_steps: set[str] = set()
 
-            # Execute steps in dependency order
-            while len(completed_steps) < len(workflow.steps):
-                # Find steps ready to execute
-                ready_steps = self._find_ready_steps(
-                    workflow.steps,
-                    completed_steps,
-                    failed_steps,
-                )
+        return result, completed_steps, failed_steps
 
-                if not ready_steps:
-                    # Check if we're deadlocked
-                    if len(completed_steps) + len(failed_steps) < len(workflow.steps):
-                        remaining = [
-                            s
-                            for s in workflow.steps
-                            if s.step_id not in completed_steps
-                            and s.step_id not in failed_steps
-                        ]
-                        self.logger.warning(
-                            f"Workflow {workflow.workflow_id} deadlocked. "
-                            f"Remaining steps: {[s.step_id for s in remaining]}",
-                        )
-                        break
-                    break
-
-                # Execute ready steps (parallel where possible)
-                step_tasks = []
-                for step in ready_steps:
-                    task = asyncio.create_task(
-                        self._execute_step_with_retry(step, context),
-                    )
-                    step_tasks.append((step.step_id, task))
-
-                # Wait for all ready steps to complete
-                for step_id, task in step_tasks:
-                    try:
-                        step_result = await task
-                        completed_steps[step_id] = step_result
-                        result.steps.append(step_result)
-
-                        if step_result.state == StepState.FAILED:
-                            failed_steps.add(step_id)
-
-                            if not workflow.continue_on_error:
-                                self.logger.error(
-                                    f"Step {step_id} failed, stopping workflow execution",
-                                )
-                                result.state = WorkflowState.FAILED
-                                result.error = step_result.error
-                                break
-
-                    except Exception as e:
-                        self.logger.exception(
-                            f"Unexpected error executing step {step_id}: {e}",
-                        )
-                        failed_steps.add(step_id)
-
-                        if not workflow.continue_on_error:
-                            result.state = WorkflowState.FAILED
-                            result.error = str(e)
-                            break
-
-                # Stop if workflow failed
-                if result.state == WorkflowState.FAILED:
-                    break
-
-            # Determine final state
-            if result.state != WorkflowState.FAILED:
-                if failed_steps:
-                    result.state = WorkflowState.FAILED
-                    result.error = f"Steps failed: {', '.join(failed_steps)}"
-                else:
-                    result.state = WorkflowState.COMPLETED
-
-            # Set completion time
-            result.completed_at = datetime.now()
-            result.duration_ms = (time.time() - start_time) * 1000
-
-            # Update stored state
-            self._workflow_states[workflow.workflow_id] = result
-
-            return result
-
-        except Exception as e:
-            self.logger.exception(
-                f"Workflow {workflow.workflow_id} execution failed: {e}"
+    async def _execute_workflow_steps(
+        self,
+        workflow: WorkflowDefinition,
+        context: dict[str, t.Any],
+        result: WorkflowResult,
+        completed_steps: dict[str, StepResult],
+        failed_steps: set[str],
+    ) -> None:
+        """Execute all workflow steps in dependency order."""
+        while len(completed_steps) < len(workflow.steps):
+            # Find steps ready to execute
+            ready_steps = self._find_ready_steps(
+                workflow.steps, completed_steps, failed_steps
             )
+
+            # Check for completion or deadlock
+            if not ready_steps:
+                self._handle_no_ready_steps(workflow, completed_steps, failed_steps)
+                break
+
+            # Execute ready steps in parallel
+            step_results = await self._execute_parallel_steps(ready_steps, context)
+
+            # Process step results
+            should_stop = self._process_step_results(
+                workflow, step_results, completed_steps, failed_steps, result
+            )
+
+            if should_stop:
+                break
+
+    def _handle_no_ready_steps(
+        self,
+        workflow: WorkflowDefinition,
+        completed_steps: dict[str, StepResult],
+        failed_steps: set[str],
+    ) -> None:
+        """Handle case where no steps are ready to execute."""
+        total_processed = len(completed_steps) + len(failed_steps)
+        if total_processed < len(workflow.steps):
+            remaining = [
+                s
+                for s in workflow.steps
+                if s.step_id not in completed_steps and s.step_id not in failed_steps
+            ]
+            self.logger.warning(
+                f"Workflow {workflow.workflow_id} deadlocked. "
+                f"Remaining steps: {[s.step_id for s in remaining]}"
+            )
+
+    async def _execute_parallel_steps(
+        self, ready_steps: list[WorkflowStep], context: dict[str, t.Any]
+    ) -> list[tuple[str, StepResult]]:
+        """Execute multiple steps in parallel and collect results."""
+        step_tasks = [
+            (
+                step.step_id,
+                asyncio.create_task(self._execute_step_with_retry(step, context)),
+            )
+            for step in ready_steps
+        ]
+
+        # Wait for all tasks to complete
+        results = []
+        for step_id, task in step_tasks:
+            step_result = await task
+            results.append((step_id, step_result))
+
+        return results
+
+    def _process_step_results(
+        self,
+        workflow: WorkflowDefinition,
+        step_results: list[tuple[str, StepResult]],
+        completed_steps: dict[str, StepResult],
+        failed_steps: set[str],
+        result: WorkflowResult,
+    ) -> bool:
+        """Process step results and update workflow state. Returns True if should stop."""
+        for step_id, step_result in step_results:
+            completed_steps[step_id] = step_result
+            result.steps.append(step_result)
+
+            if step_result.state == StepState.FAILED:
+                should_stop = self._handle_step_failure(
+                    workflow, step_id, step_result, failed_steps, result
+                )
+                if should_stop:
+                    return True
+
+        return False
+
+    def _handle_step_failure(
+        self,
+        workflow: WorkflowDefinition,
+        step_id: str,
+        step_result: StepResult,
+        failed_steps: set[str],
+        result: WorkflowResult,
+    ) -> bool:
+        """Handle a failed step. Returns True if workflow should stop."""
+        failed_steps.add(step_id)
+
+        if not workflow.continue_on_error:
+            self.logger.error(f"Step {step_id} failed, stopping workflow execution")
             result.state = WorkflowState.FAILED
-            result.error = str(e)
-            result.completed_at = datetime.now()
-            result.duration_ms = (time.time() - start_time) * 1000
-            self._workflow_states[workflow.workflow_id] = result
-            raise
+            result.error = step_result.error
+            return True
+
+        return False
+
+    def _finalize_workflow_result(
+        self,
+        workflow: WorkflowDefinition,
+        result: WorkflowResult,
+        failed_steps: set[str],
+        start_time: float,
+    ) -> None:
+        """Finalize workflow result with state and timing."""
+        # Determine final state
+        if result.state != WorkflowState.FAILED:
+            if failed_steps:
+                result.state = WorkflowState.FAILED
+                result.error = f"Steps failed: {', '.join(failed_steps)}"
+            else:
+                result.state = WorkflowState.COMPLETED
+
+        # Set completion time
+        result.completed_at = datetime.now()
+        result.duration_ms = (time.time() - start_time) * 1000
+
+        # Update stored state
+        self._workflow_states[workflow.workflow_id] = result
+
+    def _handle_workflow_exception(
+        self,
+        workflow: WorkflowDefinition,
+        result: WorkflowResult,
+        error: Exception,
+        start_time: float,
+    ) -> None:
+        """Handle workflow execution exception."""
+        self.logger.exception(
+            f"Workflow {workflow.workflow_id} execution failed: {error}"
+        )
+        result.state = WorkflowState.FAILED
+        result.error = str(error)
+        result.completed_at = datetime.now()
+        result.duration_ms = (time.time() - start_time) * 1000
+        self._workflow_states[workflow.workflow_id] = result
 
     def _find_ready_steps(
         self,
@@ -207,42 +296,60 @@ class BasicWorkflowEngine(WorkflowEngine):
         context: dict[str, t.Any],
     ) -> StepResult:
         """Execute a step with retry logic."""
-        retry_count = 0
         last_error = None
 
-        while retry_count <= step.retry_attempts:
-            try:
-                async with self._step_semaphore:
-                    result = await self.execute_step(step, context)
+        for retry_count in range(step.retry_attempts + 1):
+            # Execute single attempt
+            result, error = await self._execute_single_attempt(step, context)
 
-                    if result.state == StepState.COMPLETED:
-                        return result
+            # Check if successful
+            if result is not None and result.state == StepState.COMPLETED:
+                return result
 
-                    # Step failed but completed execution
-                    last_error = result.error
+            # Track error
+            last_error = error or (result.error if result else None)
 
-            except Exception as e:
-                self.logger.warning(
-                    f"Step {step.step_id} attempt {retry_count + 1} failed: {e}",
-                )
-                last_error = str(e)
+            # Check if should retry
+            if not self._should_retry(retry_count, step.retry_attempts):
+                break
 
-            # Increment retry count
-            retry_count += 1
-
-            # Wait before retry
-            if retry_count <= step.retry_attempts:
-                delay = step.retry_delay * (
-                    2 ** (retry_count - 1)
-                )  # Exponential backoff
-                await asyncio.sleep(delay)
+            # Wait before retry with exponential backoff
+            await self._wait_before_retry(step, retry_count)
 
         # All retries exhausted
+        return self._create_failed_result(step, last_error, retry_count)
+
+    async def _execute_single_attempt(
+        self, step: WorkflowStep, context: dict[str, t.Any]
+    ) -> tuple[StepResult | None, str | None]:
+        """Execute a single step attempt. Returns (result, error)."""
+        try:
+            async with self._step_semaphore:
+                result = await self.execute_step(step, context)
+                return result, None
+
+        except Exception as e:
+            self.logger.warning(f"Step {step.step_id} attempt failed: {e}")
+            return None, str(e)
+
+    def _should_retry(self, retry_count: int, max_retries: int) -> bool:
+        """Check if should retry after current attempt."""
+        return retry_count < max_retries
+
+    async def _wait_before_retry(self, step: WorkflowStep, retry_count: int) -> None:
+        """Wait before retry with exponential backoff."""
+        delay = step.retry_delay * (2**retry_count)
+        await asyncio.sleep(delay)
+
+    def _create_failed_result(
+        self, step: WorkflowStep, error: str | None, retry_count: int
+    ) -> StepResult:
+        """Create a failed step result after all retries exhausted."""
         return StepResult(
             step_id=step.step_id,
             state=StepState.FAILED,
-            error=last_error or "Maximum retries exceeded",
-            retry_count=retry_count - 1,
+            error=error or "Maximum retries exceeded",
+            retry_count=retry_count,
         )
 
     async def execute_step(

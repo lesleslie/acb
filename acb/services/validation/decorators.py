@@ -8,19 +8,193 @@ from __future__ import annotations
 
 import functools
 import inspect
-import typing as t
+from collections.abc import Callable
+from typing import Any
 
 from acb.depends import depends
 from acb.services.validation._base import ValidationConfig, ValidationSchema
 from acb.services.validation.results import ValidationError, ValidationReport
 from acb.services.validation.service import ValidationService
 
+# Helper Functions for Complexity Reduction
+
+
+def _create_wrapper(
+    func: Callable[..., Any],
+    async_handler: Callable[..., Any],
+) -> Callable[..., Any]:
+    """Create appropriate wrapper based on function type.
+
+    Args:
+        func: Original function to wrap
+        async_handler: Async handler function
+
+    Returns:
+        Async or sync wrapper based on function type
+    """
+    if inspect.iscoroutinefunction(func):
+        return async_handler
+
+    @functools.wraps(func)
+    def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+        import asyncio
+
+        return asyncio.run(async_handler(*args, **kwargs))
+
+    return sync_wrapper
+
+
+def _bind_function_arguments(
+    func: Callable[..., Any],
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> inspect.BoundArguments:
+    """Bind function arguments with defaults applied.
+
+    Args:
+        func: Function to bind arguments for
+        args: Positional arguments
+        kwargs: Keyword arguments
+
+    Returns:
+        Bound arguments with defaults applied
+    """
+    sig = inspect.signature(func)
+    bound_args = sig.bind(*args, **kwargs)
+    bound_args.apply_defaults()
+    return bound_args
+
+
+def _check_validation_errors(
+    results: list[Any],
+    raise_on_error: bool,
+) -> None:
+    """Check validation results and raise error if needed.
+
+    Args:
+        results: List of validation results
+        raise_on_error: Whether to raise on validation failure
+
+    Raises:
+        ValidationError: If validation failed and raise_on_error is True
+    """
+    if not results or not raise_on_error:
+        return
+
+    report = ValidationReport(results=results)
+    if not report.is_valid:
+        msg = f"Input validation failed: {'; '.join(report.get_all_errors())}"
+        raise ValidationError(msg)
+
+
+def _check_type_match(
+    value: Any,
+    expected_type: type,
+    field_name: str,
+    context: str,
+) -> None:
+    """Check if value matches expected type.
+
+    Args:
+        value: Value to check
+        expected_type: Expected type
+        field_name: Name of field being checked
+        context: Context string (input/output)
+
+    Raises:
+        ValidationError: If type doesn't match
+    """
+    if not isinstance(value, expected_type):
+        msg = (
+            f"{context} contract violation: {field_name} "
+            f"expected {expected_type.__name__}, got {type(value).__name__}"
+        )
+        raise ValidationError(msg)
+
+
+async def _validate_dict_schema(
+    service: ValidationService,
+    schema_dict: dict[str, ValidationSchema],
+    bound_args: inspect.BoundArguments,
+    config: ValidationConfig | None,
+) -> list[Any]:
+    """Validate parameters using dictionary of schemas.
+
+    Args:
+        service: ValidationService instance
+        schema_dict: Dictionary mapping parameter names to schemas
+        bound_args: Bound function arguments
+        config: Validation configuration
+
+    Returns:
+        List of validation results
+    """
+    results = []
+    for param_name, param_schema in schema_dict.items():
+        if param_name in bound_args.arguments:
+            result = await service.validate(
+                bound_args.arguments[param_name],
+                param_schema,
+                config,
+                param_name,
+            )
+            results.append(result)
+    return results
+
+
+async def _validate_single_schema(
+    service: ValidationService,
+    schema: ValidationSchema,
+    bound_args: inspect.BoundArguments,
+    config: ValidationConfig | None,
+) -> list[Any]:
+    """Validate first parameter using single schema.
+
+    Args:
+        service: ValidationService instance
+        schema: Validation schema
+        bound_args: Bound function arguments
+        config: Validation configuration
+
+    Returns:
+        List with single validation result
+    """
+    if not bound_args.arguments:
+        return []
+
+    first_param = next(iter(bound_args.arguments.values()))
+    result = await service.validate(first_param, schema, config)
+    return [result]
+
+
+def _update_validated_arguments(
+    bound_args: inspect.BoundArguments,
+    results: list[Any],
+    schema: ValidationSchema | dict[str, ValidationSchema] | None,
+) -> None:
+    """Update bound arguments with validated values.
+
+    Args:
+        bound_args: Bound arguments to update
+        results: Validation results
+        schema: Original schema (dict or single)
+    """
+    if not isinstance(schema, dict):
+        return
+
+    schema_keys = list(schema.keys())
+    for i, result in enumerate(results):
+        if result.is_valid and i < len(schema_keys):
+            param_name = schema_keys[i]
+            if param_name in bound_args.arguments:
+                bound_args.arguments[param_name] = result.value
+
 
 def validate_input(
     schema: ValidationSchema | dict[str, ValidationSchema] | None = None,
     config: ValidationConfig | None = None,
     raise_on_error: bool = True,
-) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to validate function input parameters.
 
     Args:
@@ -34,72 +208,37 @@ def validate_input(
             ...
     """
 
-    def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            # Get ValidationService
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             validation_service = depends.get(ValidationService)
+            bound_args = _bind_function_arguments(func, args, kwargs)
 
-            # Get function signature
-            sig = inspect.signature(func)
-            bound_args = sig.bind(*args, **kwargs)
-            bound_args.apply_defaults()
-
-            # Validate parameters
-            validation_results = []
-
-            if isinstance(schema, dict):
-                # Validate specific parameters
-                for param_name, param_schema in schema.items():
-                    if param_name in bound_args.arguments:
-                        result = await validation_service.validate(
-                            bound_args.arguments[param_name],
-                            param_schema,
-                            config,
-                            param_name,
-                        )
-                        validation_results.append(result)
-            elif schema is not None:
-                # Single schema validation for first parameter
-                if bound_args.arguments:
-                    first_param = next(iter(bound_args.arguments.values()))
-                    result = await validation_service.validate(
-                        first_param,
+            # Execute appropriate validation strategy
+            match schema:
+                case dict():
+                    results = await _validate_dict_schema(
+                        validation_service,
                         schema,
+                        bound_args,
                         config,
                     )
-                    validation_results.append(result)
-
-            # Check validation results
-            if validation_results and raise_on_error:
-                report = ValidationReport(results=validation_results)
-                if not report.is_valid:
-                    msg = (
-                        f"Input validation failed: {'; '.join(report.get_all_errors())}"
+                case ValidationSchema():
+                    results = await _validate_single_schema(
+                        validation_service,
+                        schema,
+                        bound_args,
+                        config,
                     )
-                    raise ValidationError(
-                        msg,
-                    )
+                case _:
+                    results = []
 
-            # Update arguments with validated values
-            for i, result in enumerate(validation_results):
-                if result.is_valid and isinstance(schema, dict):
-                    param_name = list(schema.keys())[i]
-                    if param_name in bound_args.arguments:
-                        bound_args.arguments[param_name] = result.value
+            _check_validation_errors(results, raise_on_error)
+            _update_validated_arguments(bound_args, results, schema)
 
             return await func(**bound_args.arguments)
 
-        @functools.wraps(func)
-        def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            import asyncio
-
-            return asyncio.run(async_wrapper(*args, **kwargs))
-
-        # Return appropriate wrapper based on function type
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper
-        return sync_wrapper
+        return _create_wrapper(func, async_wrapper)
 
     return decorator
 
@@ -108,7 +247,7 @@ def validate_output(
     schema: ValidationSchema | None = None,
     config: ValidationConfig | None = None,
     raise_on_error: bool = True,
-) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to validate function output.
 
     Args:
@@ -122,47 +261,79 @@ def validate_output(
             ...
     """
 
-    def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            # Execute original function
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             result = await func(*args, **kwargs)
 
-            if schema is not None:
-                # Get ValidationService
-                validation_service = depends.get(ValidationService)
+            if schema is None:
+                return result
 
-                # Validate output
-                validation_result = await validation_service.validate(
-                    result,
-                    schema,
-                    config,
-                    "output",
-                )
+            validation_service = depends.get(ValidationService)
+            validation_result = await validation_service.validate(
+                result,
+                schema,
+                config,
+                "output",
+            )
 
-                if raise_on_error and not validation_result.is_valid:
-                    msg = f"Output validation failed: {'; '.join(validation_result.errors)}"
-                    raise ValidationError(
-                        msg,
-                    )
+            if raise_on_error and not validation_result.is_valid:
+                msg = f"Output validation failed: {'; '.join(validation_result.errors)}"
+                raise ValidationError(msg)
 
-                # Return validated output
-                return validation_result.value
+            return validation_result.value
 
-            return result
-
-        @functools.wraps(func)
-        def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            import asyncio
-
-            return asyncio.run(async_wrapper(*args, **kwargs))
-
-        # Return appropriate wrapper based on function type
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper
-        return sync_wrapper
+        return _create_wrapper(func, async_wrapper)
 
     return decorator
+
+
+def _create_sanitize_config(
+    config: ValidationConfig | None,
+    enable_xss: bool,
+    enable_sql: bool,
+) -> ValidationConfig:
+    """Create sanitization configuration.
+
+    Args:
+        config: Base configuration or None
+        enable_xss: Enable XSS protection
+        enable_sql: Enable SQL injection protection
+
+    Returns:
+        Configured ValidationConfig
+    """
+    sanitize_config = config or ValidationConfig()
+    sanitize_config.enable_xss_protection = enable_xss
+    sanitize_config.enable_sql_injection_protection = enable_sql
+    sanitize_config.enable_sanitization = True
+    return sanitize_config
+
+
+async def _sanitize_parameters(
+    service: ValidationService,
+    bound_args: inspect.BoundArguments,
+    fields: list[str] | None,
+    sanitize_config: ValidationConfig,
+) -> None:
+    """Sanitize string parameters.
+
+    Args:
+        service: ValidationService instance
+        bound_args: Bound arguments to sanitize
+        fields: Fields to sanitize (None = all strings)
+        sanitize_config: Sanitization configuration
+    """
+    for param_name, value in bound_args.arguments.items():
+        should_sanitize = fields is None or param_name in fields
+        if should_sanitize and isinstance(value, str):
+            result = await service.validate(
+                value,
+                None,
+                sanitize_config,
+                param_name,
+            )
+            bound_args.arguments[param_name] = result.value
 
 
 def sanitize_input(
@@ -170,7 +341,7 @@ def sanitize_input(
     enable_xss_protection: bool = True,
     enable_sql_protection: bool = True,
     config: ValidationConfig | None = None,
-) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to sanitize input parameters for security.
 
     Args:
@@ -185,56 +356,84 @@ def sanitize_input(
             ...
     """
 
-    def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            # Get ValidationService
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             validation_service = depends.get(ValidationService)
+            bound_args = _bind_function_arguments(func, args, kwargs)
 
-            # Get function signature
-            sig = inspect.signature(func)
-            bound_args = sig.bind(*args, **kwargs)
-            bound_args.apply_defaults()
+            sanitize_config = _create_sanitize_config(
+                config,
+                enable_xss_protection,
+                enable_sql_protection,
+            )
 
-            # Create sanitization config
-            sanitize_config = config or ValidationConfig()
-            sanitize_config.enable_xss_protection = enable_xss_protection
-            sanitize_config.enable_sql_injection_protection = enable_sql_protection
-            sanitize_config.enable_sanitization = True
-
-            # Sanitize parameters
-            for param_name, value in bound_args.arguments.items():
-                if fields is None or param_name in fields:
-                    if isinstance(value, str):
-                        result = await validation_service.validate(
-                            value,
-                            None,  # Use basic validation
-                            sanitize_config,
-                            param_name,
-                        )
-                        bound_args.arguments[param_name] = result.value
+            await _sanitize_parameters(
+                validation_service,
+                bound_args,
+                fields,
+                sanitize_config,
+            )
 
             return await func(**bound_args.arguments)
 
-        @functools.wraps(func)
-        def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            import asyncio
-
-            return asyncio.run(async_wrapper(*args, **kwargs))
-
-        # Return appropriate wrapper based on function type
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper
-        return sync_wrapper
+        return _create_wrapper(func, async_wrapper)
 
     return decorator
+
+
+def _get_validation_data(
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> Any | None:
+    """Extract data to validate from args or kwargs.
+
+    Args:
+        args: Positional arguments
+        kwargs: Keyword arguments
+
+    Returns:
+        Data to validate or None
+    """
+    if kwargs:
+        return kwargs
+    if args:
+        return args[0]
+    return None
+
+
+def _update_validated_data(
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+    validated_value: Any,
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    """Update args/kwargs with validated value.
+
+    Args:
+        args: Original positional arguments
+        kwargs: Original keyword arguments
+        validated_value: Validated value to use
+
+    Returns:
+        Tuple of (updated_args, updated_kwargs)
+    """
+    if kwargs:
+        updated_kwargs = kwargs.copy()
+        if isinstance(validated_value, dict):
+            updated_kwargs.update(validated_value)
+        return args, updated_kwargs
+
+    if args:
+        return (validated_value, *args[1:]), kwargs
+
+    return args, kwargs
 
 
 def validate_schema(
     schema_name: str,
     config: ValidationConfig | None = None,
     raise_on_error: bool = True,
-) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to validate using a registered schema.
 
     Args:
@@ -248,13 +447,11 @@ def validate_schema(
             ...
     """
 
-    def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            # Get ValidationService
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             validation_service = depends.get(ValidationService)
 
-            # Get registered schema
             schema = await validation_service.get_schema(schema_name)
             if schema is None:
                 if raise_on_error:
@@ -262,51 +459,83 @@ def validate_schema(
                     raise ValidationError(msg)
                 return await func(*args, **kwargs)
 
-            # Validate first argument or kwargs
-            data_to_validate = kwargs if kwargs else (args[0] if args else None)
+            data_to_validate = _get_validation_data(args, kwargs)
+            if data_to_validate is None:
+                return await func(*args, **kwargs)
 
-            if data_to_validate is not None:
-                result = await validation_service.validate(
-                    data_to_validate,
-                    schema,
-                    config,
-                )
+            result = await validation_service.validate(
+                data_to_validate,
+                schema,
+                config,
+            )
 
-                if raise_on_error and not result.is_valid:
-                    msg = f"Schema validation failed: {'; '.join(result.errors)}"
-                    raise ValidationError(
-                        msg,
-                    )
+            if raise_on_error and not result.is_valid:
+                msg = f"Schema validation failed: {'; '.join(result.errors)}"
+                raise ValidationError(msg)
 
-                # Update data with validated values
-                if kwargs:
-                    kwargs.update(
-                        result.value if isinstance(result.value, dict) else kwargs,
-                    )
-                elif args:
-                    args = (result.value, *args[1:])
+            updated_args, updated_kwargs = _update_validated_data(
+                args,
+                kwargs,
+                result.value,
+            )
 
-            return await func(*args, **kwargs)
+            return await func(*updated_args, **updated_kwargs)
 
-        @functools.wraps(func)
-        def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            import asyncio
-
-            return asyncio.run(async_wrapper(*args, **kwargs))
-
-        # Return appropriate wrapper based on function type
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper
-        return sync_wrapper
+        return _create_wrapper(func, async_wrapper)
 
     return decorator
 
 
+def _validate_input_contract(
+    bound_args: inspect.BoundArguments,
+    contract: dict[str, type],
+) -> None:
+    """Validate input parameters against contract.
+
+    Args:
+        bound_args: Bound function arguments
+        contract: Expected parameter types
+
+    Raises:
+        ValidationError: If any parameter violates contract
+    """
+    for param_name, expected_type in contract.items():
+        if param_name not in bound_args.arguments:
+            continue
+
+        value = bound_args.arguments[param_name]
+        _check_type_match(value, expected_type, param_name, "Input")
+
+
+def _validate_output_contract(
+    result: Any,
+    contract: dict[str, type],
+) -> None:
+    """Validate output result against contract.
+
+    Args:
+        result: Function result to validate
+        contract: Expected output field types
+
+    Raises:
+        ValidationError: If any field violates contract
+    """
+    if not isinstance(result, dict):
+        return
+
+    for field_name, expected_type in contract.items():
+        if field_name not in result:
+            continue
+
+        value = result[field_name]
+        _check_type_match(value, expected_type, field_name, "Output")
+
+
 def validate_contracts(
-    input_contract: dict[str, t.Any] | None = None,
-    output_contract: dict[str, t.Any] | None = None,
+    input_contract: dict[str, Any] | None = None,
+    output_contract: dict[str, Any] | None = None,
     config: ValidationConfig | None = None,
-) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to validate API contracts for input and output.
 
     Args:
@@ -323,61 +552,116 @@ def validate_contracts(
             ...
     """
 
-    def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        async def async_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             depends.get(ValidationService)
 
-            # Validate input contract
             if input_contract is not None:
-                sig = inspect.signature(func)
-                bound_args = sig.bind(*args, **kwargs)
-                bound_args.apply_defaults()
+                bound_args = _bind_function_arguments(func, args, kwargs)
+                _validate_input_contract(bound_args, input_contract)
 
-                for param_name, expected_type in input_contract.items():
-                    if param_name in bound_args.arguments:
-                        value = bound_args.arguments[param_name]
-                        if not isinstance(value, expected_type):
-                            msg = (
-                                f"Input contract violation: {param_name} "
-                                f"expected {expected_type.__name__}, got {type(value).__name__}"
-                            )
-                            raise ValidationError(
-                                msg,
-                            )
-
-            # Execute function
             result = await func(*args, **kwargs)
 
-            # Validate output contract
             if output_contract is not None:
-                if isinstance(result, dict):
-                    for field_name, expected_type in output_contract.items():
-                        if field_name in result:
-                            value = result[field_name]
-                            if not isinstance(value, expected_type):
-                                msg = (
-                                    f"Output contract violation: {field_name} "
-                                    f"expected {expected_type.__name__}, got {type(value).__name__}"
-                                )
-                                raise ValidationError(
-                                    msg,
-                                )
+                _validate_output_contract(result, output_contract)
 
             return result
 
-        @functools.wraps(func)
-        def sync_wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
-            import asyncio
-
-            return asyncio.run(async_wrapper(*args, **kwargs))
-
-        # Return appropriate wrapper based on function type
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper
-        return sync_wrapper
+        return _create_wrapper(func, async_wrapper)
 
     return decorator
+
+
+def _filter_method_params(
+    bound_args: inspect.BoundArguments,
+) -> dict[str, Any]:
+    """Filter out 'self' parameter from bound arguments.
+
+    Args:
+        bound_args: Bound method arguments
+
+    Returns:
+        Parameters dictionary without 'self'
+    """
+    params = dict(bound_args.arguments)
+    params.pop("self", None)
+    return params
+
+
+async def _validate_method_inputs(
+    service: ValidationService,
+    schemas: dict[str, ValidationSchema],
+    params: dict[str, Any],
+) -> dict[str, Any]:
+    """Validate method input parameters.
+
+    Args:
+        service: ValidationService instance
+        schemas: Input validation schemas
+        params: Method parameters to validate
+
+    Returns:
+        Validated parameters
+
+    Raises:
+        ValidationError: If validation fails
+    """
+    validated_params = params.copy()
+
+    for param_name, schema in schemas.items():
+        if param_name not in params:
+            continue
+
+        result = await service.validate(
+            params[param_name],
+            schema,
+            None,
+            param_name,
+        )
+
+        if not result.is_valid:
+            msg = (
+                f"Method input validation failed for {param_name}: "
+                f"{'; '.join(result.errors)}"
+            )
+            raise ValidationError(msg)
+
+        validated_params[param_name] = result.value
+
+    return validated_params
+
+
+async def _validate_method_output(
+    service: ValidationService,
+    result: Any,
+    schema: ValidationSchema,
+) -> Any:
+    """Validate method output.
+
+    Args:
+        service: ValidationService instance
+        result: Method result to validate
+        schema: Output validation schema
+
+    Returns:
+        Validated result
+
+    Raises:
+        ValidationError: If validation fails
+    """
+    validation_result = await service.validate(
+        result,
+        schema,
+        None,
+        "output",
+    )
+
+    if not validation_result.is_valid:
+        msg = f"Method output validation failed: {'; '.join(validation_result.errors)}"
+        raise ValidationError(msg)
+
+    return validation_result.value
 
 
 class ValidationDecorators:
@@ -397,7 +681,7 @@ class ValidationDecorators:
         self,
         input_schemas: dict[str, ValidationSchema] | None = None,
         output_schema: ValidationSchema | None = None,
-    ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator for class method validation.
 
         Example:
@@ -410,77 +694,40 @@ class ValidationDecorators:
                     ...
         """
 
-        def decorator(method: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+        def decorator(method: Callable[..., Any]) -> Callable[..., Any]:
             @functools.wraps(method)
             async def async_wrapper(
-                instance: t.Any,
-                *args: t.Any,
-                **kwargs: t.Any,
-            ) -> t.Any:
-                # Input validation
+                instance: Any,
+                *args: Any,
+                **kwargs: Any,
+            ) -> Any:
                 if input_schemas:
                     sig = inspect.signature(method)
                     bound_args = sig.bind(instance, *args, **kwargs)
                     bound_args.apply_defaults()
 
-                    # Skip 'self' parameter
-                    params = dict(bound_args.arguments)
-                    params.pop("self", None)
+                    params = _filter_method_params(bound_args)
+                    validated_params = await _validate_method_inputs(
+                        self.validation_service,
+                        input_schemas,
+                        params,
+                    )
 
-                    for param_name, schema in input_schemas.items():
-                        if param_name in params:
-                            result = await self.validation_service.validate(
-                                params[param_name],
-                                schema,
-                                None,
-                                param_name,
-                            )
-                            if not result.is_valid:
-                                msg = (
-                                    f"Method input validation failed for {param_name}: "
-                                    f"{'; '.join(result.errors)}"
-                                )
-                                raise ValidationError(
-                                    msg,
-                                )
-                            params[param_name] = result.value
-
-                    # Update bound arguments
-                    bound_args.arguments.update(params)
+                    bound_args.arguments.update(validated_params)
                     result = await method(**bound_args.arguments)
                 else:
                     result = await method(instance, *args, **kwargs)
 
-                # Output validation
                 if output_schema:
-                    validation_result = await self.validation_service.validate(
+                    return await _validate_method_output(
+                        self.validation_service,
                         result,
                         output_schema,
-                        None,
-                        "output",
                     )
-                    if not validation_result.is_valid:
-                        msg = (
-                            f"Method output validation failed: "
-                            f"{'; '.join(validation_result.errors)}"
-                        )
-                        raise ValidationError(
-                            msg,
-                        )
-                    return validation_result.value
 
                 return result
 
-            @functools.wraps(method)
-            def sync_wrapper(instance: t.Any, *args: t.Any, **kwargs: t.Any) -> t.Any:
-                import asyncio
-
-                return asyncio.run(async_wrapper(instance, *args, **kwargs))
-
-            # Return appropriate wrapper based on method type
-            if inspect.iscoroutinefunction(method):
-                return async_wrapper
-            return sync_wrapper
+            return _create_wrapper(method, async_wrapper)
 
         return decorator
 

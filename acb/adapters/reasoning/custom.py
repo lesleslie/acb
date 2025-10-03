@@ -26,9 +26,9 @@ from acb.adapters.reasoning._base import (
 )
 
 if t.TYPE_CHECKING:
-    from acb.logger import LoggerType
-else:
     from acb.logger import Logger as LoggerType
+else:
+    LoggerType = t.Any
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
@@ -179,6 +179,81 @@ class RuleEngine:
             del self.rules[rule_name]
             self.logger.debug(f"Removed rule: {rule_name}")
 
+    def _check_evaluation_cache(
+        self,
+        rule: EnhancedRule,
+        data: dict[str, t.Any],
+    ) -> RuleEvaluationResult | None:
+        """Check cache for existing evaluation result."""
+        cache_key = f"{rule.name}_{hash(str(sorted(data.items())))}"
+        cached_result = self.rule_cache.get(cache_key)
+
+        if cached_result and self.settings.log_rule_evaluations:
+            self.logger.debug(
+                f"Rule {rule.name} returned cached result: {cached_result.matched}",
+            )
+
+        return cached_result
+
+    def _evaluate_conditions(
+        self,
+        rule: EnhancedRule,
+        data: dict[str, t.Any],
+    ) -> tuple[list[tuple[bool, float]], list[str]]:
+        """Evaluate all conditions and collect results with explanations."""
+        condition_results: list[tuple[bool, float]] = []
+        explanations: list[str] = []
+
+        for condition in rule.conditions:
+            result, explanation = self._evaluate_condition(condition, data)
+            condition_results.append((result, condition.weight))
+            explanations.append(
+                f"  {condition.field} {condition.operator.value} {condition.value}: {result}",
+            )
+
+            if self.settings.debug_mode:
+                self.logger.debug(f"Condition evaluation: {explanation}")
+
+        return condition_results, explanations
+
+    def _calculate_weighted_confidence(
+        self,
+        condition_results: list[tuple[bool, float]],
+    ) -> tuple[float, bool]:
+        """Calculate weighted confidence score and match status."""
+        if not condition_results:
+            return 0.0, False
+
+        weighted_sum = sum(result * weight for result, weight in condition_results)
+        total_weight = sum(weight for _, weight in condition_results)
+        # Type guard: Ensure total_weight is non-zero before division
+        confidence: float = (weighted_sum / total_weight) if total_weight > 0.0 else 0.0
+        matched = confidence >= self.settings.confidence_threshold
+
+        return confidence, matched
+
+    def _store_evaluation_result(
+        self,
+        rule: EnhancedRule,
+        data: dict[str, t.Any],
+        result: RuleEvaluationResult,
+    ) -> None:
+        """Store evaluation result in cache and update statistics."""
+        # Cache result
+        if len(self.rule_cache) < self.settings.rule_cache_size:
+            cache_key = f"{rule.name}_{hash(str(sorted(data.items())))}"
+            self.rule_cache[cache_key] = result
+
+        # Update stats
+        if rule.name not in self.execution_stats:
+            self.execution_stats[rule.name] = []
+        self.execution_stats[rule.name].append(result.execution_time_ms)
+
+        if self.settings.log_rule_evaluations:
+            self.logger.debug(
+                f"Rule {rule.name} evaluation: {result.matched} (confidence: {result.confidence:.2f})",
+            )
+
     def evaluate_rule(
         self,
         rule: EnhancedRule,
@@ -189,13 +264,8 @@ class RuleEngine:
 
         try:
             # Check cache first
-            cache_key = f"{rule.name}_{hash(str(sorted(data.items())))}"
-            if cache_key in self.rule_cache:
-                cached_result = self.rule_cache[cache_key]
-                if self.settings.log_rule_evaluations:
-                    self.logger.debug(
-                        f"Rule {rule.name} returned cached result: {cached_result.matched}",
-                    )
+            cached_result = self._check_evaluation_cache(rule, data)
+            if cached_result:
                 return cached_result
 
             if not rule.enabled:
@@ -208,30 +278,10 @@ class RuleEngine:
                 )
 
             # Evaluate all conditions
-            condition_results = []
-            explanations = []
-
-            for condition in rule.conditions:
-                result, explanation = self._evaluate_condition(condition, data)
-                condition_results.append((result, condition.weight))
-                explanations.append(
-                    f"  {condition.field} {condition.operator.value} {condition.value}: {result}",
-                )
-
-                if self.settings.debug_mode:
-                    self.logger.debug(f"Condition evaluation: {explanation}")
+            condition_results, explanations = self._evaluate_conditions(rule, data)
 
             # Calculate overall confidence
-            if not condition_results:
-                confidence = 0.0
-                matched = False
-            else:
-                weighted_sum = sum(
-                    result * weight for result, weight in condition_results
-                )
-                total_weight = sum(weight for _, weight in condition_results)
-                confidence = (weighted_sum / total_weight) if total_weight > 0 else 0.0
-                matched = confidence >= self.settings.confidence_threshold
+            confidence, matched = self._calculate_weighted_confidence(condition_results)
 
             # Determine triggered actions
             triggered_actions = rule.actions if matched else []
@@ -240,7 +290,7 @@ class RuleEngine:
             explanation = f"Rule '{rule.name}' evaluation:\n" + "\n".join(explanations)
             explanation += f"\nOverall confidence: {confidence:.2f}, Matched: {matched}"
 
-            result: RuleEvaluationResult = RuleEvaluationResult(
+            result = RuleEvaluationResult(
                 rule_name=rule.name,
                 matched=matched,
                 confidence=confidence,
@@ -249,19 +299,8 @@ class RuleEngine:
                 execution_time_ms=(time.time() - start_time) * 1000,
             )
 
-            # Cache result
-            if len(self.rule_cache) < self.settings.rule_cache_size:
-                self.rule_cache[cache_key] = result
-
-            # Update stats
-            if rule.name not in self.execution_stats:
-                self.execution_stats[rule.name] = []
-            self.execution_stats[rule.name].append(float(result.execution_time_ms))
-
-            if self.settings.log_rule_evaluations:
-                self.logger.debug(
-                    f"Rule {rule.name} evaluation: {matched} (confidence: {confidence:.2f})",
-                )
+            # Store result in cache and stats
+            self._store_evaluation_result(rule, data, result)
 
             return result
 
@@ -691,7 +730,7 @@ class Reasoning(ReasoningBase):
         # Extract question indicators
         entities["is_question"] = "?" in text or any(
             text.lower().startswith(q)
-            for q in ["what", "how", "why", "when", "where", "who", "which"]
+            for q in ("what", "how", "why", "when", "where", "who", "which")
         )
 
         # Extract sentiment indicators (simple)

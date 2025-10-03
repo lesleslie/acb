@@ -34,9 +34,9 @@ try:
 
     _transformers_available = True
 except ImportError:
-    AutoModel = None  # type: ignore[assignment,misc]
-    AutoTokenizer = None  # type: ignore[assignment,misc]
-    BatchEncoding = None  # type: ignore[assignment,misc]
+    AutoModel = None  # type: ignore[assignment,misc,no-redef]
+    AutoTokenizer = None  # type: ignore[assignment,misc,no-redef]
+    BatchEncoding = None  # type: ignore[assignment,misc,no-redef]
     F = None
     _transformers_available = False
 
@@ -135,82 +135,18 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
         logger: t.Any = depends.get("logger")
 
         try:
-            # Determine device
-            if self._settings.device == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self._settings.device
-
+            self._determine_device()
             await logger.info(
                 f"Loading HuggingFace model: {self._settings.model} on {self._device}",
             )
 
-            # Load tokenizer
-            tokenizer_kwargs = {
-                "trust_remote_code": self._settings.trust_remote_code,
-                "revision": self._settings.revision,
-                "cache_dir": self._settings.cache_dir,
-                "local_files_only": self._settings.local_files_only,
-            } | self._settings.tokenizer_kwargs
+            # Load tokenizer and model
+            await self._load_tokenizer()
+            await self._load_model_instance()
 
-            if self._settings.use_auth_token:
-                tokenizer_kwargs["use_auth_token"] = self._settings.use_auth_token
-
-            if AutoTokenizer is None:
-                msg = "AutoTokenizer not available"
-                raise ImportError(msg)
-
-            self._tokenizer = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]
-                    self._settings.model,
-                    revision="main",  # nosec B615
-                    **tokenizer_kwargs,
-                ),
-            )
-
-            # Load model
-            model_kwargs = {
-                "trust_remote_code": self._settings.trust_remote_code,
-                "revision": self._settings.revision,
-                "cache_dir": self._settings.cache_dir,
-                "local_files_only": self._settings.local_files_only,
-            } | self._settings.model_kwargs
-
-            if self._settings.use_auth_token:
-                model_kwargs["use_auth_token"] = self._settings.use_auth_token
-
-            # Set torch dtype
-            if self._settings.torch_dtype != "auto":
-                if self._settings.torch_dtype == "float16":
-                    model_kwargs["torch_dtype"] = torch.float16
-                elif self._settings.torch_dtype == "float32":
-                    model_kwargs["torch_dtype"] = torch.float32
-
-            if AutoModel is None:
-                msg = "AutoModel not available"
-                raise ImportError(msg)
-
-            self._model = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: AutoModel.from_pretrained(
-                    self._settings.model,
-                    revision="main",  # nosec B615
-                    **model_kwargs,
-                ),
-            )
-
-            # Move model to device and set to eval mode
-            if self._model is not None:
-                self._model.to(self._device)
-                self._model.eval()
-
-            # Enable optimizations
-            if self._settings.enable_optimization:
-                if hasattr(torch, "jit") and hasattr(torch.jit, "script"):
-                    with suppress(Exception):
-                        # Try to optimize with TorchScript (may not work for all models)
-                        self._model = torch.jit.script(self._model)
+            # Configure and optimize model
+            self._configure_model()
+            await self._optimize_model()
 
             # Register for cleanup
             self.register_resource(self._model)
@@ -222,6 +158,217 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
         except Exception as e:
             await logger.exception(f"Error loading HuggingFace model: {e}")
             raise
+
+    def _determine_device(self) -> None:
+        """Determine device for model execution."""
+        if self._settings.device == "auto":
+            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self._device = self._settings.device
+
+    def _build_tokenizer_kwargs(self) -> dict[str, t.Any]:
+        """Build kwargs for tokenizer loading."""
+        tokenizer_kwargs = {
+            "trust_remote_code": self._settings.trust_remote_code,
+            "revision": self._settings.revision,
+            "cache_dir": self._settings.cache_dir,
+            "local_files_only": self._settings.local_files_only,
+        } | self._settings.tokenizer_kwargs
+
+        if self._settings.use_auth_token:
+            tokenizer_kwargs["use_auth_token"] = self._settings.use_auth_token
+
+        return tokenizer_kwargs
+
+    async def _load_tokenizer(self) -> None:
+        """Load the tokenizer."""
+        if AutoTokenizer is None:
+            msg = "AutoTokenizer not available"
+            raise ImportError(msg)
+
+        tokenizer_kwargs = self._build_tokenizer_kwargs()
+
+        self._tokenizer = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]
+                self._settings.model,
+                revision="main",  # nosec B615
+                **tokenizer_kwargs,
+            ),
+        )
+
+    def _build_model_kwargs(self) -> dict[str, t.Any]:
+        """Build kwargs for model loading."""
+        model_kwargs = {
+            "trust_remote_code": self._settings.trust_remote_code,
+            "revision": self._settings.revision,
+            "cache_dir": self._settings.cache_dir,
+            "local_files_only": self._settings.local_files_only,
+        } | self._settings.model_kwargs
+
+        if self._settings.use_auth_token:
+            model_kwargs["use_auth_token"] = self._settings.use_auth_token
+
+        # Set torch dtype
+        if self._settings.torch_dtype == "float16":
+            model_kwargs["torch_dtype"] = torch.float16
+        elif self._settings.torch_dtype == "float32":
+            model_kwargs["torch_dtype"] = torch.float32
+
+        return model_kwargs
+
+    async def _load_model_instance(self) -> None:
+        """Load the model instance."""
+        if AutoModel is None:
+            msg = "AutoModel not available"
+            raise ImportError(msg)
+
+        model_kwargs = self._build_model_kwargs()
+
+        self._model = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: AutoModel.from_pretrained(
+                self._settings.model,
+                revision="main",  # nosec B615
+                **model_kwargs,
+            ),
+        )
+
+    def _configure_model(self) -> None:
+        """Configure model settings."""
+        if self._model is not None:
+            self._model.to(self._device)
+            self._model.eval()
+
+    async def _optimize_model(self) -> None:
+        """Apply optimizations to model if enabled."""
+        if not self._settings.enable_optimization:
+            return
+
+        if hasattr(torch, "jit") and hasattr(torch.jit, "script"):
+            with suppress(Exception):
+                # Try to optimize with TorchScript (may not work for all models)
+                self._model = torch.jit.script(self._model)
+
+    async def _tokenize_batch(
+        self,
+        texts: list[str],
+        tokenizer: t.Any,
+    ) -> dict[str, t.Any]:
+        """Tokenize batch of texts with standard parameters."""
+        return await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: tokenizer(
+                texts,
+                padding=True,
+                truncation=True,
+                max_length=self._settings.max_seq_length,
+                return_tensors="pt",
+            ),
+        )
+
+    async def _generate_embeddings(
+        self,
+        model_obj: t.Any,
+        inputs: dict[str, t.Any],
+    ) -> torch.Tensor:
+        """Generate embeddings from model inputs."""
+        with torch.no_grad():
+            outputs = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: model_obj(**inputs),
+            )
+
+        return await self._apply_pooling(
+            outputs.last_hidden_state,
+            inputs["attention_mask"],
+            self._settings.pooling_strategy,
+        )
+
+    def _create_embedding_result(
+        self,
+        text: str,
+        embedding: list[float],
+        model: str,
+        tokenizer: t.Any,
+    ) -> EmbeddingResult:
+        """Create single embedding result with metadata."""
+        return EmbeddingResult(
+            text=text,
+            embedding=embedding,
+            model=model,
+            dimensions=len(embedding),
+            tokens=len(tokenizer.encode(text)),
+            metadata={
+                "pooling_strategy": self._settings.pooling_strategy.value,
+                "device": self._device,
+                "max_seq_length": self._settings.max_seq_length,
+            },
+        )
+
+    async def _process_single_batch(
+        self,
+        batch_texts: list[str],
+        model_obj: t.Any,
+        tokenizer: t.Any,
+        model: str,
+        normalize: bool,
+    ) -> list[EmbeddingResult]:
+        """Process a single batch of texts."""
+        # Tokenize
+        inputs = await self._tokenize_batch(batch_texts, tokenizer)
+
+        # Move to device
+        inputs = {k: v.to(self._device) for k, v in inputs.items()}
+
+        # Generate embeddings
+        embeddings = await self._generate_embeddings(model_obj, inputs)
+
+        # Normalize if requested
+        if normalize:
+            embeddings = F.normalize(embeddings, p=2, dim=1)
+
+        # Convert and create results
+        embeddings_list = embeddings.cpu().tolist()
+        return [
+            self._create_embedding_result(text, embedding, model, tokenizer)
+            for text, embedding in zip(batch_texts, embeddings_list)
+        ]
+
+    async def _process_all_batches(
+        self,
+        texts: list[str],
+        batch_size: int,
+        model_obj: t.Any,
+        tokenizer: t.Any,
+        model: str,
+        normalize: bool,
+        logger: t.Any,
+    ) -> list[EmbeddingResult]:
+        """Process all text batches and return results."""
+        results = []
+        batches = self._batch_texts(texts, batch_size)
+
+        for batch_texts in batches:
+            try:
+                batch_results = await self._process_single_batch(
+                    batch_texts,
+                    model_obj,
+                    tokenizer,
+                    model,
+                    normalize,
+                )
+                results.extend(batch_results)
+
+                await logger.debug(
+                    f"HuggingFace embeddings batch completed: {len(batch_texts)} texts, model: {model}",
+                )
+
+            except Exception as e:
+                await logger.exception(f"Error generating HuggingFace embeddings: {e}")
+                raise
+
+        return results
 
     async def _embed_texts(
         self,
@@ -236,73 +383,18 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
         model_obj, tokenizer = await self._ensure_client()
         logger: t.Any = depends.get("logger")
 
-        results = []
+        # Process all batches
+        results = await self._process_all_batches(
+            texts,
+            batch_size,
+            model_obj,
+            tokenizer,
+            model,
+            normalize,
+            logger,
+        )
 
-        # Process texts in batches
-        batches = self._batch_texts(texts, batch_size)
-
-        for batch_texts in batches:
-            try:
-                # Tokenize batch
-                inputs = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: tokenizer(
-                        batch_texts,
-                        padding=True,
-                        truncation=True,
-                        max_length=self._settings.max_seq_length,
-                        return_tensors="pt",
-                    ),
-                )
-
-                # Move to device
-                inputs = {k: v.to(self._device) for k, v in inputs.items()}
-
-                # Generate embeddings
-                with torch.no_grad():
-                    outputs = await asyncio.get_event_loop().run_in_executor(
-                        None,
-                        lambda: model_obj(**inputs),
-                    )
-
-                # Apply pooling strategy
-                embeddings = await self._apply_pooling(
-                    outputs.last_hidden_state,
-                    inputs["attention_mask"],
-                    self._settings.pooling_strategy,
-                )
-
-                # Normalize if requested
-                if normalize:
-                    embeddings = F.normalize(embeddings, p=2, dim=1)
-
-                # Convert to list format
-                embeddings_list = embeddings.cpu().tolist()
-
-                # Create results
-                for i, embedding in enumerate(embeddings_list):
-                    result = EmbeddingResult(
-                        text=batch_texts[i],
-                        embedding=embedding,
-                        model=model,
-                        dimensions=len(embedding),
-                        tokens=len(tokenizer.encode(batch_texts[i])),
-                        metadata={
-                            "pooling_strategy": self._settings.pooling_strategy.value,
-                            "device": self._device,
-                            "max_seq_length": self._settings.max_seq_length,
-                        },
-                    )
-                    results.append(result)
-
-                await logger.debug(
-                    f"HuggingFace embeddings batch completed: {len(batch_texts)} texts, model: {model}",
-                )
-
-            except Exception as e:
-                await logger.exception(f"Error generating HuggingFace embeddings: {e}")
-                raise
-
+        # Aggregate metrics
         processing_time = time.time() - start_time
         total_tokens = sum(result.tokens or 0 for result in results)
 

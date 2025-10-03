@@ -56,7 +56,7 @@ except ImportError:
     create_mcp_server = None  # type: ignore
 
 if t.TYPE_CHECKING:
-    from rich.console import RenderableType
+    pass
 
 
 def register_pkg(name: str | None = None, path: AsyncPath | None = None) -> None:
@@ -111,82 +111,109 @@ async def display_components() -> None:
     await ensure_registration()
 
     if not context.is_deployed():
-        pkgs = Table(
-            title="[b][u bright_white]A[/u bright_white][bright_green]synchronous [u bright_white]C[/u bright_white][bright_green]omponent [u bright_white]B[/u bright_white][bright_green]ase[/b]",
+        _display_packages_table(context)
+        _display_actions_table()
+        _display_adapters_table()
+        _display_services_table()
+
+
+def _display_packages_table(context: t.Any) -> None:
+    """Display packages table."""
+    pkgs = Table(
+        title="[b][u bright_white]A[/u bright_white][bright_green]synchronous [u bright_white]C[/u bright_white][bright_green]omponent [u bright_white]B[/u bright_white][bright_green]ase[/b]",
+        **table_args,
+    )
+    for prop in ("Pkg", "Path"):
+        pkgs.add_column(prop)
+    for i, pkg in enumerate(context.pkg_registry.get()):
+        pkgs.add_row(
+            pkg.name,
+            str(pkg.path),
+            style="bold white" if i % 2 else "bold white on blue",
+        )
+    pkgs_padded = Padding(pkgs, (2, 4, 0, 4))
+    console.print(pkgs_padded)
+
+
+def _display_actions_table() -> None:
+    """Display actions table."""
+    actns = Table(
+        title="[b][u bright_white]A[/u bright_white][bright_green]ctions",
+        **table_args,
+    )
+    for prop in ("Name", "Pkg", "Methods"):
+        actns.add_column(prop)
+    for i, action in enumerate(action_registry.get()):
+        actns.add_row(
+            action.name,
+            action.pkg,
+            ", ".join(action.methods),
+            style="bold white" if i % 2 else "bold white on blue",
+        )
+    actns_padded = Padding(actns, (0, 4, 1, 4))
+    console.print(actns_padded)
+
+
+def _display_adapters_table() -> None:
+    """Display adapters table."""
+    adptrs = Table(
+        title="[b][u bright_white]A[/u bright_white][bright_green]datpters",
+        **table_args,
+    )
+    for prop in ("Category", "Name", "Pkg"):
+        adptrs.add_column(prop)
+    for i, adapter in enumerate(get_adapters()):
+        adptrs.add_row(
+            adapter.category,
+            adapter.name,
+            adapter.pkg,
+            style="bold white" if i % 2 else "bold white on blue",
+        )
+    adptrs_padded = Padding(adptrs, (0, 4, 1, 4))
+    console.print(adptrs_padded)
+
+
+def _display_services_table() -> None:
+    """Display services table if available."""
+    if not HAS_SERVICES:
+        return
+
+    with suppress(Exception):
+        from .services import get_registry
+
+        registry = get_registry()
+        service_ids = registry.list_services()
+
+        srvcs = Table(
+            title="[b][u bright_white]S[/u bright_white][bright_green]ervices",  # codespell:ignore
             **table_args,
         )
-        for prop in ("Pkg", "Path"):
-            pkgs.add_column(prop)
-        for i, pkg in enumerate(context.pkg_registry.get()):
-            pkgs.add_row(
-                pkg.name,
-                str(pkg.path),
-                style="bold white" if i % 2 else "bold white on blue",
-            )
-        pkgs_padded: RenderableType = Padding(pkgs, (2, 4, 0, 4))
-        console.print(pkgs_padded)
-        actns = Table(
-            title="[b][u bright_white]A[/u bright_white][bright_green]ctions",
-            **table_args,
+        for prop in ("Service ID", "Name", "Status"):
+            srvcs.add_column(prop)
+
+        for i, service_id in enumerate(service_ids):
+            _add_service_row(srvcs, registry, service_id, i)
+
+        srvcs_padded = Padding(srvcs, (0, 4, 1, 4))
+        console.print(srvcs_padded)
+
+
+def _add_service_row(
+    table: Table, registry: t.Any, service_id: str, index: int
+) -> None:
+    """Add a service row to the table."""
+    try:
+        service = registry.get_service(service_id)
+        table.add_row(
+            service_id,
+            service.name,
+            service.status.value,
+            style="bold white" if index % 2 else "bold white on blue",
         )
-        for prop in ("Name", "Pkg", "Methods"):
-            actns.add_column(prop)
-        for i, action in enumerate(action_registry.get()):
-            actns.add_row(
-                action.name,
-                action.pkg,
-                ", ".join(action.methods),
-                style="bold white" if i % 2 else "bold white on blue",
-            )
-        actns_padded: RenderableType = Padding(actns, (0, 4, 1, 4))
-        console.print(actns_padded)
-        adptrs = Table(
-            title="[b][u bright_white]A[/u bright_white][bright_green]datpters",
-            **table_args,
+    except Exception:
+        table.add_row(
+            service_id,
+            "Unknown",
+            "error",
+            style="bold white" if index % 2 else "bold white on blue",
         )
-        for prop in ("Category", "Name", "Pkg"):
-            adptrs.add_column(prop)
-        for i, adapter in enumerate(get_adapters()):
-            adptrs.add_row(
-                adapter.category,
-                adapter.name,
-                adapter.pkg,
-                style="bold white" if i % 2 else "bold white on blue",
-            )
-        adptrs_padded: RenderableType = Padding(adptrs, (0, 4, 1, 4))
-        console.print(adptrs_padded)
-
-        # Display services if available
-        if HAS_SERVICES:
-            with suppress(Exception):
-                from .services import get_registry
-
-                registry = get_registry()
-                service_ids = registry.list_services()
-
-                srvcs = Table(
-                    title="[b][u bright_white]S[/u bright_white][bright_green]ervices",  # codespell:ignore
-                    **table_args,
-                )
-                for prop in ("Service ID", "Name", "Status"):
-                    srvcs.add_column(prop)
-
-                for i, service_id in enumerate(service_ids):
-                    try:
-                        service = registry.get_service(service_id)
-                        srvcs.add_row(
-                            service_id,
-                            service.name,
-                            service.status.value,
-                            style="bold white" if i % 2 else "bold white on blue",
-                        )
-                    except Exception:
-                        srvcs.add_row(
-                            service_id,
-                            "Unknown",
-                            "error",
-                            style="bold white" if i % 2 else "bold white on blue",
-                        )
-
-                srvcs_padded: RenderableType = Padding(srvcs, (0, 4, 1, 4))
-                console.print(srvcs_padded)

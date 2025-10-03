@@ -75,7 +75,7 @@ def detect_version() -> VersionInfo:
 
             pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
             if pyproject_path.exists():
-                with open(pyproject_path, "rb") as f:
+                with pyproject_path.open("rb") as f:
                     data = tomllib.load(f)
                     version_str = data["project"]["version"]
                     return VersionInfo.from_string(version_str)

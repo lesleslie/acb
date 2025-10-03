@@ -17,6 +17,7 @@ Features:
 import asyncio
 import time
 import typing as t
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
@@ -161,9 +162,9 @@ class CircuitBreaker:
 
     async def call(
         self,
-        func: t.Callable[..., t.Awaitable[t.Any]],
-        *args,
-        **kwargs,
+        func: Callable[..., Awaitable[t.Any]],
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> t.Any:
         """Execute a function through the circuit breaker."""
         async with self._lock:
@@ -363,8 +364,8 @@ class ErrorHandlingService:
 
     def __init__(self) -> None:
         self._circuit_breakers: dict[str, CircuitBreaker] = {}
-        self._error_handlers: dict[type[Exception], t.Callable[..., Any]] = {}
-        self._fallback_handlers: dict[str, t.Callable] = {}
+        self._error_handlers: dict[type[Exception], Callable[..., Any]] = {}
+        self._fallback_handlers: dict[str, Callable[..., Any]] = {}
         self._global_metrics = ErrorMetrics()
         self._bulkheads: dict[str, asyncio.Semaphore] = {}
 
@@ -396,7 +397,7 @@ class ErrorHandlingService:
     def register_error_handler(
         self,
         exception_type: type[Exception],
-        handler: t.Callable[[Exception], t.Any],
+        handler: Callable[[Exception], t.Any],
     ) -> None:
         """Register a global error handler for specific exception types."""
         self._error_handlers[exception_type] = handler
@@ -404,7 +405,7 @@ class ErrorHandlingService:
     def register_fallback_handler(
         self,
         operation_name: str,
-        handler: t.Callable,
+        handler: Callable[..., t.Any],
     ) -> None:
         """Register a fallback handler for operations."""
         self._fallback_handlers[operation_name] = handler
@@ -422,10 +423,10 @@ class ErrorHandlingService:
     async def with_circuit_breaker(
         self,
         circuit_breaker_name: str,
-        func: t.Callable[..., t.Awaitable[t.Any]],
-        *args,
+        func: Callable[..., Awaitable[t.Any]],
+        *args: t.Any,
         config: CircuitBreakerConfig | None = None,
-        **kwargs,
+        **kwargs: t.Any,
     ) -> t.Any:
         """Execute function with circuit breaker protection."""
         cb = self.create_circuit_breaker(circuit_breaker_name, config)
@@ -433,10 +434,10 @@ class ErrorHandlingService:
 
     async def with_retry(
         self,
-        func: t.Callable[..., t.Awaitable[t.Any]],
-        *args,
+        func: Callable[..., Awaitable[t.Any]],
+        *args: t.Any,
         config: RetryConfig | None = None,
-        **kwargs,
+        **kwargs: t.Any,
     ) -> t.Any:
         """Execute function with retry logic."""
         retry_config = config or RetryConfig()
@@ -475,10 +476,10 @@ class ErrorHandlingService:
     async def with_fallback(
         self,
         operation_name: str,
-        func: t.Callable[..., t.Awaitable[t.Any]],
-        *args,
-        fallback_handler: t.Callable | None = None,
-        **kwargs,
+        func: Callable[..., Awaitable[t.Any]],
+        *args: t.Any,
+        fallback_handler: Callable[..., t.Any] | None = None,
+        **kwargs: t.Any,
     ) -> t.Any:
         """Execute function with fallback on failure."""
         try:
@@ -500,7 +501,7 @@ class ErrorHandlingService:
         self,
         bulkhead_name: str,
         max_concurrent: int | None = None,
-    ):
+    ) -> t.AsyncGenerator[None]:
         """Execute within a bulkhead for resource isolation."""
         if bulkhead_name not in self._bulkheads and max_concurrent:
             self.create_bulkhead(bulkhead_name, max_concurrent)
@@ -584,12 +585,14 @@ def circuit_breaker(
     name: str,
     config: CircuitBreakerConfig | None = None,
     service: ErrorHandlingService | None = None,
-):
+) -> Callable[[Callable[..., Awaitable[t.Any]]], Callable[..., Awaitable[t.Any]]]:
     """Decorator to add circuit breaker protection to functions."""
 
-    def decorator(func: t.Callable[..., t.Awaitable[t.Any]]) -> None:
+    def decorator(
+        func: Callable[..., Awaitable[t.Any]],
+    ) -> Callable[..., Awaitable[t.Any]]:
         @wraps(func)
-        async def wrapper(*args, **kwargs) -> None:
+        async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             error_service = service or ErrorHandlingService()
             return await error_service.with_circuit_breaker(
                 name,
@@ -607,12 +610,14 @@ def circuit_breaker(
 def retry(
     config: RetryConfig | None = None,
     service: ErrorHandlingService | None = None,
-):
+) -> Callable[[Callable[..., Awaitable[t.Any]]], Callable[..., Awaitable[t.Any]]]:
     """Decorator to add retry logic to functions."""
 
-    def decorator(func: t.Callable[..., t.Awaitable[t.Any]]) -> None:
+    def decorator(
+        func: Callable[..., Awaitable[t.Any]],
+    ) -> Callable[..., Awaitable[t.Any]]:
         @wraps(func)
-        async def wrapper(*args, **kwargs) -> None:
+        async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             error_service = service or ErrorHandlingService()
             return await error_service.with_retry(func, *args, config=config, **kwargs)
 
@@ -623,14 +628,16 @@ def retry(
 
 def fallback(
     operation_name: str,
-    fallback_handler: t.Callable | None = None,
+    fallback_handler: Callable[..., t.Any] | None = None,
     service: ErrorHandlingService | None = None,
-):
+) -> Callable[[Callable[..., Awaitable[t.Any]]], Callable[..., Awaitable[t.Any]]]:
     """Decorator to add fallback handling to functions."""
 
-    def decorator(func: t.Callable[..., t.Awaitable[t.Any]]) -> None:
+    def decorator(
+        func: Callable[..., Awaitable[t.Any]],
+    ) -> Callable[..., Awaitable[t.Any]]:
         @wraps(func)
-        async def wrapper(*args, **kwargs) -> None:
+        async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             error_service = service or ErrorHandlingService()
             return await error_service.with_fallback(
                 operation_name,
@@ -649,12 +656,14 @@ def bulkhead(
     name: str,
     max_concurrent: int,
     service: ErrorHandlingService | None = None,
-):
+) -> Callable[[Callable[..., Awaitable[t.Any]]], Callable[..., Awaitable[t.Any]]]:
     """Decorator to add bulkhead isolation to functions."""
 
-    def decorator(func: t.Callable[..., t.Awaitable[t.Any]]) -> None:
+    def decorator(
+        func: Callable[..., Awaitable[t.Any]],
+    ) -> Callable[..., Awaitable[t.Any]]:
         @wraps(func)
-        async def wrapper(*args, **kwargs) -> None:
+        async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             error_service = service or ErrorHandlingService()
             async with error_service.with_bulkhead(name, max_concurrent):
                 return await func(*args, **kwargs)

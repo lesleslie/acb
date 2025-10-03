@@ -62,7 +62,7 @@ import asyncio
 import time
 import typing as t
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
@@ -300,32 +300,26 @@ class RedisQueue(QueueBackend):
         # Cancel background tasks
         if self._delayed_processor_task:
             self._delayed_processor_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._delayed_processor_task
-            except asyncio.CancelledError:
-                pass
 
         # Close pub/sub client if active
         if self._pubsub_client:
-            try:
+            with suppress(Exception):
                 await self._pubsub_client.close()
-            except Exception:
-                pass
 
         # Close main client
         if self._client:
-            try:
+            with suppress(Exception):
                 await self._client.close()
-            except Exception:
-                pass
+
             self._client = None
 
         # Close connection pool
         if self._connection_pool:
-            try:
+            with suppress(Exception):
                 await self._connection_pool.disconnect()
-            except Exception:
-                pass
+
             self._connection_pool = None
 
         # Cleanup resources
@@ -769,7 +763,7 @@ class RedisQueue(QueueBackend):
 
             async def message_generator() -> AsyncGenerator[QueueMessage]:
                 """Generate messages from pub/sub."""
-                try:
+                with suppress(asyncio.CancelledError):
                     async for raw_message in pubsub.listen():
                         if raw_message[b"type"] in (b"message", b"pmessage"):
                             message_data = raw_message[b"data"]
@@ -780,8 +774,6 @@ class RedisQueue(QueueBackend):
                                 self.logger.warning(
                                     f"Failed to parse pub/sub message: {e}"
                                 )
-                except asyncio.CancelledError:
-                    pass
 
             yield message_generator()
 

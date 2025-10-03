@@ -10,6 +10,7 @@ This module provides the foundation for workflow management, including:
 import asyncio
 import typing as t
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -388,10 +389,8 @@ class WorkflowService(ServiceBase):
         if workflow_id in self._active_workflows:
             task = self._active_workflows[workflow_id]
             if task.done():
-                try:
+                with suppress(Exception):
                     return task.result()
-                except Exception:
-                    pass
 
         # Query engine for state
         return await self._engine.get_workflow_state(workflow_id)

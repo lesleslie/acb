@@ -274,51 +274,72 @@ class HybridAI(AIBase):
         self._log_info(f"Streaming routing: {routing_result.decision}")
 
         try:
-            if routing_result.strategy == DeploymentStrategy.CLOUD:
-                # Type narrowing: ensure _cloud_adapter is not None
-                if self._cloud_adapter is None:
-                    msg = "Cloud adapter not initialized"
-                    raise ValueError(msg)
-                return await self._cloud_adapter.generate_text_stream(request)
-            if routing_result.strategy == DeploymentStrategy.EDGE:
-                # Type narrowing: ensure _edge_adapter is not None
-                if self._edge_adapter is None:
-                    msg = "Edge adapter not initialized"
-                    raise ValueError(msg)
-                return await self._edge_adapter.generate_text_stream(request)
-            msg = f"Unsupported streaming strategy: {routing_result.strategy}"
-            raise ValueError(
-                msg,
-            )
-
+            return await self._execute_streaming_strategy(routing_result, request)
         except Exception as e:
-            # Fallback for streaming
-            self._log_warning(f"Streaming failed, attempting fallback: {e}")
-            fallback_strategy = (
-                DeploymentStrategy.EDGE
-                if routing_result.strategy == DeploymentStrategy.CLOUD
-                else DeploymentStrategy.CLOUD
-            )
+            return await self._handle_streaming_fallback(routing_result, request, e)
 
-            if (
-                fallback_strategy == DeploymentStrategy.CLOUD
-                and self.settings.cloud_fallback_enabled
-            ):
-                # Type narrowing: ensure _cloud_adapter is not None
-                if self._cloud_adapter is None:
-                    msg = "Cloud adapter not initialized"
-                    raise ValueError(msg)
-                return await self._cloud_adapter.generate_text_stream(request)
-            if (
-                fallback_strategy == DeploymentStrategy.EDGE
-                and self.settings.edge_fallback_enabled
-            ):
-                # Type narrowing: ensure _edge_adapter is not None
-                if self._edge_adapter is None:
-                    msg = "Edge adapter not initialized"
-                    raise ValueError(msg)
-                return await self._edge_adapter.generate_text_stream(request)
-            raise
+    async def _execute_streaming_strategy(
+        self, routing_result: RoutingResult, request: AIRequest
+    ) -> StreamingResponse:
+        """Execute streaming request with selected strategy."""
+        if routing_result.strategy == DeploymentStrategy.CLOUD:
+            if self._cloud_adapter is None:
+                msg = "Cloud adapter not initialized"
+                raise ValueError(msg)
+            return await self._cloud_adapter.generate_text_stream(request)
+
+        if routing_result.strategy == DeploymentStrategy.EDGE:
+            if self._edge_adapter is None:
+                msg = "Edge adapter not initialized"
+                raise ValueError(msg)
+            return await self._edge_adapter.generate_text_stream(request)
+
+        msg = f"Unsupported streaming strategy: {routing_result.strategy}"
+        raise ValueError(msg)
+
+    async def _handle_streaming_fallback(
+        self, routing_result: RoutingResult, request: AIRequest, error: Exception
+    ) -> StreamingResponse:
+        """Handle fallback when streaming fails."""
+        self._log_warning(f"Streaming failed, attempting fallback: {error}")
+
+        fallback_strategy = (
+            DeploymentStrategy.EDGE
+            if routing_result.strategy == DeploymentStrategy.CLOUD
+            else DeploymentStrategy.CLOUD
+        )
+
+        if fallback_strategy == DeploymentStrategy.CLOUD:
+            return await self._try_cloud_fallback(request)
+
+        if fallback_strategy == DeploymentStrategy.EDGE:
+            return await self._try_edge_fallback(request)
+
+        raise error
+
+    async def _try_cloud_fallback(self, request: AIRequest) -> StreamingResponse:
+        """Try cloud fallback for streaming."""
+        if not self.settings.cloud_fallback_enabled:
+            msg = "Cloud fallback not enabled"
+            raise ValueError(msg)
+
+        if self._cloud_adapter is None:
+            msg = "Cloud adapter not initialized"
+            raise ValueError(msg)
+
+        return await self._cloud_adapter.generate_text_stream(request)
+
+    async def _try_edge_fallback(self, request: AIRequest) -> StreamingResponse:
+        """Try edge fallback for streaming."""
+        if not self.settings.edge_fallback_enabled:
+            msg = "Edge fallback not enabled"
+            raise ValueError(msg)
+
+        if self._edge_adapter is None:
+            msg = "Edge adapter not initialized"
+            raise ValueError(msg)
+
+        return await self._edge_adapter.generate_text_stream(request)
 
     async def _route_request(
         self,

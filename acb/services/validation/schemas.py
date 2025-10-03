@@ -321,57 +321,82 @@ class ListValidationSchema(ValidationSchema):
         )
 
         # Convert to list if possible
-        if not isinstance(data, list | tuple):
-            if self.config.enable_coercion:
-                try:
-                    result.value = list(data) if hasattr(data, "__iter__") else [data]
-                    result.add_warning(
-                        f"Value coerced from {type(data).__name__} to list",
-                    )
-                except Exception:
-                    result.add_error("Cannot convert to list")
-                    return result
-            else:
-                result.add_error(f"Expected list, got {type(data).__name__}")
-                return result
+        if not self._coerce_to_list(data, result):
+            return result
 
         # Ensure we're working with a list
         items = (
             list(result.value) if not isinstance(result.value, list) else result.value
         )
 
-        # Length validation
+        # Validate list constraints
+        self._validate_list_length(items, result)
+        self._validate_unique_items(items, result)
+
+        # Validate individual items if schema provided
+        if self.item_schema and result.is_valid:
+            validated_items = await self._validate_list_items(items, field_name, result)
+            if result.is_valid:
+                result.value = validated_items
+
+        result.validation_time_ms = (time.perf_counter() - start_time) * 1000
+        return result
+
+    def _coerce_to_list(self, data: t.Any, result: ValidationResult) -> bool:
+        """Coerce data to list type. Returns False if coercion fails."""
+        if isinstance(data, list | tuple):
+            return True
+
+        if self.config.enable_coercion:
+            try:
+                result.value = list(data) if hasattr(data, "__iter__") else [data]
+                result.add_warning(
+                    f"Value coerced from {type(data).__name__} to list",
+                )
+                return True
+            except Exception:
+                result.add_error("Cannot convert to list")
+                return False
+
+        result.add_error(f"Expected list, got {type(data).__name__}")
+        return False
+
+    def _validate_list_length(
+        self, items: list[t.Any], result: ValidationResult
+    ) -> None:
+        """Validate list length constraints."""
         if len(items) < self.min_items:
             result.add_error(f"List too short: {len(items)} < {self.min_items}")
 
         if self.max_items is not None and len(items) > self.max_items:
             result.add_error(f"List too long: {len(items)} > {self.max_items}")
 
-        # Unique items validation
+    def _validate_unique_items(
+        self, items: list[t.Any], result: ValidationResult
+    ) -> None:
+        """Validate unique items constraint."""
         if self.unique_items and len(items) != len({str(item) for item in items}):
             result.add_error("List items must be unique")
 
-        # Validate individual items if schema provided
-        if self.item_schema and result.is_valid:
-            validated_items = []
-            for i, item in enumerate(items):
-                item_result = await self.item_schema.validate(
-                    item,
-                    f"{field_name or self.name}[{i}]",
-                )
-                if not item_result.is_valid:
-                    for error in item_result.errors:
-                        result.add_error(f"Item {i}: {error}")
-                else:
-                    validated_items.append(item_result.value)
-                    for warning in item_result.warnings:
-                        result.add_warning(f"Item {i}: {warning}")
+    async def _validate_list_items(
+        self, items: list[t.Any], field_name: str | None, result: ValidationResult
+    ) -> list[t.Any]:
+        """Validate each item in the list."""
+        validated_items = []
+        for i, item in enumerate(items):
+            item_result = await self.item_schema.validate(  # type: ignore[union-attr]
+                item,
+                f"{field_name or self.name}[{i}]",
+            )
+            if not item_result.is_valid:
+                for error in item_result.errors:
+                    result.add_error(f"Item {i}: {error}")
+            else:
+                validated_items.append(item_result.value)
+                for warning in item_result.warnings:
+                    result.add_warning(f"Item {i}: {warning}")
 
-            if result.is_valid:
-                result.value = validated_items
-
-        result.validation_time_ms = (time.perf_counter() - start_time) * 1000
-        return result
+        return validated_items
 
 
 class DictValidationSchema(ValidationSchema):

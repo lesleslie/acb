@@ -392,58 +392,18 @@ def import_test_provider(provider_categories: str | list[str] | None = None) -> 
 
         # Auto-detect from context
         mock_provider = import_test_provider()  # Detects from variable name
+
+    Complexity: 2
     """
-    if isinstance(provider_categories, str):
-        provider = get_test_provider_descriptor(provider_categories)
-        provider_name = provider.name if provider else None
-        provider_class = try_import_test_provider(provider_categories, provider_name)
-        if provider_class:
-            return provider_class
-        msg = f"Test provider not found or not enabled: {provider_categories}"
-        raise TestNotFound(msg)
+    from acb.discovery_common import RegistryConfig, import_from_registry
 
-    if provider_categories is None:
-        # Try to auto-detect from calling context
-        import inspect
-
-        frame = inspect.currentframe()
-        if frame and frame.f_back:
-            code = frame.f_back.f_code
-            # Simple heuristic: look for variable assignment
-            try:
-                line = frame.f_back.f_lineno
-                filename = code.co_filename
-                with open(filename) as f:
-                    lines = f.readlines()
-                    if line <= len(lines):
-                        current_line = lines[line - 1].strip()
-                        if "=" in current_line:
-                            var_name = current_line.split("=")[0].strip().lower()
-                            # Try to match variable name to provider category
-                            for provider in test_provider_registry.get():
-                                if (
-                                    provider.category in var_name
-                                    or provider.name in var_name
-                                ):
-                                    return try_import_test_provider(provider.category)
-            except (OSError, IndexError):
-                pass
-
-        msg = "Could not determine provider category from context"
-        raise ValueError(msg)
-
-    if isinstance(provider_categories, list):
-        results = []
-        for category in provider_categories:
-            provider_class = try_import_test_provider(category)
-            if not provider_class:
-                msg = f"Test provider not found or not enabled: {category}"
-                raise TestNotFound(msg)
-            results.append(provider_class)
-        return tuple(results) if len(results) > 1 else results[0]
-
-    msg = f"Invalid provider_categories type: {type(provider_categories)}"
-    raise ValueError(msg)
+    config = RegistryConfig(
+        get_descriptor=get_test_provider_descriptor,
+        try_import=try_import_test_provider,
+        get_all_descriptors=test_provider_registry.get,
+        not_found_exception=TestNotFound,
+    )
+    return import_from_registry(provider_categories, config)
 
 
 def register_test_providers(providers_path: str | None = None) -> None:

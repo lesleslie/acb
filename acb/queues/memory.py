@@ -129,7 +129,7 @@ class MemoryQueue(QueueBase):
         self._delayed_tasks: list[PriorityTaskItem] = []
 
         # Rate limiting
-        self._rate_limiter: dict[str, deque] = defaultdict(deque)
+        self._rate_limiter: dict[str, deque[float]] = defaultdict(deque)
 
         # Memory tracking
         self._memory_usage = 0

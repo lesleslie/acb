@@ -85,7 +85,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         super().__init__()
         self.default_strategy = default_strategy
         self._connections: dict[str, DatabaseConnection] = {}
-        self._repositories: dict[str, dict[str, RepositoryBase]] = {}
+        self._repositories: dict[str, dict[str, RepositoryBase[Any, Any]]] = {}
         self._active_tasks: dict[str, CoordinationTask] = {}
         self._completed_tasks: list[CoordinationTask] = []
         self._event_handlers: dict[str, list[Callable[..., Any]]] = {}
@@ -125,7 +125,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         self,
         database_name: str,
         entity_name: str,
-        repository: RepositoryBase,
+        repository: RepositoryBase[Any, Any],
     ) -> None:
         """Register a repository for a specific database.
 
@@ -147,7 +147,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
         self,
         database_name: str,
         entity_name: str,
-    ) -> RepositoryBase | None:
+    ) -> RepositoryBase[Any, Any] | None:
         """Get repository for database and entity.
 
         Args:

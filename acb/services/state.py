@@ -572,7 +572,8 @@ class StateManagerService(ServiceBase):
     async def _initialize(self) -> None:
         """Service-specific initialization logic."""
         # Start cleanup task
-        if self._settings.cleanup_interval_seconds > 0:
+        cleanup_interval = getattr(self._settings, "cleanup_interval_seconds", 0)
+        if cleanup_interval > 0:
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
 
     async def _shutdown(self) -> None:
@@ -597,7 +598,7 @@ class StateManagerService(ServiceBase):
         timeout: float | None = None,
     ) -> t.AsyncGenerator[None]:
         """Context manager for exclusive state access."""
-        timeout = timeout or self._settings.lock_timeout_seconds
+        timeout = timeout or getattr(self._settings, "lock_timeout_seconds", 30.0)
         lock = asyncio.Lock()
 
         try:
@@ -800,9 +801,10 @@ class StateManagerService(ServiceBase):
 
     async def _cleanup_loop(self) -> None:
         """Background cleanup loop for expired state entries."""
+        cleanup_interval = getattr(self._settings, "cleanup_interval_seconds", 60)
         while True:
             try:
-                await asyncio.sleep(self._settings.cleanup_interval_seconds)
+                await asyncio.sleep(cleanup_interval)
                 await self._cleanup_expired_entries()
             except asyncio.CancelledError:
                 break

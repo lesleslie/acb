@@ -24,18 +24,6 @@
       ],
       "type": "stdio"
     },
-    "github": {
-      "url": "http://localhost:3038/mcp",
-      "type": "http"
-    },
-    "gitlab": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@zereight/mcp-gitlab@2.0.5"
-      ],
-      "type": "stdio"
-    },
     "memory": {
       "command": "npx",
       "args": [

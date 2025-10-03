@@ -136,7 +136,7 @@ class RepositorySettings(Settings):
 
     @field_validator("default_page_size")
     @classmethod
-    def validate_page_size(cls, v, info) -> None:
+    def validate_page_size(cls, v, info) -> int:
         values: Any = info.data if hasattr(info, "data") else {}
         if "max_page_size" in values and v > values["max_page_size"]:
             msg = "default_page_size cannot exceed max_page_size"

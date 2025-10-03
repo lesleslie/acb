@@ -8,7 +8,7 @@ from pathlib import Path
 # Import devtools.pformat without direct import
 import devtools
 
-_pformat = devtools.pformat
+_pformat = devtools.pformat  # type: ignore[attr-defined]
 from aioconsole import aprint
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
@@ -22,6 +22,7 @@ __all__ = [
     "get_calling_module",
     "patch_record",
     "print_debug_info",
+    "_pformat",
 ]
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 

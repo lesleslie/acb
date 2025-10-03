@@ -122,10 +122,18 @@ class EventFilter(BaseModel):
         description="Required routing keys",
     )
 
-    def matches(self, event: Event) -> bool:  # noqa: C901
+    def matches(self, event: Event) -> bool:
         """Check if event matches this filter."""
-        import re
+        return (
+            self._matches_basic_filters(event)
+            and self._matches_content_filters(event)
+            and self._matches_pattern_filters(event)
+            and self._matches_priority_filter(event)
+            and self._matches_routing_keys(event)
+        )
 
+    def _matches_basic_filters(self, event: Event) -> bool:
+        """Check basic event type, source, and tags filters."""
         # Check event types
         if self.event_types and event.metadata.event_type not in self.event_types:
             return False
@@ -136,11 +144,14 @@ class EventFilter(BaseModel):
 
         # Check tags
         if self.tags:
-            event_tags = set(event.metadata.tags)
             required_tags = set(self.tags)
-            if not required_tags.issubset(event_tags):
+            if not required_tags.issubset(set(event.metadata.tags)):
                 return False
 
+        return True
+
+    def _matches_content_filters(self, event: Event) -> bool:
+        """Check payload and header content filters."""
         # Check payload filters
         if self.payload_filters:
             for key, expected_value in self.payload_filters.items():
@@ -156,40 +167,75 @@ class EventFilter(BaseModel):
                 ):
                     return False
 
+        return True
+
+    def _matches_pattern_filters(self, event: Event) -> bool:
+        """Check regex pattern filters for event type and source."""
+        import re
+
         # Check event type patterns
-        if self.event_type_patterns and not any(
-            re.match(
-                pattern,
-                event.metadata.event_type,
-            )  # REGEX OK: User-provided pattern matching for event filtering
-            for pattern in self.event_type_patterns
-        ):
-            return False
-
-        # Check source patterns
-        if self.source_patterns and not any(
-            re.match(
-                pattern,
-                event.metadata.source,
-            )  # REGEX OK: User-provided pattern matching for source filtering
-            for pattern in self.source_patterns
-        ):
-            return False
-
-        # Check minimum priority
-        if self.min_priority:
-            priority_order = {"low": 0, "normal": 1, "high": 2, "critical": 3}
-            min_level = priority_order.get(self.min_priority, 0)
-            event_level = priority_order.get(event.metadata.priority.value, 0)
-            if event_level < min_level:
+        if self.event_type_patterns:
+            if not any(
+                re.match(
+                    pattern, event.metadata.event_type
+                )  # REGEX OK: User-provided pattern matching for event filtering
+                for pattern in self.event_type_patterns
+            ):
                 return False
 
-        # Check routing keys
-        if self.routing_keys and event.metadata.routing_key:
-            if event.metadata.routing_key not in self.routing_keys:
+        # Check source patterns
+        if self.source_patterns:
+            if not any(
+                re.match(
+                    pattern, event.metadata.source
+                )  # REGEX OK: User-provided pattern matching for source filtering
+                for pattern in self.source_patterns
+            ):
                 return False
 
         return True
+
+    def _matches_priority_filter(self, event: Event) -> bool:
+        """Check minimum priority filter using match statement."""
+        if not self.min_priority:
+            return True
+
+        # Use match statement for priority comparison
+        match self.min_priority:
+            case "low":
+                min_level = 0
+            case "normal":
+                min_level = 1
+            case "high":
+                min_level = 2
+            case "critical":
+                min_level = 3
+            case _:
+                min_level = 0
+
+        match event.metadata.priority.value:
+            case "low":
+                event_level = 0
+            case "normal":
+                event_level = 1
+            case "high":
+                event_level = 2
+            case "critical":
+                event_level = 3
+            case _:
+                event_level = 0
+
+        return event_level >= min_level
+
+    def _matches_routing_keys(self, event: Event) -> bool:
+        """Check routing key filters."""
+        if not self.routing_keys:
+            return True
+
+        return (
+            event.metadata.routing_key is not None
+            and event.metadata.routing_key in self.routing_keys
+        )
 
 
 class EventBuffer:

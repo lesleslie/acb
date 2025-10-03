@@ -1,5 +1,3 @@
-from typing import Any
-
 """ArangoDB graph database adapter."""
 
 import typing as t
@@ -7,6 +5,7 @@ from contextlib import suppress
 from datetime import datetime
 from uuid import uuid4
 
+from pydantic import SecretStr
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -68,7 +67,7 @@ class ArangoDBSettings(GraphBaseSettings):
     """ArangoDB-specific settings."""
 
     # ArangoDB connection settings
-    host: str | None = "127.0.0.1"
+    host: SecretStr = SecretStr("127.0.0.1")
     port: int | None = 8529
     protocol: str = "http"
     database: str = "_system"
@@ -153,6 +152,8 @@ class Graph(GraphBase):
                 self._settings.password.get_secret_value(),
             )
 
+        # Type checker doesn't know _client is not None after assignment above
+        assert self._client is not None
         self._database = self._client.db(
             name=self._settings.database,
             username=auth[0] if auth else None,
@@ -233,6 +234,48 @@ class Graph(GraphBase):
             collections.update(["vertices", "edges"])
         return collections
 
+    def _is_vertex_record(self, record: dict[str, t.Any]) -> bool:
+        """Check if record is a vertex."""
+        if "_id" not in record or "/" not in record["_id"]:
+            return False
+
+        collection = record["_id"].split("/", 1)[0]
+        vertex_collections = self._settings.vertex_collections or ["vertices"]
+        return collection in vertex_collections
+
+    def _is_edge_record(self, record: dict[str, t.Any]) -> bool:
+        """Check if record is an edge."""
+        return "_from" in record and "_to" in record
+
+    def _parse_query_records(
+        self,
+        cursor: t.Any,
+    ) -> tuple[
+        list[dict[str, t.Any]], dict[str, GraphNodeModel], dict[str, GraphEdgeModel]
+    ]:
+        """Parse cursor records into categorized results using set-based deduplication."""
+        records = []
+        nodes_by_id: dict[str, GraphNodeModel] = {}
+        edges_by_id: dict[str, GraphEdgeModel] = {}
+
+        for record in cursor:
+            records.append(record)
+
+            if not isinstance(record, dict):
+                continue
+
+            # Check vertex first (more common)
+            if self._is_vertex_record(record):
+                node = self._arango_doc_to_node(record)
+                if node.id is not None:
+                    nodes_by_id[node.id] = node
+            elif self._is_edge_record(record):
+                edge = self._arango_doc_to_edge(record)
+                if edge.id is not None:
+                    edges_by_id[edge.id] = edge
+
+        return records, nodes_by_id, edges_by_id
+
     async def _execute_query(
         self,
         query: str,
@@ -253,38 +296,15 @@ class Graph(GraphBase):
                 ttl=timeout or self._settings.query_timeout,
             )
 
-            records = []
-            nodes = []
-            edges = []
-            paths: list[Any] = []
-
-            for record in cursor:
-                records.append(record)
-
-                # Parse different types of results
-                if isinstance(record, dict):
-                    # Check if it's a vertex
-                    if "_id" in record and "/" in record["_id"]:
-                        collection, _doc_key = record["_id"].split("/", 1)
-                        if collection in (
-                            self._settings.vertex_collections or ["vertices"]
-                        ):
-                            node = self._arango_doc_to_node(record)
-                            if node not in nodes:
-                                nodes.append(node)
-
-                    # Check if it's an edge
-                    if "_from" in record and "_to" in record:
-                        edge = self._arango_doc_to_edge(record)
-                        if edge not in edges:
-                            edges.append(edge)
+            # Parse records with efficient deduplication
+            records, nodes_by_id, edges_by_id = self._parse_query_records(cursor)
 
             execution_time = (datetime.now() - start_time).total_seconds()
 
             return GraphQueryResult(
-                nodes=nodes,
-                edges=edges,
-                paths=paths,
+                nodes=list(nodes_by_id.values()),
+                edges=list(edges_by_id.values()),
+                paths=[],
                 records=records,
                 execution_time=execution_time,
                 query_language=GraphQueryLanguage.AQL,
@@ -788,7 +808,7 @@ class Graph(GraphBase):
             for label in labels:
                 query = f"RETURN LENGTH({label})"
                 result = await self._execute_query(query)
-                if result.records:
+                if result.records and isinstance(result.records[0], int):
                     total += result.records[0]
             return total
         vertex_collections = self._settings.vertex_collections or ["vertices"]
@@ -796,7 +816,7 @@ class Graph(GraphBase):
         for collection_name in vertex_collections:
             query = f"RETURN LENGTH({collection_name})"
             result = await self._execute_query(query)
-            if result.records:
+            if result.records and isinstance(result.records[0], int):
                 total += result.records[0]
         return total
 
@@ -807,7 +827,7 @@ class Graph(GraphBase):
             for edge_type in edge_types:
                 query = f"RETURN LENGTH({edge_type})"
                 result = await self._execute_query(query)
-                if result.records:
+                if result.records and isinstance(result.records[0], int):
                     total += result.records[0]
             return total
         edge_collections = self._settings.edge_collections or ["edges"]
@@ -815,7 +835,7 @@ class Graph(GraphBase):
         for collection_name in edge_collections:
             query = f"RETURN LENGTH({collection_name})"
             result = await self._execute_query(query)
-            if result.records:
+            if result.records and isinstance(result.records[0], int):
                 total += result.records[0]
         return total
 

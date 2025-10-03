@@ -4,6 +4,7 @@ This module provides a standards-compliant MCP server using FastMCP,
 exposing ACB's capabilities through the Model Context Protocol.
 """
 
+from contextlib import suppress
 from typing import Any
 
 from fastmcp import FastMCP
@@ -331,16 +332,11 @@ class ACBMCPServer:
 
     async def initialize(self) -> None:
         """Initialize the server and components."""
-        try:
+        with suppress(Exception):
             self.logger.info("Initializing ACB MCP Server")
-        except Exception:
-            # Logger may not be initialized yet
-            pass
         await self.registry.initialize()
-        try:
+        with suppress(Exception):
             self.logger.info("ACB MCP Server initialized")
-        except Exception:
-            pass
 
     def run(self, transport: str = "stdio", **kwargs: Any) -> None:
         """Run the MCP server.
@@ -349,24 +345,17 @@ class ACBMCPServer:
             transport: Transport protocol ('stdio', 'sse', 'http')
             **kwargs: Additional arguments for the transport
         """
-        try:
+        with suppress(Exception):
             self.logger.info(f"Starting ACB MCP Server with {transport} transport")
-        except Exception:
-            # Logger may not be available yet
-            pass
         mcp.run(transport=transport, **kwargs)
 
     async def cleanup(self) -> None:
         """Clean up server resources."""
-        try:
+        with suppress(Exception):
             self.logger.info("Cleaning up ACB MCP Server")
-        except Exception:
-            pass
         await self.registry.cleanup()
-        try:
+        with suppress(Exception):
             self.logger.info("ACB MCP Server cleaned up")
-        except Exception:
-            pass
 
 
 def create_mcp_server() -> ACBMCPServer:

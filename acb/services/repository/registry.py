@@ -19,7 +19,7 @@ from acb.depends import depends
 
 from ._base import RepositoryBase, RepositoryError
 
-T = TypeVar("T", bound=RepositoryBase)
+T = TypeVar("T", bound="RepositoryBase[Any, Any]")
 EntityType = TypeVar("EntityType")
 IDType = TypeVar("IDType")
 
@@ -37,10 +37,10 @@ class RepositoryRegistration:
     """Repository registration information."""
 
     entity_type: type[Any]
-    repository_type: type[RepositoryBase]
-    repository_instance: RepositoryBase | None = None
+    repository_type: type[RepositoryBase[Any, Any]]
+    repository_instance: RepositoryBase[Any, Any] | None = None
     scope: RepositoryScope = RepositoryScope.SINGLETON
-    factory: t.Callable[[], RepositoryBase] | None = None
+    factory: t.Callable[[], RepositoryBase[Any, Any]] | None = None
     initialized: bool = False
 
 

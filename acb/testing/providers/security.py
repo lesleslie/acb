@@ -247,13 +247,13 @@ class SecurityTestProvider:
             ),  # REGEX OK: password strength validation
             "no_common_patterns": not any(
                 pattern in password.lower()
-                for pattern in [
+                for pattern in (
                     "password",
                     "123456",
                     "qwerty",
                     "admin",
                     "letmein",
-                ]
+                )
             ),
         }
 

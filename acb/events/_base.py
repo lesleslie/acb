@@ -15,6 +15,7 @@ Features:
 import asyncio
 import typing as t
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
@@ -421,10 +422,9 @@ class EventPublisherBase(ServiceBase):
             if not task.done():
                 task.cancel()
 
-        try:
+        with suppress(Exception):
             await asyncio.gather(*self._active_tasks.values(), return_exceptions=True)
-        except Exception:
-            pass  # Ignore cancellation exceptions
+        # Ignore cancellation exceptions
 
         self._active_tasks.clear()
         self._subscriptions.clear()

@@ -1,5 +1,6 @@
 """Component registry for ACB MCP server."""
 
+from contextlib import suppress
 from typing import Any
 
 from acb.adapters import import_adapter
@@ -40,10 +41,8 @@ class ComponentRegistry:
         if self._initialized:
             return
 
-        try:
+        with suppress(Exception):
             self.logger.info("Initializing ACB Component Registry")
-        except Exception:
-            pass
 
         # Register built-in actions
         await self._register_builtin_actions()
@@ -55,14 +54,12 @@ class ComponentRegistry:
         await self._register_services()
 
         self._initialized = True
-        try:
+        with suppress(Exception):
             self.logger.info("ACB Component Registry initialized")
-        except Exception:
-            pass
 
     async def _register_builtin_actions(self) -> None:
         """Register built-in ACB actions."""
-        try:
+        with suppress(Exception):
             # Compression actions
             from acb.actions import compress
 
@@ -79,25 +76,18 @@ class ComponentRegistry:
             self._actions["hash"] = hash
 
             # Add more actions as needed
-        except Exception:
-            pass  # Silent failure for action registration
 
     async def _register_configured_adapters(self) -> None:
         """Register adapters configured in the system."""
-        try:
+        with suppress(Exception):
             # Get configured adapters from settings
             adapter_configs = getattr(self.config, "adapters", {})
 
             for adapter_name in adapter_configs:
-                try:
+                with suppress(Exception):
                     adapter_class = import_adapter(adapter_name)
                     adapter_instance = depends.get(adapter_class)
                     self._adapters[adapter_name] = adapter_instance
-                except Exception:
-                    pass  # Silent failure for individual adapters
-
-        except Exception:
-            pass  # Silent failure for adapter registration
 
     async def _register_services(self) -> None:
         """Register services (placeholder for future implementation)."""
@@ -143,7 +133,5 @@ class ComponentRegistry:
         self._services.clear()
         self._events.clear()
         self._initialized = False
-        try:
+        with suppress(Exception):
             self.logger.info("ACB Component Registry cleaned up")
-        except Exception:
-            pass

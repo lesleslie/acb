@@ -200,9 +200,11 @@ class GraphBase(CleanupMixin, ABC):
 
     def __init__(self, **kwargs: t.Any) -> None:
         CleanupMixin.__init__(self)
-        self._client = None
-        self._client_lock = None
-        self._transaction = None
+        self._client: t.Any = None
+        self._client_lock: t.Any | None = (
+            None  # Type as Any | None to satisfy async Lock
+        )
+        self._transaction: t.Any = None
 
     @property
     @abstractmethod

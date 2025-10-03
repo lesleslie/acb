@@ -38,6 +38,9 @@ MODULE_METADATA = AdapterMetadata(
     provider="neptune",
     version="1.0.0",
     acb_min_version="0.19.0",
+    author="ACB Team",
+    created_date=datetime.now().isoformat(),
+    last_modified=datetime.now().isoformat(),
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.CONNECTION_POOLING,
@@ -54,6 +57,7 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["boto3>=1.26.0", "gremlinpython>=3.6.0"],
     description="Amazon Neptune graph database adapter with Gremlin query support and AWS integration",
+    settings_class="NeptuneSettings",
 )
 
 
@@ -454,7 +458,7 @@ class Graph(GraphBase):
         result_paths = []
         for path in paths:
             nodes: list[Any] = []
-            edges = []
+            edges: list[Any] = []
 
             for _i, element in enumerate(path):
                 if hasattr(element, "label"):  # Vertex
@@ -541,7 +545,7 @@ class Graph(GraphBase):
         neighbors = traversal.toList()
 
         # Convert to GraphNodeModel
-        result_nodes = []
+        result_nodes: list[Any] = []
         for _neighbor in neighbors:
             # Implementation would convert Gremlin vertex to GraphNodeModel
             pass

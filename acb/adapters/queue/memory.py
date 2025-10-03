@@ -44,12 +44,15 @@ from acb.adapters.queue._base import (
 
 # Module metadata for adapter discovery
 MODULE_METADATA = AdapterMetadata(
-    module_id="01K6G25MNW0V36KB2G9S52G5JB",
+    module_id=UUID("01K6G25MNW0V36KB2G9S52G5JB"),  # Convert string to UUID
     name="Memory Queue",
     category="queue",
     provider="memory",
     version="1.0.0",
     acb_min_version="0.20.0",
+    author="ACB Team",
+    created_date=datetime.now().isoformat(),
+    last_modified=datetime.now().isoformat(),
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
@@ -57,6 +60,7 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=[],
     description="In-memory queue adapter for development and testing",
+    settings_class="MemoryQueueSettings",
 )
 
 

@@ -6,6 +6,7 @@ import typing as t
 from datetime import datetime
 from uuid import uuid4
 
+from pydantic import SecretStr
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -65,7 +66,7 @@ class Neo4jSettings(GraphBaseSettings):
     """Neo4j-specific settings."""
 
     # Neo4j connection settings
-    host: str | None = "127.0.0.1"
+    host: SecretStr = SecretStr("127.0.0.1")
     port: int | None = 7687
     scheme: str = "bolt"
     database: str = "neo4j"
@@ -169,6 +170,62 @@ class Graph(GraphBase):
             await self._transaction.rollback()
             await self._transaction.close()
 
+    def _categorize_record_value(
+        self,
+        value: t.Any,
+        nodes_by_id: dict[str, GraphNodeModel],
+        edges_by_id: dict[str, GraphEdgeModel],
+        paths: list[GraphPathModel],
+    ) -> None:
+        """Categorize a single record value into nodes, edges, or paths."""
+        if hasattr(value, "labels"):  # Node
+            node = self._neo4j_node_to_model(value)
+            if node.id is not None:
+                nodes_by_id[node.id] = node
+        elif hasattr(value, "type"):  # Relationship
+            edge = self._neo4j_relationship_to_model(value)
+            if edge.id is not None:
+                edges_by_id[edge.id] = edge
+        elif hasattr(value, "nodes"):  # Path
+            path = self._neo4j_path_to_model(value)
+            paths.append(path)
+
+    async def _parse_query_result(
+        self,
+        result: t.Any,
+    ) -> tuple[
+        list[dict[str, t.Any]],
+        dict[str, GraphNodeModel],
+        dict[str, GraphEdgeModel],
+        list[GraphPathModel],
+    ]:
+        """Parse query result with efficient deduplication."""
+        records = []
+        nodes_by_id: dict[str, GraphNodeModel] = {}
+        edges_by_id: dict[str, GraphEdgeModel] = {}
+        paths: list[GraphPathModel] = []
+
+        async for record in result:
+            record_dict = dict(record)
+            records.append(record_dict)
+
+            # Extract graph elements from record values
+            for value in record.values():
+                self._categorize_record_value(value, nodes_by_id, edges_by_id, paths)
+
+        return records, nodes_by_id, edges_by_id, paths
+
+    async def _run_query(
+        self,
+        session: t.Any,
+        query: str,
+        parameters: dict[str, t.Any],
+    ) -> t.Any:
+        """Run query using transaction if available, otherwise auto-commit."""
+        if self._transaction:
+            return await self._transaction.run(query, parameters)
+        return await session.run(query, parameters)
+
     async def _execute_query(
         self,
         query: str,
@@ -181,41 +238,21 @@ class Graph(GraphBase):
 
         try:
             async with client.session(database=self._settings.database) as session:
-                if self._transaction:
-                    # Use existing transaction
-                    result = await self._transaction.run(query, parameters or {})
-                else:
-                    # Execute in auto-commit transaction
-                    result = await session.run(query, parameters or {})
+                result = await self._run_query(session, query, parameters or {})
 
-                records = []
-                nodes = []
-                edges = []
-                paths = []
-
-                async for record in result:
-                    record_dict = dict(record)
-                    records.append(record_dict)
-
-                    # Extract nodes, edges, and paths from record
-                    for value in record.values():
-                        if hasattr(value, "labels"):  # Node
-                            node = self._neo4j_node_to_model(value)
-                            if node not in nodes:
-                                nodes.append(node)
-                        elif hasattr(value, "type"):  # Relationship
-                            edge = self._neo4j_relationship_to_model(value)
-                            if edge not in edges:
-                                edges.append(edge)
-                        elif hasattr(value, "nodes"):  # Path
-                            path = self._neo4j_path_to_model(value)
-                            paths.append(path)
+                # Parse result with efficient deduplication
+                (
+                    records,
+                    nodes_by_id,
+                    edges_by_id,
+                    paths,
+                ) = await self._parse_query_result(result)
 
                 execution_time = (datetime.now() - start_time).total_seconds()
 
                 return GraphQueryResult(
-                    nodes=nodes,
-                    edges=edges,
+                    nodes=list(nodes_by_id.values()),
+                    edges=list(edges_by_id.values()),
                     paths=paths,
                     records=records,
                     execution_time=execution_time,
@@ -467,7 +504,7 @@ class Graph(GraphBase):
         # Get relationship types
         edge_query = "CALL db.relationshipTypes() YIELD relationshipType RETURN collect(relationshipType) as types"
         edge_result: Any = await self._execute_query(edge_query)
-        edge_types = edge_result.records[0]["types"] if edge_result.records else []
+        edge_types: Any = edge_result.records[0]["types"] if edge_result.records else []
 
         # Get constraints
         constraints_query = (

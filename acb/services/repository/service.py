@@ -9,6 +9,8 @@ Provides centralized repository management service:
 
 import asyncio
 import contextlib
+import typing as t
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
@@ -59,7 +61,7 @@ try:
     )
 except ImportError:
     # Discovery system not available
-    SERVICE_METADATA: ServiceMetadata | None = None
+    SERVICE_METADATA = None
 
 
 EntityType = TypeVar("EntityType")
@@ -259,7 +261,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         self,
         isolation_level: str | None = None,
         timeout: float | None = None,
-    ):
+    ) -> t.Any:
         """Get transaction context manager.
 
         Args:
@@ -299,7 +301,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         self,
         database_name: str,
         entity_name: str,
-        repository: RepositoryBase,
+        repository: RepositoryBase[Any, Any],
     ) -> None:
         """Register a repository for coordinated operations.
 
@@ -464,7 +466,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             # Try to register SQL adapter
             from acb.adapters import import_adapter
 
-            try:
+            with suppress(ImportError):
                 Sql = import_adapter("sql")
                 sql_adapter = depends.get(Sql)
                 self.coordinator.register_database(
@@ -473,11 +475,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
                     sql_adapter,
                     priority=100,
                 )
-            except ImportError:
-                pass
 
             # Try to register NoSQL adapter
-            try:
+            with suppress(ImportError):
                 Nosql = import_adapter("nosql")
                 nosql_adapter = depends.get(Nosql)
                 self.coordinator.register_database(
@@ -486,11 +486,9 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
                     nosql_adapter,
                     priority=90,
                 )
-            except ImportError:
-                pass
 
             # Try to register Cache adapter
-            try:
+            with suppress(ImportError):
                 Cache = import_adapter("cache")
                 cache_adapter = depends.get(Cache)
                 self.coordinator.register_database(
@@ -499,8 +497,6 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
                     cache_adapter,
                     priority=80,
                 )
-            except ImportError:
-                pass
 
         except Exception as e:
             self.logger.warning(f"Database adapter registration failed: {e}")

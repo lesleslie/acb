@@ -13,6 +13,8 @@ Features service discovery and dynamic import system similar to adapters:
 - Override capability through settings
 """
 
+from contextlib import suppress
+
 from ._base import (
     ServiceBase,
     ServiceConfig,
@@ -255,12 +257,11 @@ async def setup_services(enable_health_monitoring: bool = True) -> ServiceRegist
             "query_optimizer",
         ]
         for service_name in performance_services:
-            try:
+            with suppress((ServiceNotFound, ServiceNotInstalled)):
                 service_cls = get_service_class("performance", service_name)
                 service_instance = service_cls()
                 await registry.register_service(service_instance)
-            except (ServiceNotFound, ServiceNotInstalled):
-                pass  # Skip if not available
+        # Skip if not available
 
         # Register validation service
         validation_service_cls = import_service("validation")

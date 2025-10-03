@@ -67,7 +67,7 @@ import asyncio
 import time
 import typing as t
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
@@ -305,41 +305,35 @@ class RabbitMQQueue(QueueBackend):
         # Cancel background tasks
         if self._delayed_processor_task:
             self._delayed_processor_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._delayed_processor_task
-            except asyncio.CancelledError:
-                pass
 
         # Close consumers
         for consumer in self._consumers.values():
-            try:
+            with suppress(Exception):
                 await consumer.cancel()
-            except Exception:
-                pass
+
         self._consumers.clear()
 
         # Close channel pool
         for channel in self._channel_pool:
-            try:
+            with suppress(Exception):
                 await channel.close()
-            except Exception:
-                pass
+
         self._channel_pool.clear()
 
         # Close main channel
         if self._channel:
-            try:
+            with suppress(Exception):
                 await self._channel.close()
-            except Exception:
-                pass
+
             self._channel = None
 
         # Close connection
         if self._connection:
-            try:
+            with suppress(Exception):
                 await self._connection.close()
-            except Exception:
-                pass
+
             self._connection = None
 
         # Cleanup resources
@@ -547,7 +541,7 @@ class RabbitMQQueue(QueueBackend):
                 message_id=str(message.message_id),
                 correlation_id=message.correlation_id,
                 reply_to=message.reply_to,
-                headers=message.headers or {},
+                headers=message.headers,
                 expiration=str(message.ttl_seconds * 1000)
                 if message.ttl_seconds
                 else None,

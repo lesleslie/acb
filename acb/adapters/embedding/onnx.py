@@ -35,7 +35,7 @@ try:
     _onnx_available = True
 except ImportError:
     ort = None
-    AutoTokenizer = None  # type: ignore[assignment,misc]
+    AutoTokenizer = None  # type: ignore[assignment,misc,no-redef]
     _onnx_available = False
 
 MODULE_METADATA = AdapterMetadata(
@@ -227,6 +227,158 @@ class ONNXEmbedding(EmbeddingAdapter):
             await logger.exception(f"Error loading ONNX model: {e}")
             raise
 
+    async def _tokenize_batch(
+        self,
+        texts: list[str],
+        tokenizer: t.Any,
+    ) -> dict[str, np.ndarray]:
+        """Tokenize batch of texts for ONNX processing."""
+        if not callable(tokenizer):
+            msg = "Tokenizer is not callable"
+            raise TypeError(msg)
+
+        return await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: tokenizer(
+                texts,
+                padding=True,
+                truncation=True,
+                max_length=self._settings.max_seq_length,
+                return_tensors="np",
+            ),
+        )
+
+    def _prepare_onnx_inputs(
+        self,
+        tokenized: dict[str, np.ndarray],
+    ) -> dict[str, np.ndarray]:
+        """Prepare inputs for ONNX inference."""
+        onnx_inputs = {}
+
+        for input_name in self._input_names:
+            if input_name == "input_ids":
+                onnx_inputs[input_name] = tokenized["input_ids"].astype(np.int64)
+            elif input_name == "attention_mask":
+                onnx_inputs[input_name] = tokenized["attention_mask"].astype(np.int64)
+            elif input_name == "token_type_ids" and "token_type_ids" in tokenized:
+                onnx_inputs[input_name] = tokenized["token_type_ids"].astype(np.int64)
+
+        return onnx_inputs
+
+    def _count_tokens_safe(
+        self,
+        text: str,
+        tokenizer: t.Any,
+    ) -> int | None:
+        """Safely count tokens with error handling."""
+        if not hasattr(tokenizer, "encode"):
+            return None
+
+        with suppress(Exception):
+            return len(tokenizer.encode(text))
+
+        return None
+
+    def _create_embedding_result(
+        self,
+        text: str,
+        embedding: np.ndarray,
+        model: str,
+        token_count: int | None,
+    ) -> EmbeddingResult:
+        """Create single embedding result with metadata."""
+        return EmbeddingResult(
+            text=text,
+            embedding=embedding.tolist(),
+            model=model,
+            dimensions=len(embedding),
+            tokens=token_count,
+            metadata={
+                "pooling_strategy": self._settings.pooling_strategy.value,
+                "providers": self._settings.providers,
+                "max_seq_length": self._settings.max_seq_length,
+                "optimized": True,
+            },
+        )
+
+    async def _process_single_batch(
+        self,
+        batch_texts: list[str],
+        session: t.Any,
+        tokenizer: t.Any,
+        model: str,
+        normalize: bool,
+    ) -> list[EmbeddingResult]:
+        """Process a single batch of texts."""
+        # Tokenize
+        inputs = await self._tokenize_batch(batch_texts, tokenizer)
+
+        # Prepare ONNX inputs
+        onnx_inputs = self._prepare_onnx_inputs(inputs)
+
+        # Run inference
+        outputs = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: session.run(self._output_names, onnx_inputs),
+        )
+
+        # Apply pooling
+        embeddings = await self._apply_pooling(
+            outputs[0],
+            inputs["attention_mask"],
+            self._settings.pooling_strategy,
+        )
+
+        # Normalize if requested
+        if normalize:
+            embeddings = self._normalize_embeddings(embeddings)
+
+        # Create results with token counting
+        return [
+            self._create_embedding_result(
+                text,
+                embedding,
+                model,
+                self._count_tokens_safe(text, tokenizer),
+            )
+            for text, embedding in zip(batch_texts, embeddings)
+        ]
+
+    async def _process_all_batches(
+        self,
+        texts: list[str],
+        batch_size: int,
+        session: t.Any,
+        tokenizer: t.Any,
+        model: str,
+        normalize: bool,
+        logger: t.Any,
+    ) -> list[EmbeddingResult]:
+        """Process all text batches and return results."""
+        results = []
+        batches = self._batch_texts(texts, batch_size)
+
+        for batch_texts in batches:
+            try:
+                batch_results = await self._process_single_batch(
+                    batch_texts,
+                    session,
+                    tokenizer,
+                    model,
+                    normalize,
+                )
+                results.extend(batch_results)
+
+                await logger.debug(
+                    f"ONNX embeddings batch completed: {len(batch_texts)} texts, model: {model}",
+                )
+
+            except Exception as e:
+                await logger.exception(f"Error generating ONNX embeddings: {e}")
+                raise
+
+        return results
+
     async def _embed_texts(
         self,
         texts: list[str],
@@ -240,93 +392,18 @@ class ONNXEmbedding(EmbeddingAdapter):
         session, tokenizer = await self._ensure_client()
         logger: t.Any = depends.get("logger")
 
-        results = []
+        # Process all batches
+        results = await self._process_all_batches(
+            texts,
+            batch_size,
+            session,
+            tokenizer,
+            model,
+            normalize,
+            logger,
+        )
 
-        # Process texts in batches
-        batches = self._batch_texts(texts, batch_size)
-
-        for batch_texts in batches:
-            try:
-                # Tokenize batch
-                if not callable(tokenizer):
-                    msg = "Tokenizer is not callable"
-                    raise TypeError(msg)
-                inputs = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: tokenizer(
-                        batch_texts,
-                        padding=True,
-                        truncation=True,
-                        max_length=self._settings.max_seq_length,
-                        return_tensors="np",
-                    ),
-                )
-
-                # Prepare ONNX inputs
-                onnx_inputs = {}
-                for input_name in self._input_names:
-                    if input_name == "input_ids":
-                        onnx_inputs[input_name] = inputs["input_ids"].astype(np.int64)
-                    elif input_name == "attention_mask":
-                        onnx_inputs[input_name] = inputs["attention_mask"].astype(
-                            np.int64,
-                        )
-                    elif input_name == "token_type_ids" and "token_type_ids" in inputs:
-                        onnx_inputs[input_name] = inputs["token_type_ids"].astype(
-                            np.int64,
-                        )
-
-                # Run inference
-                outputs = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: session.run(self._output_names, onnx_inputs),
-                )
-
-                # Extract embeddings (usually the first output)
-                last_hidden_state = outputs[0]
-
-                # Apply pooling strategy
-                embeddings = await self._apply_pooling(
-                    last_hidden_state,
-                    inputs["attention_mask"],
-                    self._settings.pooling_strategy,
-                )
-
-                # Normalize if requested
-                if normalize:
-                    embeddings = self._normalize_embeddings(embeddings)
-
-                # Create results
-                for i, embedding in enumerate(embeddings):
-                    # Compute token count
-                    token_count = None
-                    if hasattr(tokenizer, "encode"):
-                        with suppress(Exception):
-                            token_count = len(tokenizer.encode(batch_texts[i]))
-
-                    result = EmbeddingResult(
-                        text=batch_texts[i],
-                        embedding=embedding.tolist(),
-                        model=model,
-                        dimensions=len(embedding),
-                        tokens=token_count,
-                        metadata={
-                            "pooling_strategy": self._settings.pooling_strategy.value,
-                            "providers": self._settings.providers,
-                            "max_seq_length": self._settings.max_seq_length,
-                            "optimized": True,
-                        },
-                    )
-                    results.append(result)
-
-                await logger.debug(
-                    f"ONNX embeddings batch completed: {len(batch_texts)} texts, model: {model}",
-                )
-
-            except Exception as e:
-                await logger.exception(f"Error generating ONNX embeddings: {e}")
-                raise
-
+        # Aggregate metrics
         processing_time = time.time() - start_time
         total_tokens = sum(result.tokens or 0 for result in results)
 

@@ -10,7 +10,7 @@ Provides transaction management and coordination across multiple repositories:
 import asyncio
 import typing as t
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -86,7 +86,7 @@ class UnitOfWork(CleanupMixin):
         self.isolation_level = isolation_level
         self.timeout = timeout or 60.0
         self._state = UnitOfWorkState.INACTIVE
-        self._repositories: dict[str, RepositoryBase] = {}
+        self._repositories: dict[str, RepositoryBase[Any, Any]] = {}
         self._operations: list[dict[str, Any]] = []
         self._sql_sessions: dict[str, Any] = {}
         self._nosql_sessions: dict[str, Any] = {}
@@ -117,7 +117,7 @@ class UnitOfWork(CleanupMixin):
         """Set transaction ID."""
         self._metrics.transaction_id = value
 
-    def add_repository(self, name: str, repository: RepositoryBase) -> None:
+    def add_repository(self, name: str, repository: RepositoryBase[Any, Any]) -> None:
         """Add a repository to this Unit of Work.
 
         Args:
@@ -135,7 +135,7 @@ class UnitOfWork(CleanupMixin):
         self._repositories[name] = repository
         self._metrics.repositories_used.add(name)
 
-    def get_repository(self, name: str) -> RepositoryBase | None:
+    def get_repository(self, name: str) -> RepositoryBase[Any, Any] | None:
         """Get repository by name.
 
         Args:
@@ -270,25 +270,23 @@ class UnitOfWork(CleanupMixin):
             # Initialize SQL sessions
             from acb.adapters import import_adapter
 
-            try:
+            with suppress(ImportError):
                 Sql = import_adapter("sql")
                 sql = depends.get(Sql)
                 session = await sql._ensure_session()
                 self._sql_sessions["default"] = session
                 # Begin SQL transaction
                 await session.begin()
-            except ImportError:
-                pass  # SQL adapter not available
+            # SQL adapter not available
 
             # Initialize NoSQL sessions if needed
-            try:
+            with suppress(ImportError):
                 Nosql = import_adapter("nosql")
                 nosql = depends.get(Nosql)
                 session = await nosql.get_client()
                 self._nosql_sessions["default"] = session
                 # NoSQL doesn't typically support transactions like SQL
-            except ImportError:
-                pass  # NoSQL adapter not available
+        # NoSQL adapter not available
 
         except Exception as e:
             msg = f"Failed to initialize sessions: {e}"
@@ -354,11 +352,9 @@ class UnitOfWork(CleanupMixin):
 
         # Close database sessions
         for session in self._sql_sessions.values():
-            try:
+            with suppress(Exception):
                 if hasattr(session, "close"):
                     await session.close()
-            except Exception:
-                pass
 
         self._sql_sessions.clear()
         self._nosql_sessions.clear()
@@ -521,11 +517,9 @@ class UnitOfWorkManager(CleanupMixin):
         """Clean up all Unit of Work resources."""
         # Rollback all active transactions
         for uow in list(self._active_transactions.values()):
-            try:
+            with suppress(Exception):
                 await uow.rollback()
                 await uow.cleanup()
-            except Exception:
-                pass
 
         self._active_transactions.clear()
         self._completed_transactions.clear()

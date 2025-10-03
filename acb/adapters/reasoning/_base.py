@@ -356,8 +356,12 @@ class ReasoningBase(CleanupMixin, ABC):
     ) -> ReasoningResponse:
         """Perform retrieval-augmented generation workflow."""
         if context is None:
+            current_task = asyncio.current_task()
+            task_name = (
+                current_task.get_name() if current_task is not None else "default"
+            )
             context = ReasoningContext(
-                session_id=f"rag_{asyncio.current_task().get_name()}",
+                session_id=f"rag_{task_name}",
             )
         context.knowledge_base = knowledge_base
 

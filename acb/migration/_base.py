@@ -88,6 +88,7 @@ class VersionInfo(BaseModel):
         pre_release = parts[1] if len(parts) > 1 else None
 
         # Split on build marker
+        build: str | None
         if pre_release and "+" in pre_release:
             pre_release, build = pre_release.split("+", 1)
         else:
@@ -96,12 +97,14 @@ class VersionInfo(BaseModel):
         # Parse core version
         major, minor, patch = map(int, core_version.split("."))
 
-        return cls(
-            major=major,
-            minor=minor,
-            patch=patch,
-            pre_release=pre_release,
-            build=build,
+        return cls.model_validate(
+            {
+                "major": major,
+                "minor": minor,
+                "patch": patch,
+                "pre_release": pre_release,
+                "build": build,
+            }
         )
 
     def __str__(self) -> str:
@@ -130,8 +133,10 @@ class VersionInfo(BaseModel):
 
         return False
 
-    def __le__(self, other: VersionInfo) -> bool:
+    def __le__(self, other: object) -> bool:
         """Less than or equal comparison."""
+        if not isinstance(other, VersionInfo):
+            return NotImplemented
         return self < other or self == other
 
     def __gt__(self, other: VersionInfo) -> bool:

@@ -35,6 +35,8 @@ Usage:
     EventSubscriber = import_event_handler("subscriber")
 """
 
+from contextlib import suppress
+
 # Core event classes
 from ._base import (
     Event,
@@ -365,7 +367,6 @@ async def setup_events_service(
 from acb.services.discovery import enable_service
 
 # Register events service in service discovery
-try:
+with suppress(Exception):
     enable_service("events", "events_service")
-except Exception:
-    pass  # Service registry may not be initialized yet
+# Service registry may not be initialized yet

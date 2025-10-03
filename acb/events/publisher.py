@@ -17,7 +17,7 @@ import logging
 import typing as t
 from collections import defaultdict
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -184,36 +184,44 @@ class EventPublisher(EventPublisherBase):
         """Shutdown the event publisher (ServiceBase requirement)."""
         self._shutdown_event.set()
 
-        # Cancel all worker tasks
-        for task in self._worker_tasks:
-            if not task.done():
-                task.cancel()
-
-        # Cancel subscription tasks
-        for task_list in self._subscription_tasks.values():
-            for task in task_list:
-                if not task.done():
-                    task.cancel()
-
-        # Wait for tasks to complete
-        try:
-            if self._worker_tasks:
-                await asyncio.gather(*self._worker_tasks, return_exceptions=True)
-
-            for task_list in self._subscription_tasks.values():
-                if task_list:
-                    await asyncio.gather(*task_list, return_exceptions=True)
-        except Exception:
-            pass  # Ignore cancellation exceptions
-
-        self._worker_tasks.clear()
-        self._subscription_tasks.clear()
+        # Cancel all tasks
+        await self._cancel_all_worker_tasks()
+        await self._cancel_all_subscription_tasks()
 
         # Disconnect from queue backend
         await self._queue.disconnect()
 
         if self._settings.log_events:
             self._logger.info("Event publisher stopped")
+
+    async def _cancel_all_worker_tasks(self) -> None:
+        """Cancel and wait for all worker tasks."""
+        self._cancel_tasks(self._worker_tasks)
+        await self._wait_for_tasks(self._worker_tasks)
+        self._worker_tasks.clear()
+
+    async def _cancel_all_subscription_tasks(self) -> None:
+        """Cancel and wait for all subscription tasks."""
+        all_tasks = [
+            task for tasks in self._subscription_tasks.values() for task in tasks
+        ]
+        self._cancel_tasks(all_tasks)
+        await self._wait_for_tasks(all_tasks)
+        self._subscription_tasks.clear()
+
+    @staticmethod
+    def _cancel_tasks(tasks: list[asyncio.Task[None]]) -> None:
+        """Cancel a list of tasks."""
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+
+    @staticmethod
+    async def _wait_for_tasks(tasks: list[asyncio.Task[None]]) -> None:
+        """Wait for tasks to complete, ignoring exceptions."""
+        if tasks:
+            with suppress(Exception):
+                await asyncio.gather(*tasks, return_exceptions=True)
 
     async def start(self) -> None:
         """Start the event publisher (public API)."""
@@ -321,34 +329,47 @@ class EventPublisher(EventPublisherBase):
             True if subscription was found and removed
         """
         async with self._subscription_lock:
-            # Find and remove subscription
-            for i, sub in enumerate(self._subscriptions):
-                if sub.subscription_id == subscription_id:
-                    removed_sub = self._subscriptions.pop(i)
+            # Find subscription to remove
+            if not (removed_sub := self._find_and_remove_subscription(subscription_id)):
+                return False
 
-                    # Update routing maps
-                    if removed_sub.event_type:
-                        type_subs = self._type_subscriptions[removed_sub.event_type]
-                        if removed_sub in type_subs:
-                            type_subs.remove(removed_sub)
-                    elif removed_sub in self._wildcard_subscriptions:
-                        self._wildcard_subscriptions.remove(removed_sub)
+            # Update routing maps
+            self._remove_from_routing_maps(removed_sub)
 
-                    # Cancel any active tasks for this subscription
-                    tasks = self._subscription_tasks.get(subscription_id, [])
-                    for task in tasks:
-                        if not task.done():
-                            task.cancel()
+            # Cancel subscription tasks
+            await self._cancel_subscription_tasks(subscription_id)
 
-                    if subscription_id in self._subscription_tasks:
-                        del self._subscription_tasks[subscription_id]
+            if self._settings.log_events:
+                self._logger.debug("Removed subscription: %s", subscription_id)
 
-                    if self._settings.log_events:
-                        self._logger.debug("Removed subscription: %s", subscription_id)
+            return True
 
-                    return True
+    def _find_and_remove_subscription(
+        self,
+        subscription_id: UUID,
+    ) -> EventSubscription | None:
+        """Find and remove subscription from list."""
+        for i, sub in enumerate(self._subscriptions):
+            if sub.subscription_id == subscription_id:
+                return self._subscriptions.pop(i)
+        return None
 
-        return False
+    def _remove_from_routing_maps(self, removed_sub: EventSubscription) -> None:
+        """Remove subscription from routing maps."""
+        if removed_sub.event_type:
+            if type_subs := self._type_subscriptions.get(removed_sub.event_type):
+                with suppress(ValueError):
+                    type_subs.remove(removed_sub)
+        elif removed_sub in self._wildcard_subscriptions:
+            self._wildcard_subscriptions.remove(removed_sub)
+
+    async def _cancel_subscription_tasks(self, subscription_id: UUID) -> None:
+        """Cancel all active tasks for a subscription."""
+        if tasks := self._subscription_tasks.get(subscription_id):
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            del self._subscription_tasks[subscription_id]
 
     async def publish_and_wait(
         self,
@@ -451,59 +472,32 @@ class EventPublisher(EventPublisherBase):
 
     async def _process_event(self, event: Event) -> None:
         """Process a single event with all matching handlers."""
+        # Early return for expired events
         if event.is_expired():
             event.mark_failed("Event expired")
             await self._handle_failed_event(event)
             return
 
         # Find matching subscriptions
-        matching_subs = await self._find_matching_subscriptions(event)
-
-        if not matching_subs:
+        if not (matching_subs := await self._find_matching_subscriptions(event)):
             if self._settings.log_events:
                 self._logger.debug(
-                    "No handlers for event: %s",
-                    event.metadata.event_type,
+                    "No handlers for event: %s", event.metadata.event_type
                 )
             return
 
-        # Process with each matching subscription
+        # Create handler tasks
         event.mark_processing()
         processing_start = asyncio.get_event_loop().time()
 
-        tasks = []
-        for subscription in matching_subs:
-            # Check concurrency limits
-            active_tasks = self._subscription_tasks[subscription.subscription_id]
-            if len(active_tasks) >= subscription.max_concurrent:
-                continue  # Skip if at concurrency limit
-
-            task = asyncio.create_task(
-                self._process_event_with_handler(event, subscription),
-            )
-            tasks.append(task)
-            active_tasks.append(task)
-
-        if not tasks:
+        if not (tasks := self._create_handler_tasks(event, matching_subs)):
             return
 
-        # Wait for all handlers to complete
+        # Execute and process results
         try:
             results = await asyncio.gather(*tasks, return_exceptions=True)
+            success_count = self._count_successful_results(results, event)
 
-            # Process results
-            success_count = 0
-            for result in results:
-                if isinstance(result, Exception):
-                    self._logger.error(
-                        "Handler error for event %s: %s",
-                        event.metadata.event_id,
-                        result,
-                    )
-                elif isinstance(result, EventHandlerResult) and result.success:
-                    success_count += 1
-
-            # Mark event as completed if any handler succeeded
             if success_count > 0:
                 event.mark_completed()
                 processing_time = asyncio.get_event_loop().time() - processing_start
@@ -518,12 +512,51 @@ class EventPublisher(EventPublisherBase):
             self._logger.exception("Event processing error: %s", e)
 
         finally:
-            # Clean up completed tasks
-            for subscription in matching_subs:
-                active_tasks = self._subscription_tasks[subscription.subscription_id]
-                completed_tasks = [t for t in active_tasks if t.done()]
-                for task in completed_tasks:
-                    active_tasks.remove(task)
+            self._cleanup_completed_tasks(matching_subs)
+
+    def _create_handler_tasks(
+        self,
+        event: Event,
+        matching_subs: list[EventSubscription],
+    ) -> list[asyncio.Task[EventHandlerResult]]:
+        """Create tasks for handler execution."""
+        tasks = []
+        for subscription in matching_subs:
+            active_tasks = self._subscription_tasks[subscription.subscription_id]
+            if len(active_tasks) < subscription.max_concurrent:
+                task = asyncio.create_task(
+                    self._process_event_with_handler(event, subscription),
+                )
+                tasks.append(task)
+                active_tasks.append(task)
+        return tasks
+
+    def _count_successful_results(
+        self,
+        results: list[EventHandlerResult | Exception],
+        event: Event,
+    ) -> int:
+        """Count successful handler results."""
+        success_count = 0
+        for result in results:
+            match result:
+                case Exception() as e:
+                    self._logger.error(
+                        "Handler error for event %s: %s",
+                        event.metadata.event_id,
+                        e,
+                    )
+                case EventHandlerResult(success=True):
+                    success_count += 1
+        return success_count
+
+    def _cleanup_completed_tasks(self, subscriptions: list[EventSubscription]) -> None:
+        """Remove completed tasks from subscription task lists."""
+        for subscription in subscriptions:
+            active_tasks = self._subscription_tasks[subscription.subscription_id]
+            completed = [t for t in active_tasks if t.done()]
+            for task in completed:
+                active_tasks.remove(task)
 
     async def _process_event_with_handler(
         self,

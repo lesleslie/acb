@@ -67,7 +67,7 @@ class ScheduleRule(BaseModel):
 
     @field_validator("cron_expression")
     @classmethod
-    def validate_cron_expression(cls, v) -> None:
+    def validate_cron_expression(cls, v: Any) -> Any:
         if v and not CRONITER_AVAILABLE:
             msg = "croniter is required for cron expressions. Install with: pip install croniter"
             raise ImportError(
@@ -86,7 +86,7 @@ class ScheduleRule(BaseModel):
 
     @field_validator("interval_seconds")
     @classmethod
-    def validate_interval(cls, v) -> None:
+    def validate_interval(cls, v: Any) -> Any:
         if v is not None and v <= 0:
             msg = "Interval must be positive"
             raise ValueError(msg)

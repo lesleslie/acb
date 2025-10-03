@@ -627,10 +627,7 @@ class AdaptiveConnectionPool:
             return
 
         total_connections = len(self._pool) + len(self._active_connections)
-        if (
-            total_connections > self._min_connections
-            and len(self._active_connections) == 0
-        ):
+        if total_connections > self._min_connections and not self._active_connections:
             # Close idle connections
             connections_to_close = list(self._pool)[: -self._min_connections]
             for conn in connections_to_close:

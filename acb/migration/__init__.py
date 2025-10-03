@@ -27,7 +27,11 @@ from acb.migration.assessment import (
     detect_version,
 )
 from acb.migration.compatibility import CompatibilityLayer, get_compatibility_layer
-from acb.migration.manager import MigrationManager, MigrationResult, MigrationStatus
+from acb.migration.manager import (
+    MigrationManager,
+    MigrationResult,
+    MigrationStatus,  # noqa: TCH001 - needed for runtime
+)
 from acb.migration.rollback import RollbackManager, RollbackPoint
 from acb.migration.validator import MigrationValidator, ValidationResult
 

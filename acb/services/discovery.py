@@ -407,58 +407,18 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
 
         # Auto-detect from context
         health_service = import_service()  # Detects from variable name
+
+    Complexity: 2
     """
-    if isinstance(service_categories, str):
-        service = get_service_descriptor(service_categories)
-        service_name = service.name if service else None
-        service_class = try_import_service(service_categories, service_name)
-        if service_class:
-            return service_class
-        msg = f"Service not found or not enabled: {service_categories}"
-        raise ServiceNotFound(msg)
+    from acb.discovery_common import RegistryConfig, import_from_registry
 
-    if service_categories is None:
-        # Try to auto-detect from calling context
-        import inspect
-
-        frame = inspect.currentframe()
-        if frame and frame.f_back:
-            code = frame.f_back.f_code
-            # Simple heuristic: look for variable assignment
-            try:
-                line = frame.f_back.f_lineno
-                filename = code.co_filename
-                with open(filename) as f:
-                    lines = f.readlines()
-                    if line <= len(lines):
-                        current_line = lines[line - 1].strip()
-                        if "=" in current_line:
-                            var_name = current_line.split("=")[0].strip().lower()
-                            # Try to match variable name to service category
-                            for service in service_registry.get():
-                                if (
-                                    service.category in var_name
-                                    or service.name in var_name
-                                ):
-                                    return try_import_service(service.category)
-            except (OSError, IndexError):
-                pass
-
-        msg = "Could not determine service category from context"
-        raise ValueError(msg)
-
-    if isinstance(service_categories, list):
-        results = []
-        for category in service_categories:
-            service_class = try_import_service(category)
-            if not service_class:
-                msg = f"Service not found or not enabled: {category}"
-                raise ServiceNotFound(msg)
-            results.append(service_class)
-        return tuple(results) if len(results) > 1 else results[0]
-
-    msg = f"Invalid service_categories type: {type(service_categories)}"
-    raise ValueError(msg)
+    config = RegistryConfig(
+        get_descriptor=get_service_descriptor,
+        try_import=try_import_service,
+        get_all_descriptors=service_registry.get,
+        not_found_exception=ServiceNotFound,
+    )
+    return import_from_registry(service_categories, config)
 
 
 def register_services(services_path: str | None = None) -> None:

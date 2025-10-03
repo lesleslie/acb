@@ -58,6 +58,8 @@ Usage:
     QueueClass = import_queue_provider("redis")
 """
 
+from contextlib import suppress
+
 # Core queue classes
 from ._base import (
     FunctionalTaskHandler,
@@ -93,9 +95,9 @@ try:
 
     REDIS_AVAILABLE = True
 except ImportError:
-    RedisQueue = None
-    RedisQueueSettings = None
-    create_redis_queue = None
+    RedisQueue = None  # type: ignore[assignment]
+    RedisQueueSettings = None  # type: ignore[assignment]
+    create_redis_queue: t.Callable[..., t.Any] | None = None
     REDIS_AVAILABLE = False
 
 try:
@@ -107,9 +109,9 @@ try:
 
     RABBITMQ_AVAILABLE = True
 except ImportError:
-    RabbitMQQueue = None
-    RabbitMQQueueSettings = None
-    create_rabbitmq_queue = None
+    RabbitMQQueue = None  # type: ignore[assignment]
+    RabbitMQQueueSettings = None  # type: ignore[assignment]
+    create_rabbitmq_queue: t.Callable[..., t.Any] | None = None
     RABBITMQ_AVAILABLE = False
 
 # Task scheduling
@@ -299,7 +301,8 @@ class QueueService(ServiceBase):
 
         # Get provider-specific settings class
         try:
-            descriptor = get_queue_provider_descriptor(self._settings.queue_provider)
+            queue_provider = getattr(self._settings, "queue_provider", "memory")
+            descriptor = get_queue_provider_descriptor(queue_provider)
             if descriptor:
                 import importlib
 
@@ -312,20 +315,22 @@ class QueueService(ServiceBase):
             pass  # Ignore import errors for optional settings classes
 
         # Create queue settings
+        queue_settings_dict = getattr(self._settings, "queue_settings", {})
         if queue_settings_class:
-            queue_settings = queue_settings_class(**self._settings.queue_settings)
+            queue_settings = queue_settings_class(**queue_settings_dict)
         else:
             queue_settings = None
 
         # Create and start queue
+        queue_provider = getattr(self._settings, "queue_provider", "memory")
         self._queue = create_queue_instance(
-            self._settings.queue_provider,
+            queue_provider,
             queue_settings,
         )
         await self._queue.start()
 
         # Create and start scheduler if enabled
-        if self._settings.enable_scheduler:
+        if getattr(self._settings, "enable_scheduler", False):
             self._scheduler = TaskScheduler(self._queue)
             await self._scheduler.start()
 
@@ -507,10 +512,9 @@ async def create_task_queue(
 from acb.services.discovery import enable_service
 
 # Register queue service in service discovery
-try:
+with suppress(Exception):
     enable_service("queues", "queue_service")
-except Exception:
-    pass  # pragma: allowlist secret  # Service registry may not be initialized yet
+# pragma: allowlist secret  # Service registry may not be initialized yet
 
 
 # Auto-initialize discovery

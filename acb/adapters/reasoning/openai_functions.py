@@ -25,7 +25,11 @@ from acb.adapters.reasoning._base import (
     ToolDefinition,
     calculate_confidence_score,
 )
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger as LoggerType
+else:
+    LoggerType = t.Any
 
 # Conditional imports for OpenAI
 try:
@@ -112,7 +116,7 @@ class OpenAIFunctionReasoningSettings(ReasoningBaseSettings):
 class FunctionCallTracker:
     """Tracks function calls during reasoning."""
 
-    def __init__(self, logger: Logger) -> None:
+    def __init__(self, logger: LoggerType) -> None:
         self.logger = logger
         self.calls: list[dict[str, t.Any]] = []
         self.call_count = 0
@@ -217,7 +221,7 @@ class Reasoning(ReasoningBase):
                     reasoning_chain,
                 )
             elif request.strategy == ReasoningStrategy.REACT:
-                response = await self._react_reasoning(
+                response = await self._react_reasoning_impl(
                     request,
                     client,
                     function_tracker,
@@ -305,7 +309,7 @@ class Reasoning(ReasoningBase):
                 response = await client.chat.completions.create(
                     model=request.model or self._settings.model,
                     messages=messages,
-                    tools=functions if functions else None,
+                    tools=functions or None,
                     tool_choice=self._settings.function_call_strategy
                     if functions
                     else None,
@@ -490,7 +494,16 @@ Show your reasoning process explicitly at each step.
             self.logger.exception(f"Chain-of-thought reasoning failed: {e}")
             raise
 
-    async def _react_reasoning(
+    async def _react_reasoning(self, request: ReasoningRequest) -> ReasoningResponse:
+        """Public override matching base class signature."""
+        client = await self._ensure_client()
+        function_tracker = FunctionCallTracker(self.logger)
+        reasoning_chain: list[ReasoningStep] = []
+        return await self._react_reasoning_impl(
+            request, client, function_tracker, reasoning_chain
+        )
+
+    async def _react_reasoning_impl(
         self,
         request: ReasoningRequest,
         client: AsyncOpenAI,

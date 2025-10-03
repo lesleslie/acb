@@ -30,7 +30,7 @@ try:
         generate_service_id,
     )
 
-    SERVICE_METADATA = ServiceMetadata(
+    SERVICE_METADATA: ServiceMetadata | None = ServiceMetadata(
         service_id=generate_service_id(),
         name="Health Service",
         category="health",
@@ -74,7 +74,7 @@ class HealthStatus(Enum):
 
     def __bool__(self) -> bool:
         """Return True if status indicates healthy or degraded state."""
-        return self in (HealthStatus.HEALTHY, HealthStatus.DEGRADED)
+        return self.value in ("healthy", "degraded")
 
 
 class HealthCheckType(Enum):
@@ -281,11 +281,11 @@ class HealthReporter(CleanupMixin):
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results and update history
-        component_results = {}
+        component_results: dict[str, HealthCheckResult] = {}
         for component_id, result in zip(self._components.keys(), results, strict=False):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 # Create error result for failed checks
-                result = HealthCheckResult(
+                health_result = HealthCheckResult(
                     component_id=component_id,
                     component_name=self._components[component_id].component_name,
                     status=HealthStatus.CRITICAL,
@@ -293,9 +293,11 @@ class HealthReporter(CleanupMixin):
                     error=str(result),
                     message="Health check execution failed",
                 )
+            else:
+                health_result = result
 
-            component_results[component_id] = result
-            self._update_history(component_id, result)
+            component_results[component_id] = health_result
+            self._update_history(component_id, health_result)
 
         # Update system status based on component results
         self._update_system_status(component_results)
@@ -560,7 +562,10 @@ class HealthService(ServiceBase, HealthCheckMixin):
         await self._reporter.start_monitoring()
 
         # Auto-register services if enabled
-        if self._settings.auto_register_services:
+        if (
+            hasattr(self._settings, "auto_register_services")
+            and self._settings.auto_register_services
+        ):
             await self._auto_register_services()
 
         self.logger.info("Health service initialized successfully")

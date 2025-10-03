@@ -8,6 +8,7 @@ import asyncio
 import logging
 import time
 import typing as t
+from contextlib import suppress
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -146,6 +147,8 @@ class RabbitMQQueueSettings(QueueSettings):
 class RabbitMQQueue(QueueBase):
     """RabbitMQ-backed task queue implementation."""
 
+    _settings: RabbitMQQueueSettings  # Type hint for proper attribute checking
+
     def __init__(self, settings: RabbitMQQueueSettings | None = None) -> None:
         if not RABBITMQ_AVAILABLE:
             msg = "aio-pika is required for RabbitMQQueue. Install with: pip install aio-pika>=9.0.0"
@@ -210,10 +213,9 @@ class RabbitMQQueue(QueueBase):
 
         # Close consumers
         for consumer in self._consumers.values():
-            try:
+            with suppress(Exception):
                 await consumer.close()
-            except Exception:
-                pass  # pragma: allowlist secret  # Ignore consumer close errors during shutdown
+        # pragma: allowlist secret  # Ignore consumer close errors during shutdown
         self._consumers.clear()
 
         # Close RabbitMQ connection
@@ -759,7 +761,7 @@ class RabbitMQQueue(QueueBase):
         try:
             # Declare dead letter queue
             dlq = await self._channel.declare_queue(
-                f"{self._settings.dead_letter_routing_key}",
+                str(self._settings.dead_letter_routing_key),
                 durable=True,
             )
 

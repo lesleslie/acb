@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 import time
 import typing as t
+from contextlib import suppress
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from enum import Enum
@@ -136,47 +137,68 @@ class TypeCoercer:
         """Coerce data to integer."""
         if isinstance(data, bool):
             return int(data)
+
         if isinstance(data, int | float):
-            if isinstance(data, float) and not data.is_integer():
-                if self.strategy == CoercionStrategy.PERMISSIVE:
-                    return int(data)  # Truncate
-                msg = f"Cannot coerce float {data} to int without precision loss"
-                raise ValueError(
-                    msg,
-                )
-            return int(data)
+            return self._coerce_numeric_to_int(data)
+
         if isinstance(data, str):
-            # Handle common string representations
-            data = data.strip()
-            if data.lower() in ("true", "yes", "on", "1"):
-                return 1
-            if data.lower() in ("false", "no", "off", "0"):
-                return 0
-            # Try direct conversion
-            try:
-                # Handle decimal strings
-                if "." in data:
-                    float_val = float(data)
-                    if float_val.is_integer():
-                        return int(float_val)
-                    msg = f"Cannot convert decimal string '{data}' to int"
-                    raise ValueError(
-                        msg,
-                    )
-                return int(data)
-            except ValueError:
-                # Try parsing with commas (e.g., "1,234")
-                clean_data = data.replace(",", "")
-                return int(clean_data)
-        elif isinstance(data, Decimal):
-            if data % 1 == 0:
-                return int(data)
-            msg = f"Cannot convert Decimal {data} to int without precision loss"
-            raise ValueError(
-                msg,
-            )
-        else:
+            return self._coerce_string_to_int(data)
+
+        if isinstance(data, Decimal):
+            return self._coerce_decimal_to_int(data)
+
+        return int(data)
+
+    def _coerce_numeric_to_int(self, data: int | float) -> int:
+        """Coerce numeric type to int."""
+        if isinstance(data, float) and not data.is_integer():
+            if self.strategy == CoercionStrategy.PERMISSIVE:
+                return int(data)  # Truncate
+            msg = f"Cannot coerce float {data} to int without precision loss"
+            raise ValueError(msg)
+        return int(data)
+
+    def _coerce_string_to_int(self, data: str) -> int:
+        """Coerce string to int."""
+        data = data.strip()
+
+        # Handle boolean-like strings
+        if bool_int := self._try_bool_string_to_int(data):
+            return bool_int
+
+        # Handle decimal strings
+        if "." in data:
+            return self._convert_decimal_string_to_int(data)
+
+        # Try direct conversion or with comma removal
+        try:
             return int(data)
+        except ValueError:
+            clean_data = data.replace(",", "")
+            return int(clean_data)
+
+    def _try_bool_string_to_int(self, data: str) -> int | None:
+        """Try to convert boolean-like string to int. Returns None if not boolean-like."""
+        if data.lower() in ("true", "yes", "on", "1"):
+            return 1
+        if data.lower() in ("false", "no", "off", "0"):
+            return 0
+        return None
+
+    def _convert_decimal_string_to_int(self, data: str) -> int:
+        """Convert decimal string to int if it represents an integer value."""
+        float_val = float(data)
+        if float_val.is_integer():
+            return int(float_val)
+        msg = f"Cannot convert decimal string '{data}' to int"
+        raise ValueError(msg)
+
+    def _coerce_decimal_to_int(self, data: Decimal) -> int:
+        """Coerce Decimal to int."""
+        if data % 1 == 0:
+            return int(data)
+        msg = f"Cannot convert Decimal {data} to int without precision loss"
+        raise ValueError(msg)
 
     async def _coerce_to_float(self, data: t.Any) -> float:
         """Coerce data to float."""
@@ -243,12 +265,11 @@ class TypeCoercer:
             # Try to parse JSON-like string
             import json
 
-            try:
+            with suppress((json.JSONDecodeError, ValueError)):
                 parsed = json.loads(data)
                 if isinstance(parsed, dict):
                     return parsed
-            except (json.JSONDecodeError, ValueError):
-                pass
+
             # Return single-item dict
             return {"value": data}
         return {"value": data}
@@ -324,10 +345,8 @@ class TypeCoercer:
                     continue
 
             # Try parsing ISO format
-            try:
+            with suppress(ValueError):
                 return datetime.fromisoformat(data)
-            except ValueError:
-                pass
 
             msg = f"Cannot parse datetime string: {data}"
             raise ValueError(msg)

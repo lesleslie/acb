@@ -376,6 +376,94 @@ class RedisQueue(QueueBase):
             self.logger.exception(f"Failed to enqueue task {task.task_id}: {e}")
             raise
 
+    async def _resolve_queue_keys(
+        self,
+        redis_client: t.Any,
+        queue_name: str | None,
+    ) -> list[str]:
+        """Resolve which queue keys to check for dequeue."""
+        if queue_name:
+            return [self._queue_key.format(queue_name=queue_name)]
+
+        pattern = self._queue_key.format(queue_name="*")
+        return await redis_client.keys(pattern)
+
+    async def _dequeue_with_lua(
+        self,
+        queue_key: str,
+        current_time: float,
+    ) -> TaskData | None:
+        """Dequeue using Lua script for atomic operation."""
+        result = await self._lua_scripts["dequeue"](
+            keys=[queue_key, self._processing_key, self._metrics_key],
+            args=[current_time],
+        )
+
+        if not result:
+            return None
+
+        task_key, task_data = result
+        return TaskData.model_validate_json(task_data)
+
+    async def _dequeue_manual(
+        self,
+        redis_client: t.Any,
+        queue_key: str,
+        current_time: float,
+    ) -> TaskData | None:
+        """Dequeue using manual pipeline operations."""
+        # Get task ready for processing
+        tasks = await redis_client.zrangebyscore(
+            queue_key,
+            "-inf",
+            current_time,
+            start=0,
+            num=1,
+        )
+
+        if not tasks:
+            return None
+
+        task_key = tasks[0]
+
+        # Move to processing atomically
+        pipe = redis_client.pipeline()
+        pipe.zrem(queue_key, task_key)
+        pipe.zadd(self._processing_key, {task_key: current_time})
+        pipe.hincrby(self._metrics_key, "pending_tasks", -1)
+        pipe.hincrby(self._metrics_key, "processing_tasks", 1)
+        pipe.get(task_key)
+
+        results = await pipe.execute()
+        task_data = results[-1]
+
+        if not task_data:
+            return None
+
+        task = TaskData.model_validate_json(task_data)
+        self.logger.debug(f"Dequeued task {task.task_id}")
+        return task
+
+    async def _try_dequeue_from_queues(
+        self,
+        queue_keys: list[str],
+        current_time: float,
+        redis_client: t.Any,
+    ) -> TaskData | None:
+        """Try to dequeue from multiple queue keys."""
+        use_lua = self._settings.use_lua_scripts and "dequeue" in self._lua_scripts
+
+        for queue_key in queue_keys:
+            if use_lua:
+                task = await self._dequeue_with_lua(queue_key, current_time)
+            else:
+                task = await self._dequeue_manual(redis_client, queue_key, current_time)
+
+            if task:
+                return task
+
+        return None
+
     async def dequeue(self, queue_name: str | None = None) -> TaskData | None:
         """Dequeue a task for processing."""
         if not self._running:
@@ -385,109 +473,101 @@ class RedisQueue(QueueBase):
         current_time = time.time()
 
         try:
-            # Determine which queues to check
-            if queue_name:
-                queue_keys = [self._queue_key.format(queue_name=queue_name)]
-            else:
-                # Get all queue names
-                pattern = self._queue_key.format(queue_name="*")
-                queue_keys = await redis_client.keys(pattern)
-
-            # Try to dequeue from each queue
-            for queue_key in queue_keys:
-                if self._settings.use_lua_scripts and "dequeue" in self._lua_scripts:
-                    # Use atomic Lua script
-                    result = await self._lua_scripts["dequeue"](
-                        keys=[queue_key, self._processing_key, self._metrics_key],
-                        args=[current_time],
-                    )
-
-                    if result:
-                        task_key, task_data = result
-                        return TaskData.model_validate_json(task_data)
-                else:
-                    # Manual atomic operation
-                    pipe = redis_client.pipeline()
-
-                    # Get task ready for processing
-                    tasks = await redis_client.zrangebyscore(
-                        queue_key,
-                        "-inf",
-                        current_time,
-                        start=0,
-                        num=1,
-                    )
-
-                    if tasks:
-                        task_key = tasks[0]
-
-                        # Move to processing atomically
-                        pipe.zrem(queue_key, task_key)
-                        pipe.zadd(self._processing_key, {task_key: current_time})
-                        pipe.hincrby(self._metrics_key, "pending_tasks", -1)
-                        pipe.hincrby(self._metrics_key, "processing_tasks", 1)
-                        pipe.get(task_key)
-
-                        results = await pipe.execute()
-                        task_data = results[-1]
-
-                        if task_data:
-                            task = TaskData.model_validate_json(task_data)
-                            self.logger.debug(f"Dequeued task {task.task_id}")
-                            return task
-
-            return None
-
+            queue_keys = await self._resolve_queue_keys(redis_client, queue_name)
+            return await self._try_dequeue_from_queues(
+                queue_keys, current_time, redis_client
+            )
         except Exception as e:
             self.logger.exception(f"Failed to dequeue task: {e}")
             return None
+
+    async def _check_result_storage(
+        self,
+        redis_client: t.Any,
+        task_id: UUID,
+    ) -> TaskResult | None:
+        """Check if task result exists in storage."""
+        result_key = self._task_result_key.format(task_id=task_id)
+        result_data = await redis_client.get(result_key)
+
+        if result_data:
+            return TaskResult.model_validate_json(result_data)
+
+        return None
+
+    async def _check_processing_status(
+        self,
+        redis_client: t.Any,
+        task_id: UUID,
+        task_key: str,
+    ) -> TaskResult | None:
+        """Check if task is currently being processed."""
+        processing_score = await redis_client.zscore(self._processing_key, task_key)
+
+        if processing_score is None:
+            return None
+
+        task_data = await redis_client.get(task_key)
+        if not task_data:
+            return None
+
+        task = TaskData.model_validate_json(task_data)
+        return TaskResult(
+            task_id=task_id,
+            status=TaskStatus.PROCESSING,
+            queue_name=task.queue_name,
+            started_at=datetime.fromtimestamp(processing_score),
+        )
+
+    async def _check_pending_queues(
+        self,
+        redis_client: t.Any,
+        task_id: UUID,
+        task_key: str,
+    ) -> TaskResult | None:
+        """Check if task is pending in any queue."""
+        queue_pattern = self._queue_key.format(queue_name="*")
+        queue_keys = await redis_client.keys(queue_pattern)
+        queue_keys.append(self._delayed_key)
+
+        for key in queue_keys:
+            score = await redis_client.zscore(key, task_key)
+            if score is None:
+                continue
+
+            task_data = await redis_client.get(task_key)
+            if not task_data:
+                continue
+
+            task = TaskData.model_validate_json(task_data)
+            return TaskResult(
+                task_id=task_id,
+                status=TaskStatus.PENDING,
+                queue_name=task.queue_name,
+            )
+
+        return None
 
     async def get_task_status(self, task_id: UUID) -> TaskResult | None:
         """Get task status and result."""
         redis_client = await self._ensure_redis()
 
         try:
-            # Check for result first
-            result_key = self._task_result_key.format(task_id=task_id)
-            result_data = await redis_client.get(result_key)
+            # Check for completed result
+            result = await self._check_result_storage(redis_client, task_id)
+            if result:
+                return result
 
-            if result_data:
-                return TaskResult.model_validate_json(result_data)
-
-            # Check if task is processing
+            # Check if processing
             task_key = self._task_data_key.format(task_id=task_id)
-            processing_score = await redis_client.zscore(self._processing_key, task_key)
+            result = await self._check_processing_status(
+                redis_client, task_id, task_key
+            )
+            if result:
+                return result
 
-            if processing_score is not None:
-                # Get task data for queue name
-                task_data = await redis_client.get(task_key)
-                if task_data:
-                    task = TaskData.model_validate_json(task_data)
-                    return TaskResult(
-                        task_id=task_id,
-                        status=TaskStatus.PROCESSING,
-                        queue_name=task.queue_name,
-                        started_at=datetime.fromtimestamp(processing_score),
-                    )
-
-            # Check pending queues and delayed queue
-            queue_pattern = self._queue_key.format(queue_name="*")
-            queue_keys = await redis_client.keys(queue_pattern)
-            queue_keys.append(self._delayed_key)
-
-            for key in queue_keys:
-                score = await redis_client.zscore(key, task_key)
-                if score is not None:
-                    task_data = await redis_client.get(task_key)
-                    if task_data:
-                        task = TaskData.model_validate_json(task_data)
-                        return TaskResult(
-                            task_id=task_id,
-                            status=TaskStatus.PENDING,
-                            queue_name=task.queue_name,
-                        )
-
-            return None
+            # Check pending queues
+            return await self._check_pending_queues(redis_client, task_id, task_key)
 
         except Exception as e:
             self.logger.exception(f"Failed to get task status for {task_id}: {e}")
@@ -508,21 +588,21 @@ class RedisQueue(QueueBase):
 
             removed = False
             for key in queue_keys:
-                result = await redis_client.zrem(key, task_key)
-                if result > 0:
+                zrem_result = await redis_client.zrem(key, task_key)
+                if zrem_result > 0:
                     removed = True
                     break
 
             if removed:
                 # Create cancelled result
-                result = TaskResult(
+                task_result = TaskResult(
                     task_id=task_id,
                     status=TaskStatus.CANCELLED,
                     completed_at=datetime.now(tz=UTC),
                 )
 
                 result_key = self._task_result_key.format(task_id=task_id)
-                pipe.set(result_key, result.model_dump_json())
+                pipe.set(result_key, task_result.model_dump_json())
                 pipe.expire(result_key, 86400)  # 24 hours
                 pipe.hincrby(self._metrics_key, "pending_tasks", -1)
 
@@ -616,38 +696,94 @@ class RedisQueue(QueueBase):
             self.logger.exception(f"Failed to list queues: {e}")
             return []
 
+    def _build_dead_letter_data(
+        self,
+        task: TaskData,
+        result: TaskResult,
+    ) -> dict[str, t.Any]:
+        """Build dead letter data structure."""
+        return {
+            "task": task.model_dump(),
+            "result": result.model_dump(),
+            "timestamp": time.time(),
+        }
+
+    def _configure_dead_letter_pipeline(
+        self,
+        pipe: t.Any,
+        task_key: str,
+        dead_letter_data: dict[str, t.Any],
+    ) -> None:
+        """Configure pipeline operations for dead letter storage."""
+        # Store in dead letter queue
+        pipe.zadd(self._dead_letter_key, {task_key: time.time()})
+        pipe.set(f"{task_key}:dead_letter", json.dumps(dead_letter_data))
+        pipe.expire(f"{task_key}:dead_letter", self._settings.dead_letter_ttl)
+
+        # Remove from processing
+        pipe.zrem(self._processing_key, task_key)
+
+        # Update metrics
+        pipe.hincrby(self._metrics_key, "processing_tasks", -1)
+        pipe.hincrby(self._metrics_key, "dead_letter_tasks", 1)
+
     async def _store_dead_letter_task(self, task: TaskData, result: TaskResult) -> None:
         """Store task in dead letter queue."""
         redis_client = await self._ensure_redis()
 
         try:
-            dead_letter_data = {
-                "task": task.model_dump(),
-                "result": result.model_dump(),
-                "timestamp": time.time(),
-            }
+            dead_letter_data = self._build_dead_letter_data(task, result)
+            task_key = self._task_data_key.format(task_id=task.task_id)
 
             pipe = redis_client.pipeline()
-
-            # Store in dead letter queue
-            task_key = self._task_data_key.format(task_id=task.task_id)
-            pipe.zadd(self._dead_letter_key, {task_key: time.time()})
-            pipe.set(f"{task_key}:dead_letter", json.dumps(dead_letter_data))
-            pipe.expire(f"{task_key}:dead_letter", self._settings.dead_letter_ttl)
-
-            # Remove from processing
-            pipe.zrem(self._processing_key, task_key)
-
-            # Update metrics
-            pipe.hincrby(self._metrics_key, "processing_tasks", -1)
-            pipe.hincrby(self._metrics_key, "dead_letter_tasks", 1)
-
+            self._configure_dead_letter_pipeline(pipe, task_key, dead_letter_data)
             await pipe.execute()
 
         except Exception as e:
             self.logger.exception(
-                f"Failed to store dead letter task {task.task_id}: {e}"
+                f"Failed to store dead letter task {task.task_id}: {e}",
             )
+
+    async def _move_task_to_queue(
+        self,
+        redis_client: t.Any,
+        task_key: str,
+        current_time: float,
+    ) -> tuple[str, float] | None:
+        """Move a single delayed task to its appropriate queue.
+
+        Returns:
+            Tuple of (queue_key, score) if successful, None otherwise
+        """
+        task_data = await redis_client.get(task_key)
+        if not task_data:
+            return None
+
+        task = TaskData.model_validate_json(task_data)
+        queue_key = self._queue_key.format(queue_name=task.queue_name)
+        score = current_time * 1_000_000 - task.priority.value
+        return (queue_key, score)
+
+    async def _process_ready_delayed_tasks(
+        self,
+        redis_client: t.Any,
+        ready_tasks: list[str],
+        current_time: float,
+    ) -> None:
+        """Process a batch of ready delayed tasks."""
+        pipe = redis_client.pipeline()
+
+        for task_key in ready_tasks:
+            result = await self._move_task_to_queue(
+                redis_client, task_key, current_time
+            )
+            if result:
+                queue_key, score = result
+                pipe.zadd(queue_key, {task_key: score})
+                pipe.zrem(self._delayed_key, task_key)
+
+        await pipe.execute()
+        self.logger.debug(f"Moved {len(ready_tasks)} delayed tasks to queues")
 
     async def _process_delayed_tasks(self) -> None:
         """Process delayed tasks in background."""
@@ -667,25 +803,8 @@ class RedisQueue(QueueBase):
                 )
 
                 if ready_tasks:
-                    pipe = redis_client.pipeline()
-
-                    for task_key in ready_tasks:
-                        # Get task data
-                        task_data = await redis_client.get(task_key)
-                        if task_data:
-                            task = TaskData.model_validate_json(task_data)
-
-                            # Move to appropriate queue
-                            queue_key = self._queue_key.format(
-                                queue_name=task.queue_name,
-                            )
-                            score = current_time * 1_000_000 - task.priority.value
-                            pipe.zadd(queue_key, {task_key: score})
-                            pipe.zrem(self._delayed_key, task_key)
-
-                    await pipe.execute()
-                    self.logger.debug(
-                        f"Moved {len(ready_tasks)} delayed tasks to queues",
+                    await self._process_ready_delayed_tasks(
+                        redis_client, ready_tasks, current_time
                     )
 
                 await asyncio.sleep(1.0)
@@ -715,10 +834,8 @@ class RedisQueue(QueueBase):
                 self.logger.exception(f"Redis health monitor error: {e}")
                 # Try to reconnect
                 if self._redis:
-                    try:
+                    with contextlib.suppress(Exception):
                         await self._redis.aclose()
-                    except Exception:
-                        pass  # pragma: allowlist secret  # Ignore connection close errors during error recovery
                     self._redis = None
 
     async def _update_redis_metrics(self) -> None:

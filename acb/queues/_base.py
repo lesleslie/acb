@@ -21,7 +21,11 @@ from pydantic import BaseModel, Field, field_validator
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
 from acb.depends import depends
-from acb.logger import Logger
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger as LoggerType
+else:
+    LoggerType = object
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +129,7 @@ class TaskData(BaseModel):
 
     @field_validator("scheduled_at", mode="before")
     @classmethod
-    def parse_scheduled_at(cls, v) -> None:
+    def parse_scheduled_at(cls, v: t.Any) -> datetime | t.Any:
         if isinstance(v, str):
             return datetime.fromisoformat(v)
         return v
@@ -384,7 +388,7 @@ class QueueBase(ABC, CleanupMixin):
     """Abstract base class for queue implementations."""
 
     config: Config
-    logger: Logger
+    logger: LoggerType  # type: ignore[valid-type]
 
     def __init__(self, settings: QueueSettings | None = None) -> None:
         super().__init__()
@@ -392,11 +396,11 @@ class QueueBase(ABC, CleanupMixin):
 
         # Initialize injected dependencies
         self.config = depends.get(Config)
-        self.logger = depends.get(Logger)
+        self.logger = depends.get(LoggerType)
 
         self._settings = settings or QueueSettings()
         self._handlers: dict[str, TaskHandler] = {}
-        self._workers: dict[str, asyncio.Task] = {}
+        self._workers: dict[str, asyncio.Task[None]] = {}
         self._metrics = QueueMetrics()
         self._shutdown_event = asyncio.Event()
         self._running = False

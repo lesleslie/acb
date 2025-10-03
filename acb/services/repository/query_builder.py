@@ -522,7 +522,7 @@ class QueryBuilder:
     async def _execute_select(self) -> list[EntityType]:
         """Execute SELECT query."""
         filters = self._build_filters()
-        sort_criteria = self._sort_criteria if self._sort_criteria else None
+        sort_criteria = self._sort_criteria or None
         pagination = self._pagination
 
         # Handle limit/offset if no pagination
@@ -575,7 +575,7 @@ class QueryBuilder:
                     filters[spec.field] = spec.value
                 # Add more operators as needed
 
-        return filters if filters else None
+        return filters or None
 
     def clone(self) -> "QueryBuilder":
         """Create a copy of this query builder.
