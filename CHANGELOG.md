@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Users **must** update installation commands to use the new `--group` syntax. See [MIGRATION-0.24.0.md](<./MIGRATION-0.24.0.md>) for detailed migration steps and examples.
 
 **Quick Migration**:
+
 ```bash
 # Old (no longer works)
 uv add "acb[cache,sql]"
