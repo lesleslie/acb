@@ -6,14 +6,14 @@ This guide explains ACB's simplified architecture and core design patterns.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Design Principles](#core-design-principles)
-- [Architecture Layers](#architecture-layers)
-- [Core Systems](#core-systems)
-- [Adapter Pattern](#adapter-pattern)
-- [Actions System](#actions-system)
-- [Testing Infrastructure](#testing-infrastructure)
-- [Integration Patterns](#integration-patterns)
+- [Overview](<#overview>)
+- [Core Design Principles](<#core-design-principles>)
+- [Architecture Layers](<#architecture-layers>)
+- [Core Systems](<#core-systems>)
+- [Adapter Pattern](<#adapter-pattern>)
+- [Actions System](<#actions-system>)
+- [Testing Infrastructure](<#testing-infrastructure>)
+- [Integration Patterns](<#integration-patterns>)
 
 ## Overview
 
@@ -30,6 +30,7 @@ ACB (Asynchronous Component Base) is a **minimalist Python framework** built on 
 ### What ACB Doesn't Do (Simplified in v0.19.1+)
 
 ACB intentionally removed complex enterprise features:
+
 - ❌ Services layer, events system, queues, workflows (removed in v0.19.1)
 - ❌ Complex monitoring and health checking frameworks
 - ❌ Advanced retry mechanisms and circuit breakers
@@ -71,11 +72,10 @@ Components are automatically wired using type-based injection:
 ```python
 from acb.depends import depends
 
+
 @depends.inject
 async def my_function(
-    cache: Cache = depends(),
-    storage: Storage = depends(),
-    config: Config = depends()
+    cache: Cache = depends(), storage: Storage = depends(), config: Config = depends()
 ):
     # Dependencies automatically injected
     await cache.set("key", "value")
@@ -133,6 +133,7 @@ await hot_reload.stop()
 ```
 
 **Key Features:**
+
 - YAML-based configuration files
 - Secret management integration
 - Environment variable support
@@ -153,6 +154,7 @@ Cache = import_adapter("cache")
 cache_instance = Cache()
 depends.set(Cache, cache_instance)
 
+
 # Automatic injection
 @depends.inject
 async def process_data(cache: Cache = depends()):
@@ -160,6 +162,7 @@ async def process_data(cache: Cache = depends()):
 ```
 
 **Key Features:**
+
 - Type-based dependency resolution
 - Singleton and factory patterns
 - Lazy initialization
@@ -178,6 +181,7 @@ logger.debug("Cache hit", key=cache_key, ttl=300)
 ```
 
 **Key Features:**
+
 - Async logging operations
 - Structured JSON output
 - Performance timing
@@ -200,6 +204,7 @@ storage = context.storage
 ```
 
 **Key Features:**
+
 - Centralized access to core components
 - Simplified architecture
 - Clean API surface
@@ -267,7 +272,7 @@ MODULE_METADATA = AdapterMetadata(
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
         AdapterCapability.CACHING,
-        AdapterCapability.CONNECTION_POOLING
+        AdapterCapability.CONNECTION_POOLING,
     ],
     required_packages=["redis>=4.0.0"],
     description="High-performance Redis caching adapter",
@@ -280,6 +285,7 @@ All adapters use a simplified cleanup pattern (v0.19.1+):
 
 ```python
 from acb.cleanup import CleanupMixin
+
 
 class SimpleAdapter(CleanupMixin):
     def __init__(self):
@@ -301,23 +307,27 @@ Self-contained utility functions organized by verb-based actions:
 ```python
 # Compression actions
 from acb.actions.compress import compress, decompress
+
 compressed = compress.gzip("Hello, ACB!", compresslevel=9)
 
 # Encoding actions
 from acb.actions.encode import encode, decode
+
 json_data = await encode.json(data)
 
 # Hashing actions
 from acb.actions.hash import hash
+
 blake3_hash = await hash.blake3("some data")
 ```
 
 **Action Structure:**
+
 - `acb.actions.compress`: gzip, brotli compression
 - `acb.actions.encode`: JSON, YAML, TOML, MsgPack serialization
 - `acb.actions.hash`: blake3, crc32c, md5 hashing
 
-See [ACTION_TEMPLATE.md](ACTION_TEMPLATE.md) for creating custom actions.
+See [ACTION_TEMPLATE.md](<./ACTION_TEMPLATE.md>) for creating custom actions.
 
 ## Testing Infrastructure
 
@@ -328,6 +338,7 @@ ACB provides comprehensive testing support:
 ```python
 import pytest
 from acb.testing import mock_config, mock_cache, mock_sql
+
 
 @pytest.mark.asyncio
 async def test_user_service(mock_config, mock_cache, mock_sql):
@@ -376,11 +387,10 @@ Cache = import_adapter("cache")
 Storage = import_adapter("storage")
 SQL = import_adapter("sql")
 
+
 @depends.inject
 async def process_user_data(
-    cache: Cache = depends(),
-    storage: Storage = depends(),
-    sql: SQL = depends()
+    cache: Cache = depends(), storage: Storage = depends(), sql: SQL = depends()
 ):
     # Check cache first
     user_data = await cache.get("user:123")
@@ -419,6 +429,7 @@ from fastblocks import HTTPEndpoint
 from acb.depends import depends
 from acb.config import Config
 
+
 class FastBlocksEndpoint(HTTPEndpoint):
     config: Config = depends()
 
@@ -438,8 +449,9 @@ ACB's simplified architecture (v0.19.1+) focuses on:
 - **Developer Experience**: Convention over configuration
 
 For more information:
-- [ACTION_TEMPLATE.md](ACTION_TEMPLATE.md) - Creating custom actions
-- [ADAPTER_TEMPLATE.md](ADAPTER_TEMPLATE.md) - Creating custom adapters
-- [PERFORMANCE-GUIDE.md](PERFORMANCE-GUIDE.md) - Performance optimization
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues and solutions
+
+- [ACTION_TEMPLATE.md](<./ACTION_TEMPLATE.md>) - Creating custom actions
+- [ADAPTER_TEMPLATE.md](<./ADAPTER_TEMPLATE.md>) - Creating custom adapters
+- [PERFORMANCE-GUIDE.md](<./PERFORMANCE-GUIDE.md>) - Performance optimization
+- [TROUBLESHOOTING.md](<./TROUBLESHOOTING.md>) - Common issues and solutions
 - [Individual adapter READMEs](../acb/adapters/) - Adapter-specific documentation

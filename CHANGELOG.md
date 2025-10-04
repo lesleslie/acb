@@ -45,6 +45,42 @@ All notable changes to ACB (Asynchronous Component Base) will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.1] - 2025-10-04
+
+### Changed
+
+- Acb (quality: 64/100) - 2025-10-01 23:30:46
+- Acb (quality: 64/100) - 2025-10-02 02:04:24
+- Acb (quality: 64/100) - 2025-10-02 05:27:27
+- Acb (quality: 64/100) - 2025-10-02 10:16:46
+- Acb (quality: 64/100) - 2025-10-02 12:05:44
+- Acb (quality: 64/100) - 2025-10-02 12:19:04
+- Acb (quality: 64/100) - 2025-10-02 21:19:46
+- Acb (quality: 64/100) - 2025-10-03 01:10:44
+- Acb (quality: 64/100) - 2025-10-03 01:22:23
+- Acb (quality: 64/100) - 2025-10-03 01:30:13
+- Acb (quality: 68/100) - 2025-10-02 23:45:06
+- Acb (quality: 68/100) - 2025-10-03 00:34:55
+- Acb (quality: 68/100) - 2025-10-03 00:50:05
+- Acb (quality: 69/100) - 2025-10-03 01:45:23
+- Acb (quality: 69/100) - 2025-10-03 10:20:52
+- Acb (quality: 69/100) - 2025-10-03 15:09:34
+- Acb (quality: 69/100) - 2025-10-03 16:23:43
+- Acb (quality: 69/100) - 2025-10-03 23:07:51
+- Acb (quality: 69/100) - 2025-10-04 07:19:59
+- Acb (quality: 73/100) - 2025-10-01 15:58:55
+- Acb (quality: 73/100) - 2025-10-01 22:32:03
+
+### Documentation
+
+- config: Update CHANGELOG, pyproject
+
+### Internal
+
+- Remove hook_parser.py from project root
+- Remove temporary hook parser files
+- Remove working docs and temporary files
+
 ## [0.23.0] - 2025-10-01
 
 ### Changed
