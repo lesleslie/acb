@@ -495,6 +495,7 @@ STATIC_ADAPTER_MAPPINGS = {
     "logger": ("acb.adapters.logger.loguru", "Logger"),  # Default logger (loguru)
     "logger.loguru": ("acb.adapters.logger.loguru", "Logger"),
     "logger.structlog": ("acb.adapters.logger.structlog", "Logger"),
+    "logger.logly": ("acb.adapters.logger.logly", "Logger"),
     "sql.mysql": ("acb.adapters.sql.mysql", "Sql"),
     "sql.pgsql": ("acb.adapters.sql.pgsql", "Sql"),
     "sql.sqlite": ("acb.adapters.sql.sqlite", "Sql"),
@@ -532,6 +533,7 @@ STATIC_ADAPTER_MAPPINGS = {
     "queue.memory": ("acb.adapters.queue.memory", "Queue"),
     "queue.redis": ("acb.adapters.queue.redis", "Queue"),
     "queue.rabbitmq": ("acb.adapters.queue.rabbitmq", "Queue"),
+    "queue.apscheduler": ("acb.queues.apscheduler", "Queue"),
     "ai.cloud": ("acb.adapters.ai.cloud", "CloudAI"),
     "ai.edge": ("acb.adapters.ai.edge", "EdgeAI"),
     "ai.hybrid": ("acb.adapters.ai.hybrid", "HybridAI"),

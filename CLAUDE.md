@@ -449,8 +449,8 @@ python -m crackerjack -t                       # Test and quality verification (
 uv sync --group dev
 
 # Install with specific adapter groups
-uv add "acb[cache,sql,storage]"  # Common web app stack
-uv add "acb[all]"                # All optional dependencies
+uv add --group cache --group sql --group storage  # Common web app stack
+uv add --group all                                 # All optional dependencies
 
 # Add development dependency
 uv add --group dev <package>
@@ -1110,7 +1110,7 @@ Each adapter category has its own detailed README with usage examples and config
 
 **Quick fixes:**
 
-- Adapter not loading → Check `settings/adapters.yml`, install with `uv add "acb[adapter_name]"`
+- Adapter not loading → Check `settings/adapters.yml`, install with `uv add --group adapter_name`
 - Import errors → Install ACB with `uv add acb`, check Python 3.13+ requirement
 - Config errors → Verify YAML syntax, create `settings/` structure
 - Test failures → Use proper async fixtures, `@pytest.mark.asyncio` decorator
