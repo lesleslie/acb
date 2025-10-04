@@ -85,18 +85,38 @@ uv add acb
 ACB supports various optional dependencies for different adapters and functionality:
 
 | Feature Group | Components | Installation Command |
-| ----------------- | ---------------------------------------------------------------------------------- | ---------------------------------------- |
-| Secret | Secret management (Infisical, Secret Manager) | `uv add "acb[secret]` |
-| SMTP | Email sending (Gmail, Mailgun) | `uv add "acb[smtp]` |
-| SQL | Database (MySQL, PostgreSQL) | `uv add "acb[sql]` |
-| Storage | File storage (S3, GCS, Azure, local) | `uv add "acb[storage]` |
-| Vector | Vector database (DuckDB with VSS, with Weaviate, OpenSearch, Qdrant planned) | `uv add "acb[vector]` |
-| Demo | Demo/example utilities | `uv add "acb[demo]` |
-| Development | Development tools | `uv add "acb[dev]` |
-| Multiple Features | Combined dependencies | `uv add "acb[models,cache,sql,nosql]` |
-| Web Application | Typical web app stack | `uv add "acb[models,cache,sql,storage]` |
-| Web Application Plus | Web app stack with vector support | `uv add "acb[webapp-plus]` |
-| All Features | All optional dependencies | `uv add "acb[all]` |
+| ----------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Cache | Memory and Redis caching | `uv add acb --group cache` |
+| DNS | DNS management (Cloud DNS, Cloudflare, Route53) | `uv add acb --group dns` |
+| FTPD | File transfer (FTP, SFTP) | `uv add acb --group ftpd` |
+| Monitoring | Error tracking (Sentry, Logfire) | `uv add acb --group monitoring` |
+| Requests | HTTP clients (HTTPX, Niquests) | `uv add acb --group requests` |
+| Secret | Secret management (Infisical, GCP, Azure, Cloudflare) | `uv add acb --group secret` |
+| SMTP | Email sending (Mailgun) | `uv add acb --group smtp` |
+| SQL | Database (MySQL, PostgreSQL, SQLite) | `uv add acb --group sql` |
+| Storage | File storage (S3, GCS, Azure, local) | `uv add acb --group storage` |
+| NoSQL | Document databases (MongoDB, Firestore, Redis-OM) | `uv add acb --group nosql` |
+| Vector | Vector databases (DuckDB, Pinecone, Qdrant, Weaviate) | `uv add acb --group vector` |
+| Graph | Graph databases (Neo4j, ArangoDB) | `uv add acb --group graph` |
+| AI | AI/ML integrations (Anthropic, OpenAI, Gemini, Ollama) | `uv add acb --group ai` |
+| Embedding | Embedding models (OpenAI, Sentence Transformers) | `uv add acb --group embedding` |
+| Reasoning | Reasoning frameworks (LangChain, LlamaIndex) | `uv add acb --group reasoning` |
+| Models | Model frameworks (SQLModel, Pydantic, Redis-OM, msgspec, attrs) | `uv add acb --group models` |
+| Logger | Advanced logging (Logly, Structlog) | `uv add acb --group logger` |
+| MCP | Model Context Protocol support | `uv add acb --group mcp` |
+| Demo | Demo/example utilities (Faker) | `uv add acb --group demo` |
+| Development | Development tools (pytest, ruff, pre-commit) | `uv add acb --group dev` |
+| **Composite Groups** | | |
+| Minimal | Cache + Requests (essential web stack) | `uv add acb --group minimal` |
+| API | Cache + NoSQL + Requests + Monitoring | `uv add acb --group api` |
+| Microservice | Cache + Requests + Monitoring + Secret | `uv add acb --group microservice` |
+| Web Application | Cache + SQL + Storage + Requests + Monitoring | `uv add acb --group webapp` |
+| Web App Plus | Web app + Vector databases | `uv add acb --group webapp-plus` |
+| Cloud Native | Web app + DNS + Secret + Monitoring | `uv add acb --group cloud-native` |
+| Data Platform | SQL + NoSQL + Storage + Monitoring | `uv add acb --group dataplatform` |
+| GCP Stack | GCP-specific adapters (DNS, Secret, NoSQL, Storage) | `uv add acb --group gcp` |
+| All Features | All optional dependencies | `uv add acb --group all` |
+| **Multiple Groups** | Combine any groups | `uv add acb --group cache --group sql --group storage` |
 
 ## Architecture Overview
 
