@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.23.1"
+version = "0.24.0"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 authors = [
@@ -27,7 +27,6 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "acb[cache,dns,ftpd,monitoring,nosql,requests,secret,smtp,storage]",
     "aioconsole>=0.8.1",
     "anyio>=4.9",
     "attrs>=25.3",
@@ -56,157 +55,11 @@ dependencies = [
     "uuid-utils>=0.11",
     "uvicorn>=0.30",
     "fastmcp>=2.0.0",
+    "urllib3>=2.5.0",
 ]
 
 [project.license]
 text = "BSD-3-CLAUSE"
-
-[project.optional-dependencies]
-ai = [
-    "aiohttp>=3.9",
-    "anthropic>=0.5",
-    "boto3>=1.35",
-    "google-cloud-aiplatform>=1.40",
-    "httpx[http2]>=0.28.1",
-    "ollama>=0.1",
-    "onnx>=1.14; python_version<'3.13'",
-    "onnxruntime>=1.16; python_version<'3.13'",
-    "openai>=1",
-    "psutil>=6.1",
-    "torch>=2; python_version<'3.13'",
-    "transformers>=4.30",
-]
-all = [
-    "acb[ai,cache,dns,embedding,ftpd,models,monitoring,nosql,reasoning,requests,secret,smtp,sql,storage,vector,mcp]",
-]
-api = [
-    "acb[cache,nosql,requests,monitoring,secret]",
-]
-cache = [
-    "aiocache[redis]>=0.12.3",
-    "coredis>=4.24",
-    "logfire[redis]>=3.24",
-]
-cloud-native = [
-    "acb[cache,sql,storage,secret,monitoring,dns]",
-]
-dataplatform = [
-    "acb[sql,nosql,storage,monitoring]",
-]
-demo = [
-    "faker>=37.4",
-]
-dns = [
-    "boto3>=1.35",
-    "google-cloud-dns>=0.35.1",
-    "python-cloudflare>=1.0.1",
-    "validators>=0.35",
-]
-embedding = [
-    "numpy>=2.1",
-    "onnx>=1.14; python_version<'3.13'",
-    "onnxruntime>=1.16; python_version<'3.13'",
-    "openai>=1",
-    "sentence-transformers>=2; python_version<'3.13'",
-    "torch>=2; python_version<'3.13'",
-    "transformers>=4",
-]
-ftpd = [
-    "aioftp>=0.26.2",
-    "asyncssh>=2.21",
-]
-gcp = [
-    "acb[dns,secret,nosql,storage]",
-]
-graph = [
-    "boto3>=1.26",
-    "neo4j>=5",
-    "py2neo>=2021",
-    "python-arango>=7",
-]
-mcp = [
-    "fastmcp>=2.0.0",
-]
-microservice = [
-    "acb[cache,requests,monitoring,secret]",
-]
-minimal = [
-    "acb[cache,requests]",
-]
-models = [
-    "attrs>=25.3",
-    "msgspec>=0.19",
-    "redis-om>=0.3.5",
-    "sqlalchemy>=2.0.41",
-    "sqlmodel>=0.0.24",
-]
-monitoring = [
-    "logfire[system-metrics]>=3.24",
-    "sentry-sdk[loguru]>=2.32",
-]
-nosql = [
-    "beanie>=1.30",
-    "google-cloud-firestore>=2.21",
-    "motor>=3.7.1",
-    "redis-om>=0.3.5",
-]
-reasoning = [
-    "langchain>=0.1; python_version<'3.13'",
-    "langchain-community>=0.0.20; python_version<'3.13'",
-    "langchain-openai>=0.1; python_version<'3.13'",
-    "llama-index>=0.9; python_version<'3.13'",
-    "llama-index-llms-openai>=0.1; python_version<'3.13'",
-    "openai>=1",
-    "pydantic>=2",
-    "tiktoken>=0.5",
-]
-requests = [
-    "httpx[http2]>=0.28.1",
-    "logfire[httpx]>=3.24",
-    "niquests>=3.14.1",
-    "sentry-sdk[httpx]>=2.32",
-]
-secret = [
-    "azure-identity>=1.15",
-    "azure-keyvault-secrets>=4.8",
-    "cloudflare>=3",
-    "google-cloud-secret-manager>=2.24",
-    "infisicalsdk>=1.0.9",
-]
-smtp = [
-    "mailgun>=1.1",
-]
-sql = [
-    "aiomysql>=0.2",
-    "aiosqlite>=0.21",
-    "babel>=2.17",
-    "greenlet>=3.2.3",
-    "logfire[sqlalchemy]>=3.24",
-    "pymysql>=1.1.1",
-    "sentry-sdk[sqlalchemy]>=2.32",
-    "sqlalchemy>=2.0.41",
-    "sqlalchemy-libsql>=0.2",
-    "sqlalchemy-utils>=0.41.2",
-    "sqlmodel>=0.0.24",
-]
-storage = [
-    "adlfs>=2024.12",
-    "fsspec>=2025.1",
-    "gcsfs>=2025.5.1",
-    "s3fs>=2025.5.1",
-]
-vector = [
-    "duckdb>=0.10.2",
-    "pinecone-client>=3",
-    "qdrant-client>=1.7",
-    "weaviate-client>=4",
-]
-webapp = [
-    "acb[cache,sql,storage,requests,monitoring]",
-]
-webapp-plus = [
-    "acb[cache,sql,storage,requests,monitoring,vector]",
-]
 
 [project.urls]
 Documentation = "https://github.com/lesleslie/acb"
@@ -229,6 +82,386 @@ dev = [
     "refurb>=2.1",
     "ruff>=0.12.3",
     "session-mgmt-mcp>=0.3",
+]
+cache = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+]
+dns = [
+    "boto3>=1.35",
+    "google-cloud-dns>=0.35.1",
+    "python-cloudflare>=1.0.1",
+    "validators>=0.35",
+]
+ftpd = [
+    "aioftp>=0.26.2",
+    "asyncssh>=2.21",
+]
+monitoring = [
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+]
+requests = [
+    "httpx[http2]>=0.28.1",
+    "logfire[httpx]>=3.24",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.32",
+]
+secret = [
+    "azure-identity>=1.15",
+    "azure-keyvault-secrets>=4.8",
+    "cloudflare>=3",
+    "google-cloud-secret-manager>=2.24",
+    "infisicalsdk>=1.0.9",
+]
+smtp = [
+    "mailgun>=1.1",
+]
+storage = [
+    "adlfs>=2024.12",
+    "fsspec>=2025.1",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
+]
+sql = [
+    "aiomysql>=0.2",
+    "aiosqlite>=0.21",
+    "babel>=2.17",
+    "greenlet>=3.2.3",
+    "logfire[sqlalchemy]>=3.24",
+    "pymysql>=1.1.1",
+    "sentry-sdk[sqlalchemy]>=2.32",
+    "sqlalchemy>=2.0.41",
+    "sqlalchemy-libsql>=0.2",
+    "sqlalchemy-utils>=0.41.2",
+    "sqlmodel>=0.0.24",
+]
+nosql = [
+    "beanie>=1.30",
+    "google-cloud-firestore>=2.21",
+    "motor>=3.7.1",
+    "redis-om>=0.3.5",
+]
+vector = [
+    "duckdb>=0.10.2",
+    "pinecone-client>=3",
+    "qdrant-client>=1.7",
+    "weaviate-client>=4",
+]
+graph = [
+    "boto3>=1.26",
+    "neo4j>=5",
+    "py2neo>=2021",
+    "python-arango>=7",
+]
+ai = [
+    "aiohttp>=3.9",
+    "anthropic>=0.5",
+    "boto3>=1.35",
+    "google-cloud-aiplatform>=1.40",
+    "httpx[http2]>=0.28.1",
+    "ollama>=0.1",
+    "onnx>=1.14; python_version<'3.13'",
+    "onnxruntime>=1.16; python_version<'3.13'",
+    "openai>=1",
+    "psutil>=6.1",
+    "torch>=2; python_version<'3.13'",
+    "transformers>=4.30",
+]
+embedding = [
+    "numpy>=2.1",
+    "onnx>=1.14; python_version<'3.13'",
+    "onnxruntime>=1.16; python_version<'3.13'",
+    "openai>=1",
+    "sentence-transformers>=2; python_version<'3.13'",
+    "torch>=2; python_version<'3.13'",
+    "transformers>=4",
+]
+reasoning = [
+    "langchain>=0.1; python_version<'3.13'",
+    "langchain-community>=0.0.20; python_version<'3.13'",
+    "langchain-openai>=0.1; python_version<'3.13'",
+    "llama-index>=0.9; python_version<'3.13'",
+    "llama-index-llms-openai>=0.1; python_version<'3.13'",
+    "openai>=1",
+    "pydantic>=2",
+    "tiktoken>=0.5",
+]
+models = [
+    "attrs>=25.3",
+    "msgspec>=0.19",
+    "redis-om>=0.3.5",
+    "sqlalchemy>=2.0.41",
+    "sqlmodel>=0.0.24",
+]
+logger = [
+    "logly>=0.1.4",
+    "structlog>=24",
+    "zstandard>=0.21.0",
+]
+mcp = [
+    "fastmcp>=2.0.0",
+]
+demo = [
+    "faker>=37.4",
+]
+queue-apscheduler = [
+    "apscheduler>=4.0.0a1",
+]
+queue-apscheduler-sql = [
+    "apscheduler>=4.0.0a1",
+    "sqlalchemy>=2.0.41",
+]
+queue-apscheduler-mongodb = [
+    "apscheduler>=4.0.0a1",
+    "pymongo>=4.0",
+]
+queue-apscheduler-redis = [
+    "apscheduler>=4.0.0a1",
+    "redis>=4.0",
+]
+minimal = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+    "httpx[http2]>=0.28.1",
+    "logfire[httpx]>=3.24",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.32",
+]
+api = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+    "beanie>=1.30",
+    "google-cloud-firestore>=2.21",
+    "motor>=3.7.1",
+    "redis-om>=0.3.5",
+    "httpx[http2]>=0.28.1",
+    "logfire[httpx]>=3.24",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.32",
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+    "azure-identity>=1.15",
+    "azure-keyvault-secrets>=4.8",
+    "cloudflare>=3",
+    "google-cloud-secret-manager>=2.24",
+    "infisicalsdk>=1.0.9",
+]
+microservice = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+    "httpx[http2]>=0.28.1",
+    "logfire[httpx]>=3.24",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.32",
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+    "azure-identity>=1.15",
+    "azure-keyvault-secrets>=4.8",
+    "cloudflare>=3",
+    "google-cloud-secret-manager>=2.24",
+    "infisicalsdk>=1.0.9",
+]
+webapp = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+    "aiomysql>=0.2",
+    "aiosqlite>=0.21",
+    "babel>=2.17",
+    "greenlet>=3.2.3",
+    "logfire[sqlalchemy]>=3.24",
+    "pymysql>=1.1.1",
+    "sentry-sdk[sqlalchemy]>=2.32",
+    "sqlalchemy>=2.0.41",
+    "sqlalchemy-libsql>=0.2",
+    "sqlalchemy-utils>=0.41.2",
+    "sqlmodel>=0.0.24",
+    "adlfs>=2024.12",
+    "fsspec>=2025.1",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
+    "httpx[http2]>=0.28.1",
+    "logfire[httpx]>=3.24",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.32",
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+]
+webapp-plus = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+    "aiomysql>=0.2",
+    "aiosqlite>=0.21",
+    "babel>=2.17",
+    "greenlet>=3.2.3",
+    "logfire[sqlalchemy]>=3.24",
+    "pymysql>=1.1.1",
+    "sentry-sdk[sqlalchemy]>=2.32",
+    "sqlalchemy>=2.0.41",
+    "sqlalchemy-libsql>=0.2",
+    "sqlalchemy-utils>=0.41.2",
+    "sqlmodel>=0.0.24",
+    "adlfs>=2024.12",
+    "fsspec>=2025.1",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
+    "httpx[http2]>=0.28.1",
+    "logfire[httpx]>=3.24",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.32",
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+    "duckdb>=0.10.2",
+    "pinecone-client>=3",
+    "qdrant-client>=1.7",
+    "weaviate-client>=4",
+]
+cloud-native = [
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+    "aiomysql>=0.2",
+    "aiosqlite>=0.21",
+    "babel>=2.17",
+    "greenlet>=3.2.3",
+    "logfire[sqlalchemy]>=3.24",
+    "pymysql>=1.1.1",
+    "sentry-sdk[sqlalchemy]>=2.32",
+    "sqlalchemy>=2.0.41",
+    "sqlalchemy-libsql>=0.2",
+    "sqlalchemy-utils>=0.41.2",
+    "sqlmodel>=0.0.24",
+    "adlfs>=2024.12",
+    "fsspec>=2025.1",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
+    "azure-identity>=1.15",
+    "azure-keyvault-secrets>=4.8",
+    "cloudflare>=3",
+    "google-cloud-secret-manager>=2.24",
+    "infisicalsdk>=1.0.9",
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+    "boto3>=1.35",
+    "google-cloud-dns>=0.35.1",
+    "python-cloudflare>=1.0.1",
+    "validators>=0.35",
+]
+dataplatform = [
+    "aiomysql>=0.2",
+    "aiosqlite>=0.21",
+    "babel>=2.17",
+    "greenlet>=3.2.3",
+    "logfire[sqlalchemy]>=3.24",
+    "pymysql>=1.1.1",
+    "sentry-sdk[sqlalchemy]>=2.32",
+    "sqlalchemy>=2.0.41",
+    "sqlalchemy-libsql>=0.2",
+    "sqlalchemy-utils>=0.41.2",
+    "sqlmodel>=0.0.24",
+    "beanie>=1.30",
+    "google-cloud-firestore>=2.21",
+    "motor>=3.7.1",
+    "redis-om>=0.3.5",
+    "adlfs>=2024.12",
+    "fsspec>=2025.1",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+]
+gcp = [
+    "boto3>=1.35",
+    "google-cloud-dns>=0.35.1",
+    "python-cloudflare>=1.0.1",
+    "validators>=0.35",
+    "azure-identity>=1.15",
+    "azure-keyvault-secrets>=4.8",
+    "cloudflare>=3",
+    "google-cloud-secret-manager>=2.24",
+    "infisicalsdk>=1.0.9",
+    "beanie>=1.30",
+    "google-cloud-firestore>=2.21",
+    "motor>=3.7.1",
+    "redis-om>=0.3.5",
+    "adlfs>=2024.12",
+    "fsspec>=2025.1",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
+]
+all = [
+    "aiohttp>=3.9",
+    "anthropic>=0.5",
+    "boto3>=1.35",
+    "google-cloud-aiplatform>=1.40",
+    "httpx[http2]>=0.28.1",
+    "ollama>=0.1",
+    "onnx>=1.14; python_version<'3.13'",
+    "onnxruntime>=1.16; python_version<'3.13'",
+    "openai>=1",
+    "psutil>=6.1",
+    "torch>=2; python_version<'3.13'",
+    "transformers>=4.30",
+    "aiocache[redis]>=0.12.3",
+    "coredis>=4.24",
+    "logfire[redis]>=3.24",
+    "google-cloud-dns>=0.35.1",
+    "python-cloudflare>=1.0.1",
+    "validators>=0.35",
+    "numpy>=2.1",
+    "sentence-transformers>=2; python_version<'3.13'",
+    "aioftp>=0.26.2",
+    "asyncssh>=2.21",
+    "attrs>=25.3",
+    "msgspec>=0.19",
+    "redis-om>=0.3.5",
+    "sqlalchemy>=2.0.41",
+    "sqlmodel>=0.0.24",
+    "logfire[system-metrics]>=3.24",
+    "sentry-sdk[loguru]>=2.32",
+    "beanie>=1.30",
+    "google-cloud-firestore>=2.21",
+    "motor>=3.7.1",
+    "langchain>=0.1; python_version<'3.13'",
+    "langchain-community>=0.0.20; python_version<'3.13'",
+    "langchain-openai>=0.1; python_version<'3.13'",
+    "llama-index>=0.9; python_version<'3.13'",
+    "llama-index-llms-openai>=0.1; python_version<'3.13'",
+    "pydantic>=2",
+    "tiktoken>=0.5",
+    "logfire[httpx]>=3.24",
+    "niquests>=3.14.1",
+    "sentry-sdk[httpx]>=2.32",
+    "azure-identity>=1.15",
+    "azure-keyvault-secrets>=4.8",
+    "cloudflare>=3",
+    "google-cloud-secret-manager>=2.24",
+    "infisicalsdk>=1.0.9",
+    "mailgun>=1.1",
+    "aiomysql>=0.2",
+    "aiosqlite>=0.21",
+    "babel>=2.17",
+    "greenlet>=3.2.3",
+    "logfire[sqlalchemy]>=3.24",
+    "pymysql>=1.1.1",
+    "sentry-sdk[sqlalchemy]>=2.32",
+    "sqlalchemy-libsql>=0.2",
+    "sqlalchemy-utils>=0.41.2",
+    "adlfs>=2024.12",
+    "fsspec>=2025.1",
+    "gcsfs>=2025.5.1",
+    "s3fs>=2025.5.1",
+    "duckdb>=0.10.2",
+    "pinecone-client>=3",
+    "qdrant-client>=1.7",
+    "weaviate-client>=4",
+    "fastmcp>=2.0.0",
 ]
 
 [tool.ruff]
