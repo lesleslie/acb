@@ -45,7 +45,78 @@ All notable changes to ACB (Asynchronous Component Base) will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2025-01-10
+
+### BREAKING CHANGES
+
+- **Dependency Management Modernization**: Migrated from `[project.optional-dependencies]` to `[dependency-groups]` following PEP 735 and modern UV standards
+  - ⚠️ Old syntax `uv add "acb[cache]"` **no longer works**
+  - ✅ New syntax: `uv add --group cache`
+  - All composite groups (api, webapp, cloud-native, etc.) now have flattened dependencies
+  - Zero self-references - eliminates circular dependency errors
+  - Full UV compatibility with modern dependency group standards
+  - See [MIGRATION-0.24.0.md](<./MIGRATION-0.24.0.md>) for upgrade instructions
+
+### Changed
+
+- **APScheduler Dependency**: Updated from `>=3.10.0` to `>=4.0.0`
+- **Core Package**: No longer auto-installs adapters - all adapters are now opt-in via dependency groups
+- **Dependency Organization**: Improved structure with clear categories:
+  - Infrastructure adapters (cache, dns, ftpd, monitoring, requests, secret, smtp, storage)
+  - Database adapters (sql, nosql, vector, graph)
+  - AI/ML adapters (ai, embedding, reasoning)
+  - Framework support (models, logger, mcp, demo)
+  - Queue adapters (queue-apscheduler variants)
+  - Composite use cases (minimal, api, microservice, webapp, cloud-native, etc.)
+- **Flattened Composite Groups**: All composite groups now self-contained with explicit dependencies
+- **Installation Commands**: Updated throughout documentation to use `--group` flag
+
+### Migration Required
+
+Users **must** update installation commands to use the new `--group` syntax. See [MIGRATION-0.24.0.md](<./MIGRATION-0.24.0.md>) for detailed migration steps and examples.
+
+**Quick Migration**:
+```bash
+# Old (no longer works)
+uv add "acb[cache,sql]"
+
+# New (required)
+uv add --group cache --group sql
+```
+
 ## [0.23.1] - 2025-10-04
+
+### Added
+
+- **Logly Logger Adapter**: New Rust-powered logger adapter with advanced features
+
+  - High-performance logging with Rust backend optimization
+  - Advanced compression support (gzip, zstd)
+  - Async callback system for log processing
+  - Extended log levels (trace, success)
+  - Contextualize context manager for temporary context
+  - API compatible with loguru for easy migration
+  - Comprehensive test coverage (40+ test cases)
+  - Configuration via `logger: logly` in settings/adapters.yml
+  - Install with: `uv add acb --group logger`
+
+- **APScheduler Queue Adapter**: Enterprise-grade task scheduling adapter with persistence and clustering
+
+  - Multiple job store backends (memory, SQLAlchemy, MongoDB, Redis)
+  - Multiple executor types (asyncio, thread pool, process pool)
+  - Advanced scheduling: cron expressions, intervals, one-time jobs
+  - Missed job handling with configurable grace time and coalescing
+  - Job control: pause, resume, modify, reschedule jobs
+  - Clustering support for distributed task execution
+  - Event-driven result tracking via listeners
+  - Dead letter queue for failed tasks with retry capability
+  - Comprehensive test coverage (46 test cases)
+  - Configuration via `queue: apscheduler` in settings/adapters.yml
+  - Install options:
+    - Base: `uv add --group queue-apscheduler`
+    - With SQL: `uv add --group queue-apscheduler-sql`
+    - With MongoDB: `uv add --group queue-apscheduler-mongodb`
+    - With Redis: `uv add --group queue-apscheduler-redis`
 
 ### Changed
 
