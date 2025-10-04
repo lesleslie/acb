@@ -296,7 +296,7 @@ async def cleanup_acb_resources() -> None:
 
     # Cleanup all registered resources
     for resource in resources_to_cleanup:
-        try:
+        with contextlib.suppress(Exception):
             if hasattr(resource, "cleanup"):
                 if callable(resource.cleanup):
                     await resource.cleanup()
@@ -305,9 +305,6 @@ async def cleanup_acb_resources() -> None:
                     await resource.close()
             elif hasattr(resource, "__aexit__"):
                 await resource.__aexit__(None, None, None)
-        except Exception:
-            # Ignore cleanup errors in tests
-            pass
 
 
 @pytest.fixture(autouse=True)

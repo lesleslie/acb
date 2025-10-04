@@ -13,6 +13,7 @@ Features:
 
 import asyncio
 import typing as t
+from contextlib import suppress
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -248,13 +249,10 @@ async def setup_test_environment(
     adapter_configs = getattr(test_config, "_test_config_data", {}).get("adapters", {})
 
     for adapter_type in adapter_configs:
-        try:
+        with suppress(Exception):
             adapter = await create_test_adapter(adapter_type)
             adapters[adapter_type] = adapter
             depends.set(type(adapter), adapter)
-        except Exception:
-            # Skip if adapter creation fails
-            pass
 
     # Create test environment info
     # Access depends instances using get() method instead of private attribute
@@ -272,16 +270,13 @@ async def teardown_test_environment(environment: dict[str, t.Any]) -> None:
     """Teardown a test environment and cleanup resources."""
     # Cleanup adapters
     for adapter in environment.get("adapters", {}).values():
-        try:
+        with suppress(Exception):
             if hasattr(adapter, "cleanup"):
                 await adapter.cleanup()
             elif hasattr(adapter, "close"):
                 await adapter.close()
             elif hasattr(adapter, "__aexit__"):
                 await adapter.__aexit__(None, None, None)
-        except Exception:
-            # Ignore cleanup errors
-            pass
 
     # Clear dependency injection - note: we skip clearing private instances in testing
 

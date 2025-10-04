@@ -150,11 +150,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
     def _build_query_key(self, operation: str, **kwargs: Any) -> str:
         """Build cache key for query operation."""
         # Create deterministic key from operation parameters
-        key_data = {
-            "operation": operation,
-            "entity": self.entity_name.lower(),
-            **kwargs,
-        }
+        key_data = {"operation": operation, "entity": self.entity_name.lower()} | kwargs
 
         # Sort for consistency
         sorted_data = json.dumps(key_data, sort_keys=True)

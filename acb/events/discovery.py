@@ -14,6 +14,7 @@ Features:
 """
 
 import typing as t
+from contextlib import suppress
 from contextvars import ContextVar
 from datetime import datetime
 from enum import Enum
@@ -361,11 +362,11 @@ def list_event_handlers_by_capability(
     capability: EventCapability,
 ) -> list[EventHandlerDescriptor]:
     """List event handlers that support a specific capability."""
-    handlers = []
-    for handler in event_handler_registry.get():
-        if handler.metadata and capability in handler.metadata.capabilities:
-            handlers.append(handler)
-    return handlers
+    return [
+        handler
+        for handler in event_handler_registry.get()
+        if handler.metadata and capability in handler.metadata.capabilities
+    ]
 
 
 def get_event_handler_class(category: str, name: str | None = None) -> type[t.Any]:
@@ -503,7 +504,7 @@ def _load_event_settings() -> dict[str, t.Any]:
     Returns:
         Dictionary with event configuration overrides
     """
-    try:
+    with suppress(ImportError, FileNotFoundError, Exception):
         import yaml
 
         # Look for events.yml in common locations
@@ -518,10 +519,6 @@ def _load_event_settings() -> dict[str, t.Any]:
             if settings_path.exists():
                 content = settings_path.read_text()
                 return yaml.safe_load(content) or {}
-
-    except (ImportError, FileNotFoundError, Exception):
-        # Silently ignore if settings can't be loaded
-        pass
 
     return {}
 

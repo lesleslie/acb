@@ -761,7 +761,7 @@ class RabbitMQQueue(QueueBase):
         try:
             # Declare dead letter queue
             dlq = await self._channel.declare_queue(
-                str(self._settings.dead_letter_routing_key),
+                self._settings.dead_letter_routing_key,
                 durable=True,
             )
 

@@ -300,7 +300,7 @@ class QueueService(ServiceBase):
         queue_settings_class = None
 
         # Get provider-specific settings class
-        try:
+        with suppress(Exception):
             queue_provider = getattr(self._settings, "queue_provider", "memory")
             descriptor = get_queue_provider_descriptor(queue_provider)
             if descriptor:
@@ -311,8 +311,6 @@ class QueueService(ServiceBase):
 
                 if hasattr(module, settings_class_name):
                     queue_settings_class = getattr(module, settings_class_name)
-        except Exception:
-            pass  # Ignore import errors for optional settings classes
 
         # Create queue settings
         queue_settings_dict = getattr(self._settings, "queue_settings", {})

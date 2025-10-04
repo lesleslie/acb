@@ -418,10 +418,7 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         Returns:
             List of created entities
         """
-        created = []
-        for entity in entities:
-            created.append(await self.create(entity))
-        return created
+        return [await self.create(entity) for entity in entities]
 
     async def batch_update(
         self,
@@ -435,10 +432,7 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         Returns:
             List of updated entities
         """
-        updated = []
-        for entity in entities:
-            updated.append(await self.update(entity))
-        return updated
+        return [await self.update(entity) for entity in entities]
 
     async def batch_delete(self, entity_ids: builtins.list[IDType]) -> int:
         """Delete multiple entities by ID.

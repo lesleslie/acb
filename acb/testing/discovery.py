@@ -13,6 +13,7 @@ Features:
 """
 
 import typing as t
+from contextlib import suppress
 from contextvars import ContextVar
 from datetime import datetime
 from enum import Enum
@@ -475,7 +476,7 @@ def _load_test_provider_settings() -> dict[str, t.Any]:
     Returns:
         Dictionary with test provider configuration overrides
     """
-    try:
+    with suppress(ImportError, FileNotFoundError, Exception):
         import yaml
 
         # Look for testing.yml in common locations
@@ -491,10 +492,6 @@ def _load_test_provider_settings() -> dict[str, t.Any]:
                 content = settings_path.read_text()
                 loaded = yaml.safe_load(content)
                 return dict(loaded) if loaded else {}
-
-    except (ImportError, FileNotFoundError, Exception):
-        # Silently ignore if settings can't be loaded
-        pass
 
     return {}
 

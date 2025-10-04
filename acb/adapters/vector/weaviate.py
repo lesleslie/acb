@@ -306,56 +306,111 @@ class Vector(VectorBase):
 
         try:
             weaviate_collection = client.collections.get(class_name)
-            document_ids = []
 
-            # Prepare objects for batch insert
-            objects_to_insert = []
-            for doc in documents:
-                doc_id = doc.id
-                if not doc_id:
-                    # Generate UUID if not provided
-                    import uuid
+            # Prepare documents for batch insertion
+            document_ids, objects_to_insert = self._prepare_documents_for_insert(
+                documents
+            )
 
-                    doc_id = str(uuid.uuid4())
-
-                document_ids.append(doc_id)
-
-                # Prepare object data
-                properties = doc.metadata.copy() if doc.metadata else {}
-                properties.update(
-                    {
-                        "content": properties.get("content", ""),
-                        "source": properties.get("source", ""),
-                    },
-                )
-
-                obj_data = {
-                    "uuid": doc_id,
-                    "properties": properties,
-                    "vector": {"default": doc.vector},
-                }
-
-                objects_to_insert.append(obj_data)
-
-            # Batch insert
-            batch_size = self.config.vector.batch_size
-            for i in range(0, len(objects_to_insert), batch_size):
-                batch = objects_to_insert[i : i + batch_size]
-
-                # Use batch context manager
-                with weaviate_collection.batch.dynamic() as batch_context:
-                    for obj in batch:
-                        batch_context.add_object(
-                            properties=obj["properties"],
-                            uuid=obj["uuid"],
-                            vector=obj["vector"],
-                        )
+            # Perform batch insert
+            await self._batch_insert_objects(
+                weaviate_collection, objects_to_insert, self.config.vector.batch_size
+            )
 
             return document_ids
 
         except Exception as e:
             self.logger.exception(f"Weaviate upsert failed: {e}")
             return []
+
+    def _prepare_documents_for_insert(
+        self, documents: list[VectorDocument]
+    ) -> tuple[list[str], list[dict[str, t.Any]]]:
+        """Prepare documents for batch insertion.
+
+        Args:
+            documents: Documents to prepare
+
+        Returns:
+            Tuple of (document IDs, objects to insert)
+        """
+        document_ids = []
+        objects_to_insert = []
+
+        for doc in documents:
+            doc_id = self._get_or_generate_doc_id(doc)
+            document_ids.append(doc_id)
+
+            # Prepare object data
+            obj_data = self._build_object_data(doc, doc_id)
+            objects_to_insert.append(obj_data)
+
+        return document_ids, objects_to_insert
+
+    def _get_or_generate_doc_id(self, doc: VectorDocument) -> str:
+        """Get document ID or generate new one.
+
+        Args:
+            doc: Vector document
+
+        Returns:
+            Document ID
+        """
+        if doc.id:
+            return doc.id
+
+        import uuid
+
+        return str(uuid.uuid4())
+
+    def _build_object_data(self, doc: VectorDocument, doc_id: str) -> dict[str, t.Any]:
+        """Build object data for Weaviate insertion.
+
+        Args:
+            doc: Vector document
+            doc_id: Document ID
+
+        Returns:
+            Object data dictionary
+        """
+        properties = doc.metadata.copy() if doc.metadata else {}
+        properties.update(
+            {
+                "content": properties.get("content", ""),
+                "source": properties.get("source", ""),
+            },
+        )
+
+        return {
+            "uuid": doc_id,
+            "properties": properties,
+            "vector": {"default": doc.vector},
+        }
+
+    async def _batch_insert_objects(
+        self,
+        weaviate_collection: t.Any,
+        objects_to_insert: list[dict[str, t.Any]],
+        batch_size: int,
+    ) -> None:
+        """Insert objects in batches.
+
+        Args:
+            weaviate_collection: Weaviate collection instance
+            objects_to_insert: Objects to insert
+            batch_size: Batch size for insertion
+        """
+        for i in range(0, len(objects_to_insert), batch_size):
+            batch = objects_to_insert[i : i + batch_size]
+
+            # Use batch context manager
+            with weaviate_collection.batch.dynamic() as batch_context:
+                for obj in batch:
+                    batch_context.add_object(
+                        properties=obj["properties"],
+                        uuid=obj["uuid"],
+                        vector=obj["vector"],
+                    )
 
     async def delete(
         self,

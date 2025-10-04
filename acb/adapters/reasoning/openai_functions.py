@@ -777,11 +777,13 @@ Available tools will be provided as function calls. Use them when you need to ga
 
         history = self._conversation_histories[session_id]
 
-        # Add user message
-        history.append({"role": "user", "content": query})
-
-        # Add assistant response
-        history.append({"role": "assistant", "content": response})
+        # Add user message and assistant response
+        history.extend(
+            (
+                {"role": "user", "content": query},
+                {"role": "assistant", "content": response},
+            )
+        )
 
         # Keep only last 20 messages to prevent memory bloat
         if len(history) > 20:

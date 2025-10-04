@@ -13,6 +13,7 @@ Features:
 """
 
 import typing as t
+from contextlib import suppress
 from contextvars import ContextVar
 from datetime import datetime
 from enum import Enum
@@ -490,7 +491,7 @@ def _load_service_settings() -> dict[str, t.Any]:
     Returns:
         Dictionary with service configuration overrides
     """
-    try:
+    with suppress(ImportError, FileNotFoundError, Exception):
         import yaml
 
         # Look for services.yml in common locations
@@ -506,10 +507,6 @@ def _load_service_settings() -> dict[str, t.Any]:
                 content = settings_path.read_text()
                 loaded = yaml.safe_load(content)
                 return dict(loaded) if loaded else {}
-
-    except (ImportError, FileNotFoundError, Exception):
-        # Silently ignore if settings can't be loaded
-        pass
 
     return {}
 

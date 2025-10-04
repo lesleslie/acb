@@ -698,16 +698,7 @@ class MemoryQueue(QueueBackend):
         while not self._shutdown_event.is_set():
             try:
                 current_time = time.time()
-                moved_count = 0
-
-                # Move ready delayed messages
-                while self._delayed_messages:
-                    if self._delayed_messages[0].scheduled_time <= current_time:
-                        item = heapq.heappop(self._delayed_messages)
-                        heapq.heappush(self._queues[item.message.topic], item)
-                        moved_count += 1
-                    else:
-                        break
+                moved_count = self._move_ready_messages(current_time)
 
                 if moved_count > 0:
                     self.logger.debug(
@@ -715,11 +706,7 @@ class MemoryQueue(QueueBackend):
                     )
 
                 # Sleep until next check
-                sleep_time = 1.0
-                if self._delayed_messages:
-                    next_time = self._delayed_messages[0].scheduled_time
-                    sleep_time = min(1.0, max(0.1, next_time - current_time))
-
+                sleep_time = self._calculate_sleep_time(current_time)
                 await asyncio.sleep(sleep_time)
 
             except asyncio.CancelledError:
@@ -727,6 +714,42 @@ class MemoryQueue(QueueBackend):
             except Exception as e:
                 self.logger.exception(f"Delayed processor error: {e}")
                 await asyncio.sleep(1.0)
+
+    def _move_ready_messages(self, current_time: float) -> int:
+        """Move delayed messages that are ready to main queues.
+
+        Args:
+            current_time: Current timestamp
+
+        Returns:
+            Number of messages moved
+        """
+        moved_count = 0
+
+        while self._delayed_messages:
+            if self._delayed_messages[0].scheduled_time <= current_time:
+                item = heapq.heappop(self._delayed_messages)
+                heapq.heappush(self._queues[item.message.topic], item)
+                moved_count += 1
+            else:
+                break
+
+        return moved_count
+
+    def _calculate_sleep_time(self, current_time: float) -> float:
+        """Calculate optimal sleep time until next message processing.
+
+        Args:
+            current_time: Current timestamp
+
+        Returns:
+            Sleep time in seconds
+        """
+        if not self._delayed_messages:
+            return 1.0
+
+        next_time = self._delayed_messages[0].scheduled_time
+        return min(1.0, max(0.1, next_time - current_time))
 
     async def _periodic_cleanup(self) -> None:
         """Background task for periodic cleanup."""

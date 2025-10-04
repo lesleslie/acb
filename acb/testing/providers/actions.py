@@ -213,10 +213,7 @@ class MockActionProvider:
 
         # Simple YAML simulation
         if isinstance(data, dict):
-            lines = []
-            for key, value in data.items():
-                lines.append(f"{key}: {value}")
-            return "\n".join(lines)
+            return "\n".join([f"{key}: {value}" for key, value in data.items()])
         return str(data)
 
     def _mock_yaml_decode(self, data: str, behavior: dict[str, Any]) -> t.Any:

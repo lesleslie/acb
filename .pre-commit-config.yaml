@@ -51,7 +51,7 @@ repos:
     rev: v8.28.0
     hooks:
       - id: gitleaks
-        exclude: uv\.lock|pyproject\.toml|tests/.*|docs/.*|.*\.md|^src/
+        exclude: uv\.lock|pyproject\.toml|tests/.*|docs/.*|\.claude/.*|.*\.md|^src/
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.6
     hooks:

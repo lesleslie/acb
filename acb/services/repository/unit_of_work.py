@@ -216,11 +216,8 @@ class UnitOfWork(CleanupMixin):
 
             # Execute rollback operations in reverse order
             for rollback_op in reversed(self._rollback_operations):
-                try:
+                with suppress(Exception):
                     await rollback_op()
-                except Exception:
-                    # Log rollback errors but continue
-                    pass
 
             # Rollback all database sessions
             await self._rollback_sessions()
@@ -435,10 +432,7 @@ class UnitOfWorkManager(CleanupMixin):
         Returns:
             List of metrics for active transactions
         """
-        metrics = []
-        for uow in self._active_transactions.values():
-            metrics.append(await uow.get_metrics())
-        return metrics
+        return [await uow.get_metrics() for uow in self._active_transactions.values()]
 
     async def get_transaction_history(
         self,

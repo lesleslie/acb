@@ -238,22 +238,58 @@ class ServerlessOptimizer(ServiceBase):
             if self._settings.memory_monitoring:
                 await self._monitor_memory_usage()
 
-            # Cleanup idle adapters (basic implementation)
-            idle_adapters = []
-            for name, adapter in self._preloaded_adapters.items():
-                if hasattr(adapter, "_last_used_time"):
-                    last_used = getattr(adapter, "_last_used_time", time.perf_counter())
-                    if time.perf_counter() - last_used > self._settings.max_idle_time:
-                        idle_adapters.append(name)
-
-            for name in idle_adapters:
-                if hasattr(self._preloaded_adapters[name], "cleanup"):
-                    await self._preloaded_adapters[name].cleanup()
-                del self._preloaded_adapters[name]
-                self.logger.debug(f"Cleaned up idle adapter: {name}")
+            # Identify and cleanup idle adapters
+            idle_adapters = self._identify_idle_adapters()
+            await self._cleanup_adapters(idle_adapters)
 
         except Exception as e:
             self.logger.exception(f"Error during resource cleanup: {e}")
+
+    def _identify_idle_adapters(self) -> list[str]:
+        """Identify adapters that have been idle too long.
+
+        Returns:
+            List of idle adapter names
+        """
+        idle_adapters = []
+        current_time = time.perf_counter()
+
+        for name, adapter in self._preloaded_adapters.items():
+            if self._is_adapter_idle(adapter, current_time):
+                idle_adapters.append(name)
+
+        return idle_adapters
+
+    def _is_adapter_idle(self, adapter: t.Any, current_time: float) -> bool:
+        """Check if adapter has been idle too long.
+
+        Args:
+            adapter: Adapter instance
+            current_time: Current timestamp
+
+        Returns:
+            True if adapter is idle
+        """
+        if not hasattr(adapter, "_last_used_time"):
+            return False
+
+        last_used = getattr(adapter, "_last_used_time", current_time)
+        return current_time - last_used > self._settings.max_idle_time
+
+    async def _cleanup_adapters(self, adapter_names: list[str]) -> None:
+        """Cleanup idle adapters.
+
+        Args:
+            adapter_names: List of adapter names to cleanup
+        """
+        for name in adapter_names:
+            adapter = self._preloaded_adapters[name]
+
+            if hasattr(adapter, "cleanup"):
+                await adapter.cleanup()
+
+            del self._preloaded_adapters[name]
+            self.logger.debug(f"Cleaned up idle adapter: {name}")
 
     async def _monitor_memory_usage(self) -> None:
         """Monitor and report memory usage."""
@@ -790,8 +826,7 @@ class ServerlessTieredCache:
             / max(total_requests, 1)
         ) * 100
 
-        return {
-            **self._cache_stats,
+        return self._cache_stats | {
             "hit_rate_percent": hit_rate,
             "memory_usage_mb": self._memory_usage_mb,
             "memory_entries": len(self._memory_cache),
@@ -997,8 +1032,7 @@ class MemoryEfficientProcessor:
 
     def get_processing_stats(self) -> dict[str, t.Any]:
         """Get processing statistics."""
-        return {
-            **self._processing_stats,
+        return self._processing_stats | {
             "current_memory_mb": self._current_memory_mb,
             "memory_limit_mb": self._max_memory_mb,
             "memory_utilization_percent": (

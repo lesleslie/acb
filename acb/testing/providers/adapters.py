@@ -194,9 +194,7 @@ class MockAdapterProvider:
                 result_mock.rowcount = 1
                 result_mock.lastrowid = sql_mock._next_id
                 sql_mock._next_id += 1
-            elif query.strip().upper().startswith(
-                "UPDATE",
-            ) or query.strip().upper().startswith("DELETE"):
+            elif query.strip().upper().startswith(("UPDATE", "DELETE")):
                 result_mock.rowcount = 1
             else:
                 result_mock.rowcount = 0
@@ -223,10 +221,10 @@ class MockAdapterProvider:
             await asyncio.sleep(default_behavior["query_delay"])
 
             # Return mock rows (limited by max_rows)
-            rows = []
-            for i in range(min(5, int(default_behavior["max_rows"]))):
-                rows.append({"id": i + 1, "name": f"test_record_{i}", "active": True})
-            return rows
+            return [
+                {"id": i + 1, "name": f"test_record_{i}", "active": True}
+                for i in range(min(5, int(default_behavior["max_rows"])))
+            ]
 
         # Assign behaviors
         sql_mock.execute.side_effect = mock_execute
@@ -273,16 +271,14 @@ class MockAdapterProvider:
             await asyncio.sleep(default_behavior["query_delay"])
 
             # Return mock documents
-            docs = []
-            for i in range(min(3, int(default_behavior["max_docs"]))):
-                docs.append(
-                    {
-                        "_id": f"507f1f77bcf86cd79943901{i}",
-                        "name": f"test_{i}",
-                        "active": True,
-                    },
-                )
-            return docs
+            return [
+                {
+                    "_id": f"507f1f77bcf86cd79943901{i}",
+                    "name": f"test_{i}",
+                    "active": True,
+                }
+                for i in range(min(3, int(default_behavior["max_docs"])))
+            ]
 
         async def mock_insert_one(
             collection: str,

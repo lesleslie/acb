@@ -355,7 +355,7 @@ class EmbeddingUtils:
         norm1 = np.linalg.norm(np_vec1)
         norm2 = np.linalg.norm(np_vec2)
 
-        if norm1 == 0 or norm2 == 0:
+        if 0 in (norm1, norm2):
             return 0.0
 
         return float(dot_product / (norm1 * norm2))

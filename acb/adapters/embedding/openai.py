@@ -145,53 +145,18 @@ class OpenAIEmbedding(EmbeddingAdapter):
 
         for batch_texts in batches:
             try:
-                # Apply rate limiting
                 await self._apply_rate_limit()
 
-                # Prepare request parameters
-                settings = t.cast(OpenAIEmbeddingSettings, self._settings)
-                request_params: dict[str, t.Any] = {
-                    "input": batch_texts,
-                    "model": model,
-                    "encoding_format": settings.encoding_format,
-                }
-
-                # Add dimensions for v3 models
-                if settings.dimensions and model.startswith("text-embedding-3"):
-                    request_params["dimensions"] = settings.dimensions
-
-                # Make API request
-                response: t.Any = await client.embeddings.create(
-                    **request_params,
+                # Process single batch
+                batch_results, batch_tokens = await self._process_embedding_batch(
+                    client,
+                    batch_texts,
+                    model,
+                    normalize,
                 )
 
-                # Process response
-                for i, embedding_data in enumerate(response.data):
-                    embedding = embedding_data.embedding
-
-                    # Normalize if requested
-                    if normalize:
-                        embedding = self._normalize_vector(
-                            embedding,
-                            self._settings.normalization,
-                        )
-
-                    result = EmbeddingResult(
-                        text=batch_texts[i],
-                        embedding=embedding,
-                        model=response.model,
-                        dimensions=len(embedding),
-                        tokens=None,  # OpenAI doesn't provide token count per text
-                        metadata={
-                            "index": embedding_data.index,
-                            "object": embedding_data.object,
-                        },
-                    )
-                    results.append(result)
-
-                # Track token usage
-                if hasattr(response, "usage") and response.usage:
-                    total_tokens += response.usage.total_tokens
+                results.extend(batch_results)
+                total_tokens += batch_tokens
 
                 await logger.debug(
                     f"OpenAI embeddings batch completed: {len(batch_texts)} texts, model: {model}",
@@ -210,6 +175,114 @@ class OpenAIEmbedding(EmbeddingAdapter):
             model=model,
             batch_size=len(results),
         )
+
+    async def _process_embedding_batch(
+        self,
+        client: t.Any,
+        batch_texts: list[str],
+        model: str,
+        normalize: bool,
+    ) -> tuple[list[EmbeddingResult], int]:
+        """Process a single batch of embeddings.
+
+        Args:
+            client: OpenAI client instance
+            batch_texts: Texts to embed
+            model: Model name
+            normalize: Whether to normalize vectors
+
+        Returns:
+            Tuple of (embedding results, token count)
+        """
+        # Prepare and execute API request
+        request_params = self._prepare_request_params(batch_texts, model)
+        response: t.Any = await client.embeddings.create(**request_params)
+
+        # Process response data
+        results = self._extract_embedding_results(
+            response,
+            batch_texts,
+            normalize,
+        )
+
+        # Extract token usage
+        tokens = (
+            response.usage.total_tokens
+            if hasattr(response, "usage") and response.usage
+            else 0
+        )
+
+        return results, tokens
+
+    def _prepare_request_params(
+        self,
+        batch_texts: list[str],
+        model: str,
+    ) -> dict[str, t.Any]:
+        """Prepare OpenAI API request parameters.
+
+        Args:
+            batch_texts: Texts to embed
+            model: Model name
+
+        Returns:
+            Request parameters dictionary
+        """
+        settings = t.cast(OpenAIEmbeddingSettings, self._settings)
+        request_params: dict[str, t.Any] = {
+            "input": batch_texts,
+            "model": model,
+            "encoding_format": settings.encoding_format,
+        }
+
+        # Add dimensions for v3 models
+        if settings.dimensions and model.startswith("text-embedding-3"):
+            request_params["dimensions"] = settings.dimensions
+
+        return request_params
+
+    def _extract_embedding_results(
+        self,
+        response: t.Any,
+        batch_texts: list[str],
+        normalize: bool,
+    ) -> list[EmbeddingResult]:
+        """Extract embedding results from API response.
+
+        Args:
+            response: OpenAI API response
+            batch_texts: Original texts
+            normalize: Whether to normalize vectors
+
+        Returns:
+            List of embedding results
+        """
+        results = []
+
+        for i, embedding_data in enumerate(response.data):
+            embedding = embedding_data.embedding
+
+            # Normalize if requested
+            if normalize:
+                embedding = self._normalize_vector(
+                    embedding,
+                    self._settings.normalization,
+                )
+
+            result = EmbeddingResult(
+                text=batch_texts[i],
+                embedding=embedding,
+                model=response.model,
+                dimensions=len(embedding),
+                tokens=None,  # OpenAI doesn't provide token count per text
+                metadata={
+                    "index": embedding_data.index,
+                    "object": embedding_data.object,
+                },
+            )
+            results.append(result)
+
+        return results
 
     async def _embed_documents(
         self,

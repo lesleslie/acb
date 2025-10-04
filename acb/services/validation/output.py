@@ -211,7 +211,7 @@ class OutputValidator:
 
         # Validate standard JSON API fields
         if "data" in data:
-            if not isinstance(data["data"], dict | list | type(None)):
+            if data["data"] is not None and not isinstance(data["data"], dict | list):
                 result.add_error("JSON API 'data' must be object, array, or null")
 
         if "meta" in data and not isinstance(data["meta"], dict):

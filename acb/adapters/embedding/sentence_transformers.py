@@ -5,6 +5,7 @@ import time
 import typing as t
 from contextlib import suppress
 from datetime import datetime
+from operator import itemgetter
 
 from pydantic import Field
 from acb.adapters import (
@@ -337,7 +338,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
 
         # Sort by similarity (descending)
         results = list(zip(documents, similarities, strict=False))
-        results.sort(key=lambda x: x[1], reverse=True)
+        results.sort(key=itemgetter(1), reverse=True)
 
         return results[:top_k]
 

@@ -165,11 +165,12 @@ class ValidationReport:
 
     def to_summary(self) -> str:
         """Generate a human-readable summary of the report."""
-        lines = []
-        lines.append(f"Validation Report: {'PASSED' if self.is_valid else 'FAILED'}")
-        lines.append(f"Total validations: {len(self.results)}")
-        lines.append(f"Successful: {len(self.successful_validations)}")
-        lines.append(f"Failed: {len(self.failed_validations)}")
+        lines = [
+            f"Validation Report: {'PASSED' if self.is_valid else 'FAILED'}",
+            f"Total validations: {len(self.results)}",
+            f"Successful: {len(self.successful_validations)}",
+            f"Failed: {len(self.failed_validations)}",
+        ]
 
         if self.has_errors:
             lines.append(f"Errors: {self.error_count}")

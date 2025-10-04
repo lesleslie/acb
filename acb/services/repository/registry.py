@@ -10,6 +10,7 @@ Provides centralized registration and discovery of repositories:
 import contextlib
 import inspect
 import typing as t
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, TypeVar
@@ -265,12 +266,9 @@ class RepositoryRegistry(CleanupMixin):
             # Extract entity type from repository class
             entity_type = self._extract_entity_type(repo_class)
             if entity_type:
-                try:
+                with suppress(RepositoryRegistryError):
                     self.register(entity_type, repo_class)
                     registered_count += 1
-                except RepositoryRegistryError:
-                    # Skip if already registered
-                    pass
 
         return registered_count
 

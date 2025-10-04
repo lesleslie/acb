@@ -7,6 +7,7 @@ configuration overrides.
 
 import logging
 import typing as t
+from contextlib import suppress
 from enum import Enum
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -531,7 +532,7 @@ def create_queue_instance(
 
     if settings is None:
         # Try to get provider-specific settings class
-        try:
+        with suppress(Exception):
             descriptor = get_queue_provider_descriptor(provider_name or "memory")
             if descriptor.default_settings:
                 import importlib
@@ -542,8 +543,6 @@ def create_queue_instance(
                 if hasattr(module, settings_class_name):
                     settings_class = getattr(module, settings_class_name)
                     settings = settings_class(**descriptor.default_settings, **kwargs)
-        except Exception:
-            pass  # pragma: allowlist secret  # Ignore import errors for optional settings classes
 
     return queue_class(settings)
 

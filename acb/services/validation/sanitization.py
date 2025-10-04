@@ -46,44 +46,14 @@ class InputSanitizer:
             return result
 
         try:
-            sanitized_value = data
-
             if sanitization_type == "auto":
-                # Apply all enabled sanitizers
-                if self.config.enable_xss_protection:
-                    html_result = await self._html_sanitizer.sanitize(sanitized_value)
-                    sanitized_value = html_result.value
-                    result.warnings.extend(html_result.warnings)
-
-                if self.config.enable_sql_injection_protection:
-                    sql_result = await self._sql_sanitizer.sanitize(sanitized_value)
-                    sanitized_value = sql_result.value
-                    result.warnings.extend(sql_result.warnings)
-
-                if self.config.enable_path_traversal_protection:
-                    path_result = await self._path_sanitizer.sanitize(sanitized_value)
-                    sanitized_value = path_result.value
-                    result.warnings.extend(path_result.warnings)
-
-            elif sanitization_type == "html":
-                html_result = await self._html_sanitizer.sanitize(sanitized_value)
-                sanitized_value = html_result.value
-                result.warnings.extend(html_result.warnings)
-
-            elif sanitization_type == "sql":
-                sql_result = await self._sql_sanitizer.sanitize(sanitized_value)
-                sanitized_value = sql_result.value
-                result.warnings.extend(sql_result.warnings)
-
-            elif sanitization_type == "path":
-                path_result = await self._path_sanitizer.sanitize(sanitized_value)
-                sanitized_value = path_result.value
-                result.warnings.extend(path_result.warnings)
-
-            elif sanitization_type == "url":
-                url_result = await self._url_sanitizer.sanitize(sanitized_value)
-                sanitized_value = url_result.value
-                result.warnings.extend(url_result.warnings)
+                sanitized_value = await self._sanitize_auto(data, result)
+            else:
+                sanitized_value = await self._sanitize_specific_type(
+                    data,
+                    sanitization_type,
+                    result,
+                )
 
             result.value = sanitized_value
 
@@ -95,6 +65,74 @@ class InputSanitizer:
             result.add_error(f"Sanitization failed: {e}")
 
         return result
+
+    async def _sanitize_auto(
+        self,
+        data: str,
+        result: ValidationResult,
+    ) -> str:
+        """Apply all enabled sanitizers automatically.
+
+        Args:
+            data: String data to sanitize
+            result: Validation result to accumulate warnings
+
+        Returns:
+            Sanitized string
+        """
+        sanitized_value = data
+
+        if self.config.enable_xss_protection:
+            html_result = await self._html_sanitizer.sanitize(sanitized_value)
+            sanitized_value = html_result.value
+            result.warnings.extend(html_result.warnings)
+
+        if self.config.enable_sql_injection_protection:
+            sql_result = await self._sql_sanitizer.sanitize(sanitized_value)
+            sanitized_value = sql_result.value
+            result.warnings.extend(sql_result.warnings)
+
+        if self.config.enable_path_traversal_protection:
+            path_result = await self._path_sanitizer.sanitize(sanitized_value)
+            sanitized_value = path_result.value
+            result.warnings.extend(path_result.warnings)
+
+        return sanitized_value
+
+    async def _sanitize_specific_type(
+        self,
+        data: str,
+        sanitization_type: str,
+        result: ValidationResult,
+    ) -> str:
+        """Apply specific sanitizer based on type.
+
+        Args:
+            data: String data to sanitize
+            sanitization_type: Type of sanitization to apply
+            result: Validation result to accumulate warnings
+
+        Returns:
+            Sanitized string
+        """
+        # Map sanitization type to sanitizer
+        sanitizers: dict[
+            str,
+            HTMLSanitizer | SQLSanitizer | PathSanitizer | URLSanitizer,
+        ] = {
+            "html": self._html_sanitizer,
+            "sql": self._sql_sanitizer,
+            "path": self._path_sanitizer,
+            "url": self._url_sanitizer,
+        }
+
+        sanitizer = sanitizers.get(sanitization_type)
+        if not sanitizer:
+            return data
+
+        sanitizer_result = await sanitizer.sanitize(data)
+        result.warnings.extend(sanitizer_result.warnings)
+        return sanitizer_result.value
 
 
 class HTMLSanitizer:

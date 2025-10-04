@@ -368,21 +368,57 @@ class Graph(GraphBase):
         with suppress(Exception):
             # Parse collection and key from ID
             if "/" in node_id:
-                collection_name, doc_key = node_id.split("/", 1)
-            else:
-                # Search all vertex collections
-                vertex_collections = self._settings.vertex_collections or ["vertices"]
-                for collection_name in vertex_collections:
-                    if database.has_collection(collection_name):
-                        collection = database.collection(collection_name)
-                        if collection.has(node_id):
-                            doc = collection.get(node_id)
-                            return self._arango_doc_to_node(doc)
-                return None
+                return await self._get_node_by_full_id(database, node_id)
+            return await self._search_vertex_collections(database, node_id)
 
-            if database.has_collection(collection_name):
-                collection = database.collection(collection_name)
-                doc = collection.get(doc_key)
+        return None
+
+    async def _get_node_by_full_id(
+        self,
+        database: "StandardDatabase",
+        node_id: str,
+    ) -> GraphNodeModel | None:
+        """Get node by full collection/key ID.
+
+        Args:
+            database: ArangoDB database instance
+            node_id: Full node ID with collection (e.g., "vertices/123")
+
+        Returns:
+            Node if found, None otherwise
+        """
+        collection_name, doc_key = node_id.split("/", 1)
+
+        if not database.has_collection(collection_name):
+            return None
+
+        collection = database.collection(collection_name)
+        doc = collection.get(doc_key)
+        return self._arango_doc_to_node(doc)
+
+    async def _search_vertex_collections(
+        self,
+        database: "StandardDatabase",
+        node_id: str,
+    ) -> GraphNodeModel | None:
+        """Search all vertex collections for a node by key.
+
+        Args:
+            database: ArangoDB database instance
+            node_id: Node key to search for
+
+        Returns:
+            Node if found in any collection, None otherwise
+        """
+        vertex_collections = self._settings.vertex_collections or ["vertices"]
+
+        for collection_name in vertex_collections:
+            if not database.has_collection(collection_name):
+                continue
+
+            collection = database.collection(collection_name)
+            if collection.has(node_id):
+                doc = collection.get(node_id)
                 return self._arango_doc_to_node(doc)
 
         return None
@@ -767,34 +803,84 @@ class Graph(GraphBase):
         """Create multiple edges in bulk."""
         database = await self._ensure_client()
 
-        # Group edges by collection
-        collections_data: dict[str, list[dict[str, t.Any]]] = {}
-        for edge_data in edges:
-            edge_type = edge_data["type"]
-            properties = edge_data.get("properties", {})
-
-            # Add required edge fields
-            properties["created_at"] = datetime.now().isoformat()
-            properties["updated_at"] = datetime.now().isoformat()
-            properties["_from"] = edge_data["from_node"]
-            properties["_to"] = edge_data["to_node"]
-            if "_key" not in properties:
-                properties["_key"] = str(uuid4())
-
-            collection_name = edge_type
-            if collection_name not in collections_data:
-                collections_data[collection_name] = []
-            collections_data[collection_name].append(properties)
+        # Group edges by collection and prepare properties
+        collections_data = self._prepare_edge_collections(edges)
 
         # Bulk insert into each collection
+        return await self._insert_edge_collections(database, collections_data)
+
+    def _prepare_edge_collections(
+        self,
+        edges: list[dict[str, t.Any]],
+    ) -> dict[str, list[dict[str, t.Any]]]:
+        """Group edges by collection and add required fields.
+
+        Args:
+            edges: List of edge data dictionaries
+
+        Returns:
+            Dictionary mapping collection names to edge documents
+        """
+        collections_data: dict[str, list[dict[str, t.Any]]] = {}
+
+        for edge_data in edges:
+            edge_type = edge_data["type"]
+            properties = self._prepare_edge_properties(edge_data)
+
+            if edge_type not in collections_data:
+                collections_data[edge_type] = []
+            collections_data[edge_type].append(properties)
+
+        return collections_data
+
+    def _prepare_edge_properties(self, edge_data: dict[str, t.Any]) -> dict[str, t.Any]:
+        """Prepare edge properties with required fields.
+
+        Args:
+            edge_data: Raw edge data
+
+        Returns:
+            Properties dictionary with required fields added
+        """
+        properties = edge_data.get("properties", {}).copy()
+
+        # Add required edge fields
+        properties["created_at"] = datetime.now().isoformat()
+        properties["updated_at"] = datetime.now().isoformat()
+        properties["_from"] = edge_data["from_node"]
+        properties["_to"] = edge_data["to_node"]
+
+        if "_key" not in properties:
+            properties["_key"] = str(uuid4())
+
+        return properties
+
+    async def _insert_edge_collections(
+        self,
+        database: "StandardDatabase",
+        collections_data: dict[str, list[dict[str, t.Any]]],
+    ) -> list[GraphEdgeModel]:
+        """Insert edges into their respective collections.
+
+        Args:
+            database: ArangoDB database instance
+            collections_data: Mapping of collection names to edge documents
+
+        Returns:
+            List of created edge models
+        """
         results = []
+
         for collection_name, docs in collections_data.items():
+            # Ensure collection exists
             if not database.has_collection(collection_name):
                 database.create_collection(collection_name, edge=True)
 
+            # Bulk insert
             collection = database.collection(collection_name)
             bulk_result = collection.insert_many(docs, return_new=True)
 
+            # Convert results to edge models
             for item in bulk_result:
                 if "new" in item:
                     results.append(self._arango_doc_to_edge(item["new"]))

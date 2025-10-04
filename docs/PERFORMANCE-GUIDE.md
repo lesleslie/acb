@@ -1,19 +1,19 @@
 # ACB Performance Guide
 
-> **ACB Documentation**: [Main](../README.md) | [Core Systems](../acb/README.md) | [Actions](../acb/actions/README.md) | [Adapters](../acb/adapters/README.md)
+> **Version:** 0.23.0 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
 
-This guide provides best practices and techniques for optimizing ACB application performance.
+This guide provides best practices and techniques for optimizing ACB application performance with the simplified v0.19.1+ architecture.
 
 ## Table of Contents
 
-- [General Performance Principles](#general-performance-principles)
-- [Dependency Injection Performance](#dependency-injection-performance)
-- [Adapter Performance](#adapter-performance)
-- [Universal Query Interface Performance](#universal-query-interface-performance)
-- [Configuration Optimization](#configuration-optimization)
-- [Async Best Practices](#async-best-practices)
-- [Monitoring and Profiling](#monitoring-and-profiling)
-- [Production Deployment](#production-deployment)
+- [General Performance Principles](<#general-performance-principles>)
+- [Dependency Injection Performance](<#dependency-injection-performance>)
+- [Adapter Performance](<#adapter-performance>)
+- [Universal Query Interface Performance](<#universal-query-interface-performance>)
+- [Configuration Optimization](<#configuration-optimization>)
+- [Async Best Practices](<#async-best-practices>)
+- [Monitoring and Profiling](<#monitoring-and-profiling>)
+- [Production Deployment](<#production-deployment>)
 
 ## General Performance Principles
 

@@ -10,6 +10,7 @@ Provides coordination across multiple database types:
 import asyncio
 import uuid
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -304,7 +305,7 @@ class MultiDatabaseCoordinator(CleanupMixin):
             operation="update",
             databases=set(target_databases),
             entity_type=entity_type,
-            data={"id": entity_id, **entity_data},
+            data={"id": entity_id} | entity_data,
             strategy=strategy,
             created_at=datetime.now(UTC),
         )
@@ -590,11 +591,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
     async def _execute_compensation(self, task: CoordinationTask) -> None:
         """Execute compensation actions for failed task."""
         for compensation in reversed(task.compensation_actions):
-            try:
+            with suppress(Exception):
                 await compensation()
-            except Exception:
-                # Log compensation failure but continue
-                pass
 
     async def check_database_health(self) -> dict[str, dict[str, Any]]:
         """Check health of all registered databases.
