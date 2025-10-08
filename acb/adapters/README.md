@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Actions](../actions/README.md) | [Adapters](./README.md)
+> **ACB Documentation**: [Main](<../../README.md>) | [Core Systems](<../README.md>) | [Actions](<../actions/README.md>) | [Adapters](<./README.md>)
 
 # ACB: Adapters
 
@@ -6,16 +6,16 @@ Adapters provide standardized interfaces to external systems and services in the
 
 ## Table of Contents
 
-- [Adapter System Overview](#adapter-system-overview)
-- [Security and Monitoring Infrastructure](#acb-0190-security-and-monitoring-infrastructure)
-- [Available Adapters](#available-adapters)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Implementing Custom Adapters](#implementing-custom-adapters)
-- [Adapter Lifecycle](#adapter-lifecycle)
-- [Best Practices](#best-practices)
-- [Additional Resources](#additional-resources)
+- [Adapter System Overview](<#adapter-system-overview>)
+- [Security and Monitoring Infrastructure](<#acb-0190-security-and-monitoring-infrastructure>)
+- [Available Adapters](<#available-adapters>)
+- [Installation](<#installation>)
+- [Configuration](<#configuration>)
+- [Usage](<#usage>)
+- [Implementing Custom Adapters](<#implementing-custom-adapters>)
+- [Adapter Lifecycle](<#adapter-lifecycle>)
+- [Best Practices](<#best-practices>)
+- [Additional Resources](<#additional-resources>)
 
 ## Adapter System Overview
 
@@ -102,19 +102,19 @@ ACB includes the following adapter categories:
 
 ### Caching Adapters
 
-- [**Cache**](./cache/README.md): Fast data caching
+- [**Cache**](<./cache/README.md>): Fast data caching
   - **Memory**: In-memory cache for development and small applications
   - **Redis**: Distributed cache using Redis
 
 ### DNS Adapters
 
-- [**DNS**](./dns/README.md): Domain name management
+- [**DNS**](<./dns/README.md>): Domain name management
   - **Cloud DNS**: Google Cloud DNS implementation
   - **Cloudflare**: Cloudflare DNS implementation
 
 ### File Transfer Adapters
 
-- [**FTPD**](./ftpd/README.md): File transfer protocol server implementations
+- [**FTPD**](<./ftpd/README.md>): File transfer protocol server implementations
   - **FTP**: Standard File Transfer Protocol server using aioftp
   - **SFTP**: Secure File Transfer Protocol server using asyncssh
 
@@ -127,50 +127,50 @@ ACB includes the following adapter categories:
 
 ### Database Model Adapters
 
-- [**Models**](./models/README.md): Database models and ORM integration
+- [**Models**](<./models/README.md>): Database models and ORM integration
   - **SQLModel**: SQL database ORM with SQLModel
 
 ### Monitoring Adapters
 
-- [**Monitoring**](./monitoring/README.md): Application monitoring and error tracking
+- [**Monitoring**](<./monitoring/README.md>): Application monitoring and error tracking
   - **Logfire**: Logging-based monitoring
   - **Sentry**: Error and performance monitoring with Sentry
 
 ### NoSQL Database Adapters
 
-- [**NoSQL**](./nosql/README.md): Non-relational databases
+- [**NoSQL**](<./nosql/README.md>): Non-relational databases
   - **Firestore**: Google Cloud Firestore database using Google Cloud Firestore API
   - **MongoDB**: MongoDB document database using Beanie ODM
   - **Redis**: Redis database for structured data using Redis-OM
 
 ### HTTP Client Adapters
 
-- [**Requests**](./requests/README.md): HTTP clients for API consumption
+- [**Requests**](<./requests/README.md>): HTTP clients for API consumption
   - **HTTPX**: Modern async HTTP client
   - **Niquests**: Extended HTTP client
 
 ### Secret Management Adapters
 
-- [**Secret**](./secret/README.md): Securely storing and retrieving secrets
+- [**Secret**](<./secret/README.md>): Securely storing and retrieving secrets
   - **Infisical**: Infisical secrets manager
   - **Secret Manager**: Cloud-based secret management
 
 ### Email Adapters
 
-- [**SMTP**](./smtp/README.md): Email sending
+- [**SMTP**](<./smtp/README.md>): Email sending
   - **Gmail**: Send emails through Gmail API with OAuth2
   - **Mailgun**: Send emails through Mailgun API
 
 ### SQL Database Adapters
 
-- [**SQL**](./sql/README.md): Relational databases
+- [**SQL**](<./sql/README.md>): Relational databases
   - **MySQL**: MySQL/MariaDB database adapter
   - **PostgreSQL**: PostgreSQL database adapter
   - **SQLite**: SQLite database adapter (local files and Turso cloud databases)
 
 ### Vector Database Adapters
 
-- [**Vector**](./vector/README.md): Vector databases for similarity search and AI applications
+- [**Vector**](<./vector/README.md>): Vector databases for similarity search and AI applications
   - **DuckDB**: Local vector database with VSS extension (Stable)
   - **Weaviate**: Weaviate vector database with hybrid search capabilities (Planned)
   - **OpenSearch**: OpenSearch vector database with k-NN capabilities (Planned)
@@ -178,7 +178,7 @@ ACB includes the following adapter categories:
 
 ### Storage Adapters
 
-- [**Storage**](./storage/README.md): File and object storage
+- [**Storage**](<./storage/README.md>): File and object storage
   - **Azure**: Azure Blob storage
   - **Cloud Storage**: Google Cloud Storage
   - **File**: Local file system storage
@@ -263,7 +263,7 @@ async def cache_example():
 ### Injecting Adapters Into Functions
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 import typing as t
 
@@ -279,8 +279,8 @@ Storage, Logger = import_adapter()  # Automatically detects "storage" and "logge
 @depends.inject
 async def process_file(
     filename: str,
-    storage: Storage = depends(),  # Injected storage adapter
-    logger: Logger = depends(),  # Injected logger adapter
+    storage: Inject[Storage],  # Injected storage adapter
+    logger: Inject[Logger],  # Injected logger adapter
 ) -> dict[str, t.Any]:
     logger.info(f"Processing file: {filename}")
     content: bytes | None = await storage.get_file(filename)
@@ -301,7 +301,7 @@ async def process_file(
 import typing as t
 
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 # Import multiple adapters simultaneously
@@ -312,9 +312,9 @@ Cache, Storage, SQL = import_adapter()
 @depends.inject
 async def backup_data(
     key: str,
-    cache: Cache = depends(),
-    sql: SQL = depends(),
-    storage: Storage = depends(),
+    cache: Inject[Cache],
+    sql: Inject[SQL],
+    storage: Inject[Storage],
 ) -> bool:
     # Get data from cache
     data: dict[str, t.Any] | None = await cache.get(key)
@@ -489,7 +489,7 @@ payment: stripe
 ### 6. Use Your Custom Adapter
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 # Import your adapter
@@ -497,7 +497,7 @@ Payment = import_adapter("payment")
 
 
 @depends.inject
-async def payment_example(payment: Payment = depends()) -> dict[str, str | bool]:
+async def payment_example(payment: Inject[Payment]) -> dict[str, str | bool]:
     transaction_id: str = await payment.charge(19.99, "Premium subscription")
     success: bool = await payment.refund(transaction_id)
     return {"transaction_id": transaction_id, "refunded": success}
@@ -532,6 +532,6 @@ If you were using the old dynamic discovery system, you'll need to:
 
 ## Additional Resources
 
-- [Main ACB Documentation](../README.md)
-- [Core Systems Documentation](../README.md)
-- [Actions Documentation](../actions/README.md)
+- [Main ACB Documentation](<../README.md>)
+- [Core Systems Documentation](<../README.md>)
+- [Actions Documentation](<../actions/README.md>)

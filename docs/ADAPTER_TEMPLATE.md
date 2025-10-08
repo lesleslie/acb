@@ -15,14 +15,14 @@ Example:
     Basic usage of this adapter:
 
     ```python
-    from acb.depends import depends
+    from acb.depends import Inject, depends
     from acb.adapters import import_adapter
 
     Cache = import_adapter("cache")
 
 
     @depends.inject
-    async def my_function(cache: Cache = depends()):
+    async def my_function(cache: Inject[Cache]):
         await cache.set("key", "value")
         return await cache.get("key")
     ```

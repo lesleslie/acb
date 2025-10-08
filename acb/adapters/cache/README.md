@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Cache](./README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Cache](<./README.md>)
 
 # Cache Adapter
 
@@ -6,21 +6,21 @@ The Cache adapter provides a standardized interface for data caching in ACB appl
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Available Implementations](#available-implementations)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Basic Usage](#basic-usage)
-- [Advanced Usage](#advanced-usage)
-  - [Caching Complex Data Types](#caching-complex-data-types)
-  - [Multi-Key Operations](#multi-key-operations)
-  - [Cache Decorators](#cache-decorators)
-  - [Working with Namespaces](#working-with-namespaces)
-- [Troubleshooting](#troubleshooting)
-- [Implementation Details](#implementation-details)
-- [Performance Considerations](#performance-considerations)
-- [Related Adapters](#related-adapters)
-- [Additional Resources](#additional-resources)
+- [Overview](<#overview>)
+- [Available Implementations](<#available-implementations>)
+- [Installation](<#installation>)
+- [Configuration](<#configuration>)
+- [Basic Usage](<#basic-usage>)
+- [Advanced Usage](<#advanced-usage>)
+  - [Caching Complex Data Types](<#caching-complex-data-types>)
+  - [Multi-Key Operations](<#multi-key-operations>)
+  - [Cache Decorators](<#cache-decorators>)
+  - [Working with Namespaces](<#working-with-namespaces>)
+- [Troubleshooting](<#troubleshooting>)
+- [Implementation Details](<#implementation-details>)
+- [Performance Considerations](<#performance-considerations>)
+- [Related Adapters](<#related-adapters>)
+- [Additional Resources](<#additional-resources>)
 
 ## Overview
 
@@ -88,7 +88,7 @@ cache:
 ## Basic Usage
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 # Import the cache adapter (automatically selects the one enabled in config)
@@ -167,7 +167,7 @@ await cache.expire("existing:key", ttl=120)
 Use cache decorators to automatically cache function results:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")
@@ -337,21 +337,21 @@ async def get_item(item_id):
 
 The Cache adapter works well with other ACB adapters:
 
-- [**SQL Adapter**](../sql/README.md): Cache database query results to reduce database load
-- [**NoSQL Adapter**](../nosql/README.md): Cache document results for faster access
-- [**Requests Adapter**](../requests/README.md): Cache API responses to reduce external calls
-- [**Storage Adapter**](../storage/README.md): Cache file metadata to avoid storage operations
+- [**SQL Adapter**](<../sql/README.md>): Cache database query results to reduce database load
+- [**NoSQL Adapter**](<../nosql/README.md>): Cache document results for faster access
+- [**Requests Adapter**](<../requests/README.md>): Cache API responses to reduce external calls
+- [**Storage Adapter**](<../storage/README.md>): Cache file metadata to avoid storage operations
 
 Common integration patterns:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
 # Caching database query results
 @depends.inject
-async def get_users_by_role(role: str, config: Config = depends()):
+async def get_users_by_role(role: str, config: Inject[Config]):
     @cache.cached(ttl=config.cache.query_ttl)
     async def _get_users_by_role():
         async with sql.get_session() as session:
@@ -364,7 +364,7 @@ async def get_users_by_role(role: str, config: Config = depends()):
 
 # Caching API responses
 @depends.inject
-async def get_weather(city: str, config: Config = depends()):
+async def get_weather(city: str, config: Inject[Config]):
     @cache.cached(ttl=config.cache.response_ttl)
     async def _get_weather():
         response = await requests.get(f"https://api.weather.com/{city}")
@@ -378,6 +378,6 @@ async def get_weather(city: str, config: Config = depends()):
 - [Redis Documentation](https://redis.io/documentation)
 - [Redis Caching Patterns](https://redis.com/solutions/use-cases/caching/)
 - [Caching Best Practices](https://aws.amazon.com/caching/best-practices/)
-- [ACB SQL Adapter](../sql/README.md)
-- [ACB NoSQL Adapter](../nosql/README.md)
-- [ACB Adapters Overview](../README.md)
+- [ACB SQL Adapter](<../sql/README.md>)
+- [ACB NoSQL Adapter](<../nosql/README.md>)
+- [ACB Adapters Overview](<../README.md>)

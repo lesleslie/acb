@@ -195,7 +195,7 @@ class UserService(ServiceBase):
 #### After (v0.19.1+)
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")
@@ -203,7 +203,7 @@ SQL = import_adapter("sql")
 
 
 @depends.inject
-async def create_user(data: dict, cache: Cache = depends(), sql: SQL = depends()):
+async def create_user(data: dict, cache: Inject[Cache], sql: Inject[SQL]):
     # Direct adapter usage
     async with sql.get_session() as session:
         user = User(**data)

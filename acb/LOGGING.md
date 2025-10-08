@@ -1,6 +1,6 @@
 # Logging Documentation
 
-> **ACB Documentation**: [Main](../README.md) | [Core Systems](./README.md) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
+> **ACB Documentation**: [Main](<../README.md>) | [Core Systems](<./README.md>) | [Actions](<./actions/README.md>) | [Adapters](<./adapters/README.md>)
 
 ## Overview
 
@@ -13,12 +13,12 @@ ACB provides a powerful logging system based on [Loguru](https://loguru.readthed
 ACB's logging system is built for async applications:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @depends.inject
-async def async_operation(logger: Logger = depends()):
+async def async_operation(logger: Inject[Logger]):
     logger.info("Starting async operation")
 
     # Async logging doesn't block
@@ -33,7 +33,7 @@ Support for structured data in log messages:
 
 ```python
 @depends.inject
-async def structured_logging_example(logger: Logger = depends()):
+async def structured_logging_example(logger: Inject[Logger]):
     # Log with structured data
     logger.info(
         "User login attempt",
@@ -59,7 +59,7 @@ Standard logging levels with contextual usage:
 
 ```python
 @depends.inject
-async def log_levels_example(logger: Logger = depends()):
+async def log_levels_example(logger: Inject[Logger]):
     # Debug: Detailed information for debugging
     logger.debug("Variable state", user_data=user_dict)
 
@@ -136,13 +136,13 @@ logger: structlog
 ### Context Managers for Logging
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 import time
 
 
 @depends.inject
-async def operation_with_logging_context(logger: Logger = depends()):
+async def operation_with_logging_context(logger: Inject[Logger]):
     start_time = time.time()
 
     try:
@@ -168,12 +168,12 @@ async def operation_with_logging_context(logger: Logger = depends()):
 ### Custom Log Formatting
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @depends.inject
-async def custom_formatting_example(logger: Logger = depends()):
+async def custom_formatting_example(logger: Inject[Logger]):
     # Format messages with context
     request_id = "req-123-456"
 
@@ -189,13 +189,13 @@ async def custom_formatting_example(logger: Logger = depends()):
 
 ```python
 from acb.debug import debug, timeit
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @timeit
 @depends.inject
-async def debug_and_log_example(data: dict, logger: Logger = depends()):
+async def debug_and_log_example(data: dict, logger: Inject[Logger]):
     # Quick debug output (development only)
     debug(f"Processing {len(data)} items")
 
@@ -254,13 +254,13 @@ logger.add("logs/structured.json", serialize=True, level="INFO")
 ### Async Logging Performance
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 import asyncio
 
 
 @depends.inject
-async def high_performance_logging(logger: Logger = depends()):
+async def high_performance_logging(logger: Inject[Logger]):
     # Batch log operations when possible
     events = []
 
@@ -281,14 +281,14 @@ async def high_performance_logging(logger: Logger = depends()):
 ### Conditional Logging
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 from acb.logger import Logger
 
 
 @depends.inject
 async def conditional_logging(
-    data: dict, config: Config = depends(), logger: Logger = depends()
+    data: dict, config: Inject[Config], logger: Inject[Logger]
 ):
     # Only log verbose information in debug mode
     if config.debug.enabled:
@@ -303,12 +303,12 @@ async def conditional_logging(
 ### Exception Logging
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @depends.inject
-async def error_handling_example(logger: Logger = depends()):
+async def error_handling_example(logger: Inject[Logger]):
     try:
         result = await risky_operation()
         return result
@@ -340,13 +340,13 @@ async def error_handling_example(logger: Logger = depends()):
 
 ```python
 import asyncio
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @depends.inject
 async def retry_with_logging(
-    operation_name: str, max_retries: int = 3, logger: Logger = depends()
+    operation_name: str, max_retries: int = 3, logger: Inject[Logger]
 ):
     for attempt in range(max_retries + 1):
         try:
@@ -390,7 +390,7 @@ async def retry_with_logging(
 
 ```python
 from fastapi import FastAPI, Request
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 import time
 
@@ -399,7 +399,7 @@ app = FastAPI()
 
 @depends.inject
 async def log_request_middleware(
-    request: Request, call_next, logger: Logger = depends()
+    request: Request, call_next, logger: Inject[Logger]
 ):
     start_time = time.time()
 
@@ -428,14 +428,14 @@ async def log_request_middleware(
 ### Data Pipeline Logging
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 from acb.debug import timeit
 
 
 @timeit
 @depends.inject
-async def data_pipeline_with_logging(input_data: list, logger: Logger = depends()):
+async def data_pipeline_with_logging(input_data: list, logger: Inject[Logger]):
     pipeline_id = f"pipeline-{int(time.time())}"
 
     logger.info(

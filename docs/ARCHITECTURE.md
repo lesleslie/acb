@@ -70,12 +70,12 @@ settings/
 Components are automatically wired using type-based injection:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 @depends.inject
 async def my_function(
-    cache: Cache = depends(), storage: Storage = depends(), config: Config = depends()
+    cache: Inject[Cache], storage: Inject[Storage], config: Inject[Config]
 ):
     # Dependencies automatically injected
     await cache.set("key", "value")
@@ -145,7 +145,7 @@ await hot_reload.stop()
 Built on the `bevy` framework for automatic component wiring:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")
@@ -157,7 +157,7 @@ depends.set(Cache, cache_instance)
 
 # Automatic injection
 @depends.inject
-async def process_data(cache: Cache = depends()):
+async def process_data(cache: Inject[Cache]):
     return await cache.get("data")
 ```
 
@@ -380,7 +380,7 @@ def test_file_operation(mock_async_file_system, patch_async_file_operations):
 Combine multiple adapters with dependency injection:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")
@@ -390,7 +390,7 @@ SQL = import_adapter("sql")
 
 @depends.inject
 async def process_user_data(
-    cache: Cache = depends(), storage: Storage = depends(), sql: SQL = depends()
+    cache: Inject[Cache], storage: Inject[Storage], sql: Inject[SQL]
 ):
     # Check cache first
     user_data = await cache.get("user:123")
@@ -426,12 +426,12 @@ ACB powers FastBlocks web framework:
 
 ```python
 from fastblocks import HTTPEndpoint
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
 class FastBlocksEndpoint(HTTPEndpoint):
-    config: Config = depends()
+    config: Inject[Config]
 
     def __init__(self, scope, receive, send):
         super().__init__(scope, receive, send)

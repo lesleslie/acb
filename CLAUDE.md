@@ -732,8 +732,9 @@ attrs: false
 ### Dependency Injection Usage
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
+from acb.config import Config
 
 # Import adapter classes (not instances)
 Cache = import_adapter("cache")
@@ -745,7 +746,7 @@ Storage = import_adapter("storage")
 
 @depends.inject
 async def my_function(
-    cache: Cache = depends(), storage: Storage = depends(), config: Config = depends()
+    cache: Inject[Cache], storage: Inject[Storage], config: Inject[Config]
 ):
     # Dependencies automatically injected
     pass
@@ -753,7 +754,7 @@ async def my_function(
 
 # FastBlocks HTTPEndpoint Pattern (from FastBlocks CLAUDE.md)
 class FastBlocksEndpoint(HTTPEndpoint):
-    config: Config = depends()
+    config: Inject[Config]
 
     def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
         super().__init__(scope, receive, send)

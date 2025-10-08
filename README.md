@@ -637,7 +637,7 @@ ACB features a simple yet powerful dependency injection system that makes compon
 ```python
 import typing as t
 
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 from acb.logger import Logger
 from ._base import MyServiceBase
@@ -660,8 +660,8 @@ depends.set(MyService)  # Now MyService is available in the dependency registry
 @depends.inject  # This decorator automatically injects the dependencies
 async def process_data(
     data: dict[str, t.Any],
-    config: Config = depends(),  # Injected based on type
-    logger: Logger = depends(),  # Injected by name
+    config: Inject[Config],  # Type-safe injection
+    logger: Inject[Logger],  # Type-safe injection
 ):
     # Now you can use config and logger without manually creating them
     logger.info(f"Processing data with app: {config.app.name}")
@@ -770,7 +770,7 @@ Here are some common patterns and examples that will help you get started with A
 Dependency injection is a core concept in ACB. Here's how to use it effectively:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 from acb.adapters import import_adapter
 
@@ -792,9 +792,9 @@ def direct_injection_example():
 @depends.inject
 async def process_file(
     filename: str,
-    cache: Cache = depends(),  # Injected automatically
-    storage: Storage = depends(),  # Injected automatically
-    config: Config = depends(),  # Injected automatically
+    cache: Inject[Cache],  # Type-safe injection
+    storage: Inject[Storage],  # Type-safe injection
+    config: Inject[Config],  # Type-safe injection
 ):
     # All dependencies are automatically provided
     print(f"Processing {filename} for app {config.app.name}")

@@ -117,7 +117,7 @@ file_hash = hash.blake3(b"file content")
 Adapters provide standardized interfaces to external systems:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 # Import adapter classes
@@ -135,8 +135,8 @@ def direct_injection_example():
 @depends.inject
 async def process_file(
     filename: str,
-    cache: Cache = depends(),  # Injected automatically
-    storage: Storage = depends(),  # Injected automatically
+    cache: Inject[Cache],  # Injected automatically
+    storage: Inject[Storage],  # Injected automatically
 ):
     # All dependencies are automatically provided
     # Check if file is cached
@@ -172,7 +172,7 @@ storage: file          # Use file system storage
 ACB features a simple yet powerful dependency injection system:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
@@ -180,7 +180,7 @@ from acb.config import Config
 @depends.inject
 async def process_data(
     data: dict[str, Any],
-    config: Config = depends(),  # Injected based on type
+    config: Inject[Config],  # Injected based on type
 ):
     # Now you can use config without manually creating it
     print(f"Processing data with app: {config.app.name}")
@@ -240,7 +240,7 @@ For production deployment, ensure:
 ### 1. Using Dependency Injection
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 # Import adapters
@@ -250,8 +250,8 @@ Cache, Storage = import_adapter()
 @depends.inject
 async def process_file(
     filename: str,
-    cache: Cache = depends(),
-    storage: Storage = depends(),
+    cache: Inject[Cache],
+    storage: Inject[Storage],
 ):
     # Implementation here
     pass
@@ -308,9 +308,9 @@ Common issues and solutions:
 
 For more detailed documentation:
 
-- [Main ACB Documentation](README.md)
-- [Core Systems](acb/README.md)
-- [Actions](acb/actions/README.md)
-- [Adapters](acb/adapters/README.md)
-- [Performance Guide](docs/PERFORMANCE-GUIDE.md)
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+- [Main ACB Documentation](<./README.md>)
+- [Core Systems](<./acb/README.md>)
+- [Actions](<./acb/actions/README.md>)
+- [Adapters](<./acb/adapters/README.md>)
+- [Performance Guide](<./docs/PERFORMANCE-GUIDE.md>)
+- [Troubleshooting Guide](<./docs/TROUBLESHOOTING.md>)

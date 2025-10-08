@@ -126,6 +126,7 @@ domain:example.com  # Missing space after colon
 
 ```python
 from acb.adapters import import_adapter
+from acb.depends import Inject, depends
 
 # Get the adapter class (not instance)
 Cache = import_adapter("cache")
@@ -133,7 +134,7 @@ Cache = import_adapter("cache")
 
 # Use in function signature
 @depends.inject
-async def my_function(cache: Cache = depends()):
+async def my_function(cache: Inject[Cache]):
     pass
 ```
 

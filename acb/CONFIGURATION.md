@@ -1,6 +1,6 @@
 # Configuration Documentation
 
-> **ACB Documentation**: [Main](../README.md) | [Core Systems](./README.md) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
+> **ACB Documentation**: [Main](<../README.md>) | [Core Systems](<./README.md>) | [Actions](<./actions/README.md>) | [Adapters](<./adapters/README.md>)
 
 ## Overview
 
@@ -74,12 +74,12 @@ class DebugSettings(Settings):
 ### Accessing Configuration
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
 @depends.inject
-async def my_function(config: Config = depends()):
+async def my_function(config: Inject[Config]):
     app_name = config.app.name
     debug_enabled = config.debug.enabled
     cache_ttl = config.cache.default_ttl

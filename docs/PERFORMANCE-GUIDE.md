@@ -74,7 +74,7 @@ sql:
 Register expensive services as singletons:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 # Register once during startup
 expensive_service = ExpensiveService()
@@ -83,7 +83,7 @@ depends.set(ExpensiveService, expensive_service)
 
 # All injections use the same instance
 @depends.inject
-async def fast_function(service: ExpensiveService = depends()):
+async def fast_function(service: Inject[ExpensiveService]):
     # No initialization cost per call
     return await service.operation()
 ```
@@ -93,13 +93,15 @@ async def fast_function(service: ExpensiveService = depends()):
 Use type annotations for faster dependency resolution:
 
 ```python
-# Fast - type-based lookup
+from acb.depends import Inject, depends
+
+# Fast - type-based lookup with Inject
 @depends.inject
-async def typed_function(cache: Cache = depends()):
+async def typed_function(cache: Inject[Cache]):
     pass
 
 
-# Slower - string-based lookup
+# Slower - string-based lookup (use only when necessary)
 @depends.inject
 async def string_function(cache=depends("cache")):
     pass
@@ -113,13 +115,13 @@ Optimize caching strategy:
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Cache = import_adapter("cache")
 
 
 @depends.inject
-async def optimized_caching(cache: Cache = depends()):
+async def optimized_caching(cache: Inject[Cache]):
     # Use appropriate TTL values
     short_ttl = 60  # Frequently changing data
     medium_ttl = 3600  # Hourly updates
@@ -139,12 +141,13 @@ Optimize database operations:
 
 ```python
 from acb.adapters import import_adapter
+from acb.depends import Inject, depends
 
 SQL = import_adapter("sql")
 
 
 @depends.inject
-async def optimized_database(sql: SQL = depends()):
+async def optimized_database(sql: Inject[SQL]):
     # Use connection pooling
     async with sql.get_session() as session:
         # Batch queries when possible
@@ -167,12 +170,13 @@ Optimize file operations:
 
 ```python
 from acb.adapters import import_adapter
+from acb.depends import Inject, depends
 
 Storage = import_adapter("storage")
 
 
 @depends.inject
-async def optimized_storage(storage: Storage = depends()):
+async def optimized_storage(storage: Inject[Storage]):
     # Stream large files instead of loading into memory
     async for chunk in storage.stream_file("large_file.bin"):
         await process_chunk(chunk)
@@ -335,12 +339,12 @@ sql:
 Remove debug overhead in production:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 
 @depends.inject
-async def conditional_debug(config: Config = depends()):
+async def conditional_debug(config: Inject[Config]):
     if config.debug.enabled:
         # Expensive debug operations only in debug mode
         debug_info = await collect_debug_info()
@@ -355,11 +359,11 @@ Use async patterns effectively:
 
 ```python
 import asyncio
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 @depends.inject
-async def concurrent_operations(cache: Cache = depends(), storage: Storage = depends()):
+async def concurrent_operations(cache: Inject[Cache], storage: Inject[Storage]):
     # Run independent operations concurrently
     cache_task = cache.get("user:123")
     storage_task = storage.get_file("profile.jpg")
@@ -376,13 +380,14 @@ Control concurrency to prevent resource exhaustion:
 
 ```python
 import asyncio
+from acb.depends import Inject, depends
 
 # Limit concurrent database connections
 db_semaphore = asyncio.Semaphore(10)
 
 
 @depends.inject
-async def rate_limited_operation(sql: SQL = depends()):
+async def rate_limited_operation(sql: Inject[SQL]):
     async with db_semaphore:
         # Only 10 concurrent database operations
         async with sql.get_session() as session:
@@ -433,12 +438,12 @@ Implement custom performance metrics:
 
 ```python
 import time
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 
 
 @depends.inject
-async def tracked_operation(logger: Logger = depends()):
+async def tracked_operation(logger: Inject[Logger]):
     start_time = time.time()
 
     try:
@@ -564,11 +569,11 @@ services:
 Implement health check endpoints:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 
 @depends.inject
-async def health_check(cache: Cache = depends(), sql: SQL = depends()):
+async def health_check(cache: Inject[Cache], sql: Inject[SQL]):
     """Check health of all critical services."""
     checks = {}
 
