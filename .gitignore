@@ -8,8 +8,13 @@
 /.ruff_cache/
 /.pdm-build/
 /tmp/
-/__pycache__/
-/*.pyc
+
+# Python cache files (recursive)
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.Python
 
 
 # ACB settings directory (should only be created by consuming applications)

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
-from acb.queues._base import (
+from acb.tasks._base import (
     TaskData,
     TaskResult,
     TaskStatus,

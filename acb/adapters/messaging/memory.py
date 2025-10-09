@@ -1,10 +1,13 @@
-"""In-memory queue adapter for ACB framework.
+"""In-memory messaging adapter for ACB framework.
 
-This module provides an in-memory queue backend implementation suitable for
-development, testing, and single-node deployments. Messages are stored in
-memory and will be lost on application restart.
+This module provides an in-memory messaging backend implementation supporting
+both pub/sub and queue patterns. Suitable for development, testing, and
+single-node deployments. Messages are stored in memory and will be lost on
+application restart.
 
 Features:
+- Pub/sub pattern support (events)
+- Queue pattern support (tasks)
 - Priority-based message ordering
 - Delayed message delivery
 - Dead letter queue support
@@ -14,6 +17,7 @@ Features:
 - Metrics collection
 
 Implementation follows ACB adapter patterns:
+- Dual interface (PubSubBackend + QueueBackend)
 - Public/private method delegation
 - Lazy client initialization
 - Async context manager support
@@ -28,43 +32,53 @@ from collections import defaultdict, deque
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
-from acb.adapters.queue._base import (
-    QueueBackend,
-    QueueCapability,
-    QueueConnectionError,
+from acb.adapters.messaging._base import (
+    UnifiedMessagingBackend,
+    MessagingSettings,
+    MessagingCapability,
+    MessagingConnectionError,
+    MessagingOperationError,
     QueueFullError,
+    QueueEmptyError,
+    PubSubMessage,
     QueueMessage,
-    QueueOperationError,
-    QueueSettings,
+    MessagePriority,
+    Subscription,
 )
+from acb.depends import depends
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger as LoggerType
+else:
+    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
 
 # Module metadata for adapter discovery
 MODULE_METADATA = AdapterMetadata(
-    module_id=UUID("01K6G25MNW0V36KB2G9S52G5JB"),  # Convert string to UUID
-    name="Memory Queue",
-    category="queue",
+    module_id=UUID("66c46147-3eba-49a1-949a-b01df1710453"),
+    name="Memory Messaging",
+    category="messaging",
     provider="memory",
-    version="1.0.0",
-    acb_min_version="0.20.0",
+    version="2.0.0",
+    acb_min_version="0.25.0",
     author="ACB Team",
-    created_date=datetime.now().isoformat(),
-    last_modified=datetime.now().isoformat(),
+    created_date="2025-10-08",
+    last_modified="2025-10-08",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
         AdapterCapability.CONNECTION_POOLING,
     ],
     required_packages=[],
-    description="In-memory queue adapter for development and testing",
-    settings_class="MemoryQueueSettings",
+    description="In-memory messaging adapter for development and testing",
+    settings_class="MemoryMessagingSettings",
 )
 
 
-class MemoryQueueSettings(QueueSettings):
+class MemoryMessagingSettings(MessagingSettings):
     """Settings specific to memory queue implementation."""
 
     # Memory limits
@@ -84,6 +98,10 @@ class MemoryQueueSettings(QueueSettings):
     )
 
     # Dead letter queue
+    enable_dead_letter: bool = Field(
+        default=True,
+        description="Enable dead letter queue for failed messages",
+    )
     dead_letter_retention_seconds: int = Field(
         default=86400,
         description="Dead letter message retention time",
@@ -97,6 +115,12 @@ class MemoryQueueSettings(QueueSettings):
     rate_limit_per_second: int = Field(
         default=100,
         description="Max messages per second per topic",
+    )
+
+    # Health monitoring
+    health_check_interval: float = Field(
+        default=60.0,
+        description="Interval between health checks in seconds",
     )
 
 
@@ -137,7 +161,7 @@ class PriorityMessageItem:
         return self.message.message_id == other.message.message_id
 
 
-class MemoryQueue(QueueBackend):
+class MemoryMessaging(UnifiedMessagingBackend):
     """In-memory queue backend implementation.
 
     Provides a full-featured queue implementation that runs entirely in memory.
@@ -157,14 +181,19 @@ class MemoryQueue(QueueBackend):
     - No distributed clustering
     """
 
-    def __init__(self, settings: MemoryQueueSettings | None = None) -> None:
-        """Initialize memory queue.
+    def __init__(self, settings: MemoryMessagingSettings | None = None) -> None:
+        """Initialize memory messaging.
 
         Args:
-            settings: Memory queue configuration
+            settings: Memory messaging configuration
         """
         super().__init__(settings)
-        self._settings: MemoryQueueSettings = settings or MemoryQueueSettings()
+        self._settings: MemoryMessagingSettings = settings or MemoryMessagingSettings()
+
+        # Connection management
+        self._client: "MemoryMessaging" | None = None
+        self._connection_lock = asyncio.Lock()
+        self._shutdown_event = asyncio.Event()
 
         # Message storage
         self._queues: dict[str, list[PriorityMessageItem]] = defaultdict(list)
@@ -187,11 +216,24 @@ class MemoryQueue(QueueBackend):
         self._delayed_processor_task: asyncio.Task[None] | None = None
         self._cleanup_task: asyncio.Task[None] | None = None
 
+    @property
+    def logger(self) -> t.Any:
+        """Lazy-initialize logger.
+
+        Returns:
+            Logger instance
+        """
+        if self._logger is None:
+            from acb.adapters import import_adapter
+            logger_cls = import_adapter("logger")
+            self._logger = depends.get(logger_cls)
+        return self._logger
+
     # ========================================================================
     # Abstract Implementation Methods (Private)
     # ========================================================================
 
-    async def _ensure_client(self) -> t.Any:
+    async def _ensure_client(self) -> "MemoryMessaging":
         """Ensure queue client is initialized.
 
         For memory queue, "client" is just the internal state.
@@ -321,12 +363,12 @@ class MemoryQueue(QueueBackend):
             Message ID
 
         Raises:
-            QueueConnectionError: If not connected
+            MessagingConnectionError: If not connected
             QueueFullError: If queue is full
-            QueueOperationError: If send fails
+            MessagingOperationError: If send fails
         """
         if not self._connected:
-            raise QueueConnectionError("Queue not connected")
+            raise MessagingConnectionError("Queue not connected")
 
         # Check memory limits
         message_size = self._estimate_message_size(message)
@@ -337,17 +379,17 @@ class MemoryQueue(QueueBackend):
             )
 
         # Check queue size limits
-        if len(self._queues[message.topic]) >= self._settings.max_messages_per_topic:
+        if len(self._queues[message.queue]) >= self._settings.max_messages_per_topic:
             raise QueueFullError(
-                f"Queue {message.topic} is full "
+                f"Queue {message.queue} is full "
                 f"({self._settings.max_messages_per_topic} messages)",
             )
 
         # Check rate limiting
         if self._settings.enable_rate_limiting:
-            if not await self._check_rate_limit(message.topic):
-                raise QueueOperationError(
-                    f"Rate limit exceeded for topic {message.topic}",
+            if not await self._check_rate_limit(message.queue):
+                raise MessagingOperationError(
+                    f"Rate limit exceeded for queue {message.queue}",
                 )
 
         # Calculate scheduled time
@@ -367,7 +409,7 @@ class MemoryQueue(QueueBackend):
             heapq.heappush(self._delayed_messages, item)
         else:
             # Immediate message
-            heapq.heappush(self._queues[message.topic], item)
+            heapq.heappush(self._queues[message.queue], item)
 
         # Update metrics
         self._memory_usage += message_size
@@ -375,7 +417,7 @@ class MemoryQueue(QueueBackend):
         self._messages_sent += 1
 
         self.logger.debug(
-            f"Sent message {message.message_id} to topic {message.topic}",
+            f"Sent message {message.message_id} to queue {message.queue}",
         )
 
         return str(message.message_id)
@@ -395,10 +437,10 @@ class MemoryQueue(QueueBackend):
             Message or None if queue is empty
 
         Raises:
-            QueueConnectionError: If not connected
+            MessagingConnectionError: If not connected
         """
         if not self._connected:
-            raise QueueConnectionError("Queue not connected")
+            raise MessagingConnectionError("Queue not connected")
 
         # Check if queue has messages
         queue = self._queues[topic]
@@ -433,10 +475,10 @@ class MemoryQueue(QueueBackend):
             timeout: Operation timeout (unused for memory)
 
         Raises:
-            QueueOperationError: If message not in processing state
+            MessagingOperationError: If message not in processing state
         """
         if message.message_id not in self._processing_messages:
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Message {message.message_id} not in processing state",
             )
 
@@ -467,10 +509,10 @@ class MemoryQueue(QueueBackend):
             timeout: Operation timeout (unused for memory)
 
         Raises:
-            QueueOperationError: If message not in processing state
+            MessagingOperationError: If message not in processing state
         """
         if message.message_id not in self._processing_messages:
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Message {message.message_id} not in processing state",
             )
 
@@ -484,7 +526,7 @@ class MemoryQueue(QueueBackend):
             # Requeue with incremented retry count
             message.retry_count += 1
             item = PriorityMessageItem(message, time.time())
-            heapq.heappush(self._queues[message.topic], item)
+            heapq.heappush(self._queues[message.queue], item)
 
             self.logger.debug(
                 f"Requeued message {message.message_id} "
@@ -576,14 +618,14 @@ class MemoryQueue(QueueBackend):
             if_empty: Only delete if queue is empty
 
         Raises:
-            QueueOperationError: If queue not empty and if_empty=True
+            MessagingOperationError: If queue not empty and if_empty=True
         """
         if name not in self._queues:
             return
 
         queue = self._queues[name]
         if if_empty and queue:
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Cannot delete non-empty queue: {name}",
             )
 
@@ -663,22 +705,24 @@ class MemoryQueue(QueueBackend):
     # Utility Methods
     # ========================================================================
 
-    def get_capabilities(self) -> list[QueueCapability]:
+    def get_capabilities(self) -> set[MessagingCapability]:
         """Get supported capabilities.
 
         Returns:
-            List of capabilities
+            Set of capabilities
         """
-        return [
-            QueueCapability.BASIC_QUEUE,
-            QueueCapability.PUB_SUB,
-            QueueCapability.PRIORITY_QUEUE,
-            QueueCapability.DELAYED_MESSAGES,
-            QueueCapability.DEAD_LETTER_QUEUE,
-            QueueCapability.BATCH_OPERATIONS,
-        ]
+        return {
+            MessagingCapability.BASIC_QUEUE,
+            MessagingCapability.PUB_SUB,
+            MessagingCapability.PRIORITY_QUEUE,
+            MessagingCapability.DELAYED_MESSAGES,
+            MessagingCapability.DEAD_LETTER_QUEUE,
+            MessagingCapability.BATCH_OPERATIONS,
+            MessagingCapability.PATTERN_SUBSCRIBE,
+            MessagingCapability.BROADCAST,
+        }
 
-    def supports_capability(self, capability: QueueCapability) -> bool:
+    def supports_capability(self, capability: MessagingCapability) -> bool:
         """Check if a capability is supported.
 
         Args:
@@ -729,7 +773,7 @@ class MemoryQueue(QueueBackend):
         while self._delayed_messages:
             if self._delayed_messages[0].scheduled_time <= current_time:
                 item = heapq.heappop(self._delayed_messages)
-                heapq.heappush(self._queues[item.message.topic], item)
+                heapq.heappush(self._queues[item.message.queue], item)
                 moved_count += 1
             else:
                 break
@@ -839,7 +883,7 @@ class MemoryQueue(QueueBackend):
             # Estimate based on payload and metadata
             payload_size = len(message.payload)
             metadata_size = (
-                sys.getsizeof(message.topic)
+                sys.getsizeof(message.queue)
                 + sys.getsizeof(message.message_id)
                 + sys.getsizeof(message.headers)
             )
@@ -876,5 +920,7 @@ class MemoryQueue(QueueBackend):
         await self.disconnect()
 
 
-# Convenience alias for import_adapter
-Queue = MemoryQueue
+# Export with role-specific names for DI
+# These allow the same implementation to be used for both patterns
+MemoryPubSub = MemoryMessaging  # For events system (pub/sub)
+MemoryQueue = MemoryMessaging   # For tasks system (queues)

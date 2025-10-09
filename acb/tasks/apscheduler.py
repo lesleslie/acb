@@ -39,6 +39,7 @@ from ._base import (
     TaskHandler,
     TaskResult,
     TaskStatus,
+    generate_queue_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -99,37 +100,25 @@ class APSchedulerSettings(QueueSettings):
     job_result_cache_size: int = 1000  # Number of job results to keep in memory
 
 
-MODULE_METADATA = AdapterMetadata(
-    module_id=UUID("01940000-0000-7000-8000-000000000002"),  # Static UUID7
+MODULE_METADATA = QueueMetadata(
+    queue_id=UUID("01940000-0000-7000-8000-000000000002"),  # Static UUID7
     name="APScheduler Queue",
-    category="queue",
-    provider="apscheduler",
+    description="Production-grade queue adapter with job persistence, distributed scheduling, and advanced missed-run handling via APScheduler",
     version="1.0.0",
-    acb_min_version="0.19.0",
-    author="ACB Framework",
-    created_date="2025-01-04T00:00:00",
-    last_modified="2025-01-04T00:00:00",
-    status=AdapterStatus.STABLE,
     capabilities=[
-        # Standard queue capabilities
-        AdapterCapability.ASYNC_OPERATIONS,
-        AdapterCapability.PRIORITY_QUEUE,
-        AdapterCapability.DELAYED_TASKS,
-        # APScheduler-specific capabilities (defined in _base.py)
+        QueueCapability.PRIORITY_QUEUE,
+        QueueCapability.DELAYED_TASKS,
         QueueCapability.CRON_SCHEDULING,
         QueueCapability.PERSISTENCE,
         QueueCapability.HORIZONTAL_SCALING,
         QueueCapability.TASK_TRACKING,
         QueueCapability.METRICS_COLLECTION,
     ],
+    max_throughput=None,  # Depends on job store backend
+    max_workers=None,  # Configurable via executor settings
+    supports_clustering=True,
     required_packages=["apscheduler>=3.10.0"],
-    optional_packages={
-        "sqlalchemy": "sqlalchemy>=2.0",
-        "mongodb": "pymongo>=4.0",
-        "redis": "redis>=4.0",
-    },
-    description="Production-grade queue adapter with job persistence, distributed scheduling, and advanced missed-run handling via APScheduler",
-    settings_class="APSchedulerSettings",
+    min_python_version="3.13",
 )
 
 
@@ -225,15 +214,15 @@ class Queue(QueueBase):
             client_options = self.settings.mongodb_client_options.copy()
             # Extract connection URL if provided in job_store_url
             if self.settings.job_store_url:
-                client = pymongo.MongoClient(
+                mongo_client = pymongo.MongoClient(
                     self.settings.job_store_url,
                     **client_options,
                 )
             else:
-                client = pymongo.MongoClient(**client_options)
+                mongo_client = pymongo.MongoClient(**client_options)
 
             stores["default"] = MongoDBJobStore(
-                client=client,
+                client=mongo_client,
                 database=self.settings.mongodb_database,
                 collection=self.settings.mongodb_collection,
             )
@@ -244,15 +233,15 @@ class Queue(QueueBase):
 
             # Extract connection parameters if URL provided
             if self.settings.job_store_url:
-                client = redis.from_url(
+                redis_client = redis.from_url(
                     self.settings.job_store_url,
                     **self.settings.redis_client_options,
                 )
             else:
-                client = redis.StrictRedis(**self.settings.redis_client_options)
+                redis_client = redis.StrictRedis(**self.settings.redis_client_options)
 
             stores["default"] = RedisJobStore(
-                client=client,
+                client=redis_client,
                 jobs_key=self.settings.redis_jobs_key,
                 run_times_key=self.settings.redis_run_times_key,
             )

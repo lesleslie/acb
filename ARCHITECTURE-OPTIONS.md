@@ -3,6 +3,7 @@
 ## Current State Analysis
 
 ### What We Have Now
+
 ```
 acb/
 ├── adapters/queue/       # "Universal" queue backend (trying to do both)
@@ -14,9 +15,11 @@ acb/
 ```
 
 ### The Core Problem
+
 The `QueueBackend` tries to be universal for both events and tasks, but they have fundamentally different semantics:
 
 **Events (Pub/Sub Pattern)**:
+
 - Multiple subscribers to same event
 - Fire-and-forget delivery
 - Topic/channel based routing
@@ -25,6 +28,7 @@ The `QueueBackend` tries to be universal for both events and tasks, but they hav
 - Real-time streaming
 
 **Tasks (Work Queue Pattern)**:
+
 - Single worker processes each task
 - Guaranteed execution with retries
 - Queue-based distribution
@@ -56,6 +60,7 @@ acb/
 ```
 
 **Pros**:
+
 - Crystal clear separation of concerns
 - Each backend optimized for its use case
 - No conceptual confusion
@@ -63,6 +68,7 @@ acb/
 - Tasks use queuing semantics (FIFO, acknowledgments)
 
 **Cons**:
+
 - Some code duplication between backends
 - Two sets of adapters to maintain
 - Redis/RabbitMQ can do both - we'd have two adapters
@@ -88,12 +94,14 @@ acb/
 ```
 
 **Pros**:
+
 - Single transport adapter per backend (Redis, RabbitMQ, etc.)
 - Clear semantic separation at the layer level
 - Reuses transport connections efficiently
 - Easier to add new transports
 
 **Cons**:
+
 - More complex layering
 - Transport interface must be generic enough for both patterns
 - Performance overhead from abstraction layers
@@ -129,12 +137,14 @@ class QueueBackend:
 ```
 
 **Pros**:
+
 - Single backend implementation per technology
 - Both patterns explicitly supported
 - Clear method naming shows intent
 - Matches what Redis/RabbitMQ actually provide
 
 **Cons**:
+
 - Backend interface is larger
 - Risk of using wrong pattern
 - Still some conceptual mixing
@@ -158,30 +168,39 @@ acb/
 ```python
 # acb/adapters/messaging/_base.py
 
+
 class PubSubBackend(ABC):
     """Interface for pub/sub messaging patterns."""
+
     async def publish(self, topic: str, message: Message) -> None: ...
     async def subscribe(self, pattern: str) -> Subscription: ...
     async def unsubscribe(self, subscription: Subscription) -> None: ...
 
+
 class QueueBackend(ABC):
     """Interface for work queue patterns."""
+
     async def enqueue(self, queue: str, task: Task, priority: int) -> str: ...
     async def dequeue(self, queue: str, timeout: float) -> Task | None: ...
     async def acknowledge(self, task_id: str) -> None: ...
     async def reject(self, task_id: str, requeue: bool) -> None: ...
 
+
 class UnifiedMessagingBackend(PubSubBackend, QueueBackend):
     """Backends that support both patterns inherit both interfaces."""
+
     pass
+
 
 # Each implementation
 class RedisBackend(UnifiedMessagingBackend):
     """Redis supports both pub/sub and queues."""
+
     # Implement both interfaces
 ```
 
 **Pros**:
+
 - Clear interface separation
 - Single implementation per technology
 - Type safety - events can only use PubSubBackend
@@ -189,6 +208,7 @@ class RedisBackend(UnifiedMessagingBackend):
 - Natural upgrade path from memory to Redis/RabbitMQ
 
 **Cons**:
+
 - Two interfaces to understand
 - Backends need to implement both (but that's reality)
 
@@ -199,13 +219,15 @@ class RedisBackend(UnifiedMessagingBackend):
 **Rule**: Use `_base.py` when you need to define an abstract interface or protocol that multiple implementations will follow.
 
 **Where to use `_base.py`**:
+
 1. ✅ **All adapter categories** - Define the adapter interface
-2. ✅ **High-level systems with multiple backends** (events, tasks, workflows)
-3. ✅ **Services that have multiple implementations** (repository pattern)
-4. ❌ **Concrete implementations** - Don't need _base.py
-5. ❌ **Single-implementation modules** - Don't need _base.py
+1. ✅ **High-level systems with multiple backends** (events, tasks, workflows)
+1. ✅ **Services that have multiple implementations** (repository pattern)
+1. ❌ **Concrete implementations** - Don't need \_base.py
+1. ❌ **Single-implementation modules** - Don't need \_base.py
 
 **Current Status**:
+
 ```
 ✅ Correct Usage:
 - acb/adapters/*/_base.py    # All adapter interfaces
@@ -220,6 +242,7 @@ class RedisBackend(UnifiedMessagingBackend):
 ```
 
 **Standard Structure**:
+
 ```python
 # _base.py
 """Interface definition for [component type].
@@ -230,6 +253,7 @@ implementation code.
 """
 
 from abc import ABC, abstractmethod
+
 
 class ComponentInterface(ABC):
     """Abstract interface for components."""
@@ -249,28 +273,32 @@ class ComponentInterface(ABC):
 **Go with Option 4 (Hybrid Approach)** because it:
 
 1. **Provides clear separation** between pub/sub and queue patterns
-2. **Acknowledges reality** that Redis/RabbitMQ support both patterns
-3. **Maintains type safety** - events can't accidentally use queue methods
-4. **Allows gradual migration** from the current mixed approach
-5. **Follows principle of least surprise** - messaging backends do messaging
+1. **Acknowledges reality** that Redis/RabbitMQ support both patterns
+1. **Maintains type safety** - events can't accidentally use queue methods
+1. **Allows gradual migration** from the current mixed approach
+1. **Follows principle of least surprise** - messaging backends do messaging
 
 **Implementation Plan**:
 
 1. **Phase 1**: Rename and restructure
+
    - `acb/queues/` → `acb/tasks/`
    - `acb/adapters/queue/` → `acb/adapters/messaging/`
 
-2. **Phase 2**: Split interfaces in `messaging/_base.py`
+1. **Phase 2**: Split interfaces in `messaging/_base.py`
+
    - Create `PubSubBackend` interface
    - Create `QueueBackend` interface
    - Create `UnifiedMessagingBackend` combining both
 
-3. **Phase 3**: Update implementations
+1. **Phase 3**: Update implementations
+
    - Update events to use `PubSubBackend`
    - Update tasks to use `QueueBackend`
    - Messaging adapters implement `UnifiedMessagingBackend`
 
-4. **Phase 4**: Clean up `_base.py` usage across codebase
+1. **Phase 4**: Clean up `_base.py` usage across codebase
+
    - Remove unnecessary `_base.py` files
    - Ensure consistent pattern usage
 

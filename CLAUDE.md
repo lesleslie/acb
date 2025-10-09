@@ -491,6 +491,11 @@ acb/
 │   │   ├── memory.py
 │   │   ├── redis.py
 │   │   └── _base.py  # Basic cache functionality
+│   ├── messaging/    # Unified messaging backends (dual interfaces)
+│   │   ├── memory.py
+│   │   ├── redis.py
+│   │   ├── rabbitmq.py
+│   │   └── _base.py  # PubSubBackend + QueueBackend interfaces
 │   ├── models/       # Model framework support (SQLModel, Pydantic, etc.)
 │   ├── sql/          # MySQL, PostgreSQL, SQLite databases
 │   │   ├── mysql.py
@@ -506,6 +511,8 @@ acb/
 │   ├── dns/          # DNS management (Cloud DNS, Cloudflare, Route53)
 │   ├── ftpd/         # File transfer (FTP, SFTP)
 │   └── ...
+├── events/           # Event-driven messaging system (uses pubsub adapter)
+├── tasks/            # Task queue system (uses queue adapter)
 ├── cleanup.py        # Simple resource cleanup patterns
 ├── config.py         # Configuration system with simple hot-reloading
 ├── console.py        # Console utilities
@@ -909,6 +916,8 @@ Self-contained utility functions automatically discovered and registered:
 ### Adapter Categories
 
 - **cache**: Memory, Redis (aiocache, coredis)
+- **messaging**: Dual-interface backends (pubsub for events, queue for tasks)
+  - Memory, Redis, RabbitMQ (unified messaging with pub/sub and queue patterns)
 - **models**: SQLModel, Pydantic, Redis-OM, msgspec, attrs (auto-detection, universal query interface)
 - **sql**: MySQL, PostgreSQL, SQLite (SQLAlchemy, SQLModel)
 - **nosql**: MongoDB, Firestore, Redis
@@ -1094,6 +1103,7 @@ Each adapter category has its own detailed README with usage examples and config
 - **\[[acb/adapters/cache/README|Cache]\]**: Memory and Redis caching with aiocache interface
 - **\[[acb/adapters/dns/README|DNS]\]**: Domain management (Cloud DNS, Cloudflare, Route53)
 - **\[[acb/adapters/ftpd/README|FTPD]\]**: File transfer protocols (FTP, SFTP)
+- **\[[acb/adapters/messaging/README|Messaging]\]**: Dual-interface backends for pub/sub and queues (Memory, Redis, RabbitMQ)
 - **\[[acb/adapters/models/README|Models]\]**: Universal query interface for multiple ORMs
 - **\[[acb/adapters/monitoring/README|Monitoring]\]**: Error tracking (Sentry, Logfire)
 - **\[[acb/adapters/nosql/README|NoSQL]\]**: Document databases (MongoDB, Firestore, Redis)

@@ -33,7 +33,7 @@ class FtpdSettings(FtpdBaseSettings):
     client_keys: list[str] = Field(default_factory=list)
 
 
-class SFTPHandler(SFTPServer):
+class SFTPHandler(SFTPServer):  # type: ignore[misc]
     def __init__(self, conn: SSHServerConnection) -> None:
         conn.get_extra_info("ftpd_root_dir")
         super().__init__(t.cast("t.Any", conn), chroot=None)
@@ -72,7 +72,7 @@ class Ftpd(FtpdBase):
             raise
 
     def _create_server_connection(self) -> asyncssh.SSHServer:
-        class ServerConnection(asyncssh.SSHServer):
+        class ServerConnection(asyncssh.SSHServer):  # type: ignore[misc]
             def __init__(self, config: t.Any) -> None:
                 self.config = config
 

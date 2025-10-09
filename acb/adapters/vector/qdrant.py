@@ -194,17 +194,23 @@ class Vector(VectorBase):
             # Create quantization config if enabled
             quantization_config = None
             if self.config.vector.enable_quantization:
-                from qdrant_client.models import QuantizationType, ScalarQuantization
+                from qdrant_client.models import (
+                    ScalarQuantization,
+                    ScalarQuantizationConfig,
+                    ScalarType,
+                )
 
                 quantization_config = ScalarQuantization(
-                    type=QuantizationType.INT8,
-                    quantile=self.config.vector.quantization_config["scalar"].get(
-                        "quantile",
-                        0.99,
-                    ),
-                    always_ram=self.config.vector.quantization_config["scalar"].get(
-                        "always_ram",
-                        True,
+                    scalar=ScalarQuantizationConfig(
+                        type=ScalarType.INT8,
+                        quantile=self.config.vector.quantization_config["scalar"].get(
+                            "quantile",
+                            0.99,
+                        ),
+                        always_ram=self.config.vector.quantization_config["scalar"].get(
+                            "always_ram",
+                            True,
+                        ),
                     ),
                 )
 
@@ -292,7 +298,8 @@ class Vector(VectorBase):
                     )
 
             if conditions:
-                return Filter(must=conditions)
+                # Type cast to match Filter union type expectations
+                return Filter(must=conditions)  # type: ignore[arg-type]
 
             return None
 
@@ -381,10 +388,10 @@ class Vector(VectorBase):
         try:
             from qdrant_client.models import PointIdsList
 
-            # Delete points
+            # Delete points (cast ids to satisfy type checker)
             operation_info = await client.delete(
                 collection_name=collection_name,
-                points_selector=PointIdsList(points=ids),
+                points_selector=PointIdsList(points=ids),  # type: ignore[arg-type]
                 wait=True,
             )
 

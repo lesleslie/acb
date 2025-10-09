@@ -23,13 +23,16 @@ from acb.adapters.embedding._base import (
 from acb.config import Config
 from acb.depends import depends
 
-try:
+if t.TYPE_CHECKING:
     from openai import AsyncOpenAI
+else:
+    try:
+        from openai import AsyncOpenAI  # type: ignore[no-redef]
 
-    _openai_available = True
-except ImportError:
-    AsyncOpenAI = None
-    _openai_available = False
+        _openai_available = True
+    except ImportError:
+        AsyncOpenAI = None  # type: ignore[assignment,misc,no-redef]
+        _openai_available = False
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
@@ -99,7 +102,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
 
         super().__init__(settings)
         self._settings = settings
-        self._client: AsyncOpenAI | None = None
+        self._client: t.Any = None
         self._rate_limiter = None
         self._last_request_time = 0.0
 
@@ -111,7 +114,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
                 raise ImportError(msg)
             # Cast settings to access OpenAI-specific fields
             settings = t.cast(OpenAIEmbeddingSettings, self._settings)
-            self._client = AsyncOpenAI(
+            self._client = AsyncOpenAI(  # type: ignore[assignment]
                 api_key=self._settings.api_key.get_secret_value()
                 if self._settings.api_key
                 else "",

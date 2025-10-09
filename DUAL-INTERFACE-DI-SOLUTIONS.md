@@ -3,22 +3,28 @@
 ## The Challenge
 
 With our proposed architecture:
+
 ```python
 # acb/adapters/messaging/_base.py
 class PubSubBackend(ABC):
     """For events - pub/sub pattern"""
+
     async def publish(self, topic: str, message: bytes) -> None: ...
     async def subscribe(self, topic: str) -> AsyncIterator[bytes]: ...
 
+
 class QueueBackend(ABC):
     """For tasks - work queue pattern"""
+
     async def enqueue(self, queue: str, task: bytes) -> str: ...
     async def dequeue(self, queue: str) -> bytes | None: ...
     async def acknowledge(self, task_id: str) -> None: ...
 
+
 # acb/adapters/messaging/redis.py
 class RedisMessaging(PubSubBackend, QueueBackend):
     """Redis implements both interfaces"""
+
     # Implementation of both interfaces
 ```
 
@@ -37,7 +43,6 @@ static_mappings = {
     "pubsub.memory": ("acb.adapters.messaging.memory", "MemoryPubSub"),
     "pubsub.redis": ("acb.adapters.messaging.redis", "RedisPubSub"),
     "pubsub.rabbitmq": ("acb.adapters.messaging.rabbitmq", "RabbitMQPubSub"),
-
     # Tasks use queue adapters
     "queue.memory": ("acb.adapters.messaging.memory", "MemoryQueue"),
     "queue.redis": ("acb.adapters.messaging.redis", "RedisQueue"),
@@ -49,6 +54,7 @@ static_mappings = {
 # acb/adapters/messaging/redis.py
 class RedisMessaging(PubSubBackend, QueueBackend):
     """Unified implementation"""
+
     async def publish(self, topic: str, message: bytes) -> None:
         # Redis pub/sub implementation
         ...
@@ -57,12 +63,14 @@ class RedisMessaging(PubSubBackend, QueueBackend):
         # Redis list implementation
         ...
 
+
 # Export with different names for DI
 RedisPubSub = RedisMessaging  # For events
-RedisQueue = RedisMessaging   # For tasks
+RedisQueue = RedisMessaging  # For tasks
 ```
 
 **Usage**:
+
 ```python
 # Events system
 from acb.depends import depends, Inject
@@ -70,12 +78,15 @@ from acb.adapters import import_adapter
 
 PubSub = import_adapter("pubsub")  # Gets RedisPubSub (which is RedisMessaging)
 
+
 @depends.inject
 async def publish_event(pubsub: Inject[PubSub]):
     await pubsub.publish("events", b"data")
 
+
 # Tasks system
 Queue = import_adapter("queue")  # Gets RedisQueue (which is also RedisMessaging)
+
 
 @depends.inject
 async def enqueue_task(queue: Inject[Queue]):
@@ -83,12 +94,14 @@ async def enqueue_task(queue: Inject[Queue]):
 ```
 
 **Pros**:
+
 - ✅ Works with existing DI system unchanged
 - ✅ Clear separation in usage
 - ✅ Type safety maintained
 - ✅ Single implementation class
 
 **Cons**:
+
 - Two adapter categories for what's really one backend
 - Slight naming redundancy
 
@@ -115,13 +128,16 @@ class RedisMessaging:
         """Get queue interface"""
         return self._queue
 
+
 # Export as Messaging
 Messaging = RedisMessaging
 ```
 
 **Usage**:
+
 ```python
 Messaging = import_adapter("messaging")
+
 
 @depends.inject
 async def my_function(messaging: Inject[Messaging]):
@@ -133,10 +149,12 @@ async def my_function(messaging: Inject[Messaging]):
 ```
 
 **Pros**:
+
 - Single adapter registration
 - Both interfaces accessible
 
 **Cons**:
+
 - ❌ Breaks existing patterns
 - ❌ Users must know to use `.pubsub` or `.queue`
 - ❌ Less type safety
@@ -153,6 +171,7 @@ def import_pubsub(backend: str = None) -> type[PubSubBackend]:
     module = import_module(f"acb.adapters.messaging.{backend}")
     return module.PubSub
 
+
 def import_queue(backend: str = None) -> type[QueueBackend]:
     """Import queue backend"""
     backend = backend or get_configured_backend()
@@ -161,11 +180,13 @@ def import_queue(backend: str = None) -> type[QueueBackend]:
 ```
 
 **Usage**:
+
 ```python
 from acb.adapters.messaging import import_pubsub, import_queue
 
 PubSub = import_pubsub()  # Gets Redis pub/sub
-Queue = import_queue()    # Gets Redis queue
+Queue = import_queue()  # Gets Redis queue
+
 
 @depends.inject
 async def event_handler(pubsub: Inject[PubSub]):
@@ -173,10 +194,12 @@ async def event_handler(pubsub: Inject[PubSub]):
 ```
 
 **Pros**:
+
 - Explicit interface selection
 - Clean separation
 
 **Cons**:
+
 - ❌ Different from standard `import_adapter()` pattern
 - ❌ Requires new import functions
 
@@ -188,24 +211,30 @@ Use Python protocols and type narrowing:
 # acb/adapters/messaging/_base.py
 from typing import Protocol, runtime_checkable
 
+
 @runtime_checkable
 class PubSubProtocol(Protocol):
     async def publish(self, topic: str, message: bytes) -> None: ...
     async def subscribe(self, topic: str) -> AsyncIterator[bytes]: ...
+
 
 @runtime_checkable
 class QueueProtocol(Protocol):
     async def enqueue(self, queue: str, task: bytes) -> str: ...
     async def dequeue(self, queue: str) -> bytes | None: ...
 
+
 class MessagingBackend(PubSubProtocol, QueueProtocol):
     """Combined interface"""
+
     pass
 ```
 
 **Usage**:
+
 ```python
 Messaging = import_adapter("messaging")
+
 
 @depends.inject
 async def event_handler(messaging: Inject[Messaging]):
@@ -215,10 +244,12 @@ async def event_handler(messaging: Inject[Messaging]):
 ```
 
 **Pros**:
+
 - Type safe with protocols
 - Single adapter
 
 **Cons**:
+
 - ❌ Runtime type checking needed
 - ❌ Less explicit than separate interfaces
 
@@ -227,6 +258,7 @@ async def event_handler(messaging: Inject[Messaging]):
 Regardless of solution, configuration would look like:
 
 ### For Solution 1 (Recommended):
+
 ```yaml
 # settings/adapters.yml
 pubsub: redis    # For events
@@ -238,6 +270,7 @@ queue: redis
 ```
 
 ### For Other Solutions:
+
 ```yaml
 # settings/adapters.yml
 messaging: redis  # Single backend for both
@@ -248,12 +281,14 @@ messaging: redis  # Single backend for both
 **Use Solution 1: Two Separate Adapter Categories**
 
 This approach:
+
 1. **Works with existing ACB patterns** - No changes to DI system
-2. **Provides clarity** - `import_adapter("pubsub")` vs `import_adapter("queue")`
-3. **Maintains type safety** - Each interface is separate
-4. **Allows flexibility** - Could use Redis for events, RabbitMQ for tasks
+1. **Provides clarity** - `import_adapter("pubsub")` vs `import_adapter("queue")`
+1. **Maintains type safety** - Each interface is separate
+1. **Allows flexibility** - Could use Redis for events, RabbitMQ for tasks
 
 **Implementation structure**:
+
 ```
 acb/
 ├── adapters/
@@ -265,13 +300,17 @@ acb/
 ```
 
 **Registration**:
+
 ```python
 # Each implementation exports two names
 # acb/adapters/messaging/redis.py
 
+
 class RedisMessaging(PubSubBackend, QueueBackend):
     """Single implementation, dual interface"""
+
     # ... implementation ...
+
 
 # Export with role-specific names
 RedisPubSub = RedisMessaging
@@ -279,6 +318,7 @@ RedisQueue = RedisMessaging
 ```
 
 This gives us:
+
 - ✅ **Clean DI**: `PubSub = import_adapter("pubsub")`
 - ✅ **Type safety**: Events can only see PubSub methods
 - ✅ **Single implementation**: No code duplication

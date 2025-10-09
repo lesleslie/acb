@@ -63,6 +63,7 @@ import time
 import typing as t
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager, suppress
+from uuid import UUID
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
@@ -70,29 +71,32 @@ from acb.config import Config
 from acb.depends import Inject, depends
 
 from ._base import (
-    QueueBackend,
-    QueueCapability,
-    QueueConnectionError,
+    UnifiedMessagingBackend,
+    MessagingSettings,
+    MessagingCapability,
+    MessagingConnectionError,
+    MessagingOperationError,
+    MessagingTimeoutError,
     QueueMessage,
-    QueueOperationError,
-    QueueSettings,
-    QueueTimeoutError,
-    generate_adapter_id,
+    PubSubMessage,
+    MessagePriority,
+    Subscription,
 )
+from acb.depends import depends
 
 # Lazy imports for coredis
 _coredis_imports: dict[str, t.Any] = {}
 
 MODULE_METADATA = AdapterMetadata(
-    module_id=generate_adapter_id(),
-    name="Redis Queue",
-    category="queue",
+    module_id=UUID("fef2289a-83f8-43e3-a5c0-a5343ee8bc88"),
+    name="Redis Messaging",
+    category="messaging",
     provider="redis",
     version="1.0.0",
     acb_min_version="0.19.0",
     author="Claude Code",
     created_date="2025-10-01",
-    last_modified="2025-10-01",
+    last_modified="2025-10-08",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
@@ -103,12 +107,12 @@ MODULE_METADATA = AdapterMetadata(
         AdapterCapability.RECONNECTION,
     ],
     required_packages=["coredis>=4.0.0"],
-    description="High-performance Redis queue backend with clustering support",
-    settings_class="RedisQueueSettings",
+    description="High-performance Redis messaging backend with pub/sub and queue support",
+    settings_class="RedisMessagingSettings",
     config_example={
         "connection_url": "redis://localhost:6379/0",
         "max_connections": 20,
-        "key_prefix": "acb:queue",
+        "key_prefix": "acb:messaging",
         "enable_clustering": False,
         "use_lua_scripts": True,
     },
@@ -146,12 +150,12 @@ def _get_coredis_imports() -> dict[str, t.Any]:
     return _coredis_imports
 
 
-class RedisQueueSettings(QueueSettings):
-    """Settings for Redis queue implementation."""
+class RedisMessagingSettings(MessagingSettings):
+    """Settings for Redis messaging implementation."""
 
     # Redis connection
     connection_url: str | None = "redis://localhost:6379/0"
-    key_prefix: str = "acb:queue"
+    key_prefix: str = "acb:messaging"
 
     # Connection pool settings
     max_connections: int = 20
@@ -168,6 +172,10 @@ class RedisQueueSettings(QueueSettings):
 
     # Message retention
     message_ttl: int = 86400  # 24 hours
+
+    # Operation timeouts
+    send_timeout: float = 10.0
+    ack_timeout: float = 5.0
     dead_letter_ttl: int = 604800  # 7 days
 
     @depends.inject
@@ -175,30 +183,34 @@ class RedisQueueSettings(QueueSettings):
         super().__init__(**values)
 
 
-class RedisQueue(QueueBackend):
-    """Redis-backed queue implementation.
+class RedisMessaging(UnifiedMessagingBackend):
+    """Redis-backed unified messaging implementation.
 
-    Provides high-performance queue operations using Redis data structures:
+    Provides high-performance messaging operations using Redis data structures:
+    - Pub/sub for event-driven messaging patterns
     - Sorted sets for priority queues and delayed messages
     - Lists for FIFO queue operations
-    - Pub/sub for event messaging
     - Hash maps for message metadata storage
     """
 
     config: Config
 
-    def __init__(self, settings: RedisQueueSettings | None = None) -> None:
-        """Initialize Redis queue backend.
+    def __init__(self, settings: RedisMessagingSettings | None = None) -> None:
+        """Initialize Redis messaging backend.
 
         Args:
-            settings: Redis queue configuration
+            settings: Redis messaging configuration
         """
         super().__init__(settings)
-        self._settings: RedisQueueSettings = settings or RedisQueueSettings()
+        self._settings: RedisMessagingSettings = settings or RedisMessagingSettings()
 
         # Redis client and pool
         self._client: t.Any = None
         self._connection_pool: t.Any = None
+
+        # Connection management attributes (required by base class)
+        self._connection_lock = asyncio.Lock()
+        self._shutdown_event = asyncio.Event()
 
         # Key patterns for Redis operations
         self._queue_key = f"{self._settings.key_prefix}:queues:{{topic}}"
@@ -215,6 +227,19 @@ class RedisQueue(QueueBackend):
         self._delayed_processor_task: asyncio.Task[None] | None = None
         self._pubsub_client: t.Any = None
 
+    @property
+    def logger(self) -> t.Any:
+        """Lazy-initialize logger.
+
+        Returns:
+            Logger instance
+        """
+        if self._logger is None:
+            from acb.adapters import import_adapter
+            Logger = import_adapter("logger")
+            self._logger = depends.get(Logger)
+        return self._logger
+
     # ========================================================================
     # Connection Management (Private Implementation)
     # ========================================================================
@@ -226,7 +251,7 @@ class RedisQueue(QueueBackend):
             Redis client instance
 
         Raises:
-            QueueConnectionError: If connection fails
+            MessagingConnectionError: If connection fails
         """
         if self._client is None:
             async with self._connection_lock:
@@ -264,7 +289,7 @@ class RedisQueue(QueueBackend):
 
                     except Exception as e:
                         self.logger.exception(f"Failed to connect to Redis: {e}")
-                        raise QueueConnectionError(
+                        raise MessagingConnectionError(
                             "Failed to establish Redis connection",
                             original_error=e,
                         ) from e
@@ -460,19 +485,19 @@ class RedisQueue(QueueBackend):
             Message ID
 
         Raises:
-            QueueConnectionError: If not connected
-            QueueOperationError: If send fails
+            MessagingConnectionError: If not connected
+            MessagingOperationError: If send fails
             QueueTimeoutError: If operation times out
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
         timeout = timeout or self._settings.send_timeout
 
         try:
-            # Serialize message
-            message_data = message.to_bytes()
+            # Serialize message using Pydantic
+            message_data = message.model_dump_json().encode()
             message_key = self._message_key.format(message_id=message.message_id)
 
             # Calculate score for sorted set
@@ -487,7 +512,7 @@ class RedisQueue(QueueBackend):
             if message.delay_seconds > 0:
                 queue_key = self._delayed_key
             else:
-                queue_key = self._queue_key.format(topic=message.topic)
+                queue_key = self._queue_key.format(topic=message.queue)
 
             # Use Lua script for atomic operation if available
             if self._settings.use_lua_scripts and "enqueue" in self._lua_scripts:
@@ -515,18 +540,18 @@ class RedisQueue(QueueBackend):
                     await asyncio.wait_for(pipe.execute(), timeout=timeout)
 
             self.logger.debug(
-                f"Sent message {message.message_id} to queue {message.topic}"
+                f"Sent message {message.message_id} to queue {message.queue}"
             )
             return str(message.message_id)
 
         except TimeoutError as e:
-            raise QueueTimeoutError(
+            raise MessagingTimeoutError(
                 f"Send operation timed out after {timeout}s",
                 original_error=e,
             ) from e
         except Exception as e:
             self.logger.exception(f"Failed to send message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to send message",
                 original_error=e,
             ) from e
@@ -554,7 +579,7 @@ class RedisQueue(QueueBackend):
             return None
 
         message_key, message_data = result
-        return QueueMessage.from_bytes(message_data)
+        return QueueMessage.model_validate_json(message_data)
 
     async def _receive_with_manual_atomic(
         self,
@@ -590,7 +615,7 @@ class RedisQueue(QueueBackend):
 
         message_data = results[-1]
         if message_data:
-            return QueueMessage.from_bytes(message_data)
+            return QueueMessage.model_validate_json(message_data)
 
         return None
 
@@ -609,14 +634,14 @@ class RedisQueue(QueueBackend):
             Message or None if no messages available
 
         Raises:
-            QueueConnectionError: If not connected
-            QueueOperationError: If receive fails
+            MessagingConnectionError: If not connected
+            MessagingOperationError: If receive fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
-        timeout = timeout or self._settings.receive_timeout
+        timeout = timeout or self._settings.connection_timeout
         queue_key = self._queue_key.format(topic=topic)
 
         try:
@@ -637,7 +662,7 @@ class RedisQueue(QueueBackend):
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to receive message",
                 original_error=e,
             ) from e
@@ -654,13 +679,13 @@ class RedisQueue(QueueBackend):
             timeout: Optional timeout override
 
         Raises:
-            QueueOperationError: If ack fails
+            MessagingOperationError: If ack fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
-        timeout = timeout or self._settings.ack_timeout
+        timeout = timeout or self._settings.connection_timeout
         message_key = self._message_key.format(message_id=message.message_id)
 
         try:
@@ -686,7 +711,7 @@ class RedisQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to acknowledge message",
                 original_error=e,
             ) from e
@@ -705,10 +730,10 @@ class RedisQueue(QueueBackend):
             timeout: Optional timeout override
 
         Raises:
-            QueueOperationError: If reject fails
+            MessagingOperationError: If reject fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
         timeout = timeout or self._settings.ack_timeout
@@ -722,12 +747,12 @@ class RedisQueue(QueueBackend):
                 if requeue and message.retry_count < message.max_retries:
                     # Increment retry count and requeue
                     message.retry_count += 1
-                    queue_key = self._queue_key.format(topic=message.topic)
+                    queue_key = self._queue_key.format(topic=message.queue)
                     score = time.time() * 1_000_000 - message.priority.value
 
                     await pipe.set(
                         message_key.encode(),
-                        message.to_bytes(),
+                        message.model_dump_json().encode(),
                         ex=self._settings.message_ttl,
                     )
                     await pipe.zadd(queue_key.encode(), {message_key.encode(): score})
@@ -749,7 +774,7 @@ class RedisQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to reject message",
                 original_error=e,
             ) from e
@@ -770,7 +795,7 @@ class RedisQueue(QueueBackend):
             Async generator of messages
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
         pubsub_channel = self._pubsub_key.format(topic=topic)
@@ -792,7 +817,7 @@ class RedisQueue(QueueBackend):
                         if raw_message[b"type"] in (b"message", b"pmessage"):
                             message_data = raw_message[b"data"]
                             try:
-                                message = QueueMessage.from_bytes(message_data)
+                                message = QueueMessage.model_validate_json(message_data)
                                 yield message
                             except Exception as e:
                                 self.logger.warning(
@@ -842,10 +867,10 @@ class RedisQueue(QueueBackend):
             if_empty: Only delete if empty
 
         Raises:
-            QueueOperationError: If deletion fails
+            MessagingOperationError: If deletion fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=name)
@@ -854,7 +879,7 @@ class RedisQueue(QueueBackend):
             if if_empty:
                 size = await client.zcard(queue_key.encode())
                 if size > 0:
-                    raise QueueOperationError(f"Queue {name} is not empty")
+                    raise MessagingOperationError(f"Queue {name} is not empty")
 
             # Get all message keys and delete
             message_keys = await client.zrange(queue_key.encode(), 0, -1)
@@ -869,7 +894,7 @@ class RedisQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to delete queue {name}: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Failed to delete queue {name}",
                 original_error=e,
             ) from e
@@ -887,10 +912,10 @@ class RedisQueue(QueueBackend):
             Number of messages purged
 
         Raises:
-            QueueOperationError: If purge fails
+            MessagingOperationError: If purge fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=name)
@@ -912,7 +937,7 @@ class RedisQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {name}: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Failed to purge queue {name}",
                 original_error=e,
             ) from e
@@ -930,10 +955,10 @@ class RedisQueue(QueueBackend):
             Message count
 
         Raises:
-            QueueOperationError: If operation fails
+            MessagingOperationError: If operation fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=name)
@@ -944,7 +969,7 @@ class RedisQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to get queue size for {name}: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Failed to get queue size for {name}",
                 original_error=e,
             ) from e
@@ -962,10 +987,10 @@ class RedisQueue(QueueBackend):
             List of queue names
 
         Raises:
-            QueueOperationError: If operation fails
+            MessagingOperationError: If operation fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to Redis")
+            raise MessagingConnectionError("Not connected to Redis")
 
         client = await self._ensure_client()
 
@@ -989,7 +1014,7 @@ class RedisQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to list queues: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to list queues",
                 original_error=e,
             ) from e
@@ -1020,11 +1045,11 @@ class RedisQueue(QueueBackend):
             if not message_data:
                 return
 
-            message = QueueMessage.from_bytes(message_data)
+            message = QueueMessage.model_validate_json(message_data)
 
             # Calculate new score and queue key
             score = time.time() * 1_000_000 - message.priority.value
-            queue_key = self._queue_key.format(topic=message.topic)
+            queue_key = self._queue_key.format(topic=message.queue)
 
             # Move atomically
             async with client.pipeline() as pipe:
@@ -1076,43 +1101,188 @@ class RedisQueue(QueueBackend):
     # Utility Methods
     # ========================================================================
 
-    def get_capabilities(self) -> list[QueueCapability]:
+    def get_capabilities(self) -> set[MessagingCapability]:
         """Get backend capabilities.
 
         Returns:
-            List of supported capabilities
+            Set of supported capabilities
         """
-        capabilities = [
-            QueueCapability.BASIC_QUEUE,
-            QueueCapability.PUB_SUB,
-            QueueCapability.PRIORITY_QUEUE,
-            QueueCapability.DELAYED_MESSAGES,
-            QueueCapability.PERSISTENCE,
-            QueueCapability.DEAD_LETTER_QUEUE,
-            QueueCapability.CONNECTION_POOLING,
-            QueueCapability.MESSAGE_TTL,
-            QueueCapability.BATCH_OPERATIONS,
-        ]
+        capabilities = {
+            MessagingCapability.BASIC_QUEUE,
+            MessagingCapability.PUB_SUB,
+            MessagingCapability.PRIORITY_QUEUE,
+            MessagingCapability.DELAYED_MESSAGES,
+            MessagingCapability.PERSISTENCE,
+            MessagingCapability.DEAD_LETTER_QUEUE,
+            MessagingCapability.CONNECTION_POOLING,
+            MessagingCapability.MESSAGE_TTL,
+            MessagingCapability.BATCH_OPERATIONS,
+            MessagingCapability.PATTERN_SUBSCRIBE,
+            MessagingCapability.BROADCAST,
+        }
 
         if self._settings.enable_clustering:
-            capabilities.extend(
-                [
-                    QueueCapability.CLUSTERING,
-                    QueueCapability.LOAD_BALANCING,
-                ]
-            )
+            capabilities.add(MessagingCapability.CLUSTERING)
 
         return capabilities
 
+    # ========================================================================
+    # Public Interface Methods (Required by UnifiedMessagingBackend)
+    # ========================================================================
+
+    async def connect(self) -> None:
+        """Establish connection to Redis backend."""
+        await self._connect()
+
+    async def disconnect(self) -> None:
+        """Close connection to Redis backend."""
+        await self._disconnect()
+
+    async def health_check(self) -> dict[str, t.Any]:
+        """Perform health check on Redis backend."""
+        return await self._health_check()
+
+    # Pub/Sub Interface (for events system)
+
+    async def publish(
+        self,
+        topic: str,
+        message: bytes,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        """Publish a message to a topic (pub/sub pattern)."""
+        from uuid import uuid4
+        queue_msg = QueueMessage(
+            message_id=uuid4(),
+            queue=topic,
+            payload=message,
+            headers=headers or {},
+        )
+        await self._send(queue_msg)
+
+    async def subscribe(
+        self,
+        topic: str,
+        pattern: bool = False,
+    ) -> Subscription:
+        """Subscribe to a topic or pattern."""
+        subscription = Subscription(topic=topic)
+        return subscription
+
+    async def unsubscribe(self, subscription: Subscription) -> None:
+        """Unsubscribe from a topic."""
+        # Cleanup handled by context manager in receive_messages
+        pass
+
+    @asynccontextmanager  # type: ignore[arg-type]
+    async def receive_messages(
+        self,
+        subscription: Subscription,
+        timeout: float | None = None,
+    ) -> AsyncIterator[AsyncIterator[PubSubMessage]]:
+        """Receive messages from a subscription."""
+        async with self._subscribe(subscription.topic) as queue_messages:
+            async def convert_messages() -> AsyncGenerator[PubSubMessage]:
+                """Convert QueueMessage to PubSubMessage."""
+                async for queue_msg in queue_messages:
+                    pubsub_msg = PubSubMessage(
+                        message_id=queue_msg.message_id,
+                        topic=queue_msg.queue,
+                        payload=queue_msg.payload,
+                        correlation_id=queue_msg.correlation_id,
+                        headers=queue_msg.headers,
+                    )
+                    yield pubsub_msg
+            yield convert_messages()
+
+    # Queue Interface (for tasks system)
+
+    async def enqueue(
+        self,
+        queue: str,
+        message: bytes,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        delay_seconds: float = 0.0,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """Add a message to a queue."""
+        from uuid import uuid4
+        queue_msg = QueueMessage(
+            message_id=uuid4(),
+            queue=queue,
+            payload=message,
+            priority=priority,
+            delay_seconds=delay_seconds,
+            headers=headers or {},
+        )
+        return await self._send(queue_msg)
+
+    async def dequeue(
+        self,
+        queue: str,
+        timeout: float | None = None,
+        visibility_timeout: float = 30.0,
+    ) -> QueueMessage | None:
+        """Remove and return a message from a queue."""
+        return await self._receive(queue, timeout)
+
+    async def acknowledge(
+        self,
+        queue: str,
+        message_id: str,
+    ) -> None:
+        """Acknowledge successful processing of a message."""
+        # Find the message in processing (simplified - would need tracking in real impl)
+        # For now, just acknowledge by message_id
+        from uuid import UUID
+        dummy_msg = QueueMessage(
+            message_id=UUID(message_id),
+            queue=queue,
+            payload=b"",
+        )
+        await self._acknowledge(dummy_msg)
+
+    async def reject(
+        self,
+        queue: str,
+        message_id: str,
+        requeue: bool = True,
+    ) -> None:
+        """Reject a message, optionally requeuing it."""
+        from uuid import UUID
+        dummy_msg = QueueMessage(
+            message_id=UUID(message_id),
+            queue=queue,
+            payload=b"",
+        )
+        await self._reject(dummy_msg, requeue)
+
+    async def purge_queue(self, queue: str) -> int:
+        """Remove all messages from a queue."""
+        return await self._purge_queue(queue)
+
+    async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
+        """Get statistics for a queue."""
+        size = await self._get_queue_size(queue)
+        return {
+            "message_count": size,
+            "consumer_count": 0,  # Redis doesn't track consumers directly
+        }
+
 
 # Factory function
-def create_redis_queue(settings: RedisQueueSettings | None = None) -> RedisQueue:
-    """Create a Redis queue instance.
+def create_redis_messaging(settings: RedisMessagingSettings | None = None) -> RedisMessaging:
+    """Create a Redis messaging instance.
 
     Args:
-        settings: Queue settings
+        settings: Messaging settings
 
     Returns:
-        RedisQueue instance
+        RedisMessaging instance
     """
-    return RedisQueue(settings)
+    return RedisMessaging(settings)
+
+
+# Export with role-specific names for dependency injection
+RedisPubSub = RedisMessaging  # For events system (pubsub adapter)
+RedisQueue = RedisMessaging   # For tasks system (queue adapter)

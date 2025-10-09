@@ -5,13 +5,13 @@ import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from acb.queues.memory import (
+from acb.tasks.memory import (
     MemoryQueue,
     MemoryQueueSettings,
     PriorityTaskItem,
     create_memory_queue,
 )
-from acb.queues._base import (
+from acb.tasks._base import (
     TaskData,
     TaskPriority,
     TaskStatus,

@@ -184,7 +184,7 @@ class Vector(VectorBase):
             }
 
             if vector_config:
-                collection_config["vector_index_config"] = vector_config
+                collection_config["vector_index_config"] = vector_config  # type: ignore[assignment]
 
             client.collections.create(**collection_config)
             self.logger.info(f"Created Weaviate class: {class_name}")
@@ -254,7 +254,7 @@ class Vector(VectorBase):
     def _build_where_filter(
         self,
         filter_expr: dict[str, t.Any],
-    ) -> dict[str, t.Any] | None:
+    ) -> t.Any:
         """Build Weaviate where filter from filter expression."""
         try:
             from weaviate.classes.query import Filter

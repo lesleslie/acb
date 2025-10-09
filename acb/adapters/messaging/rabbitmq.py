@@ -69,33 +69,42 @@ import typing as t
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager, suppress
 
+from uuid import UUID, uuid4
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 
 from ._base import (
-    QueueBackend,
-    QueueCapability,
-    QueueConnectionError,
+    UnifiedMessagingBackend,
+    MessagingSettings,
+    MessagingCapability,
+    MessagingConnectionError,
+    MessagingOperationError,
+    MessagingTimeoutError,
     QueueMessage,
-    QueueOperationError,
-    QueueSettings,
-    QueueTimeoutError,
-    generate_adapter_id,
+    PubSubMessage,
+    MessagePriority,
+    Subscription,
 )
+from acb.depends import depends
+
+if t.TYPE_CHECKING:
+    from acb.logger import Logger as LoggerType
+else:
+    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
 
 # Lazy imports for aio-pika
 _aio_pika_imports: dict[str, t.Any] = {}
 
 MODULE_METADATA = AdapterMetadata(
-    module_id=generate_adapter_id(),
-    name="RabbitMQ Queue",
-    category="queue",
+    module_id=UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
+    name="RabbitMQ Messaging",
+    category="messaging",
     provider="rabbitmq",
     version="1.0.0",
     acb_min_version="0.20.0",
     author="Claude Code",
     created_date="2025-10-01",
-    last_modified="2025-10-01",
+    last_modified="2025-10-08",
     status=AdapterStatus.STABLE,
     capabilities=[
         AdapterCapability.ASYNC_OPERATIONS,
@@ -105,11 +114,11 @@ MODULE_METADATA = AdapterMetadata(
         AdapterCapability.RECONNECTION,
     ],
     required_packages=["aio-pika>=9.0.0"],
-    description="Enterprise RabbitMQ queue backend with clustering and HA support",
-    settings_class="RabbitMQQueueSettings",
+    description="Enterprise RabbitMQ messaging backend with pub/sub and queue support",
+    settings_class="RabbitMQMessagingSettings",
     config_example={
         "connection_url": "amqp://guest:guest@localhost:5672/",
-        "exchange_name": "acb.tasks",
+        "exchange_name": "acb.messaging",
         "exchange_type": "direct",
         "max_priority": 255,
         "prefetch_count": 10,
@@ -143,8 +152,8 @@ def _get_aio_pika_imports() -> dict[str, t.Any]:
     return _aio_pika_imports
 
 
-class RabbitMQQueueSettings(QueueSettings):
-    """Settings for RabbitMQ queue implementation."""
+class RabbitMQMessagingSettings(MessagingSettings):
+    """Settings for RabbitMQ messaging implementation."""
 
     # RabbitMQ connection
     connection_url: str | None = "amqp://guest:guest@localhost:5672/"
@@ -152,7 +161,7 @@ class RabbitMQQueueSettings(QueueSettings):
     connection_timeout: float = 10.0
 
     # Exchange configuration
-    exchange_name: str = "acb.tasks"
+    exchange_name: str = "acb.messaging"
     exchange_type: str = "direct"  # direct, topic, fanout, headers
     exchange_durable: bool = True
     exchange_auto_delete: bool = False
@@ -186,30 +195,49 @@ class RabbitMQQueueSettings(QueueSettings):
     prefetch_count: int = 10
     consumer_timeout: float = 30.0
 
+    # Operation timeouts
+    send_timeout: float = Field(
+        default=10.0,
+        description="Timeout for send operations in seconds",
+    )
+    receive_timeout: float = Field(
+        default=30.0,
+        description="Timeout for receive operations in seconds",
+    )
+    ack_timeout: float = Field(
+        default=5.0,
+        description="Timeout for acknowledge/reject operations in seconds",
+    )
+
     # Channel pool
     channel_pool_size: int = 5
 
 
-class RabbitMQQueue(QueueBackend):
-    """RabbitMQ-backed queue implementation.
+class RabbitMQMessaging(UnifiedMessagingBackend):
+    """RabbitMQ-backed unified messaging implementation.
 
-    Provides enterprise-grade queue operations using RabbitMQ:
-    - Direct exchanges for point-to-point messaging
-    - Topic exchanges for pub/sub patterns
+    Provides enterprise-grade messaging operations using RabbitMQ:
+    - Topic exchanges for pub/sub event patterns
+    - Direct exchanges for point-to-point task queues
     - Priority queues using x-max-priority
     - Delayed messages via plugin or TTL+DLQ pattern
     - Dead letter exchanges for failed messages
     - Connection pooling and automatic recovery
     """
 
-    def __init__(self, settings: RabbitMQQueueSettings | None = None) -> None:
-        """Initialize RabbitMQ queue backend.
+    def __init__(self, settings: RabbitMQMessagingSettings | None = None) -> None:
+        """Initialize RabbitMQ messaging backend.
 
         Args:
-            settings: RabbitMQ queue configuration
+            settings: RabbitMQ messaging configuration
         """
         super().__init__(settings)
-        self._settings: RabbitMQQueueSettings = settings or RabbitMQQueueSettings()
+        self._settings: RabbitMQMessagingSettings = settings or RabbitMQMessagingSettings()
+
+        # Connection management
+        self._connection_lock = asyncio.Lock()
+        self._shutdown_event = asyncio.Event()
+        self._logger: t.Any = None
 
         # RabbitMQ connection and channels
         self._connection: t.Any = None
@@ -228,6 +256,19 @@ class RabbitMQQueue(QueueBackend):
 
         # Track messages being processed
         self._processing_messages: dict[str, tuple[QueueMessage, t.Any]] = {}
+
+    @property
+    def logger(self) -> t.Any:
+        """Lazy-initialize logger.
+
+        Returns:
+            Logger instance
+        """
+        if self._logger is None:
+            from acb.adapters import import_adapter
+            logger_cls = import_adapter("logger")
+            self._logger = depends.get(logger_cls)
+        return self._logger
 
     # ========================================================================
     # Connection Management (Private Implementation)
@@ -269,7 +310,7 @@ class RabbitMQQueue(QueueBackend):
 
                     except Exception as e:
                         self.logger.exception(f"Failed to connect to RabbitMQ: {e}")
-                        raise QueueConnectionError(
+                        raise MessagingConnectionError(
                             "Failed to establish RabbitMQ connection",
                             original_error=e,
                         ) from e
@@ -391,7 +432,7 @@ class RabbitMQQueue(QueueBackend):
     async def _setup_exchanges(self) -> None:
         """Setup RabbitMQ exchanges."""
         if not self._channel:
-            raise QueueConnectionError("Channel not available")
+            raise MessagingConnectionError("Channel not available")
 
         imports = _get_aio_pika_imports()
         ExchangeType = imports["ExchangeType"]
@@ -433,7 +474,7 @@ class RabbitMQQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to setup exchanges: {e}")
-            raise QueueConnectionError(
+            raise MessagingConnectionError(
                 "Failed to setup RabbitMQ exchanges", original_error=e
             ) from e
 
@@ -451,7 +492,7 @@ class RabbitMQQueue(QueueBackend):
         """
         if name not in self._queues:
             if not self._channel:
-                raise QueueConnectionError("Channel not available")
+                raise MessagingConnectionError("Channel not available")
 
             try:
                 # Queue arguments
@@ -487,7 +528,7 @@ class RabbitMQQueue(QueueBackend):
 
             except Exception as e:
                 self.logger.exception(f"Failed to create queue {name}: {e}")
-                raise QueueOperationError(
+                raise MessagingOperationError(
                     f"Failed to create queue {name}", original_error=e
                 ) from e
 
@@ -517,7 +558,7 @@ class RabbitMQQueue(QueueBackend):
             QueueTimeoutError: If operation times out
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to RabbitMQ")
+            raise MessagingConnectionError("Not connected to RabbitMQ")
 
         await self._ensure_client()
         timeout = timeout or self._settings.send_timeout
@@ -527,8 +568,8 @@ class RabbitMQQueue(QueueBackend):
         DeliveryMode = imports["DeliveryMode"]
 
         try:
-            # Serialize message
-            message_data = message.to_bytes()
+            # Serialize message payload
+            message_data = message.payload
 
             # Convert priority to RabbitMQ scale (0-255)
             priority = min(message.priority.value * 50, self._settings.max_priority)
@@ -540,11 +581,7 @@ class RabbitMQQueue(QueueBackend):
                 delivery_mode=DeliveryMode.PERSISTENT,
                 message_id=str(message.message_id),
                 correlation_id=message.correlation_id,
-                reply_to=message.reply_to,
                 headers=message.headers,
-                expiration=str(message.ttl_seconds * 1000)
-                if message.ttl_seconds
-                else None,
             )
 
             # Handle delayed messages
@@ -555,24 +592,24 @@ class RabbitMQQueue(QueueBackend):
                 await asyncio.wait_for(
                     self._exchange.publish(
                         rmq_message,
-                        routing_key=message.topic,
+                        routing_key=message.queue,
                     ),
                     timeout=timeout,
                 )
 
             self.logger.debug(
-                f"Sent message {message.message_id} to topic {message.topic}"
+                f"Sent message {message.message_id} to queue {message.queue}"
             )
             return str(message.message_id)
 
         except TimeoutError as e:
-            raise QueueTimeoutError(
+            raise MessagingTimeoutError(
                 f"Send operation timed out after {timeout}s",
                 original_error=e,
             ) from e
         except Exception as e:
             self.logger.exception(f"Failed to send message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to send message",
                 original_error=e,
             ) from e
@@ -593,11 +630,11 @@ class RabbitMQQueue(QueueBackend):
             rmq_message.headers["x-delay"] = delay_ms
             await self._delayed_exchange.publish(
                 rmq_message,
-                routing_key=message.topic,
+                routing_key=message.queue,
             )
         else:
             # Use TTL + DLQ pattern
-            temp_queue_name = f"delayed.{message.topic}.{int(time.time())}"
+            temp_queue_name = f"delayed.{message.queue}.{int(time.time())}"
 
             # Create temporary queue with TTL and DLX
             await self._channel.declare_queue(
@@ -607,7 +644,7 @@ class RabbitMQQueue(QueueBackend):
                 arguments={
                     "x-message-ttl": delay_ms,
                     "x-dead-letter-exchange": self._settings.exchange_name,
-                    "x-dead-letter-routing-key": message.topic,
+                    "x-dead-letter-routing-key": message.queue,
                 },
             )
 
@@ -636,7 +673,7 @@ class RabbitMQQueue(QueueBackend):
             QueueOperationError: If receive fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to RabbitMQ")
+            raise MessagingConnectionError("Not connected to RabbitMQ")
 
         await self._ensure_client()
         queue = await self._ensure_queue(topic)
@@ -650,8 +687,16 @@ class RabbitMQQueue(QueueBackend):
             if rmq_message is None:
                 return None
 
-            # Parse ACB message
-            message = QueueMessage.from_bytes(rmq_message.body)
+            # Create ACB message from RabbitMQ message
+            from uuid import UUID
+            message = QueueMessage(
+                message_id=UUID(rmq_message.message_id) if rmq_message.message_id else uuid4(),
+                queue=topic,
+                payload=rmq_message.body,
+                priority=MessagePriority.NORMAL,  # Could map from RabbitMQ priority
+                correlation_id=rmq_message.correlation_id,
+                headers=dict(rmq_message.headers or {}),
+            )
 
             # Store for later acknowledgment
             self._processing_messages[str(message.message_id)] = (message, rmq_message)
@@ -665,7 +710,7 @@ class RabbitMQQueue(QueueBackend):
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to receive message",
                 original_error=e,
             ) from e
@@ -687,7 +732,7 @@ class RabbitMQQueue(QueueBackend):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
-            raise QueueOperationError(f"Message {message_id} not in processing state")
+            raise MessagingOperationError(f"Message {message_id} not in processing state")
 
         try:
             _, rmq_message = self._processing_messages[message_id]
@@ -705,7 +750,7 @@ class RabbitMQQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to acknowledge message",
                 original_error=e,
             ) from e
@@ -729,7 +774,7 @@ class RabbitMQQueue(QueueBackend):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
-            raise QueueOperationError(f"Message {message_id} not in processing state")
+            raise MessagingOperationError(f"Message {message_id} not in processing state")
 
         try:
             _, rmq_message = self._processing_messages[message_id]
@@ -747,7 +792,7 @@ class RabbitMQQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 "Failed to reject message",
                 original_error=e,
             ) from e
@@ -768,7 +813,7 @@ class RabbitMQQueue(QueueBackend):
             Async generator of messages
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to RabbitMQ")
+            raise MessagingConnectionError("Not connected to RabbitMQ")
 
         await self._ensure_client()
         queue = await self._ensure_queue(topic)
@@ -789,8 +834,16 @@ class RabbitMQQueue(QueueBackend):
                     async for rmq_message in consumer:
                         async with rmq_message.process():
                             try:
-                                # Parse ACB message
-                                message = QueueMessage.from_bytes(rmq_message.body)
+                                # Create ACB message from RabbitMQ message
+                                from uuid import UUID
+                                message = QueueMessage(
+                                    message_id=UUID(rmq_message.message_id) if rmq_message.message_id else uuid4(),
+                                    queue=topic,
+                                    payload=rmq_message.body,
+                                    priority=MessagePriority.NORMAL,
+                                    correlation_id=rmq_message.correlation_id,
+                                    headers=dict(rmq_message.headers or {}),
+                                )
 
                                 # Store for acknowledgment
                                 self._processing_messages[str(message.message_id)] = (
@@ -834,7 +887,7 @@ class RabbitMQQueue(QueueBackend):
             **options: Backend-specific options (e.g., durable, auto_delete)
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to RabbitMQ")
+            raise MessagingConnectionError("Not connected to RabbitMQ")
 
         # Queue will be created by _ensure_queue
         await self._ensure_queue(name)
@@ -855,7 +908,7 @@ class RabbitMQQueue(QueueBackend):
             QueueOperationError: If deletion fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to RabbitMQ")
+            raise MessagingConnectionError("Not connected to RabbitMQ")
 
         await self._ensure_client()
 
@@ -873,7 +926,7 @@ class RabbitMQQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to delete queue {name}: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Failed to delete queue {name}",
                 original_error=e,
             ) from e
@@ -894,7 +947,7 @@ class RabbitMQQueue(QueueBackend):
             QueueOperationError: If purge fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to RabbitMQ")
+            raise MessagingConnectionError("Not connected to RabbitMQ")
 
         await self._ensure_client()
 
@@ -911,7 +964,7 @@ class RabbitMQQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {name}: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Failed to purge queue {name}",
                 original_error=e,
             ) from e
@@ -932,7 +985,7 @@ class RabbitMQQueue(QueueBackend):
             QueueOperationError: If operation fails
         """
         if not self._connected:
-            raise QueueConnectionError("Not connected to RabbitMQ")
+            raise MessagingConnectionError("Not connected to RabbitMQ")
 
         await self._ensure_client()
 
@@ -946,7 +999,7 @@ class RabbitMQQueue(QueueBackend):
 
         except Exception as e:
             self.logger.exception(f"Failed to get queue size for {name}: {e}")
-            raise QueueOperationError(
+            raise MessagingOperationError(
                 f"Failed to get queue size for {name}",
                 original_error=e,
             ) from e
@@ -1002,45 +1055,191 @@ class RabbitMQQueue(QueueBackend):
         self.logger.debug("Stopped delayed message monitor")
 
     # ========================================================================
+    # Public Interface Methods (Required by UnifiedMessagingBackend)
+    # ========================================================================
+
+    async def connect(self) -> None:
+        """Establish connection to RabbitMQ backend."""
+        await self._connect()
+
+    async def disconnect(self) -> None:
+        """Close connection to RabbitMQ backend."""
+        await self._disconnect()
+
+    async def health_check(self) -> dict[str, t.Any]:
+        """Perform health check on RabbitMQ backend."""
+        return await self._health_check()
+
+    # Pub/Sub Interface (for events system)
+
+    async def publish(
+        self,
+        topic: str,
+        message: bytes,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        """Publish a message to a topic (pub/sub pattern)."""
+        from uuid import uuid4
+        queue_msg = QueueMessage(
+            message_id=uuid4(),
+            queue=topic,
+            payload=message,
+            headers=headers or {},
+        )
+        await self._send(queue_msg)
+
+    async def subscribe(
+        self,
+        topic: str,
+        pattern: bool = False,
+    ) -> Subscription:
+        """Subscribe to a topic or pattern."""
+        # Create subscription object
+        subscription = Subscription(
+            topic=topic,
+        )
+        return subscription
+
+    async def unsubscribe(self, subscription: Subscription) -> None:
+        """Unsubscribe from a topic."""
+        # Cleanup consumer if exists
+        if subscription.topic in self._consumers:
+            try:
+                await self._consumers[subscription.topic].cancel()
+                del self._consumers[subscription.topic]
+            except Exception as e:
+                self.logger.warning(f"Error unsubscribing: {e}")
+
+    @asynccontextmanager  # type: ignore[arg-type]
+    async def receive_messages(
+        self,
+        subscription: Subscription,
+        timeout: float | None = None,
+    ) -> AsyncIterator[AsyncIterator[PubSubMessage]]:
+        """Receive messages from a subscription."""
+        async with self._subscribe(subscription.topic) as queue_messages:
+            async def convert_messages() -> AsyncGenerator[PubSubMessage]:
+                """Convert QueueMessage to PubSubMessage."""
+                async for queue_msg in queue_messages:
+                    pubsub_msg = PubSubMessage(
+                        message_id=queue_msg.message_id,
+                        topic=queue_msg.queue,
+                        payload=queue_msg.payload,
+                        correlation_id=queue_msg.correlation_id,
+                        headers=queue_msg.headers,
+                    )
+                    yield pubsub_msg
+            yield convert_messages()
+
+    # Queue Interface (for tasks system)
+
+    async def enqueue(
+        self,
+        queue: str,
+        message: bytes,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        delay_seconds: float = 0.0,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """Add a message to a queue."""
+        from uuid import uuid4
+        queue_msg = QueueMessage(
+            message_id=uuid4(),
+            queue=queue,
+            payload=message,
+            priority=priority,
+            delay_seconds=delay_seconds,
+            headers=headers or {},
+        )
+        return await self._send(queue_msg)
+
+    async def dequeue(
+        self,
+        queue: str,
+        timeout: float | None = None,
+        visibility_timeout: float = 30.0,
+    ) -> QueueMessage | None:
+        """Remove and return a message from a queue."""
+        return await self._receive(queue, timeout)
+
+    async def acknowledge(
+        self,
+        queue: str,
+        message_id: str,
+    ) -> None:
+        """Acknowledge successful processing of a message."""
+        # Find the message in processing
+        if message_id in self._processing_messages:
+            message, _ = self._processing_messages[message_id]
+            await self._acknowledge(message)
+
+    async def reject(
+        self,
+        queue: str,
+        message_id: str,
+        requeue: bool = True,
+    ) -> None:
+        """Reject a message, optionally requeuing it."""
+        # Find the message in processing
+        if message_id in self._processing_messages:
+            message, _ = self._processing_messages[message_id]
+            await self._reject(message, requeue)
+
+    async def purge_queue(self, queue: str) -> int:
+        """Remove all messages from a queue."""
+        return await self._purge_queue(queue)
+
+    async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
+        """Get statistics for a queue."""
+        size = await self._get_queue_size(queue)
+        return {
+            "message_count": size,
+            "consumer_count": 1 if queue in self._consumers else 0,
+        }
+
+    # ========================================================================
     # Utility Methods
     # ========================================================================
 
-    def get_capabilities(self) -> list[QueueCapability]:
+    def get_capabilities(self) -> set[MessagingCapability]:
         """Get backend capabilities.
 
         Returns:
-            List of supported capabilities
+            Set of supported capabilities
         """
-        capabilities = [
-            QueueCapability.BASIC_QUEUE,
-            QueueCapability.PUB_SUB,
-            QueueCapability.PRIORITY_QUEUE,
-            QueueCapability.DELAYED_MESSAGES,
-            QueueCapability.PERSISTENCE,
-            QueueCapability.DEAD_LETTER_QUEUE,
-            QueueCapability.CONNECTION_POOLING,
-            QueueCapability.MESSAGE_TTL,
-            QueueCapability.CLUSTERING,
-            QueueCapability.LOAD_BALANCING,
-        ]
+        capabilities = {
+            MessagingCapability.BASIC_QUEUE,
+            MessagingCapability.PUB_SUB,
+            MessagingCapability.PRIORITY_QUEUE,
+            MessagingCapability.DELAYED_MESSAGES,
+            MessagingCapability.PERSISTENCE,
+            MessagingCapability.DEAD_LETTER_QUEUE,
+            MessagingCapability.CONNECTION_POOLING,
+            MessagingCapability.MESSAGE_TTL,
+            MessagingCapability.CLUSTERING,
+            MessagingCapability.PATTERN_SUBSCRIBE,
+            MessagingCapability.BROADCAST,
+            MessagingCapability.TRANSACTIONS,
+        }
 
         return capabilities
 
 
 # Factory function
-def create_rabbitmq_queue(
-    settings: RabbitMQQueueSettings | None = None,
-) -> RabbitMQQueue:
-    """Create a RabbitMQ queue instance.
+def create_rabbitmq_messaging(
+    settings: RabbitMQMessagingSettings | None = None,
+) -> RabbitMQMessaging:
+    """Create a RabbitMQ messaging instance.
 
     Args:
-        settings: Queue settings
+        settings: Messaging settings
 
     Returns:
-        RabbitMQQueue instance
+        RabbitMQMessaging instance
     """
-    return RabbitMQQueue(settings)
+    return RabbitMQMessaging(settings)
 
 
-# Convenience alias for import_adapter
-Queue = RabbitMQQueue
+# Export with role-specific names for dependency injection
+RabbitMQPubSub = RabbitMQMessaging  # For events system (pubsub adapter)
+RabbitMQQueue = RabbitMQMessaging   # For tasks system (queue adapter)

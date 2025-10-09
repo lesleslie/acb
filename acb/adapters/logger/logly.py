@@ -2,6 +2,7 @@
 
 import logging
 import typing as t
+from contextlib import suppress
 from inspect import currentframe
 from uuid import UUID
 
@@ -278,11 +279,9 @@ class Logger(LoggerBase):
 
         logger = self._ensure_logger()
         for callback in self._callbacks:
-            try:
-                logger.add_callback(callback)
-            except AttributeError:
+            with suppress(AttributeError):
                 # Logly might not support callbacks yet
-                pass
+                logger.add_callback(callback)
 
     def _log_app_info(self) -> None:
         """Log application startup information."""
@@ -299,11 +298,9 @@ class Logger(LoggerBase):
         """
         self._callbacks.append(callback)
         logger = self._ensure_logger()
-        try:
-            logger.add_callback(callback)
-        except AttributeError:
+        with suppress(AttributeError):
             # Logly might not support callbacks in this version
-            pass
+            logger.add_callback(callback)
 
     def remove_callback(self, callback: t.Callable[..., t.Any]) -> None:
         """Unregister callback.
@@ -314,10 +311,8 @@ class Logger(LoggerBase):
         if callback in self._callbacks:
             self._callbacks.remove(callback)
             logger = self._ensure_logger()
-            try:
+            with suppress(AttributeError):
                 logger.remove_callback(callback)
-            except AttributeError:
-                pass
 
     def contextualize(self, **context: t.Any) -> t.Any:
         """Context manager for temporary context.
@@ -346,14 +341,12 @@ class Logger(LoggerBase):
         buffered log messages are written.
         """
         logger = self._ensure_logger()
-        try:
+        with suppress(AttributeError):
             logger.complete()
-        except AttributeError:
-            # If complete() not available, try flush()
-            try:
-                logger.flush()
-            except AttributeError:
-                pass
+            return
+        # If complete() not available, try flush()
+        with suppress(AttributeError):
+            logger.flush()
 
     def trace(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None:
         """Log trace message (below debug level).

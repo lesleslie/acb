@@ -398,9 +398,7 @@ app = FastAPI()
 
 
 @depends.inject
-async def log_request_middleware(
-    request: Request, call_next, logger: Inject[Logger]
-):
+async def log_request_middleware(request: Request, call_next, logger: Inject[Logger]):
     start_time = time.time()
 
     logger.info(

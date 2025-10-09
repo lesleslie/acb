@@ -55,7 +55,6 @@ dependencies = [
     "uuid-utils>=0.11",
     "uvicorn>=0.30",
     "fastmcp>=2.0.0",
-    "urllib3>=2.5.0",
 ]
 
 [project.license]

@@ -306,10 +306,10 @@ class Reasoning(ReasoningBase):
         while call_count < max_calls:
             try:
                 # Make API call
-                response = await client.chat.completions.create(
+                response = await client.chat.completions.create(  # type: ignore[call-overload]
                     model=request.model or self._settings.model,
-                    messages=messages,
-                    tools=functions or None,
+                    messages=messages,  # type: ignore[arg-type]
+                    tools=functions or None,  # type: ignore[arg-type]
                     tool_choice=self._settings.function_call_strategy
                     if functions
                     else None,
@@ -464,7 +464,7 @@ Show your reasoning process explicitly at each step.
         try:
             response = await client.chat.completions.create(
                 model=request.model or self._settings.model,
-                messages=messages,
+                messages=messages,  # type: ignore[arg-type]
                 temperature=request.temperature,
                 max_tokens=request.max_tokens,
                 response_format={"type": "text"},
@@ -561,8 +561,8 @@ Available tools will be provided as function calls. Use them when you need to ga
             try:
                 response = await client.chat.completions.create(
                     model=request.model or self._settings.model,
-                    messages=messages,
-                    tools=functions,
+                    messages=messages,  # type: ignore[arg-type]
+                    tools=functions,  # type: ignore[arg-type]
                     tool_choice="auto",
                     temperature=request.temperature,
                     max_tokens=request.max_tokens,
@@ -574,14 +574,14 @@ Available tools will be provided as function calls. Use them when you need to ga
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": message.content,
-                        "tool_calls": [  # type: ignore[dict-item]
+                        "content": message.content or "",  # type: ignore[dict-item]
+                        "tool_calls": [  # type: ignore[dict-item,union-attr]
                             {
                                 "id": tool_call.id,
                                 "type": tool_call.type,
                                 "function": {
-                                    "name": tool_call.function.name,
-                                    "arguments": tool_call.function.arguments,
+                                    "name": tool_call.function.name,  # type: ignore[union-attr]
+                                    "arguments": tool_call.function.arguments,  # type: ignore[union-attr]
                                 },
                             }
                             for tool_call in (message.tool_calls or [])
@@ -594,7 +594,7 @@ Available tools will be provided as function calls. Use them when you need to ga
                 if message.tool_calls:
                     # Execute tools (Act phase)
                     tool_results = await self._execute_tool_calls(
-                        message.tool_calls,
+                        message.tool_calls,  # type: ignore[arg-type]
                         request.tools,
                         function_tracker,
                     )
@@ -606,12 +606,13 @@ Available tools will be provided as function calls. Use them when you need to ga
                             input_data={
                                 "reasoning": message.content,
                                 "tools_called": [
-                                    tc.function.name for tc in message.tool_calls
+                                    tc.function.name  # type: ignore[union-attr]
+                                    for tc in message.tool_calls
                                 ],
                             },
                             output_data={"tool_results": tool_results},
                             reasoning="Executed tools based on reasoning analysis",
-                            tools_used=[tc.function.name for tc in message.tool_calls],
+                            tools_used=[tc.function.name for tc in message.tool_calls],  # type: ignore[union-attr]
                         ),
                     )
 

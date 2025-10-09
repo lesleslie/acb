@@ -21,18 +21,18 @@ async def demo_server_capabilities() -> None:
     # Demo 1: List all registered tools
     print("\n1. Registered MCP Tools:")
     print("-" * 70)
-    for tool_name in [
+    for tool_name in (
         "list_components",
         "execute_action",
         "get_adapter_info",
         "execute_workflow",
-    ]:
+    ):
         print(f"   ✓ {tool_name}")
 
     # Demo 2: List all registered resources
     print("\n2. Registered MCP Resources:")
     print("-" * 70)
-    for resource_uri in ["registry://components", "metrics://system", "config://app"]:
+    for resource_uri in ("registry://components", "metrics://system", "config://app"):
         print(f"   ✓ {resource_uri}")
 
     # Demo 3: Component discovery

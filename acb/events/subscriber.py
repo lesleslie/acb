@@ -1,11 +1,11 @@
 """Event Subscriber and Routing System.
 
 Provides subscriber management, event routing, and subscription lifecycle
-for the ACB Events System using the unified queue adapter backend. Supports
-both pull and push subscription models with advanced filtering and routing.
+for the ACB Events System using the unified messaging adapter's pub/sub backend.
+Supports both pull and push subscription models with advanced filtering and routing.
 
 Features:
-- Queue adapter backend integration
+- Pub/sub messaging backend integration
 - Event subscription management
 - Advanced event filtering and routing
 - Pull and push subscription models
@@ -457,9 +457,9 @@ class EventSubscriber(ServiceBase):
         self._router = EventRouter()
         self._subscriptions: dict[UUID, ManagedSubscription] = {}
 
-        # Queue adapter integration
-        Queue = import_adapter("queue")
-        self._queue = depends.get(Queue)
+        # PubSub adapter integration
+        PubSub = import_adapter("pubsub")
+        self._pubsub = depends.get(PubSub)
 
         # Processing control
         self._processing_semaphore = asyncio.Semaphore(

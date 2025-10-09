@@ -126,9 +126,9 @@ class EventPublisher(EventPublisherBase):
         self._settings = settings or EventPublisherSettings()
         self._metrics = PublisherMetrics()
 
-        # Queue adapter integration
-        Queue = import_adapter("queue")
-        self._queue = depends.get(Queue)
+        # PubSub adapter integration
+        PubSub = import_adapter("pubsub")
+        self._pubsub = depends.get(PubSub)
 
         # Event routing
         self._subscriptions: list[EventSubscription] = []
@@ -169,7 +169,7 @@ class EventPublisher(EventPublisherBase):
     async def _initialize(self) -> None:
         """Initialize the event publisher (ServiceBase requirement)."""
         # Connect to queue backend
-        await self._queue.connect()
+        await self._pubsub.connect()
 
         # Start worker tasks
         num_workers = min(self._settings.max_concurrent_events, 10)
@@ -189,7 +189,7 @@ class EventPublisher(EventPublisherBase):
         await self._cancel_all_subscription_tasks()
 
         # Disconnect from queue backend
-        await self._queue.disconnect()
+        await self._pubsub.disconnect()
 
         if self._settings.log_events:
             self._logger.info("Event publisher stopped")
@@ -253,7 +253,7 @@ class EventPublisher(EventPublisherBase):
 
         # Serialize event and publish via queue adapter
         from msgspec import msgpack
-        from acb.adapters.queue import MessagePriority
+        from acb.adapters.messaging import MessagePriority
 
         # Map event priority to queue priority
         priority_map = {
@@ -278,7 +278,7 @@ class EventPublisher(EventPublisherBase):
         payload = msgpack.packb(event_dict)
 
         # Publish to queue
-        await self._queue.publish(
+        await self._pubsub.publish(
             topic=topic,
             payload=payload,
             priority=queue_priority,
@@ -439,7 +439,7 @@ class EventPublisher(EventPublisherBase):
         while not self._shutdown_event.is_set():
             try:
                 # Subscribe to event messages via queue adapter
-                async with self._queue.subscribe(topic_pattern) as messages:
+                async with self._pubsub.subscribe(topic_pattern) as messages:
                     async for queue_message in messages:
                         if self._shutdown_event.is_set():
                             break
@@ -453,7 +453,7 @@ class EventPublisher(EventPublisherBase):
                             await self._process_event(event)
 
                             # Acknowledge message
-                            await self._queue.acknowledge(queue_message)
+                            await self._pubsub.acknowledge(queue_message)
 
                         except Exception as e:
                             self._logger.exception(
@@ -462,7 +462,7 @@ class EventPublisher(EventPublisherBase):
                                 e,
                             )
                             # Reject message (will go to DLQ if configured)
-                            await self._queue.reject(queue_message, requeue=False)
+                            await self._pubsub.reject(queue_message, requeue=False)
 
             except asyncio.CancelledError:
                 break
@@ -604,7 +604,7 @@ class EventPublisher(EventPublisherBase):
     async def _handle_failed_event(self, event: Event) -> None:
         """Handle a failed event (retry or dead letter)."""
         from msgspec import msgpack
-        from acb.adapters.queue import MessagePriority
+        from acb.adapters.messaging import MessagePriority
 
         self._metrics.record_event_failed()
 
@@ -622,7 +622,7 @@ class EventPublisher(EventPublisherBase):
             topic = f"{self._settings.event_topic_prefix}.{event.metadata.event_type}"
             payload = msgpack.packb(event.model_dump(mode="json"))
 
-            await self._queue.enqueue(
+            await self._pubsub.enqueue(
                 topic=topic,
                 payload=payload,
                 priority=MessagePriority.NORMAL,

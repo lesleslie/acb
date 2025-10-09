@@ -29,7 +29,7 @@ except ImportError:
     EVENT_JOB_ERROR = "job_error"
     EVENT_JOB_MISSED = "job_missed"
 
-from acb.queues._base import (
+from acb.tasks._base import (
     TaskData,
     TaskPriority,
     TaskStatus,
@@ -39,7 +39,7 @@ from acb.queues._base import (
 
 # Mock APSchedulerSettings and Queue for when apscheduler is not installed
 if APSCHEDULER_AVAILABLE:
-    from acb.queues.apscheduler import (
+    from acb.tasks.apscheduler import (
         APSchedulerSettings,
         Queue,
     )

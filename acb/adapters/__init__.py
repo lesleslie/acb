@@ -530,10 +530,19 @@ STATIC_ADAPTER_MAPPINGS = {
     "graph.neo4j": ("acb.adapters.graph.neo4j", "Graph"),
     "graph.neptune": ("acb.adapters.graph.neptune", "Graph"),
     "graph.arangodb": ("acb.adapters.graph.arangodb", "Graph"),
-    "queue.memory": ("acb.adapters.queue.memory", "Queue"),
-    "queue.redis": ("acb.adapters.queue.redis", "Queue"),
-    "queue.rabbitmq": ("acb.adapters.queue.rabbitmq", "Queue"),
-    "queue.apscheduler": ("acb.queues.apscheduler", "Queue"),
+    # Pub/Sub adapters for events system
+    "pubsub.memory": ("acb.adapters.messaging.memory", "MemoryPubSub"),
+    "pubsub.redis": ("acb.adapters.messaging.redis", "RedisPubSub"),
+    "pubsub.rabbitmq": ("acb.adapters.messaging.rabbitmq", "RabbitMQPubSub"),
+    # Queue adapters for tasks system
+    "queue.memory": ("acb.adapters.messaging.memory", "MemoryQueue"),
+    "queue.redis": ("acb.adapters.messaging.redis", "RedisQueue"),
+    "queue.rabbitmq": ("acb.adapters.messaging.rabbitmq", "RabbitMQQueue"),
+    # Task system adapters
+    "tasks.memory": ("acb.tasks.memory", "TaskSystem"),
+    "tasks.redis": ("acb.tasks.redis", "TaskSystem"),
+    "tasks.rabbitmq": ("acb.tasks.rabbitmq", "TaskSystem"),
+    "tasks.apscheduler": ("acb.tasks.apscheduler", "TaskSystem"),
     "ai.cloud": ("acb.adapters.ai.cloud", "CloudAI"),
     "ai.edge": ("acb.adapters.ai.edge", "EdgeAI"),
     "ai.hybrid": ("acb.adapters.ai.hybrid", "HybridAI"),

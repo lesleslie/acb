@@ -1,0 +1,547 @@
+"""Messaging adapter interfaces for ACB framework.
+
+This module provides dual interfaces for messaging backends:
+1. PubSubBackend - For event-driven pub/sub patterns (events system)
+2. QueueBackend - For task queue patterns (tasks system)
+
+Messaging implementations (Redis, RabbitMQ, etc.) can implement both
+interfaces to support both patterns with a single backend.
+
+Key Design Principles:
+1. Clear separation between pub/sub and queue patterns
+2. Type-safe interfaces preventing cross-pattern usage
+3. Connection pooling and lifecycle management
+4. Async-first with proper error handling
+5. Follows ACB adapter patterns with MODULE_METADATA
+"""
+
+import asyncio
+import typing as t
+from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import datetime
+from enum import Enum
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field
+from acb.cleanup import CleanupMixin
+from acb.config import Config
+from acb.depends import depends
+
+# Re-export common types for convenience
+__all__ = [
+    # Interfaces
+    "PubSubBackend",
+    "QueueBackend",
+    "UnifiedMessagingBackend",
+    # Settings
+    "MessagingSettings",
+    # Messages
+    "PubSubMessage",
+    "QueueMessage",
+    # Enums
+    "MessagePriority",
+    "DeliveryMode",
+    "MessagingCapability",
+    # Exceptions
+    "MessagingException",
+    "MessagingConnectionError",
+    "MessagingOperationError",
+    "MessagingTimeoutError",
+    "QueueFullError",
+    "QueueEmptyError",
+]
+
+
+# ============================================================================
+# Enums and Constants
+# ============================================================================
+
+
+class MessagePriority(Enum):
+    """Message priority levels for queue ordering."""
+
+    LOW = 1
+    NORMAL = 5
+    HIGH = 10
+    CRITICAL = 20
+
+
+class DeliveryMode(Enum):
+    """Message delivery guarantees."""
+
+    FIRE_AND_FORGET = "fire_and_forget"  # No acknowledgment
+    AT_LEAST_ONCE = "at_least_once"  # May be delivered multiple times
+    EXACTLY_ONCE = "exactly_once"  # Delivered exactly once (if supported)
+
+
+class MessagingCapability(Enum):
+    """Messaging backend capabilities for feature detection."""
+
+    # Pub/Sub capabilities
+    PUB_SUB = "pub_sub"  # Basic publish/subscribe
+    PATTERN_SUBSCRIBE = "pattern_subscribe"  # Pattern-based subscriptions
+    BROADCAST = "broadcast"  # Broadcast to all subscribers
+
+    # Queue capabilities
+    BASIC_QUEUE = "basic_queue"  # Basic enqueue/dequeue
+    PRIORITY_QUEUE = "priority_queue"  # Priority ordering
+    DELAYED_MESSAGES = "delayed_messages"  # Message delay/scheduling
+    DEAD_LETTER_QUEUE = "dead_letter_queue"  # Failed message handling
+
+    # Common capabilities
+    PERSISTENCE = "persistence"  # Disk-backed storage
+    TRANSACTIONS = "transactions"  # Atomic operations
+    CONNECTION_POOLING = "connection_pooling"  # Connection reuse
+    CLUSTERING = "clustering"  # Distributed deployment
+    MESSAGE_TTL = "message_ttl"  # Time-to-live support
+    BATCH_OPERATIONS = "batch_operations"  # Bulk send/receive
+    STREAMING = "streaming"  # Continuous message streaming
+
+
+# ============================================================================
+# Exception Hierarchy
+# ============================================================================
+
+
+class MessagingException(Exception):
+    """Base exception for all messaging-related errors."""
+
+    def __init__(
+        self,
+        message: str,
+        original_error: Exception | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.original_error = original_error
+
+
+class MessagingConnectionError(MessagingException):
+    """Raised when connection to messaging backend fails."""
+
+
+class MessagingOperationError(MessagingException):
+    """Raised when a messaging operation fails."""
+
+
+class MessagingTimeoutError(MessagingException):
+    """Raised when a messaging operation times out."""
+
+
+class QueueFullError(MessagingException):
+    """Raised when queue capacity is exceeded."""
+
+
+class QueueEmptyError(MessagingException):
+    """Raised when attempting to dequeue from empty queue."""
+
+
+# ============================================================================
+# Data Models
+# ============================================================================
+
+
+class PubSubMessage(BaseModel):
+    """Message format for pub/sub operations."""
+
+    # Core identification
+    message_id: UUID = Field(default_factory=uuid4)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    # Pub/sub specific
+    topic: str = Field(description="Topic/channel for pub/sub")
+    payload: bytes = Field(description="Message payload as bytes")
+
+    # Optional metadata
+    correlation_id: str | None = None
+    headers: dict[str, str] = Field(default_factory=dict)
+
+
+class QueueMessage(BaseModel):
+    """Message format for queue operations."""
+
+    # Core identification
+    message_id: UUID = Field(default_factory=uuid4)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    # Queue specific
+    queue: str = Field(description="Target queue name")
+    payload: bytes = Field(description="Message payload as bytes")
+    priority: MessagePriority = MessagePriority.NORMAL
+
+    # Task queue features
+    delay_seconds: float = 0.0
+    max_retries: int = 3
+    retry_count: int = 0
+
+    # Optional metadata
+    correlation_id: str | None = None
+    headers: dict[str, str] = Field(default_factory=dict)
+
+
+class MessagingSettings(BaseModel):
+    """Base settings for messaging adapters.
+
+    Subclasses should extend this with backend-specific configuration.
+    """
+
+    # Connection settings
+    connection_url: str | None = None
+    connection_timeout: float = 10.0
+    max_connections: int = 10
+
+    # Performance tuning
+    batch_size: int = 100
+    prefetch_count: int = 10
+
+    # Reliability
+    retry_attempts: int = 3
+    retry_delay: float = 1.0
+
+    # Feature flags
+    enable_persistence: bool = False
+    enable_transactions: bool = False
+
+
+class Subscription(BaseModel):
+    """Represents an active subscription to a pub/sub topic."""
+
+    subscription_id: UUID = Field(default_factory=uuid4)
+    topic: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    active: bool = True
+
+
+# ============================================================================
+# Interface: PubSubBackend (for Events System)
+# ============================================================================
+
+
+class PubSubBackend(ABC, CleanupMixin):
+    """Interface for pub/sub messaging patterns.
+
+    Used by the events system for event-driven messaging.
+    Supports multiple subscribers, topic-based routing, and broadcasts.
+    """
+
+    def __init__(self, settings: MessagingSettings | None = None) -> None:
+        super().__init__()
+        self._settings = settings or MessagingSettings()
+        self._logger: t.Any = None
+        self._connected = False
+
+    # Lifecycle Management
+
+    @abstractmethod
+    async def connect(self) -> None:
+        """Establish connection to the messaging backend."""
+        ...
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        """Close connection to the messaging backend."""
+        ...
+
+    @abstractmethod
+    async def health_check(self) -> dict[str, t.Any]:
+        """Check health status of the backend."""
+        ...
+
+    # Core Pub/Sub Operations
+
+    @abstractmethod
+    async def publish(
+        self,
+        topic: str,
+        message: bytes,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        """Publish a message to a topic.
+
+        Args:
+            topic: Topic/channel to publish to
+            message: Message payload as bytes
+            headers: Optional message headers
+        """
+        ...
+
+    @abstractmethod
+    async def subscribe(
+        self,
+        topic: str,
+        pattern: bool = False,
+    ) -> Subscription:
+        """Subscribe to a topic or pattern.
+
+        Args:
+            topic: Topic/pattern to subscribe to
+            pattern: Whether topic is a pattern (e.g., "events.*")
+
+        Returns:
+            Subscription object for managing the subscription
+        """
+        ...
+
+    @abstractmethod
+    async def unsubscribe(self, subscription: Subscription) -> None:
+        """Unsubscribe from a topic."""
+        ...
+
+    @abstractmethod
+    @asynccontextmanager
+    async def receive_messages(
+        self,
+        subscription: Subscription,
+        timeout: float | None = None,
+    ) -> AsyncGenerator[AsyncIterator[PubSubMessage], None]:
+        """Receive messages from a subscription.
+
+        Args:
+            subscription: Active subscription to receive from
+            timeout: Timeout in seconds (None for no timeout)
+
+        Yields:
+            Async iterator of messages
+        """
+        raise NotImplementedError  # pragma: no cover
+        yield  # pragma: no cover - type checker needs this
+
+    # Batch Operations
+
+    async def publish_batch(
+        self,
+        messages: list[tuple[str, bytes, dict[str, str] | None]],
+    ) -> None:
+        """Publish multiple messages in a batch.
+
+        Default implementation calls publish() for each message.
+        Backends can override for optimized batch operations.
+        """
+        for topic, payload, headers in messages:
+            await self.publish(topic, payload, headers)
+
+    # Capability Detection
+
+    @abstractmethod
+    def get_capabilities(self) -> set[MessagingCapability]:
+        """Get the capabilities supported by this backend."""
+        ...
+
+
+# ============================================================================
+# Interface: QueueBackend (for Tasks System)
+# ============================================================================
+
+
+class QueueBackend(ABC, CleanupMixin):
+    """Interface for work queue patterns.
+
+    Used by the tasks system for job processing with workers.
+    Supports single consumer per message, acknowledgments, and retries.
+    """
+
+    def __init__(self, settings: MessagingSettings | None = None) -> None:
+        super().__init__()
+        self._settings = settings or MessagingSettings()
+        self._logger: t.Any = None
+        self._connected = False
+
+    # Lifecycle Management
+
+    @abstractmethod
+    async def connect(self) -> None:
+        """Establish connection to the messaging backend."""
+        ...
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        """Close connection to the messaging backend."""
+        ...
+
+    @abstractmethod
+    async def health_check(self) -> dict[str, t.Any]:
+        """Check health status of the backend."""
+        ...
+
+    # Core Queue Operations
+
+    @abstractmethod
+    async def enqueue(
+        self,
+        queue: str,
+        message: bytes,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        delay_seconds: float = 0.0,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """Add a message to a queue.
+
+        Args:
+            queue: Queue name
+            message: Message payload as bytes
+            priority: Message priority
+            delay_seconds: Delay before message becomes available
+            headers: Optional message headers
+
+        Returns:
+            Message ID for tracking
+        """
+        ...
+
+    @abstractmethod
+    async def dequeue(
+        self,
+        queue: str,
+        timeout: float | None = None,
+        visibility_timeout: float = 30.0,
+    ) -> QueueMessage | None:
+        """Remove and return a message from a queue.
+
+        Args:
+            queue: Queue name
+            timeout: Wait timeout in seconds (None for no wait)
+            visibility_timeout: Time before message returns to queue if not acked
+
+        Returns:
+            Message if available, None otherwise
+        """
+        ...
+
+    @abstractmethod
+    async def acknowledge(
+        self,
+        queue: str,
+        message_id: str,
+    ) -> None:
+        """Acknowledge successful processing of a message.
+
+        Args:
+            queue: Queue name
+            message_id: ID of message to acknowledge
+        """
+        ...
+
+    @abstractmethod
+    async def reject(
+        self,
+        queue: str,
+        message_id: str,
+        requeue: bool = True,
+    ) -> None:
+        """Reject a message, optionally requeuing it.
+
+        Args:
+            queue: Queue name
+            message_id: ID of message to reject
+            requeue: Whether to return message to queue
+        """
+        ...
+
+    # Queue Management
+
+    @abstractmethod
+    async def purge_queue(self, queue: str) -> int:
+        """Remove all messages from a queue.
+
+        Returns:
+            Number of messages purged
+        """
+        ...
+
+    @abstractmethod
+    async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
+        """Get statistics for a queue.
+
+        Returns:
+            Dict with stats like message_count, consumer_count, etc.
+        """
+        ...
+
+    # Dead Letter Queue
+
+    async def send_to_dlq(
+        self,
+        queue: str,
+        message: QueueMessage,
+        reason: str,
+    ) -> None:
+        """Send a failed message to the dead letter queue.
+
+        Default implementation enqueues to {queue}_dlq.
+        Backends can override for custom DLQ handling.
+        """
+        dlq_name = f"{queue}_dlq"
+        dlq_message = message.model_copy()
+        dlq_message.headers["dlq_reason"] = reason
+        dlq_message.headers["original_queue"] = queue
+        await self.enqueue(
+            dlq_name,
+            dlq_message.payload,
+            headers=dlq_message.headers,
+        )
+
+    # Batch Operations
+
+    async def enqueue_batch(
+        self,
+        queue: str,
+        messages: list[tuple[bytes, MessagePriority, dict[str, str] | None]],
+    ) -> list[str]:
+        """Enqueue multiple messages in a batch.
+
+        Default implementation calls enqueue() for each message.
+        Backends can override for optimized batch operations.
+        """
+        message_ids = []
+        for payload, priority, headers in messages:
+            message_id = await self.enqueue(queue, payload, priority, headers=headers)
+            message_ids.append(message_id)
+        return message_ids
+
+    # Capability Detection
+
+    @abstractmethod
+    def get_capabilities(self) -> set[MessagingCapability]:
+        """Get the capabilities supported by this backend."""
+        ...
+
+
+# ============================================================================
+# Unified Interface (for backends supporting both patterns)
+# ============================================================================
+
+
+class UnifiedMessagingBackend(PubSubBackend, QueueBackend):
+    """Base class for backends that support both pub/sub and queue patterns.
+
+    Most messaging systems (Redis, RabbitMQ, etc.) support both patterns,
+    so they can inherit from this unified interface.
+    """
+
+    def __init__(self, settings: MessagingSettings | None = None) -> None:
+        # Single init since both parent classes have the same init
+        super().__init__(settings)
+
+    # Shared lifecycle methods only need to be implemented once
+    # since they're identical in both interfaces
+
+    @abstractmethod
+    async def connect(self) -> None:
+        """Establish connection to the messaging backend."""
+        ...
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        """Close connection to the messaging backend."""
+        ...
+
+    @abstractmethod
+    async def health_check(self) -> dict[str, t.Any]:
+        """Check health status of the backend."""
+        ...
+
+    @abstractmethod
+    def get_capabilities(self) -> set[MessagingCapability]:
+        """Get the capabilities supported by this backend."""
+        ...

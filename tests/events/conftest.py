@@ -7,7 +7,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from acb.adapters.queue import MessagePriority, QueueMessage
+from acb.adapters.messaging import MessagePriority, QueueMessage
 
 
 class MockQueueSubscription:

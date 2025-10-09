@@ -95,6 +95,7 @@ Use type annotations for faster dependency resolution:
 ```python
 from acb.depends import Inject, depends
 
+
 # Fast - type-based lookup with Inject
 @depends.inject
 async def typed_function(cache: Inject[Cache]):
