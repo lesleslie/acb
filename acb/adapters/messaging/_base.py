@@ -15,7 +15,6 @@ Key Design Principles:
 5. Follows ACB adapter patterns with MODULE_METADATA
 """
 
-import asyncio
 import typing as t
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, AsyncIterator
@@ -26,8 +25,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 from acb.cleanup import CleanupMixin
-from acb.config import Config
-from acb.depends import depends
 
 # Re-export common types for convenience
 __all__ = [
@@ -294,7 +291,7 @@ class PubSubBackend(ABC, CleanupMixin):
         self,
         subscription: Subscription,
         timeout: float | None = None,
-    ) -> AsyncGenerator[AsyncIterator[PubSubMessage], None]:
+    ) -> AsyncGenerator[AsyncIterator[PubSubMessage]]:
         """Receive messages from a subscription.
 
         Args:

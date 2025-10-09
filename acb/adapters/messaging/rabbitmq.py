@@ -68,24 +68,24 @@ import time
 import typing as t
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager, suppress
-
 from uuid import UUID, uuid4
+
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.depends import depends
 
 from ._base import (
-    UnifiedMessagingBackend,
-    MessagingSettings,
+    MessagePriority,
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
+    MessagingSettings,
     MessagingTimeoutError,
-    QueueMessage,
     PubSubMessage,
-    MessagePriority,
+    QueueMessage,
     Subscription,
+    UnifiedMessagingBackend,
 )
-from acb.depends import depends
 
 if t.TYPE_CHECKING:
     from acb.logger import Logger as LoggerType
@@ -232,7 +232,9 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
             settings: RabbitMQ messaging configuration
         """
         super().__init__(settings)
-        self._settings: RabbitMQMessagingSettings = settings or RabbitMQMessagingSettings()
+        self._settings: RabbitMQMessagingSettings = (
+            settings or RabbitMQMessagingSettings()
+        )
 
         # Connection management
         self._connection_lock = asyncio.Lock()
@@ -266,6 +268,7 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
         """
         if self._logger is None:
             from acb.adapters import import_adapter
+
             logger_cls = import_adapter("logger")
             self._logger = depends.get(logger_cls)
         return self._logger
@@ -689,8 +692,11 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
 
             # Create ACB message from RabbitMQ message
             from uuid import UUID
+
             message = QueueMessage(
-                message_id=UUID(rmq_message.message_id) if rmq_message.message_id else uuid4(),
+                message_id=UUID(rmq_message.message_id)
+                if rmq_message.message_id
+                else uuid4(),
                 queue=topic,
                 payload=rmq_message.body,
                 priority=MessagePriority.NORMAL,  # Could map from RabbitMQ priority
@@ -732,7 +738,9 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
-            raise MessagingOperationError(f"Message {message_id} not in processing state")
+            raise MessagingOperationError(
+                f"Message {message_id} not in processing state"
+            )
 
         try:
             _, rmq_message = self._processing_messages[message_id]
@@ -774,7 +782,9 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
-            raise MessagingOperationError(f"Message {message_id} not in processing state")
+            raise MessagingOperationError(
+                f"Message {message_id} not in processing state"
+            )
 
         try:
             _, rmq_message = self._processing_messages[message_id]
@@ -836,8 +846,11 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
                             try:
                                 # Create ACB message from RabbitMQ message
                                 from uuid import UUID
+
                                 message = QueueMessage(
-                                    message_id=UUID(rmq_message.message_id) if rmq_message.message_id else uuid4(),
+                                    message_id=UUID(rmq_message.message_id)
+                                    if rmq_message.message_id
+                                    else uuid4(),
                                     queue=topic,
                                     payload=rmq_message.body,
                                     priority=MessagePriority.NORMAL,
@@ -1080,6 +1093,7 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
     ) -> None:
         """Publish a message to a topic (pub/sub pattern)."""
         from uuid import uuid4
+
         queue_msg = QueueMessage(
             message_id=uuid4(),
             queue=topic,
@@ -1118,6 +1132,7 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
     ) -> AsyncIterator[AsyncIterator[PubSubMessage]]:
         """Receive messages from a subscription."""
         async with self._subscribe(subscription.topic) as queue_messages:
+
             async def convert_messages() -> AsyncGenerator[PubSubMessage]:
                 """Convert QueueMessage to PubSubMessage."""
                 async for queue_msg in queue_messages:
@@ -1129,6 +1144,7 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
                         headers=queue_msg.headers,
                     )
                     yield pubsub_msg
+
             yield convert_messages()
 
     # Queue Interface (for tasks system)
@@ -1143,6 +1159,7 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
     ) -> str:
         """Add a message to a queue."""
         from uuid import uuid4
+
         queue_msg = QueueMessage(
             message_id=uuid4(),
             queue=queue,
@@ -1242,4 +1259,4 @@ def create_rabbitmq_messaging(
 
 # Export with role-specific names for dependency injection
 RabbitMQPubSub = RabbitMQMessaging  # For events system (pubsub adapter)
-RabbitMQQueue = RabbitMQMessaging   # For tasks system (queue adapter)
+RabbitMQQueue = RabbitMQMessaging  # For tasks system (queue adapter)

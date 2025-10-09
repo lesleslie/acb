@@ -5,15 +5,18 @@ Enterprise-grade asynchronous task queue adapters for the ACB framework, providi
 ## Available Adapters
 
 ### Memory Queue (`queue.memory`)
+
 In-memory task queue with priority support and delayed execution.
 
 **Best For:**
+
 - Development and testing
 - Single-process applications
 - Temporary task queues
 - Low-latency requirements
 
 **Features:**
+
 - Priority-based task ordering
 - Delayed task scheduling
 - Memory usage limits
@@ -21,9 +24,11 @@ In-memory task queue with priority support and delayed execution.
 - Dead letter queue
 
 ### APScheduler Queue (`queue.apscheduler`) ⭐ NEW
+
 Enterprise task scheduler with persistence, clustering, and advanced scheduling.
 
 **Best For:**
+
 - Production applications requiring persistence
 - Distributed systems with clustering
 - Complex scheduling (cron, intervals)
@@ -31,6 +36,7 @@ Enterprise task scheduler with persistence, clustering, and advanced scheduling.
 - Applications with high availability requirements
 
 **Features:**
+
 - **Multiple Job Stores**: Memory, SQLAlchemy, MongoDB, Redis
 - **Multiple Executors**: Asyncio, thread pool, process pool
 - **Advanced Scheduling**: Cron expressions, intervals, one-time jobs
@@ -53,6 +59,7 @@ from acb.queues._base import TaskData, TaskHandler, TaskResult, TaskStatus
 Queue = import_adapter("queue")
 queue = depends.get(Queue)
 
+
 # Define a task handler
 class EmailHandler(TaskHandler):
     async def handle(self, task: TaskData) -> TaskResult:
@@ -67,6 +74,7 @@ class EmailHandler(TaskHandler):
             queue_name=task.queue_name,
         )
 
+
 # Register handler
 queue.register_handler("send_email", EmailHandler())
 
@@ -74,7 +82,7 @@ queue.register_handler("send_email", EmailHandler())
 task = TaskData(
     task_type="send_email",
     queue_name="notifications",
-    payload={"email": "user@example.com"}
+    payload={"email": "user@example.com"},
 )
 task_id = await queue.enqueue(task)
 
@@ -153,7 +161,7 @@ task_id = await queue.add_cron_job(
     task_type="cleanup_logs",
     cron_expression="0 2 * * *",  # Daily at 2 AM
     queue_name="maintenance",
-    payload={"retention_days": 30}
+    payload={"retention_days": 30},
 )
 
 # With timezone
@@ -161,7 +169,7 @@ task_id = await queue.add_cron_job(
     task_type="send_report",
     cron_expression="0 9 * * MON",  # Mondays at 9 AM
     timezone="America/New_York",
-    queue_name="reports"
+    queue_name="reports",
 )
 ```
 
@@ -173,7 +181,7 @@ task_id = await queue.add_interval_job(
     task_type="health_check",
     minutes=30,
     queue_name="monitoring",
-    payload={"service": "api"}
+    payload={"service": "api"},
 )
 
 # Complex intervals
@@ -181,7 +189,7 @@ task_id = await queue.add_interval_job(
     task_type="backup_database",
     hours=6,
     minutes=30,  # Every 6.5 hours
-    queue_name="backups"
+    queue_name="backups",
 )
 ```
 
@@ -196,9 +204,10 @@ await queue.resume_job(task_id)
 
 # Modify job trigger
 from apscheduler.triggers.cron import CronTrigger
+
 await queue.modify_job(
     task_id=task_id,
-    trigger=CronTrigger.from_crontab("*/10 * * * *")  # Every 10 minutes
+    trigger=CronTrigger.from_crontab("*/10 * * * *"),  # Every 10 minutes
 )
 
 # Reschedule to specific time
@@ -206,10 +215,7 @@ from apscheduler.triggers.date import DateTrigger
 from datetime import datetime, timedelta, UTC
 
 new_time = datetime.now(tz=UTC) + timedelta(hours=2)
-await queue.reschedule_job(
-    task_id=task_id,
-    trigger=DateTrigger(run_date=new_time)
-)
+await queue.reschedule_job(task_id=task_id, trigger=DateTrigger(run_date=new_time))
 
 # Cancel job
 await queue.cancel_task(task_id)
@@ -248,6 +254,7 @@ await queue.retry_dead_letter_task(task_id)
 ## Installation
 
 ### Memory Queue
+
 ```bash
 # No extra dependencies
 uv add acb
@@ -292,16 +299,16 @@ All queue adapters use the same task data model from `QueueBase`:
 from acb.queues._base import TaskData, TaskPriority
 
 task = TaskData(
-    task_id=uuid4(),              # Auto-generated if not provided
-    task_type="send_email",       # Handler registration key
-    queue_name="notifications",   # Logical queue grouping
+    task_id=uuid4(),  # Auto-generated if not provided
+    task_type="send_email",  # Handler registration key
+    queue_name="notifications",  # Logical queue grouping
     payload={"email": "user@example.com"},  # Task-specific data
-    priority=TaskPriority.HIGH,   # HIGH, NORMAL, LOW
-    max_retries=3,                # Retry attempts on failure
-    retry_count=0,                # Current retry count
-    delay=0,                      # Delay in seconds before execution
-    scheduled_at=None,            # Specific datetime to run
-    created_at=datetime.now(),    # Auto-generated
+    priority=TaskPriority.HIGH,  # HIGH, NORMAL, LOW
+    max_retries=3,  # Retry attempts on failure
+    retry_count=0,  # Current retry count
+    delay=0,  # Delay in seconds before execution
+    scheduled_at=None,  # Specific datetime to run
+    created_at=datetime.now(),  # Auto-generated
 )
 ```
 
@@ -311,6 +318,7 @@ Implement the `TaskHandler` abstract class:
 
 ```python
 from acb.queues._base import TaskHandler, TaskData, TaskResult, TaskStatus
+
 
 class MyHandler(TaskHandler):
     async def handle(self, task: TaskData) -> TaskResult:
@@ -404,10 +412,7 @@ class RobustHandler(TaskHandler):
 
     async def process_with_timeout(self, task: TaskData, timeout: int = 30):
         """Process task with timeout."""
-        return await asyncio.wait_for(
-            self.do_work(task),
-            timeout=timeout
-        )
+        return await asyncio.wait_for(self.do_work(task), timeout=timeout)
 ```
 
 ## Migration Guide
@@ -415,6 +420,7 @@ class RobustHandler(TaskHandler):
 ### From Memory to APScheduler
 
 1. **Update configuration:**
+
    ```yaml
    # Before
    queue: memory
@@ -423,14 +429,15 @@ class RobustHandler(TaskHandler):
    queue: apscheduler
    ```
 
-2. **Add persistence (recommended):**
+1. **Add persistence (recommended):**
+
    ```yaml
    queue:
      job_store_type: sqlalchemy
      job_store_url: postgresql://localhost/scheduler
    ```
 
-3. **No code changes required** - Both adapters implement `QueueBase`
+1. **No code changes required** - Both adapters implement `QueueBase`
 
 ### Upgrading to Cron/Interval Jobs
 
@@ -454,17 +461,20 @@ await queue.add_cron_job(
 ### APScheduler Jobs Not Executing
 
 1. **Check scheduler is running:**
+
    ```python
    scheduler = await queue._ensure_scheduler()
    print(f"Running: {scheduler.running}")
    ```
 
-2. **Verify handler registration:**
+1. **Verify handler registration:**
+
    ```python
    assert "my_task" in queue._handlers
    ```
 
-3. **Check job store configuration:**
+1. **Check job store configuration:**
+
    ```python
    info = await queue.get_queue_info("my_queue")
    print(info)
@@ -490,6 +500,7 @@ queue:
 ## Examples
 
 See `tests/queues/test_apscheduler_queue.py` for comprehensive examples including:
+
 - Job store configurations
 - Executor types
 - Clustering setup
@@ -524,11 +535,12 @@ See `tests/queues/test_apscheduler_queue.py` for comprehensive examples includin
 ## Contributing
 
 When adding new queue adapters, ensure:
+
 1. Extend `QueueBase` abstract class
-2. Implement all abstract methods
-3. Add comprehensive tests (40+ test cases)
-4. Include `MODULE_METADATA` with capabilities
-5. Document in this README
+1. Implement all abstract methods
+1. Add comprehensive tests (40+ test cases)
+1. Include `MODULE_METADATA` with capabilities
+1. Document in this README
 
 ## License
 

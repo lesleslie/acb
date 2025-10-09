@@ -8,7 +8,6 @@ This adapter integrates APScheduler 3.x with ACB's queue system, providing:
 - Runtime job modification capabilities
 """
 
-import asyncio
 import logging
 import typing as t
 from datetime import UTC, datetime
@@ -28,7 +27,6 @@ except ImportError:
     IntervalTrigger = None  # type: ignore[assignment,misc]
     APSCHEDULER_AVAILABLE = False
 
-from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 
 from ._base import (
     QueueBase,
@@ -39,7 +37,6 @@ from ._base import (
     TaskHandler,
     TaskResult,
     TaskStatus,
-    generate_queue_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -165,7 +162,8 @@ class Queue(QueueBase):
         scheduler = AsyncIOScheduler(
             jobstores=self._job_stores,
             executors=self._executors,
-            job_defaults=self.settings.job_defaults or {
+            job_defaults=self.settings.job_defaults
+            or {
                 "coalesce": self.settings.coalesce,
                 "max_instances": self.settings.max_instances,
                 "misfire_grace_time": self.settings.misfire_grace_time,
@@ -208,8 +206,8 @@ class Queue(QueueBase):
             )
 
         elif self.settings.job_store_type == "mongodb":
-            from apscheduler.jobstores.mongodb import MongoDBJobStore
             import pymongo
+            from apscheduler.jobstores.mongodb import MongoDBJobStore
 
             client_options = self.settings.mongodb_client_options.copy()
             # Extract connection URL if provided in job_store_url
@@ -228,8 +226,8 @@ class Queue(QueueBase):
             )
 
         elif self.settings.job_store_type == "redis":
-            from apscheduler.jobstores.redis import RedisJobStore
             import redis
+            from apscheduler.jobstores.redis import RedisJobStore
 
             # Extract connection parameters if URL provided
             if self.settings.job_store_url:
@@ -288,8 +286,8 @@ class Queue(QueueBase):
     def _setup_event_listeners(self, scheduler: AsyncIOScheduler) -> None:
         """Set up event listeners for job tracking."""
         from apscheduler.events import (
-            EVENT_JOB_EXECUTED,
             EVENT_JOB_ERROR,
+            EVENT_JOB_EXECUTED,
             EVENT_JOB_MISSED,
         )
 
@@ -359,7 +357,7 @@ class Queue(QueueBase):
             trigger = DateTrigger(run_date=datetime.now(tz=UTC))
 
         # Add job to scheduler
-        job = scheduler.add_job(
+        scheduler.add_job(
             func=self._execute_handler,
             trigger=trigger,
             args=[handler, task],
@@ -473,7 +471,9 @@ class Queue(QueueBase):
 
         # Filter by queue name if needed
         queue_jobs = [
-            job for job in jobs if job.kwargs.get("task", {}).get("queue_name") == queue_name
+            job
+            for job in jobs
+            if job.kwargs.get("task", {}).get("queue_name") == queue_name
         ]
 
         return {
@@ -627,7 +627,7 @@ class Queue(QueueBase):
             timezone=self.settings.timezone,
         )
 
-        job = scheduler.add_job(
+        scheduler.add_job(
             func=self._execute_handler,
             trigger=trigger,
             args=[handler, task],
@@ -636,7 +636,9 @@ class Queue(QueueBase):
             **job_kwargs,
         )
 
-        self.logger.info(f"Added cron job {task.task_id} with expression: {cron_expression}")
+        self.logger.info(
+            f"Added cron job {task.task_id} with expression: {cron_expression}"
+        )
 
         return task.task_id
 
@@ -681,7 +683,7 @@ class Queue(QueueBase):
             timezone=self.settings.timezone,
         )
 
-        job = scheduler.add_job(
+        scheduler.add_job(
             func=self._execute_handler,
             trigger=trigger,
             args=[handler, task],
@@ -772,7 +774,9 @@ class Queue(QueueBase):
             "id": job.id,
             "name": job.name,
             "trigger": str(job.trigger),
-            "next_run_time": job.next_run_time.isoformat() if job.next_run_time else None,
+            "next_run_time": job.next_run_time.isoformat()
+            if job.next_run_time
+            else None,
             "pending": job.pending,
             "misfire_grace_time": job.misfire_grace_time,
             "max_instances": job.max_instances,

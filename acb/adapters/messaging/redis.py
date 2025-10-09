@@ -71,18 +71,17 @@ from acb.config import Config
 from acb.depends import Inject, depends
 
 from ._base import (
-    UnifiedMessagingBackend,
-    MessagingSettings,
+    MessagePriority,
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
+    MessagingSettings,
     MessagingTimeoutError,
-    QueueMessage,
     PubSubMessage,
-    MessagePriority,
+    QueueMessage,
     Subscription,
+    UnifiedMessagingBackend,
 )
-from acb.depends import depends
 
 # Lazy imports for coredis
 _coredis_imports: dict[str, t.Any] = {}
@@ -236,6 +235,7 @@ class RedisMessaging(UnifiedMessagingBackend):
         """
         if self._logger is None:
             from acb.adapters import import_adapter
+
             Logger = import_adapter("logger")
             self._logger = depends.get(Logger)
         return self._logger
@@ -1152,6 +1152,7 @@ class RedisMessaging(UnifiedMessagingBackend):
     ) -> None:
         """Publish a message to a topic (pub/sub pattern)."""
         from uuid import uuid4
+
         queue_msg = QueueMessage(
             message_id=uuid4(),
             queue=topic,
@@ -1182,6 +1183,7 @@ class RedisMessaging(UnifiedMessagingBackend):
     ) -> AsyncIterator[AsyncIterator[PubSubMessage]]:
         """Receive messages from a subscription."""
         async with self._subscribe(subscription.topic) as queue_messages:
+
             async def convert_messages() -> AsyncGenerator[PubSubMessage]:
                 """Convert QueueMessage to PubSubMessage."""
                 async for queue_msg in queue_messages:
@@ -1193,6 +1195,7 @@ class RedisMessaging(UnifiedMessagingBackend):
                         headers=queue_msg.headers,
                     )
                     yield pubsub_msg
+
             yield convert_messages()
 
     # Queue Interface (for tasks system)
@@ -1207,6 +1210,7 @@ class RedisMessaging(UnifiedMessagingBackend):
     ) -> str:
         """Add a message to a queue."""
         from uuid import uuid4
+
         queue_msg = QueueMessage(
             message_id=uuid4(),
             queue=queue,
@@ -1235,6 +1239,7 @@ class RedisMessaging(UnifiedMessagingBackend):
         # Find the message in processing (simplified - would need tracking in real impl)
         # For now, just acknowledge by message_id
         from uuid import UUID
+
         dummy_msg = QueueMessage(
             message_id=UUID(message_id),
             queue=queue,
@@ -1250,6 +1255,7 @@ class RedisMessaging(UnifiedMessagingBackend):
     ) -> None:
         """Reject a message, optionally requeuing it."""
         from uuid import UUID
+
         dummy_msg = QueueMessage(
             message_id=UUID(message_id),
             queue=queue,
@@ -1271,7 +1277,9 @@ class RedisMessaging(UnifiedMessagingBackend):
 
 
 # Factory function
-def create_redis_messaging(settings: RedisMessagingSettings | None = None) -> RedisMessaging:
+def create_redis_messaging(
+    settings: RedisMessagingSettings | None = None,
+) -> RedisMessaging:
     """Create a Redis messaging instance.
 
     Args:
@@ -1285,4 +1293,4 @@ def create_redis_messaging(settings: RedisMessagingSettings | None = None) -> Re
 
 # Export with role-specific names for dependency injection
 RedisPubSub = RedisMessaging  # For events system (pubsub adapter)
-RedisQueue = RedisMessaging   # For tasks system (queue adapter)
+RedisQueue = RedisMessaging  # For tasks system (queue adapter)

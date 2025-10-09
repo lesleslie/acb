@@ -32,22 +32,18 @@ from collections import defaultdict, deque
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.adapters.messaging._base import (
-    UnifiedMessagingBackend,
-    MessagingSettings,
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
+    MessagingSettings,
     QueueFullError,
-    QueueEmptyError,
-    PubSubMessage,
     QueueMessage,
-    MessagePriority,
-    Subscription,
+    UnifiedMessagingBackend,
 )
 from acb.depends import depends
 
@@ -191,7 +187,7 @@ class MemoryMessaging(UnifiedMessagingBackend):
         self._settings: MemoryMessagingSettings = settings or MemoryMessagingSettings()
 
         # Connection management
-        self._client: "MemoryMessaging" | None = None
+        self._client: MemoryMessaging | None = None
         self._connection_lock = asyncio.Lock()
         self._shutdown_event = asyncio.Event()
 
@@ -225,6 +221,7 @@ class MemoryMessaging(UnifiedMessagingBackend):
         """
         if self._logger is None:
             from acb.adapters import import_adapter
+
             logger_cls = import_adapter("logger")
             self._logger = depends.get(logger_cls)
         return self._logger
@@ -923,4 +920,4 @@ class MemoryMessaging(UnifiedMessagingBackend):
 # Export with role-specific names for DI
 # These allow the same implementation to be used for both patterns
 MemoryPubSub = MemoryMessaging  # For events system (pub/sub)
-MemoryQueue = MemoryMessaging   # For tasks system (queues)
+MemoryQueue = MemoryMessaging  # For tasks system (queues)
