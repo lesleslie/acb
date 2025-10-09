@@ -739,7 +739,7 @@ attrs: false
 ### Dependency Injection Usage
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from acb.config import Config
 

@@ -637,7 +637,7 @@ ACB features a simple yet powerful dependency injection system that makes compon
 ```python
 import typing as t
 
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 from acb.logger import Logger
 from ._base import MyServiceBase
@@ -660,8 +660,8 @@ depends.set(MyService)  # Now MyService is available in the dependency registry
 @depends.inject  # This decorator automatically injects the dependencies
 async def process_data(
     data: dict[str, t.Any],
-    config: Inject[Config],  # Type-safe injection
-    logger: Inject[Logger],  # Type-safe injection
+    config: Inject[Config],  # Type-safe injection from acb.depends
+    logger: Inject[Logger],  # Type-safe injection from acb.depends
 ):
     # Now you can use config and logger without manually creating them
     logger.info(f"Processing data with app: {config.app.name}")
@@ -770,7 +770,7 @@ Here are some common patterns and examples that will help you get started with A
 Dependency injection is a core concept in ACB. Here's how to use it effectively:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 from acb.adapters import import_adapter
 
@@ -781,8 +781,8 @@ Cache, Storage = import_adapter()  # This gets the configured cache and storage 
 # Method 1: Using depends.get() directly
 def direct_injection_example():
     # Get instances when you need them
-    config = depends.get()
-    cache = depends.get()
+    config = depends.get(Config)
+    cache = depends.get(Cache)
 
     # Use the components
     print(f"App name: {config.app.name}")
@@ -792,9 +792,9 @@ def direct_injection_example():
 @depends.inject
 async def process_file(
     filename: str,
-    cache: Inject[Cache],  # Type-safe injection
-    storage: Inject[Storage],  # Type-safe injection
-    config: Inject[Config],  # Type-safe injection
+    cache: Inject[Cache],  # Type-safe injection from acb.depends
+    storage: Inject[Storage],  # Type-safe injection from acb.depends
+    config: Inject[Config],  # Type-safe injection from acb.depends
 ):
     # All dependencies are automatically provided
     print(f"Processing {filename} for app {config.app.name}")
@@ -917,7 +917,7 @@ Here are some common use cases for ACB and how to implement them:
 ACB is great for building data processing pipelines that need to handle different data sources and storage options:
 
 ```python
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from acb.actions.encode import encode, decode
 from acb.actions.compress import compress, decompress
@@ -931,7 +931,7 @@ SQL = import_adapter("sql")
 
 @depends.inject
 async def process_data_pipeline(
-    data_id: str, storage=depends(Storage), cache=depends(Cache), sql=depends(SQL)
+    data_id: str, storage: Inject[Storage], cache: Inject[Cache], sql: Inject[SQL]
 ):
     # Step 1: Check if processed data is in cache
     processed_data = await cache.get(f"processed:{data_id}")
@@ -968,7 +968,7 @@ async def process_data_pipeline(
 ACB's configuration system makes it easy to build a configuration management system:
 
 ```python
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.config import Config, Settings
 from pydantic import SecretStr
 
@@ -991,7 +991,7 @@ class ApiSettings(Settings):
 
 # Access configuration
 @depends.inject
-async def initialize_services(config=depends(Config)):
+async def initialize_services(config: Inject[Config]):
     # Access standard app settings
     app_name = config.app.name
     app_version = config.app.version
@@ -1012,7 +1012,7 @@ async def initialize_services(config=depends(Config)):
 ACB's cache adapter makes it easy to implement caching:
 
 ```python
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from acb.actions.encode import encode, decode
 import typing as t
@@ -1023,7 +1023,7 @@ Cache = import_adapter("cache")
 
 
 @depends.inject
-async def get_user_data(user_id: int, cache=depends(Cache)):
+async def get_user_data(user_id: int, cache: Inject[Cache]):
     # Try to get from cache first
     cache_key = f"user:{user_id}"
     cached_data = await cache.get(cache_key)

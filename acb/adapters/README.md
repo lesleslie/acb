@@ -263,7 +263,7 @@ async def cache_example():
 ### Injecting Adapters Into Functions
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 import typing as t
 
@@ -301,7 +301,7 @@ async def process_file(
 import typing as t
 
 from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 # Import multiple adapters simultaneously
@@ -489,7 +489,7 @@ payment: stripe
 ### 6. Use Your Custom Adapter
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 # Import your adapter

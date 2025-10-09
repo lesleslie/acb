@@ -88,7 +88,7 @@ cache:
 ## Basic Usage
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 # Import the cache adapter (automatically selects the one enabled in config)
@@ -167,7 +167,7 @@ await cache.expire("existing:key", ttl=120)
 Use cache decorators to automatically cache function results:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")
@@ -345,7 +345,7 @@ The Cache adapter works well with other ACB adapters:
 Common integration patterns:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 

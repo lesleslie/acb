@@ -13,7 +13,7 @@ ACB provides a powerful logging system based on [Loguru](https://loguru.readthed
 ACB's logging system is built for async applications:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -136,7 +136,7 @@ logger: structlog
 ### Context Managers for Logging
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 import time
 
@@ -168,7 +168,7 @@ async def operation_with_logging_context(logger: Inject[Logger]):
 ### Custom Log Formatting
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -189,7 +189,7 @@ async def custom_formatting_example(logger: Inject[Logger]):
 
 ```python
 from acb.debug import debug, timeit
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -254,7 +254,7 @@ logger.add("logs/structured.json", serialize=True, level="INFO")
 ### Async Logging Performance
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 import asyncio
 
@@ -281,7 +281,7 @@ async def high_performance_logging(logger: Inject[Logger]):
 ### Conditional Logging
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 from acb.logger import Logger
 
@@ -303,7 +303,7 @@ async def conditional_logging(
 ### Exception Logging
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -340,7 +340,7 @@ async def error_handling_example(logger: Inject[Logger]):
 
 ```python
 import asyncio
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -390,7 +390,7 @@ async def retry_with_logging(
 
 ```python
 from fastapi import FastAPI, Request
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 import time
 
@@ -426,7 +426,7 @@ async def log_request_middleware(request: Request, call_next, logger: Inject[Log
 ### Data Pipeline Logging
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 from acb.debug import timeit
 

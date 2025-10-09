@@ -126,7 +126,7 @@ domain:example.com  # Missing space after colon
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 # Get the adapter class (not instance)
 Cache = import_adapter("cache")

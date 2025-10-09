@@ -45,6 +45,12 @@ All notable changes to ACB (Asynchronous Component Base) will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.1] - 2025-10-09
+
+### Internal
+
+- config: Update pyproject
+
 ## [0.24.0] - 2025-01-10
 
 ### BREAKING CHANGES
@@ -55,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All composite groups (api, webapp, cloud-native, etc.) now have flattened dependencies
   - Zero self-references - eliminates circular dependency errors
   - Full UV compatibility with modern dependency group standards
-  - See [MIGRATION-0.24.0.md](<./MIGRATION-0.24.0.md>) for upgrade instructions
+  - See [MIGRATION-0.24.0.md](./MIGRATION-0.24.0.md) for upgrade instructions
 
 ### Changed
 
@@ -73,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Migration Required
 
-Users **must** update installation commands to use the new `--group` syntax. See [MIGRATION-0.24.0.md](<./MIGRATION-0.24.0.md>) for detailed migration steps and examples.
+Users **must** update installation commands to use the new `--group` syntax. See [MIGRATION-0.24.0.md](./MIGRATION-0.24.0.md) for detailed migration steps and examples.
 
 **Quick Migration**:
 

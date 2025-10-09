@@ -74,7 +74,7 @@ sql:
 Register expensive services as singletons:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 # Register once during startup
 expensive_service = ExpensiveService()
@@ -93,7 +93,7 @@ async def fast_function(service: Inject[ExpensiveService]):
 Use type annotations for faster dependency resolution:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 # Fast - type-based lookup with Inject
@@ -116,7 +116,7 @@ Optimize caching strategy:
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 Cache = import_adapter("cache")
 
@@ -142,7 +142,7 @@ Optimize database operations:
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 SQL = import_adapter("sql")
 
@@ -171,7 +171,7 @@ Optimize file operations:
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 Storage = import_adapter("storage")
 
@@ -340,7 +340,7 @@ sql:
 Remove debug overhead in production:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -360,7 +360,7 @@ Use async patterns effectively:
 
 ```python
 import asyncio
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 @depends.inject
@@ -381,7 +381,7 @@ Control concurrency to prevent resource exhaustion:
 
 ```python
 import asyncio
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 # Limit concurrent database connections
 db_semaphore = asyncio.Semaphore(10)
@@ -439,7 +439,7 @@ Implement custom performance metrics:
 
 ```python
 import time
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -570,7 +570,7 @@ services:
 Implement health check endpoints:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 @depends.inject

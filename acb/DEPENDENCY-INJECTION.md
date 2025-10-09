@@ -49,7 +49,7 @@ ACB's dependency injection system is built on the [bevy](https://github.com/bevy
 The central dependency injection interface provides three main functions:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 # Register a dependency
 depends.set(MyClass, instance)
@@ -87,7 +87,7 @@ async def my_function(config: Inject[Config], logger: Inject[Logger]):
 Register your own components:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 class MyService:
@@ -138,7 +138,7 @@ async def process_data(cache: Inject[Cache], storage: Inject[Storage]):
 The most common pattern using the `@depends.inject` decorator:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 import typing as t
 
@@ -166,7 +166,7 @@ async def process_user_data(
 For cases where decorator injection isn't suitable:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -185,7 +185,7 @@ async def manual_retrieval():
 For service classes:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -207,7 +207,7 @@ class UserService:
 ### Conditional Dependencies
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -223,7 +223,7 @@ async def conditional_processing(data: dict, config: Inject[Config]):
 ### Factory Pattern
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 class ServiceFactory:
@@ -274,7 +274,7 @@ depends.set(UserService)
 
 ```python
 import typing as t
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 # Import adapter types
@@ -298,7 +298,7 @@ async def typed_function(
 
 ```python
 import typing as t
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 T = t.TypeVar("T")
 
@@ -316,7 +316,7 @@ async def generic_processor(data: T, config: Inject[Config]) -> T:
 ```python
 import pytest
 from unittest.mock import AsyncMock
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 @pytest.fixture
@@ -343,7 +343,7 @@ async def test_function_with_mocks(mock_cache):
 
 ```python
 import pytest
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 
 
 @pytest.fixture(autouse=True)

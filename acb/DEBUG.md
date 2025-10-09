@@ -163,7 +163,7 @@ Get information about calling modules:
 
 ```python
 from acb.debug import get_calling_module, patch_record
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -184,7 +184,7 @@ Enable debugging based on conditions:
 
 ```python
 from acb.debug import debug
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -234,7 +234,7 @@ Debug output can be routed through the logging system:
 
 ```python
 from acb.debug import debug
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -254,7 +254,7 @@ Combine debug output with structured logging:
 
 ```python
 from acb.debug import debug, pprint
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.logger import Logger
 
 
@@ -281,7 +281,7 @@ async def structured_debugging(operation: str, data: dict, logger: Inject[Logger
 
 ```python
 from acb.debug import debug
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -300,7 +300,7 @@ async def environment_aware_debug(config: Inject[Config]):
 
 ```python
 from acb.debug import debug, timeit
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -403,7 +403,7 @@ debug:
 ```python
 from fastapi import FastAPI, Depends
 from acb.debug import debug, timeit
-from acb.depends import Inject, depends as acb_depends
+from acb.depends import depends, Inject as acb_depends
 
 app = FastAPI()
 

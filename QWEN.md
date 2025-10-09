@@ -117,7 +117,7 @@ file_hash = hash.blake3(b"file content")
 Adapters provide standardized interfaces to external systems:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 # Import adapter classes
@@ -172,7 +172,7 @@ storage: file          # Use file system storage
 ACB features a simple yet powerful dependency injection system:
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 
@@ -240,7 +240,7 @@ For production deployment, ensure:
 ### 1. Using Dependency Injection
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 # Import adapters

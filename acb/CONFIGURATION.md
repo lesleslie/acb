@@ -74,7 +74,7 @@ class DebugSettings(Settings):
 ### Accessing Configuration
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.config import Config
 
 

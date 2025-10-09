@@ -195,7 +195,7 @@ class UserService(ServiceBase):
 #### After (v0.19.1+)
 
 ```python
-from acb.depends import Inject, depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")
