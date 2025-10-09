@@ -134,16 +134,29 @@ class SqlSettings(SqlBaseSettings):
         self._async_url = make_url(final_url)
 
     def _setup_local_urls(self) -> None:
-        if self.database_url.startswith("sqlite:///"):
-            db_path = self.database_url[10:]
+        # Extract database path, handling various URL formats
+        if ":///" in self.database_url:
+            # Handle sqlite:/// or sqlite+driver:/// formats
+            db_path = self.database_url.split(":///", 1)[1]
+        elif "://" in self.database_url:
+            # Handle sqlite:// format
+            db_path = self.database_url.split("://", 1)[1]
         else:
+            # Plain path
             db_path = self.database_url
 
-        # Only create directories for actual file paths, not for :memory: or invalid paths
-        if db_path != ":memory:" and not db_path.endswith(":"):
-            # Validate it's a proper file path (not a driver name)
-            if "/" in db_path or "\\" in db_path or db_path.endswith(".db"):
-                Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        # Only create directories for actual file paths
+        # Skip :memory:, empty paths, and paths that look like driver names
+        should_create_dir = (
+            db_path
+            and db_path != ":memory:"
+            and not db_path.endswith(":")
+            and ("/" in db_path or "\\" in db_path)
+            and not db_path.startswith("sqlite+")  # Don't create dirs for driver names
+        )
+
+        if should_create_dir:
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
         query_params = {}
         if self.wal_mode:
@@ -176,9 +189,25 @@ class Sql(SqlBase):
     async def _create_client(self) -> t.Any:
         self.logger.debug(self.config.sql._async_url)
         if not self.config.sql.is_turso:
-            db_path = Path(self.config.sql.database_url.replace("sqlite:///", ""))
-            if not db_path.parent.exists():
-                db_path.parent.mkdir(parents=True, exist_ok=True)
+            # Extract database path properly
+            db_url = self.config.sql.database_url
+            if ":///" in db_url:
+                db_path_str = db_url.split(":///", 1)[1]
+            elif "://" in db_url:
+                db_path_str = db_url.split("://", 1)[1]
+            else:
+                db_path_str = db_url
+
+            # Only create directory for valid file paths
+            if (
+                db_path_str
+                and db_path_str != ":memory:"
+                and not db_path_str.startswith("sqlite+")
+                and ("/" in db_path_str or "\\" in db_path_str)
+            ):
+                db_path = Path(db_path_str)
+                if not db_path.parent.exists():
+                    db_path.parent.mkdir(parents=True, exist_ok=True)
         from sqlalchemy.ext.asyncio import create_async_engine
 
         engine = create_async_engine(

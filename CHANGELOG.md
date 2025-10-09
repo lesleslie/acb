@@ -45,6 +45,12 @@ All notable changes to ACB (Asynchronous Component Base) will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.2] - 2025-10-09
+
+### Fixed
+
+- docs: Update 20 files
+
 ## [0.25.1] - 2025-10-09
 
 ### Internal

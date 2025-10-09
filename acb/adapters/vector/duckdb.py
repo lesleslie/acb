@@ -45,11 +45,6 @@ class VectorSettings(VectorBaseSettings):
     threads: int = 4
     enable_vss: bool = True
 
-    def __init__(self, **values: t.Any) -> None:
-        super().__init__(**values)
-        # Ensure database directory exists
-        Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
-
 
 class Vector(VectorBase):
     """DuckDB vector adapter implementation."""
@@ -58,8 +53,13 @@ class Vector(VectorBase):
         """Create DuckDB connection with VSS extension."""
         import duckdb
 
+        # Ensure database directory exists before creating connection
+        db_path = self.config.vector.database_path
+        if db_path != ":memory:" and ("/" in db_path or "\\" in db_path):
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
         conn = duckdb.connect(
-            self.config.vector.database_path,
+            db_path,
             config={
                 "memory_limit": self.config.vector.memory_limit,
                 "threads": self.config.vector.threads,
