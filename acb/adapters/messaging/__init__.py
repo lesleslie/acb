@@ -19,7 +19,8 @@ This package provides unified messaging backends with two interfaces:
 Available Implementations:
 - Memory: In-memory for development/testing
 - Redis: Redis-backed for distributed systems
-- RabbitMQ: Enterprise messaging with AMQP
+- RabbitMQ: Enterprise messaging with AMQP (via aio-pika)
+- aiormq: RabbitMQ messaging with aiormq library
 
 Example Usage:
     ```python

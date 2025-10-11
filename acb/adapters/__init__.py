@@ -534,10 +534,12 @@ STATIC_ADAPTER_MAPPINGS = {
     "pubsub.memory": ("acb.adapters.messaging.memory", "MemoryPubSub"),
     "pubsub.redis": ("acb.adapters.messaging.redis", "RedisPubSub"),
     "pubsub.rabbitmq": ("acb.adapters.messaging.rabbitmq", "RabbitMQPubSub"),
+    "pubsub.aiormq": ("acb.adapters.messaging.aiormq", "AioRmqPubSub"),
     # Queue adapters for tasks system
     "queue.memory": ("acb.adapters.messaging.memory", "MemoryQueue"),
     "queue.redis": ("acb.adapters.messaging.redis", "RedisQueue"),
     "queue.rabbitmq": ("acb.adapters.messaging.rabbitmq", "RabbitMQQueue"),
+    "queue.aiormq": ("acb.adapters.messaging.aiormq", "AioRmqQueue"),
     # Task system adapters
     "tasks.memory": ("acb.tasks.memory", "TaskSystem"),
     "tasks.redis": ("acb.tasks.redis", "TaskSystem"),

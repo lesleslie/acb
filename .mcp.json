@@ -40,7 +40,7 @@
       ],
       "type": "stdio"
     },
-    "filesystem": {
+    "rust-filesystem": {
       "command": "rust-mcp-filesystem",
       "args": [
         "-w",
