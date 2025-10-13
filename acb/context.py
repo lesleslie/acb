@@ -4,23 +4,20 @@ This module provides centralized state management for ACB, replacing the
 previous global state variables with a proper context class.
 """
 
-from __future__ import annotations
 
 import asyncio
 import typing as t
 from contextvars import ContextVar
 
+from anyio import Path as AsyncPath
 from pydantic import BaseModel, ConfigDict
 
-if t.TYPE_CHECKING:
-    from anyio import Path as AsyncPath
-
-    from .actions import Action
-    from .adapters import Adapter
+from .actions import Action
+from .adapters import Adapter
 
 
 @t.runtime_checkable
-class ACBContextProtocol(t.Protocol):
+class ContextProtocol(t.Protocol):
     """Protocol defining the ACB context interface."""
 
     async def ensure_registration(self) -> None:
@@ -50,7 +47,7 @@ class Pkg(BaseModel):
     adapters: list[Adapter] = []
 
 
-class ACBContext:
+class Context:
     """Centralized context for ACB state management.
 
     This class encapsulates all global state that was previously scattered
@@ -192,18 +189,18 @@ class ACBContext:
 
 
 # Global context instance - still a singleton but encapsulated
-_global_context: ACBContext | None = None
+_global_context: Context | None = None
 
 
-def get_context() -> ACBContext:
+def get_context() -> Context:
     """Get the global ACB context."""
     global _global_context
     if _global_context is None:
-        _global_context = ACBContext()
+        _global_context = Context()
     return _global_context
 
 
-def set_context(context: ACBContext) -> None:
+def set_context(context: Context) -> None:
     """Set the global ACB context (mainly for testing)."""
     global _global_context
     _global_context = context

@@ -24,7 +24,7 @@ from acb.adapters.graph._base import (
     GraphTraversalDirection,
 )
 from acb.config import Config
-from acb.depends import Inject
+from acb.depends import Inject, depends
 
 if t.TYPE_CHECKING:
     from arango import ArangoClient
@@ -59,11 +59,11 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["python-arango>=7.0.0"],
     description="High-performance ArangoDB multi-model database adapter with AQL query support",
-    settings_class="ArangoDBSettings",
+    settings_class="GraphSettings",
 )
 
 
-class ArangoDBSettings(GraphBaseSettings):
+class GraphSettings(GraphBaseSettings):
     """ArangoDB-specific settings."""
 
     # ArangoDB connection settings
@@ -998,3 +998,5 @@ class Graph(GraphBase):
                 else None
             ),
         )
+
+depends.set(Graph, "arangodb")

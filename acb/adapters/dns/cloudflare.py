@@ -292,4 +292,4 @@ class Dns(DnsBase):
         await self._create_record(record)
 
 
-depends.set(Dns)
+depends.set(Dns, "cloudflare")

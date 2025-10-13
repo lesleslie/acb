@@ -9,12 +9,9 @@ from rich.padding import Padding
 from rich.table import Table
 
 # Re-exports for backward compatibility
-from .actions import Action as Action
 from .actions import action_registry
-from .adapters import Adapter as Adapter
 from .adapters import get_adapters
 from .console import console
-from .context import Pkg as Pkg
 from .context import get_context
 
 # Services layer imports
@@ -66,7 +63,7 @@ def register_pkg(name: str | None = None, path: AsyncPath | None = None) -> None
         name: Package name (optional, will be inferred from caller if not provided)
         path: Package path (optional, will be inferred from caller if not provided)
     """
-    context = get_context()
+    ctx = get_context()
 
     if name is None or path is None:
         # Fallback to frame inspection only if arguments not provided
@@ -82,13 +79,13 @@ def register_pkg(name: str | None = None, path: AsyncPath | None = None) -> None
         path = path or inferred_path
 
     # Use async-safe context method - register immediately to queue
-    context._lazy_registration_queue.append((name, path))
+    ctx._lazy_registration_queue.append((name, path))
 
 
 async def ensure_registration() -> None:
     """Ensure all packages are registered."""
-    context = get_context()
-    await context.ensure_registration()
+    ctx = get_context()
+    await ctx.ensure_registration()
 
 
 # Backward compatibility alias
@@ -107,17 +104,17 @@ table_args: dict[str, t.Any] = {
 
 async def display_components() -> None:
     """Display registered components in a formatted table."""
-    context = get_context()
+    ctx = get_context()
     await ensure_registration()
 
-    if not context.is_deployed():
-        _display_packages_table(context)
+    if not ctx.is_deployed():
+        _display_packages_table(ctx)
         _display_actions_table()
         _display_adapters_table()
         _display_services_table()
 
 
-def _display_packages_table(context: t.Any) -> None:
+def _display_packages_table(ctx: t.Any) -> None:
     """Display packages table."""
     pkgs = Table(
         title="[b][u bright_white]A[/u bright_white][bright_green]synchronous [u bright_white]C[/u bright_white][bright_green]omponent [u bright_white]B[/u bright_white][bright_green]ase[/b]",
@@ -125,7 +122,7 @@ def _display_packages_table(context: t.Any) -> None:
     )
     for prop in ("Pkg", "Path"):
         pkgs.add_column(prop)
-    for i, pkg in enumerate(context.pkg_registry.get()):
+    for i, pkg in enumerate(ctx.pkg_registry.get()):
         pkgs.add_row(
             pkg.name,
             str(pkg.path),

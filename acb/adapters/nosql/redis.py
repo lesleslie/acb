@@ -370,4 +370,4 @@ class Nosql(NosqlBase):
             self._transaction = None
 
 
-depends.set(Nosql)
+depends.set(Nosql, "redis")

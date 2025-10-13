@@ -269,4 +269,4 @@ class Storage(StorageBase):
             return False
 
 
-depends.set(Storage)
+depends.set(Storage, "file")

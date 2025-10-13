@@ -217,10 +217,10 @@ The following adapter-specific dependency groups are available:
 
 ## Configuration
 
-Adapters are configured in the `settings/adapters.yml` file. This file defines which implementation of each adapter type will be used:
+Adapters are configured in the `settings/adapters.yaml` file. This file defines which implementation of each adapter type will be used:
 
 ```yaml
-# Example adapters.yml
+# Example adapters.yaml
 cache: redis       # Use Redis for caching
 logger: loguru     # Use Loguru for logging
 sql: pgsql         # Use PostgreSQL for SQL database (or: mysql, sqlite)
@@ -229,7 +229,7 @@ storage: s3        # Use S3 for storage
 secret:            # Secret adapter is disabled
 ```
 
-Each adapter can be further configured in `settings/app.yml`:
+Each adapter can be further configured in `settings/app.yaml`:
 
 ```yaml
 # Example adapter-specific settings
@@ -482,7 +482,7 @@ register_package(Path(__file__).parent)
 ### 5. Configure the Adapter
 
 ```yaml
-# settings/adapters.yml
+# settings/adapters.yaml
 payment: stripe
 ```
 
@@ -514,7 +514,7 @@ If you were using the old dynamic discovery system, you'll need to:
 ## Adapter Lifecycle
 
 1. **Registration**: Adapters are discovered and registered during application startup
-1. **Configuration**: The enabled adapter for each category is determined from `adapters.yml`
+1. **Configuration**: The enabled adapter for each category is determined from `adapters.yaml`
 1. **Initialization**: The `init()` method is called when the adapter is first accessed
 1. **Usage**: The adapter is used throughout the application lifecycle
 1. **Cleanup**: If needed, cleanup is handled when the application shuts down

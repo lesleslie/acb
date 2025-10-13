@@ -394,4 +394,4 @@ class Cache(CacheBase, SSLConfigMixin):
             raise
 
 
-depends.set(Cache)
+depends.set(Cache, "redis")

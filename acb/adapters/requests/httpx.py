@@ -209,4 +209,4 @@ class Requests(RequestsBase):
         self.logger.debug("HTTPX adapter initialized with lazy loading")
 
 
-depends.set(Requests)
+depends.set(Requests, "httpx")

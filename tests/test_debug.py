@@ -3,7 +3,6 @@ from typing import Any, Final
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from rich.console import Console
 from acb.debug import (
     colorized_stderr_print,
     debug,
@@ -19,6 +18,7 @@ TEST_DEBUG_MSG: Final[str] = "test debug message"
 
 @pytest.fixture
 def mock_console() -> MagicMock:
+    from rich.console import Console
     console = MagicMock(spec=Console)
     console.print = MagicMock()
     return console

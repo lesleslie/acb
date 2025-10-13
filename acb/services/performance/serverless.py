@@ -185,7 +185,7 @@ class ServerlessOptimizer(ServiceBase):
             try:
                 start_time = time.perf_counter()
                 adapter_class = import_adapter(adapter_name)
-                adapter_instance = depends.get(adapter_class)
+                adapter_instance = await depends.get(adapter_class)
 
                 # Initialize adapter if it has async initialization
                 if hasattr(adapter_instance, "initialize"):
@@ -391,7 +391,7 @@ class AdapterPreInitializer:
             if eager:
                 # Eager initialization
                 adapter_class = import_adapter(adapter_name)
-                adapter_instance = depends.get(adapter_class)
+                adapter_instance = await depends.get(adapter_class)
 
                 if hasattr(adapter_instance, "initialize"):
                     await adapter_instance.initialize()
@@ -402,7 +402,7 @@ class AdapterPreInitializer:
                 # Lazy initialization
                 async def factory() -> t.Any:
                     adapter_class = import_adapter(adapter_name)
-                    adapter_instance = depends.get(adapter_class)
+                    adapter_instance = await depends.get(adapter_class)
 
                     if hasattr(adapter_instance, "initialize"):
                         await adapter_instance.initialize()

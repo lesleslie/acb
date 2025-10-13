@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Requests](./README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Requests](<./README.md>)
 
 # Requests Adapter
 
@@ -6,21 +6,21 @@ The Requests adapter provides a standardized interface for making HTTP requests 
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Available Implementations](#available-implementations)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Basic Usage](#basic-usage)
-- [Advanced Usage](#advanced-usage)
-  - [Working with Response Objects](#working-with-response-objects)
-  - [Request Caching](#request-caching)
-  - [Custom Headers](#custom-headers)
-  - [Authentication](#authentication)
-- [Troubleshooting](#troubleshooting)
-- [Performance Considerations](#performance-considerations)
-- [Implementation Details](#implementation-details)
-- [Related Adapters](#related-adapters)
-- [Additional Resources](#additional-resources)
+- [Overview](<#overview>)
+- [Available Implementations](<#available-implementations>)
+- [Installation](<#installation>)
+- [Configuration](<#configuration>)
+- [Basic Usage](<#basic-usage>)
+- [Advanced Usage](<#advanced-usage>)
+  - [Working with Response Objects](<#working-with-response-objects>)
+  - [Request Caching](<#request-caching>)
+  - [Custom Headers](<#custom-headers>)
+  - [Authentication](<#authentication>)
+- [Troubleshooting](<#troubleshooting>)
+- [Performance Considerations](<#performance-considerations>)
+- [Implementation Details](<#implementation-details>)
+- [Related Adapters](<#related-adapters>)
+- [Additional Resources](<#additional-resources>)
 
 ## Overview
 
@@ -55,7 +55,7 @@ uv add "acb[requests,redis,cache]"
 
 ### Settings
 
-Configure the Requests adapter in your `settings/adapters.yml` file:
+Configure the Requests adapter in your `settings/adapters.yaml` file:
 
 ```yaml
 # Use HTTPX implementation
@@ -70,7 +70,7 @@ requests: null
 
 ### Requests Settings
 
-The Requests adapter settings can be customized in your `settings/app.yml` file:
+The Requests adapter settings can be customized in your `settings/app.yaml` file:
 
 ```yaml
 requests:
@@ -319,9 +319,9 @@ class Requests(RequestsBase):
 
 The Requests adapter works well with these other ACB adapters:
 
-- [**Cache Adapter**](../cache/README.md): Used indirectly for response caching
-- [**Secret Adapter**](../secret/README.md): Store API keys and credentials securely
-- [**NoSQL Adapter**](../nosql/README.md): Store API responses for longer-term persistence
+- [**Cache Adapter**](<../cache/README.md>): Used indirectly for response caching
+- [**Secret Adapter**](<../secret/README.md>): Store API keys and credentials securely
+- [**NoSQL Adapter**](<../nosql/README.md>): Store API responses for longer-term persistence
 
 Integration example:
 
@@ -370,6 +370,6 @@ async def fetch_and_store_weather():
 - [HTTPX Documentation](https://www.python-httpx.org/)
 - [Hishel Documentation](https://github.com/karpetrosyan/hishel)
 - [HTTP Status Codes](https://httpstatuses.com/)
-- [ACB Cache Adapter](../cache/README.md)
-- [ACB Secret Adapter](../secret/README.md)
-- [ACB Adapters Overview](../README.md)
+- [ACB Cache Adapter](<../cache/README.md>)
+- [ACB Secret Adapter](<../secret/README.md>)
+- [ACB Adapters Overview](<../README.md>)

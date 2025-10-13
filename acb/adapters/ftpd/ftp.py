@@ -267,4 +267,4 @@ class Ftpd(FtpdBase):
                 os.rmdir(temp_dir)
 
 
-depends.set(Ftpd)
+depends.set(Ftpd, "ftp")

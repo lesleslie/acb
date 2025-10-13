@@ -27,15 +27,17 @@ ACB (Asynchronous Component Base) is a **minimalist Python framework** built on 
 - **Async-First Design**: Built for high-performance asynchronous operations
 - **Action Utilities**: Self-contained utility functions for common tasks
 
-### What ACB Doesn't Do (Simplified in v0.19.1+)
+### What ACB Does (Since v0.19.1+)
 
-ACB intentionally removed complex enterprise features:
+ACB focuses on clean adapter interfaces while maintaining essential enterprise features:
 
-- ❌ Services layer, events system, queues, workflows (removed in v0.19.1)
-- ❌ Complex monitoring and health checking frameworks
-- ❌ Advanced retry mechanisms and circuit breakers
-- ❌ Multi-tier caching strategies and query builders
-- ❌ Distributed tracing and observability frameworks
+- ✅ Unified Adapter Interfaces: Clean, consistent APIs for external systems
+- ✅ Services layer: Standardized service patterns with lifecycle management
+- ✅ Events system: Event-driven architecture for communication between components
+- ✅ Dependency Injection: Automatic component wiring using the `bevy` framework
+- ✅ Configuration Management: YAML-based settings with hot-reload support
+- ✅ Actions System: Self-contained utility functions for common tasks
+- ✅ Async-First Design: Built for high-performance asynchronous operations
 
 ## Core Design Principles
 
@@ -96,6 +98,8 @@ async with sql.get_session() as session:
 
 ## Architecture Layers
 
+ACB follows a layered architecture with clear separation of concerns:
+
 ```
 ┌─────────────────────────────────────────┐
 │        Application Layer                │
@@ -103,7 +107,25 @@ async with sql.get_session() as session:
 └─────────────────────────────────────────┘
                     │
 ┌─────────────────────────────────────────┐
+│         Services Layer                  │
+│ (Business logic and lifecycle mgmt)     │
+│ - Repository: Data access patterns      │
+│ - Validation: Data validation & security│
+│ - Performance: Optimization services    │
+└─────────────────────────────────────────┘
+                    │
+┌─────────────────────────────────────────┐
+│         Orchestration Layer             │
+│ (Communication & process management)    │
+│ - Events: Event-driven communication    │
+│ - Tasks: Background job processing      │
+│ - Workflows: Process orchestration      │
+│ - MCP: AI/ML model context protocol     │
+└─────────────────────────────────────────┘
+                    │
+┌─────────────────────────────────────────┐
 │         Adapter Layer                   │
+│  (External system integration)          │
 │  (Cache, SQL, NoSQL, Storage, etc.)     │
 └─────────────────────────────────────────┘
                     │
@@ -112,6 +134,48 @@ async with sql.get_session() as session:
 │  (Config, DI, Logger, Context, SSL)     │
 └─────────────────────────────────────────┘
 ```
+
+### Layer Responsibilities
+
+**Application Layer:**
+- Contains application-specific business logic
+- Uses ACB components to implement domain functionality
+- Frameworks like FastBlocks operate at this layer
+
+**Services Layer:**
+- Provides stateful components with lifecycle management
+- Implements business services with health checks and metrics
+- Handles domain-specific operations (repository, validation, performance)
+
+**Orchestration Layer:**
+- Manages communication between components
+- Handles background processing and task execution
+- Orchestrates multi-step processes and workflows
+- Provides AI/ML integration interfaces (MCP)
+
+**Adapter Layer:**
+- Provides standardized interfaces to external systems
+- Abstracts implementation details of external services
+- Enables configuration-driven implementation selection
+
+**Core Infrastructure:**
+- Provides foundational services for the framework
+- Handles configuration, dependency injection, and logging
+- Ensures consistent cross-cutting concerns
+
+### Development & Deployment Tools
+
+ACB also includes specialized tools for development and deployment that operate outside the runtime architecture:
+
+**Migration Tools:**
+- Provides version migration capabilities for ACB applications
+- Handles compatibility between different ACB versions
+- Supports rollback and validation of migrations
+
+**Testing Infrastructure:**
+- Comprehensive testing utilities and fixtures
+- Mocking capabilities for all ACB components
+- Performance testing tools
 
 ## Core Systems
 
@@ -302,7 +366,8 @@ class SimpleAdapter(CleanupMixin):
 
 ## Actions System
 
-Self-contained utility functions organized by verb-based actions:
+Stateless utility functions organized by verb-based actions (not a runtime architectural layer). Actions provide simple, stateless operations that can be used across all architectural layers:
+
 
 ```python
 # Compression actions
@@ -440,16 +505,18 @@ class FastBlocksEndpoint(HTTPEndpoint):
 
 ## Summary
 
-ACB's simplified architecture (v0.19.1+) focuses on:
+ACB's comprehensive architecture (v0.20.0+) focuses on:
 
 - **Clean Adapter Interfaces**: Unified APIs for external systems
-- **Minimal Core**: Config, DI, Logger, Context, SSL
-- **Essential Features Only**: No over-engineering
+- **Services Layer**: Lifecycle management for stateful components
+- **Orchestration Layer**: Events, Tasks, and Workflow management
+- **Essential Core**: Config, DI, Logger, Context, SSL
 - **Async Performance**: Built for high-throughput applications
 - **Developer Experience**: Convention over configuration
 
-For more information:
+For implementation guidance:
 
+- [ARCHITECTURE_IMPLEMENTATION_GUIDE.md](<./ARCHITECTURE_IMPLEMENTATION_GUIDE.md>) - Complete guide to architectural layers and implementation patterns
 - [ACTION_TEMPLATE.md](<./ACTION_TEMPLATE.md>) - Creating custom actions
 - [ADAPTER_TEMPLATE.md](<./ADAPTER_TEMPLATE.md>) - Creating custom adapters
 - [PERFORMANCE-GUIDE.md](<./PERFORMANCE-GUIDE.md>) - Performance optimization

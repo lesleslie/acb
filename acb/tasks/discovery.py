@@ -488,7 +488,7 @@ def apply_queue_provider_overrides(config_path: str | Path | None = None) -> Non
         config_path: Path to configuration file
     """
     if config_path is None:
-        config_path = Path("settings/queues.yml")
+        config_path = Path("settings/queues.yaml")
     else:
         config_path = Path(config_path)
 

@@ -506,4 +506,4 @@ class Vector(VectorBase):
             return False
 
 
-depends.set(Vector)
+depends.set(Vector, "duckdb")

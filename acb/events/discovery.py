@@ -8,7 +8,7 @@ Features:
 - Dynamic event handler loading via import_event_handler()
 - Event handler registry with metadata support
 - Auto-discovery and configuration
-- Override capability through settings/events.yml
+- Override capability through settings/events.yaml
 - Thread-safe registry using ContextVar
 - Capability-based event processing detection
 """
@@ -499,7 +499,7 @@ def disable_event_handler(category: str, name: str | None = None) -> None:
 
 @lru_cache(maxsize=1)
 def _load_event_settings() -> dict[str, t.Any]:
-    """Load event configuration from settings/events.yml.
+    """Load event configuration from settings/events.yaml.
 
     Returns:
         Dictionary with event configuration overrides
@@ -507,12 +507,12 @@ def _load_event_settings() -> dict[str, t.Any]:
     with suppress(ImportError, FileNotFoundError, Exception):
         import yaml
 
-        # Look for events.yml in common locations
+        # Look for events.yaml in common locations
         settings_paths = [
-            Path("settings/events.yml"),
-            Path("events.yml"),
-            Path.cwd() / "settings" / "events.yml",
-            Path.cwd() / "events.yml",
+            Path("settings/events.yaml"),
+            Path("events.yaml"),
+            Path.cwd() / "settings" / "events.yaml",
+            Path.cwd() / "events.yaml",
         ]
 
         for settings_path in settings_paths:
@@ -533,7 +533,7 @@ def get_event_handler_override(category: str) -> str | None:
         Override handler name or None if no override
 
     Example:
-        # In settings/events.yml:
+        # In settings/events.yaml:
         # publisher: memory_publisher
         # subscriber: redis_subscriber
         # processor: kafka_processor

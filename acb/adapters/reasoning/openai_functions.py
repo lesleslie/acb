@@ -25,6 +25,7 @@ from acb.adapters.reasoning._base import (
     ToolDefinition,
     calculate_confidence_score,
 )
+from acb.depends import depends
 
 if t.TYPE_CHECKING:
     from acb.logger import Logger as LoggerType
@@ -842,6 +843,9 @@ Available tools will be provided as function calls. Use them when you need to ga
                 "raw_response": response.choices[0].message.content,
             }
 
+ReasoningSettings = OpenAIFunctionReasoningSettings
+
+depends.set(Reasoning, "openai_functions")
 
 # Export the adapter class
-__all__ = ["MODULE_METADATA", "OpenAIFunctionReasoningSettings", "Reasoning"]
+__all__ = ["MODULE_METADATA", "OpenAIFunctionReasoningSettings", "Reasoning", "ReasoningSettings"]

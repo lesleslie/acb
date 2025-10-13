@@ -81,4 +81,4 @@ class Storage(StorageBase):
         self.logger.debug(f"CORS policies for {bucket.name!r} bucket removed")
 
 
-depends.set(Storage)
+depends.set(Storage, "gcs")

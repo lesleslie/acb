@@ -396,7 +396,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Context System
 
-ACB has a new `acb/context.py` module that provides centralized context management for the framework. This is part of the simplified architecture in v0.19.1+.
+ACB has a `acb/context.py` module that provides centralized context management for the framework. This is part of the comprehensive architecture in v0.20.0+.
 
 ## Development Commands
 
@@ -579,28 +579,39 @@ MODULE_METADATA = AdapterMetadata(
 **Key capabilities**: CONNECTION_POOLING, TRANSACTIONS, ASYNC_OPERATIONS, CACHING, ENCRYPTION
 **Status levels**: ALPHA, BETA, STABLE, DEPRECATED, EXPERIMENTAL
 
-### Simplified Architecture (v0.19.1+)
+### Comprehensive Architecture (v0.20.0+)
 
-ACB has been significantly simplified to focus on its core mission: providing clean, reliable adapter interfaces for external systems. Complex enterprise features have been removed or simplified to avoid over-engineering.
+ACB has evolved to provide both clean, reliable adapter interfaces for external systems and comprehensive enterprise features through its Services layer. The architecture now includes distinct layers for different purposes:
 
-#### Core Simplifications
+#### Architecture Layers
 
-**Removed Complex Features:**
+**Adapter Layer:**
+- Clean interfaces for external systems (databases, caches, storage, etc.)
+- Configuration-driven implementation selection
+- Resource cleanup and connection pooling
 
-- Complex enterprise monitoring and health checking
-- Advanced retry mechanisms and circuit breakers
-- Multi-tier caching strategies and complex query builders
-- Distributed tracing and observability frameworks
-- Rate limiting and advanced security systems
-- Backup and restore functionality
+**Services Layer (Reintroduced):**
+- Lifecycle management for long-running components
+- Health monitoring and metrics collection
+- Complex business logic encapsulation
+- Event-driven communication patterns
+- Workflow orchestration capabilities
 
-**Preserved Essential Features:**
-
-- Basic resource cleanup patterns
+**Core Infrastructure:**
+- Configuration management
+- Dependency injection
+- Logging and debugging tools
 - SSL/TLS configuration support
-- Simple configuration hot-reloading
-- Core adapter functionality
-- Basic model framework support
+
+#### Services Layer Features
+
+**Available Services:**
+
+- Repository services with Unit of Work pattern
+- Validation services with security features
+- Performance optimization services
+- Event-driven architecture services
+- Workflow orchestration services
 
 #### Simple Resource Cleanup
 
@@ -989,7 +1000,7 @@ Self-contained utility functions automatically discovered and registered:
 
 Key improvements in v0.19.1:
 
-- **Simplified Architecture**: Removed complex enterprise features to focus on core adapter functionality
+- **Comprehensive Architecture**: Reintroduced enterprise features as Services layer while maintaining core adapter functionality
 - **Basic Resource Cleanup**: Simple, reliable cleanup patterns without over-engineering
 - **Essential SSL/TLS**: Basic SSL configuration support where needed
 - **Streamlined Cache Operations**: Simple caching with standard aiocache interface
@@ -1075,7 +1086,7 @@ ACB maintains a detailed changelog tracking all significant changes:
 - **Static Adapter Mappings**: Replaced dynamic discovery with hardcoded mappings for better performance
 - **Memory Cache Rewrite**: Full aiocache interface implementation with MsgPack serialization
 - **Library Mode Detection**: Automatic detection of library vs application usage
-- **Architecture Simplification**: Removed complex enterprise features in favor of simplicity
+- **Architecture Evolution**: Reintroduced enterprise features as dedicated Services layer while maintaining simplicity of core adapters
 - **Performance**: 50-70% faster adapter loading, 30-40% faster test startup
 
 ## Task Completion Requirements

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import SecretStr
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.depends import depends
 
 from ._base import (
     AIBase,
@@ -709,3 +710,5 @@ class CloudAI(AIBase):
 # Alias for backward compatibility and convention
 Ai = CloudAI
 AiSettings = CloudAISettings
+
+depends.set(Ai, "cloud")

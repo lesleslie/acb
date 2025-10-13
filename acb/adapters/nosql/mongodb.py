@@ -273,4 +273,4 @@ class Nosql(NosqlBase):
     # Health checking removed as part of architectural simplification
 
 
-depends.set(Nosql)
+depends.set(Nosql, "mongodb")

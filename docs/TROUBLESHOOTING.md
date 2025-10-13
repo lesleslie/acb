@@ -1,8 +1,8 @@
 # ACB Troubleshooting Guide
 
-> **Version:** 0.23.0 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
+> **Version:** 0.25.2 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
 
-This guide helps you troubleshoot common issues when working with ACB v0.23.0 and the simplified v0.19.1+ architecture.
+This guide helps you troubleshoot common issues when working with ACB v0.25.2 with comprehensive services, events, and workflow architecture.
 
 ## Table of Contents
 

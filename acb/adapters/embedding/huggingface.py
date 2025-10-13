@@ -610,3 +610,6 @@ async def create_huggingface_embedding(
 
 # Type alias
 Embedding = HuggingFaceEmbedding
+EmbeddingSettings = HuggingFaceEmbeddingSettings
+
+depends.set(Embedding, "huggingface")

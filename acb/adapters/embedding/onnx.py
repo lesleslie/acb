@@ -673,3 +673,6 @@ async def create_onnx_embedding(
 
 # Type alias
 Embedding = ONNXEmbedding
+EmbeddingSettings = ONNXEmbeddingSettings
+
+depends.set(Embedding, "onnx")

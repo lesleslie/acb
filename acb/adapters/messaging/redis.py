@@ -1294,3 +1294,8 @@ def create_redis_messaging(
 # Export with role-specific names for dependency injection
 RedisPubSub = RedisMessaging  # For events system (pubsub adapter)
 RedisQueue = RedisMessaging  # For tasks system (queue adapter)
+
+Messaging = RedisMessaging
+MessagingSettings = RedisMessagingSettings
+
+depends.set(Messaging, "redis")

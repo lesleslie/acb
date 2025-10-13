@@ -89,4 +89,4 @@ class Storage(StorageBase):
         return path in self._directories
 
 
-depends.set(Storage)
+depends.set(Storage, "memory")

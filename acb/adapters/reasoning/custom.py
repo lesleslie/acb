@@ -24,6 +24,7 @@ from acb.adapters.reasoning._base import (
     ReasoningStrategy,
     calculate_confidence_score,
 )
+from acb.depends import depends
 
 if t.TYPE_CHECKING:
     from acb.logger import Logger as LoggerType
@@ -891,6 +892,9 @@ class Reasoning(ReasoningBase):
         stats = engine.get_rule_statistics()
         return dict(stats)
 
+ReasoningSettings = CustomReasoningSettings
+
+depends.set(Reasoning, "custom")
 
 # Export the adapter class
-__all__ = ["MODULE_METADATA", "CustomReasoningSettings", "Reasoning"]
+__all__ = ["MODULE_METADATA", "CustomReasoningSettings", "Reasoning", "ReasoningSettings"]

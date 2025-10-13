@@ -55,6 +55,8 @@ If you're new to ACB, here are the key concepts to understand:
   - [Actions](<#actions>)
   - [Adapters](<#adapters>)
   - [Universal Query Interface](<#universal-query-interface>)
+  - [Services](<#services>)
+  - [Events & Orchestration](<#events--orchestration>)
   - [Configuration System](<#configuration-system>)
   - [Dependency Injection](<#dependency-injection>)
 - [Common Patterns](<#common-patterns>)
@@ -144,18 +146,19 @@ ACB is structured around these fundamental building blocks:
 
 ### Actions
 
-Actions are modular, self-contained utility functions that perform specific tasks. They are automatically discovered and registered, making them immediately available throughout your application.
+Actions are modular, self-contained utility functions that perform specific tasks. Unlike services, adapters, events, or tasks, actions are not a runtime architectural layer but rather a utility collection of stateless functions available throughout your application.
 
 #### What Are Actions?
 
-Think of actions as a toolbox of utility functions that you can use anywhere in your application. Unlike adapters (which provide interfaces to external systems), actions are simple functions that perform specific tasks like compression, encoding, or hashing.
+Think of actions as a toolbox of utility functions that you can use anywhere in your application. Unlike the architectural layers (Services, Orchestration, Adapters), actions provide simple utility operations without lifecycle management or external system integration.
 
 Key characteristics of actions:
 
-- **Self-contained**: Each action is independent and doesn't rely on external services
-- **Automatically available**: No need to register or initialize them
-- **Categorized**: Organized by function (compress, encode, hash, etc.)
+- **Stateless**: Each action is a pure function with no internal state
+- **No Lifecycle**: No initialization, configuration, or shutdown required
+- **Categorized by Function**: Organized by verb-based categories (compress, encode, hash, etc.)
 - **Consistent API**: Similar operations have similar interfaces
+- **Cross-Cutting Utility**: Available for use across all architectural layers
 
 #### Available Actions
 
@@ -509,6 +512,217 @@ activity = await nosql_query.for_model(UserActivity).simple.all()
 ```
 
 For comprehensive documentation and examples, see the [Models Adapter Documentation](<./acb/adapters/models/README.md>).
+
+### Services
+
+ACB's Services layer provides a standardized framework for building long-running, stateful components with lifecycle management, health checking, metrics collection, and resource cleanup capabilities. Services extend the ServiceBase class to get consistent patterns for initialization, shutdown, and health monitoring.
+
+#### Key Features
+
+- **Lifecycle Management**: Standardized patterns for service initialization, operation, and graceful shutdown
+- **Health Monitoring**: Built-in health checking with customizable health check logic
+- **Metrics Collection**: Standardized metrics collection for performance and operational visibility
+- **Dependency Injection Integration**: Seamless integration with ACB's dependency injection system
+- **Configuration Management**: Standardized settings and configuration patterns
+- **Resource Cleanup**: Automatic resource management and cleanup patterns
+
+#### Service Architecture Patterns
+
+ACB uses two main patterns for structuring services:
+
+1. **Simple Services**: Services that directly inherit from ServiceBase for focused functionality
+2. **Complex Services**: Services with complex domain logic that use a `_base.py` file pattern to define protocols and abstract interfaces
+
+**Services with Complex Domain Logic** (like repository, validation):
+- Use the `_base.py` pattern to define protocols, interfaces, and abstract base classes
+- This allows for multiple implementations and clear contracts
+- Separate abstract contracts from concrete implementations
+
+**Services with Focused Functionality** (like performance optimizers):
+- Direct inheritance from ServiceBase is appropriate
+- Less need for complex inheritance hierarchies if functionality is straightforward
+- Still follow ServiceBase for consistent lifecycle management
+
+#### Example: Creating a Simple Service
+
+```python
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.depends import depends
+
+
+class MyCustomService(ServiceBase):
+    """A custom service example."""
+    
+    def __init__(self):
+        service_config = ServiceConfig(
+            service_id="my_custom_service",
+            name="My Custom Service",
+            description="An example custom service",
+            priority=50,  # Initialization priority
+        )
+        settings = ServiceSettings()
+        super().__init__(service_config, settings)
+    
+    async def _initialize(self) -> None:
+        """Service-specific initialization logic."""
+        self.logger.info("Initializing my custom service")
+        # Add initialization code here
+    
+    async def _shutdown(self) -> None:
+        """Service-specific shutdown logic."""
+        self.logger.info("Shutting down my custom service")
+        # Add cleanup code here
+    
+    async def _health_check(self) -> dict:
+        """Service-specific health check logic."""
+        return {"status": "ok", "custom_metric": "value"}
+
+
+# Usage with dependency injection
+@depends.inject
+async def use_my_service(my_service: MyCustomService = depends()):
+    # Use the service instance
+    await my_service.initialize()
+    # ... do work ...
+    await my_service.shutdown()
+```
+
+#### Available Services
+
+| Service Category | Description | Key Features |
+|------------------|-------------|--------------|
+| **Repository** | Data access layer with Unit of Work pattern | Multi-database coordination, caching integration, transaction management |
+| **Validation** | Data validation with security features | Schema validation, input sanitization, performance monitoring |
+| **Performance** | Optimization services | Metrics collection, cache optimization, query optimization |
+
+### Events & Orchestration
+
+ACB's Events, Tasks, and Workflows systems provide comprehensive orchestration capabilities for building complex, event-driven applications with reliable background processing and process management.
+
+#### Events System
+
+The Events system provides pub-sub messaging capabilities with support for event-driven communication between components.
+
+**Key Features:**
+- **Event-Driven Architecture**: Support for pub-sub patterns with multiple subscription options
+- **Event Types**: Support for different delivery modes (fire-and-forget, at-least-once, exactly-once)
+- **Event Handling**: Support for both functional and class-based event handlers
+- **Error Handling**: Built-in retry mechanisms and error management
+- **Performance**: Optimized for high-throughput event processing
+
+**Example: Using the Events System**
+```python
+from acb.events import create_event, EventPublisher, event_handler, EventHandlerResult
+
+# Create and publish events
+event = create_event("user.created", "user_service", {"user_id": 123})
+
+async with EventPublisher() as publisher:
+    await publisher.publish(event)
+
+# Define event handlers
+@event_handler("user.created")
+async def handle_user_created(event):
+    user_id = event.payload["user_id"]
+    print(f"Processing user creation for {user_id}")
+    return EventHandlerResult(success=True)
+```
+
+#### Tasks System
+
+The Tasks system provides reliable background job processing with multiple backend support and advanced scheduling capabilities.
+
+**Key Features:**
+- **Multiple Backends**: Support for memory, Redis, and message queue backends
+- **Priority Processing**: Support for prioritized task execution
+- **Scheduling**: Support for delayed execution and cron-style scheduling
+- **Retry Mechanisms**: Configurable retry with exponential backoff
+- **Monitoring**: Built-in metrics and monitoring capabilities
+
+**Example: Using the Tasks System**
+```python
+from acb.tasks import create_task_queue, TaskData, task_handler
+
+# Create a task queue
+async with create_task_queue("memory") as queue:
+    # Define a task handler
+    @task_handler("email_task")
+    async def send_email_task(task_data):
+        email = task_data.payload["email"]
+        # Send email logic here
+        return {"sent": True, "email": email}
+    
+    # Register handler
+    queue.register_handler("email_task", send_email_task)
+    
+    # Create and enqueue a task
+    task = TaskData(
+        task_type="email_task",
+        payload={"email": "user@example.com"},
+    )
+    task_id = await queue.enqueue(task)
+```
+
+#### Workflows System
+
+The Workflows system provides orchestration capabilities for managing complex multi-step processes with state management and error handling.
+
+**Key Features:**
+- **State Management**: Persistent state tracking for long-running processes
+- **Process Orchestration**: Management of complex multi-step operations
+- **Error Handling**: Comprehensive error handling and compensation mechanisms
+- **Monitoring**: Built-in workflow monitoring and tracking
+
+**Example: Using the Workflows System**
+```python
+from acb.workflows import WorkflowService
+
+workflow_service = WorkflowService()
+
+# Define and execute workflows with state management
+async def execute_complex_process():
+    # Workflow execution with state persistence and error handling
+    result = await workflow_service.execute_workflow(
+        "complex_business_process",
+        {"input_data": "value"},
+        timeout=3600  # 1 hour timeout
+    )
+    return result
+```
+
+#### MCP (Model Context Protocol) System
+
+The MCP system provides a standardized interface for AI applications to interact with the entire ACB ecosystem. It acts as a central orchestration layer that exposes all of ACB's capabilities through the Model Context Protocol, enabling AI assistants like Claude to discover, interact with, and orchestrate ACB components.
+
+**Key Features:**
+- **Universal Component Discovery**: List all available actions, adapters, services, and other components in a single interface
+- **Action Execution**: Execute any registered action with parameter validation across all action categories  
+- **Component Management**: Enable, disable, or configure components dynamically with real-time status monitoring
+- **AI/ML Integration**: Seamless integration with AI/ML adapters for LLM interactions and model serving
+- **Cross-Component Orchestration**: Define and execute complex workflows spanning multiple component types
+
+**Example: MCP Integration**
+```python
+# The MCP server can be integrated with AI assistants like Claude Desktop
+# to provide access to all ACB capabilities through a standardized protocol
+{
+  "mcpServers": {
+    "acb": {
+      "command": "uv",
+      "args": [
+        "run",
+        "python",
+        "-m",
+        "acb.mcp.server"
+      ],
+      "env": {
+        "ACB_MCP_HOST": "127.0.0.1",
+        "ACB_MCP_PORT": "8000"
+      }
+    }
+  }
+}
+```
 
 ### MCP Server
 
@@ -1522,6 +1736,7 @@ class Stripe(PaymentBase):
 
 For more detailed documentation about ACB components:
 
+- [**Architecture Implementation Guide**](<./docs/ARCHITECTURE_IMPLEMENTATION_GUIDE.md>): Complete guide to ACB's architectural layers and implementation patterns
 - [**Core Systems**](<./acb/README.md>): Configuration, dependency injection, debugging, and logging
 - [**Actions**](<./acb/actions/README.md>): Detailed guide to built-in actions and creating custom ones
 - [**Adapters**](<./acb/adapters/README.md>): Comprehensive documentation on adapter system and implementations

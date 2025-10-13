@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Monitoring](./README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Monitoring](<./README.md>)
 
 # Monitoring Adapter
 
@@ -39,7 +39,7 @@ uv add "acb[monitoring,logging]"
 
 ### Settings
 
-Configure the Monitoring adapter in your `settings/adapters.yml` file:
+Configure the Monitoring adapter in your `settings/adapters.yaml` file:
 
 ```yaml
 # Use Sentry implementation
@@ -54,7 +54,7 @@ monitoring: null
 
 ### Monitoring Settings
 
-The Monitoring adapter settings can be customized in your `settings/app.yml` file:
+The Monitoring adapter settings can be customized in your `settings/app.yaml` file:
 
 ```yaml
 monitoring:
@@ -197,7 +197,7 @@ monitoring.set_tags(
 1. **DSN Configuration Error**
 
    - **Problem**: `ConfigurationError: DSN not configured`
-   - **Solution**: Set a valid DSN in your settings/app.yml file
+   - **Solution**: Set a valid DSN in your settings/app.yaml file
 
 1. **High Event Volume**
 
@@ -237,4 +237,4 @@ class MonitoringBase:
 - [Sentry Documentation](https://docs.sentry.io/platforms/python/)
 - [Performance Monitoring Best Practices](https://docs.sentry.io/product/performance/)
 - [ACB Logger Adapter](../logger/README.md)
-- [ACB Adapters Overview](../README.md)
+- [ACB Adapters Overview](<../README.md>)

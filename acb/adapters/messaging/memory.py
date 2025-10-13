@@ -921,3 +921,8 @@ class MemoryMessaging(UnifiedMessagingBackend):
 # These allow the same implementation to be used for both patterns
 MemoryPubSub = MemoryMessaging  # For events system (pub/sub)
 MemoryQueue = MemoryMessaging  # For tasks system (queues)
+
+Messaging = MemoryMessaging
+MessagingSettings = MemoryMessagingSettings
+
+depends.set(Messaging, "memory")

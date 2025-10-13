@@ -605,3 +605,6 @@ async def create_lfm_embedding(config: Config | None = None) -> LiquidLFMEmbeddi
 
 # Type alias
 Embedding = LiquidLFMEmbedding
+EmbeddingSettings = LiquidLFMEmbeddingSettings
+
+depends.set(Embedding, "lfm")

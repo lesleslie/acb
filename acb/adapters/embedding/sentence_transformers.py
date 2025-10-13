@@ -460,3 +460,6 @@ async def create_sentence_transformers_embedding(
 
 # Type alias
 Embedding = SentenceTransformersEmbedding
+EmbeddingSettings = SentenceTransformersSettings
+
+depends.set(Embedding, "sentence_transformers")

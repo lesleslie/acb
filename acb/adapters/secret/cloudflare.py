@@ -267,4 +267,4 @@ class Secret(SecretBase):
         return []
 
 
-depends.set(Secret)
+depends.set(Secret, "cloudflare")

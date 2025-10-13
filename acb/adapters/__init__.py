@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import os
 import sys
@@ -12,6 +10,7 @@ from functools import lru_cache
 from importlib import import_module, util
 from inspect import stack
 from pathlib import Path
+from pprint import pprint
 from uuid import UUID
 
 # Removed nest_asyncio import - not needed in library code
@@ -30,6 +29,7 @@ try:
     uuid_lib: t.Any = uuid_utils  # type: ignore[no-redef]
 except ImportError:
     import uuid
+    uuid_utils = None
 
     _uuid7_available = False
     uuid_lib: t.Any = uuid  # type: ignore[no-redef]
@@ -351,9 +351,9 @@ tmp_path: AsyncPath = root_path / "tmp"
 adapters_path: AsyncPath = root_path / "adapters"
 actions_path: AsyncPath = root_path / "actions"
 settings_path: AsyncPath = root_path / "settings"
-app_settings_path: AsyncPath = settings_path / "app.yml"
-debug_settings_path: AsyncPath = settings_path / "debug.yml"
-adapter_settings_path: AsyncPath = settings_path / "adapters.yml"
+app_settings_path: AsyncPath = settings_path / "app.yaml"
+debug_settings_path: AsyncPath = settings_path / "debug.yaml"
+adapter_settings_path: AsyncPath = settings_path / "adapters.yaml"
 secrets_path: AsyncPath = (
     AsyncPath(Path(tempfile.mkdtemp(prefix="mock_secrets_")))
     if _testing or "pytest" in sys.modules
@@ -372,8 +372,7 @@ class AdapterNotFound(Exception): ...
 class AdapterNotInstalled(Exception): ...
 
 
-class StaticImportError(ImportError):
-    pass
+class StaticImportError(ImportError): ...
 
 
 AdapterClass = t.TypeVar("AdapterClass")
@@ -458,13 +457,18 @@ core_adapters = [
 def _update_adapter_caches() -> None:
     enabled_cache = {}
     installed_cache = {}
+    print(len(adapter_registry.get()))
     for adapter in adapter_registry.get():
         if adapter.enabled:
             enabled_cache[adapter.category] = adapter
         if adapter.installed:
             installed_cache[adapter.category] = adapter
-    _enabled_adapters_cache.set(enabled_cache)
-    _installed_adapters_cache.set(installed_cache)
+    _enabled_adapters_cache.get().update(enabled_cache)
+    print("\nAdapters enabled:")
+    pprint([(a.name, a.category) for a in _enabled_adapters_cache.get().values()])
+    _installed_adapters_cache.get().update(installed_cache)
+    print("\nAdapters installed:")
+    pprint([(a.name, a.category) for a in _installed_adapters_cache.get().values()])
 
 
 adapter_registry.get().extend([*core_adapters])
@@ -666,7 +670,7 @@ async def _setup_adapter_configuration() -> None:
     if await _should_skip_project_setup(cwd_path):
         return
     cwd_settings_path = cwd_path / "settings"
-    cwd_adapter_settings_path = cwd_settings_path / "adapters.yml"
+    cwd_adapter_settings_path = cwd_settings_path / "adapters.yaml"
     await _create_adapter_settings_if_needed(
         cwd_settings_path,
         cwd_adapter_settings_path,
@@ -737,10 +741,10 @@ async def _load_enabled_adapters(
 
 
 async def _ensure_package_registration() -> None:
-    from acb import ensure_registration_async, pkg_registry
+    from acb import ensure_registration_async, get_context
 
     await ensure_registration_async()
-    for pkg in pkg_registry.get():
+    for pkg in get_context().pkg_registry.get():
         if not pkg.adapters:
             from contextlib import suppress
 
@@ -749,10 +753,10 @@ async def _ensure_package_registration() -> None:
 
 
 async def _collect_all_adapters() -> list[Adapter]:
-    from acb import pkg_registry
+    from acb import get_context
 
     all_adapters = list(adapter_registry.get())
-    for pkg in pkg_registry.get():
+    for pkg in get_context().pkg_registry.get():
         for adapter in pkg.adapters:
             if adapter not in all_adapters:
                 adapter_registry.get().append(adapter)
@@ -798,12 +802,12 @@ async def _find_adapter(adapter_category: str) -> Adapter:
                     adapter = get_adapter(adapter_category)
                     if adapter is not None:
                         return adapter
-        msg = f"{adapter_category} adapter not found – check adapters.yml and ensure package registration"
+        msg = f"{adapter_category} adapter not found – check adapters.yaml and ensure package registration"
         raise AdapterNotFound(
             msg,
         )
     except AttributeError:
-        msg = f"{adapter_category} adapter not found – check adapters.yml"
+        msg = f"{adapter_category} adapter not found – check adapters.yaml"
         raise AdapterNotFound(
             msg,
         )
@@ -902,7 +906,6 @@ def import_adapter(adapter_categories: str | list[str] | None = None) -> t.Any:
         adapter_class = try_import_adapter(adapter_categories, adapter_name)
         if adapter_class:
             return adapter_class
-
         return import_adapter_with_context([adapter_categories])
 
     return import_adapter_with_context(adapter_categories)
@@ -968,9 +971,8 @@ def import_adapter_with_context(
 
     try:
         # Check if we're in an async context
+        import asyncio
         try:
-            import asyncio
-
             asyncio.get_running_loop()
             # We're in an async context - this function shouldn't be called here
             msg = (
@@ -990,7 +992,6 @@ def import_adapter_with_context(
         raise AdapterNotInstalled(
             msg,
         )
-
     return (
         imported_adapters[0]
         if len(imported_adapters) == 1
@@ -1040,16 +1041,17 @@ def extract_adapter_modules(modules: list[AsyncPath], adapter: str) -> list[Adap
 async def register_adapters(path: AsyncPath) -> list[Adapter]:
     if _testing or "pytest" in sys.modules:
         return []
-    adapters_path = path / "adapters"
-    if not await adapters_path.exists():
+    _adapters_path = path / "adapters"
+    if not (await _adapters_path.exists()):
         return []
-    pkg_adapters = await path_adapters(adapters_path)
-    adapters: list[Adapter] = []
+    pkg_adapters = await path_adapters(_adapters_path)
+    _adapters: list[Adapter] = []
     for adapter_name, modules in pkg_adapters.items():
         _modules = extract_adapter_modules(modules, adapter_name)
-        adapters.extend(_modules)
+        _adapters.extend(_modules)
+    pprint(sorted([(a.category, a.name) for a in _adapters]))
     registry = adapter_registry.get()
-    for a in adapters:
+    for a in _adapters:
         module = ".".join(a.module.split(".")[-2:])
         remove = next(
             (_a for _a in registry if ".".join(_a.module.split(".")[-2:]) == module),
@@ -1059,5 +1061,8 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
             registry.remove(remove)
         registry.append(a)
         _adapter_import_locks.get()[a.category] = asyncio.Lock()
+    pprint(len(adapter_registry.get()))
     _update_adapter_caches()
-    return adapters
+    return _adapters
+
+adapters = asyncio.run(register_adapters(AsyncPath(__file__).parent.parent))

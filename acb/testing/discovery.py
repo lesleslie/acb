@@ -471,7 +471,7 @@ def disable_test_provider(category: str) -> None:
 
 @lru_cache(maxsize=1)
 def _load_test_provider_settings() -> dict[str, t.Any]:
-    """Load test provider configuration from settings/testing.yml.
+    """Load test provider configuration from settings/testing.yaml.
 
     Returns:
         Dictionary with test provider configuration overrides
@@ -479,12 +479,12 @@ def _load_test_provider_settings() -> dict[str, t.Any]:
     with suppress(ImportError, FileNotFoundError, Exception):
         import yaml
 
-        # Look for testing.yml in common locations
+        # Look for testing.yaml in common locations
         settings_paths = [
-            Path("settings/testing.yml"),
-            Path("testing.yml"),
-            Path.cwd() / "settings" / "testing.yml",
-            Path.cwd() / "testing.yml",
+            Path("settings/testing.yaml"),
+            Path("testing.yaml"),
+            Path.cwd() / "settings" / "testing.yaml",
+            Path.cwd() / "testing.yaml",
         ]
 
         for settings_path in settings_paths:
@@ -506,7 +506,7 @@ def get_test_provider_override(category: str) -> str | None:
         Override provider name or None if no override
 
     Example:
-        # In settings/testing.yml:
+        # In settings/testing.yaml:
         # mocking: mock_adapter_provider
         # performance: performance_test_provider
         # integration: database_test_provider

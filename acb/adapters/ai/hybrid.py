@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.depends import depends
 
 from ._base import (
     AIBase,
@@ -856,3 +857,5 @@ class HybridAI(AIBase):
 # Alias for backward compatibility and convention
 Ai = HybridAI
 AiSettings = HybridAISettings
+
+depends.set(Ai, "hybrid")

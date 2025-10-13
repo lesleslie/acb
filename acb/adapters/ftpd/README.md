@@ -1,4 +1,4 @@
-**ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [FTPD](./README.md)
+**ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [FTPD](<./README.md>)
 
 # FTPD Adapter
 
@@ -38,7 +38,7 @@ uv add "acb[ftpd,storage]"
 
 ### Settings
 
-Configure the FTPD adapter in your `settings/adapters.yml` file:
+Configure the FTPD adapter in your `settings/adapters.yaml` file:
 
 ```yaml
 # Use FTP implementation
@@ -53,7 +53,7 @@ ftpd: null
 
 ### FTPD Settings
 
-The FTPD adapter settings can be customized in your `settings/app.yml` file:
+The FTPD adapter settings can be customized in your `settings/app.yaml` file:
 
 ```yaml
 ftpd:
@@ -177,7 +177,7 @@ async with ftpd.connect() as client:
 ### Custom Authentication
 
 ```python
-# In your settings/app.yml file:
+# In your settings/app.yaml file:
 ftpd:
   username: "custom_user"
   password: "custom_pass"
@@ -269,6 +269,6 @@ class FtpdBase(AdapterBase):
 - [asyncssh Documentation](https://asyncssh.readthedocs.io/)
 - [FTP Protocol Documentation](https://tools.ietf.org/html/rfc959)
 - [SFTP Protocol Documentation](https://tools.ietf.org/html/draft-ietf-secsh-filexfer-13)
-- [ACB Storage Adapter](../storage/README.md)
+- [ACB Storage Adapter](<../storage/README.md>)
 - [ACB Auth Adapter](../auth/README.md)
-- [ACB Adapters Overview](../README.md)
+- [ACB Adapters Overview](<../README.md>)

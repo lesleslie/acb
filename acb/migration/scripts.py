@@ -77,8 +77,8 @@ class ConfigurationMigrationScript(MigrationScript):
 
         # Migrate old config files
         migrations = [
-            ("config.yaml", settings_dir / "app.yml"),
-            ("debug.yaml", settings_dir / "debug.yml"),
+            ("config.yaml", settings_dir / "app.yaml"),
+            ("debug.yaml", settings_dir / "debug.yaml"),
             (".env", settings_dir / "secrets" / ".env"),
         ]
 
@@ -114,9 +114,9 @@ class AdapterMigrationScript(MigrationScript):
     ) -> None:
         """Execute adapter migration."""
         settings_dir = project_root / "settings"
-        adapters_yml = settings_dir / "adapters.yml"
+        adapters_yml = settings_dir / "adapters.yaml"
 
-        # Create default adapters.yml if missing
+        # Create default adapters.yaml if missing
         if not adapters_yml.exists():
             default_config = """# ACB Adapter Configuration
 # Specify which adapter implementations to use

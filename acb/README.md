@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../README.md) | [Core Systems](./README.md) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
+> **ACB Documentation**: [Main](<../README.md>) | [Core Systems](<./README.md>) | [Actions](<./actions/README.md>) | [Adapters](<./adapters/README.md>)
 
 # ACB: Core Systems
 
@@ -6,14 +6,14 @@ This document provides in-depth details about the core systems in the Asynchrono
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Configuration and Settings](#1-configuration-and-settings)
-- [Dependency Injection](#2-dependency-injection)
-- [Debugging Tools](#3-debugging-tools)
-- [Logging](#4-logging)
-- [MCP Server](#5-mcp-server)
-- [Related Projects](#related-projects)
-- [Further Reading](#further-reading)
+- [Overview](<#overview>)
+- [Configuration and Settings](<#1-configuration-and-settings>)
+- [Dependency Injection](<#2-dependency-injection>)
+- [Debugging Tools](<#3-debugging-tools>)
+- [Logging](<#4-logging>)
+- [MCP Server](<#5-mcp-server>)
+- [Related Projects](<#related-projects>)
+- [Further Reading](<#further-reading>)
 
 ## Overview
 
@@ -55,7 +55,7 @@ ACB uses a robust configuration system based on [Pydantic](https://pydantic-docs
   The configuration system aggregates settings from multiple sources:
 
   - **Initialization Parameters:** Passed in at startup.
-  - **YAML Configuration Files:** Settings are read from YAML files (e.g., `app.yml` for application settings, or other adapter-specific YAML files).
+  - **YAML Configuration Files:** Settings are read from YAML files (e.g., `app.yaml` for application settings, or other adapter-specific YAML files).
   - **File-based Secrets:** Manages secrets stored in files within a designated secrets directory.
   - **External Secret Managers:** Optionally integrates with external secret managers using adapters (see the secret adapter in `acb/adapters/secret`).
 
@@ -85,7 +85,7 @@ uv add "acb[config]"
 uv add "acb[secret,config]"
 ```
 
-For more detailed configuration information, refer to [Configuration Documentation](./CONFIGURATION.md).
+For more detailed configuration information, refer to [Configuration Documentation](<./CONFIGURATION.md>).
 
 ______________________________________________________________________
 
@@ -133,7 +133,7 @@ async def process_file(
     return cached_data
 ```
 
-For more information on dependency injection, please see the [Dependency Injection Documentation](./DEPENDENCY-INJECTION.md).
+For more information on dependency injection, please see the [Dependency Injection Documentation](<./DEPENDENCY-INJECTION.md>).
 
 ______________________________________________________________________
 
@@ -160,7 +160,7 @@ The debug module in ACB (`acb/debug.py`) is designed to provide insightful diagn
 
 ### Debug Configuration
 
-ACB's debug behavior can be configured through your application settings in `settings/debug.yml`:
+ACB's debug behavior can be configured through your application settings in `settings/debug.yaml`:
 
 ```yaml
 debug:
@@ -281,7 +281,7 @@ init_debug()  # Configures debug output based on environment
 
 1. **Performance Considerations**: In production environments, be selective about what you debug to avoid performance impacts.
 
-For detailed examples and further instructions, refer to the [Debug Documentation](./DEBUG.md).
+For detailed examples and further instructions, refer to the [Debug Documentation](<./DEBUG.md>).
 
 ______________________________________________________________________
 
@@ -320,7 +320,7 @@ uv add "acb[structlog]"
 uv add "acb[loguru,structlog]"
 ```
 
-For more details on logging configuration and customization, see the [Logging Documentation](./LOGGING.md).
+For more details on logging configuration and customization, see the [Logging Documentation](<./LOGGING.md>).
 
 ______________________________________________________________________
 
@@ -348,7 +348,7 @@ The MCP server is built on top of ACB's existing architecture and integrates wit
 - **Configuration**: Centralized configuration management
 - **Logging**: Structured logging and monitoring
 
-For more details on the MCP server implementation, see the [MCP Server Documentation](./mcp/README.md).
+For more details on the MCP server implementation, see the [MCP Server Documentation](<./mcp/README.md>).
 
 ______________________________________________________________________
 
@@ -362,6 +362,6 @@ ______________________________________________________________________
 
 ## Further Reading
 
-- [Main ACB Documentation](../README.md): Overview of the entire ACB framework
-- [Actions Documentation](./actions/README.md): Details about built-in actions and creating custom ones
-- [Adapters Documentation](./adapters/README.md): Information about adapter interfaces and implementations
+- [Main ACB Documentation](<../README.md>): Overview of the entire ACB framework
+- [Actions Documentation](<./actions/README.md>): Details about built-in actions and creating custom ones
+- [Adapters Documentation](<./adapters/README.md>): Information about adapter interfaces and implementations

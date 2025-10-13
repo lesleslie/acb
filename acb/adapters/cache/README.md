@@ -53,7 +53,7 @@ uv add "acb[redis,sql,storage]"
 
 ### Settings
 
-Configure the cache adapter in your `settings/adapters.yml` file:
+Configure the cache adapter in your `settings/adapters.yaml` file:
 
 ```yaml
 # Use Redis implementation
@@ -68,7 +68,7 @@ cache: null
 
 ### Cache Settings
 
-The cache adapter settings can be customized in your `settings/app.yml` file:
+The cache adapter settings can be customized in your `settings/app.yaml` file:
 
 ```yaml
 cache:

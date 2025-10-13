@@ -253,4 +253,4 @@ class Sql(SqlBase):
                 raise
 
 
-depends.set(Sql)
+depends.set(Sql, "sqlite")

@@ -15,14 +15,14 @@ This guide helps you upgrade between ACB versions, detailing breaking changes an
 
 Version 0.19.1 represents a **major architectural simplification**, removing complex enterprise features to focus on ACB's core mission: providing clean, reliable adapter interfaces for external systems.
 
-### Removed Features
+### Removed Features (v0.19.1)
 
-The following enterprise features were **completely removed**:
+The following enterprise features were temporarily removed in v0.19.1:
 
-#### ❌ Services Layer
+#### ❌ Services Layer (Temporarily Removed)
 
 ```python
-# REMOVED - No longer available
+# REMOVED in v0.19.1 - No longer available
 from acb.services import ServiceBase, register_service
 
 
@@ -36,56 +36,80 @@ class UserService(ServiceBase):  # ❌ ServiceBase removed
 - Use dependency injection for adapter access
 - Consider framework-specific patterns (e.g., FastBlocks services)
 
-#### ❌ Event System
+### Reintroduced Features (After v0.19.1)
+
+The following enterprise features were **reintroduced** in later versions as the architecture evolved:
+
+#### ✅ Services Layer (Reintroduced after v0.19.1)
 
 ```python
-# REMOVED - No longer available
-from acb.events import EventPublisher, EventSubscriber
+# AVAILABLE - Reintroduced after v0.19.1
+from acb.services import ServiceBase, ServiceConfig, ServiceSettings
 
-publisher = EventPublisher()  # ❌ Events removed
-await publisher.emit("user.created", user_id=123)
+
+class UserService(ServiceBase):  # ✅ ServiceBase available again
+    async def _initialize(self) -> None:
+        # Service initialization logic
+        pass
+    
+    async def _shutdown(self) -> None:
+        # Service shutdown logic
+        pass
+    
+    async def _health_check(self) -> dict:
+        # Custom health check logic
+        return {"status": "healthy"}
 ```
 
-**Migration Path:**
+The Services layer now provides standardized patterns for building long-running, stateful components with lifecycle management, health checking, metrics collection, and resource cleanup capabilities.
 
-- Use framework-specific event systems (e.g., Starlette events)
-- Implement custom pub/sub if needed
-- Consider external message brokers for distributed events
-
-#### ❌ Task Queue System
+#### ✅ Events System (Reintroduced after v0.19.1)
 
 ```python
-# REMOVED - No longer available
-from acb.queues import Queue, task
+# AVAILABLE - Reintroduced after v0.19.1
+from acb.events import EventPublisher, EventSubscriber, create_event
 
-queue = Queue()  # ❌ Queues removed
-
-
-@task(queue=queue)
-async def process_order(order_id: str):
-    pass
+# Create and publish events
+event = create_event("user.created", "user_service", {"user_id": 123})
+publisher = EventPublisher()  # ✅ Events available again
+await publisher.publish(event)
 ```
 
-**Migration Path:**
-
-- Use dedicated task queue libraries (Celery, RQ, Dramatiq, Huey)
-- Implement simple async task processing if needed
-- Consider cloud-based queue services (AWS SQS, Google Pub/Sub)
-
-#### ❌ Workflow Engine
+#### ✅ Events System (Reintroduced after v0.19.1)
 
 ```python
-# REMOVED - No longer available
-from acb.workflows import WorkflowDefinition, WorkflowEngine
+# AVAILABLE - Reintroduced after v0.19.1
+from acb.events import EventPublisher, EventSubscriber, create_event
 
-workflow = WorkflowDefinition(...)  # ❌ Workflows removed
+# Create and publish events
+event = create_event("user.created", "user_service", {"user_id": 123})
+publisher = EventPublisher()  # ✅ Events available again
+await publisher.publish(event)
 ```
 
-**Migration Path:**
+#### ✅ Tasks System (Reintroduced after v0.19.1)
 
-- Use workflow libraries (Temporal, Prefect, Airflow)
-- Implement custom workflow logic if simple
-- Use application-level orchestration
+```python
+# AVAILABLE - Reintroduced after v0.19.1
+from acb.tasks import create_task_queue, TaskData
+
+# Create and process background tasks
+async with create_task_queue("memory") as queue:
+    task = TaskData(task_type="email_task", payload={"email": "user@example.com"})
+    task_id = await queue.enqueue(task)  # ✅ Tasks available again
+```
+
+#### ✅ Workflows (Reintroduced after v0.19.1)
+
+```python
+# AVAILABLE - Reintroduced after v0.19.1
+from acb.workflows import WorkflowService
+
+workflow_service = WorkflowService()
+# Define and execute workflows using ACB's workflow patterns
+```
+
+The Services, Events, Tasks, and Workflows systems have been redesigned with better integration with the core infrastructure, providing lifecycle management, health monitoring, and dependency injection capabilities.
 
 #### ❌ Complex Health Checking
 
@@ -192,7 +216,7 @@ class UserService(ServiceBase):
         return user
 ```
 
-#### After (v0.19.1+)
+#### After (v0.19.1 - Temporarily Removed)
 
 ```python
 from acb.depends import depends, Inject
@@ -217,6 +241,48 @@ async def create_user(data: dict, cache: Inject[Cache], sql: Inject[SQL]):
     # await send_welcome_email(user.id)  # Direct call or external queue
 
     return user
+```
+
+#### After (v0.20.0+ - Services Reintroduced)
+
+```python
+from acb.services import ServiceBase, ServiceConfig, ServiceSettings
+from acb.depends import depends, Inject
+from acb.adapters import import_adapter
+
+Cache = import_adapter("cache")
+SQL = import_adapter("sql")
+
+
+class UserService(ServiceBase):
+    def __init__(self):
+        service_config = ServiceConfig(
+            service_id="user_service",
+            name="User Service",
+            description="Manages user creation and operations"
+        )
+        super().__init__(service_config=service_config)
+    
+    async def create_user(self, data: dict, 
+                         cache: Inject[Cache] = depends(),
+                         sql: Inject[SQL] = depends()):
+        async with sql.get_session() as session:
+            user = User(**data)
+            session.add(user)
+            await session.commit()
+
+        # Cache the user
+        await cache.set(f"user:{user.id}", user, ttl=3600)
+        
+        # Emit event using events system
+        from acb.events import create_event
+        event = create_event("user.created", "user_service", {"user_id": user.id})
+        # Use event publisher to emit the event
+        from acb.events import EventPublisher
+        publisher = depends.get(EventPublisher)
+        await publisher.publish(event)
+
+        return user
 ```
 
 ## Version 0.16.17+ (Performance Optimizations)
@@ -403,18 +469,20 @@ If you encounter issues during migration:
 
 | ACB Version | Python Version | Key Changes |
 |-------------|---------------|-------------|
-| 0.23.0 | 3.13+ | Current stable release |
-| 0.19.1 | 3.13+ | **Major simplification** - removed enterprise features |
+| 0.25.2 | 3.13+ | Current stable release with services, events, tasks, workflows |
+| 0.20.0+ | 3.13+ | **Services reintroduced** - Services, Events, Tasks, and Workflows restored |
+| 0.19.1 | 3.13+ | **Major simplification** - temporarily removed enterprise features |
 | 0.16.17 | 3.12+ | Static adapter mappings, performance improvements |
 | 0.16.0 | 3.12+ | Initial stable release |
 
 ## Summary
 
-ACB's evolution focuses on **simplicity and performance**:
+ACB's evolution focuses on **simplicity, performance, and comprehensive service architecture**:
 
-- **v0.19.1+**: Simplified architecture, removed complex features
+- **v0.20.0+**: Services, Events, Tasks, and Workflows reintroduced with improved architecture
+- **v0.19.1**: Simplified architecture, temporarily removed complex features
 - **v0.16.17+**: Performance optimizations, static mappings
-- **Current (v0.23.0)**: Stable, production-ready, minimal core
+- **Current (v0.25.2)**: Stable, production-ready with services, events, tasks, workflows
 
 For detailed changes, always refer to:
 

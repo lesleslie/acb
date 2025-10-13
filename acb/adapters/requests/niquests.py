@@ -164,4 +164,4 @@ class Requests(RequestsBase):
         self.logger.debug("Niquests adapter initialized")
 
 
-depends.set(Requests)
+depends.set(Requests, "niquests")

@@ -108,8 +108,8 @@ def _check_deprecated_config(config_dir: Path) -> list[MigrationIssue]:
 
     # Check for old config file locations
     old_configs = [
-        ("config.yaml", "settings/app.yml"),
-        ("debug.yaml", "settings/debug.yml"),
+        ("config.yaml", "settings/app.yaml"),
+        ("debug.yaml", "settings/debug.yaml"),
         (".env", "settings/secrets/.env"),
     ]
 
@@ -133,15 +133,15 @@ def _check_adapter_config(settings_dir: Path) -> list[MigrationIssue]:
     """Check adapter configuration for deprecated patterns."""
     issues = []
 
-    adapters_yml = settings_dir / "adapters.yml"
+    adapters_yml = settings_dir / "adapters.yaml"
     if not adapters_yml.exists():
         issues.append(
             MigrationIssue(
                 severity=MigrationSeverity.WARNING,
-                message="Missing settings/adapters.yml configuration",
+                message="Missing settings/adapters.yaml configuration",
                 component="adapters",
                 fix_available=True,
-                fix_description="Create adapters.yml with adapter selections",
+                fix_description="Create adapters.yaml with adapter selections",
             ),
         )
 

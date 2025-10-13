@@ -486,7 +486,7 @@ def disable_service(category: str) -> None:
 
 @lru_cache(maxsize=1)
 def _load_service_settings() -> dict[str, t.Any]:
-    """Load service configuration from settings/services.yml.
+    """Load service configuration from settings/services.yaml.
 
     Returns:
         Dictionary with service configuration overrides
@@ -494,12 +494,12 @@ def _load_service_settings() -> dict[str, t.Any]:
     with suppress(ImportError, FileNotFoundError, Exception):
         import yaml
 
-        # Look for services.yml in common locations
+        # Look for services.yaml in common locations
         settings_paths = [
-            Path("settings/services.yml"),
-            Path("services.yml"),
-            Path.cwd() / "settings" / "services.yml",
-            Path.cwd() / "services.yml",
+            Path("settings/services.yaml"),
+            Path("services.yaml"),
+            Path.cwd() / "settings" / "services.yaml",
+            Path.cwd() / "services.yaml",
         ]
 
         for settings_path in settings_paths:
@@ -521,7 +521,7 @@ def get_service_override(category: str) -> str | None:
         Override service name or None if no override
 
     Example:
-        # In settings/services.yml:
+        # In settings/services.yaml:
         # performance: performance_optimizer
         # health: health_service
         # validation: validation_service

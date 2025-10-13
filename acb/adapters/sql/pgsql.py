@@ -88,4 +88,4 @@ class SqlSettings(SqlBaseSettings):
 class Sql(SqlBase): ...
 
 
-depends.set(Sql)
+depends.set(Sql, "pgsql")

@@ -478,7 +478,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
 
             with suppress(ImportError):
                 Sql = import_adapter("sql")
-                sql_adapter = depends.get(Sql)
+                sql_adapter = await depends.get(Sql)
                 self.coordinator.register_database(
                     "sql_primary",
                     DatabaseType.SQL,
@@ -489,7 +489,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             # Try to register NoSQL adapter
             with suppress(ImportError):
                 Nosql = import_adapter("nosql")
-                nosql_adapter = depends.get(Nosql)
+                nosql_adapter = await depends.get(Nosql)
                 self.coordinator.register_database(
                     "nosql_primary",
                     DatabaseType.NOSQL,
@@ -500,7 +500,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             # Try to register Cache adapter
             with suppress(ImportError):
                 Cache = import_adapter("cache")
-                cache_adapter = depends.get(Cache)
+                cache_adapter = await depends.get(Cache)
                 self.coordinator.register_database(
                     "cache_primary",
                     DatabaseType.CACHE,

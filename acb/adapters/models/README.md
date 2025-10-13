@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Models](./README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Models](<./README.md>)
 
 # Models Adapter
 
@@ -43,7 +43,7 @@ uv add "acb[models,sql,nosql,cache]"
 
 ### Adapter Configuration
 
-Enable the Models adapter in your `settings/adapters.yml` file:
+Enable the Models adapter in your `settings/adapters.yaml` file:
 
 ```yaml
 # Enable the Models adapter (auto-detects model types)
@@ -57,7 +57,7 @@ cache: redis
 
 ### Model Framework Configuration
 
-Configure which model frameworks are enabled in your `settings/models.yml` file:
+Configure which model frameworks are enabled in your `settings/models.yaml` file:
 
 ```yaml
 # Enable SQLModel support (default: true)
@@ -87,7 +87,7 @@ attrs: false
 
 ### Advanced Settings
 
-Additional settings can be customized in your `settings/app.yml` file:
+Additional settings can be customized in your `settings/app.yaml` file:
 
 ```yaml
 models:
@@ -546,7 +546,7 @@ print(adapter.get_field_mapping(EnterpriseUser))  # {"salary_band": "band", ...}
 1. **Framework Disabled**
 
    - **Problem**: Model framework not working despite correct base class
-   - **Solution**: Check `settings/models.yml` to ensure the framework is enabled
+   - **Solution**: Check `settings/models.yaml` to ensure the framework is enabled
 
 1. **Auto-Detection Issues**
 
@@ -557,13 +557,13 @@ print(adapter.get_field_mapping(EnterpriseUser))  # {"salary_band": "band", ...}
 
 1. **Settings File Not Found**
 
-   - **Problem**: `FileNotFoundError: settings/models.yml`
+   - **Problem**: `FileNotFoundError: settings/models.yaml`
    - **Solution**: Create the file or use default settings (all frameworks enabled)
 
 1. **Invalid Configuration**
 
    - **Problem**: `ValidationError in models settings`
-   - **Solution**: Ensure boolean values in `models.yml`: `sqlmodel: true` not `sqlmodel: "true"`
+   - **Solution**: Ensure boolean values in `models.yaml`: `sqlmodel: true` not `sqlmodel: "true"`
 
 ## Implementation Details
 
@@ -638,7 +638,7 @@ class ModelsAdapter(ModelsBase):
 - [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
 - [Pydantic Documentation](https://docs.pydantic.dev/)
 - [Redis-OM Documentation](https://redis.io/docs/stack/search/object-mapping/)
-- [ACB SQL Adapter](../sql/README.md)
-- [ACB NoSQL Adapter](../nosql/README.md)
+- [ACB SQL Adapter](<../sql/README.md>)
+- [ACB NoSQL Adapter](<../nosql/README.md>)
 - [ACB Universal Query Interface](./examples/query_interface_demo.py)
-- [ACB Adapters Overview](../README.md)
+- [ACB Adapters Overview](<../README.md>)

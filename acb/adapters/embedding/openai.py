@@ -443,3 +443,6 @@ async def create_openai_embedding(config: Config | None = None) -> OpenAIEmbeddi
 
 # Type alias
 Embedding = OpenAIEmbedding
+EmbeddingSettings = OpenAIEmbeddingSettings
+
+depends.set(Embedding, "openai")

@@ -17,7 +17,7 @@ from acb.depends import depends
 from ._base import LoggerBase, LoggerBaseSettings
 
 
-class LoglySettings(LoggerBaseSettings):
+class LoggerSettings(LoggerBaseSettings):
     """Logly-specific logger settings with Rust backend optimization."""
 
     # Logly-specific format strings (similar to Loguru)
@@ -118,7 +118,7 @@ MODULE_METADATA = AdapterMetadata(
         "zstd": "zstandard>=0.21.0",  # For zstd compression
     },
     description="Rust-powered high-performance logger with advanced rotation, compression, and async callbacks",
-    settings_class="LoglySettings",
+    settings_class="LoggerSettings",
 )
 
 
@@ -384,6 +384,8 @@ class Logger(LoggerBase):
         self.complete()
         # Call parent cleanup
         await super().cleanup()
+
+depends.set(Logger, "logly")
 
 
 class InterceptHandler(logging.Handler):

@@ -1,7 +1,7 @@
 """Base service class for ACB services layer.
 
 This module provides the foundation for ACB's services architecture,
-following the simplified architecture patterns introduced in v0.19.1+.
+following the comprehensive architecture patterns introduced in v0.20.0+.
 """
 
 import asyncio

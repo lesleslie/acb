@@ -1,8 +1,8 @@
 # ACB Performance Guide
 
-> **Version:** 0.23.0 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
+> **Version:** 0.25.2 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
 
-This guide provides best practices and techniques for optimizing ACB application performance with the simplified v0.19.1+ architecture.
+This guide provides best practices and techniques for optimizing ACB application performance with comprehensive services, events, and workflow architecture.
 
 ## Table of Contents
 
@@ -13,6 +13,7 @@ This guide provides best practices and techniques for optimizing ACB application
 - [Configuration Optimization](<#configuration-optimization>)
 - [Async Best Practices](<#async-best-practices>)
 - [Monitoring and Profiling](<#monitoring-and-profiling>)
+- [Service and Events Performance](<#service-and-events-performance>)
 - [Production Deployment](<#production-deployment>)
 
 ## General Performance Principles
@@ -481,6 +482,170 @@ async def memory_monitor():
             vms_mb=memory.vms / 1024 / 1024,
         )
         await asyncio.sleep(60)  # Check every minute
+```
+
+## Service, Events, Tasks and Workflows Performance
+
+### Service Initialization and Lifecycle
+
+Optimize service startup and resource management:
+
+```python
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.depends import depends, Inject
+import asyncio
+
+
+class OptimizedService(ServiceBase):
+    def __init__(self):
+        service_config = ServiceConfig(
+            service_id="optimized_service",
+            name="Optimized Service",
+            priority=50,  # Set appropriate priority for startup order
+        )
+        super().__init__(service_config=service_config)
+        
+    async def _initialize(self) -> None:
+        # Perform initialization steps that require async operations
+        self.logger.info("Initializing optimized service")
+        
+        # Use lazy initialization for expensive resources
+        self._expensive_resource = None
+        
+    async def _shutdown(self) -> None:
+        # Clean up resources during shutdown
+        if self._expensive_resource:
+            await self._expensive_resource.cleanup()
+        
+    async def get_expensive_resource(self):
+        # Lazy loading of expensive resources
+        if self._expensive_resource is None:
+            self._expensive_resource = await self._create_expensive_resource()
+        return self._expensive_resource
+
+# Use dependency injection to access services
+@depends.inject
+async def use_service(my_service: OptimizedService = depends()):
+    resource = await my_service.get_expensive_resource()
+    return await resource.process()
+```
+
+### Event System Performance
+
+Optimize event publishing and handling:
+
+```python
+from acb.events import create_event, EventPublisher, event_handler, EventHandlerResult
+from acb.depends import depends, Inject
+
+
+# Minimize event payload size for better performance
+async def optimized_event_creation():
+    # Include only necessary data in events
+    event = create_event(
+        "user.action", 
+        "user_service", 
+        {"user_id": 123},  # Only essential data
+        priority="normal"  # Set appropriate priority
+    )
+    
+    publisher = depends.get(EventPublisher)
+    await publisher.publish(event)
+
+
+# Use asynchronous event handlers when possible
+@event_handler("user.action")
+async def handle_user_action(event):
+    # Perform async operations in handler
+    result = await process_user_action(event.payload["user_id"])
+    return EventHandlerResult(success=True, metadata={"processed": result})
+
+
+# Batch event processing for high-volume scenarios
+async def batch_event_processing(events_batch):
+    # Process multiple events efficiently
+    tasks = [process_single_event(event) for event in events_batch]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    return results
+
+
+### Tasks System Performance
+
+Optimize task processing and queue management:
+
+```python
+from acb.tasks import create_task_queue, TaskData, TaskPriority
+
+
+# Optimize task creation and execution
+async def optimized_task_handling():
+    # Use appropriate priority levels
+    high_priority_task = TaskData(
+        task_type="critical_operation",
+        payload={"data": "important"},
+        priority=TaskPriority.HIGH
+    )
+    
+    # Batch task creation when possible
+    tasks_batch = [
+        TaskData(task_type="email", payload={"user_id": uid})
+        for uid in user_ids
+    ]
+    
+    # Use the task queue efficiently
+    async with create_task_queue("redis") as queue:
+        # Process multiple tasks in batch
+        task_ids = await queue.enqueue_batch(tasks_batch)
+        return task_ids
+
+
+# Optimize worker configuration
+async def configure_workers(queue):
+    # Set appropriate concurrency based on task type
+    # CPU-bound tasks: lower concurrency
+    # I/O-bound tasks: higher concurrency
+    await queue.set_worker_concurrency(10)  # Adjust based on your workload
+```
+
+### Workflows Performance
+
+Optimize workflow execution and state management:
+
+```python
+from acb.workflows import WorkflowService
+
+
+# Optimize workflow execution
+async def optimized_workflow_execution():
+    workflow_service = WorkflowService()
+    
+    # Use appropriate timeouts for different operations
+    result = await workflow_service.execute_workflow(
+        "complex_operation",
+        input_data={"data": "value"},
+        timeout=3600,  # 1 hour for long operations
+        retry_policy={
+            "max_retries": 3,
+            "backoff_multiplier": 2
+        }
+    )
+    return result
+
+
+# Optimize state persistence
+async def optimize_state_management():
+    # Minimize state size to improve performance
+    workflow_service = WorkflowService()
+    
+    # Store only necessary state data
+    minimal_state = {
+        "current_step": "step3",
+        "essential_data": "...",
+        # Avoid storing large objects in state
+    }
+    
+    # Use external storage for large data
+    await workflow_service.set_state("workflow_id", minimal_state)
 ```
 
 ## Production Deployment

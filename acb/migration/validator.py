@@ -154,7 +154,7 @@ class MigrationValidator:
             return False
 
         # Check for required files
-        required_files = ["app.yml", "adapters.yml"]
+        required_files = ["app.yaml", "adapters.yaml"]
         missing_files = [
             required_file
             for required_file in required_files
@@ -181,14 +181,14 @@ class MigrationValidator:
         Returns:
             True if adapter configuration is valid
         """
-        adapters_yml = project_root / "settings" / "adapters.yml"
+        adapters_yml = project_root / "settings" / "adapters.yaml"
 
         if not adapters_yml.exists():
             self._add_issue(
                 severity=MigrationSeverity.WARNING,
                 component="adapters",
-                message="adapters.yml not found",
-                fix_suggestion="Create settings/adapters.yml with adapter selections",
+                message="adapters.yaml not found",
+                fix_suggestion="Create settings/adapters.yaml with adapter selections",
             )
             return False
 
@@ -199,15 +199,15 @@ class MigrationValidator:
                 self._add_issue(
                     severity=MigrationSeverity.WARNING,
                     component="adapters",
-                    message="adapters.yml is empty",
-                    fix_suggestion="Add adapter configurations to adapters.yml",
+                    message="adapters.yaml is empty",
+                    fix_suggestion="Add adapter configurations to adapters.yaml",
                 )
                 return False
         except Exception as e:
             self._add_issue(
                 severity=MigrationSeverity.ERROR,
                 component="adapters",
-                message=f"Failed to read adapters.yml: {e}",
+                message=f"Failed to read adapters.yaml: {e}",
                 fix_suggestion="Check file permissions and YAML syntax",
             )
             return False

@@ -336,25 +336,25 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             return {}
         if get_context().is_testing_mode() or get_context().is_library_mode():
             return self._handle_testing_mode()
-        yml_path = AsyncPath(str(settings_path / f"{self.adapter_name}.yml"))
-        await self._create_default_settings_file(yml_path)
-        yml_settings = await self._load_settings_from_file(yml_path)
-        yml_settings = self._process_debug_settings(yml_settings)
-        await self._update_settings_file(yml_path, yml_settings)
-        self._update_global_variables(yml_settings)
-        return yml_settings
+        yaml_path = AsyncPath(str(settings_path / f"{self.adapter_name}.yaml"))
+        await self._create_default_settings_file(yaml_path)
+        yaml_settings = await self._load_settings_from_file(yaml_path)
+        yaml_settings = self._process_debug_settings(yaml_settings)
+        await self._update_settings_file(yaml_path, yaml_settings)
+        self._update_global_variables(yaml_settings)
+        return yaml_settings
 
     def _handle_testing_mode(self) -> dict[str, t.Any]:
         default_settings = self._get_default_settings()
         self._update_global_variables(default_settings)
         return default_settings
 
-    async def _create_default_settings_file(self, yml_path: AsyncPath) -> None:
-        if await yml_path.exists() or _deployed:
+    async def _create_default_settings_file(self, yaml_path: AsyncPath) -> None:
+        if await yaml_path.exists() or _deployed:
             return
         dump_settings = self._get_dump_settings()
         if self._should_create_settings_file(dump_settings):
-            await dump.yaml(dump_settings, yml_path)
+            await dump.yaml(dump_settings, yaml_path)
 
     def _get_dump_settings(self) -> dict[str, t.Any]:
         return {
@@ -364,46 +364,49 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             and "Optional" not in str(info.annotation)
         }
 
+    @staticmethod
     def _should_create_settings_file(self, dump_settings: dict[str, t.Any]) -> bool:
         return bool(dump_settings) and any(
             value is not None and value not in ({}, [])
             for value in dump_settings.values()
         )
 
-    async def _load_settings_from_file(self, yml_path: AsyncPath) -> dict[str, t.Any]:
-        if await yml_path.exists():
-            result = await load.yaml(yml_path)
+    @staticmethod
+    async def _load_settings_from_file(self, yaml_path: AsyncPath) -> dict[str, t.Any]:
+        if await yaml_path.exists():
+            result = await load.yaml(yaml_path)
             return dict(result) if result else {}
         return {}
 
     def _process_debug_settings(
         self,
-        yml_settings: dict[str, t.Any],
+        yaml_settings: dict[str, t.Any],
     ) -> dict[str, t.Any]:
         if self.adapter_name != "debug":
-            return yml_settings
+            return yaml_settings
 
         for adapter in adapter_registry.get():
-            if adapter.category not in (yml_settings.keys() or ("config", "logger")):
-                yml_settings[adapter.category] = False
-        return yml_settings
+            if adapter.category not in (yaml_settings.keys() or ("config", "logger")):
+                yaml_settings[adapter.category] = False
+        return yaml_settings
 
     async def _update_settings_file(
         self,
-        yml_path: AsyncPath,
-        yml_settings: dict[str, t.Any],
+        yaml_path: AsyncPath,
+        yaml_settings: dict[str, t.Any],
     ) -> None:
-        if not self._should_update_settings_file(yml_settings):
+        if not self._should_update_settings_file(yaml_settings):
             return
-        await dump.yaml(yml_settings, yml_path, sort_keys=True)
+        await dump.yaml(yaml_settings, yaml_path, sort_keys=True)
 
-    def _should_update_settings_file(self, yml_settings: dict[str, t.Any]) -> bool:
+    @staticmethod
+    def _should_update_settings_file(self, yaml_settings: dict[str, t.Any]) -> bool:
         return (
             not _deployed
-            and bool(yml_settings)
+            and bool(yaml_settings)
             and any(
                 value is not None and value not in ({}, [])
-                for value in yml_settings.values()
+                for value in yaml_settings.values()
             )
         )
 
@@ -877,10 +880,10 @@ class ConfigHotReload:
     async def _check_for_changes(self) -> None:
         """Check if any configuration files have changed."""
         config_files = [
-            Path("settings/app.yml"),
-            Path("settings/adapters.yml"),
-            Path("settings/debug.yml"),
-            Path("settings/models.yml"),
+            Path("settings/app.yaml"),
+            Path("settings/adapters.yaml"),
+            Path("settings/debug.yaml"),
+            Path("settings/models.yaml"),
         ]
 
         for config_file in config_files:

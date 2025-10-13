@@ -11,11 +11,12 @@ except ImportError:
     structlog = None  # type: ignore[assignment]
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.depends import depends
 
 from ._base import LoggerBase, LoggerBaseSettings
 
 
-class StructlogSettings(LoggerBaseSettings):
+class LoggerSettings(LoggerBaseSettings):
     """Structlog-specific logger settings."""
 
     # Structlog-specific configuration
@@ -130,7 +131,7 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["structlog"],
     description="Advanced structured logging with JSON output and comprehensive context management",
-    settings_class="StructlogSettings",
+    settings_class="LoggerSettings",
 )
 
 
@@ -152,10 +153,10 @@ class Logger(LoggerBase):
             )
 
     @property
-    def settings(self) -> StructlogSettings:
+    def settings(self) -> LoggerSettings:
         """Get structlog-specific settings."""
         if self._settings is None:
-            self._settings = StructlogSettings()
+            self._settings = LoggerSettings()
         return self._settings  # type: ignore[return-value]
 
     def _ensure_logger(self) -> t.Any:
@@ -361,3 +362,5 @@ class Logger(LoggerBase):
             exception=error,
             **context,
         )
+
+depends.set(Logger, "structlog")

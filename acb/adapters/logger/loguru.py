@@ -21,7 +21,7 @@ from acb.depends import depends
 from ._base import LoggerBase, LoggerBaseSettings
 
 
-class LoguruSettings(LoggerBaseSettings):
+class LoggerSettings(LoggerBaseSettings):
     """Loguru-specific logger settings."""
 
     # Loguru-specific format strings
@@ -64,7 +64,7 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["loguru", "aioconsole"],
     description="High-performance async logger with colored output and structured logging support",
-    settings_class="LoguruSettings",
+    settings_class="LoggerSettings",
 )
 
 
@@ -89,10 +89,10 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         self._bound_context: dict[str, t.Any] = {}
 
     @property
-    def settings(self) -> LoguruSettings:
+    def settings(self) -> LoggerSettings:
         """Get Loguru-specific settings."""
         if self._settings is None:
-            self._settings = LoguruSettings()
+            self._settings = LoggerSettings()
         return self._settings  # type: ignore[return-value]
 
     # Private implementation methods
@@ -240,6 +240,8 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         """Log application startup information."""
         self.info(f"App path: {self.config.root_path}")  # type: ignore[no-untyped-call]
         self.info(f"App deployed: {self.config.deployed}")  # type: ignore[no-untyped-call]
+
+depends.set(Logger, "loguru")
 
 
 class InterceptHandler(logging.Handler):

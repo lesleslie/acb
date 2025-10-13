@@ -142,13 +142,13 @@ class PerformanceOptimizer(ServiceBase):
         # Try to get adapters for optimization
         try:
             Cache = import_adapter("cache")
-            self._cache_adapter = depends.get(Cache)
+            self._cache_adapter = await depends.get(Cache)
         except Exception as e:
             self.logger.warning(f"Cache adapter not available: {e}")
 
         try:
             Sql = import_adapter("sql")
-            self._sql_adapter = depends.get(Sql)
+            self._sql_adapter = await depends.get(Sql)
         except Exception as e:
             self.logger.warning(f"SQL adapter not available: {e}")
 

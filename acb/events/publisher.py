@@ -36,7 +36,7 @@ from ._base import (
 class EventPublisherSettings(ServiceSettings):
     """Settings for event publisher configuration."""
 
-    # Queue backend configuration (uses queue adapter from settings/adapters.yml)
+    # Queue backend configuration (uses queue adapter from settings/adapters.yaml)
     event_topic_prefix: str = Field(
         default="events",
         description="Prefix for event topics",
@@ -662,7 +662,7 @@ def create_event_publisher(
 ) -> EventPublisher:
     """Create an event publisher with specified settings.
 
-    The queue backend is determined by settings/adapters.yml configuration.
+    The queue backend is determined by settings/adapters.yaml configuration.
 
     Args:
         **settings_kwargs: Additional settings

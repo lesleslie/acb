@@ -38,8 +38,7 @@ MODULE_METADATA = AdapterMetadata(
 )
 
 
-class CacheSettings(CacheBaseSettings):
-    pass
+class CacheSettings(CacheBaseSettings):...
 
 
 class Cache(CacheBase):
@@ -183,4 +182,4 @@ class Cache(CacheBase):
         return bool(await cache.expire(key, ttl=ttl))
 
 
-depends.set(Cache)
+depends.set(Cache, "memory")

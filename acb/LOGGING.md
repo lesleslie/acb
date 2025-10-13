@@ -80,7 +80,7 @@ async def log_levels_example(logger: Inject[Logger]):
 
 ### Logger Settings
 
-Configure logging behavior in `settings/app.yml`:
+Configure logging behavior in `settings/app.yaml`:
 
 ```yaml
 logger:
@@ -121,7 +121,7 @@ logger:
 
 ### Adapter Selection
 
-Choose logging implementation in `settings/adapters.yml`:
+Choose logging implementation in `settings/adapters.yaml`:
 
 ```yaml
 # Use Loguru (default)
@@ -222,7 +222,7 @@ async def debug_and_log_example(data: dict, logger: Inject[Logger]):
 ### Module-Specific Logging
 
 ```python
-# In settings/debug.yml, control per-module logging
+# In settings/debug.yaml, control per-module logging
 debug:
   logging: true
   cache: true      # Enable cache module logging

@@ -224,4 +224,4 @@ class Ftpd(FtpdBase):
             await f.write(content)
 
 
-depends.set(Ftpd)
+depends.set(Ftpd, "sftp")

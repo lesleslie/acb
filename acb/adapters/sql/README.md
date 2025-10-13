@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [SQL](./README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [SQL](<./README.md>)
 
 # SQL Adapter
 
@@ -6,28 +6,28 @@ The SQL adapter provides a standardized interface for relational database operat
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Available Implementations](#available-implementations)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Basic Usage](#basic-usage)
-- [Universal Query Interface](#universal-query-interface)
-  - [Simple Query Style](#simple-query-style)
-  - [Repository Pattern](#repository-pattern)
-  - [Specification Pattern](#specification-pattern)
-  - [Advanced Query Builder](#advanced-query-builder)
-  - [Hybrid Query Interface](#hybrid-query-interface)
-- [Traditional SQL Operations](#traditional-sql-operations)
-  - [Using SQLModel with Type Safety](#using-sqlmodel-with-type-safety)
-  - [Transactions](#transactions)
-  - [Raw Connection Access](#raw-connection-access)
-- [Advanced Features](#advanced-features)
-  - [Working with Database Migrations](#working-with-database-migrations)
-  - [Database Backup and Restore](#database-backup-and-restore)
-- [Troubleshooting](#troubleshooting)
-- [Performance Considerations](#performance-considerations)
-- [Related Adapters](#related-adapters)
-- [Additional Resources](#additional-resources)
+- [Overview](<#overview>)
+- [Available Implementations](<#available-implementations>)
+- [Installation](<#installation>)
+- [Configuration](<#configuration>)
+- [Basic Usage](<#basic-usage>)
+- [Universal Query Interface](<#universal-query-interface>)
+  - [Simple Query Style](<#simple-query-style>)
+  - [Repository Pattern](<#repository-pattern>)
+  - [Specification Pattern](<#specification-pattern>)
+  - [Advanced Query Builder](<#advanced-query-builder>)
+  - [Hybrid Query Interface](<#hybrid-query-interface>)
+- [Traditional SQL Operations](<#traditional-sql-operations>)
+  - [Using SQLModel with Type Safety](<#using-sqlmodel-with-type-safety>)
+  - [Transactions](<#transactions>)
+  - [Raw Connection Access](<#raw-connection-access>)
+- [Advanced Features](<#advanced-features>)
+  - [Working with Database Migrations](<#working-with-database-migrations>)
+  - [Database Backup and Restore](<#database-backup-and-restore>)
+- [Troubleshooting](<#troubleshooting>)
+- [Performance Considerations](<#performance-considerations>)
+- [Related Adapters](<#related-adapters>)
+- [Additional Resources](<#additional-resources>)
 
 ## Overview
 
@@ -63,7 +63,7 @@ uv add "acb[sql,cache,storage]"
 
 ### Settings
 
-Configure the SQL adapter in your `settings/adapters.yml` file:
+Configure the SQL adapter in your `settings/adapters.yaml` file:
 
 ```yaml
 # Use MySQL implementation
@@ -78,7 +78,7 @@ sql: sqlite
 
 ### SQL Settings
 
-The SQL adapter settings can be customized in your `settings/app.yml` file:
+The SQL adapter settings can be customized in your `settings/app.yaml` file:
 
 ```yaml
 sql:
@@ -453,10 +453,10 @@ sql:
 
 The SQL adapter integrates seamlessly with other ACB adapters:
 
-- [**Models Adapter**](../models/README.md): Define SQLModel and Pydantic models
-- [**Cache Adapter**](../cache/README.md): Automatic query result caching
-- [**NoSQL Adapter**](../nosql/README.md): Hybrid database architectures
-- [**Storage Adapter**](../storage/README.md): File metadata storage
+- [**Models Adapter**](<../models/README.md>): Define SQLModel and Pydantic models
+- [**Cache Adapter**](<../cache/README.md>): Automatic query result caching
+- [**NoSQL Adapter**](<../nosql/README.md>): Hybrid database architectures
+- [**Storage Adapter**](<../storage/README.md>): File metadata storage
 
 ## Additional Resources
 

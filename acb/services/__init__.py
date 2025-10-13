@@ -1,9 +1,9 @@
 """Services layer for ACB framework.
 
-Provides service-oriented architecture patterns with lifecycle management,
+Provides comprehensive service-oriented architecture patterns with lifecycle management,
 dependency injection, and performance optimization capabilities.
 
-This module integrates with ACB's simplified architecture (v0.19.1+) and
+This module integrates with ACB's complete architecture (v0.20.0+) and
 can be extended by web frameworks for additional functionality.
 
 Features service discovery and dynamic import system similar to adapters:

@@ -26,14 +26,14 @@ uv add "acb[vector]"
 
 ## Configuration
 
-Configure your vector database in `settings/adapters.yml`:
+Configure your vector database in `settings/adapters.yaml`:
 
 ```yaml
 # Use DuckDB vector adapter
 vector: duckdb
 ```
 
-And in `settings/vector.yml`:
+And in `settings/vector.yaml`:
 
 ```yaml
 vector:

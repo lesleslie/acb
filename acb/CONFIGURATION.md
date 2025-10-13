@@ -28,12 +28,12 @@ The configuration system aggregates settings from multiple sources in order of p
 
 ```
 settings/
-├── app.yml          # Application-wide settings
-├── debug.yml        # Debug configuration
-├── adapters.yml     # Adapter implementation selection
+├── app.yaml          # Application-wide settings
+├── debug.yaml        # Debug configuration
+├── adapters.yaml     # Adapter implementation selection
 └── secrets/         # Secret files (gitignored)
-    ├── api_keys.yml
-    └── database.yml
+    ├── api_keys.yaml
+    └── database.yaml
 ```
 
 ## Core Settings Models
@@ -90,12 +90,12 @@ async def my_function(config: Inject[Config]):
 Create environment-specific files:
 
 ```yaml
-# settings/app.yml (development)
+# settings/app.yaml (development)
 app:
   name: "MyApp-Dev"
   domain: "localhost:8000"
 
-# settings/production/app.yml (production)
+# settings/production/app.yaml (production)
 app:
   name: "MyApp"
   domain: "myapp.com"
@@ -108,7 +108,7 @@ app:
 Store sensitive data in `settings/secrets/`:
 
 ```yaml
-# settings/secrets/database.yml
+# settings/secrets/database.yaml
 database:
   password: "super_secret_password"
   api_key: "secret_api_key"
@@ -119,10 +119,10 @@ database:
 Configure cloud secret management:
 
 ```yaml
-# settings/adapters.yml
+# settings/adapters.yaml
 secret: secret_manager  # or: infisical
 
-# settings/app.yml
+# settings/app.yaml
 secret:
   project_id: "my-gcp-project"
   secret_names:
@@ -265,7 +265,7 @@ unset ACB_LIBRARY_MODE
 
 ### ACB 0.16.17+ Specific Issues
 
-**Adapter Configuration Not Loading**: Ensure you're in application mode if you need full adapter configuration. Check for the presence of `settings/adapters.yml` file.
+**Adapter Configuration Not Loading**: Ensure you're in application mode if you need full adapter configuration. Check for the presence of `settings/adapters.yaml` file.
 
 **Static Mapping Errors**: If you're getting "StaticImportError" exceptions, ensure your adapters are properly registered in the static mapping system.
 

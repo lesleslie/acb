@@ -1,4 +1,4 @@
-Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/dns/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [DNS](./README.md)
+Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/dns/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [DNS](<./README.md>)
 
 # DNS Adapter
 
@@ -36,7 +36,7 @@ uv add "acb[dns,storage,sql]"
 
 ### Settings
 
-Configure the DNS adapter in your `settings/adapters.yml` file:
+Configure the DNS adapter in your `settings/adapters.yaml` file:
 
 ```yaml
 # Use Cloud DNS implementation
@@ -54,7 +54,7 @@ dns: null
 
 ### DNS Settings
 
-The DNS adapter settings can be customized in your `settings/app.yml` file:
+The DNS adapter settings can be customized in your `settings/app.yaml` file:
 
 ```yaml
 dns:
@@ -187,7 +187,7 @@ DNS = import_adapter("dns")
 dns = depends.get(DNS)
 
 # Create a proxied record (traffic routed through Cloudflare)
-# This is configured in settings/app.yml with proxied: true
+# This is configured in settings/app.yaml with proxied: true
 record = DnsRecord(name="www", type="A", ttl=300, rrdata="203.0.113.1")
 await dns.create_records(record)
 
@@ -324,4 +324,4 @@ class DnsBase:
 - [Route53 API Reference](https://docs.aws.amazon.com/Route53/latest/APIReference/)
 - [Boto3 Route53 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/route53.html)
 - [DNS Best Practices](https://www.cloudflare.com/learning/dns/dns-best-practices/)
-- [ACB Adapters Overview](../README.md)
+- [ACB Adapters Overview](<../README.md>)

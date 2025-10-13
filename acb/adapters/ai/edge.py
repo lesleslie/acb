@@ -8,6 +8,7 @@ from uuid import UUID
 import httpx
 from pydantic import SecretStr
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.depends import depends
 
 from ._base import (
     AIBase,
@@ -778,3 +779,5 @@ class EdgeAI(AIBase):
 # Alias for backward compatibility and convention
 Ai = EdgeAI
 AiSettings = EdgeAISettings
+
+depends.set(Ai, "edge")

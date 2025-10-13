@@ -124,7 +124,7 @@ asyncio.run(main())
 
 ### Debug Settings
 
-Configure debugging behavior in `settings/debug.yml`:
+Configure debugging behavior in `settings/debug.yaml`:
 
 ```yaml
 debug:

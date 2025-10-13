@@ -555,7 +555,9 @@ class QueueBase(ABC, CleanupMixin):
         if self._metrics.worker_metrics.idle_workers > 0:
             self._metrics.worker_metrics.idle_workers -= 1
 
-    async def _handle_empty_queue(self) -> None:
+
+    @staticmethod
+    async def _handle_empty_queue() -> None:
         """Handle empty queue by waiting before next dequeue."""
         await asyncio.sleep(1.0)
 

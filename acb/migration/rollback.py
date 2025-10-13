@@ -200,7 +200,7 @@ class RollbackManager:
             "pyproject.toml",
             "uv.lock",
             ".env",
-            "*.yml",
+            "*.yaml",
             "*.yaml",
         ]
 

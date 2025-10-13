@@ -25,7 +25,7 @@ from acb.adapters.graph._base import (
     GraphTraversalDirection,
 )
 from acb.config import Config
-from acb.depends import Inject
+from acb.depends import Inject, depends
 
 if t.TYPE_CHECKING:
     from neo4j import AsyncDriver, AsyncTransaction
@@ -58,11 +58,11 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["neo4j>=5.0.0"],
     description="High-performance Neo4j graph database adapter with full Cypher query support",
-    settings_class="Neo4jSettings",
+    settings_class="GraphSettings",
 )
 
 
-class Neo4jSettings(GraphBaseSettings):
+class GraphSettings(GraphBaseSettings):
     """Neo4j-specific settings."""
 
     # Neo4j connection settings
@@ -651,3 +651,5 @@ class Graph(GraphBase):
             edges=edges,
             length=len(path.relationships),
         )
+
+depends.set(Graph, "neo4j")

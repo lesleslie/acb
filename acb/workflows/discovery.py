@@ -8,7 +8,7 @@ Features:
 - Dynamic workflow engine loading via import_workflow_engine()
 - Workflow engine registry with metadata support
 - Auto-discovery and configuration
-- Override capability through settings/workflows.yml
+- Override capability through settings/workflows.yaml
 - Thread-safe registry using ContextVar
 """
 

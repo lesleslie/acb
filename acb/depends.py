@@ -21,11 +21,12 @@ class DependsProtocol(t.Protocol):
     @staticmethod
     def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]: ...
     @staticmethod
-    def set(class_: t.Any, instance: t.Any = None) -> t.Any: ...
+    def set(class_: t.Any, instance: t.Any = None, module: str | None = None) -> t.Any:
+        ...
     @staticmethod
-    def get(category: t.Any) -> t.Any: ...
+    def get(category: t.Any, module: str | None = None) -> t.Any: ...
     @staticmethod
-    async def get_async(category: t.Any) -> t.Any: ...
+    async def get_async(category: t.Any, module: str | None = None) -> t.Any: ...
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any: ...
 
 
@@ -42,24 +43,32 @@ class Depends:
         return t.cast("t.Callable[..., t.Any]", auto_inject(func))
 
     @staticmethod
-    def set(class_: t.Any, instance: t.Any = None) -> t.Any:
+    def set(class_: t.Any, instance: t.Any = None, module: str | None = None) -> t.Any:
         """Register a class/instance in the dependency container.
 
         Returns the instance that was registered.
         """
         if instance is None:
             instance = class_()
-            get_container().add(class_, instance)
-            return instance
-        get_container().add(class_, instance)
-        return instance
+            get_container().add(class_, instance, qualifier=module)
+            return instance if not module else (instance, module)
+        get_container().add(class_, instance, qualifier=module)
+        return instance if not module else (instance, module)
 
+    async def get(self, category: t.Any, module: str | None =  None) -> t.Any:
+        """Get dependency asynchronously (now the default method as intended).
+        
+        This method was defined as async but had a bug in original implementation.
+        Now properly awaits the async dependency resolution."""
+        return await self.get_async(category, module)
+    
     @staticmethod
-    def get(category: t.Any) -> t.Any:
-        """Get dependency instance by category or class.
+    def get_sync(category: t.Any, module: str | None = None) -> t.Any:
+        """Get dependency instance synchronously.
 
         Args:
             category: The dependency category (string) or class to retrieve
+            module: The dependency module (string) to retrieve
 
         Returns:
             The dependency instance
@@ -68,16 +77,16 @@ class Depends:
             For adapter dependencies that require async initialization,
             use get_async() instead.
         """
-        return _get_dependency_sync(category)
+        return _get_dependency_sync(category, module)
 
     @staticmethod
-    async def get_async(category: t.Any) -> t.Any:
+    async def get_async(category: t.Any, module: str | None = None) -> t.Any:
         """Get dependency instance asynchronously.
 
         This is needed for adapter dependencies that require async initialization.
-
         Args:
             category: The dependency category (string) or class to retrieve
+            module: The dependency module (string) to retrieve
 
         Returns:
             The dependency instance
@@ -85,15 +94,58 @@ class Depends:
         if isinstance(category, str):
             # First try the container cache
             with suppress(Exception):
-                result = get_container().get(category)
+                result = get_container().get(category, qualifier=module)
                 if result is not None:
                     return result
 
             # Import adapter asynchronously
             class_ = await _get_adapter_class_async(category)
-            return get_container().get(class_)
+            return get_container().get(class_, qualifier=module)
 
-        return get_container().get(category)
+        return get_container().get(category, qualifier=module)
+
+    @staticmethod
+    def get_sync(category: t.Any, module: str | None = None) -> t.Any:
+        """Get dependency instance by category or class.
+
+        Args:
+            category: The dependency category (string) or class to retrieve
+            module: The dependency module (string) to retrieve
+
+        Returns:
+            The dependency instance
+
+        Note:
+            For adapter dependencies that require async initialization,
+            use get_async() instead.
+        """
+        return _get_dependency_sync(category, module)
+
+    @staticmethod
+    async def get_async(category: t.Any, module: str | None = None) -> t.Any:
+        """Get dependency instance asynchronously.
+
+        This is needed for adapter dependencies that require async initialization.
+
+        Args:
+            category: The dependency category (string) or class to retrieve
+            module: The dependency module (string) to retrieve
+
+        Returns:
+            The dependency instance
+        """
+        if isinstance(category, str):
+            # First try the container cache
+            with suppress(Exception):
+                result = get_container().get(category, qualifier=module)
+                if result is not None:
+                    return result
+
+            # Import adapter asynchronously
+            class_ = await _get_adapter_class_async(category)
+            return get_container().get(class_, qualifier=module)
+
+        return get_container().get(category, qualifier=module)
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Support using depends as a callable for backward compatibility.
@@ -104,12 +156,12 @@ class Depends:
         return _DEPENDENCY_SENTINEL
 
 
-def _get_dependency_sync(category: t.Any) -> t.Any:
+def _get_dependency_sync(category: t.Any, module: str | None = None) -> t.Any:
     """Get dependency synchronously (for non-adapter dependencies)."""
     if isinstance(category, str):
         # Try the container cache first
         with suppress(Exception):
-            result = get_container().get(category)
+            result = get_container().get(category, qualifier=module)
             if result is not None:
                 return result
 
@@ -121,7 +173,7 @@ def _get_dependency_sync(category: t.Any) -> t.Any:
         )
         raise RuntimeError(msg)
 
-    return get_container().get(category)
+    return get_container().get(category, qualifier=module)
 
 
 @lru_cache(maxsize=256)
@@ -138,7 +190,7 @@ depends = Depends()
 __all__ = ["depends", "fast_depends", "Inject", "Depends"]
 
 
-def fast_depends(category: t.Any) -> t.Any:
+def fast_depends(category: t.Any, module: str | None = None) -> t.Any:
     """High-performance dependency injection.
 
     This function provides direct dependency lookup without any
@@ -146,10 +198,11 @@ def fast_depends(category: t.Any) -> t.Any:
 
     Example:
         cache = fast_depends("cache")
-        sql = fast_depends("sql")
+        sql = fast_depends("sql", "sqlite"))
 
     Args:
         category: The dependency category or class to retrieve
+        module: The dependency module (string) to retrieve
 
     Returns:
         The dependency instance
@@ -158,4 +211,4 @@ def fast_depends(category: t.Any) -> t.Any:
         This is now just an alias for depends.get() since we've removed
         the stack introspection overhead.
     """
-    return depends.get(category)
+    return depends.get(category, module)

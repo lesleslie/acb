@@ -79,4 +79,4 @@ class Monitoring(MonitoringBase):
         )
 
 
-depends.set(Monitoring)
+depends.set(Monitoring, "sentry")

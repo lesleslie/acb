@@ -51,4 +51,4 @@ class Storage(StorageBase):
     # Health checking removed as part of architectural simplification
 
 
-depends.set(Storage)
+depends.set(Storage, "s3")

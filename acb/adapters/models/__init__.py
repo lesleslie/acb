@@ -8,7 +8,7 @@ This package provides simple model adapters for different frameworks:
 - msgspec: Msgspec model adapter
 - redis_om: Redis OM adapter
 
-Simplified architecture focusing on basic model operations.
+Clean architecture focusing on basic model operations with Services layer available for complex enterprise features.
 """
 
 from contextlib import suppress

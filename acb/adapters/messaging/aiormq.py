@@ -1259,3 +1259,8 @@ def create_aiormq_messaging(
 # Export with role-specific names for dependency injection
 AioRmqPubSub = AioRmqMessaging  # For events system (pubsub adapter)
 AioRmqQueue = AioRmqMessaging  # For tasks system (queue adapter)
+
+Messaging = AioRmqMessaging
+MessagingSettings = AioRmqMessagingSettings
+
+depends.set(Messaging, "aiormq")

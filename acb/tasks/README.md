@@ -55,7 +55,7 @@ from acb.depends import depends
 from acb.adapters import import_adapter
 from acb.queues._base import TaskData, TaskHandler, TaskResult, TaskStatus
 
-# Import queue adapter (loads from settings/adapters.yml)
+# Import queue adapter (loads from settings/adapters.yaml)
 Queue = import_adapter("queue")
 queue = depends.get(Queue)
 
@@ -94,10 +94,10 @@ print(f"Task status: {status.status}")
 ### Memory Queue Configuration
 
 ```yaml
-# settings/adapters.yml
+# settings/adapters.yaml
 queue: memory
 
-# settings/queue.yml (optional)
+# settings/queue.yaml (optional)
 queue:
   max_memory_usage: 100_000_000  # 100MB
   max_tasks_per_queue: 10_000
@@ -109,10 +109,10 @@ queue:
 ### APScheduler Queue Configuration
 
 ```yaml
-# settings/adapters.yml
+# settings/adapters.yaml
 queue: apscheduler
 
-# settings/queue.yml
+# settings/queue.yaml
 queue:
   # Job Store (choose one)
   job_store_type: memory  # or: sqlalchemy, mongodb, redis

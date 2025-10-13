@@ -213,4 +213,4 @@ class Dns(DnsBase):
             self.logger.info("No DNS changes detected")
 
 
-depends.set(Dns)
+depends.set(Dns, "gcdns")

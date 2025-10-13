@@ -1260,3 +1260,8 @@ def create_rabbitmq_messaging(
 # Export with role-specific names for dependency injection
 RabbitMQPubSub = RabbitMQMessaging  # For events system (pubsub adapter)
 RabbitMQQueue = RabbitMQMessaging  # For tasks system (queue adapter)
+
+Messaging = RabbitMQMessaging
+MessagingSettings = RabbitMQMessagingSettings
+
+depends.set(Messaging, "rabbitmq")

@@ -283,4 +283,4 @@ class Smtp(SmtpBase):
         await self.create_routes()
 
 
-depends.set(Smtp)
+depends.set(Smtp, "mailgun")

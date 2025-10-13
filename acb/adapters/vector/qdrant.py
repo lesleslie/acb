@@ -568,4 +568,4 @@ class Vector(VectorBase):
         return capability in supported_capabilities
 
 
-depends.set(Vector)
+depends.set(Vector, "qdrant")

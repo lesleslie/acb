@@ -83,6 +83,7 @@ dev = [
     "session-mgmt-mcp>=0.3",
 ]
 cache = [
+    "acb",
     "aiocache[redis]>=0.12.3",
     "coredis>=4.24",
     "logfire[redis]>=3.24",
@@ -124,6 +125,7 @@ storage = [
     "s3fs>=2025.5.1",
 ]
 sql = [
+    "acb",
     "aiomysql>=0.2",
     "aiosqlite>=0.21",
     "babel>=2.17",
@@ -137,6 +139,7 @@ sql = [
     "sqlmodel>=0.0.24",
 ]
 nosql = [
+    "acb",
     "beanie>=1.30",
     "google-cloud-firestore>=2.21",
     "motor>=3.7.1",
@@ -709,6 +712,9 @@ index-url = "https://pypi.org/simple/"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
 prerelease = "allow"
+
+[tool.uv.sources.acb]
+workspace = true
 
 [tool.complexipy]
 default_pattern = "**/*.py"

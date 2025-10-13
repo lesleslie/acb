@@ -341,4 +341,4 @@ class Dns(DnsBase):
             raise
 
 
-depends.set(Dns)
+depends.set(Dns, "route53")

@@ -181,8 +181,8 @@ class V018CompatibilityLayer(CompatibilityLayer):
             filename: Configuration filename
         """
         mapping = {
-            "config.yaml": "settings/app.yml",
-            "debug.yaml": "settings/debug.yml",
+            "config.yaml": "settings/app.yaml",
+            "debug.yaml": "settings/debug.yaml",
             ".env": "settings/secrets/.env",
         }
 

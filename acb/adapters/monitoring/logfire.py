@@ -83,4 +83,4 @@ class Monitoring(MonitoringBase):
         instrument_system_metrics()
 
 
-depends.set(Monitoring)
+depends.set(Monitoring, "logfire")
