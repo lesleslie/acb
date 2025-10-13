@@ -54,7 +54,7 @@ def _initialize_logger() -> None:
 
     # Check if already registered
     with suppress(Exception):
-        depends.get(logger_class)
+        depends.get_sync(logger_class)
         return  # Already initialized
 
     # Create and initialize logger instance
