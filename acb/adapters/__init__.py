@@ -29,6 +29,7 @@ try:
     uuid_lib: t.Any = uuid_utils  # type: ignore[no-redef]
 except ImportError:
     import uuid
+
     uuid_utils = None
 
     _uuid7_available = False
@@ -469,6 +470,7 @@ def _update_adapter_caches() -> None:
     _installed_adapters_cache.get().update(installed_cache)
     print("\nAdapters installed:")
     pprint([(a.name, a.category) for a in _installed_adapters_cache.get().values()])
+    print()
 
 
 adapter_registry.get().extend([*core_adapters])
@@ -972,6 +974,7 @@ def import_adapter_with_context(
     try:
         # Check if we're in an async context
         import asyncio
+
         try:
             asyncio.get_running_loop()
             # We're in an async context - this function shouldn't be called here
@@ -1064,5 +1067,6 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
     pprint(len(adapter_registry.get()))
     _update_adapter_caches()
     return _adapters
+
 
 adapters = asyncio.run(register_adapters(AsyncPath(__file__).parent.parent))

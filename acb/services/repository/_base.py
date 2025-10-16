@@ -200,14 +200,17 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         super().__init__()
         self.entity_type = entity_type
         self.entity_name = getattr(entity_type, "__name__", str(entity_type))
-        self.settings = settings or depends.get(RepositorySettings)  # Keep sync temporarily
+        self.settings = settings or depends.get(
+            RepositorySettings
+        )  # Keep sync temporarily
         self._cache = None
         self._metrics: dict[str, t.Any] = {}
-    
+
     async def _async_init(self) -> None:
         """Async initialization of repository dependencies."""
         if self._cache is None:
             from acb.adapters import import_adapter
+
             Cache = import_adapter("cache")
             self._cache = await depends.get(Cache)
 

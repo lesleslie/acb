@@ -743,9 +743,15 @@ Let's work through this:
             confidence_score=min(best_confidence + 0.1, 1.0),
         )
 
+
 ReasoningSettings = LlamaIndexReasoningSettings
 
 depends.set(Reasoning, "llamaindex")
 
 # Export the adapter class
-__all__ = ["MODULE_METADATA", "LlamaIndexReasoningSettings", "Reasoning", "ReasoningSettings"]
+__all__ = [
+    "MODULE_METADATA",
+    "LlamaIndexReasoningSettings",
+    "Reasoning",
+    "ReasoningSettings",
+]

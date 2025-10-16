@@ -686,8 +686,16 @@ class Config:
 
 depends.set(Config, get_singleton_instance(Config))
 
+
+async def _initialize_config_eagerly() -> None:
+    config = await depends.get(Config)
+    config.init()
+
+
 if _should_initialize_eagerly():
-    depends.get(Config).init()
+    import asyncio
+
+    asyncio.run(_initialize_config_eagerly())
 
 _ADAPTER_LOCKS: WeakKeyDictionary[t.Any, t.Any] = WeakKeyDictionary()
 

@@ -16,7 +16,6 @@ Key Design Principles:
 """
 
 import typing as t
-from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -24,7 +23,6 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from acb.cleanup import CleanupMixin
 
 # Re-export common types for convenience
 __all__ = [
@@ -215,39 +213,36 @@ class Subscription(BaseModel):
 # ============================================================================
 
 
-class PubSubBackend(ABC, CleanupMixin):
-    """Interface for pub/sub messaging patterns.
+class PubSubBackend(t.Protocol):
+    """Protocol interface for pub/sub messaging patterns.
 
     Used by the events system for event-driven messaging.
     Supports multiple subscribers, topic-based routing, and broadcasts.
+
+    Note: This is a Protocol (structural typing), not ABC (inheritance).
+    Any class matching this interface can be used for pub/sub messaging.
     """
 
-    def __init__(self, settings: MessagingSettings | None = None) -> None:
-        super().__init__()
-        self._settings = settings or MessagingSettings()
-        self._logger: t.Any = None
-        self._connected = False
+    _settings: MessagingSettings
+    _logger: t.Any
+    _connected: bool
 
     # Lifecycle Management
 
-    @abstractmethod
     async def connect(self) -> None:
         """Establish connection to the messaging backend."""
         ...
 
-    @abstractmethod
     async def disconnect(self) -> None:
         """Close connection to the messaging backend."""
         ...
 
-    @abstractmethod
     async def health_check(self) -> dict[str, t.Any]:
         """Check health status of the backend."""
         ...
 
     # Core Pub/Sub Operations
 
-    @abstractmethod
     async def publish(
         self,
         topic: str,
@@ -263,7 +258,6 @@ class PubSubBackend(ABC, CleanupMixin):
         """
         ...
 
-    @abstractmethod
     async def subscribe(
         self,
         topic: str,
@@ -280,12 +274,10 @@ class PubSubBackend(ABC, CleanupMixin):
         """
         ...
 
-    @abstractmethod
     async def unsubscribe(self, subscription: Subscription) -> None:
         """Unsubscribe from a topic."""
         ...
 
-    @abstractmethod
     @asynccontextmanager
     async def receive_messages(
         self,
@@ -315,12 +307,10 @@ class PubSubBackend(ABC, CleanupMixin):
         Default implementation calls publish() for each message.
         Backends can override for optimized batch operations.
         """
-        for topic, payload, headers in messages:
-            await self.publish(topic, payload, headers)
+        ...
 
     # Capability Detection
 
-    @abstractmethod
     def get_capabilities(self) -> set[MessagingCapability]:
         """Get the capabilities supported by this backend."""
         ...
@@ -331,39 +321,36 @@ class PubSubBackend(ABC, CleanupMixin):
 # ============================================================================
 
 
-class QueueBackend(ABC, CleanupMixin):
-    """Interface for work queue patterns.
+class QueueBackend(t.Protocol):
+    """Protocol interface for work queue patterns.
 
     Used by the tasks system for job processing with workers.
     Supports single consumer per message, acknowledgments, and retries.
+
+    Note: This is a Protocol (structural typing), not ABC (inheritance).
+    Any class matching this interface can be used for task queues.
     """
 
-    def __init__(self, settings: MessagingSettings | None = None) -> None:
-        super().__init__()
-        self._settings = settings or MessagingSettings()
-        self._logger: t.Any = None
-        self._connected = False
+    _settings: MessagingSettings
+    _logger: t.Any
+    _connected: bool
 
     # Lifecycle Management
 
-    @abstractmethod
     async def connect(self) -> None:
         """Establish connection to the messaging backend."""
         ...
 
-    @abstractmethod
     async def disconnect(self) -> None:
         """Close connection to the messaging backend."""
         ...
 
-    @abstractmethod
     async def health_check(self) -> dict[str, t.Any]:
         """Check health status of the backend."""
         ...
 
     # Core Queue Operations
 
-    @abstractmethod
     async def enqueue(
         self,
         queue: str,
@@ -386,7 +373,6 @@ class QueueBackend(ABC, CleanupMixin):
         """
         ...
 
-    @abstractmethod
     async def dequeue(
         self,
         queue: str,
@@ -405,7 +391,6 @@ class QueueBackend(ABC, CleanupMixin):
         """
         ...
 
-    @abstractmethod
     async def acknowledge(
         self,
         queue: str,
@@ -419,7 +404,6 @@ class QueueBackend(ABC, CleanupMixin):
         """
         ...
 
-    @abstractmethod
     async def reject(
         self,
         queue: str,
@@ -437,7 +421,6 @@ class QueueBackend(ABC, CleanupMixin):
 
     # Queue Management
 
-    @abstractmethod
     async def purge_queue(self, queue: str) -> int:
         """Remove all messages from a queue.
 
@@ -446,7 +429,6 @@ class QueueBackend(ABC, CleanupMixin):
         """
         ...
 
-    @abstractmethod
     async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
         """Get statistics for a queue.
 
@@ -468,15 +450,7 @@ class QueueBackend(ABC, CleanupMixin):
         Default implementation enqueues to {queue}_dlq.
         Backends can override for custom DLQ handling.
         """
-        dlq_name = f"{queue}_dlq"
-        dlq_message = message.model_copy()
-        dlq_message.headers["dlq_reason"] = reason
-        dlq_message.headers["original_queue"] = queue
-        await self.enqueue(
-            dlq_name,
-            dlq_message.payload,
-            headers=dlq_message.headers,
-        )
+        ...
 
     # Batch Operations
 
@@ -490,15 +464,10 @@ class QueueBackend(ABC, CleanupMixin):
         Default implementation calls enqueue() for each message.
         Backends can override for optimized batch operations.
         """
-        message_ids = []
-        for payload, priority, headers in messages:
-            message_id = await self.enqueue(queue, payload, priority, headers=headers)
-            message_ids.append(message_id)
-        return message_ids
+        ...
 
     # Capability Detection
 
-    @abstractmethod
     def get_capabilities(self) -> set[MessagingCapability]:
         """Get the capabilities supported by this backend."""
         ...
@@ -509,36 +478,138 @@ class QueueBackend(ABC, CleanupMixin):
 # ============================================================================
 
 
-class UnifiedMessagingBackend(PubSubBackend, QueueBackend):
-    """Base class for backends that support both pub/sub and queue patterns.
+class UnifiedMessagingBackend(t.Protocol):
+    """Protocol combining pub/sub and queue patterns.
 
-    Most messaging systems (Redis, RabbitMQ, etc.) support both patterns,
-    so they can inherit from this unified interface.
+    Most messaging systems (Redis, RabbitMQ, etc.) support both patterns.
+    Implementations should satisfy both PubSubBackend and QueueBackend protocols.
+
+    Note: This is a Protocol (structural typing), not ABC (inheritance).
+    Any class matching both interfaces can be used as a unified backend.
     """
 
-    def __init__(self, settings: MessagingSettings | None = None) -> None:
-        # Single init since both parent classes have the same init
-        super().__init__(settings)
+    _settings: MessagingSettings
+    _logger: t.Any
+    _connected: bool
 
-    # Shared lifecycle methods only need to be implemented once
-    # since they're identical in both interfaces
+    # Shared lifecycle methods (identical in both interfaces)
 
-    @abstractmethod
     async def connect(self) -> None:
         """Establish connection to the messaging backend."""
         ...
 
-    @abstractmethod
     async def disconnect(self) -> None:
         """Close connection to the messaging backend."""
         ...
 
-    @abstractmethod
     async def health_check(self) -> dict[str, t.Any]:
         """Check health status of the backend."""
         ...
 
-    @abstractmethod
     def get_capabilities(self) -> set[MessagingCapability]:
         """Get the capabilities supported by this backend."""
+        ...
+
+    # PubSubBackend methods
+
+    async def publish(
+        self,
+        topic: str,
+        message: bytes,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        """Publish a message to a topic."""
+        ...
+
+    async def subscribe(
+        self,
+        topic: str,
+        pattern: bool = False,
+    ) -> Subscription:
+        """Subscribe to a topic or pattern."""
+        ...
+
+    async def unsubscribe(self, subscription: Subscription) -> None:
+        """Unsubscribe from a topic."""
+        ...
+
+    @asynccontextmanager
+    async def receive_messages(
+        self,
+        subscription: Subscription,
+        timeout: float | None = None,
+    ) -> AsyncGenerator[AsyncIterator[PubSubMessage]]:
+        """Receive messages from a subscription."""
+        raise NotImplementedError  # pragma: no cover
+        yield  # pragma: no cover
+
+    async def publish_batch(
+        self,
+        messages: list[tuple[str, bytes, dict[str, str] | None]],
+    ) -> None:
+        """Publish multiple messages in a batch."""
+        ...
+
+    # QueueBackend methods
+
+    async def enqueue(
+        self,
+        queue: str,
+        message: bytes,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        delay_seconds: float = 0.0,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """Add a message to a queue."""
+        ...
+
+    async def dequeue(
+        self,
+        queue: str,
+        timeout: float | None = None,
+        visibility_timeout: float = 30.0,
+    ) -> QueueMessage | None:
+        """Remove and return a message from a queue."""
+        ...
+
+    async def acknowledge(
+        self,
+        queue: str,
+        message_id: str,
+    ) -> None:
+        """Acknowledge successful processing of a message."""
+        ...
+
+    async def reject(
+        self,
+        queue: str,
+        message_id: str,
+        requeue: bool = True,
+    ) -> None:
+        """Reject a message, optionally requeuing it."""
+        ...
+
+    async def purge_queue(self, queue: str) -> int:
+        """Remove all messages from a queue."""
+        ...
+
+    async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
+        """Get statistics for a queue."""
+        ...
+
+    async def send_to_dlq(
+        self,
+        queue: str,
+        message: QueueMessage,
+        reason: str,
+    ) -> None:
+        """Send a failed message to the dead letter queue."""
+        ...
+
+    async def enqueue_batch(
+        self,
+        queue: str,
+        messages: list[tuple[bytes, MessagePriority, dict[str, str] | None]],
+    ) -> list[str]:
+        """Enqueue multiple messages in a batch."""
         ...

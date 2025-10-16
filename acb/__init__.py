@@ -2,16 +2,16 @@ import typing as t
 from contextlib import suppress
 from inspect import currentframe
 
-# Rich.repr import removed - not used in refactored code
 from anyio import Path as AsyncPath
 from rich import box
 from rich.padding import Padding
 from rich.table import Table
+from acb.console import Console
+from acb.depends import Inject, depends
 
 # Re-exports for backward compatibility
 from .actions import action_registry
 from .adapters import get_adapters
-from .console import console
 from .context import get_context
 
 # Services layer imports
@@ -103,18 +103,24 @@ table_args: dict[str, t.Any] = {
 
 
 async def display_components() -> None:
+    """Public-facing function to display components."""
+    await _display_components()
+
+
+@depends.inject
+async def _display_components(console: Inject[Console]) -> None:
     """Display registered components in a formatted table."""
     ctx = get_context()
     await ensure_registration()
 
     if not ctx.is_deployed():
-        _display_packages_table(ctx)
-        _display_actions_table()
-        _display_adapters_table()
-        _display_services_table()
+        _display_packages_table(ctx, console)
+        _display_actions_table(console)
+        _display_adapters_table(console)
+        _display_services_table(console)
 
 
-def _display_packages_table(ctx: t.Any) -> None:
+def _display_packages_table(ctx: t.Any, console: Console) -> None:
     """Display packages table."""
     pkgs = Table(
         title="[b][u bright_white]A[/u bright_white][bright_green]synchronous [u bright_white]C[/u bright_white][bright_green]omponent [u bright_white]B[/u bright_white][bright_green]ase[/b]",
@@ -132,7 +138,7 @@ def _display_packages_table(ctx: t.Any) -> None:
     console.print(pkgs_padded)
 
 
-def _display_actions_table() -> None:
+def _display_actions_table(console: Console) -> None:
     """Display actions table."""
     actns = Table(
         title="[b][u bright_white]A[/u bright_white][bright_green]ctions",
@@ -151,7 +157,7 @@ def _display_actions_table() -> None:
     console.print(actns_padded)
 
 
-def _display_adapters_table() -> None:
+def _display_adapters_table(console: Console) -> None:
     """Display adapters table."""
     adptrs = Table(
         title="[b][u bright_white]A[/u bright_white][bright_green]datpters",
@@ -170,7 +176,7 @@ def _display_adapters_table() -> None:
     console.print(adptrs_padded)
 
 
-def _display_services_table() -> None:
+def _display_services_table(console: Console) -> None:
     """Display services table if available."""
     if not HAS_SERVICES:
         return

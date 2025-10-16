@@ -51,11 +51,11 @@ class UserService(ServiceBase):  # ✅ ServiceBase available again
     async def _initialize(self) -> None:
         # Service initialization logic
         pass
-    
+
     async def _shutdown(self) -> None:
         # Service shutdown logic
         pass
-    
+
     async def _health_check(self) -> dict:
         # Custom health check logic
         return {"status": "healthy"}
@@ -259,13 +259,13 @@ class UserService(ServiceBase):
         service_config = ServiceConfig(
             service_id="user_service",
             name="User Service",
-            description="Manages user creation and operations"
+            description="Manages user creation and operations",
         )
         super().__init__(service_config=service_config)
-    
-    async def create_user(self, data: dict, 
-                         cache: Inject[Cache] = depends(),
-                         sql: Inject[SQL] = depends()):
+
+    async def create_user(
+        self, data: dict, cache: Inject[Cache] = depends(), sql: Inject[SQL] = depends()
+    ):
         async with sql.get_session() as session:
             user = User(**data)
             session.add(user)
@@ -273,12 +273,14 @@ class UserService(ServiceBase):
 
         # Cache the user
         await cache.set(f"user:{user.id}", user, ttl=3600)
-        
+
         # Emit event using events system
         from acb.events import create_event
+
         event = create_event("user.created", "user_service", {"user_id": user.id})
         # Use event publisher to emit the event
         from acb.events import EventPublisher
+
         publisher = depends.get(EventPublisher)
         await publisher.publish(event)
 

@@ -999,4 +999,5 @@ class Graph(GraphBase):
             ),
         )
 
+
 depends.set(Graph, "arangodb")

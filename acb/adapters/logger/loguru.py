@@ -241,6 +241,7 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         self.info(f"App path: {self.config.root_path}")  # type: ignore[no-untyped-call]
         self.info(f"App deployed: {self.config.deployed}")  # type: ignore[no-untyped-call]
 
+
 depends.set(Logger, "loguru")
 
 

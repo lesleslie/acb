@@ -531,14 +531,16 @@ ACB's Services layer provides a standardized framework for building long-running
 ACB uses two main patterns for structuring services:
 
 1. **Simple Services**: Services that directly inherit from ServiceBase for focused functionality
-2. **Complex Services**: Services with complex domain logic that use a `_base.py` file pattern to define protocols and abstract interfaces
+1. **Complex Services**: Services with complex domain logic that use a `_base.py` file pattern to define protocols and abstract interfaces
 
 **Services with Complex Domain Logic** (like repository, validation):
+
 - Use the `_base.py` pattern to define protocols, interfaces, and abstract base classes
 - This allows for multiple implementations and clear contracts
 - Separate abstract contracts from concrete implementations
 
 **Services with Focused Functionality** (like performance optimizers):
+
 - Direct inheritance from ServiceBase is appropriate
 - Less need for complex inheritance hierarchies if functionality is straightforward
 - Still follow ServiceBase for consistent lifecycle management
@@ -552,7 +554,7 @@ from acb.depends import depends
 
 class MyCustomService(ServiceBase):
     """A custom service example."""
-    
+
     def __init__(self):
         service_config = ServiceConfig(
             service_id="my_custom_service",
@@ -562,17 +564,17 @@ class MyCustomService(ServiceBase):
         )
         settings = ServiceSettings()
         super().__init__(service_config, settings)
-    
+
     async def _initialize(self) -> None:
         """Service-specific initialization logic."""
         self.logger.info("Initializing my custom service")
         # Add initialization code here
-    
+
     async def _shutdown(self) -> None:
         """Service-specific shutdown logic."""
         self.logger.info("Shutting down my custom service")
         # Add cleanup code here
-    
+
     async def _health_check(self) -> dict:
         """Service-specific health check logic."""
         return {"status": "ok", "custom_metric": "value"}
@@ -604,6 +606,7 @@ ACB's Events, Tasks, and Workflows systems provide comprehensive orchestration c
 The Events system provides pub-sub messaging capabilities with support for event-driven communication between components.
 
 **Key Features:**
+
 - **Event-Driven Architecture**: Support for pub-sub patterns with multiple subscription options
 - **Event Types**: Support for different delivery modes (fire-and-forget, at-least-once, exactly-once)
 - **Event Handling**: Support for both functional and class-based event handlers
@@ -611,6 +614,7 @@ The Events system provides pub-sub messaging capabilities with support for event
 - **Performance**: Optimized for high-throughput event processing
 
 **Example: Using the Events System**
+
 ```python
 from acb.events import create_event, EventPublisher, event_handler, EventHandlerResult
 
@@ -619,6 +623,7 @@ event = create_event("user.created", "user_service", {"user_id": 123})
 
 async with EventPublisher() as publisher:
     await publisher.publish(event)
+
 
 # Define event handlers
 @event_handler("user.created")
@@ -633,6 +638,7 @@ async def handle_user_created(event):
 The Tasks system provides reliable background job processing with multiple backend support and advanced scheduling capabilities.
 
 **Key Features:**
+
 - **Multiple Backends**: Support for memory, Redis, and message queue backends
 - **Priority Processing**: Support for prioritized task execution
 - **Scheduling**: Support for delayed execution and cron-style scheduling
@@ -640,6 +646,7 @@ The Tasks system provides reliable background job processing with multiple backe
 - **Monitoring**: Built-in metrics and monitoring capabilities
 
 **Example: Using the Tasks System**
+
 ```python
 from acb.tasks import create_task_queue, TaskData, task_handler
 
@@ -651,10 +658,10 @@ async with create_task_queue("memory") as queue:
         email = task_data.payload["email"]
         # Send email logic here
         return {"sent": True, "email": email}
-    
+
     # Register handler
     queue.register_handler("email_task", send_email_task)
-    
+
     # Create and enqueue a task
     task = TaskData(
         task_type="email_task",
@@ -668,16 +675,19 @@ async with create_task_queue("memory") as queue:
 The Workflows system provides orchestration capabilities for managing complex multi-step processes with state management and error handling.
 
 **Key Features:**
+
 - **State Management**: Persistent state tracking for long-running processes
 - **Process Orchestration**: Management of complex multi-step operations
 - **Error Handling**: Comprehensive error handling and compensation mechanisms
 - **Monitoring**: Built-in workflow monitoring and tracking
 
 **Example: Using the Workflows System**
+
 ```python
 from acb.workflows import WorkflowService
 
 workflow_service = WorkflowService()
+
 
 # Define and execute workflows with state management
 async def execute_complex_process():
@@ -685,7 +695,7 @@ async def execute_complex_process():
     result = await workflow_service.execute_workflow(
         "complex_business_process",
         {"input_data": "value"},
-        timeout=3600  # 1 hour timeout
+        timeout=3600,  # 1 hour timeout
     )
     return result
 ```
@@ -695,32 +705,26 @@ async def execute_complex_process():
 The MCP system provides a standardized interface for AI applications to interact with the entire ACB ecosystem. It acts as a central orchestration layer that exposes all of ACB's capabilities through the Model Context Protocol, enabling AI assistants like Claude to discover, interact with, and orchestrate ACB components.
 
 **Key Features:**
+
 - **Universal Component Discovery**: List all available actions, adapters, services, and other components in a single interface
-- **Action Execution**: Execute any registered action with parameter validation across all action categories  
+- **Action Execution**: Execute any registered action with parameter validation across all action categories
 - **Component Management**: Enable, disable, or configure components dynamically with real-time status monitoring
 - **AI/ML Integration**: Seamless integration with AI/ML adapters for LLM interactions and model serving
 - **Cross-Component Orchestration**: Define and execute complex workflows spanning multiple component types
 
 **Example: MCP Integration**
+
 ```python
 # The MCP server can be integrated with AI assistants like Claude Desktop
 # to provide access to all ACB capabilities through a standardized protocol
 {
-  "mcpServers": {
-    "acb": {
-      "command": "uv",
-      "args": [
-        "run",
-        "python",
-        "-m",
-        "acb.mcp.server"
-      ],
-      "env": {
-        "ACB_MCP_HOST": "127.0.0.1",
-        "ACB_MCP_PORT": "8000"
-      }
+    "mcpServers": {
+        "acb": {
+            "command": "uv",
+            "args": ["run", "python", "-m", "acb.mcp.server"],
+            "env": {"ACB_MCP_HOST": "127.0.0.1", "ACB_MCP_PORT": "8000"},
+        }
     }
-  }
 }
 ```
 
@@ -810,7 +814,7 @@ class MyServiceSettings(Settings):
 
 ### Dependency Injection
 
-ACB features a simple yet powerful dependency injection system that makes component wiring automatic and testable.
+ACB features a simple yet powerful dependency injection system that makes component wiring automatic and testable. Starting in v0.20.0+, ACB uses a **hybrid dependency injection architecture** that matches the pattern to the architectural layer.
 
 #### How Dependency Injection Works in ACB
 
@@ -846,49 +850,224 @@ ACB features a simple yet powerful dependency injection system that makes compon
 └─────────────────────────────────────────────────┘
 ```
 
-**Example: Using dependency injection**
+#### Protocol-Based vs Concrete Class Dependency Injection (v0.20.0+)
+
+ACB uses different dependency injection patterns for different architectural layers:
+
+| Component Type | DI Pattern | Interface Type | Injection Syntax | Best For |
+|---------------|-----------|----------------|------------------|----------|
+| **Services** | Protocol-based | `ServiceProtocol` | `Inject[RepositoryServiceProtocol]` | Business logic, complex workflows, easy testing |
+| **Adapters** | Concrete class | Base class | `Inject[Cache]` | Infrastructure, external systems, shared utilities |
+| **Core** | Concrete class | Direct class | `Inject[Config]` | Configuration, logging, foundational components |
+
+**Why Different Patterns?**
+
+- **Services**: Use Protocol-based DI for clean interfaces and easy mocking in tests
+- **Adapters**: Use concrete class DI to leverage shared infrastructure (connection pooling, retry logic, cleanup)
+- **Core**: Use concrete class DI for stable, foundational components
+
+#### Pattern 1: Protocol-Based DI (Services)
+
+**When to use**: Business logic, complex workflows, testable components
 
 ```python
-import typing as t
-
 from acb.depends import depends, Inject
-from acb.config import Config
-from acb.logger import Logger
-from ._base import MyServiceBase
+from acb.services.protocols import (
+    RepositoryServiceProtocol,
+    ValidationServiceProtocol,
+)
 
 
-class MyService(MyServiceBase):
-    async def process_data(self, data: dict[str, t.Any]) -> dict[str, t.Any]:
-        # Process data...
-        return result
-
-    async def init(self):
-        await super().init()
-
-
-# Register your custom component
-depends.set(MyService)  # Now MyService is available in the dependency registry
-
-
-# Inject dependencies into functions
-@depends.inject  # This decorator automatically injects the dependencies
-async def process_data(
-    data: dict[str, t.Any],
-    config: Inject[Config],  # Type-safe injection from acb.depends
-    logger: Inject[Logger],  # Type-safe injection from acb.depends
+@depends.inject
+async def process_order(
+    order_id: str,
+    repo: Inject[RepositoryServiceProtocol],  # Protocol, not concrete class
+    validator: Inject[ValidationServiceProtocol],
 ):
-    # Now you can use config and logger without manually creating them
-    logger.info(f"Processing data with app: {config.app.name}")
-    # Process data...
-    return result
+    """Process an order with validation and persistence.
+
+    Note: Dependencies are Protocol interfaces, making this easy to test
+    with mock implementations.
+    """
+    async with repo.unit_of_work() as uow:
+        order = await repo.get(order_id)
+        if not order:
+            raise ValueError(f"Order {order_id} not found")
+
+        validation = await validator.validate_business_rules(order)
+        if not validation.is_valid:
+            raise ValueError(f"Invalid order: {validation.errors}")
+
+        order.status = "processed"
+        await repo.save(order, uow)
 ```
+
+**Testing with Protocol-based DI:**
+
+```python
+import pytest
+from acb.depends import depends
+from acb.services.protocols import RepositoryServiceProtocol
+
+
+# Mock implementation matches Protocol interface
+class MockRepository:
+    def __init__(self):
+        self.entities = {}
+
+    @asynccontextmanager
+    async def unit_of_work(self):
+        yield UnitOfWork(transaction=None)
+
+    async def get(self, entity_id):
+        return self.entities.get(entity_id)
+
+    async def save(self, entity, uow=None):
+        self.entities[entity.id] = entity
+
+
+@pytest.mark.asyncio
+async def test_process_order():
+    # Register mock for Protocol
+    mock_repo = MockRepository()
+    depends.set(RepositoryServiceProtocol, mock_repo)
+
+    # Test uses Protocol interface, not concrete implementation
+    await process_order("order-123")
+
+    assert "order-123" in mock_repo.entities
+```
+
+#### Pattern 2: Concrete Class DI (Adapters)
+
+**When to use**: Infrastructure, external systems, shared utilities
+
+```python
+from acb.depends import depends, Inject
+from acb.adapters import import_adapter
+
+# Import concrete adapter classes
+Cache = import_adapter("cache")
+Storage = import_adapter("storage")
+
+
+@depends.inject
+async def cache_uploaded_file(
+    file_path: str,
+    cache: Inject[Cache],  # Concrete class, not Protocol
+    storage: Inject[Storage],
+):
+    """Cache file metadata from storage.
+
+    Note: Dependencies are concrete classes because we need access to
+    shared infrastructure like connection pooling and retry logic.
+    """
+    metadata = await storage.get_metadata(file_path)
+    await cache.set(f"metadata:{file_path}", metadata, ttl=3600)
+```
+
+**Why concrete classes for adapters?**
+
+Adapters benefit from shared base class infrastructure:
+
+- Connection pooling via `_ensure_client()`
+- Retry logic via `_retry_operation()`
+- Resource cleanup via `CleanupMixin`
+- Configuration loading from `settings/adapters.yml`
+- Standard lifecycle methods (`connect()`, `disconnect()`, `health_check()`)
+
+#### Pattern 3: Mixed DI (Services + Adapters)
+
+**Real-world example**: Services calling adapters
+
+```python
+from acb.depends import depends, Inject
+from acb.services.protocols import RepositoryServiceProtocol
+from acb.adapters import import_adapter
+
+Cache = import_adapter("cache")
+
+
+@depends.inject
+async def get_user_with_cache(
+    user_id: str,
+    repo: Inject[RepositoryServiceProtocol],  # Service Protocol
+    cache: Inject[Cache],  # Adapter concrete class
+):
+    """Get user from repository with caching.
+
+    This pattern combines Protocol-based DI for business logic (repository)
+    with concrete class DI for infrastructure (cache).
+    """
+    # Try cache first
+    cache_key = f"user:{user_id}"
+    cached_user = await cache.get(cache_key)
+    if cached_user:
+        return cached_user
+
+    # Fetch from repository
+    user = await repo.get(user_id)
+    if user:
+        await cache.set(cache_key, user, ttl=300)
+
+    return user
+```
+
+#### Registering Custom Components
+
+**Services** (Protocol-based):
+
+```python
+from acb.depends import depends
+from acb.services.protocols import RepositoryServiceProtocol
+from acb.services.repository.sql_repository import SqlRepositoryService
+
+# Register concrete implementation for Protocol
+depends.set(RepositoryServiceProtocol, SqlRepositoryService())
+```
+
+**Adapters** (Concrete class):
+
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+# Adapters auto-register based on settings/adapters.yml
+Cache = import_adapter("cache")
+
+# Manual registration (if needed)
+cache_instance = Cache()
+depends.set(Cache, cache_instance)
+```
+
+#### Quick Reference: When to Use Which Pattern
+
+**Use Protocol-based DI when:**
+
+- ✅ Writing business logic in Services layer
+- ✅ Need multiple implementations of same interface
+- ✅ Want easy mocking in unit tests
+- ✅ Prefer composition over inheritance
+- ✅ Building new features in v0.20.0+
+
+**Use Concrete class DI when:**
+
+- ✅ Working with Adapters (infrastructure)
+- ✅ Need shared base class utilities
+- ✅ Using configuration-driven implementation selection
+- ✅ Leveraging ACB's connection pooling and retry logic
+- ✅ Working with Core components (Config, Logger)
 
 #### Benefits of Dependency Injection
 
 1. **Reduced Boilerplate**: No need to manually create and pass objects
-1. **Testability**: Easy to mock dependencies for testing
+1. **Testability**: Easy to mock dependencies for testing (especially with Protocols)
 1. **Flexibility**: Change implementations without changing your code
 1. **Decoupling**: Components don't need to know how to create their dependencies
+1. **Type Safety**: Full IDE support with type hints and autocomplete
+1. **Clear Architecture**: DI pattern signals architectural layer (Service vs Adapter)
+
+For detailed architectural guidance, see [docs/ARCHITECTURE-DECISION-PROTOCOL-DI.md](<./docs/ARCHITECTURE-DECISION-PROTOCOL-DI.md>).
 
 ````
 

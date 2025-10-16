@@ -363,4 +363,5 @@ class Logger(LoggerBase):
             **context,
         )
 
+
 depends.set(Logger, "structlog")

@@ -668,10 +668,16 @@ Please synthesize the insights from all paths and provide the best possible answ
             ),  # Boost confidence for synthesis
         )
 
+
 ReasoningSettings = LangChainReasoningSettings
 
 depends.set(Reasoning, "langchain")
 
 
 # Export the adapter class
-__all__ = ["MODULE_METADATA", "LangChainReasoningSettings", "Reasoning", "ReasoningSettings"]
+__all__ = [
+    "MODULE_METADATA",
+    "LangChainReasoningSettings",
+    "Reasoning",
+    "ReasoningSettings",
+]

@@ -67,6 +67,7 @@ from uuid import UUID
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.cleanup import CleanupMixin
 from acb.config import Config
 from acb.depends import Inject, depends
 
@@ -80,7 +81,6 @@ from ._base import (
     PubSubMessage,
     QueueMessage,
     Subscription,
-    UnifiedMessagingBackend,
 )
 
 # Lazy imports for coredis
@@ -182,7 +182,7 @@ class RedisMessagingSettings(MessagingSettings):
         super().__init__(**values)
 
 
-class RedisMessaging(UnifiedMessagingBackend):
+class RedisMessaging(CleanupMixin):
     """Redis-backed unified messaging implementation.
 
     Provides high-performance messaging operations using Redis data structures:
@@ -200,7 +200,7 @@ class RedisMessaging(UnifiedMessagingBackend):
         Args:
             settings: Redis messaging configuration
         """
-        super().__init__(settings)
+        super().__init__()
         self._settings: RedisMessagingSettings = settings or RedisMessagingSettings()
 
         # Redis client and pool

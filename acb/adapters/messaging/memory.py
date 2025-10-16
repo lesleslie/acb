@@ -43,8 +43,8 @@ from acb.adapters.messaging._base import (
     MessagingSettings,
     QueueFullError,
     QueueMessage,
-    UnifiedMessagingBackend,
 )
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
@@ -157,11 +157,13 @@ class PriorityMessageItem:
         return self.message.message_id == other.message.message_id
 
 
-class MemoryMessaging(UnifiedMessagingBackend):
+class MemoryMessaging(CleanupMixin):
     """In-memory queue backend implementation.
 
     Provides a full-featured queue implementation that runs entirely in memory.
     Suitable for development, testing, and single-process applications.
+
+    Implements both PubSubBackend and QueueBackend protocols (UnifiedMessagingBackend).
 
     Capabilities:
     - Priority-based message ordering
@@ -183,7 +185,7 @@ class MemoryMessaging(UnifiedMessagingBackend):
         Args:
             settings: Memory messaging configuration
         """
-        super().__init__(settings)
+        super().__init__()
         self._settings: MemoryMessagingSettings = settings or MemoryMessagingSettings()
 
         # Connection management

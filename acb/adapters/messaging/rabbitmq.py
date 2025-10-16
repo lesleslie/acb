@@ -72,6 +72,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 
 from ._base import (
@@ -84,7 +85,6 @@ from ._base import (
     PubSubMessage,
     QueueMessage,
     Subscription,
-    UnifiedMessagingBackend,
 )
 
 if t.TYPE_CHECKING:
@@ -213,7 +213,7 @@ class RabbitMQMessagingSettings(MessagingSettings):
     channel_pool_size: int = 5
 
 
-class RabbitMQMessaging(UnifiedMessagingBackend):
+class RabbitMQMessaging(CleanupMixin):
     """RabbitMQ-backed unified messaging implementation.
 
     Provides enterprise-grade messaging operations using RabbitMQ:
@@ -231,7 +231,7 @@ class RabbitMQMessaging(UnifiedMessagingBackend):
         Args:
             settings: RabbitMQ messaging configuration
         """
-        super().__init__(settings)
+        super().__init__()
         self._settings: RabbitMQMessagingSettings = (
             settings or RabbitMQMessagingSettings()
         )

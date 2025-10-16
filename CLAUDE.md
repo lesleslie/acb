@@ -586,11 +586,13 @@ ACB has evolved to provide both clean, reliable adapter interfaces for external 
 #### Architecture Layers
 
 **Adapter Layer:**
+
 - Clean interfaces for external systems (databases, caches, storage, etc.)
 - Configuration-driven implementation selection
 - Resource cleanup and connection pooling
 
 **Services Layer (Reintroduced):**
+
 - Lifecycle management for long-running components
 - Health monitoring and metrics collection
 - Complex business logic encapsulation
@@ -598,6 +600,7 @@ ACB has evolved to provide both clean, reliable adapter interfaces for external 
 - Workflow orchestration capabilities
 
 **Core Infrastructure:**
+
 - Configuration management
 - Dependency injection
 - Logging and debugging tools
@@ -778,6 +781,209 @@ class FastBlocksEndpoint(HTTPEndpoint):
         super().__init__(scope, receive, send)
         self.templates = depends.get("templates")
 ```
+
+### Protocol-Based vs Concrete Class Dependency Injection
+
+**CRITICAL ARCHITECTURAL DECISION**: ACB uses different DI patterns for different component types.
+
+#### When to Use Protocol-Based DI (NEW in v0.20.0+)
+
+**Use Protocols for Services Layer:**
+
+```python
+from acb.depends import Inject, depends
+from acb.services.protocols import RepositoryServiceProtocol, ValidationServiceProtocol
+
+
+@depends.inject
+async def business_logic(
+    repo: Inject[RepositoryServiceProtocol],  # Protocol, not concrete class
+    validator: Inject[ValidationServiceProtocol],
+):
+    """Services use Protocol-based DI for clean interfaces."""
+    async with repo.unit_of_work() as uow:
+        entity = await repo.get("entity-id")
+
+        # Validate business rules
+        result = await validator.validate_business_rules(entity)
+        if result["is_valid"]:
+            await repo.save(entity, uow)
+```
+
+**Why Protocols for Services:**
+
+- ✅ Pure business logic without infrastructure concerns
+- ✅ Easy mocking for tests (no inheritance required)
+- ✅ Clear, explicit interface contracts
+- ✅ Better IDE autocomplete and type checking
+- ✅ Multiple implementations without coupling
+
+**Available Service Protocols:**
+
+- `RepositoryServiceProtocol` - Unit of Work pattern for data access
+- `ValidationServiceProtocol` - Input validation with security
+- `PerformanceServiceProtocol` - Performance optimization
+- `EventServiceProtocol` - Event-driven architecture
+- `WorkflowServiceProtocol` - Workflow orchestration
+
+#### When to Use Concrete Class DI (Adapters)
+
+**Use Concrete Classes for Adapters:**
+
+```python
+from acb.depends import Inject, depends
+from acb.adapters import import_adapter
+
+Cache = import_adapter("cache")  # Concrete class (MemoryCache or RedisCache)
+Storage = import_adapter("storage")  # Concrete class (S3Storage, GCSStorage, etc.)
+
+
+@depends.inject
+async def infrastructure_code(
+    cache: Inject[Cache],  # Concrete class, not Protocol
+    storage: Inject[Storage],
+):
+    """Adapters use concrete classes for shared implementation."""
+    await cache.set("key", "value", ttl=300)
+    await storage.upload("file.txt", data)
+```
+
+**Why Concrete Classes for Adapters:**
+
+- ✅ Share infrastructure code (cleanup, SSL config, connection pooling)
+- ✅ Configuration-driven selection (`settings/adapters.yml`)
+- ✅ Consistent patterns across all adapter types
+- ✅ Resource lifecycle management via base classes
+- ✅ The adapter pattern itself provides decoupling
+
+**Adapter Base Classes Provide:**
+
+- `CleanupMixin` - Resource cleanup
+- `SSLConfigMixin` - SSL/TLS configuration
+- `_ensure_client()` - Lazy connection initialization
+- `_create_client()` - Client factory pattern
+- Configuration integration
+
+#### Decision Matrix: Protocol vs Concrete Class
+
+| Component Type | DI Pattern | Reason | Example |
+|---------------|-----------|---------|---------|
+| **Services** | `Inject[ServiceProtocol]` | Pure business logic, easy testing | `RepositoryServiceProtocol` |
+| **Adapters** | `Inject[ConcreteClass]` | Shared infrastructure, config-driven | `Cache`, `Storage`, `Sql` |
+| **Core** | `Inject[ConcreteClass]` | Foundational, stable, simple | `Config`, `Logger` |
+
+#### Example: Mixing Both Patterns
+
+```python
+from acb.depends import Inject, depends
+from acb.adapters import import_adapter
+from acb.services.protocols import RepositoryServiceProtocol, ValidationServiceProtocol
+from acb.config import Config
+
+# Concrete classes for adapters
+Cache = import_adapter("cache")
+Storage = import_adapter("storage")
+
+
+@depends.inject
+async def complete_workflow(
+    # Protocols for business logic services
+    repo: Inject[RepositoryServiceProtocol],
+    validator: Inject[ValidationServiceProtocol],
+    # Concrete classes for infrastructure adapters
+    cache: Inject[Cache],
+    storage: Inject[Storage],
+    config: Inject[Config],
+):
+    """Mix both patterns as appropriate."""
+
+    # Services handle business logic
+    async with repo.unit_of_work() as uow:
+        entity = await repo.get("id")
+
+        # Adapters handle infrastructure
+        cached = await cache.get("entity:id")
+        if not cached:
+            data = await storage.download("entity.json")
+            await cache.set("entity:id", data)
+```
+
+#### Testing Implications
+
+**Testing Services (Protocol-based):**
+
+```python
+from acb.services.protocols import RepositoryServiceProtocol
+
+
+class MockRepository:  # No inheritance needed!
+    """Just implement the protocol interface."""
+
+    async def get(self, entity_id):
+        return MockEntity(id=entity_id)
+
+    async def save(self, entity, uow=None):
+        pass
+
+    # ... other protocol methods
+
+
+# Works because MockRepository matches RepositoryServiceProtocol structure
+depends.set(RepositoryServiceProtocol, MockRepository())
+```
+
+**Testing Adapters (Concrete class-based):**
+
+```python
+from acb.adapters.cache.memory import MemoryCache
+
+# Use real implementation (fast in-memory) or create mock
+mock_cache = MemoryCache()
+depends.set(Cache, mock_cache)
+```
+
+#### Migration Guide
+
+**If you have existing code using concrete classes for services**, migrate to Protocols:
+
+```python
+# Before (v0.19.x)
+from acb.services.validation import ValidationService
+
+
+@depends.inject
+async def old_way(validator: Inject[ValidationService]):
+    pass
+
+
+# After (v0.20.0+)
+from acb.services.protocols import ValidationServiceProtocol
+
+
+@depends.inject
+async def new_way(validator: Inject[ValidationServiceProtocol]):
+    pass
+```
+
+The concrete `ValidationService` still exists and implements `ValidationServiceProtocol`, so existing code continues to work while new code benefits from Protocol-based DI.
+
+#### Summary: When to Use Each Pattern
+
+**Use Protocol-Based DI (`Inject[SomeProtocol]`) for:**
+
+- Services layer (business logic, workflows, orchestration)
+- Application-specific logic
+- Code that needs flexible mocking
+- Pure interfaces without shared implementation
+
+**Use Concrete Class DI (`Inject[ConcreteClass]`) for:**
+
+- Adapters layer (external system integrations)
+- Infrastructure components
+- Code that shares implementation via base classes
+- Configuration-driven component selection
+
+This hybrid approach maximizes benefits: infrastructure reuse where needed, clean interfaces for business logic.
 
 ### Universal Query Interface Examples (v0.19.0+)
 

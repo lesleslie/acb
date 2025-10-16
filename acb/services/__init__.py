@@ -73,6 +73,35 @@ from .performance import (
     lazy_resource,
     optimize_cold_start,
 )
+
+# Protocol interfaces for dependency injection
+from .protocols import (
+    # Repository
+    EntityProtocol,
+    # Events
+    Event,
+    EventHandler,
+    EventServiceProtocol,
+    # Performance
+    PerformanceBudget,
+    PerformanceServiceProtocol,
+    RepositoryServiceProtocol,
+    UnitOfWork,
+    ValidationRule,
+    ValidationServiceProtocol,
+    ValidationSeverity,
+    # Workflow
+    WorkflowServiceProtocol,
+    WorkflowState,
+    WorkflowTransition,
+)
+from .protocols import (
+    PerformanceMetrics as PerformanceMetricsProtocol,
+)
+from .protocols import (
+    # Validation
+    ValidationResult as ValidationResultProtocol,
+)
 from .registry import (
     ServiceDependencyError,
     ServiceNotFoundError,
@@ -177,6 +206,23 @@ __all__ = [
     "ValidationService",
     "ValidationSettings",
     "ValidationWarning",
+    # Protocol interfaces for DI
+    "RepositoryServiceProtocol",
+    "UnitOfWork",
+    "EntityProtocol",
+    "ValidationServiceProtocol",
+    "ValidationResultProtocol",
+    "ValidationRule",
+    "ValidationSeverity",
+    "PerformanceServiceProtocol",
+    "PerformanceMetricsProtocol",
+    "PerformanceBudget",
+    "EventServiceProtocol",
+    "Event",
+    "EventHandler",
+    "WorkflowServiceProtocol",
+    "WorkflowState",
+    "WorkflowTransition",
     "apply_service_overrides",
     "create_service_metadata_template",
     "delete_state",

@@ -46,9 +46,7 @@ class Secret(SecretBase):
         try:
             client_secrets = await self.client.list_secrets(request=request)
         except PermissionDenied:
-            msg = (
-                "\n ERROR:  'project' id in 'settings/app.yaml' is invalid or not set!\n"
-            )
+            msg = "\n ERROR:  'project' id in 'settings/app.yaml' is invalid or not set!\n"
             raise SystemExit(
                 msg,
             )

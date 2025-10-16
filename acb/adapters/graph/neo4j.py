@@ -652,4 +652,5 @@ class Graph(GraphBase):
             length=len(path.relationships),
         )
 
+
 depends.set(Graph, "neo4j")

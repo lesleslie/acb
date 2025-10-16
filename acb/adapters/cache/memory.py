@@ -38,7 +38,7 @@ MODULE_METADATA = AdapterMetadata(
 )
 
 
-class CacheSettings(CacheBaseSettings):...
+class CacheSettings(CacheBaseSettings): ...
 
 
 class Cache(CacheBase):

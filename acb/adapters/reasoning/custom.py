@@ -892,9 +892,15 @@ class Reasoning(ReasoningBase):
         stats = engine.get_rule_statistics()
         return dict(stats)
 
+
 ReasoningSettings = CustomReasoningSettings
 
 depends.set(Reasoning, "custom")
 
 # Export the adapter class
-__all__ = ["MODULE_METADATA", "CustomReasoningSettings", "Reasoning", "ReasoningSettings"]
+__all__ = [
+    "MODULE_METADATA",
+    "CustomReasoningSettings",
+    "Reasoning",
+    "ReasoningSettings",
+]

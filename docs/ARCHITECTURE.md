@@ -138,27 +138,32 @@ ACB follows a layered architecture with clear separation of concerns:
 ### Layer Responsibilities
 
 **Application Layer:**
+
 - Contains application-specific business logic
 - Uses ACB components to implement domain functionality
 - Frameworks like FastBlocks operate at this layer
 
 **Services Layer:**
+
 - Provides stateful components with lifecycle management
 - Implements business services with health checks and metrics
 - Handles domain-specific operations (repository, validation, performance)
 
 **Orchestration Layer:**
+
 - Manages communication between components
 - Handles background processing and task execution
 - Orchestrates multi-step processes and workflows
 - Provides AI/ML integration interfaces (MCP)
 
 **Adapter Layer:**
+
 - Provides standardized interfaces to external systems
 - Abstracts implementation details of external services
 - Enables configuration-driven implementation selection
 
 **Core Infrastructure:**
+
 - Provides foundational services for the framework
 - Handles configuration, dependency injection, and logging
 - Ensures consistent cross-cutting concerns
@@ -168,11 +173,13 @@ ACB follows a layered architecture with clear separation of concerns:
 ACB also includes specialized tools for development and deployment that operate outside the runtime architecture:
 
 **Migration Tools:**
+
 - Provides version migration capabilities for ACB applications
 - Handles compatibility between different ACB versions
 - Supports rollback and validation of migrations
 
 **Testing Infrastructure:**
+
 - Comprehensive testing utilities and fixtures
 - Mocking capabilities for all ACB components
 - Performance testing tools
@@ -367,7 +374,6 @@ class SimpleAdapter(CleanupMixin):
 ## Actions System
 
 Stateless utility functions organized by verb-based actions (not a runtime architectural layer). Actions provide simple, stateless operations that can be used across all architectural layers:
-
 
 ```python
 # Compression actions

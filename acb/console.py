@@ -3,11 +3,12 @@ import os
 from contextlib import suppress
 
 from aioconsole import aprint
-from rich.console import Console
+from rich.console import Console as RichConsole
 from rich.traceback import install
+from acb.depends import depends
 
 
-class RichConsole(Console):
+class Console(RichConsole):
     def __init__(self) -> None:
         super().__init__()
 
@@ -39,6 +40,9 @@ class RichConsole(Console):
                 del self._buffer[:]
 
 
-console = RichConsole()
+console = Console()
+depends.set(Console, console)
+
+
 if os.getenv("DEPLOYED", "False").lower() != "true":
     install(console=console)

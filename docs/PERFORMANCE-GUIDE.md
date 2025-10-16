@@ -504,24 +504,25 @@ class OptimizedService(ServiceBase):
             priority=50,  # Set appropriate priority for startup order
         )
         super().__init__(service_config=service_config)
-        
+
     async def _initialize(self) -> None:
         # Perform initialization steps that require async operations
         self.logger.info("Initializing optimized service")
-        
+
         # Use lazy initialization for expensive resources
         self._expensive_resource = None
-        
+
     async def _shutdown(self) -> None:
         # Clean up resources during shutdown
         if self._expensive_resource:
             await self._expensive_resource.cleanup()
-        
+
     async def get_expensive_resource(self):
         # Lazy loading of expensive resources
         if self._expensive_resource is None:
             self._expensive_resource = await self._create_expensive_resource()
         return self._expensive_resource
+
 
 # Use dependency injection to access services
 @depends.inject
@@ -534,7 +535,7 @@ async def use_service(my_service: OptimizedService = depends()):
 
 Optimize event publishing and handling:
 
-```python
+````python
 from acb.events import create_event, EventPublisher, event_handler, EventHandlerResult
 from acb.depends import depends, Inject
 
@@ -543,12 +544,12 @@ from acb.depends import depends, Inject
 async def optimized_event_creation():
     # Include only necessary data in events
     event = create_event(
-        "user.action", 
-        "user_service", 
+        "user.action",
+        "user_service",
         {"user_id": 123},  # Only essential data
         priority="normal"  # Set appropriate priority
     )
-    
+
     publisher = depends.get(EventPublisher)
     await publisher.publish(event)
 
@@ -585,13 +586,13 @@ async def optimized_task_handling():
         payload={"data": "important"},
         priority=TaskPriority.HIGH
     )
-    
+
     # Batch task creation when possible
     tasks_batch = [
         TaskData(task_type="email", payload={"user_id": uid})
         for uid in user_ids
     ]
-    
+
     # Use the task queue efficiently
     async with create_task_queue("redis") as queue:
         # Process multiple tasks in batch
@@ -605,7 +606,7 @@ async def configure_workers(queue):
     # CPU-bound tasks: lower concurrency
     # I/O-bound tasks: higher concurrency
     await queue.set_worker_concurrency(10)  # Adjust based on your workload
-```
+````
 
 ### Workflows Performance
 
@@ -618,16 +619,13 @@ from acb.workflows import WorkflowService
 # Optimize workflow execution
 async def optimized_workflow_execution():
     workflow_service = WorkflowService()
-    
+
     # Use appropriate timeouts for different operations
     result = await workflow_service.execute_workflow(
         "complex_operation",
         input_data={"data": "value"},
         timeout=3600,  # 1 hour for long operations
-        retry_policy={
-            "max_retries": 3,
-            "backoff_multiplier": 2
-        }
+        retry_policy={"max_retries": 3, "backoff_multiplier": 2},
     )
     return result
 
@@ -636,14 +634,14 @@ async def optimized_workflow_execution():
 async def optimize_state_management():
     # Minimize state size to improve performance
     workflow_service = WorkflowService()
-    
+
     # Store only necessary state data
     minimal_state = {
         "current_step": "step3",
         "essential_data": "...",
         # Avoid storing large objects in state
     }
-    
+
     # Use external storage for large data
     await workflow_service.set_state("workflow_id", minimal_state)
 ```

@@ -385,6 +385,7 @@ class Logger(LoggerBase):
         # Call parent cleanup
         await super().cleanup()
 
+
 depends.set(Logger, "logly")
 
 

@@ -1,6 +1,6 @@
 """aiormq Queue Backend Adapter for ACB.
 
-RabbitMQ-backed queue implementation using aiormq library. 
+RabbitMQ-backed queue implementation using aiormq library.
 This adapter provides high-performance async messaging with RabbitMQ
 using the aiormq library instead of aio-pika.
 
@@ -132,17 +132,21 @@ MODULE_METADATA = AdapterMetadata(
     },
 )
 
+
 def _get_aiormq_imports() -> dict[str, t.Any]:
     """Lazy import of aiormq dependencies."""
     if not _aiormq_imports:
         try:
             import aiormq
-            _aiormq_imports.update({
-                "aiormq": aiormq,
-                "connect": aiormq.connect,
-                "Message": aiormq.Message,
-                "ExchangeType": aiormq.ExchangeType,
-            })
+
+            _aiormq_imports.update(
+                {
+                    "aiormq": aiormq,
+                    "connect": aiormq.connect,
+                    "Message": aiormq.Message,
+                    "ExchangeType": aiormq.ExchangeType,
+                }
+            )
         except ImportError as e:
             raise ImportError(
                 "aiormq is required for AioRmqMessaging. "
@@ -178,7 +182,9 @@ class AioRmqMessagingSettings(MessagingSettings):
     dlx_routing_key: str = "dead_letter"
 
     # Delayed message configuration
-    enable_delayed_plugin: bool = False  # aiormq doesn't have native delayed message plugin support
+    enable_delayed_plugin: bool = (
+        False  # aiormq doesn't have native delayed message plugin support
+    )
     delayed_exchange_name: str = "acb.tasks.delayed"
 
     # Message TTL (milliseconds)
@@ -232,9 +238,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
             settings: aiormq messaging configuration
         """
         super().__init__(settings)
-        self._settings: AioRmqMessagingSettings = (
-            settings or AioRmqMessagingSettings()
-        )
+        self._settings: AioRmqMessagingSettings = settings or AioRmqMessagingSettings()
 
         # Connection management
         self._connection_lock = asyncio.Lock()
@@ -603,7 +607,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
             )
             return str(message.message_id)
 
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             raise MessagingTimeoutError(
                 f"Send operation timed out after {timeout}s",
                 original_error=e,
@@ -636,6 +640,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
         else:
             # Use TTL + DLQ pattern
             import time
+
             temp_queue_name = f"delayed.{message.queue}.{int(time.time())}"
 
             # Create temporary queue with TTL and DLX
@@ -711,7 +716,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
             )
             return message
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
@@ -879,7 +884,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
                                 message_queue.get(), timeout=1.0
                             )
                             yield message
-                        except asyncio.TimeoutError:
+                        except TimeoutError:
                             # Continue loop until shutdown
                             continue
                 except asyncio.CancelledError:
@@ -984,9 +989,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
             # Purge queue
             result = await queue.purge()
 
-            self.logger.info(
-                f"Purged {result} messages from queue {name}"
-            )
+            self.logger.info(f"Purged {result} messages from queue {name}")
             return result
 
         except Exception as e:
