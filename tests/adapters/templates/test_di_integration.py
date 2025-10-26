@@ -35,8 +35,8 @@ class TestDependencyInjection:
     @pytest.mark.asyncio
     async def test_multiple_di_instances(self, template_dir):
         """Test using multiple template adapters via DI."""
-        
-        
+
+
 
         # Create two separate template directories
         emails_dir = template_dir / "emails"
@@ -131,7 +131,7 @@ class TestSettingsConfiguration:
 
     def test_adapter_settings_override(self, template_dir):
         """Test that adapter constructor params create settings."""
-        
+
 
         templates = TemplatesAdapter(
             template_dir=template_dir,
@@ -191,8 +191,8 @@ class TestDIPatterns:
     @pytest.mark.asyncio
     async def test_di_override_pattern(self, templates, template_dir):
         """Test DI override pattern for testing."""
-        
-        
+
+
 
         # Set default templates
         depends.set(TemplatesAdapter, templates)

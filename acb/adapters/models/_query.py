@@ -8,12 +8,12 @@ model frameworks (Pydantic, SQLModel, etc.) through a unified interface.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
 
-class DatabaseAdapter(ABC, Generic[T]):
+class DatabaseAdapter[T](ABC):
     """Abstract base class for database adapters.
 
     Database adapters provide the low-level database operations
@@ -137,7 +137,7 @@ class DatabaseAdapter(ABC, Generic[T]):
         return await self.create(model, data)
 
 
-class ModelAdapter(ABC, Generic[T]):
+class ModelAdapter[T](ABC):
     """Abstract base class for model adapters.
 
     Model adapters handle model-specific serialization/deserialization

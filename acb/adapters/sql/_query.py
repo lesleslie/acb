@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from sqlalchemy import select, delete as sql_delete, update as sql_update, desc, asc
+from sqlalchemy import asc, select
+from sqlalchemy import delete as sql_delete
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from acb.adapters.models._query import DatabaseAdapter
 
 T = TypeVar("T", bound=SQLModel)

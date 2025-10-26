@@ -115,7 +115,7 @@ class Jinja2Templates(TemplatesBase):
             ```python
             html = await templates.render(
                 "user_profile.html",
-                user={"name": "Alice", "email": "alice@example.com"}
+                user={"name": "Alice", "email": "alice@example.com"},
             )
             ```
         """
@@ -172,10 +172,7 @@ class Jinja2Templates(TemplatesBase):
 
         Example:
             ```python
-            html = await templates.render_string(
-                "Hello {{ name }}!",
-                name="World"
-            )
+            html = await templates.render_string("Hello {{ name }}!", name="World")
             ```
         """
         template = self.env.from_string(template_string)

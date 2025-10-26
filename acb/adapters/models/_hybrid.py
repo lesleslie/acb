@@ -197,14 +197,16 @@ class ACBQuery:
         registry.register_model_adapter("sqlmodel", sqlmodel_adapter)
 
         # Create query interface
-        query = ACBQuery(
-            database_adapter_name="sql",
-            model_adapter_name="sqlmodel"
-        )
+        query = ACBQuery(database_adapter_name="sql", model_adapter_name="sqlmodel")
 
         # Use it
         user = await query.for_model(User).simple.find(id=1)
-        recent = await query.for_model(User).advanced.order_by_desc("created_at").limit(10).all()
+        recent = (
+            await query.for_model(User)
+            .advanced.order_by_desc("created_at")
+            .limit(10)
+            .all()
+        )
         ```
     """
 

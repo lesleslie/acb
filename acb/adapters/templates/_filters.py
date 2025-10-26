@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 from datetime import datetime
+
 from markupsafe import Markup
 
 if t.TYPE_CHECKING:

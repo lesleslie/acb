@@ -123,7 +123,7 @@ class ServiceBase(ABC, CleanupMixin):
                 # Try to get injected logger from DI container
                 imported_logger = depends.get(Logger)
                 # If depends.get returns a coroutine, we're in test context - use fallback
-                if hasattr(imported_logger, '__await__'):
+                if hasattr(imported_logger, "__await__"):
                     self._logger = logging.getLogger(self.__class__.__name__)
                 else:
                     self._logger = imported_logger

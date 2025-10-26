@@ -64,7 +64,7 @@ settings = TemplatesBaseSettings(
     enable_async=True,
     autoescape=True,
     cache_size=500,
-    auto_reload=False  # Disable for production
+    auto_reload=False,  # Disable for production
 )
 
 # Initialize with settings
@@ -80,18 +80,17 @@ from acb.depends import depends, Inject
 templates = TemplatesAdapter(template_dir="templates")
 depends.set("templates", templates)
 
+
 # Inject into async functions
 @depends.inject
 async def render_email(
-    user: dict[str, str],
-    templates: Inject["TemplatesAdapter"]
+    user: dict[str, str], templates: Inject["TemplatesAdapter"]
 ) -> str:
     """Render email template with DI."""
     return await templates.render(
-        "email/welcome.html",
-        user=user,
-        site_name="My Awesome Site"
+        "email/welcome.html", user=user, site_name="My Awesome Site"
     )
+
 
 # Use the function
 html = await render_email({"name": "Alice", "email": "alice@example.com"})
@@ -127,7 +126,7 @@ Render a template file asynchronously.
 html = await templates.render(
     "user_profile.html",
     user={"name": "Alice", "email": "alice@example.com"},
-    title="User Profile"
+    title="User Profile",
 )
 ```
 
@@ -136,10 +135,7 @@ html = await templates.render(
 Render a template string asynchronously.
 
 ```python
-html = await templates.render_string(
-    "Hello {{ name }}!",
-    name="World"
-)
+html = await templates.render_string("Hello {{ name }}!", name="World")
 ```
 
 ##### `add_filter(name: str, func: Callable) -> None`
@@ -201,6 +197,7 @@ Format datetime objects or ISO strings.
 ```python
 # Python
 from datetime import datetime
+
 timestamp = datetime(2025, 1, 25, 14, 30, 0)
 ```
 
@@ -241,27 +238,29 @@ from acb.adapters.templates import TemplatesAdapter
 
 templates = TemplatesAdapter()
 
+
 # Add custom filter for currency formatting
 def currency(value: float, symbol: str = "$") -> str:
     """Format value as currency."""
     return f"{symbol}{value:,.2f}"
 
+
 templates.add_filter("currency", currency)
+
 
 # Add custom filter for truncation
 def truncate(value: str, length: int = 50, suffix: str = "...") -> str:
     """Truncate string to specified length."""
     if len(value) <= length:
         return value
-    return value[:length].rsplit(' ', 1)[0] + suffix
+    return value[:length].rsplit(" ", 1)[0] + suffix
+
 
 templates.add_filter("truncate", truncate)
 
 # Use in template
 html = await templates.render(
-    "product.html",
-    price=1299.99,
-    description="A very long product description..."
+    "product.html", price=1299.99, description="A very long product description..."
 )
 ```
 
@@ -326,7 +325,7 @@ html = await templates.render(
     <p>We're excited to have you on board.</p>
     <p>Your account email: <strong>{{ user.email }}</strong></p>
     <p>Account created: {{ created_at|datetime("%B %d, %Y") }}</p>
-    
+
     <a href="{{ activation_link }}" style="
         display: inline-block;
         padding: 10px 20px;
@@ -348,7 +347,7 @@ html = await templates.render(
     user={"name": "Alice", "email": "alice@example.com"},
     created_at=datetime.now(),
     activation_link="https://example.com/activate/abc123",
-    site_name="My Awesome Site"
+    site_name="My Awesome Site",
 )
 ```
 
@@ -365,7 +364,7 @@ dev_templates = TemplatesAdapter(
     enable_async=True,
     autoescape=True,
     cache_size=100,
-    auto_reload=True  # Reload templates on change
+    auto_reload=True,  # Reload templates on change
 )
 ```
 
@@ -380,7 +379,7 @@ prod_templates = TemplatesAdapter(
     enable_async=True,
     autoescape=True,
     cache_size=500,
-    auto_reload=False  # Never reload for performance
+    auto_reload=False,  # Never reload for performance
 )
 ```
 
@@ -394,7 +393,7 @@ from acb.adapters.templates import TemplatesAdapter
 templates = TemplatesAdapter(
     template_dir=os.getenv("TEMPLATE_DIR", "templates"),
     auto_reload=os.getenv("ENV") == "development",
-    cache_size=int(os.getenv("TEMPLATE_CACHE_SIZE", "400"))
+    cache_size=int(os.getenv("TEMPLATE_CACHE_SIZE", "400")),
 )
 ```
 
@@ -413,6 +412,7 @@ app = FastAPI()
 templates = TemplatesAdapter(template_dir="templates")
 depends.set("templates", templates)
 
+
 @app.get("/")
 @depends.inject
 async def home(templates: Inject["TemplatesAdapter"]):
@@ -420,12 +420,10 @@ async def home(templates: Inject["TemplatesAdapter"]):
     html = await templates.render("index.html", title="Home")
     return {"html": html}
 
+
 @app.get("/user/{user_id}")
 @depends.inject
-async def user_profile(
-    user_id: int,
-    templates: Inject["TemplatesAdapter"]
-):
+async def user_profile(user_id: int, templates: Inject["TemplatesAdapter"]):
     """Render user profile."""
     # Fetch user from database
     user = {"id": user_id, "name": "Alice", "email": "alice@example.com"}
@@ -444,6 +442,7 @@ app = FastHTML()
 templates = TemplatesAdapter(template_dir="templates")
 depends.set("templates", templates)
 
+
 @app.get("/partial/user/{user_id}")
 async def user_partial(user_id: int):
     """Return HTMX partial."""
@@ -458,26 +457,28 @@ async def user_partial(user_id: int):
 import asyncio
 from acb.adapters.templates import TemplatesAdapter
 
+
 async def generate_report():
     """Generate HTML report."""
     templates = TemplatesAdapter(template_dir="report_templates")
-    
+
     data = {
         "title": "Monthly Report",
         "generated_at": datetime.now(),
         "metrics": [
             {"name": "Users", "value": 1234},
             {"name": "Revenue", "value": 56789.99},
-        ]
+        ],
     }
-    
+
     html = await templates.render("report.html", **data)
-    
+
     # Save to file
     with open("report.html", "w") as f:
         f.write(html)
-    
+
     print("✅ Report generated: report.html")
+
 
 if __name__ == "__main__":
     asyncio.run(generate_report())
@@ -492,16 +493,18 @@ import pytest
 from acb.adapters.templates import TemplatesAdapter
 from pathlib import Path
 
+
 @pytest.fixture
 async def templates(tmp_path):
     """Create templates adapter with temp directory."""
     template_dir = tmp_path / "templates"
     template_dir.mkdir()
-    
+
     # Create test template
     (template_dir / "test.html").write_text("Hello {{ name }}!")
-    
+
     return TemplatesAdapter(template_dir=template_dir)
+
 
 @pytest.mark.asyncio
 async def test_render_basic(templates):
@@ -509,14 +512,13 @@ async def test_render_basic(templates):
     result = await templates.render("test.html", name="World")
     assert result == "Hello World!"
 
+
 @pytest.mark.asyncio
 async def test_render_string(templates):
     """Test string template rendering."""
-    result = await templates.render_string(
-        "{{ value|json }}",
-        value={"key": "data"}
-    )
+    result = await templates.render_string("{{ value|json }}", value={"key": "data"})
     assert '"key": "data"' in result
+
 
 @pytest.mark.asyncio
 async def test_custom_filter(templates):
@@ -549,6 +551,7 @@ The async architecture allows for concurrent template rendering without blocking
 
 ```python
 import asyncio
+
 
 async def render_multiple():
     """Render multiple templates concurrently."""
@@ -586,6 +589,7 @@ print(templates.template_dir)  # Verify path
 
 # Ensure file exists
 from pathlib import Path
+
 assert (Path(templates.template_dir) / "index.html").exists()
 ```
 
@@ -618,6 +622,7 @@ templates = TemplatesAdapter(autoescape=False)
 ### vs. Plain Jinja2
 
 **ACB Templates Adapter Benefits:**
+
 - ✅ Async-first architecture (async/await support)
 - ✅ Dependency injection integration
 - ✅ Default filters included
@@ -625,6 +630,7 @@ templates = TemplatesAdapter(autoescape=False)
 - ✅ Consistent with other ACB adapters
 
 **Plain Jinja2:**
+
 - ❌ Sync-only by default
 - ❌ Manual DI setup
 - ❌ No default filters
@@ -633,6 +639,7 @@ templates = TemplatesAdapter(autoescape=False)
 ### vs. FastBlocks Templates
 
 **ACB Templates Adapter:**
+
 - ✅ Lightweight (400 lines vs 37,000+)
 - ✅ Simple API, focused on rendering
 - ✅ No external service dependencies
@@ -640,6 +647,7 @@ templates = TemplatesAdapter(autoescape=False)
 - ❌ No HTMY integration
 
 **FastBlocks Templates:**
+
 - ✅ Redis caching support
 - ✅ HTMY integration
 - ✅ Cloud storage backends
@@ -672,10 +680,12 @@ TemplatesBaseSettings (settings with DI)
 ### Dependencies
 
 **Core Dependencies:**
+
 - `jinja2>=3.1.6` - Template engine
 - `jinja2-async-environment>=0.14.3` - Async rendering support
 
 **ACB Dependencies:**
+
 - `acb.config.Settings` - Settings base class
 - `acb.depends.depends` - Dependency injection
 
@@ -684,10 +694,10 @@ TemplatesBaseSettings (settings with DI)
 When contributing to the templates adapter:
 
 1. **Follow ACB patterns**: Use existing adapters (cache, logger) as reference
-2. **Type hints required**: All functions must have type annotations
-3. **Async-first**: Use `async/await` for all I/O operations
-4. **Test coverage**: Maintain ≥85% coverage
-5. **Documentation**: Update README for new features
+1. **Type hints required**: All functions must have type annotations
+1. **Async-first**: Use `async/await` for all I/O operations
+1. **Test coverage**: Maintain ≥85% coverage
+1. **Documentation**: Update README for new features
 
 ## License
 
@@ -696,11 +706,12 @@ Part of the ACB (Asynchronous Component Base) framework.
 ## Support
 
 For issues, questions, or contributions:
+
 - **GitHub Issues**: [acb/issues](https://github.com/lesleslie/acb/issues)
 - **Documentation**: [acb.readthedocs.io](https://acb.readthedocs.io)
 - **Email**: les@wedgwoodwebworks.com
 
----
+______________________________________________________________________
 
-**Version**: 0.26.0 (ACB Templates Adapter)  
+**Version**: 0.26.0 (ACB Templates Adapter)
 **Last Updated**: 2025-01-25
