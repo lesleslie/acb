@@ -5,7 +5,7 @@
 **Decision Makers**: ACB Core Team
 **Version**: ACB v0.20.0+
 
----
+______________________________________________________________________
 
 ## Context and Problem Statement
 
@@ -14,6 +14,7 @@ ACB (Asynchronous Component Base) has historically used concrete class-based dep
 **Should ACB adopt Protocol-based dependency injection for the Services layer, or continue using concrete classes for all components?**
 
 This decision affects:
+
 - **Developer Experience**: How easy is it to write and understand service code?
 - **Testability**: How difficult is it to write unit tests and mock dependencies?
 - **Type Safety**: How well do type checkers catch errors at development time?
@@ -26,22 +27,27 @@ This decision affects:
 ### Technical Factors
 
 1. **Architectural Layer Differences**
+
    - **Adapters**: External system integration requiring shared infrastructure code
    - **Services**: Business logic orchestration requiring clean interfaces
 
-2. **Testing Requirements**
+1. **Testing Requirements**
+
    - Services contain complex business logic requiring extensive mocking
    - Adapters provide infrastructure utilities with simpler testing needs
 
-3. **Implementation Patterns**
+1. **Implementation Patterns**
+
    - Adapters need base classes for connection pooling, retry logic, cleanup patterns
    - Services benefit from interface-only definitions without implementation inheritance
 
-4. **Type System Evolution**
+1. **Type System Evolution**
+
    - Python 3.13+ has excellent Protocol support with structural typing
    - Modern type checkers (pyright, mypy) handle Protocols well
 
-5. **Framework Philosophy**
+1. **Framework Philosophy**
+
    - ACB prioritizes **explicit over implicit**
    - ACB values **simple over complex** for adapters
    - ACB embraces **modern Python patterns** where beneficial
@@ -49,21 +55,24 @@ This decision affects:
 ### Practical Considerations
 
 6. **Migration Impact**: Existing adapter code is stable and well-tested
-7. **Learning Curve**: Developers need to understand when to use which pattern
-8. **Documentation**: Clear guidance needed for both patterns
-9. **Ecosystem Compatibility**: Integration with FastBlocks and other ACB-based projects
+1. **Learning Curve**: Developers need to understand when to use which pattern
+1. **Documentation**: Clear guidance needed for both patterns
+1. **Ecosystem Compatibility**: Integration with FastBlocks and other ACB-based projects
 
 ## Considered Options
 
 ### Option 1: Universal Protocol-Based DI
+
 **Description**: Convert ALL components (adapters + services) to Protocol-based DI
 
 **Pros**:
+
 - ✅ Consistent DI pattern across entire codebase
 - ✅ Maximum testability for all components
 - ✅ Clean separation of interface and implementation everywhere
 
 **Cons**:
+
 - ❌ Loses shared adapter infrastructure (connection pooling, retry logic, cleanup)
 - ❌ Duplicates utility code across adapter implementations
 - ❌ Breaks stable, well-tested adapter base classes
@@ -72,18 +81,21 @@ This decision affects:
 
 **Verdict**: ❌ **Rejected** - Sacrifices proven adapter patterns for consistency that doesn't add value
 
----
+______________________________________________________________________
 
 ### Option 2: Keep Concrete Classes for Everything
+
 **Description**: Continue using concrete class DI for both adapters and services
 
 **Pros**:
+
 - ✅ No migration needed - zero breaking changes
 - ✅ Consistent DI pattern across entire codebase
 - ✅ Keeps proven adapter infrastructure patterns
 - ✅ Simple mental model - one DI approach
 
 **Cons**:
+
 - ❌ Services tightly coupled to concrete implementations
 - ❌ Difficult to mock complex service dependencies in tests
 - ❌ Forces inheritance where composition would be cleaner
@@ -92,12 +104,14 @@ This decision affects:
 
 **Verdict**: ❌ **Rejected** - Works for adapters, but limits service testability and flexibility
 
----
+______________________________________________________________________
 
 ### Option 3: Hybrid Approach (SELECTED)
+
 **Description**: Protocol-based DI for Services, Concrete class DI for Adapters
 
 **Pros**:
+
 - ✅ **Services**: Clean interfaces, easy mocking, flexible testing
 - ✅ **Adapters**: Keep proven infrastructure patterns intact
 - ✅ **Best of Both Worlds**: Right tool for each layer
@@ -105,12 +119,13 @@ This decision affects:
 - ✅ **Clear Mental Model**: Pattern choice matches architectural layer
 
 **Cons**:
+
 - ⚠️ Two DI patterns to learn (mitigated by clear documentation)
 - ⚠️ Need decision matrix for edge cases (mitigated by architectural guidelines)
 
 **Verdict**: ✅ **SELECTED** - Pragmatic solution maximizing benefits while minimizing disruption
 
----
+______________________________________________________________________
 
 ## Decision Outcome
 
@@ -125,18 +140,20 @@ This decision affects:
 ### Key Principles
 
 1. **Services Use Protocols** - Business logic components define Protocol interfaces for clean, testable contracts
-2. **Adapters Use Concrete Classes** - Infrastructure components use base classes for shared implementation
-3. **Core Uses Concrete Classes** - Foundational components (Config, Logger) use direct classes for simplicity
+1. **Adapters Use Concrete Classes** - Infrastructure components use base classes for shared implementation
+1. **Core Uses Concrete Classes** - Foundational components (Config, Logger) use direct classes for simplicity
 
 ### Implementation Guidelines
 
 #### For Services (Protocol-Based DI)
 
 **Define Protocol Interface:**
+
 ```python
 # acb/services/protocols.py
 from typing import Protocol, AsyncContextManager
 import typing as t
+
 
 class RepositoryServiceProtocol(Protocol):
     """Protocol for repository services with Unit of Work pattern."""
@@ -159,6 +176,7 @@ class RepositoryServiceProtocol(Protocol):
 ```
 
 **Implement Concrete Service:**
+
 ```python
 # acb/services/repository/sql_repository.py
 from acb.services.protocols import RepositoryServiceProtocol, UnitOfWork
@@ -166,6 +184,7 @@ from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 Sql = import_adapter("sql")
+
 
 class SqlRepositoryService:
     """SQL-based repository implementation.
@@ -190,9 +209,11 @@ class SqlRepositoryService:
 ```
 
 **Use in Business Logic:**
+
 ```python
 from acb.depends import depends, Inject
 from acb.services.protocols import RepositoryServiceProtocol, ValidationServiceProtocol
+
 
 @depends.inject
 async def process_order(
@@ -215,10 +236,12 @@ async def process_order(
 ```
 
 **Test with Mock:**
+
 ```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from acb.depends import depends
+
 
 # Mock implements the Protocol interface
 class MockRepository:
@@ -235,9 +258,11 @@ class MockRepository:
     async def save(self, entity, uow=None):
         self.entities[entity.id] = entity
 
+
 @pytest.fixture
 def mock_repo():
     return MockRepository()
+
 
 @pytest.mark.asyncio
 async def test_process_order(mock_repo):
@@ -253,10 +278,12 @@ async def test_process_order(mock_repo):
 #### For Adapters (Concrete Class DI)
 
 **Use Existing Base Class:**
+
 ```python
 # acb/adapters/cache/redis.py
 from acb.adapters.cache._base import CacheBase
 from acb.cleanup import CleanupMixin
+
 
 class Cache(CacheBase, CleanupMixin):
     """Redis cache adapter - concrete implementation."""
@@ -268,12 +295,14 @@ class Cache(CacheBase, CleanupMixin):
 ```
 
 **Use in Infrastructure Code:**
+
 ```python
 from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")
 Storage = import_adapter("storage")
+
 
 @depends.inject
 async def cache_uploaded_file(
@@ -289,6 +318,7 @@ async def cache_uploaded_file(
 **Why No Protocol for Adapters?**
 
 Adapters benefit from shared base class infrastructure:
+
 - Connection pooling via `_ensure_client()`
 - Retry logic via `_retry_operation()`
 - Resource cleanup via `CleanupMixin`
@@ -305,54 +335,66 @@ These utilities would need duplication across implementations if using Protocols
 # acb/adapters/messaging/_base.py
 from typing import Protocol
 
+
 class PubSubBackend(Protocol):
     """Protocol for pub/sub messaging (events system)."""
+
     async def publish(self, topic: str, message: bytes) -> None: ...
     async def subscribe(self, topic: str) -> Subscription: ...
 
+
 class QueueBackend(Protocol):
     """Protocol for queue messaging (tasks system)."""
+
     async def enqueue(self, queue: str, message: bytes) -> str: ...
     async def dequeue(self, queue: str) -> QueueMessage | None: ...
 
+
 class UnifiedMessagingBackend(Protocol):
     """Combines both interfaces for unified backends like Redis."""
+
     # Includes all methods from both PubSubBackend and QueueBackend
 ```
 
 This is an exception because:
+
 - Events system needs `PubSubBackend` interface
 - Tasks system needs `QueueBackend` interface
 - Same backend (Redis) implements both interfaces
 - Protocol structural typing enables this dual-interface pattern
 
----
+______________________________________________________________________
 
 ## Consequences
 
 ### Positive Consequences
 
 1. **✅ Services Are Highly Testable**
+
    - Protocol interfaces easy to mock in unit tests
    - No need to instantiate full infrastructure stack
    - Fast test execution with minimal dependencies
 
-2. **✅ Services Are Flexible**
+1. **✅ Services Are Flexible**
+
    - Swap implementations without changing business logic
    - Multiple implementations of same Protocol (e.g., SqlRepository, MongoRepository)
    - Composition over inheritance for service design
 
-3. **✅ Adapters Keep Proven Patterns**
+1. **✅ Adapters Keep Proven Patterns**
+
    - Zero breaking changes to stable adapter code
    - Shared infrastructure remains intact
    - Connection pooling, retry logic, cleanup patterns preserved
 
-4. **✅ Clear Architectural Boundaries**
+1. **✅ Clear Architectural Boundaries**
+
    - DI pattern signals architectural layer (Service vs Adapter)
    - Developers know which pattern to use based on component type
    - Consistent with ACB's layered architecture
 
-5. **✅ Type Safety for Business Logic**
+1. **✅ Type Safety for Business Logic**
+
    - Protocols provide excellent type checking for service interfaces
    - Structural typing catches interface mismatches at development time
    - Modern type checkers (pyright, mypy) excel with Protocols
@@ -360,14 +402,17 @@ This is an exception because:
 ### Negative Consequences
 
 1. **⚠️ Two DI Patterns to Learn**
+
    - **Mitigation**: Comprehensive documentation in CLAUDE.md, this ADR, and services/protocols.py
    - **Severity**: LOW - Clear architectural boundaries make decision obvious
 
-2. **⚠️ Potential Confusion for Edge Cases**
+1. **⚠️ Potential Confusion for Edge Cases**
+
    - **Mitigation**: Decision matrix and examples in documentation
    - **Severity**: LOW - Edge cases are rare, defaults are clear
 
-3. **⚠️ Initial Migration Effort**
+1. **⚠️ Initial Migration Effort**
+
    - **Mitigation**: Only new Services layer affected, adapters unchanged
    - **Severity**: LOW - Isolated to new v0.20.0+ features
 
@@ -378,13 +423,14 @@ This is an exception because:
    - Both patterns use the same `bevy` DI framework
    - No measurable performance difference in practice
 
----
+______________________________________________________________________
 
 ## Implementation Notes
 
 ### File Structure
 
 **Services Layer:**
+
 ```
 acb/services/
 ├── protocols.py              # Protocol interfaces (NEW)
@@ -398,6 +444,7 @@ acb/services/
 ```
 
 **Adapters Layer (Unchanged):**
+
 ```
 acb/adapters/
 ├── cache/
@@ -414,6 +461,7 @@ acb/adapters/
 ### Registration Pattern
 
 **Services (Protocol-Based):**
+
 ```python
 # Register concrete implementation for Protocol
 from acb.depends import depends
@@ -423,6 +471,7 @@ from acb.services.repository.sql_repository import SqlRepositoryService
 # Explicit registration
 depends.set(RepositoryServiceProtocol, SqlRepositoryService())
 
+
 # Usage injects via Protocol
 @depends.inject
 async def business_logic(repo: Inject[RepositoryServiceProtocol]):
@@ -431,11 +480,13 @@ async def business_logic(repo: Inject[RepositoryServiceProtocol]):
 ```
 
 **Adapters (Concrete Class):**
+
 ```python
 # Adapters auto-register based on settings/adapters.yml
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")  # Returns concrete class based on config
+
 
 # Usage injects concrete class directly
 @depends.inject
@@ -447,16 +498,18 @@ async def infrastructure_code(cache: Inject[Cache]):
 ### Testing Strategy
 
 **Services:**
+
 - Mock Protocol interfaces in unit tests
 - Use lightweight mock implementations
 - Test business logic in isolation
 
 **Adapters:**
+
 - Use real implementations in integration tests
 - Mock external systems (Redis, PostgreSQL, S3, etc.)
 - Test adapter infrastructure patterns
 
----
+______________________________________________________________________
 
 ## Version Compatibility
 
@@ -464,7 +517,7 @@ async def infrastructure_code(cache: Inject[Cache]):
 - **Python Version**: 3.13+ (required for modern Protocol support)
 - **FastBlocks Compatibility**: v0.14.0+ (requires ACB v0.19.0+)
 
----
+______________________________________________________________________
 
 ## References
 
@@ -480,11 +533,12 @@ async def infrastructure_code(cache: Inject[Cache]):
 - [Python typing.Protocol Documentation](https://docs.python.org/3/library/typing.html#typing.Protocol)
 - [ACB Adapter Pattern Documentation](https://github.com/lesleslie/acb)
 
----
+______________________________________________________________________
 
 ## Decision Review
 
 This ADR should be reviewed:
+
 - When introducing new architectural layers
 - When Python's type system evolves significantly
 - After 12 months to assess practical impact

@@ -16,14 +16,6 @@
       ],
       "type": "stdio"
     },
-    "git": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@cyanheads/git-mcp-server@2.3.3"
-      ],
-      "type": "stdio"
-    },
     "memory": {
       "command": "npx",
       "args": [

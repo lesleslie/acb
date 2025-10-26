@@ -27,6 +27,15 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
     from acb.adapters.models._redis_om import RedisOMModelAdapter
 
+from acb.adapters.models._hybrid import ACBQuery
+
+# Import query interface components
+from acb.adapters.models._query import (
+    DatabaseAdapter,
+    ModelAdapter,
+    QueryRegistry,
+    registry,
+)
 from acb.adapters.models._sqlalchemy import SQLAlchemyModelAdapter
 from acb.adapters.models._sqlmodel import SQLModelAdapter
 
@@ -36,6 +45,12 @@ __all__ = [
     "PydanticModelAdapter",
     "SQLAlchemyModelAdapter",
     "SQLModelAdapter",
+    # Query interface exports
+    "ACBQuery",
+    "DatabaseAdapter",
+    "ModelAdapter",
+    "QueryRegistry",
+    "registry",
 ]
 
 
@@ -114,8 +129,12 @@ class ModelsAdapter(ModelsBase):
         with suppress(ImportError):
             # Suppress Pydantic deprecation warnings from redis_om
             with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=DeprecationWarning, module="redis_om")
-                warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
+                warnings.filterwarnings(
+                    "ignore", category=DeprecationWarning, module="redis_om"
+                )
+                warnings.filterwarnings(
+                    "ignore", category=DeprecationWarning, module="pydantic"
+                )
                 from redis_om import HashModel
 
             if issubclass(model_class, HashModel):

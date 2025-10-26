@@ -23,6 +23,7 @@ ACB uses **two different dependency injection patterns** for different component
 from acb.depends import Inject, depends
 from acb.services.protocols import RepositoryServiceProtocol
 
+
 @depends.inject
 async def business_logic(repo: Inject[RepositoryServiceProtocol]):
     # Protocol-based DI for clean, testable code
@@ -45,6 +46,7 @@ from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")  # Concrete class
+
 
 @depends.inject
 async def infrastructure_code(cache: Inject[Cache]):
@@ -243,6 +245,7 @@ import pytest
 from acb.depends import depends
 from acb.services.protocols import RepositoryServiceProtocol, ValidationServiceProtocol
 
+
 # Mock repository - just implement the protocol interface
 class MockRepository:
     def __init__(self):
@@ -266,12 +269,14 @@ class MockRepository:
     def unit_of_work(self):
         return MockUnitOfWork()
 
+
 # Mock works because it matches the Protocol structure!
 @pytest.fixture
 def mock_repo():
     repo = MockRepository()
     depends.set(RepositoryServiceProtocol, repo)
     return repo
+
 
 async def test_my_function(mock_repo):
     # Function receives MockRepository via DI
@@ -286,6 +291,7 @@ When implementing these protocols:
 1. **Create a concrete class** that implements the protocol:
    ```python
    from acb.services.protocols import RepositoryServiceProtocol
+
 
    class SqlRepository:  # No inheritance needed!
        async def get(self, entity_id):
@@ -338,7 +344,7 @@ from typing import Protocol
 from uuid import UUID
 
 if t.TYPE_CHECKING:
-    from pydantic import BaseModel
+    pass
 
 # Re-export for convenience
 __all__ = [
@@ -502,9 +508,7 @@ class RepositoryServiceProtocol(Protocol):
         ```python
         @depends.inject
         async def update_user(
-            user_id: str,
-            data: dict,
-            repo: Inject[RepositoryServiceProtocol]
+            user_id: str, data: dict, repo: Inject[RepositoryServiceProtocol]
         ):
             async with repo.unit_of_work() as uow:
                 user = await repo.get(user_id)
@@ -606,10 +610,7 @@ class ValidationServiceProtocol(Protocol):
     Example:
         ```python
         @depends.inject
-        async def create_user(
-            data: dict,
-            validator: Inject[ValidationServiceProtocol]
-        ):
+        async def create_user(data: dict, validator: Inject[ValidationServiceProtocol]):
             result = await validator.validate_input(data, rules=["email", "password"])
             if not result["is_valid"]:
                 raise ValidationError(result["errors"])
@@ -703,9 +704,7 @@ class PerformanceServiceProtocol(Protocol):
     Example:
         ```python
         @depends.inject
-        async def monitor_request(
-            perf: Inject[PerformanceServiceProtocol]
-        ):
+        async def monitor_request(perf: Inject[PerformanceServiceProtocol]):
             async with perf.measure("api_request"):
                 # Perform operation
                 pass
@@ -803,8 +802,7 @@ class EventServiceProtocol(Protocol):
         ```python
         @depends.inject
         async def publish_user_created(
-            user_id: str,
-            events: Inject[EventServiceProtocol]
+            user_id: str, events: Inject[EventServiceProtocol]
         ):
             event = {
                 "event_id": uuid4(),
@@ -864,7 +862,7 @@ class EventServiceProtocol(Protocol):
         event_type: str | None = None,
         since: datetime | None = None,
         limit: int = 100,
-    ) -> AsyncGenerator[Event, None]:
+    ) -> AsyncGenerator[Event]:
         """Get historical events.
 
         Args:
@@ -894,8 +892,7 @@ class WorkflowServiceProtocol(Protocol):
         ```python
         @depends.inject
         async def process_order(
-            order_id: str,
-            workflow: Inject[WorkflowServiceProtocol]
+            order_id: str, workflow: Inject[WorkflowServiceProtocol]
         ):
             # Start workflow
             await workflow.start(order_id, "order_processing")

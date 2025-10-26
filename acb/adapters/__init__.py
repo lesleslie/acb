@@ -10,7 +10,6 @@ from functools import lru_cache
 from importlib import import_module, util
 from inspect import stack
 from pathlib import Path
-from pprint import pprint
 from uuid import UUID
 
 # Removed nest_asyncio import - not needed in library code
@@ -458,19 +457,13 @@ core_adapters = [
 def _update_adapter_caches() -> None:
     enabled_cache = {}
     installed_cache = {}
-    print(len(adapter_registry.get()))
     for adapter in adapter_registry.get():
         if adapter.enabled:
             enabled_cache[adapter.category] = adapter
         if adapter.installed:
             installed_cache[adapter.category] = adapter
     _enabled_adapters_cache.get().update(enabled_cache)
-    print("\nAdapters enabled:")
-    pprint([(a.name, a.category) for a in _enabled_adapters_cache.get().values()])
     _installed_adapters_cache.get().update(installed_cache)
-    print("\nAdapters installed:")
-    pprint([(a.name, a.category) for a in _installed_adapters_cache.get().values()])
-    print()
 
 
 adapter_registry.get().extend([*core_adapters])
@@ -1052,7 +1045,6 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
     for adapter_name, modules in pkg_adapters.items():
         _modules = extract_adapter_modules(modules, adapter_name)
         _adapters.extend(_modules)
-    pprint(sorted([(a.category, a.name) for a in _adapters]))
     registry = adapter_registry.get()
     for a in _adapters:
         module = ".".join(a.module.split(".")[-2:])
@@ -1064,7 +1056,6 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
             registry.remove(remove)
         registry.append(a)
         _adapter_import_locks.get()[a.category] = asyncio.Lock()
-    pprint(len(adapter_registry.get()))
     _update_adapter_caches()
     return _adapters
 

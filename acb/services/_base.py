@@ -112,6 +112,31 @@ class ServiceBase(ABC, CleanupMixin):
         self._initialized = False
         self._start_time: float | None = None
 
+        # Initialize logger (synchronous fallback for tests)
+        self._logger: logging.Logger | None = None
+
+    @property
+    def logger(self) -> logging.Logger:
+        """Get logger instance with lazy initialization."""
+        if self._logger is None:
+            try:
+                # Try to get injected logger from DI container
+                imported_logger = depends.get(Logger)
+                # If depends.get returns a coroutine, we're in test context - use fallback
+                if hasattr(imported_logger, '__await__'):
+                    self._logger = logging.getLogger(self.__class__.__name__)
+                else:
+                    self._logger = imported_logger
+            except Exception:
+                # Fallback to standard logging if DI not available
+                self._logger = logging.getLogger(self.__class__.__name__)
+        return self._logger
+
+    @logger.setter
+    def logger(self, value: logging.Logger) -> None:
+        """Set logger instance."""
+        self._logger = value
+
     @property
     def service_id(self) -> str:
         """Get service identifier."""

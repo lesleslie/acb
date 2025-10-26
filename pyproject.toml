@@ -124,6 +124,10 @@ storage = [
     "gcsfs>=2025.5.1",
     "s3fs>=2025.5.1",
 ]
+templates = [
+    "jinja2>=3.1.6",
+    "jinja2-async-environment>=0.14.3",
+]
 sql = [
     "acb",
     "aiomysql>=0.2",

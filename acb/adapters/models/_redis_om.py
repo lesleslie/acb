@@ -15,8 +15,12 @@ from acb.adapters.models._attrs import ModelAdapter
 try:
     # Suppress Pydantic deprecation warnings from redis_om
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=DeprecationWarning, module="redis_om")
-        warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
+        warnings.filterwarnings(
+            "ignore", category=DeprecationWarning, module="redis_om"
+        )
+        warnings.filterwarnings(
+            "ignore", category=DeprecationWarning, module="pydantic"
+        )
         from redis_om import HashModel
 
     _redis_om_available = True
