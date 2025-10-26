@@ -178,10 +178,7 @@ class TestStorageBucket:
     @pytest.fixture
     def storage_bucket(self, mock_client: AsyncMock, mock_config: MagicMock) -> StorageBucket:
         """Create a StorageBucket instance."""
-        with pytest.MonkeyPatch().context() as mp:
-            mp.setattr("acb.adapters.storage._base.depends.get", lambda cls: mock_config)
-            bucket = StorageBucket(mock_client, "test", "test-prefix")
-            return bucket
+        return StorageBucket(mock_client, "test", mock_config, "test-prefix")
 
     def test_init(self, storage_bucket: StorageBucket) -> None:
         """Test StorageBucket initialization."""

@@ -82,10 +82,17 @@ class StorageBucket:
     client: t.Any
     bucket: str
     prefix: str | None = None
-    config: Inject[Config]
+    config: Config
 
-    def __init__(self, client: t.Any, bucket: str, prefix: str | None = None) -> None:
+    def __init__(
+        self,
+        client: t.Any,
+        bucket: str,
+        config: Config,
+        prefix: str | None = None,
+    ) -> None:
         self.client = client
+        self.config = config
         self.name = bucket
         self.bucket = self.config.storage.buckets[bucket]
         self.prefix = prefix or self.config.storage.prefix
@@ -229,7 +236,7 @@ class StorageBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
     async def init(self) -> None:
         client = await self.get_client()
         for bucket in self.config.storage.buckets:
-            setattr(self, bucket, StorageBucket(client, bucket))
+            setattr(self, bucket, StorageBucket(client, bucket, self.config))
             self.logger.debug(f"{bucket.title()} storage bucket initialized")
 
     # Simple storage operations without complex retry/monitoring

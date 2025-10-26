@@ -120,13 +120,9 @@ class ServiceBase(ABC, CleanupMixin):
         """Get logger instance with lazy initialization."""
         if self._logger is None:
             try:
-                # Try to get injected logger from DI container
-                imported_logger = depends.get(Logger)
-                # If depends.get returns a coroutine, we're in test context - use fallback
-                if hasattr(imported_logger, "__await__"):
-                    self._logger = logging.getLogger(self.__class__.__name__)
-                else:
-                    self._logger = imported_logger
+                # Use synchronous get for pre-registered Logger class
+                # Logger is already registered during module import, so get_sync works
+                self._logger = depends.get_sync(Logger)
             except Exception:
                 # Fallback to standard logging if DI not available
                 self._logger = logging.getLogger(self.__class__.__name__)
