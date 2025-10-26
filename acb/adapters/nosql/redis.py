@@ -1,11 +1,18 @@
 import typing as t
+import warnings
 from contextlib import asynccontextmanager, suppress
 from functools import cached_property
 from uuid import UUID
 
 import redis.asyncio as redis
 from pydantic import field_validator
-from redis_om import HashModel, Migrator, get_redis_connection
+
+# Suppress Pydantic deprecation warnings from redis_om
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="redis_om")
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
+    from redis_om import HashModel, Migrator, get_redis_connection
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
 from acb.depends import Inject, depends

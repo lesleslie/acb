@@ -11,6 +11,7 @@ This package provides simple model adapters for different frameworks:
 Clean architecture focusing on basic model operations with Services layer available for complex enterprise features.
 """
 
+import warnings
 from contextlib import suppress
 from functools import lru_cache
 from typing import Any
@@ -19,7 +20,13 @@ from acb.adapters.models._attrs import AttrsModelAdapter
 from acb.adapters.models._base import ModelsBase, ModelsBaseSettings
 from acb.adapters.models._msgspec import MsgspecModelAdapter
 from acb.adapters.models._pydantic import PydanticModelAdapter
-from acb.adapters.models._redis_om import RedisOMModelAdapter
+
+# Suppress Pydantic deprecation warnings from redis_om
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="redis_om")
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
+    from acb.adapters.models._redis_om import RedisOMModelAdapter
+
 from acb.adapters.models._sqlalchemy import SQLAlchemyModelAdapter
 from acb.adapters.models._sqlmodel import SQLModelAdapter
 
@@ -105,7 +112,11 @@ class ModelsAdapter(ModelsBase):
             if issubclass(model_class, BaseModel):
                 return "pydantic"
         with suppress(ImportError):
-            from redis_om import HashModel
+            # Suppress Pydantic deprecation warnings from redis_om
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning, module="redis_om")
+                warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
+                from redis_om import HashModel
 
             if issubclass(model_class, HashModel):
                 return "redis_om"

@@ -7,12 +7,17 @@ allowing the universal query interface to work with Redis-OM HashModel classes.
 from __future__ import annotations
 
 import inspect
+import warnings
 from typing import Any, TypeVar, get_args, get_origin
 
 from acb.adapters.models._attrs import ModelAdapter
 
 try:
-    from redis_om import HashModel
+    # Suppress Pydantic deprecation warnings from redis_om
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module="redis_om")
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module="pydantic")
+        from redis_om import HashModel
 
     _redis_om_available = True
 except ImportError:
