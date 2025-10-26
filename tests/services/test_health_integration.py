@@ -370,7 +370,12 @@ class TestHealthSystemIntegration:
 
     async def test_health_monitoring_with_alerts(self):
         """Test health monitoring with alerting capabilities."""
-        health_service = HealthService()
+        # Disable auto_register_services to avoid picking up components from previous tests
+        from acb.services import HealthServiceSettings
+        from acb.services._base import ServiceConfig
+        config = ServiceConfig(service_id="health_service", name="Health Service")
+        settings = HealthServiceSettings(auto_register_services=False)
+        health_service = HealthService(service_config=config, settings=settings)
         await health_service.initialize()
 
         # Create component that will fail
@@ -403,7 +408,12 @@ class TestHealthMonitoringScenarios:
 
     async def test_gradual_system_degradation(self):
         """Test system health during gradual degradation."""
-        health_service = HealthService()
+        # Disable auto_register_services to avoid picking up components from previous tests
+        from acb.services import HealthServiceSettings
+        from acb.services._base import ServiceConfig
+        config = ServiceConfig(service_id="health_service", name="Health Service")
+        settings = HealthServiceSettings(auto_register_services=False)
+        health_service = HealthService(service_config=config, settings=settings)
         await health_service.initialize()
 
         # Set up multiple components
@@ -438,7 +448,12 @@ class TestHealthMonitoringScenarios:
 
     async def test_recovery_monitoring(self):
         """Test monitoring system recovery from failures."""
-        health_service = HealthService()
+        # Disable auto_register_services to avoid picking up components from previous tests
+        from acb.services import HealthServiceSettings
+        from acb.services._base import ServiceConfig
+        config = ServiceConfig(service_id="health_service", name="Health Service")
+        settings = HealthServiceSettings(auto_register_services=False)
+        health_service = HealthService(service_config=config, settings=settings)
         await health_service.initialize()
 
         # Start with failed component

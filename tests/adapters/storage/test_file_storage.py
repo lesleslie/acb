@@ -182,7 +182,7 @@ class TestFileStorage:
         assert Storage.file_system == DirFileSystem
 
     @pytest.mark.asyncio
-    async def test_init_method(self, storage_adapter: Storage) -> None:
+    async def test_init_method(self, storage_adapter: Storage, mock_config: MagicMock) -> None:
         mock_client = MockAsyncFileSystemWrapper()
 
         storage_adapter._client = mock_client
@@ -192,9 +192,10 @@ class TestFileStorage:
 
             await storage_adapter.init()
 
-            mock_bucket_cls.assert_any_call(mock_client, "templates")
-            mock_bucket_cls.assert_any_call(mock_client, "test")
-            mock_bucket_cls.assert_any_call(mock_client, "media")
+            # StorageBucket is called with (client, bucket_name, config)
+            mock_bucket_cls.assert_any_call(mock_client, "templates", storage_adapter.config)
+            mock_bucket_cls.assert_any_call(mock_client, "test", storage_adapter.config)
+            mock_bucket_cls.assert_any_call(mock_client, "media", storage_adapter.config)
 
             assert storage_adapter.templates == mock_bucket
             assert storage_adapter.test == mock_bucket

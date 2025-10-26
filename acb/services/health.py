@@ -233,9 +233,6 @@ class HealthReporter(CleanupMixin):
     maintains historical data, and provides system-wide health status reporting.
     """
 
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore[valid-type]
-
     def __init__(self, settings: HealthReporterSettings | None = None) -> None:
         super().__init__()
         self._settings = settings or HealthReporterSettings()
@@ -244,6 +241,15 @@ class HealthReporter(CleanupMixin):
         self._system_status = HealthStatus.UNKNOWN
         self._check_task: asyncio.Task[t.Any] | None = None
         self._shutdown_event = asyncio.Event()
+
+        # Initialize configuration - try DI first, fallback to direct instantiation
+        try:
+            self.config = depends.get_sync(Config)
+        except Exception:
+            self.config = Config()
+
+        # Use standard logging for logger - simpler and more reliable
+        self.logger = logging.getLogger(__name__)
 
     def register_component(self, component: HealthCheckMixin) -> None:
         """Register a component for health monitoring."""

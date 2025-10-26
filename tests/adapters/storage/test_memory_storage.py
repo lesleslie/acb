@@ -12,34 +12,62 @@ class TestMemoryStorageSettings:
 
     def test_init_with_defaults(self, mock_config):
         """Test settings initialization with default values."""
-        settings = StorageSettings()
+        from acb.config import Config
+        from acb.depends import depends
 
-        # Test inherited defaults from StorageBaseSettings
-        assert settings.prefix == "acb"  # From config.app.name
-        assert settings.user_project == "acb"
-        assert settings.buckets == {"test": "test-bucket"}
-        assert settings.local_fs is False
-        assert settings.memory_fs is False
+        # Set up mock_config with app.name
+        mock_config.app = MagicMock()
+        mock_config.app.name = "acb"
+
+        # Register mock_config in DI container
+        depends.set(Config, mock_config)
+
+        try:
+            settings = StorageSettings()
+
+            # Test inherited defaults from StorageBaseSettings
+            assert settings.prefix == "acb"  # From config.app.name
+            assert settings.user_project == "acb"
+            assert settings.buckets == {"test": "test-bucket"}
+            assert settings.local_fs is False
+            assert settings.memory_fs is False
+        finally:
+            # Restore original Config instance
+            depends.set(Config, Config())
 
     def test_init_with_custom_values(self, mock_config):
         """Test settings initialization with custom values."""
-        custom_buckets = {
-            "media": "my-media-bucket",
-            "templates": "my-templates-bucket",
-            "test": "my-test-bucket",
-        }
+        from acb.config import Config
+        from acb.depends import depends
 
-        settings = StorageSettings(
-            prefix="my-app",
-            user_project="my-project",
-            buckets=custom_buckets,
-            local_path=AsyncPath("/custom/storage"),
-        )
+        # Set up mock_config with app.name
+        mock_config.app = MagicMock()
+        mock_config.app.name = "acb"
 
-        assert settings.prefix == "my-app"
-        assert settings.user_project == "my-project"
-        assert settings.buckets == custom_buckets
-        assert settings.local_path == AsyncPath("/custom/storage")
+        # Register mock_config in DI container
+        depends.set(Config, mock_config)
+
+        try:
+            custom_buckets = {
+                "media": "my-media-bucket",
+                "templates": "my-templates-bucket",
+                "test": "my-test-bucket",
+            }
+
+            settings = StorageSettings(
+                prefix="my-app",
+                user_project="my-project",
+                buckets=custom_buckets,
+                local_path=AsyncPath("/custom/storage"),
+            )
+
+            assert settings.prefix == "my-app"
+            assert settings.user_project == "my-project"
+            assert settings.buckets == custom_buckets
+            assert settings.local_path == AsyncPath("/custom/storage")
+        finally:
+            # Restore original Config instance
+            depends.set(Config, Config())
 
 
 class TestMemoryStorage:
@@ -48,6 +76,16 @@ class TestMemoryStorage:
     @pytest.fixture
     def mock_storage_settings(self, mock_config):
         """Mock storage settings for testing."""
+        from acb.config import Config
+        from acb.depends import depends
+
+        # Set up mock_config with app.name
+        mock_config.app = MagicMock()
+        mock_config.app.name = "acb"
+
+        # Register mock_config in DI container
+        depends.set(Config, mock_config)
+
         mock_config.storage = StorageSettings(
             prefix="test-app",
             user_project="test-project",

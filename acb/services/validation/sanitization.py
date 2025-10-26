@@ -132,6 +132,9 @@ class InputSanitizer:
 
         sanitizer_result = await sanitizer.sanitize(data)
         result.warnings.extend(sanitizer_result.warnings)
+        result.errors.extend(sanitizer_result.errors)
+        if not sanitizer_result.is_valid:
+            result.is_valid = False
         return sanitizer_result.value
 
 

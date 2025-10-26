@@ -4,6 +4,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from acb.depends import depends
 from acb.services.performance.serverless import (
     AdapterPreInitializer,
     ColdStartMetrics,
@@ -152,46 +153,43 @@ class TestFastDependencies:
     def test_cached_resolve(self):
         """Test cached dependency resolution."""
         mock_instance = MagicMock()
+        mock_get_sync = MagicMock(return_value=mock_instance)
 
-        with patch("acb.services.performance.serverless.depends.get") as mock_get:
-            mock_get.return_value = mock_instance
-
+        with patch.object(depends, "get_sync", new=mock_get_sync):
             # First resolution
             result1 = self.fast_deps.cached_resolve(str, "test_key")
             assert result1 is mock_instance
-            mock_get.assert_called_once_with(str)
+            mock_get_sync.assert_called_once_with(str)
 
             # Second resolution should use cache
-            mock_get.reset_mock()
+            mock_get_sync.reset_mock()
             result2 = self.fast_deps.cached_resolve(str, "test_key")
             assert result2 is mock_instance
-            mock_get.assert_not_called()
+            mock_get_sync.assert_not_called()
 
     def test_clear_cache(self):
         """Test cache clearing."""
         mock_instance = MagicMock()
+        mock_get_sync = MagicMock(return_value=mock_instance)
 
-        with patch("acb.services.performance.serverless.depends.get") as mock_get:
-            mock_get.return_value = mock_instance
-
+        with patch.object(depends, "get_sync", new=mock_get_sync):
             # Cache a resolution
             self.fast_deps.cached_resolve(str, "test_key")
 
             # Clear cache
             self.fast_deps.clear_cache()
 
-            # Next resolution should call depends.get again
+            # Next resolution should call depends.get_sync again
             result = self.fast_deps.cached_resolve(str, "test_key")
             assert result is mock_instance
-            assert mock_get.call_count == 2
+            assert mock_get_sync.call_count == 2
 
     def test_resolution_stats(self):
         """Test resolution statistics tracking."""
         mock_instance = MagicMock()
+        mock_get_sync = MagicMock(return_value=mock_instance)
 
-        with patch("acb.services.performance.serverless.depends.get") as mock_get:
-            mock_get.return_value = mock_instance
-
+        with patch.object(depends, "get_sync", new=mock_get_sync):
             self.fast_deps.cached_resolve(str, "test_key")
             stats = self.fast_deps.get_resolution_stats()
 

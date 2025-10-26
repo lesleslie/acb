@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from acb.adapters.dns.cloud_dns import Dns, DnsSettings
+from acb.adapters.dns.gcdns import Dns, DnsSettings
 from acb.config import Config
 
 

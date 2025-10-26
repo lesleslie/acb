@@ -268,18 +268,21 @@ class TestValidationService:
         validation_service: ValidationService
     ) -> None:
         """Test validation error handling."""
-        # Test with a schema that will cause an error
+        # Test error handling at the public validate() method level
+        # which catches exceptions and returns error results
         broken_schema = Mock()
         broken_schema._ensure_compiled = AsyncMock()
         broken_schema.validate = AsyncMock(side_effect=Exception("Test error"))
 
-        result = await validation_service._validate_with_schema(
+        # Use public validate method which has exception handling
+        result = await validation_service.validate(
             "test", broken_schema, ValidationConfig(), "test_field"
         )
 
         assert result.is_valid is False
         assert len(result.errors) > 0
-        assert "Test error" in result.errors[0]
+        # The error should be wrapped as "Validation exception: ..."
+        assert any("exception" in error.lower() for error in result.errors)
 
     async def test_models_adapter_integration_disabled(
         self,
@@ -307,15 +310,21 @@ class TestValidationService:
         mock_logger: Mock
     ) -> None:
         """Test models adapter integration when enabled."""
-        # Mock models adapter
+        # Create a mock ModelsAdapter class
+        MockModelsAdapterClass = Mock()
+
+        # Create mock adapter instance
         mock_adapter = Mock()
         mock_adapter.get_adapter_for_model = Mock()
-        mock_adapter.get_adapter_for_model.return_value.create_instance = Mock(
-            return_value="created_instance"
-        )
+        mock_adapter_impl = Mock()
+        mock_adapter_impl.create_instance = Mock(return_value="created_instance")
+        mock_adapter.get_adapter_for_model.return_value = mock_adapter_impl
 
-        mock_import_adapter.return_value = Mock
-        depends.set(Mock, mock_adapter)
+        # Setup: import_adapter("models") returns MockModelsAdapterClass
+        mock_import_adapter.return_value = MockModelsAdapterClass
+
+        # Setup: DI returns the mock adapter when requesting the class
+        depends.set(MockModelsAdapterClass, mock_adapter)
 
         # Create service with models adapter enabled
         settings = ValidationSettings(models_adapter_enabled=True)

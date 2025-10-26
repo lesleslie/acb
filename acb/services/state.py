@@ -129,7 +129,7 @@ class StateManagerSettings(ServiceSettings):
             from acb.config import Config
             from acb.depends import depends
 
-            depends.get(Config)
+            depends.get_sync(Config)
             super().__init__(**values)
         except Exception:
             # Fallback for testing - initialize BaseModel directly
@@ -378,7 +378,7 @@ class PersistentStateManager(StateManager):
             from acb.depends import depends
 
             try:
-                self._repository = depends.get("repository_service")
+                self._repository = depends.get_sync("repository_service")
             except Exception:
                 # Fallback to mock implementation for testing
                 self._repository = t.cast("t.Any", MockRepositoryService())
@@ -835,7 +835,7 @@ async def get_state_service() -> StateManagerService:
     from acb.depends import depends
 
     try:
-        return t.cast("StateManagerService", depends.get(StateManagerService))
+        return t.cast("StateManagerService", depends.get_sync(StateManagerService))
     except Exception:
         # Fallback to new instance
         service = StateManagerService()

@@ -45,8 +45,6 @@ class ServiceRegistry:
     with ACB's dependency injection integration.
     """
 
-    logger: Logger = depends()  # type: ignore[valid-type]
-
     def __init__(self) -> None:
         self._services: dict[str, ServiceBase] = {}
         self._service_configs: dict[str, ServiceConfig] = {}
@@ -54,6 +52,8 @@ class ServiceRegistry:
         self._shutdown_order: list[str] = []
         self._registry_lock = asyncio.Lock()
         self._initialized = False
+        # Initialize logger - use standard logging for reliability
+        self.logger = logging.getLogger(__name__)
 
     async def register_service(
         self,
@@ -252,7 +252,7 @@ class ServiceRegistry:
         total_services = len(health_results)
 
         return {
-            "overall_healthy": len(errors) == 0,
+            "overall_healthy": healthy_services == total_services,
             "healthy_services": healthy_services,
             "total_services": total_services,
             "services": health_results,

@@ -215,7 +215,7 @@ class TestValidationSystemIntegration:
         # Validate all data
         results = []
         for i, data in enumerate(test_data):
-            result = await validation_service.validate(data, strict_schema, f"item_{i}")
+            result = await validation_service.validate(data, strict_schema, None, f"item_{i}")
             results.append(result)
 
         # Build validation report
@@ -226,8 +226,8 @@ class TestValidationSystemIntegration:
         # Check report summary
         assert not report.is_valid  # Should fail due to validation errors
         assert report.error_count > 0
-        assert report.failed_validations == 2  # Two should fail
-        assert report.successful_validations == 1  # One should pass
+        assert len(report.failed_validations) == 2  # Two should fail
+        assert len(report.successful_validations) == 1  # One should pass
 
         # Check error details
         errors_by_field = report.get_errors_by_field()

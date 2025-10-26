@@ -37,15 +37,26 @@ class TestCacheSettings:
         assert settings.template_ttl == 7200
 
     def test_response_ttl_with_config(self, mock_config: MagicMock) -> None:
-        mock_config.deployed = False
-        settings = CacheBaseSettings()
-        settings.__init__(config=mock_config)
-        assert settings.response_ttl == 1
+        from acb.config import Config
+        from acb.depends import depends
 
+        # Test with deployed=False
+        mock_config.deployed = False
+        depends.set(Config, mock_config)
+        try:
+            settings = CacheBaseSettings()
+            assert settings.response_ttl == 1
+        finally:
+            depends.set(Config, Config())
+
+        # Test with deployed=True
         mock_config.deployed = True
-        settings = CacheBaseSettings()
-        settings.__init__(config=mock_config)
-        assert settings.response_ttl == settings.default_ttl
+        depends.set(Config, mock_config)
+        try:
+            settings = CacheBaseSettings()
+            assert settings.response_ttl == settings.default_ttl
+        finally:
+            depends.set(Config, Config())
 
 
 class TestMemoryCache:

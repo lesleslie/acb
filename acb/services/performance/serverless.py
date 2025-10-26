@@ -453,7 +453,7 @@ class FastDependencies:
             return self._resolution_cache[key]
 
         start_time = time.perf_counter()
-        instance = depends.get(dependency_type)
+        instance = depends.get_sync(dependency_type)
         resolution_time = (time.perf_counter() - start_time) * 1000
 
         self._resolution_cache[key] = instance

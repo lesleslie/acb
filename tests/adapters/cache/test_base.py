@@ -199,8 +199,13 @@ class TestMemoryCache:
         assert cache is not None
 
     @pytest.mark.asyncio
-    async def test_set_get(self) -> None:
+    async def test_set_get(self, mock_config: MagicMock) -> None:
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test"
+
         cache = MemoryCache()
+        cache.config = mock_config
+
         await cache.set("test_key", "test_value", ttl=10)
         result = await cache.get("test_key")
         assert result == "test_value"

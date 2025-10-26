@@ -35,7 +35,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_serialize_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = True
             mock_attrs.asdict.return_value = {"id": 1, "name": "test"}
 
@@ -50,7 +50,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_serialize_non_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -76,7 +76,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_names_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field1 = MagicMock()
             mock_field1.name = "id"
             mock_field2 = MagicMock()
@@ -96,7 +96,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_names_non_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -114,7 +114,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_types_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field1 = MagicMock()
             mock_field1.name = "id"
             mock_field1.type = int
@@ -136,7 +136,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_types_non_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -165,7 +165,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_manual_serialize_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field1 = MagicMock()
             mock_field1.name = "id"
             mock_field2 = MagicMock()
@@ -189,7 +189,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_manual_serialize_non_attrs_model(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -217,7 +217,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_serialize_value_nested_attrs(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             adapter = AttrsModelAdapter[Any]()
 
             # Test nested attrs object
@@ -306,7 +306,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_filter_data_for_model_attrs(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field1 = MagicMock()
             mock_field1.name = "name"
             mock_field2 = MagicMock()
@@ -326,7 +326,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_filter_data_for_model_annotations(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -344,7 +344,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_filter_data_for_model_fallback(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -385,7 +385,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_entity_name_attrs_metadata(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field = MagicMock()
             mock_field.metadata = {"table_name": "attrs_table"}
 
@@ -400,7 +400,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_entity_name_default(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -411,7 +411,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_mapping_attrs(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field1 = MagicMock()
             mock_field1.name = "field1"
             mock_field1.metadata = {"alias": "field_one"}
@@ -432,7 +432,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_mapping_annotations(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -498,7 +498,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_primary_key_field_attrs(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = True
 
             adapter = AttrsModelAdapter[Any]()
@@ -514,7 +514,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_primary_key_field_annotations(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -533,7 +533,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_attrs_primary_key_metadata(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field1 = MagicMock()
             mock_field1.name = "custom_pk"
             mock_field1.metadata = {"primary_key": True}
@@ -552,7 +552,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_attrs_primary_key_common_names(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field1 = MagicMock()
             mock_field1.name = "pk"
             mock_field1.metadata = {}
@@ -571,7 +571,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_attrs_primary_key_default(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field = MagicMock()
             mock_field.name = "name"
             mock_field.metadata = {}
@@ -646,7 +646,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_type_attrs(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field = MagicMock()
             mock_field.name = "test_field"
             mock_field.type = str
@@ -662,7 +662,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_type_attrs_none_type(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_field = MagicMock()
             mock_field.name = "test_field"
             mock_field.type = None
@@ -678,7 +678,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_type_annotations(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -692,7 +692,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_field_type_default(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             mock_attrs.has.return_value = False
 
             adapter = AttrsModelAdapter[Any]()
@@ -703,7 +703,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_is_relationship_field_list_of_attrs(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
             # Mock a nested attrs class
             class NestedModel:
                 pass
@@ -722,7 +722,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_is_relationship_field_single_attrs(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
 
             class NestedModel:
                 pass
@@ -747,7 +747,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_nested_model_class_list(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
 
             class NestedModel:
                 pass
@@ -766,7 +766,7 @@ class TestAttrsModelAdapter:
 
     @pytest.mark.skipif(not ATTRS_AVAILABLE, reason="attrs not available")
     def test_get_nested_model_class_single(self) -> None:
-        with patch("acb.adapters.models._attrs.attrs") as mock_attrs:
+        with patch("acb.adapters.models._attrs.attrs_lib") as mock_attrs:
 
             class NestedModel:
                 pass

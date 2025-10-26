@@ -7,7 +7,7 @@ import pytest
 _pydantic_available = False
 try:
     from pydantic import BaseModel as PydanticBaseModel
-    from pydantic import Field as PydanticField
+    from pydantic import ConfigDict, Field as PydanticField
 
     _pydantic_available = True
     BaseModel = PydanticBaseModel

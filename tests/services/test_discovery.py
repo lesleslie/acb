@@ -283,7 +283,7 @@ class TestServiceAutoDetection:
         """Test auto-detection of service from context (mocked)."""
         with patch('builtins.open', side_effect=OSError("File not found")):
             # Should fall back to ValueError when auto-detection fails
-            with pytest.raises(ValueError, match="Could not determine service category"):
+            with pytest.raises(ValueError, match="Could not determine category from context"):
                 import_service()  # No arguments, should try auto-detection
 
 

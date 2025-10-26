@@ -349,7 +349,13 @@ class ListValidationSchema(ValidationSchema):
 
         if self.config.enable_coercion:
             try:
-                result.value = list(data) if hasattr(data, "__iter__") else [data]
+                # Strings should be wrapped as single item, not split into characters
+                if isinstance(data, str):
+                    result.value = [data]
+                elif hasattr(data, "__iter__"):
+                    result.value = list(data)
+                else:
+                    result.value = [data]
                 result.add_warning(
                     f"Value coerced from {type(data).__name__} to list",
                 )

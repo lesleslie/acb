@@ -211,7 +211,7 @@ def validate_input(
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            validation_service = depends.get(ValidationService)
+            validation_service = await depends.get(ValidationService)
             bound_args = _bind_function_arguments(func, args, kwargs)
 
             # Execute appropriate validation strategy
@@ -269,7 +269,7 @@ def validate_output(
             if schema is None:
                 return result
 
-            validation_service = depends.get(ValidationService)
+            validation_service = await depends.get(ValidationService)
             validation_result = await validation_service.validate(
                 result,
                 schema,
@@ -359,7 +359,7 @@ def sanitize_input(
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            validation_service = depends.get(ValidationService)
+            validation_service = await depends.get(ValidationService)
             bound_args = _bind_function_arguments(func, args, kwargs)
 
             sanitize_config = _create_sanitize_config(
@@ -450,7 +450,7 @@ def validate_schema(
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            validation_service = depends.get(ValidationService)
+            validation_service = await depends.get(ValidationService)
 
             schema = await validation_service.get_schema(schema_name)
             if schema is None:
@@ -555,7 +555,7 @@ def validate_contracts(
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            depends.get(ValidationService)
+            await depends.get(ValidationService)
 
             if input_contract is not None:
                 bound_args = _bind_function_arguments(func, args, kwargs)
@@ -674,7 +674,7 @@ class ValidationDecorators:
     def validation_service(self) -> ValidationService:
         """Get ValidationService instance."""
         if self._validation_service is None:
-            self._validation_service = depends.get(ValidationService)
+            self._validation_service = depends.get_sync(ValidationService)
         return self._validation_service
 
     def method_validator(

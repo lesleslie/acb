@@ -86,7 +86,6 @@ class ValidationService(ServiceBase, ValidationProtocol):
     """
 
     config: Config = depends()
-    logger: Logger = depends()  # type: ignore[valid-type]
 
     def __init__(
         self,
@@ -189,7 +188,7 @@ class ValidationService(ServiceBase, ValidationProtocol):
             from acb.adapters import import_adapter
 
             ModelsAdapter = import_adapter("models")
-            self._models_adapter = depends.get(ModelsAdapter)
+            self._models_adapter = await depends.get(ModelsAdapter)
             self.logger.info("Models adapter integration enabled")
         except Exception as e:
             self.logger.warning(f"Failed to initialize models adapter: {e}")

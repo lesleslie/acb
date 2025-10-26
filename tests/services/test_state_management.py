@@ -363,13 +363,13 @@ class TestConvenienceFunctions:
     @pytest.mark.asyncio
     async def test_convenience_functions(self):
         """Test get_state, set_state, delete_state functions."""
-        with patch("acb.depends.depends.get") as mock_depends_get:
+        with patch("acb.depends.depends.get_sync") as mock_depends_get_sync:
             # Mock the state service
             mock_service = AsyncMock()
             mock_service.get.return_value = "convenience_value"
             mock_service.set.return_value = None
             mock_service.delete.return_value = True
-            mock_depends_get.return_value = mock_service
+            mock_depends_get_sync.return_value = mock_service
 
             # Test convenience functions
             await set_state("conv_key", "convenience_value")
@@ -387,7 +387,7 @@ class TestConvenienceFunctions:
     @pytest.mark.asyncio
     async def test_get_state_service_fallback(self):
         """Test get_state_service fallback behavior."""
-        with patch("acb.depends.depends.get", side_effect=Exception("No service")), \
+        with patch("acb.depends.depends.get_sync", side_effect=Exception("No service")), \
              patch("acb.depends.depends.set") as mock_depends_set:
 
             # Should create new service instance

@@ -272,7 +272,7 @@ class PydanticModelAdapter(ModelAdapter[T]):
             non_none_args = [arg for arg in args if arg is not type(None)]
             if len(non_none_args) == 1:
                 return non_none_args[0]  # type: ignore[return-value, no-any-return]
-        return type(field_type)  # type: ignore[return-value, no-any-return]
+        return field_type  # type: ignore[return-value, no-any-return]
 
     def is_relationship_field(self, model_class: type[T], field_name: str) -> bool:
         field_type = self.get_field_type(model_class, field_name)

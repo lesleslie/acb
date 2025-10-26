@@ -107,23 +107,31 @@ class TestStorage:
 
 class TestGetClient:
     @patch("acb.adapters.storage.gcs.Client")
-    @patch("acb.config.Config")
-    def test_get_client_basic(self, mock_config_class, mock_client_class) -> None:
+    def test_get_client_basic(self, mock_client_class) -> None:
+        from acb.config import Config
+        from acb.depends import depends
+
         # Mock the config instance
-        mock_config = MagicMock()
+        mock_config = MagicMock(spec=Config)
         mock_config.app.project = "test-project"
-        mock_config_class.return_value = mock_config
 
-        # Mock the Client constructor
-        mock_client_instance = MagicMock()
-        mock_client_class.return_value = mock_client_instance
+        # Register mock config in DI container
+        depends.set(Config, mock_config)
 
-        # Test the get_client method with explicit config
-        client = Storage.get_client(config=mock_config)
+        try:
+            # Mock the Client constructor
+            mock_client_instance = MagicMock()
+            mock_client_class.return_value = mock_client_instance
 
-        # Verify Client was called with correct project
-        mock_client_class.assert_called_once_with(project="test-project")
-        assert client == mock_client_instance
+            # Test the get_client method - config comes from DI
+            client = Storage.get_client()
+
+            # Verify Client was called with correct project
+            mock_client_class.assert_called_once_with(project="test-project")
+            assert client == mock_client_instance
+        finally:
+            # Restore original Config instance
+            depends.set(Config, Config())
 
     @patch("acb.adapters.storage.gcs.Client")
     @patch("acb.adapters.storage.gcs.catch_warnings")
@@ -131,50 +139,68 @@ class TestGetClient:
     def test_get_client_warning_suppression(
         self, mock_filterwarnings, mock_catch_warnings, mock_client_class
     ) -> None:
+        from acb.config import Config
+        from acb.depends import depends
+
         # Mock the config instance
-        mock_config = MagicMock()
+        mock_config = MagicMock(spec=Config)
         mock_config.app.project = "test-project"
 
-        # Mock the warning context manager
-        mock_warnings_context = MagicMock()
-        mock_catch_warnings.return_value = mock_warnings_context
+        # Register mock config in DI container
+        depends.set(Config, mock_config)
 
-        # Mock the Client constructor
-        mock_client_instance = MagicMock()
-        mock_client_class.return_value = mock_client_instance
+        try:
+            # Mock the warning context manager
+            mock_warnings_context = MagicMock()
+            mock_catch_warnings.return_value = mock_warnings_context
 
-        # Test the get_client method with explicit config
-        client = Storage.get_client(config=mock_config)
-
-        # Verify warning suppression was set up
-        mock_catch_warnings.assert_called_once()
-        mock_filterwarnings.assert_called_once_with("ignore", category=Warning)
-
-        # Verify Client was still called correctly
-        mock_client_class.assert_called_once_with(project="test-project")
-        assert client == mock_client_instance
-
-    @patch("acb.adapters.storage.gcs.depends")
-    def test_get_client_with_real_warning_suppression(self, mock_depends) -> None:
-        # Mock the config dependency
-        mock_config = MagicMock()
-        mock_config.app.project = "test-project"
-        mock_depends.return_value = mock_config
-
-        # Test that warnings are actually suppressed
-        with patch("acb.adapters.storage.gcs.Client") as mock_client:
+            # Mock the Client constructor
             mock_client_instance = MagicMock()
-            mock_client.return_value = mock_client_instance
+            mock_client_class.return_value = mock_client_instance
 
-            # This should not raise any warnings
-            with warnings.catch_warnings(record=True):
-                warnings.simplefilter("always")
+            # Test the get_client method - config comes from DI
+            client = Storage.get_client()
 
-                # The get_client method should suppress warnings internally
-                client = Storage.get_client()
+            # Verify warning suppression was set up
+            mock_catch_warnings.assert_called_once()
+            mock_filterwarnings.assert_called_once_with("ignore", category=Warning)
 
-                # Verify the client was created
-                assert client == mock_client_instance
+            # Verify Client was still called correctly
+            mock_client_class.assert_called_once_with(project="test-project")
+            assert client == mock_client_instance
+        finally:
+            # Restore original Config instance
+            depends.set(Config, Config())
+
+    def test_get_client_with_real_warning_suppression(self) -> None:
+        from acb.config import Config
+        from acb.depends import depends
+
+        # Mock the config dependency
+        mock_config = MagicMock(spec=Config)
+        mock_config.app.project = "test-project"
+
+        # Register mock config in DI container
+        depends.set(Config, mock_config)
+
+        try:
+            # Test that warnings are actually suppressed
+            with patch("acb.adapters.storage.gcs.Client") as mock_client:
+                mock_client_instance = MagicMock()
+                mock_client.return_value = mock_client_instance
+
+                # This should not raise any warnings
+                with warnings.catch_warnings(record=True):
+                    warnings.simplefilter("always")
+
+                    # The get_client method should suppress warnings internally
+                    client = Storage.get_client()
+
+                    # Verify the client was created
+                    assert client == mock_client_instance
+        finally:
+            # Restore original Config instance
+            depends.set(Config, Config())
 
 
 class TestSetCors:
