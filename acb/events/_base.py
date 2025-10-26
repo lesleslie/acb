@@ -260,6 +260,10 @@ class TypedEventHandler[EventType: Event](EventHandler):
         """Check if this handler can process the given event type."""
         return event.metadata.event_type == self._event_type
 
+    async def handle(self, event: Event) -> EventHandlerResult:
+        """Handle the event. Subclasses should override this method."""
+        return EventHandlerResult(success=True)
+
 
 class FunctionalEventHandler(EventHandler):
     """Event handler that wraps a function."""
