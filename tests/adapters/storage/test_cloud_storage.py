@@ -12,7 +12,7 @@ from anyio import Path as AsyncPath
 from gcsfs.core import GCSFileSystem
 from acb.adapters import AdapterStatus
 from acb.adapters.storage._base import StorageBase, StorageBaseSettings
-from acb.adapters.storage.cloud_storage import (
+from acb.adapters.storage.gcs import (
     MODULE_ID,
     MODULE_STATUS,
     Storage,
@@ -106,7 +106,7 @@ class TestStorage:
 
 
 class TestGetClient:
-    @patch("acb.adapters.storage.cloud_storage.Client")
+    @patch("acb.adapters.storage.gcs.Client")
     @patch("acb.config.Config")
     def test_get_client_basic(self, mock_config_class, mock_client_class) -> None:
         # Mock the config instance
@@ -125,9 +125,9 @@ class TestGetClient:
         mock_client_class.assert_called_once_with(project="test-project")
         assert client == mock_client_instance
 
-    @patch("acb.adapters.storage.cloud_storage.Client")
-    @patch("acb.adapters.storage.cloud_storage.catch_warnings")
-    @patch("acb.adapters.storage.cloud_storage.filterwarnings")
+    @patch("acb.adapters.storage.gcs.Client")
+    @patch("acb.adapters.storage.gcs.catch_warnings")
+    @patch("acb.adapters.storage.gcs.filterwarnings")
     def test_get_client_warning_suppression(
         self, mock_filterwarnings, mock_catch_warnings, mock_client_class
     ) -> None:
@@ -154,7 +154,7 @@ class TestGetClient:
         mock_client_class.assert_called_once_with(project="test-project")
         assert client == mock_client_instance
 
-    @patch("acb.adapters.storage.cloud_storage.depends")
+    @patch("acb.adapters.storage.gcs.depends")
     def test_get_client_with_real_warning_suppression(self, mock_depends) -> None:
         # Mock the config dependency
         mock_config = MagicMock()
@@ -162,7 +162,7 @@ class TestGetClient:
         mock_depends.return_value = mock_config
 
         # Test that warnings are actually suppressed
-        with patch("acb.adapters.storage.cloud_storage.Client") as mock_client:
+        with patch("acb.adapters.storage.gcs.Client") as mock_client:
             mock_client_instance = MagicMock()
             mock_client.return_value = mock_client_instance
 
@@ -388,8 +388,8 @@ class TestStorageImplementation:
 
 class TestErrorHandling:
     def test_get_client_with_invalid_project(self) -> None:
-        with patch("acb.adapters.storage.cloud_storage.depends") as mock_depends:
-            with patch("acb.adapters.storage.cloud_storage.Client") as mock_client:
+        with patch("acb.adapters.storage.gcs.depends") as mock_depends:
+            with patch("acb.adapters.storage.gcs.Client") as mock_client:
                 # Mock config with invalid project
                 mock_config = MagicMock()
                 mock_config.app.project = None
