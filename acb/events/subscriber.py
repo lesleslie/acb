@@ -24,8 +24,6 @@ from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
-from acb.adapters import import_adapter
-from acb.depends import depends
 from acb.services import ServiceBase, ServiceSettings
 
 from ._base import (

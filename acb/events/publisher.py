@@ -40,7 +40,7 @@ class _MockSubscription:
         """Initialize mock subscription."""
         pass
 
-    async def __aenter__(self) -> t.AsyncGenerator[t.Any, None]:
+    async def __aenter__(self) -> t.AsyncGenerator[t.Any]:
         """Start subscription and return async generator."""
         return self._iterate_messages()
 
@@ -53,7 +53,7 @@ class _MockSubscription:
         """Cleanup subscription."""
         pass
 
-    async def _iterate_messages(self) -> t.AsyncGenerator[t.Any, None]:
+    async def _iterate_messages(self) -> t.AsyncGenerator[t.Any]:
         """Async generator that yields mock messages (none for mock)."""
         # For testing, we don't actually yield any messages
         # The async for loop will complete immediately
