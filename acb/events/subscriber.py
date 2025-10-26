@@ -457,9 +457,9 @@ class EventSubscriber(ServiceBase):
         self._router = EventRouter()
         self._subscriptions: dict[UUID, ManagedSubscription] = {}
 
-        # PubSub adapter integration
-        PubSub = import_adapter("pubsub")
-        self._pubsub = depends.get(PubSub)
+        # PubSub adapter integration (lazy initialization)
+        self._pubsub: t.Any = None
+        self._pubsub_class: t.Any = None
 
         # Processing control
         self._processing_semaphore = asyncio.Semaphore(
