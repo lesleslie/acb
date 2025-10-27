@@ -24,7 +24,6 @@ from acb.services.validation._base import (
 
 if t.TYPE_CHECKING:
     from acb.config import Config
-    from acb.logger import Logger
 
 # Service metadata for discovery system
 try:

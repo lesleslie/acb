@@ -1,531 +1,98 @@
-______________________________________________________________________
-
-## id: 01K6HKJ89ZZD7FAHNQ50ZB97S3
-
-______________________________________________________________________
-
-## id: 01K6HG54TYHMM99SCCJYP3TTX6
-
-______________________________________________________________________
-
-## id: 01K6HFJ0039RSX7CV6R3SFBM1X
-
-______________________________________________________________________
-
-## id: 01K6HFCYHDWPN2R55SYHTEX7FV
-
-______________________________________________________________________
-
-## id: 01K6GZRC39P0K0Q5QQH4QDF4WB
-
-______________________________________________________________________
-
-## id: 01K6GZPBC29VEG1A7M3KAJKDRJ
-
-______________________________________________________________________
-
-## id: 01K6GSRDFC9915STE2WQ1QSX7T
-
-______________________________________________________________________
-
-## id: 01K6GSM8B3K5DAT43VD6CG76B5
-
-______________________________________________________________________
-
-## id: 01K6GPA5N9SQWD4MYX7KW41D70
-
-______________________________________________________________________
-
-## id: 01K6GMDS8ME60XSR5XEC2DRV53
-
-______________________________________________________________________
-
-## id: 01K6GKSYAFRB2Y1SZ0CSEMJVTB
-
-______________________________________________________________________
-
-## id: 01K6GKJPK3KNBQH6XDXAB61P73
-
-______________________________________________________________________
-
-## id: 01K6GJYHNVZA8QAQ5DTAQ4XDDR
-
-______________________________________________________________________
-
-## id: 01K6GGMBV709ZMJPKJ0RVGG8FF
-
-______________________________________________________________________
-
-## id: 01K6G689DFF8R27Q77W17HVGEP
-
-______________________________________________________________________
-
-## id: 01K6G5HVJAF5NQ8CKM2VE912KR
-
-______________________________________________________________________
-
-## id: 01K6G58KK2643JE28EAKYERTBA
-
-______________________________________________________________________
-
-## id: 01K6G4MKQFVDA86A14QC0CN594
-
-______________________________________________________________________
-
-## id: 01K6G3R96TAVWKH9NV86JV1335
-
-______________________________________________________________________
-
-## id: 01K6G396X6N6ENWG4CZMCKJ5S1
-
-______________________________________________________________________
-
-## id: 01K6FZP563ASRTS2C91DZRZ0DQ
-
-______________________________________________________________________
-
-## id: 01K6FY3S3ABTQS4NAGC5V6M2VQ
-
-______________________________________________________________________
-
-## id: 01K6FVE7XEPQEK4V7M3N3JFEQG
-
-______________________________________________________________________
-
-## id: 01K6FSH2DFR5YHEE65YMW0004P
-
-______________________________________________________________________
-
-## id: 01K6FSG3NQP1CCXYCEK70GCTT5
-
-______________________________________________________________________
-
-## id: 01K6FSAQF3THR3634DWHW90E0X
-
-______________________________________________________________________
-
-## id: 01K6FRWDEYNQDADRXQCV3RSB0D
-
-______________________________________________________________________
-
-## id: 01K6FRSPX3CX33K3Q0YKTWXGQP
-
-______________________________________________________________________
-
-## id: 01K6FRKTHJ9TYD7YW920WENWR0
-
-______________________________________________________________________
-
-## id: 01K6FRJ57Z98JNXV4B1X8BDJK1
-
-______________________________________________________________________
-
-## id: 01K6FRDXBRY4CT4EVEJFK7345N
-
-______________________________________________________________________
-
-## id: 01K6FQVX72JMKZ4RTTDT9MKBVW
-
-______________________________________________________________________
-
-## id: 01K6FQNX1AW53FPE9C3RS149CK
-
-______________________________________________________________________
-
-## id: 01K6FQ9CD2ENQ0K7HGQ40M571V
-
-______________________________________________________________________
-
-## id: 01K6FQ05QQKEHA9ZPEARW2ARXJ
-
-______________________________________________________________________
-
-## id: 01K6FPY9NH99JG4GRMV1E6XBGD
-
-______________________________________________________________________
-
-## id: 01K6FPVVRMT56BCBBFD439XRPQ
-
-______________________________________________________________________
-
-## id: 01K6FP8ZWXPKP3E6AT33CJC6KR
-
-______________________________________________________________________
-
-## id: 01K6FP1YCCEYY3DHMW5GSDMSCZ
-
-______________________________________________________________________
-
-## id: 01K6FP068AB37BTQH88ZWKA7DD
-
-______________________________________________________________________
-
-## id: 01K6FNY5M1BVFYXMDB2VY4NDYW
-
-______________________________________________________________________
-
-## id: 01K6FND4EQE65SP5YBW8G5VM7X
-
-______________________________________________________________________
-
-## id: 01K6FN9C2BJKF30MDD5JCAHE3P
-
-______________________________________________________________________
-
-## id: 01K6FM8S6EFXACHJVCBYHCMTBB
-
-______________________________________________________________________
-
-## id: 01K6FM4EDTJ16TZ3SQHY3WZXSD
-
-______________________________________________________________________
-
-## id: 01K6FM331M7ADVSJ5NDG0V62BK
-
-______________________________________________________________________
-
-## id: 01K6FKYVGR702W4SY0G3N456EB
-
-______________________________________________________________________
-
-## id: 01K6FKXEN079K63D2TCXK9TDWJ
-
-______________________________________________________________________
-
-## id: 01K6FD9GZEK4WV9JXXSF7PDGEM
-
-______________________________________________________________________
-
-## id: 01K6FCP86543V6YZN5K3BE1BTX
-
-______________________________________________________________________
-
-## id: 01K6FBZAAW4GYQJV8KHTKD3NDM
-
-______________________________________________________________________
-
-## id: 01K6FBRRHG6TEYAA48R79T48WA
-
-______________________________________________________________________
-
-## id: 01K6FBJH4NR8EQXHC565D936Y5
-
-______________________________________________________________________
-
-## id: 01K6FB8JY7HDVG0E0NMV7PB7A0
-
-______________________________________________________________________
-
-## id: 01K6F9NY2K0KDRV955DQ0H6N7H
-
-______________________________________________________________________
-
-## id: 01K6F9JXGDDAAA7PT94TG354YA
-
-______________________________________________________________________
-
-## id: 01K6F9HYWHVWA4XW00CG5CMC4Q
-
-______________________________________________________________________
-
-## id: 01K6F9FF98ZZD705MQGR4MC0YM
-
-______________________________________________________________________
-
-## id: 01K6F9EJ1ZW4JA92EJGYNJY9YH
-
-______________________________________________________________________
-
-## id: 01K6F8HGV695SCXVPYMRT3GYRS
-
-______________________________________________________________________
-
-## id: 01K6F85VTPAHQZ8MN262MZJDKN
-
-______________________________________________________________________
-
-## id: 01K6F6ZJ0EX6QDW2WD8TVXYQDP
-
-______________________________________________________________________
-
-## id: 01K6F6Y7B352K2TD3FZYAHGKTC
-
-______________________________________________________________________
-
-## id: 01K6F0QGMP7WF99GNP1H55PG17
-
-______________________________________________________________________
-
-## id: 01K6F0619C6E5DDF7ZZMGS7Y1T
-
-______________________________________________________________________
-
-## id: 01K6EZZT0ENVTE67TDCB6RMRC7
-
-______________________________________________________________________
-
-## id: 01K6EZZ6FK3GA096N5BXS07CWH
-
-______________________________________________________________________
-
-## id: 01K6EZMXWT3T0T665ZW2TFGQV9
-
-______________________________________________________________________
-
-## id: 01K6EZM455AKWGZK5EAAS2YYV9
-
-______________________________________________________________________
-
-## id: 01K6EZ6SYHE720BJG6V8G64ZWS
-
-______________________________________________________________________
-
-## id: 01K6EZ65TJE529ZTVYT0R7S8SB
-
-______________________________________________________________________
-
-## id: 01K6EZ11S8JEEGSPYK3P8JGZC7
-
-______________________________________________________________________
-
-## id: 01K6EZ05EJ8DHRCMXC57M5RJBN
-
-______________________________________________________________________
-
-## id: 01K6EYXXDQFQX635V8WR4F4NP6
-
-______________________________________________________________________
-
-## id: 01K6EYX71AAT7BXNE32CA8Q90W
-
-______________________________________________________________________
-
-## id: 01K6EXJPHNHJK0B5TRGQHPMREP
-
-______________________________________________________________________
-
-## id: 01K6EXHNX99V1FHPT6B099SNZ6
-
-______________________________________________________________________
-
-## id: 01K6EXCJ39YCJT8JDTWHH3GJYQ
-
-______________________________________________________________________
-
-## id: 01K6EXBR49YTT8F9TZ556PYT6J
-
-______________________________________________________________________
-
-## id: 01K6EWFGYR9CW333DB62RPQGMR
-
-______________________________________________________________________
-
-## id: 01K6EWEPE4HFYYPZ8GDFT6XG7F
-
-______________________________________________________________________
-
-## id: 01K6ETPQ2HKZ1Y93NDDXT2ZSPP
-
-______________________________________________________________________
-
-## id: 01K6ETP1VBYQVDB5MJYVEFNYJQ
-
-______________________________________________________________________
-
-## id: 01K6ETJAREEJYZ6SDN39XVE87J
-
-______________________________________________________________________
-
-## id: 01K6ETHJN1QWCR2WKQ2YF0NG8P
-
-______________________________________________________________________
-
-## id: 01K6ESWK48DSRVQEZQ9S3VVB5T
-
-______________________________________________________________________
-
-## id: 01K6ESVYAC8ZT9NSQHGZY6NPFK
-
-______________________________________________________________________
-
-## id: 01K6ESP1VSPTCX6TE4BFF580SD
-
-______________________________________________________________________
-
-## id: 01K6ESND3T6X1R74Z5VP2VCCJ1
-
-______________________________________________________________________
-
-## id: 01K6ESKZMJ2JK4G3FSS1326YV6
-
-______________________________________________________________________
-
-## id: 01K6ESK8W4PES0RM4W0VE4TQ55
-
-______________________________________________________________________
-
-## id: 01K6ESHEHAAD1BKTET3G98AHPK
-
-______________________________________________________________________
-
-## id: 01K6ESGV3BDM3GR95YCREM4RY1
-
-______________________________________________________________________
-
-## id: 01K6EN5QQTASTVQC9G0MC0VA1K
-
-______________________________________________________________________
-
-## id: 01K6EN4YAEE902RMZBHSFG993K
-
-______________________________________________________________________
-
-## id: 01K6EMS40R7VZTAKPTJZW34SQD
-
-______________________________________________________________________
-
-## id: 01K6EMRAZQAGM2VGXCDTSPM08R
-
-______________________________________________________________________
-
-## id: 01K6EJ7YR450BPMNTE6005P0R0
-
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Context System
+## Quick Reference
 
-ACB has a `acb/context.py` module that provides centralized context management for the framework. This is part of the comprehensive architecture in v0.20.0+.
+**Version**: 0.25.2 | **Python**: 3.13+ | **Featured**: [FastBlocks](https://github.com/lesleslie/fastblocks)
 
-## Development Commands
-
-### Testing
+### Essential Commands
 
 ```bash
-# Run all tests
-python -m pytest
+# Testing
+python -m pytest                    # All tests
+python -m pytest -m unit           # Unit tests only
+python -m pytest --cov=acb         # With coverage
 
-# Run tests with coverage
-python -m pytest --cov=acb --cov-report=term
+# Quality (MANDATORY before task completion)
+python -m crackerjack -t --ai-fix  # Full verification
+ruff check --fix && ruff format    # Lint & format
+pyright                            # Type checking
 
-# Run specific test categories
-python -m pytest -m unit        # Unit tests only
-python -m pytest -m integration # Integration tests only
-python -m pytest -m benchmark   # Benchmark tests only
-
-# Run tests for specific adapter
-python -m pytest tests/adapters/cache/
-python -m pytest tests/adapters/sql/test_mysql.py
-
-# Run tests with verbose output
-python -m pytest -v
-
-# Run with show output (print statements)
-python -m pytest -s
-```
-
-### Code Quality
-
-```bash
-# Lint and format code
-ruff check --fix
-ruff format
-
-# Type checking (using pyright)
-pyright
-
-# Full quality workflow with crackerjack
-python -m crackerjack -x -t -p <version> -c    # Clean, test, bump version, commit
-python -m crackerjack -a <version>             # Alternative automated workflow
-python -m crackerjack -t --ai-fix              # Test and quality verification (AI-optimized output)
-python -m crackerjack -t                       # Test and quality verification (human-friendly output)
-```
-
-### Package Management
-
-```bash
-# Install development dependencies
-uv sync --group dev
-
-# Install with specific adapter groups
-uv add --group cache --group sql --group storage  # Common web app stack
-uv add --group all                                 # All optional dependencies
-
-# Add development dependency
-uv add --group dev <package>
+# Package Management (UPDATED for v0.24.0)
+uv sync --group dev                     # Install dev dependencies
+uv add --group cache                    # Add single adapter
+uv add --group cache --group sql        # Add multiple adapters
+uv add --group webapp                   # Add composite group
 ```
 
 ## Architecture Overview
 
-ACB (Asynchronous Component Base) is a modular Python framework with a component-based architecture built around **actions**, **adapters**, and **dependency injection**.
+ACB (Asynchronous Component Base) is a modular Python framework built around **actions**, **adapters**, **services**, and **dependency injection**.
 
-### Featured Implementation
+### Recent Breaking Changes (v0.24.0)
 
-**FastBlocks**: A high-performance web framework built on ACB showcasing enterprise-grade adapter patterns and HTMX integration. [See FastBlocks on GitHub](https://github.com/lesleslie/fastblocks) for a complete example of ACB best practices in production.
+**CRITICAL**: Dependency installation syntax has changed:
+- ❌ **Old (no longer works)**: `uv add "acb[cache]"`
+- ✅ **New (required)**: `uv add --group cache`
 
-### Version Compatibility
-
-- **Python**: 3.13+ (required)
-- **FastBlocks Integration**: ACB v0.19.0+ required for FastBlocks v0.14.0+
-- **Breaking Changes**: See MIGRATION guides for version-specific upgrade instructions
+All adapter installations now use the `--group` flag instead of extras syntax. See CHANGELOG.md for full migration details.
 
 ### Core Design Patterns
 
-1. **Adapter Pattern**: All external integrations use standardized interfaces with pluggable implementations
-1. **Dependency Injection**: Components are automatically wired together using the `bevy` framework
-1. **Configuration-Driven**: Behavior is controlled through YAML configuration files
-1. **Async-First**: Built for high-performance asynchronous operations
-1. **Dynamic Adapter Loading**: Adapters are loaded on-demand using convention-based discovery
+1. **Adapter Pattern**: Standardized interfaces for external systems (cache, SQL, storage, etc.)
+2. **Dependency Injection**: Automatic component wiring via `bevy` framework
+3. **Configuration-Driven**: YAML-based behavior control (`settings/`)
+4. **Async-First**: High-performance asynchronous operations
+5. **Dynamic Loading**: Convention-based adapter discovery
 
-### Directory Structure (v0.19.1+ Simplified)
+### Directory Structure (v0.19.1+)
 
 ```
 acb/
-├── actions/          # Pure utility functions (verb-based)
-│   ├── compress/     # Compression utilities (gzip, brotli)
-│   ├── encode/       # Encoding/decoding (JSON, YAML, TOML, MsgPack)
-│   └── hash/         # Hashing utilities (blake3, crc32c, md5)
+├── actions/          # Utility functions (compress, encode, hash)
 ├── adapters/         # External system integrations
-│   ├── cache/        # Memory, Redis caching (simplified)
-│   │   ├── memory.py
-│   │   ├── redis.py
-│   │   └── _base.py  # Basic cache functionality
-│   ├── messaging/    # Unified messaging backends (dual interfaces)
-│   │   ├── memory.py
-│   │   ├── redis.py
-│   │   ├── rabbitmq.py
-│   │   └── _base.py  # PubSubBackend + QueueBackend interfaces
-│   ├── models/       # Model framework support (SQLModel, Pydantic, etc.)
-│   ├── sql/          # MySQL, PostgreSQL, SQLite databases
-│   │   ├── mysql.py
-│   │   ├── pgsql.py
-│   │   ├── sqlite.py
-│   │   └── _base.py  # Basic SQL functionality
+│   ├── cache/        # Memory, Redis (aiocache interface)
+│   ├── sql/          # MySQL, PostgreSQL, SQLite
+│   ├── storage/      # S3, GCS, Azure, file
 │   ├── nosql/        # MongoDB, Firestore, Redis
-│   ├── storage/      # S3, GCS, Azure, file storage
-│   ├── secret/       # Secret management (Infisical, GCP Secret Manager, Azure, Cloudflare)
+│   ├── messaging/    # Memory, Redis, RabbitMQ (pub/sub + queue)
+│   ├── models/       # SQLModel, Pydantic, msgspec, attrs
+│   ├── secret/       # Infisical, GCP, Azure, Cloudflare
 │   ├── monitoring/   # Sentry, Logfire
-│   ├── requests/     # HTTP clients (HTTPX, Niquests)
-│   ├── smtp/         # Email sending (Gmail, Mailgun)
-│   ├── dns/          # DNS management (Cloud DNS, Cloudflare, Route53)
-│   ├── ftpd/         # File transfer (FTP, SFTP)
-│   └── ...
-├── events/           # Event-driven messaging system (uses pubsub adapter)
-├── tasks/            # Task queue system (uses queue adapter)
-├── cleanup.py        # Simple resource cleanup patterns
-├── config.py         # Configuration system with simple hot-reloading
-├── console.py        # Console utilities
-├── context.py        # Centralized context management (v0.19.1+)
-├── debug.py          # Debugging utilities
-├── depends.py        # Dependency injection framework
-├── logger.py         # Logging system
+│   ├── requests/     # HTTPX, Niquests
+│   ├── smtp/         # Gmail, Mailgun
+│   ├── dns/          # Cloud DNS, Cloudflare, Route53
+│   └── ftpd/         # FTP, SFTP
+├── events/           # Event-driven messaging (uses pubsub)
+├── tasks/            # Task queue system (uses queue)
+├── cleanup.py        # Resource cleanup patterns
+├── config.py         # Configuration with hot-reloading
+├── context.py        # Centralized context management
+├── depends.py        # Dependency injection
+├── logger.py         # Loguru-based logging
 └── ssl_config.py     # SSL/TLS configuration
 ```
 
-### Adapter Implementation Pattern
+### Comprehensive Architecture (v0.20.0+)
 
-All adapters follow a consistent pattern with public/private method delegation:
+**Adapter Layer**: Clean interfaces for external systems with config-driven selection
+**Services Layer**: Enterprise features (lifecycle, health monitoring, validation, workflows)
+**Core Infrastructure**: Config, DI, logging, debugging, SSL/TLS
+**MCP Integration**: Model Context Protocol server for AI application integration
+
+### Available Services (v0.20.0+)
+
+| Service | Location | Key Features |
+|---------|----------|--------------|
+| **Repository** | `acb.services.repository` | Unit of Work, query builder, specifications, caching |
+| **Validation** | `acb.services.validation` | Schema validation, sanitization, coercion, decorators |
+| **Performance** | `acb.services.performance` | Metrics, query optimization, cache optimization, serverless |
+| **Health** | `acb.services.health` | Service health monitoring and status checks |
+| **Registry** | `acb.services.registry` | Service discovery and registration |
+| **State** | `acb.services.state` | State management and persistence |
+
+### Adapter Implementation Pattern
 
 ```python
 class ExampleAdapter:
@@ -534,30 +101,26 @@ class ExampleAdapter:
         self._settings = None
 
     async def public_method(self, *args, **kwargs):
-        # Public methods delegate to private implementation
         return await self._public_method(*args, **kwargs)
 
     async def _public_method(self, *args, **kwargs):
-        # Private method contains actual implementation
         client = await self._ensure_client()
-        # Implementation logic here
+        # Implementation logic
         return result
 
     async def _ensure_client(self):
-        # Lazy client initialization pattern with connection pooling
         if self._client is None:
             self._client = await self._create_client()
         return self._client
 
     async def _create_client(self):
-        # Initialize the actual client connection
-        # Use self._settings for configuration
+        # Initialize client using self._settings
         return client_instance
 ```
 
-### Adapter Metadata Standard
+**Key Points**: Public/private delegation, lazy initialization, `_ensure_client()` pattern
 
-Each adapter includes `MODULE_METADATA` for identification and capability discovery:
+### Adapter Metadata Standard
 
 ```python
 from acb.adapters import AdapterMetadata, AdapterStatus, AdapterCapability
@@ -576,780 +139,284 @@ MODULE_METADATA = AdapterMetadata(
 )
 ```
 
-**Key capabilities**: CONNECTION_POOLING, TRANSACTIONS, ASYNC_OPERATIONS, CACHING, ENCRYPTION
-**Status levels**: ALPHA, BETA, STABLE, DEPRECATED, EXPERIMENTAL
-
-### Comprehensive Architecture (v0.20.0+)
-
-ACB has evolved to provide both clean, reliable adapter interfaces for external systems and comprehensive enterprise features through its Services layer. The architecture now includes distinct layers for different purposes:
-
-#### Architecture Layers
-
-**Adapter Layer:**
-
-- Clean interfaces for external systems (databases, caches, storage, etc.)
-- Configuration-driven implementation selection
-- Resource cleanup and connection pooling
-
-**Services Layer (Reintroduced):**
-
-- Lifecycle management for long-running components
-- Health monitoring and metrics collection
-- Complex business logic encapsulation
-- Event-driven communication patterns
-- Workflow orchestration capabilities
-
-**Core Infrastructure:**
-
-- Configuration management
-- Dependency injection
-- Logging and debugging tools
-- SSL/TLS configuration support
-
-#### Services Layer Features
-
-**Available Services:**
-
-- Repository services with Unit of Work pattern
-- Validation services with security features
-- Performance optimization services
-- Event-driven architecture services
-- Workflow orchestration services
-
-#### Simple Resource Cleanup
-
-All adapters now use a simplified cleanup pattern:
-
-```python
-from acb.cleanup import CleanupMixin
-
-
-class SimpleAdapter(CleanupMixin):
-    """Adapter with basic cleanup capability"""
-
-    def __init__(self):
-        super().__init__()
-        self._client = None
-
-    async def _create_client(self):
-        client = SomeClient()
-        self.register_resource(client)  # Register for automatic cleanup
-        return client
-
-    async def get_data(self):
-        client = await self._ensure_client()
-        return await client.fetch_data()
-
-    # Cleanup is automatic via CleanupMixin
-```
-
-#### Basic Cache Operations
-
-Cache adapters provide simple, reliable caching:
-
-```python
-# Basic cache operations
-await cache.set("key", "value", ttl=300)
-await cache.get("key")
-await cache.delete("key")
-
-# Standard aiocache interface
-await cache.add("key", "value")  # Set only if not exists
-await cache.increment("counter", delta=1)  # Atomic increment
-await cache.expire("key", ttl=60)  # Update TTL
-await cache.multi_set({"k1": "v1", "k2": "v2"})  # Batch operations
-
-# Automatic resource cleanup with context manager
-async with cache:
-    await cache.set("temp", "data")
-    # Cleanup happens automatically
-```
-
-#### Simple Configuration Hot-Reloading
-
-Basic configuration monitoring is now built into the config system:
-
-```python
-from acb.config import Config, enable_config_hot_reload
-
-# Enable simple hot-reloading
-config = Config()
-hot_reload = await enable_config_hot_reload(config, check_interval=5.0)
-
-# Configuration files are monitored automatically:
-# - settings/app.yml
-# - settings/adapters.yml
-# - settings/debug.yml
-# - settings/models.yml
-
-# Stop monitoring when done
-await hot_reload.stop()
-```
-
 ## Configuration System
 
 ### Settings Structure
 
 ```
 settings/
-├── app.yml          # Application settings (name, version, domain)
+├── app.yml          # Application settings
 ├── debug.yml        # Debug configuration
-├── adapters.yml     # Adapter implementation selection
-├── models.yml       # Models framework configuration (SQLModel, Pydantic, Redis-OM)
+├── adapters.yml     # Adapter selection (cache: redis, sql: postgresql, etc.)
+├── models.yml       # Model frameworks (sqlmodel, pydantic, msgspec, attrs)
 └── secrets/         # Secret files (not committed)
 ```
 
-### Adapter Selection
-
-Configure which implementations to use in `settings/adapters.yml`:
+### Adapter Selection Example
 
 ```yaml
+# settings/adapters.yml
 cache: redis        # or: memory
 storage: s3         # or: file, gcs, azure
 sql: postgresql     # or: mysql, sqlite
-models: true        # Enable models adapter (auto-detects model types)
-nosql: mongodb      # or: firestore, redis
-ftpd: sftp          # or: ftp
+models: true        # Enable models adapter
 ```
 
-### Static Adapter Mappings (v0.16.17+)
-
-ACB uses hardcoded static mappings for adapter registration, improving performance and reliability:
-
-```python
-# Example of static adapter mappings
-static_mappings = {
-    "cache.memory": ("acb.adapters.cache.memory", "Cache"),
-    "cache.redis": ("acb.adapters.cache.redis", "Cache"),
-    "storage.s3": ("acb.adapters.storage.s3", "Storage"),
-    "sql.pgsql": ("acb.adapters.sql.pgsql", "Sql"),
-    # ... and many more
-}
-```
-
-This approach eliminates runtime discovery issues and import errors.
-
-### Models Framework Configuration
-
-Configure which model frameworks are enabled in `settings/models.yml`:
-
-```yaml
-# Enable SQLModel support (default: true)
-sqlmodel: true
-
-# Enable Pydantic support (default: true)
-pydantic: true
-
-# Enable Redis-OM support (default: false)
-redis_om: false
-
-# Enable msgspec support (default: false)
-msgspec: false
-
-# Enable attrs support (default: false)
-attrs: false
-```
-
-### Dependency Injection Usage
+### Dependency Injection
 
 ```python
 from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from acb.config import Config
 
-# Import adapter classes (not instances)
-Cache = import_adapter("cache")
+Cache = import_adapter("cache")  # Concrete class
 Storage = import_adapter("storage")
-
-# Or use the no-argument form that infers from context
-# Cache, Storage = import_adapter()  # Infers from variable names
-
 
 @depends.inject
 async def my_function(
-    cache: Inject[Cache], storage: Inject[Storage], config: Inject[Config]
-):
-    # Dependencies automatically injected
-    pass
-
-
-# FastBlocks HTTPEndpoint Pattern (from FastBlocks CLAUDE.md)
-class FastBlocksEndpoint(HTTPEndpoint):
+    cache: Inject[Cache],
+    storage: Inject[Storage],
     config: Inject[Config]
-
-    def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        super().__init__(scope, receive, send)
-        self.templates = depends.get("templates")
+):
+    await cache.set("key", "value", ttl=300)
+    await storage.upload("file.txt", data)
 ```
 
-### Protocol-Based vs Concrete Class Dependency Injection
+### Protocol-Based vs Concrete Class DI
 
-**CRITICAL ARCHITECTURAL DECISION**: ACB uses different DI patterns for different component types.
+**CRITICAL**: ACB uses different DI patterns for different layers.
 
-#### When to Use Protocol-Based DI (NEW in v0.20.0+)
-
-**Use Protocols for Services Layer:**
+#### Services Layer (Protocol-Based)
 
 ```python
-from acb.depends import Inject, depends
 from acb.services.protocols import RepositoryServiceProtocol, ValidationServiceProtocol
-
 
 @depends.inject
 async def business_logic(
-    repo: Inject[RepositoryServiceProtocol],  # Protocol, not concrete class
+    repo: Inject[RepositoryServiceProtocol],  # Protocol
     validator: Inject[ValidationServiceProtocol],
 ):
-    """Services use Protocol-based DI for clean interfaces."""
     async with repo.unit_of_work() as uow:
-        entity = await repo.get("entity-id")
-
-        # Validate business rules
+        entity = await repo.get("id")
         result = await validator.validate_business_rules(entity)
         if result["is_valid"]:
             await repo.save(entity, uow)
 ```
 
-**Why Protocols for Services:**
+**Why Protocols**: Pure business logic, easy mocking, clear interfaces, better type checking
 
-- ✅ Pure business logic without infrastructure concerns
-- ✅ Easy mocking for tests (no inheritance required)
-- ✅ Clear, explicit interface contracts
-- ✅ Better IDE autocomplete and type checking
-- ✅ Multiple implementations without coupling
+**Available Protocols**: `RepositoryServiceProtocol`, `ValidationServiceProtocol`, `PerformanceServiceProtocol`, `EventServiceProtocol`, `WorkflowServiceProtocol`
 
-**Available Service Protocols:**
-
-- `RepositoryServiceProtocol` - Unit of Work pattern for data access
-- `ValidationServiceProtocol` - Input validation with security
-- `PerformanceServiceProtocol` - Performance optimization
-- `EventServiceProtocol` - Event-driven architecture
-- `WorkflowServiceProtocol` - Workflow orchestration
-
-#### When to Use Concrete Class DI (Adapters)
-
-**Use Concrete Classes for Adapters:**
+#### Adapters Layer (Concrete Classes)
 
 ```python
-from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
-Cache = import_adapter("cache")  # Concrete class (MemoryCache or RedisCache)
-Storage = import_adapter("storage")  # Concrete class (S3Storage, GCSStorage, etc.)
-
+Cache = import_adapter("cache")  # Concrete class
 
 @depends.inject
-async def infrastructure_code(
-    cache: Inject[Cache],  # Concrete class, not Protocol
-    storage: Inject[Storage],
-):
-    """Adapters use concrete classes for shared implementation."""
-    await cache.set("key", "value", ttl=300)
-    await storage.upload("file.txt", data)
+async def infrastructure_code(cache: Inject[Cache]):
+    await cache.set("key", "value")
 ```
 
-**Why Concrete Classes for Adapters:**
+**Why Concrete**: Shared infrastructure (cleanup, SSL, pooling), config-driven, resource lifecycle
 
-- ✅ Share infrastructure code (cleanup, SSL config, connection pooling)
-- ✅ Configuration-driven selection (`settings/adapters.yml`)
-- ✅ Consistent patterns across all adapter types
-- ✅ Resource lifecycle management via base classes
-- ✅ The adapter pattern itself provides decoupling
+#### Decision Matrix
 
-**Adapter Base Classes Provide:**
+| Component | DI Pattern | Reason | Example |
+|-----------|-----------|---------|---------|
+| **Services** | `Inject[ServiceProtocol]` | Business logic, testing | `RepositoryServiceProtocol` |
+| **Adapters** | `Inject[ConcreteClass]` | Infrastructure, config | `Cache`, `Storage`, `Sql` |
+| **Core** | `Inject[ConcreteClass]` | Foundational | `Config`, `Logger` |
 
-- `CleanupMixin` - Resource cleanup
-- `SSLConfigMixin` - SSL/TLS configuration
-- `_ensure_client()` - Lazy connection initialization
-- `_create_client()` - Client factory pattern
-- Configuration integration
-
-#### Decision Matrix: Protocol vs Concrete Class
-
-| Component Type | DI Pattern | Reason | Example |
-|---------------|-----------|---------|---------|
-| **Services** | `Inject[ServiceProtocol]` | Pure business logic, easy testing | `RepositoryServiceProtocol` |
-| **Adapters** | `Inject[ConcreteClass]` | Shared infrastructure, config-driven | `Cache`, `Storage`, `Sql` |
-| **Core** | `Inject[ConcreteClass]` | Foundational, stable, simple | `Config`, `Logger` |
-
-#### Example: Mixing Both Patterns
-
-```python
-from acb.depends import Inject, depends
-from acb.adapters import import_adapter
-from acb.services.protocols import RepositoryServiceProtocol, ValidationServiceProtocol
-from acb.config import Config
-
-# Concrete classes for adapters
-Cache = import_adapter("cache")
-Storage = import_adapter("storage")
-
-
-@depends.inject
-async def complete_workflow(
-    # Protocols for business logic services
-    repo: Inject[RepositoryServiceProtocol],
-    validator: Inject[ValidationServiceProtocol],
-    # Concrete classes for infrastructure adapters
-    cache: Inject[Cache],
-    storage: Inject[Storage],
-    config: Inject[Config],
-):
-    """Mix both patterns as appropriate."""
-
-    # Services handle business logic
-    async with repo.unit_of_work() as uow:
-        entity = await repo.get("id")
-
-        # Adapters handle infrastructure
-        cached = await cache.get("entity:id")
-        if not cached:
-            data = await storage.download("entity.json")
-            await cache.set("entity:id", data)
-```
-
-#### Testing Implications
-
-**Testing Services (Protocol-based):**
-
-```python
-from acb.services.protocols import RepositoryServiceProtocol
-
-
-class MockRepository:  # No inheritance needed!
-    """Just implement the protocol interface."""
-
-    async def get(self, entity_id):
-        return MockEntity(id=entity_id)
-
-    async def save(self, entity, uow=None):
-        pass
-
-    # ... other protocol methods
-
-
-# Works because MockRepository matches RepositoryServiceProtocol structure
-depends.set(RepositoryServiceProtocol, MockRepository())
-```
-
-**Testing Adapters (Concrete class-based):**
-
-```python
-from acb.adapters.cache.memory import MemoryCache
-
-# Use real implementation (fast in-memory) or create mock
-mock_cache = MemoryCache()
-depends.set(Cache, mock_cache)
-```
-
-#### Migration Guide
-
-**If you have existing code using concrete classes for services**, migrate to Protocols:
-
-```python
-# Before (v0.19.x)
-from acb.services.validation import ValidationService
-
-
-@depends.inject
-async def old_way(validator: Inject[ValidationService]):
-    pass
-
-
-# After (v0.20.0+)
-from acb.services.protocols import ValidationServiceProtocol
-
-
-@depends.inject
-async def new_way(validator: Inject[ValidationServiceProtocol]):
-    pass
-```
-
-The concrete `ValidationService` still exists and implements `ValidationServiceProtocol`, so existing code continues to work while new code benefits from Protocol-based DI.
-
-#### Summary: When to Use Each Pattern
-
-**Use Protocol-Based DI (`Inject[SomeProtocol]`) for:**
-
-- Services layer (business logic, workflows, orchestration)
-- Application-specific logic
-- Code that needs flexible mocking
-- Pure interfaces without shared implementation
-
-**Use Concrete Class DI (`Inject[ConcreteClass]`) for:**
-
-- Adapters layer (external system integrations)
-- Infrastructure components
-- Code that shares implementation via base classes
-- Configuration-driven component selection
-
-This hybrid approach maximizes benefits: infrastructure reuse where needed, clean interfaces for business logic.
-
-### Universal Query Interface Examples (v0.19.0+)
-
-The models adapter provides comprehensive support for multiple model frameworks with automatic detection:
-
-```python
-from acb.depends import depends
-from acb.adapters import import_adapter
-from acb.adapters.models._hybrid import ACBQuery
-
-# Import the models adapter
-Models = import_adapter("models")
-models = depends.get(Models)
-
-# Example models using different frameworks
-from sqlmodel import SQLModel, Field
-from pydantic import BaseModel
-import msgspec
-import attrs
-
-
-# SQLModel for SQL databases
-class User(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    name: str
-    email: str
-    active: bool = True
-
-
-# Pydantic for API DTOs
-class UserCreateRequest(BaseModel):
-    name: str
-    email: str
-
-
-# msgspec for high-performance serialization
-class UserSession(msgspec.Struct):
-    user_id: str
-    token: str
-    expires_at: int
-
-
-# attrs for mature applications
-@attrs.define
-class UserProfile:
-    bio: str
-    avatar_url: str
-
-
-# Universal query interface works with all model types
-query = ACBQuery()
-
-# Simple query style - works with any model framework
-users = await query.for_model(User).simple.all()
-user = await query.for_model(User).simple.find(1)
-new_user = await query.for_model(User).simple.create(
-    {"name": "John Doe", "email": "john@example.com"}
-)
-
-# Basic query operations (simplified)
-filtered_users = await query.for_model(User).simple.filter({"active": True}).limit(10)
-```
-
-### Configuration Library Mode Detection (v0.16.17+)
-
-ACB now automatically detects when it's being used as a library vs application using sophisticated detection logic:
-
-```python
-# ACB detects library usage in these contexts:
-# - During pip install or setup.py execution
-# - When current directory is not "acb" (working directory check)
-# - Build processes and package installation
-# - Test contexts (pytest detection)
-
-# Manual override if needed:
-import os
-
-os.environ["ACB_LIBRARY_MODE"] = "true"
-
-# Library mode affects:
-# - Configuration initialization (eager vs lazy)
-# - Adapter registration behavior
-# - Debug output configuration
-```
+**For detailed examples**, see adapter-specific READMEs in `acb/adapters/*/README.md`
 
 ## Testing Guidelines
 
-### Mock Implementation Requirements
+### Mock Requirements
 
-- Mock classes must match real adapter signatures
-- Implement proper public/private method delegation
-- Mock async context managers need both `__aenter__` and `__aexit__`
-- Clear cached properties before tests: `del adapter.property_name`
+- Match real adapter signatures
+- Implement public/private delegation
+- Mock async context managers need `__aenter__` and `__aexit__`
+- Clear cached properties: `del adapter.property_name`
 
 ### Test Organization
 
-- Implementation tests: `test_<implementation>.py` (specific behavior)
-- Shared functionality: `test_<category>_base.py` (when needed for common test patterns)
-- Use pytest markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.benchmark`
-- Base test files contain common fixtures and reusable assertion utilities
-- Mock classes must implement proper public/private method delegation
-- Separate test classes for complex adapters to avoid fixture conflicts
+- Use markers: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.benchmark`
+- Never create actual files - use provided mock fixtures
+- Separate test classes for complex adapters
 
-### File System Mocking
-
-Tests automatically patch file operations to prevent actual file creation:
-
-- `patch_file_operations`: Patches pathlib.Path operations
-- `patch_async_file_operations`: Patches anyio.Path operations
-- `mock_config`: Provides mocked Config without real files
-
-### Key Test Fixtures
-
-The test suite provides several important fixtures:
+### Key Fixtures
 
 - `mock_config`: Mocked Config for unit testing
-- `real_config`: Real Config instance for integration tests
-- `mock_adapter_settings`: Generic adapter settings mock
-- `patch_file_operations`: File system mocking for unit tests
+- `real_config`: Real Config for integration tests
+- `patch_file_operations`: File system mocking
 - `patch_async_file_operations`: Async file system mocking
-
-### Testing Best Practices
-
-1. **Never create actual files**: Use provided mock fixtures
-1. **Proper delegation**: Mock classes must mirror real implementation signatures
-1. **Async context managers**: Implement both `__aenter__` and `__aexit__`
-1. **Clear cached properties**: Use `del adapter.property_name` before tests
-1. **Exception handling**: Mock objects should handle expected exceptions
-
-## Key Components
-
-### Actions
-
-Self-contained utility functions automatically discovered and registered:
-
-- `acb.actions.compress`: gzip, brotli compression
-- `acb.actions.encode`: JSON, YAML, TOML, MsgPack serialization
-- `acb.actions.hash`: blake3, crc32c, md5 hashing
-
-### Core Systems
-
-- **Config**: Pydantic-based configuration with secret management
-- **Logger**: Loguru-based async logging with structured output
-- **Debug**: icecream-powered debugging with performance timing
-- **Depends**: bevy-based dependency injection
-
-### Adapter Categories
-
-- **cache**: Memory, Redis (aiocache, coredis)
-- **messaging**: Dual-interface backends (pubsub for events, queue for tasks)
-  - Memory, Redis, RabbitMQ (unified messaging with pub/sub and queue patterns)
-- **models**: SQLModel, Pydantic, Redis-OM, msgspec, attrs (auto-detection, universal query interface)
-- **sql**: MySQL, PostgreSQL, SQLite (SQLAlchemy, SQLModel)
-- **nosql**: MongoDB, Firestore, Redis
-- **storage**: File, S3, GCS, Azure
-- **secret**: Infisical, GCP Secret Manager, Azure Key Vault, Cloudflare KV
-- **monitoring**: Sentry, Logfire
-- **requests**: HTTPX, Niquests
-- **smtp**: Gmail, Mailgun
-- **dns**: Cloud DNS, Cloudflare, Route53
-- **ftpd**: FTP, SFTP clients
 
 ## Development Workflow
 
 1. **Setup**: `uv sync --group dev`
-1. **Code**: Follow adapter patterns and async interfaces
-1. **Test**: Write tests with proper mocking
-1. **Quality**: Use ruff for formatting and pyright for type checking
-1. **Verification**: **MANDATORY** - Run `python -m crackerjack -t --ai-fix` before task completion
-1. **Automation**: Use crackerjack for comprehensive workflows
+2. **Code**: Follow adapter patterns and async interfaces
+3. **Test**: Write tests with proper mocking
+4. **Quality**: Use ruff for formatting, pyright for type checking
+5. **Verification**: **MANDATORY** - Run `python -m crackerjack -t --ai-fix` before completion
+6. **Automation**: Use crackerjack for comprehensive workflows
 
 ## Code Quality Compliance
 
-**Target Python 3.13+** with modern syntax and security practices:
+**Python 3.13+** with modern syntax and security practices:
 
-**Modern Python patterns:**
+**Modern patterns**: `pathlib.Path`, `str.removeprefix()`, `|` unions, `dict1 | dict2`, comprehensions, `match` statements, type annotations
 
-- Use `pathlib.Path`, `str.removeprefix()`, `|` union types, `dict1 | dict2` merging
-- Use `any()/all()`, comprehensions, `enumerate()`, context managers
-- Prefer `match` statements, type annotations on all functions
+**Security**: Never use `eval()`, `exec()`, `subprocess.shell=True`, `pickle` with untrusted data. Use `secrets` module, parameterized queries, input validation
 
-**Security requirements:**
-
-- Never use `eval()`, `exec()`, `subprocess.shell=True`, `pickle` with untrusted data
-- Use `secrets` module (not `random`), environment variables for secrets
-- Parameterized queries only, validate all inputs, specify file encoding
-
-**Type safety:**
-
-- Explicit type hints on parameters/returns, handle `Optional` properly
-- Use `str | None`, `list[str]`, `dict[str, Any]` modern syntax
-- Type narrowing with assertions, `Protocol` for duck typing
+**Type safety**: Explicit hints, `str | None`, `list[str]`, `dict[str, Any]`, type narrowing with assertions
 
 **Pre-commit hooks**: Refurb, Bandit, Pyright, Ruff, pyproject-fmt, Vulture, Creosote, Complexipy, Codespell, detect-secrets
 
-## Project Structure
+## Version Information
 
-**Core directories**: `actions/` (utilities), `adapters/` (external systems), `core/` (infrastructure)
-**Key files**: `config.py`, `depends.py`, `logger.py`, `debug.py`, `context.py`
-**Settings structure**: `app.yml`, `debug.yml`, `adapters.yml`, `models.yml`, `secrets/`
+### Current: 0.25.2
 
-## Important Rules from .windsurfrules
+**Key improvements**:
+- Model Context Protocol (MCP) server for AI integration
+- Logly logger adapter with Rust-powered performance (v0.23.1)
+- APScheduler queue adapter for enterprise task scheduling (v0.23.1)
+- Modern dependency groups using `--group` syntax (v0.24.0)
+- Comprehensive architecture with Services layer
+- Basic resource cleanup via CleanupMixin
+- Streamlined cache operations (aiocache interface)
+- Performance improvements (50% faster operations)
+- Universal query interface for models adapter
 
-- Always implement adapter pattern with public/private method delegation
-- Use `_ensure_client()` pattern for lazy connection initialization
-- Mock classes must mirror real implementation signatures
-- Follow consistent async interfaces across all adapters
-- Group dependencies by adapter type in pyproject.toml
-- Use ACB settings pattern for component configuration
-- Implement proper error handling with appropriate exception types
-- **Include MODULE_METADATA in all adapters** with proper AdapterMetadata schema
-- Use AdapterCapability enum for feature detection and runtime validation
-- Follow semantic versioning for adapter versions (independent of ACB version)
-- **Implement simple resource cleanup** - use basic cleanup patterns via CleanupMixin
-- **Follow basic security practices** - validate inputs, use secure defaults
+### Recent Changes (v0.16.17+)
 
-## Version Information and Recent Changes
+- **Static Adapter Mappings**: Hardcoded mappings for better performance
+- **Memory Cache Rewrite**: Full aiocache interface with MsgPack
+- **Library Mode Detection**: Automatic library vs app detection
+- **Performance**: 50-70% faster adapter loading, 30-40% faster tests
 
-### Current Version: 0.19.1
+### Breaking Changes
 
-Key improvements in v0.19.1:
+1. **v0.24.0**: Dependency installation changed to `--group` syntax (CRITICAL)
+2. **v0.16.17**: Memory cache now uses aiocache interface
+3. **v0.16.17**: Some test mocks removed - use real adapters
+4. **v0.16.17**: Library mode auto-detection may affect initialization
 
-- **Comprehensive Architecture**: Reintroduced enterprise features as Services layer while maintaining core adapter functionality
-- **Basic Resource Cleanup**: Simple, reliable cleanup patterns without over-engineering
-- **Essential SSL/TLS**: Basic SSL configuration support where needed
-- **Streamlined Cache Operations**: Simple caching with standard aiocache interface
-- **Performance Improvements**: Continued optimization with faster adapter loading
-- Enhanced models adapter with universal query interface
-- Improved SQL adapter reliability and performance
-- Better error handling and logging across all adapters
-- Updated dependencies and compatibility fixes
+**Migration**: See `MIGRATION-0.24.0.md`, `MIGRATION-0.16.17.md`, and `CHANGELOG.md`
 
-### Recent Changes and Best Practices (v0.16.17+)
+## Adapter Documentation
 
-### Performance Optimizations
+Each adapter has detailed README with examples:
 
-- **Dynamic Adapter Loading**: Simplified adapter loading with convention-based discovery
-- **Memory Cache Enhancement**: Full aiocache interface implementation (50% faster operations)
-- **Test Infrastructure**: Removed heavy mocks for faster test startup (30-40% improvement)
+- **[Cache](<./acb/adapters/cache/README.md>)**: Memory, Redis caching
+- **[SQL](<./acb/adapters/sql/README.md>)**: MySQL, PostgreSQL, SQLite
+- **[Storage](<./acb/adapters/storage/README.md>)**: S3, GCS, Azure, file
+- **[Messaging](acb/adapters/messaging/README.md)**: Memory, Redis, RabbitMQ
+- **[Models](<./acb/adapters/models/README.md>)**: Universal query interface
+- **[Secret](<./acb/adapters/secret/README.md>)**: Infisical, GCP, Azure, Cloudflare
+- **[Monitoring](<./acb/adapters/monitoring/README.md>)**: Sentry, Logfire
+- **[DNS](<./acb/adapters/dns/README.md>)**: Cloud DNS, Cloudflare, Route53
+- **[SMTP](<./acb/adapters/smtp/README.md>)**: Gmail, Mailgun
+- **[NoSQL](<./acb/adapters/nosql/README.md>)**: MongoDB, Firestore, Redis
+- **[Requests](<./acb/adapters/requests/README.md>)**: HTTPX, Niquests
+- **[FTPD](<./acb/adapters/ftpd/README.md>)**: FTP, SFTP
 
-### Core Adapters
+### Recent Adapter Additions
 
-Only two adapters are automatically registered as they are truly essential for ACB operation:
+**Logly Logger** (v0.23.1): Rust-powered high-performance logging
+- Install: `uv add --group logger`
+- Config: `logger: logly` in settings/adapters.yml
+- Features: Advanced compression (gzip, zstd), async callbacks, extended log levels
+- Performance: Rust backend optimization for high-throughput scenarios
 
-- `config` - Configuration management (always needed)
-- `loguru` - Logging system (always needed)
+**APScheduler Queue** (v0.23.1): Enterprise-grade task scheduling
+- Install: `uv add --group queue-apscheduler` (base) or variants with SQL/MongoDB/Redis
+- Config: `queue: apscheduler` in settings/adapters.yml
+- Features: Cron expressions, job persistence, clustering, dead letter queue
+- Supports: Multiple job stores (memory, SQL, MongoDB, Redis) and executors
 
-All other adapters follow the opt-in principle and must be explicitly configured in `settings/adapters.yml`.
+## MCP Integration
 
-### Performance Best Practices
+ACB includes a Model Context Protocol server for AI application integration:
 
-1. **Use Lazy Loading**: Initialize expensive resources only when needed
+```bash
+# Start MCP server
+uv run python -m acb.mcp.server
+```
 
-   ```python
-   async def _ensure_client(self):
-       if self._client is None:
-           self._client = await self._create_client()
-       return self._client
-   ```
+**Features**:
+- Component discovery (actions, adapters, services)
+- Action execution through MCP tools
+- Adapter management and configuration
+- Workflow orchestration
+- Health monitoring and diagnostics
+- Real-time event streams and metrics
 
-1. **Connection Pooling**: Configure pool sizes for database adapters
+**Configuration** (Claude Desktop):
+```json
+{
+  "mcpServers": {
+    "acb": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "acb.mcp.server"],
+      "env": {
+        "ACB_MCP_HOST": "127.0.0.1",
+        "ACB_MCP_PORT": "8000"
+      }
+    }
+  }
+}
+```
 
-   ```yaml
-   sql:
-     pool_size: 20
-     max_overflow: 30
-   ```
+## Common Issues
 
-1. **Singleton Services**: Register expensive services once during startup
-
-   ```python
-   expensive_service = ExpensiveService()
-   depends.set(ExpensiveService, expensive_service)
-   ```
-
-1. **Cache Strategy**: Use appropriate TTL values to balance memory and performance
-
-1. **Async Best Practices**: Use `asyncio.gather()` for concurrent operations
-
-For detailed performance optimization, see `docs/PERFORMANCE-GUIDE.md`.
-
-### Breaking Changes to Be Aware Of
-
-1. **Memory Cache Interface**: Now uses aiocache BaseCache interface - update method signatures
-1. **Test Mocks**: Some test mocks removed - use real adapters or minimal mocks
-1. **Configuration Detection**: Library mode auto-detection may affect initialization
-
-### Migration Best Practices
-
-- Review MIGRATION-0.16.17.md for detailed upgrade instructions
-- Update memory cache usage to new aiocache interface
-- Test thoroughly with dynamic adapter loading
-- Verify configuration loading in library mode
-
-## Changelog and Version History
-
-ACB maintains a detailed changelog tracking all significant changes:
-
-- **Latest Version**: 0.19.1
-- **Breaking Changes**: See CHANGELOG.md for version-specific breaking changes
-- **Migration Guides**: Detailed migration instructions for major version updates
-- **Recent Improvements**: Performance optimizations, adapter system refactor (0.16.17+)
-
-### Recent Notable Changes (0.16.17+)
-
-- **Static Adapter Mappings**: Replaced dynamic discovery with hardcoded mappings for better performance
-- **Memory Cache Rewrite**: Full aiocache interface implementation with MsgPack serialization
-- **Library Mode Detection**: Automatic detection of library vs application usage
-- **Architecture Evolution**: Reintroduced enterprise features as dedicated Services layer while maintaining simplicity of core adapters
-- **Performance**: 50-70% faster adapter loading, 30-40% faster test startup
-
-## Task Completion Requirements
-
-**MANDATORY: Before marking any task as complete, AI assistants MUST:**
-
-1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-fix` to run all quality checks and tests with AI-optimized output
-1. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
-1. **Re-run verification**: Ensure crackerjack passes completely (all hooks pass, all tests pass)
-1. **Document verification**: Mention that crackerjack verification was completed successfully
-
-**Why this is critical:**
-
-- Ensures all code meets project quality standards
-- Prevents broken code from being committed
-- Maintains consistency with project development workflow
-- Catches issues early before they become problems
-
-**Never skip crackerjack verification** - it's the project's standard quality gate.
-
-## Adapter-Specific Documentation
-
-Each adapter category has its own detailed README with usage examples and configuration:
-
-- **\[[acb/adapters/cache/README|Cache]\]**: Memory and Redis caching with aiocache interface
-- **\[[acb/adapters/dns/README|DNS]\]**: Domain management (Cloud DNS, Cloudflare, Route53)
-- **\[[acb/adapters/ftpd/README|FTPD]\]**: File transfer protocols (FTP, SFTP)
-- **\[[acb/adapters/messaging/README|Messaging]\]**: Dual-interface backends for pub/sub and queues (Memory, Redis, RabbitMQ)
-- **\[[acb/adapters/models/README|Models]\]**: Universal query interface for multiple ORMs
-- **\[[acb/adapters/monitoring/README|Monitoring]\]**: Error tracking (Sentry, Logfire)
-- **\[[acb/adapters/nosql/README|NoSQL]\]**: Document databases (MongoDB, Firestore, Redis)
-- **\[[acb/adapters/requests/README|Requests]\]**: HTTP clients (HTTPX, Niquests)
-- **\[[acb/adapters/secret/README|Secret]\]**: Secret management (Infisical, GCP, Azure, Cloudflare)
-- **\[[acb/adapters/smtp/README|SMTP]\]**: Email sending (Gmail, Mailgun)
-- **\[[acb/adapters/sql/README|SQL]\]**: Relational databases (MySQL, PostgreSQL, SQLite)
-- **\[[acb/adapters/storage/README|Storage]\]**: File storage (S3, GCS, Azure, local)
-
-## Common Issues and Solutions
-
-**Secret detection**: Add `# pragma: allowlist secret` to config examples
-**Adapter field types**: Return `Any` (not `type(Any)`) for missing fields
-**Test mocks**: Include all required attributes (e.g., `mock_sql.ssl_enabled = True`)
-
-**Quick fixes:**
-
+**Quick fixes**:
 - Adapter not loading → Check `settings/adapters.yml`, install with `uv add --group adapter_name`
-- Import errors → Install ACB with `uv add acb`, check Python 3.13+ requirement
+- Import errors → Install ACB with `uv add acb`, verify Python 3.13+
 - Config errors → Verify YAML syntax, create `settings/` structure
-- Test failures → Use proper async fixtures, `@pytest.mark.asyncio` decorator
+- Test failures → Use async fixtures, `@pytest.mark.asyncio` decorator
+- Secret detection → Add `# pragma: allowlist secret` to examples
+- **Dependency install fails** → Use `--group` syntax, not old extras syntax `[adapter]`
 
 ## Critical Development Rules
 
-**MANDATORY: Follow these rules exactly:**
-
+**MANDATORY**:
 - Do what has been asked; nothing more, nothing less
-- NEVER create files unless they're absolutely necessary for achieving your goal
-- ALWAYS prefer editing an existing file to creating a new one
-- NEVER proactively create documentation files (\*.md) or README files unless explicitly requested
-- When working with secrets in config examples, add `# pragma: allowlist secret` comments
-- Always return `Any` (not `type(Any)`) from adapter field type methods for missing fields
+- NEVER create files unless absolutely necessary
+- ALWAYS prefer editing existing files
+- NEVER proactively create documentation files unless explicitly requested
+- Run `python -m crackerjack -t --ai-fix` before marking tasks complete
+- When working with secrets in config examples, add `# pragma: allowlist secret`
+- Always return `Any` (not `type(Any)`) from adapter field type methods
+
+## Task Completion Requirements
+
+**MANDATORY before marking any task complete**:
+
+1. Run `python -m crackerjack -t --ai-fix` for all quality checks
+2. Fix all formatting, linting, type checking, and test failures
+3. Re-run verification to ensure all checks pass
+4. Document that crackerjack verification completed successfully
+
+**Never skip crackerjack verification** - it's the project's quality gate.
+
+## Performance Best Practices
+
+1. **Lazy Loading**: Initialize expensive resources only when needed
+2. **Connection Pooling**: Configure pool sizes in `settings/adapters.yml`
+3. **Singleton Services**: Register expensive services once at startup
+4. **Cache Strategy**: Use appropriate TTL values
+5. **Async Best Practices**: Use `asyncio.gather()` for concurrent operations
+
+**For detailed performance optimization**, see `docs/PERFORMANCE-GUIDE.md`
+
+## Important Patterns
+
+- Adapter pattern with public/private method delegation
+- `_ensure_client()` for lazy connection initialization
+- Mock classes must mirror real implementation signatures
+- Consistent async interfaces across all adapters
+- MODULE_METADATA in all adapters with proper AdapterMetadata schema
+- Resource cleanup via CleanupMixin
+- Security: validate inputs, use secure defaults

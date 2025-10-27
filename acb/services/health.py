@@ -17,7 +17,6 @@ from enum import Enum
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
 from acb.depends import depends
-from acb.logger import Logger
 
 from ._base import ServiceBase, ServiceConfig, ServiceSettings
 

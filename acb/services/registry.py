@@ -11,7 +11,6 @@ from contextlib import suppress
 from operator import itemgetter
 
 from acb.depends import depends
-from acb.logger import Logger
 
 if t.TYPE_CHECKING:
     from ._base import ServiceBase, ServiceConfig

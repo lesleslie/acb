@@ -20,7 +20,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-memory@2025.8.4"
+        "@modelcontextprotocol/server-memory@2025.9.25"
       ],
       "type": "stdio"
     },
@@ -32,14 +32,6 @@
       ],
       "type": "stdio"
     },
-    "rust-filesystem": {
-      "command": "rust-mcp-filesystem",
-      "args": [
-        "-w",
-        "~/Projects"
-      ],
-      "type": "stdio"
-    },
     "mermaid": {
       "url": "http://localhost:3033/mcp",
       "type": "http"
@@ -48,7 +40,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@upstash/context7-mcp@1.0.17"
+        "@upstash/context7-mcp@1.0.20"
       ],
       "type": "stdio"
     },
