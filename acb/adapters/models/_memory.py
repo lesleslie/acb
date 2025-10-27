@@ -137,7 +137,7 @@ class MemoryDatabaseAdapter(DatabaseAdapter[T]):
             List of model instances
         """
         store = self._get_store(model)
-        docs = list(store)  # Copy to avoid mutation
+        docs = store.copy()  # Copy to avoid mutation
 
         # Apply ordering
         if order_by:

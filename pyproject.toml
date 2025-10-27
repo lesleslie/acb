@@ -46,7 +46,6 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "pyfiglet>=1.0.3",
     "pyyaml>=6.0.2",
-    "redis-om>=0.3.5",
     "sqlalchemy>=2.0.41",
     "sqlalchemy-utils>=0.41.2",
     "sqlmodel>=0.0.24",

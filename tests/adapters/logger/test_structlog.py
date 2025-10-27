@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
-from acb.adapters.logger.structlog import Logger, StructlogSettings, MODULE_METADATA
+from acb.adapters.logger.structlog import Logger, LoggerSettings, MODULE_METADATA
 from acb.adapters import AdapterCapability, AdapterStatus
 
 
@@ -14,12 +14,12 @@ except ImportError:
     structlog = None
 
 
-class TestStructlogSettings:
-    """Test StructlogSettings configuration."""
+class TestLoggerSettings:
+    """Test LoggerSettings configuration."""
 
     def test_default_settings(self):
         """Test default Structlog settings."""
-        settings = StructlogSettings()
+        settings = LoggerSettings()
 
         assert settings.json_output is True
         assert settings.include_metadata is True
@@ -31,7 +31,7 @@ class TestStructlogSettings:
 
     def test_processor_configuration(self):
         """Test processor configuration."""
-        settings = StructlogSettings(
+        settings = LoggerSettings(
             add_timestamp=False,
             context_vars=False,
             include_caller_info=False
@@ -54,7 +54,7 @@ class TestStructlogSettings:
     @pytest.mark.skipif(structlog is None, reason="structlog not available")
     def test_build_processors_json_output(self):
         """Test processor building for JSON output."""
-        settings = StructlogSettings(json_output=True)
+        settings = LoggerSettings(json_output=True)
 
         processors = settings._build_processors()
 
@@ -66,7 +66,7 @@ class TestStructlogSettings:
     @pytest.mark.skipif(structlog is None, reason="structlog not available")
     def test_build_processors_console_output(self):
         """Test processor building for console output."""
-        settings = StructlogSettings(
+        settings = LoggerSettings(
             json_output=False,
             pretty_print=True
         )
@@ -78,7 +78,7 @@ class TestStructlogSettings:
     @pytest.mark.skipif(structlog is None, reason="structlog not available")
     def test_structlog_settings_building(self):
         """Test structlog-specific settings building."""
-        settings = StructlogSettings()
+        settings = LoggerSettings()
 
         structlog_settings = settings.settings
 
@@ -90,7 +90,7 @@ class TestStructlogSettings:
     def test_build_processors_no_structlog(self):
         """Test processor building when structlog is not available."""
         with patch("acb.adapters.logger.structlog.structlog", None):
-            settings = StructlogSettings()
+            settings = LoggerSettings()
 
             processors = settings._build_processors()
 

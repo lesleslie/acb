@@ -840,16 +840,16 @@ async def _initialize_adapter(
     if adapter_settings is not None:
         from acb.config import Config
 
-        config = depends.get(Config)
+        config = await depends.get(Config)
         setattr(config, adapter_category, adapter_settings)
-    instance = depends.get(adapter_class)
+    instance = await depends.get(adapter_class)
     if hasattr(instance, "init"):
         init_result = instance.init()
         if hasattr(init_result, "__await__"):
             await init_result
     from acb.logger import Logger
 
-    logger = depends.get(Logger)
+    logger = await depends.get(Logger)
     logger.info(f"Adapter initialized: {adapter.class_name}")
     return adapter_class
 

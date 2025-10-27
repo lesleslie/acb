@@ -365,14 +365,14 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         }
 
     @staticmethod
-    def _should_create_settings_file(self, dump_settings: dict[str, t.Any]) -> bool:
+    def _should_create_settings_file(dump_settings: dict[str, t.Any]) -> bool:
         return bool(dump_settings) and any(
             value is not None and value not in ({}, [])
             for value in dump_settings.values()
         )
 
     @staticmethod
-    async def _load_settings_from_file(self, yaml_path: AsyncPath) -> dict[str, t.Any]:
+    async def _load_settings_from_file(yaml_path: AsyncPath) -> dict[str, t.Any]:
         if await yaml_path.exists():
             result = await load.yaml(yaml_path)
             return dict(result) if result else {}
@@ -400,7 +400,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         await dump.yaml(yaml_settings, yaml_path, sort_keys=True)
 
     @staticmethod
-    def _should_update_settings_file(self, yaml_settings: dict[str, t.Any]) -> bool:
+    def _should_update_settings_file(yaml_settings: dict[str, t.Any]) -> bool:
         return (
             not _deployed
             and bool(yaml_settings)
@@ -711,7 +711,8 @@ class AdapterBase:
         if not hasattr(self, "_logger"):
             try:
                 Logger = import_adapter("logger")
-                self._logger = depends.get(Logger)
+                logger_instance = depends.get_sync(Logger)
+                self._logger = logger_instance
             except Exception:
                 import logging
 

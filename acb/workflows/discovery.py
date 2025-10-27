@@ -289,7 +289,7 @@ def import_workflow_engine(engine_type: str | None = None) -> t.Any:
     from acb.config import Config
     from acb.depends import depends
 
-    config = depends.get(Config)
+    config = await depends.get(Config)
     workflow_settings = config.settings_dict.get("workflows", {})
     override_engine = workflow_settings.get("engine_type")
 
@@ -308,7 +308,7 @@ def import_workflow_engine(engine_type: str | None = None) -> t.Any:
     except (ImportError, AttributeError) as e:
         from acb.logger import Logger
 
-        logger = depends.get(Logger)
+        logger = await depends.get(Logger)
         logger.exception(f"Failed to import workflow engine {engine_type}: {e}")
         msg = (
             f"Could not import workflow engine: {engine_type}. "

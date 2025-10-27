@@ -318,9 +318,9 @@ class TestLoggerConfiguration:
         assert loguru_settings.colorize is False
 
         try:
-            from acb.adapters.logger.structlog import StructlogSettings
+            from acb.adapters.logger.structlog import LoggerSettings
 
-            structlog_settings = StructlogSettings(
+            structlog_settings = LoggerSettings(
                 json_output=True,
                 pretty_print=False,
                 add_timestamp=True

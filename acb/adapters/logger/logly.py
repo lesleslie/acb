@@ -137,10 +137,10 @@ class Logger(LoggerBase):
             raise ImportError(msg)
 
     @property
-    def settings(self) -> LoglySettings:
+    def settings(self) -> LoggerSettings:
         """Get Logly-specific settings."""
         if self._settings is None:
-            self._settings = LoglySettings()
+            self._settings = LoggerSettings()
         return self._settings  # type: ignore[return-value]
 
     def _ensure_logger(self) -> t.Any:
@@ -396,7 +396,7 @@ class InterceptHandler(logging.Handler):
         """Emit log record via Logly."""
         # Get logger from dependency container
         try:
-            logger_instance = depends.get(Logger)
+            logger_instance = depends.get_sync(Logger)
         except Exception:
             # Fallback to basic logging if logger not available
             return

@@ -4,7 +4,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from acb.adapters.graph.neo4j import Graph, Neo4jSettings, MODULE_METADATA
+from acb.adapters.graph.neo4j import Graph, GraphSettings, MODULE_METADATA
 from acb.adapters.graph._base import (
     GraphQueryLanguage,
     GraphNodeModel,

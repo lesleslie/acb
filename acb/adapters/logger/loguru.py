@@ -252,7 +252,7 @@ class InterceptHandler(logging.Handler):
         """Emit log record via Loguru."""
         # Get logger from dependency container
         try:
-            logger_instance = depends.get(Logger)
+            logger_instance = depends.get_sync(Logger)
         except Exception:
             # Fallback to basic logging if logger not available
             return

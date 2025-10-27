@@ -410,10 +410,7 @@ class QueueBase(ABC, CleanupMixin):
         """Get config with lazy initialization."""
         if self._config is None:
             try:
-                self._config = depends.get(Config)
-                # If depends.get returns a coroutine, we're in test context
-                if hasattr(self._config, "__await__"):
-                    raise RuntimeError("Config DI returned coroutine in test context")
+                self._config = depends.get_sync(Config)
             except Exception:
                 # Fallback - in test context, create a minimal config
                 from acb.config import Config as RealConfig
@@ -431,12 +428,8 @@ class QueueBase(ABC, CleanupMixin):
         """Get logger with lazy initialization."""
         if self._logger is None:
             try:
-                imported_logger = depends.get(LoggerType)
-                # If depends.get returns a coroutine, we're in test context
-                if hasattr(imported_logger, "__await__"):
-                    self._logger = logging.getLogger(__class__.__name__)
-                else:
-                    self._logger = imported_logger
+                imported_logger = depends.get_sync(LoggerType)
+                self._logger = imported_logger
             except Exception:
                 # Fallback to standard logging
                 self._logger = logging.getLogger(self.__class__.__name__)

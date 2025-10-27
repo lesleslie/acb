@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from anyio import Path as AsyncPath
-from acb.adapters.logger.loguru import LoguruSettings
+from acb.adapters.logger.loguru import LoggerSettings as LoguruSettings
 from acb.logger import (
     Logger,
     LoggerProtocol,

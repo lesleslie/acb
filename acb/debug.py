@@ -30,7 +30,7 @@ _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 def get_calling_module() -> Path | None:
     with suppress(AttributeError, TypeError, RuntimeError):
         try:
-            config = depends.get("config")
+            config = depends.get_sync("config")
         except RuntimeError:
             # Config requires async initialization, use a fallback
             return None
@@ -91,7 +91,7 @@ def init_debug() -> None:
     warnings.filterwarnings("ignore", category=RuntimeWarning, module="icecream")
     try:
         try:
-            config = depends.get("config")
+            config = depends.get_sync("config")
         except RuntimeError:
             # Config requires async initialization, use default settings
             debug_args = {

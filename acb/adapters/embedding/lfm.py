@@ -141,7 +141,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
             #     "Liquid AI LFM library not available. Install with: pip install liquid-ai-lfm"
             # )
 
-        depends.get("config")
+        depends.get_sync("config")
         if settings is None:
             settings = LiquidLFMEmbeddingSettings()
 
@@ -161,7 +161,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
     async def _load_model(self) -> None:
         """Load the Liquid AI LFM model with memory-efficient settings."""
-        logger: t.Any = depends.get("logger")
+        logger: t.Any = await depends.get("logger")
 
         try:
             # Determine optimal device based on constraints
@@ -298,7 +298,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
         """Generate embeddings using Liquid AI LFM with memory optimization."""
         start_time = time.time()
         model_obj, tokenizer = await self._ensure_client()
-        logger: t.Any = depends.get("logger")
+        logger: t.Any = await depends.get("logger")
 
         results = []
 
@@ -416,7 +416,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 
     async def _optimize_memory(self) -> None:
         """Optimize memory usage when approaching limits."""
-        logger: t.Any = depends.get("logger")
+        logger: t.Any = await depends.get("logger")
         await logger.info("Memory limit approached, optimizing...")
 
         # LFM-specific memory optimization strategies would go here
@@ -597,7 +597,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
 async def create_lfm_embedding(config: Config | None = None) -> LiquidLFMEmbedding:
     """Create Liquid AI LFM embedding adapter instance."""
     if config is None:
-        config = depends.get("config")
+        config = await depends.get("config")
 
     settings = LiquidLFMEmbeddingSettings()
     return LiquidLFMEmbedding(settings)
