@@ -33,6 +33,7 @@ ACB (Asynchronous Component Base) is a modular Python framework built around **a
 ### Recent Breaking Changes (v0.24.0)
 
 **CRITICAL**: Dependency installation syntax has changed:
+
 - ❌ **Old (no longer works)**: `uv add "acb[cache]"`
 - ✅ **New (required)**: `uv add --group cache`
 
@@ -41,10 +42,10 @@ All adapter installations now use the `--group` flag instead of extras syntax. S
 ### Core Design Patterns
 
 1. **Adapter Pattern**: Standardized interfaces for external systems (cache, SQL, storage, etc.)
-2. **Dependency Injection**: Automatic component wiring via `bevy` framework
-3. **Configuration-Driven**: YAML-based behavior control (`settings/`)
-4. **Async-First**: High-performance asynchronous operations
-5. **Dynamic Loading**: Convention-based adapter discovery
+1. **Dependency Injection**: Automatic component wiring via `bevy` framework
+1. **Configuration-Driven**: YAML-based behavior control (`settings/`)
+1. **Async-First**: High-performance asynchronous operations
+1. **Dynamic Loading**: Convention-based adapter discovery
 
 ### Directory Structure (v0.19.1+)
 
@@ -172,11 +173,10 @@ from acb.config import Config
 Cache = import_adapter("cache")  # Concrete class
 Storage = import_adapter("storage")
 
+
 @depends.inject
 async def my_function(
-    cache: Inject[Cache],
-    storage: Inject[Storage],
-    config: Inject[Config]
+    cache: Inject[Cache], storage: Inject[Storage], config: Inject[Config]
 ):
     await cache.set("key", "value", ttl=300)
     await storage.upload("file.txt", data)
@@ -190,6 +190,7 @@ async def my_function(
 
 ```python
 from acb.services.protocols import RepositoryServiceProtocol, ValidationServiceProtocol
+
 
 @depends.inject
 async def business_logic(
@@ -213,6 +214,7 @@ async def business_logic(
 from acb.adapters import import_adapter
 
 Cache = import_adapter("cache")  # Concrete class
+
 
 @depends.inject
 async def infrastructure_code(cache: Inject[Cache]):
@@ -256,11 +258,11 @@ async def infrastructure_code(cache: Inject[Cache]):
 ## Development Workflow
 
 1. **Setup**: `uv sync --group dev`
-2. **Code**: Follow adapter patterns and async interfaces
-3. **Test**: Write tests with proper mocking
-4. **Quality**: Use ruff for formatting, pyright for type checking
-5. **Verification**: **MANDATORY** - Run `python -m crackerjack -t --ai-fix` before completion
-6. **Automation**: Use crackerjack for comprehensive workflows
+1. **Code**: Follow adapter patterns and async interfaces
+1. **Test**: Write tests with proper mocking
+1. **Quality**: Use ruff for formatting, pyright for type checking
+1. **Verification**: **MANDATORY** - Run `python -m crackerjack -t --ai-fix` before completion
+1. **Automation**: Use crackerjack for comprehensive workflows
 
 ## Code Quality Compliance
 
@@ -279,6 +281,7 @@ async def infrastructure_code(cache: Inject[Cache]):
 ### Current: 0.25.2
 
 **Key improvements**:
+
 - Model Context Protocol (MCP) server for AI integration
 - Logly logger adapter with Rust-powered performance (v0.23.1)
 - APScheduler queue adapter for enterprise task scheduling (v0.23.1)
@@ -299,9 +302,9 @@ async def infrastructure_code(cache: Inject[Cache]):
 ### Breaking Changes
 
 1. **v0.24.0**: Dependency installation changed to `--group` syntax (CRITICAL)
-2. **v0.16.17**: Memory cache now uses aiocache interface
-3. **v0.16.17**: Some test mocks removed - use real adapters
-4. **v0.16.17**: Library mode auto-detection may affect initialization
+1. **v0.16.17**: Memory cache now uses aiocache interface
+1. **v0.16.17**: Some test mocks removed - use real adapters
+1. **v0.16.17**: Library mode auto-detection may affect initialization
 
 **Migration**: See `MIGRATION-0.24.0.md`, `MIGRATION-0.16.17.md`, and `CHANGELOG.md`
 
@@ -325,12 +328,14 @@ Each adapter has detailed README with examples:
 ### Recent Adapter Additions
 
 **Logly Logger** (v0.23.1): Rust-powered high-performance logging
+
 - Install: `uv add --group logger`
 - Config: `logger: logly` in settings/adapters.yml
 - Features: Advanced compression (gzip, zstd), async callbacks, extended log levels
 - Performance: Rust backend optimization for high-throughput scenarios
 
 **APScheduler Queue** (v0.23.1): Enterprise-grade task scheduling
+
 - Install: `uv add --group queue-apscheduler` (base) or variants with SQL/MongoDB/Redis
 - Config: `queue: apscheduler` in settings/adapters.yml
 - Features: Cron expressions, job persistence, clustering, dead letter queue
@@ -346,6 +351,7 @@ uv run python -m acb.mcp.server
 ```
 
 **Features**:
+
 - Component discovery (actions, adapters, services)
 - Action execution through MCP tools
 - Adapter management and configuration
@@ -354,6 +360,7 @@ uv run python -m acb.mcp.server
 - Real-time event streams and metrics
 
 **Configuration** (Claude Desktop):
+
 ```json
 {
   "mcpServers": {
@@ -372,6 +379,7 @@ uv run python -m acb.mcp.server
 ## Common Issues
 
 **Quick fixes**:
+
 - Adapter not loading → Check `settings/adapters.yml`, install with `uv add --group adapter_name`
 - Import errors → Install ACB with `uv add acb`, verify Python 3.13+
 - Config errors → Verify YAML syntax, create `settings/` structure
@@ -382,6 +390,7 @@ uv run python -m acb.mcp.server
 ## Critical Development Rules
 
 **MANDATORY**:
+
 - Do what has been asked; nothing more, nothing less
 - NEVER create files unless absolutely necessary
 - ALWAYS prefer editing existing files
@@ -395,19 +404,19 @@ uv run python -m acb.mcp.server
 **MANDATORY before marking any task complete**:
 
 1. Run `python -m crackerjack -t --ai-fix` for all quality checks
-2. Fix all formatting, linting, type checking, and test failures
-3. Re-run verification to ensure all checks pass
-4. Document that crackerjack verification completed successfully
+1. Fix all formatting, linting, type checking, and test failures
+1. Re-run verification to ensure all checks pass
+1. Document that crackerjack verification completed successfully
 
 **Never skip crackerjack verification** - it's the project's quality gate.
 
 ## Performance Best Practices
 
 1. **Lazy Loading**: Initialize expensive resources only when needed
-2. **Connection Pooling**: Configure pool sizes in `settings/adapters.yml`
-3. **Singleton Services**: Register expensive services once at startup
-4. **Cache Strategy**: Use appropriate TTL values
-5. **Async Best Practices**: Use `asyncio.gather()` for concurrent operations
+1. **Connection Pooling**: Configure pool sizes in `settings/adapters.yml`
+1. **Singleton Services**: Register expensive services once at startup
+1. **Cache Strategy**: Use appropriate TTL values
+1. **Async Best Practices**: Use `asyncio.gather()` for concurrent operations
 
 **For detailed performance optimization**, see `docs/PERFORMANCE-GUIDE.md`
 
