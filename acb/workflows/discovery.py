@@ -289,7 +289,7 @@ def import_workflow_engine(engine_type: str | None = None) -> t.Any:
     from acb.config import Config
     from acb.depends import depends
 
-    config = await depends.get(Config)
+    config = depends.get_sync(Config)
     workflow_settings = config.settings_dict.get("workflows", {})
     override_engine = workflow_settings.get("engine_type")
 
