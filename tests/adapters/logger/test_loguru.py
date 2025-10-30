@@ -3,17 +3,17 @@
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
 
-from acb.adapters.logger.loguru import Logger, LoguruSettings, MODULE_METADATA, InterceptHandler
+from acb.adapters.logger.loguru import Logger, LoggerSettings, MODULE_METADATA, InterceptHandler
 from acb.adapters import AdapterCapability, AdapterStatus
 from acb.config import Config
 
 
-class TestLoguruSettings:
-    """Test LoguruSettings configuration."""
+class TestLoggerSettings:
+    """Test LoggerSettings configuration."""
 
     def test_default_settings(self):
-        """Test default Loguru settings."""
-        settings = LoguruSettings()
+        """Test default Logger settings."""
+        settings = LoggerSettings()
 
         assert settings.backtrace is False
         assert settings.catch is False
@@ -22,7 +22,7 @@ class TestLoguruSettings:
 
     def test_format_inheritance(self):
         """Test format inheritance from base."""
-        settings = LoguruSettings()
+        settings = LoggerSettings()
 
         assert settings.format is not None
         assert "time" in settings.format
@@ -30,7 +30,7 @@ class TestLoguruSettings:
 
     def test_settings_building(self):
         """Test settings dict building."""
-        settings = LoguruSettings()
+        settings = LoggerSettings()
 
         assert "format" in settings.settings
         assert "enqueue" in settings.settings
@@ -77,11 +77,11 @@ class TestLoguruLogger:
         assert logger._bound_context == {}
 
     def test_settings_property(self):
-        """Test settings property returns LoguruSettings."""
+        """Test settings property returns LoggerSettings."""
         logger = Logger()
 
         settings = logger.settings
-        assert isinstance(settings, LoguruSettings)
+        assert isinstance(settings, LoggerSettings)
 
     def test_context_binding(self):
         """Test context binding creates new logger instance."""

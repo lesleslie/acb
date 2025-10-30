@@ -32,8 +32,10 @@ async def register_tools(
 
         server = create_mcp_server()
 
+
         async def my_tool(param: str) -> dict[str, str]:
             return {"result": f"Processed: {param}"}
+
 
         await register_tools(server, {"my_tool": my_tool})
         ```
@@ -59,7 +61,7 @@ async def register_resources(
     server: t.Any,
     resources: dict[str, t.Callable[..., t.Awaitable[str]]],
 ) -> None:
-    """Register resources with ACB MCP server.
+    r"""Register resources with ACB MCP server.
 
     This function enables plugin servers to dynamically register their
     MCP resources (documentation, schemas, etc.) with an ACB-based server instance.
@@ -78,8 +80,10 @@ async def register_resources(
 
         server = create_mcp_server()
 
+
         async def api_docs() -> str:
             return "# API Documentation\\n..."
+
 
         await register_resources(server, {"api_docs": api_docs})
         ```

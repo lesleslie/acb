@@ -54,6 +54,7 @@ dependencies = [
     "uuid-utils>=0.11",
     "uvicorn>=0.30",
     "fastmcp>=2.0.0",
+    "mcp-common>=0.2.0",
 ]
 
 [project.license]
@@ -660,6 +661,7 @@ exclude-deps = [
     "google-crc32c",
     "hatchling",
     "toml",
+    "mcp-common",
 ]
 
 [tool.refurb]

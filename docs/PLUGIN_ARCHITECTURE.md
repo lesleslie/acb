@@ -4,7 +4,7 @@
 **Status**: Production Ready
 **Last Updated**: 2025-01-27
 
----
+______________________________________________________________________
 
 ## Overview
 
@@ -18,7 +18,7 @@ The ACB (Asynchronous Component Base) framework provides a plugin architecture t
 - ✅ **Async-First**: Built on FastMCP's async foundation
 - ✅ **Zero Config**: Plugins work out-of-the-box with sensible defaults
 
----
+______________________________________________________________________
 
 ## Architecture Diagram
 
@@ -60,7 +60,7 @@ The ACB (Asynchronous Component Base) framework provides a plugin architecture t
 └─────────────────────────────────────────────────────────┘
 ```
 
----
+______________________________________________________________________
 
 ## Core Concepts
 
@@ -70,6 +70,7 @@ A plugin MCP server has three main components:
 
 ```python
 from acb.mcp import create_mcp_server, register_tools, register_resources
+
 
 class MyPluginMCPServer:
     """Plugin server extending ACB infrastructure."""
@@ -104,6 +105,7 @@ async def my_tool(param: str) -> dict[str, str]:
     """Example tool implementation."""
     return {"result": f"Processed: {param}"}
 
+
 # Register with ACB server
 tools = {
     "my_tool": my_tool,
@@ -121,6 +123,7 @@ async def get_api_docs() -> str:
     """Return API documentation as markdown."""
     return "# API Documentation\\n..."
 
+
 # Register with ACB server
 resources = {
     "api_docs": get_api_docs,
@@ -129,51 +132,59 @@ resources = {
 await register_resources(server, resources)
 ```
 
----
+______________________________________________________________________
 
 ## Inheritance Model
 
 ### What Plugins Inherit from ACB
 
 1. **Rate Limiting** (automatic)
+
    - 15 requests/second sustainable rate
    - Burst capacity of 40 requests
    - Global rate limiting enabled by default
 
-2. **Component Registry**
+1. **Component Registry**
+
    - Access to ACB actions (compress, encode, hash, etc.)
    - Adapter integration (HTTP, WebSocket, etc.)
    - Service orchestration
 
-3. **FastMCP Infrastructure**
+1. **FastMCP Infrastructure**
+
    - Async request handling
    - Tool/resource decorators
    - Transport layer (STDIO, HTTP, SSE)
 
-4. **Logging & Observability**
+1. **Logging & Observability**
+
    - Structured logging via ACB logger
    - Error tracking and reporting
 
 ### What Plugins Provide
 
 1. **Domain-Specific Tools**
+
    - Plugin-specific MCP tool implementations
    - Custom validation and error handling
 
-2. **Domain-Specific Resources**
+1. **Domain-Specific Resources**
+
    - API documentation
    - Configuration schemas
    - Best practices guides
 
-3. **Custom Initialization**
+1. **Custom Initialization**
+
    - Plugin-specific setup logic
    - External service connections
 
----
+______________________________________________________________________
 
 ## Reference Implementation: FastBlocks
 
 FastBlocks is the reference implementation of an ACB MCP plugin. See:
+
 - **Source**: `/Users/les/Projects/fastblocks/fastblocks/mcp/`
 - **Documentation**: `/Users/les/Projects/fastblocks/docs/ACB_PLUGIN_EXAMPLE.md`
 
@@ -190,6 +201,7 @@ fastblocks/mcp/
 ### Key FastBlocks Patterns
 
 1. **Server Initialization**:
+
    ```python
    class FastBlocksMCPServer:
        def __init__(self, name: str = "FastBlocks"):
@@ -197,7 +209,8 @@ fastblocks/mcp/
            self._server = create_mcp_server()
    ```
 
-2. **Tool Registration**:
+1. **Tool Registration**:
+
    ```python
    async def register_fastblocks_tools(server: Any) -> None:
        from acb.mcp import register_tools
@@ -210,7 +223,8 @@ fastblocks/mcp/
        await register_tools(server, tools)
    ```
 
-3. **Resource Registration**:
+1. **Resource Registration**:
+
    ```python
    async def register_fastblocks_resources(server: Any) -> None:
        from acb.mcp import register_resources
@@ -223,7 +237,7 @@ fastblocks/mcp/
        await register_resources(server, resources)
    ```
 
----
+______________________________________________________________________
 
 ## API Contracts
 
@@ -293,7 +307,7 @@ async def register_resources(
     """
 ```
 
----
+______________________________________________________________________
 
 ## Development Guidelines
 
@@ -334,6 +348,7 @@ Use comprehensive type hints:
 ```python
 from typing import Any, Callable, Awaitable
 
+
 async def my_tool(
     param1: str,
     param2: int | None = None,
@@ -367,6 +382,7 @@ Test plugin integration:
 import pytest
 from acb.mcp import create_mcp_server, register_tools
 
+
 @pytest.mark.asyncio
 async def test_plugin_tools_register():
     server = create_mcp_server()
@@ -379,33 +395,39 @@ async def test_plugin_tools_register():
     assert test_tool.__name__ in str(server._server._mcp_server.tools)
 ```
 
----
+______________________________________________________________________
 
 ## Migration Guide
 
 ### From Standalone MCP Server → ACB Plugin
 
 **Before** (standalone):
+
 ```python
 from fastmcp import FastMCP
 
 app = FastMCP("my-server")
 
+
 @app.tool()
 async def my_tool(param: str) -> dict:
     return {"result": param}
+
 
 app.run()
 ```
 
 **After** (ACB plugin):
+
 ```python
 from acb.mcp import create_mcp_server, register_tools
 
 server = create_mcp_server()  # Inherits rate limiting
 
+
 async def my_tool(param: str) -> dict:
     return {"result": param}
+
 
 await register_tools(server, {"my_tool": my_tool})
 
@@ -413,12 +435,13 @@ server.run()  # Use ACB server's run method
 ```
 
 **Benefits**:
+
 - ✅ Automatic rate limiting (15 req/sec, burst 40)
 - ✅ Access to ACB component registry
 - ✅ Structured logging
 - ✅ Consistent error handling
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -427,6 +450,7 @@ server.run()  # Use ACB server's run method
 **Cause**: Server not created via `create_mcp_server()`
 
 **Solution**:
+
 ```python
 # ❌ Wrong
 server = ACBMCPServer()  # Missing FastMCP instance
@@ -440,6 +464,7 @@ server = create_mcp_server()  # Creates with _server attribute
 **Cause**: ACB version too old
 
 **Solution**:
+
 ```bash
 uv add "acb>=1.0.0"  # Ensure recent version
 ```
@@ -449,17 +474,19 @@ uv add "acb>=1.0.0"  # Ensure recent version
 **Cause**: Tool is not async or not callable
 
 **Solution**:
+
 ```python
 # ❌ Wrong
 def my_tool(param: str) -> dict:  # Not async
     return {"result": param}
+
 
 # ✅ Correct
 async def my_tool(param: str) -> dict:  # Async function
     return {"result": param}
 ```
 
----
+______________________________________________________________________
 
 ## FAQ
 
@@ -468,6 +495,7 @@ A: Not currently. Rate limiting is configured at the ACB server level (15 req/se
 
 **Q: Can I access ACB's component registry from my plugin?**
 A: Yes! Use dependency injection:
+
 ```python
 from acb.depends import depends
 from acb.mcp import ComponentRegistry
@@ -482,7 +510,7 @@ A: No. Always use `create_mcp_server()` to get an ACB server instance. This ensu
 **Q: Can I create multiple plugin servers?**
 A: Yes, but each creates a separate ACB server instance with its own rate limiting. Consider using a single server with multiple tool namespaces instead.
 
----
+______________________________________________________________________
 
 ## Resources
 
@@ -491,7 +519,7 @@ A: Yes, but each creates a separate ACB server instance with its own rate limiti
 - **Plugin Example**: `/Users/les/Projects/fastblocks/docs/ACB_PLUGIN_EXAMPLE.md`
 - **ACB Framework**: `/Users/les/Projects/acb/`
 
----
+______________________________________________________________________
 
 **Maintained by**: ACB Core Team
 **License**: MIT

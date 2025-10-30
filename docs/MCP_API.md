@@ -5,13 +5,13 @@
 **Python**: 3.13+
 **Last Updated**: 2025-01-27
 
----
+______________________________________________________________________
 
 ## Overview
 
 The `acb.mcp` module provides the public API for creating and extending ACB MCP servers. This API enables plugin developers to inherit ACB's infrastructure (rate limiting, component registry, logging) while adding domain-specific functionality.
 
----
+______________________________________________________________________
 
 ## Module Exports
 
@@ -20,15 +20,12 @@ from acb.mcp import (
     # Server Creation
     create_mcp_server,
     mcp,  # Direct FastMCP instance access
-
     # Plugin API
     register_tools,
     register_resources,
-
     # Server Classes
     ACBMCPServer,
     ACMCPServer,  # Backwards compatibility alias
-
     # Components
     ComponentRegistry,
     WorkflowOrchestrator,
@@ -37,7 +34,7 @@ from acb.mcp import (
 )
 ```
 
----
+______________________________________________________________________
 
 ## Core Functions
 
@@ -46,15 +43,18 @@ from acb.mcp import (
 Create an ACB MCP server instance with full infrastructure.
 
 **Signature**:
+
 ```python
 def create_mcp_server() -> ACBMCPServer:
     """Create and return an ACB MCP server instance."""
 ```
 
 **Returns**:
+
 - `ACBMCPServer`: Configured server instance ready to run
 
 **Server Includes**:
+
 - ✅ FastMCP instance (`server._server`)
 - ✅ Rate limiting (15 req/sec, burst 40)
 - ✅ Component registry
@@ -63,6 +63,7 @@ def create_mcp_server() -> ACBMCPServer:
 - ✅ Structured logging
 
 **Example**:
+
 ```python
 from acb.mcp import create_mcp_server
 
@@ -79,6 +80,7 @@ server.run(transport="http", host="127.0.0.1", port=8080)  # HTTP mode
 ```
 
 **Rate Limiting Configuration**:
+
 ```python
 # Automatically configured:
 - max_requests_per_second: 15.0
@@ -86,13 +88,14 @@ server.run(transport="http", host="127.0.0.1", port=8080)  # HTTP mode
 - global_limit: True
 ```
 
----
+______________________________________________________________________
 
 ### `register_tools()`
 
 Register MCP tools with an ACB server instance.
 
 **Signature**:
+
 ```python
 async def register_tools(
     server: Any,
@@ -102,24 +105,29 @@ async def register_tools(
 ```
 
 **Parameters**:
+
 - `server` (`ACBMCPServer`): Server instance from `create_mcp_server()`
 - `tools` (`dict[str, Callable]`): Mapping of tool names to async functions
 
 **Raises**:
+
 - `AttributeError`: If server doesn't have `_server` attribute
 - `ValueError`: If any tool is not callable
 
 **Tool Requirements**:
+
 - ✅ Must be async functions (`async def`)
 - ✅ Must be callable
 - ✅ Should return JSON-serializable types
 - ✅ Should use type hints
 
 **Example**:
+
 ```python
 from acb.mcp import create_mcp_server, register_tools
 
 server = create_mcp_server()
+
 
 # Define tools
 async def create_user(name: str, email: str) -> dict[str, Any]:
@@ -127,12 +135,14 @@ async def create_user(name: str, email: str) -> dict[str, Any]:
     user_id = await db.create_user(name, email)
     return {"success": True, "user_id": user_id}
 
+
 async def get_user(user_id: int) -> dict[str, Any]:
     """Retrieve user by ID."""
     user = await db.get_user(user_id)
     if not user:
         return {"success": False, "error": "User not found"}
     return {"success": True, "user": user}
+
 
 # Register with server
 tools = {
@@ -143,6 +153,7 @@ await register_tools(server, tools)
 ```
 
 **Error Handling Pattern**:
+
 ```python
 async def safe_tool(param: str) -> dict[str, Any]:
     """Tool with proper error handling."""
@@ -161,13 +172,14 @@ async def safe_tool(param: str) -> dict[str, Any]:
         raise
 ```
 
----
+______________________________________________________________________
 
 ### `register_resources()`
 
 Register MCP resources (documentation/data) with an ACB server instance.
 
 **Signature**:
+
 ```python
 async def register_resources(
     server: Any,
@@ -177,23 +189,28 @@ async def register_resources(
 ```
 
 **Parameters**:
+
 - `server` (`ACBMCPServer`): Server instance from `create_mcp_server()`
 - `resources` (`dict[str, Callable]`): Mapping of resource URIs to async functions
 
 **Raises**:
+
 - `AttributeError`: If server doesn't have `_server` attribute
 - `ValueError`: If any resource is not callable
 
 **Resource Requirements**:
+
 - ✅ Must be async functions (`async def`)
 - ✅ Must return `str` (typically markdown)
 - ✅ Should be idempotent (safe to call multiple times)
 
 **Example**:
+
 ```python
 from acb.mcp import create_mcp_server, register_resources
 
 server = create_mcp_server()
+
 
 # Define resources
 async def get_api_documentation() -> str:
@@ -212,9 +229,11 @@ Creates a new user account.
 **Returns**: User ID and success status
 """
 
+
 async def get_configuration_schema() -> str:
     """Return JSON schema for configuration."""
     import json
+
     schema = {
         "type": "object",
         "properties": {
@@ -225,6 +244,7 @@ async def get_configuration_schema() -> str:
     }
     return json.dumps(schema, indent=2)
 
+
 # Register with server
 resources = {
     "api_docs": get_api_documentation,
@@ -233,7 +253,7 @@ resources = {
 await register_resources(server, resources)
 ```
 
----
+______________________________________________________________________
 
 ## Server Classes
 
@@ -242,6 +262,7 @@ await register_resources(server, resources)
 Main MCP server class with lifecycle management.
 
 **Attributes**:
+
 - `_server` (`FastMCP`): Underlying FastMCP instance
 - `registry` (`ComponentRegistry`): ACB component registry
 - `logger` (`Logger`): Structured logger instance
@@ -249,6 +270,7 @@ Main MCP server class with lifecycle management.
 **Methods**:
 
 #### `async initialize() -> None`
+
 Initialize server and components.
 
 ```python
@@ -257,13 +279,16 @@ await server.initialize()  # Must call before running
 ```
 
 #### `run(transport: str = "stdio", **kwargs) -> None`
+
 Run the MCP server.
 
 **Parameters**:
+
 - `transport` (`str`): Transport protocol ("stdio", "http", "sse")
 - `**kwargs`: Additional transport-specific arguments
 
 **Example**:
+
 ```python
 # STDIO mode (Claude Desktop)
 server.run()
@@ -276,6 +301,7 @@ server.run(transport="sse", host="0.0.0.0", port=3000)
 ```
 
 #### `async cleanup() -> None`
+
 Clean up server resources.
 
 ```python
@@ -285,7 +311,7 @@ finally:
     await server.cleanup()
 ```
 
----
+______________________________________________________________________
 
 ## Component Classes
 
@@ -296,6 +322,7 @@ Access to registered ACB components.
 **Methods**:
 
 #### `get_actions() -> dict[str, Any]`
+
 Get all registered action categories.
 
 ```python
@@ -309,6 +336,7 @@ actions = server.registry.get_actions()
 ```
 
 #### `get_adapters() -> dict[str, Any]`
+
 Get all registered adapters.
 
 ```python
@@ -317,18 +345,21 @@ adapters = server.registry.get_adapters()
 ```
 
 #### `get_services() -> dict[str, Any]`
+
 Get all registered services.
 
 #### `get_events() -> dict[str, Any]`
+
 Get all registered event handlers.
 
----
+______________________________________________________________________
 
 ### `WorkflowOrchestrator`
 
 Execute multi-step workflows across ACB components.
 
 **Example**:
+
 ```python
 from acb.depends import depends
 from acb.mcp import WorkflowOrchestrator
@@ -358,25 +389,29 @@ workflow = {
 result = await orchestrator.execute(workflow)
 ```
 
----
+______________________________________________________________________
 
 ## Direct FastMCP Access
 
 The `mcp` export provides direct access to the global FastMCP instance.
 
 **Use Cases**:
+
 - Debugging
 - Advanced FastMCP features
 - Direct decorator usage (not recommended for plugins)
 
 **Example**:
+
 ```python
 from acb.mcp import mcp
+
 
 # Direct tool registration (not recommended for plugins)
 @mcp.tool()
 async def debug_tool() -> dict:
     return {"status": "ok"}
+
 
 # Access server internals (debugging only)
 print(f"Registered tools: {len(mcp._mcp_server.tools)}")
@@ -384,7 +419,7 @@ print(f"Registered tools: {len(mcp._mcp_server.tools)}")
 
 **⚠️ Warning**: Direct `mcp` usage bypasses plugin registration patterns. Use `create_mcp_server()` + `register_tools()` for production plugins.
 
----
+______________________________________________________________________
 
 ## Type Hints Reference
 
@@ -399,6 +434,7 @@ ToolFunc = Callable[..., Awaitable[dict[str, Any]]]
 # Resource signature
 ResourceFunc = Callable[..., Awaitable[str]]
 
+
 # Common return types
 class ToolResult(TypedDict):
     success: bool
@@ -411,15 +447,18 @@ class ToolResult(TypedDict):
 ```python
 from typing import Any, TypedDict
 
+
 class UserData(TypedDict):
     id: int
     name: str
     email: str
 
+
 class ToolResult(TypedDict):
     success: bool
     data: UserData | None
     error: str | None
+
 
 async def create_user_typed(
     name: str,
@@ -441,7 +480,7 @@ async def create_user_typed(
         }
 ```
 
----
+______________________________________________________________________
 
 ## Best Practices
 
@@ -465,6 +504,7 @@ server.run()
 def sync_tool(param: str) -> dict:  # Not async
     return {"result": param}
 
+
 # ✅ Correct
 async def async_tool(param: str) -> dict:
     return {"result": param}
@@ -479,6 +519,7 @@ async def bad_tool(param: str) -> dict:
         return await operation(param)
     except Exception:
         return {}  # Silent failure
+
 
 # ✅ Correct - specific handling + logging
 async def good_tool(param: str) -> dict:
@@ -500,6 +541,7 @@ async def good_tool(param: str) -> dict:
 async def unclear_tool(a, b):
     return {"x": a + b}
 
+
 # ✅ Correct - full type hints
 async def clear_tool(a: int, b: int) -> dict[str, int]:
     return {"x": a + b}
@@ -514,14 +556,17 @@ await register_tools(server, {"tool2": tool2})
 await register_tools(server, {"tool3": tool3})
 
 # ✅ Correct - single bulk registration
-await register_tools(server, {
-    "tool1": tool1,
-    "tool2": tool2,
-    "tool3": tool3,
-})
+await register_tools(
+    server,
+    {
+        "tool1": tool1,
+        "tool2": tool2,
+        "tool3": tool3,
+    },
+)
 ```
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -532,6 +577,7 @@ await register_tools(server, {
 **Cause**: Server not created via `create_mcp_server()`
 
 **Solution**: Always use the factory function:
+
 ```python
 server = create_mcp_server()  # ✅ Correct
 ```
@@ -541,6 +587,7 @@ server = create_mcp_server()  # ✅ Correct
 **Cause**: Attempted to run server multiple times
 
 **Solution**: Only call `run()` once:
+
 ```python
 server.run()  # First call - OK
 server.run()  # Second call - Error!
@@ -551,12 +598,13 @@ server.run()  # Second call - Error!
 **Cause**: Registered non-function as tool
 
 **Solution**: Ensure all tools are async functions:
+
 ```python
 async def my_tool() -> dict:  # ✅ Callable async function
     return {}
 ```
 
----
+______________________________________________________________________
 
 ## Migration Guide
 
@@ -568,9 +616,11 @@ from fastmcp import FastMCP
 
 app = FastMCP("my-server")
 
+
 @app.tool()
 async def my_tool() -> dict:
     return {}
+
 
 app.run()
 
@@ -579,8 +629,10 @@ from acb.mcp import create_mcp_server, register_tools
 
 server = create_mcp_server()
 
+
 async def my_tool() -> dict:
     return {}
+
 
 await register_tools(server, {"my_tool": my_tool})
 await server.initialize()
@@ -588,20 +640,21 @@ server.run()
 ```
 
 **Benefits of migration**:
+
 - ✅ Automatic rate limiting
 - ✅ Component registry access
 - ✅ Structured logging
 - ✅ Consistent error handling
 
----
+______________________________________________________________________
 
 ## See Also
 
-- **[Plugin Architecture Guide](PLUGIN_ARCHITECTURE.md)**: Complete guide to building ACB plugins
+- **[Plugin Architecture Guide](<./PLUGIN_ARCHITECTURE.md>)**: Complete guide to building ACB plugins
 - **[FastBlocks Example](../../fastblocks/docs/ACB_PLUGIN_EXAMPLE.md)**: Reference implementation
 - **[ACB Documentation](https://github.com/lesleslie/acb)**: Full ACB framework docs
 
----
+______________________________________________________________________
 
 **API Version**: 1.0.0
 **Maintained By**: ACB Core Team

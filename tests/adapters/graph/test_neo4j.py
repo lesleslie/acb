@@ -4,7 +4,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from acb.adapters.graph.neo4j import Graph, GraphSettings, MODULE_METADATA
+from acb.adapters.graph.neo4j import Graph, Neo4jSettings, MODULE_METADATA
 from acb.adapters.graph._base import (
     GraphQueryLanguage,
     GraphNodeModel,
@@ -160,7 +160,7 @@ class TestNeo4jAdapter:
     @pytest.fixture
     def neo4j_settings(self):
         """Create Neo4j settings for testing."""
-        return GraphSettings(
+        return Neo4jSettings(
             host="localhost",
             port=7687,
             user="neo4j",
@@ -511,12 +511,12 @@ class TestNeo4jAdapter:
         assert model.type == "KNOWS"
 
 
-class TestGraphSettings:
+class TestNeo4jSettings:
     """Test Neo4j settings."""
 
     def test_default_settings(self):
         """Test default Neo4j settings."""
-        settings = GraphSettings()
+        settings = Neo4jSettings()
 
         assert settings.host == "127.0.0.1"
         assert settings.port == 7687
@@ -525,7 +525,7 @@ class TestGraphSettings:
 
     def test_custom_settings(self):
         """Test custom Neo4j settings."""
-        settings = GraphSettings(
+        settings = Neo4jSettings(
             host="neo4j.example.com",
             port=7688,
             scheme="bolt+s",
