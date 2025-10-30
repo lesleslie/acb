@@ -435,7 +435,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
 async def create_openai_embedding(config: Config | None = None) -> OpenAIEmbedding:
     """Create OpenAI embedding adapter instance."""
     if config is None:
-        config = depends.get("config")
+        config = await depends.get("config")
 
     settings = OpenAIEmbeddingSettings()
     return OpenAIEmbedding(settings)

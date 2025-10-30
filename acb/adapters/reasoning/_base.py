@@ -271,7 +271,7 @@ class ReasoningBase(CleanupMixin, ABC):
         self._memory_store: dict[str, dict[MemoryType, t.Any]] = {}
         self._tool_registry: dict[str, ToolDefinition] = {}
         self._decision_trees: dict[str, DecisionTree] = {}
-        self.logger = depends.get(Logger)
+        self.logger = depends.get_sync(Logger)
 
     @property
     def settings(self) -> ReasoningBaseSettings:
@@ -511,8 +511,8 @@ class ReasoningBase(CleanupMixin, ABC):
             Embedding = import_adapter("embedding")
             Vector = import_adapter("vector")
 
-            embedding_adapter = depends.get(Embedding)
-            vector_adapter = depends.get(Vector)
+            embedding_adapter = await depends.get(Embedding)
+            vector_adapter = await depends.get(Vector)
 
             # Generate query embedding
             query_embedding = await embedding_adapter.embed_text(query)

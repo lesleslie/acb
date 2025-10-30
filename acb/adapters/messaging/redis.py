@@ -71,16 +71,20 @@ from acb.cleanup import CleanupMixin
 from acb.config import Config
 from acb.depends import Inject, depends
 
+LoggerType = t.Any
+
 from ._base import (
     MessagePriority,
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
-    MessagingSettings,
     MessagingTimeoutError,
     PubSubMessage,
     QueueMessage,
     Subscription,
+)
+from ._base import (
+    MessagingSettings as BaseMessagingSettings,
 )
 
 # Lazy imports for coredis
@@ -149,7 +153,7 @@ def _get_coredis_imports() -> dict[str, t.Any]:
     return _coredis_imports
 
 
-class RedisMessagingSettings(MessagingSettings):
+class RedisMessagingSettings(BaseMessagingSettings):
     """Settings for Redis messaging implementation."""
 
     # Redis connection
@@ -225,9 +229,11 @@ class RedisMessaging(CleanupMixin):
         # Background task handles
         self._delayed_processor_task: asyncio.Task[None] | None = None
         self._pubsub_client: t.Any = None
+        self._logger: LoggerType | None = None
+        self._connected: bool = False
 
     @property
-    def logger(self) -> t.Any:
+    def logger(self) -> LoggerType:
         """Lazy-initialize logger.
 
         Returns:
@@ -236,8 +242,8 @@ class RedisMessaging(CleanupMixin):
         if self._logger is None:
             from acb.adapters import import_adapter
 
-            Logger = import_adapter("logger")
-            self._logger = depends.get(Logger)
+            logger_cls = import_adapter("logger")
+            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
         return self._logger
 
     # ========================================================================

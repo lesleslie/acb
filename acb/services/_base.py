@@ -86,9 +86,6 @@ class ServiceBase(ABC, CleanupMixin):
     dependency injection, configuration, and resource cleanup.
     """
 
-    config: Inject[Config]
-    logger: Inject[Logger]
-
     def __init__(
         self,
         service_config: ServiceConfig | None = None,

@@ -69,7 +69,10 @@ class Jinja2Templates(TemplatesBase):
         super().__init__(settings)
 
         # Ensure template directory exists
-        self.template_dir = Path(self.settings.template_dir)
+        template_dir_setting = self.settings.template_dir
+        if template_dir_setting is None:
+            template_dir_setting = Path.cwd() / "templates"
+        self.template_dir = Path(template_dir_setting)
         self.template_dir.mkdir(parents=True, exist_ok=True)
 
         # Configure async Jinja2 environment
@@ -122,37 +125,9 @@ class Jinja2Templates(TemplatesBase):
         template = await self.env.get_template_async(template_name)
         merged_context = {**(context or {}), **kwargs}
 
-        # Use root_render_func directly for jinja2-async-environment compatibility
-        # This is required for template inheritance to work properly
         ctx = template.new_context(merged_context)
-        result = []
         rendering = template.root_render_func(ctx)
-
-        # Handle different rendering result types (from jinja2-async-environment pattern)
-        if hasattr(rendering, "__aiter__"):
-            # It's an async generator - iterate directly
-            async for chunk in rendering:
-                result.append(chunk)
-        elif hasattr(rendering, "__await__"):
-            # It's a coroutine - await it first
-            awaited_result = await rendering
-            if awaited_result is not None:
-                if hasattr(awaited_result, "__aiter__"):
-                    # The awaited result is an async generator
-                    async for chunk in awaited_result:
-                        result.append(chunk)
-                else:
-                    # The awaited result is a simple value
-                    result.append(str(awaited_result))
-        elif hasattr(rendering, "__iter__") and not isinstance(rendering, str):
-            # It's a regular iterator
-            for chunk in rendering:
-                result.append(chunk)
-        elif rendering is not None:
-            # It's a simple value
-            result.append(str(rendering))
-
-        return "".join(result)
+        return await self._render_to_string(rendering)
 
     async def render_string(
         self,
@@ -178,36 +153,34 @@ class Jinja2Templates(TemplatesBase):
         template = self.env.from_string(template_string)
         merged_context = {**(context or {}), **kwargs}
 
-        # Use root_render_func directly for jinja2-async-environment compatibility
         ctx = template.new_context(merged_context)
-        result = []
         rendering = template.root_render_func(ctx)
+        return await self._render_to_string(rendering)
 
-        # Handle different rendering result types (from jinja2-async-environment pattern)
+    async def _render_to_string(self, rendering: t.Any) -> str:
+        chunks = await self._collect_render_chunks(rendering)
+        return "".join(chunks)
+
+    async def _collect_render_chunks(self, rendering: t.Any) -> list[str]:
+        if rendering is None:
+            return []
+        if isinstance(rendering, str):
+            return [rendering]
+        if isinstance(rendering, bytes):
+            return [rendering.decode()]
         if hasattr(rendering, "__aiter__"):
-            # It's an async generator - iterate directly
-            async for chunk in rendering:
-                result.append(chunk)
-        elif hasattr(rendering, "__await__"):
-            # It's a coroutine - await it first
+            return [self._ensure_text(chunk) async for chunk in rendering]
+        if hasattr(rendering, "__await__"):
             awaited_result = await rendering
-            if awaited_result is not None:
-                if hasattr(awaited_result, "__aiter__"):
-                    # The awaited result is an async generator
-                    async for chunk in awaited_result:
-                        result.append(chunk)
-                else:
-                    # The awaited result is a simple value
-                    result.append(str(awaited_result))
-        elif hasattr(rendering, "__iter__") and not isinstance(rendering, str):
-            # It's a regular iterator
-            for chunk in rendering:
-                result.append(chunk)
-        elif rendering is not None:
-            # It's a simple value
-            result.append(str(rendering))
+            return await self._collect_render_chunks(awaited_result)
+        if hasattr(rendering, "__iter__"):
+            return [self._ensure_text(chunk) for chunk in rendering]
+        return [self._ensure_text(rendering)]
 
-        return "".join(result)
+    def _ensure_text(self, value: t.Any) -> str:
+        if isinstance(value, bytes):
+            return value.decode()
+        return str(value)
 
     def add_filter(self, name: str, func: Callable[..., t.Any]) -> None:
         """Register a custom template filter.

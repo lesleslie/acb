@@ -98,45 +98,55 @@ class ScheduleRule(BaseModel):
             self.calculate_next_run()
 
     def calculate_next_run(self, from_time: datetime | None = None) -> datetime | None:
-        """Calculate the next run time."""
+        """Calculate and persist the next run time."""
         if not self.enabled:
-            return None
+            return self._set_next_run(None)
 
+        base_time = self._resolve_base_time(from_time)
+        if self._schedule_exhausted(base_time):
+            return self._set_next_run(None)
+
+        next_time = self._compute_next_time(base_time)
+        if not self._is_within_schedule_window(next_time):
+            return self._set_next_run(None)
+
+        return self._set_next_run(next_time)
+
+    def _resolve_base_time(self, from_time: datetime | None) -> datetime:
         base_time = from_time or datetime.now(tz=UTC)
-
-        # Check if we've exceeded max runs
-        if self.max_runs is not None and self.run_count >= self.max_runs:
-            return None
-
-        # Check if we're past end time
-        if self.end_time and base_time >= self.end_time:
-            return None
-
-        # Check if we haven't reached start time
         if self.start_time and base_time < self.start_time:
-            base_time = self.start_time
+            return self.start_time
+        return base_time
 
-        next_time = None
+    def _schedule_exhausted(self, base_time: datetime) -> bool:
+        if self.max_runs is not None and self.run_count >= self.max_runs:
+            return True
+        if self.end_time and base_time >= self.end_time:
+            return True
+        return False
 
+    def _compute_next_time(self, base_time: datetime) -> datetime | None:
         if self.cron_expression:
-            # Use cron expression
-            if croniter:
-                cron = croniter.croniter(self.cron_expression, base_time)
-                next_time = cron.get_next(datetime)
-            else:
+            if not croniter:
                 msg = "croniter is required for cron expressions"
                 raise ImportError(msg)
-        elif self.interval_seconds:
-            # Use interval
-            if self.last_run:
-                next_time = self.last_run + timedelta(seconds=self.interval_seconds)
-            else:
-                next_time = base_time + timedelta(seconds=self.interval_seconds)
+            cron = croniter.croniter(self.cron_expression, base_time)
+            return cron.get_next(datetime)
 
-        # Ensure next time is not past end time
-        if next_time and self.end_time and next_time > self.end_time:
-            return None
+        if self.interval_seconds:
+            anchor = self.last_run or base_time
+            return anchor + timedelta(seconds=self.interval_seconds)
 
+        return None
+
+    def _is_within_schedule_window(self, next_time: datetime | None) -> bool:
+        if next_time is None:
+            return False
+        if self.end_time and next_time > self.end_time:
+            return False
+        return True
+
+    def _set_next_run(self, next_time: datetime | None) -> datetime | None:
         self.next_run = next_time
         return next_time
 

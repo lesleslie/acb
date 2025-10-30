@@ -112,7 +112,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
     """
 
     def __init__(self, settings: RepositoryServiceSettings | None = None) -> None:
-        self.settings = settings or depends.get(RepositoryServiceSettings)
+        self.settings = settings or depends.get_sync(RepositoryServiceSettings)
 
         # Create service config from settings
         from acb.services._base import ServiceConfig

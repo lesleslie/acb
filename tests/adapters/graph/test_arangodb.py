@@ -243,7 +243,7 @@ class TestArangoDBAdapter:
     @pytest.fixture
     def arangodb_settings(self):
         """Create ArangoDB settings for testing."""
-        return ArangoDBSettings(
+        return GraphSettings(
             host="localhost",
             port=8529,
             database="test_db",
@@ -606,12 +606,12 @@ class TestArangoDBAdapter:
         assert edge.properties["weight"] == 1.5
 
 
-class TestArangoDBSettings:
+class TestGraphSettings:
     """Test ArangoDB settings."""
 
     def test_default_settings(self):
         """Test default ArangoDB settings."""
-        settings = ArangoDBSettings()
+        settings = GraphSettings()
 
         assert settings.host == "127.0.0.1"
         assert settings.port == 8529
@@ -621,7 +621,7 @@ class TestArangoDBSettings:
 
     def test_custom_settings(self):
         """Test custom ArangoDB settings."""
-        settings = ArangoDBSettings(
+        settings = GraphSettings(
             host="arangodb.example.com",
             port=8530,
             protocol="https",

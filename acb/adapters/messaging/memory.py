@@ -40,17 +40,16 @@ from acb.adapters.messaging._base import (
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
-    MessagingSettings,
     QueueFullError,
     QueueMessage,
+)
+from acb.adapters.messaging._base import (
+    MessagingSettings as BaseMessagingSettings,
 )
 from acb.cleanup import CleanupMixin
 from acb.depends import depends
 
-if t.TYPE_CHECKING:
-    from acb.logger import Logger as LoggerType
-else:
-    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
+LoggerType = t.Any
 
 # Module metadata for adapter discovery
 MODULE_METADATA = AdapterMetadata(
@@ -74,7 +73,7 @@ MODULE_METADATA = AdapterMetadata(
 )
 
 
-class MemoryMessagingSettings(MessagingSettings):
+class MemoryMessagingSettings(BaseMessagingSettings):
     """Settings specific to memory queue implementation."""
 
     # Memory limits
@@ -213,9 +212,11 @@ class MemoryMessaging(CleanupMixin):
         # Background tasks
         self._delayed_processor_task: asyncio.Task[None] | None = None
         self._cleanup_task: asyncio.Task[None] | None = None
+        self._logger: LoggerType | None = None
+        self._connected: bool = False
 
     @property
-    def logger(self) -> t.Any:
+    def logger(self) -> LoggerType:
         """Lazy-initialize logger.
 
         Returns:
@@ -225,8 +226,20 @@ class MemoryMessaging(CleanupMixin):
             from acb.adapters import import_adapter
 
             logger_cls = import_adapter("logger")
-            self._logger = depends.get(logger_cls)
+            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
         return self._logger
+
+    # ========================================================================
+    # Public Lifecycle Methods
+    # ========================================================================
+
+    async def connect(self) -> None:
+        """Establish connection to the in-memory backend."""
+        await self._connect()
+
+    async def disconnect(self) -> None:
+        """Disconnect from the in-memory backend."""
+        await self._disconnect()
 
     # ========================================================================
     # Abstract Implementation Methods (Private)

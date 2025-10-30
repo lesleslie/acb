@@ -125,7 +125,9 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
     ) -> None:
         super().__init__(wrapped_repository.entity_type, wrapped_repository.settings)
         self.wrapped = wrapped_repository
-        self.cache_settings = cache_settings or depends.get(RepositoryCacheSettings)
+        self.cache_settings = cache_settings or depends.get_sync(
+            RepositoryCacheSettings
+        )
         self._cache = None
         self._metrics: CacheMetrics = CacheMetrics()  # type: ignore[assignment]
         self._query_cache: dict[str, tuple[Any, datetime]] = {}
@@ -137,7 +139,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
                 from acb.adapters import import_adapter
 
                 Cache = import_adapter("cache")
-                self._cache = depends.get(Cache)
+                self._cache = await depends.get(Cache)
             except ImportError:
                 # Cache not available, disable caching
                 return None

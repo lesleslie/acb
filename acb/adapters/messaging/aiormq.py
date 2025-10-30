@@ -74,6 +74,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
+from acb.cleanup import CleanupMixin
 from acb.depends import depends
 
 from ._base import (
@@ -81,18 +82,16 @@ from ._base import (
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
-    MessagingSettings,
     MessagingTimeoutError,
     PubSubMessage,
     QueueMessage,
     Subscription,
-    UnifiedMessagingBackend,
+)
+from ._base import (
+    MessagingSettings as BaseMessagingSettings,
 )
 
-if t.TYPE_CHECKING:
-    from acb.logger import Logger as LoggerType
-else:
-    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
+LoggerType = t.Any
 
 # Lazy imports for aiormq
 _aiormq_imports: dict[str, t.Any] = {}
@@ -156,7 +155,7 @@ def _get_aiormq_imports() -> dict[str, t.Any]:
     return _aiormq_imports
 
 
-class AioRmqMessagingSettings(MessagingSettings):
+class AioRmqMessagingSettings(BaseMessagingSettings):
     """Settings for aiormq messaging implementation."""
 
     # RabbitMQ connection
@@ -219,7 +218,7 @@ class AioRmqMessagingSettings(MessagingSettings):
     channel_pool_size: int = 5
 
 
-class AioRmqMessaging(UnifiedMessagingBackend):
+class AioRmqMessaging(CleanupMixin):
     """aiormq-backed unified messaging implementation.
 
     Provides RabbitMQ messaging operations using the aiormq library:
@@ -237,13 +236,14 @@ class AioRmqMessaging(UnifiedMessagingBackend):
         Args:
             settings: aiormq messaging configuration
         """
-        super().__init__(settings)
+        super().__init__()
         self._settings: AioRmqMessagingSettings = settings or AioRmqMessagingSettings()
 
         # Connection management
         self._connection_lock = asyncio.Lock()
         self._shutdown_event = asyncio.Event()
-        self._logger: t.Any = None
+        self._logger: LoggerType | None = None
+        self._connected: bool = False
 
         # aiormq connection and channels
         self._connection: t.Any = None
@@ -264,7 +264,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
         self._processing_messages: dict[str, tuple[QueueMessage, t.Any]] = {}
 
     @property
-    def logger(self) -> t.Any:
+    def logger(self) -> LoggerType:
         """Lazy-initialize logger.
 
         Returns:
@@ -274,7 +274,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
             from acb.adapters import import_adapter
 
             logger_cls = import_adapter("logger")
-            self._logger = depends.get(logger_cls)
+            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
         return self._logger
 
     # ========================================================================
@@ -841,7 +841,7 @@ class AioRmqMessaging(UnifiedMessagingBackend):
             # Message processing callback
             message_queue: asyncio.Queue[QueueMessage] = asyncio.Queue()
 
-            async def message_handler(rmq_message):
+            async def message_handler(rmq_message: t.Any) -> None:
                 """Process incoming messages and put them in the queue."""
                 try:
                     # Create ACB message from aiormq message

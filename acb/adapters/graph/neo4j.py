@@ -58,11 +58,11 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["neo4j>=5.0.0"],
     description="High-performance Neo4j graph database adapter with full Cypher query support",
-    settings_class="GraphSettings",
+    settings_class="Neo4jSettings",
 )
 
 
-class GraphSettings(GraphBaseSettings):
+class Neo4jSettings(GraphBaseSettings):
     """Neo4j-specific settings."""
 
     # Neo4j connection settings

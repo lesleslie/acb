@@ -5,16 +5,16 @@ import typing as t
 from contextlib import suppress
 from pathlib import Path
 
-# Import devtools.pformat without direct import
-import devtools
-
-_pformat = devtools.pformat  # type: ignore[attr-defined]
 from aioconsole import aprint
+from devtools.prettier import pformat as devtools_pformat
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
 
 from .depends import depends
 from .logger import Logger
+
+_pformat = devtools_pformat
+pformat = devtools_pformat
 
 __all__ = [
     "colorized_stderr_print",

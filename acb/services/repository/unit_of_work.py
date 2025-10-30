@@ -269,7 +269,7 @@ class UnitOfWork(CleanupMixin):
 
             with suppress(ImportError):
                 Sql = import_adapter("sql")
-                sql = depends.get(Sql)
+                sql = await depends.get(Sql)
                 session = await sql._ensure_session()
                 self._sql_sessions["default"] = session
                 # Begin SQL transaction
@@ -279,7 +279,7 @@ class UnitOfWork(CleanupMixin):
             # Initialize NoSQL sessions if needed
             with suppress(ImportError):
                 Nosql = import_adapter("nosql")
-                nosql = depends.get(Nosql)
+                nosql = await depends.get(Nosql)
                 session = await nosql.get_client()
                 self._nosql_sessions["default"] = session
                 # NoSQL doesn't typically support transactions like SQL

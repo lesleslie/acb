@@ -357,7 +357,10 @@ class RepositoryRegistry(CleanupMixin):
 
         # Use dependency injection to create instance
         try:
-            return depends.get(registration.repository_type)
+            return t.cast(
+                RepositoryBase[Any, Any],
+                depends.get_sync(registration.repository_type),
+            )
         except Exception:
             # Fall back to direct instantiation
             return registration.repository_type(registration.entity_type)

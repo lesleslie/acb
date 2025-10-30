@@ -24,6 +24,14 @@
       ],
       "type": "stdio"
     },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking@2025.7.1"
+      ],
+      "type": "stdio"
+    },
     "mermaid": {
       "url": "http://localhost:3033/mcp",
       "type": "http"

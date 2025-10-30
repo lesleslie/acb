@@ -120,7 +120,7 @@ class ONNXEmbedding(EmbeddingAdapter):
                 msg,
             )
 
-        depends.get("config")
+        depends.get_sync("config")
         if settings is None:
             msg = "ONNXEmbeddingSettings must be provided with model_path"
             raise ValueError(msg)
@@ -661,7 +661,7 @@ async def create_onnx_embedding(
 ) -> ONNXEmbedding:
     """Create ONNX embedding adapter instance."""
     if config is None:
-        config = depends.get("config")
+        config = await depends.get("config")
 
     if not model_path:
         msg = "model_path is required for ONNX embedding"

@@ -57,11 +57,11 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["boto3>=1.26.0", "gremlinpython>=3.6.0"],
     description="Amazon Neptune graph database adapter with Gremlin query support and AWS integration",
-    settings_class="GraphSettings",
+    settings_class="NeptuneSettings",
 )
 
 
-class GraphSettings(GraphBaseSettings):
+class NeptuneSettings(GraphBaseSettings):
     """Neptune-specific settings."""
 
     # Neptune connection settings

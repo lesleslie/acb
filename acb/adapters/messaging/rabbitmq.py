@@ -80,17 +80,16 @@ from ._base import (
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
-    MessagingSettings,
     MessagingTimeoutError,
     PubSubMessage,
     QueueMessage,
     Subscription,
 )
+from ._base import (
+    MessagingSettings as BaseMessagingSettings,
+)
 
-if t.TYPE_CHECKING:
-    from acb.logger import Logger as LoggerType
-else:
-    LoggerType: t.Any = t.Any  # type: ignore[assignment,no-redef]
+LoggerType = t.Any
 
 # Lazy imports for aio-pika
 _aio_pika_imports: dict[str, t.Any] = {}
@@ -152,7 +151,7 @@ def _get_aio_pika_imports() -> dict[str, t.Any]:
     return _aio_pika_imports
 
 
-class RabbitMQMessagingSettings(MessagingSettings):
+class RabbitMQMessagingSettings(BaseMessagingSettings):
     """Settings for RabbitMQ messaging implementation."""
 
     # RabbitMQ connection
@@ -239,7 +238,8 @@ class RabbitMQMessaging(CleanupMixin):
         # Connection management
         self._connection_lock = asyncio.Lock()
         self._shutdown_event = asyncio.Event()
-        self._logger: t.Any = None
+        self._logger: LoggerType | None = None
+        self._connected: bool = False
 
         # RabbitMQ connection and channels
         self._connection: t.Any = None
@@ -260,7 +260,7 @@ class RabbitMQMessaging(CleanupMixin):
         self._processing_messages: dict[str, tuple[QueueMessage, t.Any]] = {}
 
     @property
-    def logger(self) -> t.Any:
+    def logger(self) -> LoggerType:
         """Lazy-initialize logger.
 
         Returns:
@@ -270,7 +270,7 @@ class RabbitMQMessaging(CleanupMixin):
             from acb.adapters import import_adapter
 
             logger_cls = import_adapter("logger")
-            self._logger = depends.get(logger_cls)
+            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
         return self._logger
 
     # ========================================================================

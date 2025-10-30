@@ -387,9 +387,6 @@ class QueueSettings(Settings):
 class QueueBase(ABC, CleanupMixin):
     """Abstract base class for queue implementations."""
 
-    config: Config
-    logger: LoggerType  # type: ignore[valid-type]
-
     def __init__(self, settings: QueueSettings | None = None) -> None:
         super().__init__()
         CleanupMixin.__init__(self)

@@ -21,15 +21,18 @@ from pydantic import BaseModel, ConfigDict, Field
 from acb.actions.encode import yaml_encode
 from acb.depends import depends
 
+# Declare uuid_utils to handle both import cases
+uuid_utils: t.Any = None  # Initialize as None
+
 try:
-    import uuid_utils
+    import uuid_utils  # type: ignore[no-redef]
 
     _uuid7_available = True
     uuid_lib: t.Any = uuid_utils  # type: ignore[no-redef]
 except ImportError:
     import uuid
 
-    uuid_utils = None
+    uuid_utils = None  # type: ignore[no-redef]
 
     _uuid7_available = False
     uuid_lib: t.Any = uuid  # type: ignore[no-redef]

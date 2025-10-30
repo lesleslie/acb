@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from sqlalchemy import asc, select
+from sqlalchemy import asc, desc, select
 from sqlalchemy import delete as sql_delete
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -126,7 +126,7 @@ class SQLDatabaseAdapter(DatabaseAdapter[T]):
         model: type[T],
         order_by: str | None = None,
         limit: int | None = None,
-        desc: bool = False,
+        descending: bool = False,
     ) -> list[T]:
         """Get all records, optionally ordered and limited.
 
@@ -134,7 +134,7 @@ class SQLDatabaseAdapter(DatabaseAdapter[T]):
             model: SQLModel class
             order_by: Field name to order by
             limit: Maximum number of records
-            desc: Sort in descending order
+            descending: Sort in descending order
 
         Returns:
             List of model instances
@@ -146,7 +146,9 @@ class SQLDatabaseAdapter(DatabaseAdapter[T]):
         # Add ordering
         if order_by:
             order_column = getattr(model, order_by)
-            stmt = stmt.order_by(desc(order_column) if desc else asc(order_column))
+            stmt = stmt.order_by(
+                desc(order_column) if descending else asc(order_column)
+            )
 
         # Add limit
         if limit is not None:
@@ -179,4 +181,5 @@ class SQLDatabaseAdapter(DatabaseAdapter[T]):
         result = await session.execute(stmt)
         await session.commit()
 
-        return result.rowcount > 0  # type: ignore[no-any-return]
+        rowcount = getattr(result, "rowcount", 0)
+        return bool(rowcount and rowcount > 0)

@@ -59,11 +59,11 @@ MODULE_METADATA = AdapterMetadata(
     ],
     required_packages=["python-arango>=7.0.0"],
     description="High-performance ArangoDB multi-model database adapter with AQL query support",
-    settings_class="GraphSettings",
+    settings_class="ArangoDBSettings",
 )
 
 
-class GraphSettings(GraphBaseSettings):
+class ArangoDBSettings(GraphBaseSettings):
     """ArangoDB-specific settings."""
 
     # ArangoDB connection settings
@@ -763,26 +763,36 @@ class Graph(GraphBase):
     ) -> list[GraphNodeModel]:
         """Create multiple vertices in bulk."""
         database = await self._ensure_client()
+        collections_data = self._group_nodes_by_collection(nodes)
+        return self._insert_node_collections(database, collections_data)
 
-        # Group nodes by collection
-        collections_data: dict[str, list[dict[str, t.Any]]] = {}
+    def _group_nodes_by_collection(
+        self,
+        nodes: list[dict[str, t.Any]],
+    ) -> dict[str, list[dict[str, t.Any]]]:
+        collections: dict[str, list[dict[str, t.Any]]] = {}
         for node_data in nodes:
-            labels = node_data.get("labels", [])
-            properties = node_data.get("properties", {})
+            labels = node_data.get("labels") or ["vertices"]
+            properties = self._prepare_node_properties(node_data.get("properties", {}))
+            collections.setdefault(labels[0], []).append(properties)
+        return collections
 
-            # Add timestamps and ID
-            properties["created_at"] = datetime.now().isoformat()
-            properties["updated_at"] = datetime.now().isoformat()
-            if "_key" not in properties:
-                properties["_key"] = str(uuid4())
+    def _prepare_node_properties(
+        self, properties: dict[str, t.Any]
+    ) -> dict[str, t.Any]:
+        prepared = properties.copy()
+        timestamp = datetime.now().isoformat()
+        prepared.setdefault("_key", str(uuid4()))
+        prepared["created_at"] = timestamp
+        prepared["updated_at"] = timestamp
+        return prepared
 
-            collection_name = labels[0] if labels else "vertices"
-            if collection_name not in collections_data:
-                collections_data[collection_name] = []
-            collections_data[collection_name].append(properties)
-
-        # Bulk insert into each collection
-        results = []
+    def _insert_node_collections(
+        self,
+        database: t.Any,
+        collections_data: dict[str, list[dict[str, t.Any]]],
+    ) -> list[GraphNodeModel]:
+        results: list[GraphNodeModel] = []
         for collection_name, docs in collections_data.items():
             if not database.has_collection(collection_name):
                 database.create_collection(collection_name)
@@ -790,9 +800,11 @@ class Graph(GraphBase):
             collection = database.collection(collection_name)
             bulk_result = collection.insert_many(docs, return_new=True)
 
-            for item in bulk_result:
-                if "new" in item:
-                    results.append(self._arango_doc_to_node(item["new"]))
+            results.extend(
+                self._arango_doc_to_node(item["new"])
+                for item in bulk_result
+                if "new" in item
+            )
 
         return results
 

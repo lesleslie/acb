@@ -4,6 +4,7 @@ This module provides a standards-compliant MCP server using FastMCP,
 exposing ACB's capabilities through the Model Context Protocol.
 """
 
+import importlib.util
 from contextlib import suppress
 from typing import Any
 
@@ -14,8 +15,28 @@ from acb.logger import Logger
 
 from .registry import ComponentRegistry
 
+# Check FastMCP rate limiting middleware availability (Phase 3.3 M2: improved pattern)
+RATE_LIMITING_AVAILABLE = (
+    importlib.util.find_spec("fastmcp.server.middleware.rate_limiting") is not None
+)
+
+# Check mcp-common ServerPanels availability (Phase 3.3 M2: improved pattern)
+SERVERPANELS_AVAILABLE = importlib.util.find_spec("mcp_common.ui") is not None
+
 # Create the FastMCP server instance
 mcp = FastMCP("ACB MCP Server", version="1.0.0")
+
+# Add rate limiting middleware (Phase 3 Security Hardening)
+if RATE_LIMITING_AVAILABLE:
+    from fastmcp.server.middleware.rate_limiting import RateLimitingMiddleware
+
+    rate_limiter = RateLimitingMiddleware(
+        max_requests_per_second=15.0,  # Sustainable rate for framework operations
+        burst_capacity=40,  # Allow bursts for component execution
+        global_limit=True,  # Protect the ACB framework server globally
+    )
+    # Use public API (Phase 3.1 C1 fix: standardize middleware access)
+    mcp.add_middleware(rate_limiter)
 
 # Global component registry instance
 _registry: ComponentRegistry | None = None
@@ -345,8 +366,45 @@ class ACBMCPServer:
             transport: Transport protocol ('stdio', 'sse', 'http')
             **kwargs: Additional arguments for the transport
         """
-        with suppress(Exception):
-            self.logger.info(f"Starting ACB MCP Server with {transport} transport")
+        # Display beautiful startup message with ServerPanels (or fallback to plain text)
+        if SERVERPANELS_AVAILABLE:
+            from mcp_common.ui import ServerPanels
+
+            features = [
+                "🔧 Component Management",
+                "⚙️  Action Execution",
+                "📦 Adapter Integration",
+                "🎯 Event Orchestration",
+                "🔌 Service Registry",
+            ]
+            if RATE_LIMITING_AVAILABLE:
+                features.append("⚡ Rate Limiting (15 req/sec, burst 40)")
+
+            if transport in ("http", "sse"):
+                # HTTP/SSE mode display
+                host = kwargs.get("host", "127.0.0.1")
+                port = kwargs.get("port", 8080)
+                ServerPanels.startup_success(
+                    server_name="ACB MCP Server",
+                    version="1.0.0",
+                    features=features,
+                    endpoint=f"http://{host}:{port}",
+                    transport="HTTP (streamable)" if transport == "http" else "SSE",
+                )
+            else:
+                # STDIO mode display
+                ServerPanels.startup_success(
+                    server_name="ACB MCP Server",
+                    version="1.0.0",
+                    features=features,
+                    transport="STDIO",
+                    mode="Claude Desktop",
+                )
+        else:
+            # Fallback to simple logging
+            with suppress(Exception):
+                self.logger.info(f"Starting ACB MCP Server with {transport} transport")
+
         mcp.run(transport=transport, **kwargs)
 
     async def cleanup(self) -> None:

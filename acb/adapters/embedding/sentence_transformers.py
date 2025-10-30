@@ -112,7 +112,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
                 msg,
             )
 
-        depends.get("config")
+        depends.get_sync("config")
         if settings is None:
             settings = SentenceTransformersSettings()
 
@@ -452,7 +452,7 @@ async def create_sentence_transformers_embedding(
 ) -> SentenceTransformersEmbedding:
     """Create Sentence Transformers embedding adapter instance."""
     if config is None:
-        config = depends.get("config")
+        config = await depends.get("config")
 
     settings = SentenceTransformersSettings()
     return SentenceTransformersEmbedding(settings)

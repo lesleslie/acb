@@ -160,7 +160,7 @@ class TestNeo4jAdapter:
     @pytest.fixture
     def neo4j_settings(self):
         """Create Neo4j settings for testing."""
-        return Neo4jSettings(
+        return GraphSettings(
             host="localhost",
             port=7687,
             user="neo4j",
@@ -511,12 +511,12 @@ class TestNeo4jAdapter:
         assert model.type == "KNOWS"
 
 
-class TestNeo4jSettings:
+class TestGraphSettings:
     """Test Neo4j settings."""
 
     def test_default_settings(self):
         """Test default Neo4j settings."""
-        settings = Neo4jSettings()
+        settings = GraphSettings()
 
         assert settings.host == "127.0.0.1"
         assert settings.port == 7687
@@ -525,7 +525,7 @@ class TestNeo4jSettings:
 
     def test_custom_settings(self):
         """Test custom Neo4j settings."""
-        settings = Neo4jSettings(
+        settings = GraphSettings(
             host="neo4j.example.com",
             port=7688,
             scheme="bolt+s",

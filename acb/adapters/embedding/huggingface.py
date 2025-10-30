@@ -602,7 +602,7 @@ async def create_huggingface_embedding(
 ) -> HuggingFaceEmbedding:
     """Create HuggingFace embedding adapter instance."""
     if config is None:
-        config = depends.get("config")
+        config = await depends.get("config")
 
     settings = HuggingFaceEmbeddingSettings()
     return HuggingFaceEmbedding(settings)

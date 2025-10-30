@@ -200,9 +200,7 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         super().__init__()
         self.entity_type = entity_type
         self.entity_name = getattr(entity_type, "__name__", str(entity_type))
-        self.settings = settings or depends.get(
-            RepositorySettings
-        )  # Keep sync temporarily
+        self.settings = settings or depends.get_sync(RepositorySettings)
         self._cache = None
         self._metrics: dict[str, t.Any] = {}
 
@@ -230,7 +228,7 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
                 from acb.adapters import import_adapter
 
                 Cache = import_adapter("cache")
-                self._cache = depends.get(Cache)
+                self._cache = await depends.get(Cache)
             except ImportError:
                 self.settings.cache_enabled = False
         return self._cache

@@ -17,6 +17,7 @@ from .server import (
     create_mcp_server,
     mcp,  # Direct access to FastMCP instance
 )
+from .tool_registry import register_resources, register_tools
 from .tools import ACBMCPTools
 
 __all__ = [
@@ -28,4 +29,6 @@ __all__ = [
     "WorkflowOrchestrator",
     "create_mcp_server",
     "mcp",
+    "register_resources",
+    "register_tools",
 ]

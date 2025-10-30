@@ -308,7 +308,7 @@ def import_workflow_engine(engine_type: str | None = None) -> t.Any:
     except (ImportError, AttributeError) as e:
         from acb.logger import Logger
 
-        logger = await depends.get(Logger)
+        logger = depends.get_sync(Logger)
         logger.exception(f"Failed to import workflow engine {engine_type}: {e}")
         msg = (
             f"Could not import workflow engine: {engine_type}. "

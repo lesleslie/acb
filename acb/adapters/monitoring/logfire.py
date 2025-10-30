@@ -76,7 +76,7 @@ class Monitoring(MonitoringBase):
                 case "redis":
                     instrument_redis()
                 case "sqlalchemy":
-                    sql: SqlBase = depends.get(category="sql")
+                    sql: SqlBase = depends.get_sync(category="sql")
                     instrument_sqlalchemy(engine=sql.engine)
                 case _:
                     pass
