@@ -81,7 +81,7 @@ server.run(transport="http", host="127.0.0.1", port=8080)  # HTTP mode
 
 **Rate Limiting Configuration**:
 
-```python
+```
 # Automatically configured:
 - max_requests_per_second: 15.0
 - burst_capacity: 40

@@ -27,9 +27,12 @@ from acb.config import Config
 from acb.depends import Inject, depends
 
 if t.TYPE_CHECKING:
-    from arango import ArangoClient
     from arango.database import StandardDatabase
     from arango.graph import Graph as ArangoGraph
+
+    # For type checking purposes, we define ArangoClient as Any to avoid import errors
+    # because arango module doesn't explicitly export ArangoClient
+    ArangoClient = t.Any  # type: ignore
 
 
 MODULE_METADATA = AdapterMetadata(
@@ -98,7 +101,7 @@ class Graph(GraphBase):
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self._settings = ArangoDBSettings(**kwargs)
-        self._client: ArangoClient | None = None
+        self._client: t.Any | None = None
         self._database: StandardDatabase | None = None
         self._graph: ArangoGraph | None = None
 
@@ -128,7 +131,7 @@ class Graph(GraphBase):
     async def _create_client(self) -> "StandardDatabase":
         """Create ArangoDB client and database connection."""
         try:
-            from arango import ArangoClient
+            from arango import ArangoClient  # type: ignore
         except ImportError as e:
             msg = "python-arango package is required for ArangoDB adapter"
             raise ImportError(msg) from e
@@ -140,8 +143,6 @@ class Graph(GraphBase):
         self._client = ArangoClient(
             hosts=url,
             request_timeout=self._settings.request_timeout,
-            max_retries=self._settings.max_retries,
-            retry_backoff_factor=self._settings.retry_backoff_factor,
         )
 
         # Connect to database
@@ -154,11 +155,16 @@ class Graph(GraphBase):
 
         # Type checker doesn't know _client is not None after assignment above
         assert self._client is not None
-        self._database = self._client.db(
-            name=self._settings.database,
-            username=auth[0] if auth else None,
-            password=auth[1] if auth else None,
-        )
+        if auth:
+            self._database = self._client.db(
+                name=self._settings.database,
+                username=auth[0],
+                password=auth[1],
+            )
+        else:
+            self._database = self._client.db(
+                name=self._settings.database,
+            )
 
         # Ensure graph exists
         await self._ensure_graph()
@@ -394,7 +400,9 @@ class Graph(GraphBase):
 
         collection = database.collection(collection_name)
         doc = collection.get(doc_key)
-        return self._arango_doc_to_node(doc)
+        if doc is not None and isinstance(doc, dict):
+            return self._arango_doc_to_node(doc)
+        return None
 
     async def _search_vertex_collections(
         self,
@@ -419,7 +427,8 @@ class Graph(GraphBase):
             collection = database.collection(collection_name)
             if collection.has(node_id):
                 doc = collection.get(node_id)
-                return self._arango_doc_to_node(doc)
+                if doc is not None and isinstance(doc, dict):
+                    return self._arango_doc_to_node(doc)
 
         return None
 
@@ -800,11 +809,13 @@ class Graph(GraphBase):
             collection = database.collection(collection_name)
             bulk_result = collection.insert_many(docs, return_new=True)
 
-            results.extend(
-                self._arango_doc_to_node(item["new"])
-                for item in bulk_result
-                if "new" in item
-            )
+            # Handle different return types from insert_many
+            if isinstance(bulk_result, list):
+                results.extend(
+                    self._arango_doc_to_node(item["new"])
+                    for item in bulk_result
+                    if isinstance(item, dict) and "new" in item
+                )
 
         return results
 
@@ -893,9 +904,11 @@ class Graph(GraphBase):
             bulk_result = collection.insert_many(docs, return_new=True)
 
             # Convert results to edge models
-            for item in bulk_result:
-                if "new" in item:
-                    results.append(self._arango_doc_to_edge(item["new"]))
+            # Handle different return types from insert_many
+            if isinstance(bulk_result, list):
+                for item in bulk_result:
+                    if isinstance(item, dict) and "new" in item:
+                        results.append(self._arango_doc_to_edge(item["new"]))
 
         return results
 

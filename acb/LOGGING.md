@@ -221,7 +221,7 @@ async def debug_and_log_example(data: dict, logger: Inject[Logger]):
 
 ### Module-Specific Logging
 
-```python
+```yaml
 # In settings/debug.yaml, control per-module logging
 debug:
   logging: true
@@ -346,8 +346,8 @@ from acb.logger import Logger
 
 @depends.inject
 async def retry_with_logging(
-    operation_name: str, max_retries: int = 3, logger: Inject[Logger]
-):
+    operation_name: str, logger: Inject[Logger], max_retries: int = 3
+) -> None:
     for attempt in range(max_retries + 1):
         try:
             logger.info(

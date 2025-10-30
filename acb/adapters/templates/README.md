@@ -104,7 +104,7 @@ Main adapter class for async template rendering.
 
 #### Constructor Parameters
 
-```python
+```
 TemplatesAdapter(
     template_dir: Path | str | None = None,  # Default: ./templates
     *,

@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
 
 # Hash Action
 
@@ -6,20 +6,20 @@ The Hash action provides secure hashing functions for data integrity and checksu
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Usage](#usage)
-  - [Basic Hashing](#basic-hashing)
-  - [File Hashing](#file-hashing)
-  - [Checksum Verification](#checksum-verification)
-- [API Reference](#api-reference)
-  - [blake3](#blake3)
-  - [crc32c](#crc32c)
-  - [md5](#md5)
-- [Examples](#examples)
-- [Security Considerations](#security-considerations)
-- [Performance Comparison](#performance-comparison)
-- [Related Actions](#related-actions)
+- [Overview](<#overview>)
+- [Features](<#features>)
+- [Usage](<#usage>)
+  - [Basic Hashing](<#basic-hashing>)
+  - [File Hashing](<#file-hashing>)
+  - [Checksum Verification](<#checksum-verification>)
+- [API Reference](<#api-reference>)
+  - [blake3](<#blake3>)
+  - [crc32c](<#crc32c>)
+  - [md5](<#md5>)
+- [Examples](<#examples>)
+- [Security Considerations](<#security-considerations>)
+- [Performance Comparison](<#performance-comparison>)
+- [Related Actions](<#related-actions>)
 
 ## Overview
 
@@ -102,7 +102,7 @@ else:
 Generates a BLAKE3 hash for the given object.
 
 ```python
-async def blake3(obj: Union[str, bytes, dict, AsyncPath]) -> str
+async def blake3(obj: Union[str, bytes, dict, AsyncPath]) -> str: ...
 ```
 
 **Parameters:**
@@ -118,7 +118,7 @@ async def blake3(obj: Union[str, bytes, dict, AsyncPath]) -> str
 Calculates a CRC32C checksum for the given object.
 
 ```python
-async def crc32c(obj: Union[str, bytes, dict, AsyncPath]) -> int
+async def crc32c(obj: Union[str, bytes, dict, AsyncPath]) -> int: ...
 ```
 
 **Parameters:**
@@ -134,7 +134,7 @@ async def crc32c(obj: Union[str, bytes, dict, AsyncPath]) -> int
 Generates an MD5 hash for the given object.
 
 ```python
-async def md5(obj: Union[str, bytes, dict, AsyncPath]) -> str
+async def md5(obj: Union[str, bytes, dict, AsyncPath]) -> str: ...
 ```
 
 **Parameters:**
@@ -275,5 +275,5 @@ Approximate performance for 1GB of data on modern hardware:
 
 ## Related Actions
 
-- [Compress Action](../compress/README.md): Compression and decompression utilities
-- [Encode Action](../encode/README.md): Data serialization with formats like JSON, YAML, and MsgPack
+- [Compress Action](<../compress/README.md>): Compression and decompression utilities
+- [Encode Action](<../encode/README.md>): Data serialization with formats like JSON, YAML, and MsgPack

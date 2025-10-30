@@ -16,7 +16,7 @@ class TestDepends:
         service = SampleService(name="test_service")
         depends.set(SampleService, service)
 
-        result = depends.get(SampleService)
+        result = await depends.get(SampleService)
         assert result is not None
         assert result is service
         assert result.name == "test_service"
@@ -28,7 +28,7 @@ class TestDepends:
 
         depends.set(SampleService, factory())
 
-        result = depends.get(SampleService)
+        result = await depends.get(SampleService)
 
         assert isinstance(result, SampleService)
         assert result.name == "factory_service"
@@ -39,7 +39,7 @@ class TestDepends:
 
         depends.set(SampleService, service)
 
-        result = depends.get(SampleService)
+        result = await depends.get(SampleService)
 
         assert isinstance(result, SampleService)
         assert result.name == "async_service"
@@ -50,7 +50,7 @@ class TestDepends:
         # This should create a new instance of SampleService
         depends.set(SampleService)
 
-        result = depends.get(SampleService)
+        result = await depends.get(SampleService)
         assert result is not None
         assert isinstance(result, SampleService)
 
@@ -159,15 +159,16 @@ class TestDepends:
         service = SampleService(name="fast_depends_service")
         depends.set(SampleService, service)
 
-        result = fast_depends(SampleService)
+        result = await fast_depends(SampleService)
         assert result is not None
         assert result is service
         assert result.name == "fast_depends_service"
 
-    def test_get_with_string_category_raises_runtime_error(self) -> None:
+    @pytest.mark.asyncio
+    async def test_get_with_string_category_raises_runtime_error(self) -> None:
         """Test that getting a string category raises RuntimeError."""
         with pytest.raises(RuntimeError) as exc_info:
-            depends.get("nonexistent_category")
+            await depends.get("nonexistent_category")
 
         assert "requires async initialization" in str(exc_info.value)
         assert "Use 'await depends.get_async" in str(exc_info.value)

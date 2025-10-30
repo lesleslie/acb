@@ -1,5 +1,45 @@
 ______________________________________________________________________
 
+## [0.26.0] - 2025-10-30
+
+### Added
+
+- phase3: Add integration tests and performance benchmarks
+
+### Changed
+
+- Acb (quality: 67/100) - 2025-10-26 06:29:26
+- Acb (quality: 67/100) - 2025-10-26 18:29:53
+- Acb (quality: 67/100) - 2025-10-26 20:39:28
+- Acb (quality: 67/100) - 2025-10-26 23:22:04
+- Acb (quality: 67/100) - 2025-10-26 23:22:24
+- Acb (quality: 71/100) - 2025-10-11 07:51:49
+- Acb (quality: 71/100) - 2025-10-16 14:01:34
+- Acb (quality: 71/100) - 2025-10-25 18:13:39
+- Fix type annotations in async generators
+
+### Fixed
+
+- events: Implement lazy initialization pattern for adapters
+- Implement Quick Win #2 and #3 - service and task initialization
+- Resolve all services test failures and health status calculation bugs
+- tests: Correct undefined variable test expectation
+
+### Documentation
+
+- Add comprehensive test coverage initiative summary
+- core: Update 5 files
+- core: Update gcdns, README, gcs
+- events: Document Quick Win #4 implementation and pattern
+- testing: Add comprehensive test coverage analysis and quick win fixes
+
+### Internal
+
+- No changes to commit
+- No changes to commit
+- No changes to commit
+- No changes to commit
+
 ## [Unreleased] - 2025-10-14
 
 ### Added

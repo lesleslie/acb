@@ -6,10 +6,11 @@ from contextlib import suppress
 from inspect import currentframe
 from uuid import UUID
 
-try:
-    from logly import logger as logly_logger
-except ImportError:
-    logly_logger = None
+logly_logger: t.Any = None
+with suppress(ImportError):
+    from logly import logger as _real_logly_logger
+
+    logly_logger = _real_logly_logger
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends

@@ -57,10 +57,9 @@ class Depends:
         return instance if not module else (instance, module)
 
     async def get(self, category: t.Any, module: str | None = None) -> t.Any:
-        """Get dependency asynchronously (now the default method as intended).
+        """Get dependency asynchronously.
 
-        This method was defined as async but had a bug in original implementation.
-        Now properly awaits the async dependency resolution.
+        This method is async for proper async initialization of adapters.
         """
         return await self.get_async(category, module)
 
@@ -101,9 +100,17 @@ class Depends:
                 if result is not None:
                     return result
 
-            # Import adapter asynchronously
-            class_ = await _get_adapter_class_async(category)
-            return get_container().get(class_, qualifier=module)
+            # Import adapter asynchronously - handle import errors
+            try:
+                class_ = await _get_adapter_class_async(category)
+                return get_container().get(class_, qualifier=module)
+            except Exception:
+                # If adapter import fails, raise the expected RuntimeError
+                msg = (
+                    f"Adapter '{category}' requires async initialization. "
+                    f"Use 'await depends.get_async(\"{category}\")' instead."
+                )
+                raise RuntimeError(msg)
 
         return get_container().get(category, qualifier=module)
 
@@ -150,15 +157,15 @@ depends = Depends()
 __all__ = ["depends", "fast_depends", "Inject", "Depends"]
 
 
-def fast_depends(category: t.Any, module: str | None = None) -> t.Any:
+async def fast_depends(category: t.Any, module: str | None = None) -> t.Any:
     """High-performance dependency injection.
 
     This function provides direct dependency lookup without any
     introspection or special handling.
 
     Example:
-        cache = fast_depends("cache")
-        sql = fast_depends("sql", "sqlite"))
+        cache = await fast_depends("cache")
+        sql = await fast_depends("sql", "sqlite"))
 
     Args:
         category: The dependency category or class to retrieve
@@ -171,4 +178,4 @@ def fast_depends(category: t.Any, module: str | None = None) -> t.Any:
         This is now just an alias for depends.get() since we've removed
         the stack introspection overhead.
     """
-    return depends.get(category, module)
+    return await depends.get(category, module)

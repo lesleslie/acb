@@ -176,7 +176,7 @@ async with ftpd.connect() as client:
 
 ### Custom Authentication
 
-```python
+```yaml
 # In your settings/app.yaml file:
 ftpd:
   username: "custom_user"

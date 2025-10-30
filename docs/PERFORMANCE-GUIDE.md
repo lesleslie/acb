@@ -59,7 +59,7 @@ class ExpensiveService:
 
 Use connection pools for database and external service connections:
 
-```python
+```yaml
 # SQL adapter automatically uses connection pooling
 # Configure pool size in settings
 sql:
@@ -535,25 +535,26 @@ async def use_service(my_service: OptimizedService = depends()):
 
 Optimize event publishing and handling:
 
-````python
+```python
 from acb.events import create_event, EventPublisher, event_handler, EventHandlerResult
 from acb.depends import depends, Inject
 
 
 # Minimize event payload size for better performance
-async def optimized_event_creation():
+async def optimized_event_creation() -> None:
     # Include only necessary data in events
     event = create_event(
         "user.action",
         "user_service",
         {"user_id": 123},  # Only essential data
-        priority="normal"  # Set appropriate priority
+        priority="normal",  # Set appropriate priority
     )
 
     publisher = depends.get(EventPublisher)
     await publisher.publish(event)
+```
 
-
+```python
 # Use asynchronous event handlers when possible
 @event_handler("user.action")
 async def handle_user_action(event):
@@ -568,7 +569,7 @@ async def batch_event_processing(events_batch):
     tasks = [process_single_event(event) for event in events_batch]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     return results
-
+```
 
 ### Tasks System Performance
 
@@ -584,13 +585,12 @@ async def optimized_task_handling():
     high_priority_task = TaskData(
         task_type="critical_operation",
         payload={"data": "important"},
-        priority=TaskPriority.HIGH
+        priority=TaskPriority.HIGH,
     )
 
     # Batch task creation when possible
     tasks_batch = [
-        TaskData(task_type="email", payload={"user_id": uid})
-        for uid in user_ids
+        TaskData(task_type="email", payload={"user_id": uid}) for uid in user_ids
     ]
 
     # Use the task queue efficiently
@@ -606,7 +606,7 @@ async def configure_workers(queue):
     # CPU-bound tasks: lower concurrency
     # I/O-bound tasks: higher concurrency
     await queue.set_worker_concurrency(10)  # Adjust based on your workload
-````
+```
 
 ### Workflows Performance
 

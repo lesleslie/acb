@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
 
 # Encode Action
 
@@ -6,18 +6,18 @@ The Encode action provides data serialization and deserialization capabilities f
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Usage](#usage)
-  - [Encoding Data](#encoding-data)
-  - [Decoding Data](#decoding-data)
-  - [Working with Files](#working-with-files)
-- [API Reference](#api-reference)
-  - [Supported Formats](#supported-formats)
-  - [Common Parameters](#common-parameters)
-- [Examples](#examples)
-- [Best Practices](#best-practices)
-- [Related Actions](#related-actions)
+- [Overview](<#overview>)
+- [Features](<#features>)
+- [Usage](<#usage>)
+  - [Encoding Data](<#encoding-data>)
+  - [Decoding Data](<#decoding-data>)
+  - [Working with Files](<#working-with-files>)
+- [API Reference](<#api-reference>)
+  - [Supported Formats](<#supported-formats>)
+  - [Common Parameters](<#common-parameters>)
+- [Examples](<#examples>)
+- [Best Practices](<#best-practices>)
+- [Related Actions](<#related-actions>)
 
 ## Overview
 
@@ -115,13 +115,14 @@ loaded_config = await decode.yaml(config_path)
 
 #### Encoding Methods
 
-```python
+```text
 async def encode.format(
     obj: Any,
     path: Optional[AsyncPath] = None,
     sort_keys: bool = False,
     **kwargs
 ) -> bytes:
+    ...
 ```
 
 **Parameters:**
@@ -137,12 +138,13 @@ async def encode.format(
 
 #### Decoding Methods
 
-```python
+```text
 async def decode.format(
     obj: Union[bytes, str, AsyncPath],
     use_list: bool = False,
     **kwargs
 ) -> Any:
+    ...
 ```
 
 **Parameters:**
@@ -274,5 +276,5 @@ async def main():
 
 ## Related Actions
 
-- [Compress Action](../compress/README.md): Compression and decompression utilities
-- [Hash Action](../hash/README.md): Generate secure hashes and checksums for data integrity
+- [Compress Action](<../compress/README.md>): Compression and decompression utilities
+- [Hash Action](<../hash/README.md>): Generate secure hashes and checksums for data integrity

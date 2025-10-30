@@ -470,6 +470,8 @@ When creating mock classes for testing adapters, it's important to implement pro
 
        def _private_method(self, arg):
            # Implementation
+           pass
+
 
    # Mock class - CORRECT implementation
    class MockAdapter:
@@ -478,6 +480,7 @@ When creating mock classes for testing adapters, it's important to implement pro
 
        def _private_method(self, arg):
            # Mock implementation
+           pass
    ```
 
 1. **Separate Test Classes for Complex Mocks**: For adapters with complex dependencies (like Redis, SQLModel), create separate test classes with their own fixtures to avoid conflicts with base classes.

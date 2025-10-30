@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
 
 # Compress Action
 
@@ -6,17 +6,17 @@ The Compress action provides efficient data compression and decompression utilit
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Usage](#usage)
-  - [Compression](#compression)
-  - [Decompression](#decompression)
-- [API Reference](#api-reference)
-  - [Compress](#compress)
-  - [Decompress](#decompress)
-- [Examples](#examples)
-- [Performance Considerations](#performance-considerations)
-- [Related Actions](#related-actions)
+- [Overview](<#overview>)
+- [Features](<#features>)
+- [Usage](<#usage>)
+  - [Compression](<#compression>)
+  - [Decompression](<#decompression>)
+- [API Reference](<#api-reference>)
+  - [Compress](<#compress>)
+  - [Decompress](<#decompress>)
+- [Examples](<#examples>)
+- [Performance Considerations](<#performance-considerations>)
+- [Related Actions](<#related-actions>)
 
 ## Overview
 
@@ -101,7 +101,7 @@ def gzip(
     content: str | bytes,
     path: t.Optional[str | Path] = None,
     compresslevel: int = 6,
-) -> bytes
+) -> bytes: ...
 ```
 
 **Parameters:**
@@ -119,7 +119,7 @@ def gzip(
 Compresses data using the Brotli algorithm.
 
 ```python
-def brotli(data: bytes | str, level: int = 3) -> bytes
+def brotli(data: bytes | str, level: int = 3) -> bytes: ...
 ```
 
 **Parameters:**
@@ -138,7 +138,7 @@ def brotli(data: bytes | str, level: int = 3) -> bytes
 Decompresses gzipped content.
 
 ```python
-def gzip(content: Any) -> str
+def gzip(content: Any) -> str: ...
 ```
 
 **Parameters:**
@@ -154,7 +154,7 @@ def gzip(content: Any) -> str
 Decompresses Brotli-compressed data.
 
 ```python
-def brotli(data: bytes) -> str
+def brotli(data: bytes) -> str: ...
 ```
 
 **Parameters:**
@@ -231,5 +231,5 @@ for algorithm in ["gzip", "brotli"]:
 
 ## Related Actions
 
-- [Encode/Decode Action](../encode/README.md): Data serialization with formats like JSON, YAML, and MsgPack
-- [Hash Action](../hash/README.md): Generate secure hashes and checksums for data integrity
+- [Encode/Decode Action](<../encode/README.md>): Data serialization with formats like JSON, YAML, and MsgPack
+- [Hash Action](<../hash/README.md>): Generate secure hashes and checksums for data integrity
