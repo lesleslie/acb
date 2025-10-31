@@ -17,9 +17,10 @@ Version 0.19.1 represents a **major architectural simplification**, removing com
 
 ### Removed Features (v0.19.1)
 
-The following enterprise features were temporarily removed in v0.19.1:
+The following enterprise features were temporarily removed in v0.19.1 and were
+reintroduced in subsequent releases:
 
-#### ❌ Services Layer (Temporarily Removed)
+#### ❌ Services Layer (temporarily removed in 0.19.1)
 
 ```python
 # REMOVED in v0.19.1 - No longer available
@@ -30,17 +31,15 @@ class UserService(ServiceBase):  # ❌ ServiceBase removed
     pass
 ```
 
-**Migration Path:**
+**Migration Note:** If you are targeting exactly 0.19.1, implement service logic
+directly in your application and access adapters via DI. For versions >= 0.20,
+use the reintroduced Services layer shown below.
 
-- Implement business logic directly in your application
-- Use dependency injection for adapter access
-- Consider framework-specific patterns (e.g., FastBlocks services)
+### Reintroduced Features (after 0.19.1)
 
-### Reintroduced Features (After v0.19.1)
+The following features are available again in current versions:
 
-The following enterprise features were **reintroduced** in later versions as the architecture evolved:
-
-#### ✅ Services Layer (Reintroduced after v0.19.1)
+#### ✅ Services Layer
 
 ```python
 # AVAILABLE - Reintroduced after v0.19.1
@@ -63,7 +62,7 @@ class UserService(ServiceBase):  # ✅ ServiceBase available again
 
 The Services layer now provides standardized patterns for building long-running, stateful components with lifecycle management, health checking, metrics collection, and resource cleanup capabilities.
 
-#### ✅ Events System (Reintroduced after v0.19.1)
+#### ✅ Events System
 
 ```python
 # AVAILABLE - Reintroduced after v0.19.1
@@ -75,19 +74,7 @@ publisher = EventPublisher()  # ✅ Events available again
 await publisher.publish(event)
 ```
 
-#### ✅ Events System (Reintroduced after v0.19.1)
-
-```python
-# AVAILABLE - Reintroduced after v0.19.1
-from acb.events import EventPublisher, EventSubscriber, create_event
-
-# Create and publish events
-event = create_event("user.created", "user_service", {"user_id": 123})
-publisher = EventPublisher()  # ✅ Events available again
-await publisher.publish(event)
-```
-
-#### ✅ Tasks System (Reintroduced after v0.19.1)
+#### ✅ Tasks System
 
 ```python
 # AVAILABLE - Reintroduced after v0.19.1
@@ -99,7 +86,7 @@ async with create_task_queue("memory") as queue:
     task_id = await queue.enqueue(task)  # ✅ Tasks available again
 ```
 
-#### ✅ Workflows (Reintroduced after v0.19.1)
+#### ✅ Workflows
 
 ```python
 # AVAILABLE - Reintroduced after v0.19.1
@@ -187,16 +174,20 @@ hot_reload = await enable_config_hot_reload(config, check_interval=5.0)
 await hot_reload.stop()
 ```
 
-### Migration Checklist for v0.19.1+
+### Migration Checklist
 
-- [ ] **Remove service layer dependencies** - Use direct adapter access
-- [ ] **Replace event system** - Use framework-specific events or custom implementation
-- [ ] **Replace queue system** - Use dedicated task queue library
-- [ ] **Replace workflow engine** - Use workflow library or custom orchestration
-- [ ] **Update health checks** - Implement simple application-level checks
-- [ ] **Update retry logic** - Use `tenacity` or simple retry patterns
-- [ ] **Update cleanup patterns** - Use `CleanupMixin` for resource cleanup
-- [ ] **Test thoroughly** - Validate all functionality after migration
+If migrating to exactly v0.19.1:
+
+- [ ] Remove service/event/task/workflow dependencies
+- [ ] Replace events/queues with project‑level implementations
+- [ ] Simplify health and retry logic
+
+If migrating to v0.20+ (current):
+
+- [ ] Adopt reintroduced Services/Events/Tasks/Workflows
+- [ ] Use `CleanupMixin` for resource cleanup
+- [ ] Validate health checks with `acb.monitoring.*`
+- [ ] Run full quality workflow: `python -m crackerjack`
 
 ### Code Examples
 

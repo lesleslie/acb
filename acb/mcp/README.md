@@ -25,10 +25,12 @@ The MCP Server is organized into several modules:
 
 ## Installation
 
-The MCP server is included with ACB. To use it, ensure you have the required dependencies:
+The MCP server is included with ACB and requires no extra install beyond the
+standard project dependencies. If you’re setting up the repo locally, install
+the toolchain and deps with:
 
 ```bash
-pip install fastapi uvicorn
+uv sync --extra dev
 ```
 
 ## Usage
@@ -38,9 +40,12 @@ pip install fastapi uvicorn
 ```python
 from acb.mcp import create_mcp_server
 
-# Create and start the MCP server
+# Create and start the MCP server (STDIO transport for Claude Desktop)
 server = create_mcp_server()
-# server.start(host="127.0.0.1", port=8000)
+server.run(transport="stdio")
+
+# Or start an HTTP endpoint
+# server.run(transport="http", host="127.0.0.1", port=8080)
 ```
 
 ### Using MCP Tools

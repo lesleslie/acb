@@ -42,11 +42,11 @@ Caching is a crucial component of high-performance applications. The ACB Cache a
 ## Installation
 
 ```bash
-# Install with Redis cache support
-uv add "acb[redis]"
+# Install cache support (memory + Redis)
+uv add acb --group cache
 
 # Or include it with other dependencies
-uv add "acb[redis,sql,storage]"
+uv add acb --group cache --group sql --group storage
 ```
 
 ## Configuration

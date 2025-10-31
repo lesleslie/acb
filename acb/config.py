@@ -526,6 +526,24 @@ class Settings(BaseModel):
     ) -> tuple[PydanticSettingsProtocol, ...]:
         return (unified_source,)
 
+    # --- Helpers -------------------------------------------------------------
+    def get_data_dir(self, field_name: str) -> Path:
+        """Return a directory path from a Path field and ensure it exists.
+
+        Expands '~' and creates the directory if missing. Raises ValueError
+        when the field doesn't exist or is not a Path instance.
+        """
+        if not hasattr(self, field_name):
+            raise ValueError(f"Settings class has no field '{field_name}'")
+        value = getattr(self, field_name)
+        if not isinstance(value, Path):
+            raise ValueError(
+                f"Field '{field_name}' must be a Path, got {type(value).__name__}"
+            )
+        expanded = value.expanduser()
+        expanded.mkdir(parents=True, exist_ok=True)
+        return expanded
+
 
 class DebugSettings(Settings):
     production: bool = False

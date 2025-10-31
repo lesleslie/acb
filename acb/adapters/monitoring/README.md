@@ -26,13 +26,10 @@ The ACB Monitoring adapter offers comprehensive application visibility:
 
 ```bash
 # Install with Monitoring support
-uv add "acb[monitoring]"
+uv add acb --group monitoring
 
-# Or with specific implementation
-uv add "acb[sentry]"
-
-# Or include it with other dependencies
-uv add "acb[monitoring,logging]"
+# Or include it with logger integration
+uv add acb --group monitoring --group logger
 ```
 
 ## Configuration

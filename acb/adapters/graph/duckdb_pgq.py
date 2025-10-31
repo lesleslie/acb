@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import re
 import typing as t
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -68,6 +69,18 @@ MODULE_METADATA = AdapterMetadata(
     ),
     settings_class="DuckDBPGQSettings",
 )
+
+
+def _safe_ident(name: str) -> str:
+    """Validate and return a safe SQL identifier.
+
+    Allows only letters, numbers, and underscores, starting with a letter or underscore.
+    Raises ValueError if the identifier is unsafe.
+    """
+    if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):  # nosec B108
+        msg = f"Unsafe SQL identifier: {name!r}"
+        raise ValueError(msg)
+    return name
 
 
 def _ensure_directory(target: Path) -> None:
@@ -159,31 +172,31 @@ class Graph(GraphBase):
 
     async def _install_extensions(self, conn: AsyncConnection) -> None:
         for extension in self._settings.install_extensions:
-            stmt = text(f"INSTALL {extension}")
+            safe_extension = _safe_ident(extension)
+            stmt = text(f"INSTALL {safe_extension}")  # nosec B608
             with suppress(Exception):
                 await conn.execute(stmt)
-            stmt = text(f"LOAD {extension}")
+            stmt = text(f"LOAD {safe_extension}")  # nosec B608
             with suppress(Exception):
                 await conn.execute(stmt)
 
     async def _configure_pragmas(self, conn: AsyncConnection) -> None:
         for pragma, value in self._settings.pragmas.items():
-            value_str = str(value)
+            value_str = value if isinstance(value, str) else format(value)
             numeric_check = value_str.lstrip("-+").replace(".", "", 1).isdigit()
             if numeric_check:
                 clause = value_str
             else:
                 escaped = value_str.replace("'", "''")
                 clause = f"'{escaped}'"
-            stmt = text(f"PRAGMA {pragma}={clause}")
+            safe_pragma = _safe_ident(pragma)
+            stmt = text(f"PRAGMA {safe_pragma}={clause}")  # nosec B608
             await conn.execute(stmt)
 
     async def _ensure_tables(self, conn: AsyncConnection) -> None:
-        nodes_table = self._settings.nodes_table
-        edges_table = self._settings.edges_table
-        await conn.execute(
-            text(
-                f"""
+        nodes_table = _safe_ident(self._settings.nodes_table)
+        edges_table = _safe_ident(self._settings.edges_table)
+        sql_nodes = f"""
                 CREATE TABLE IF NOT EXISTS {nodes_table} (
                     id TEXT PRIMARY KEY,
                     labels JSON,
@@ -191,9 +204,8 @@ class Graph(GraphBase):
                     created_at TIMESTAMP,
                     updated_at TIMESTAMP
                 )
-                """
-            )
-        )
+                """  # nosec B608
+        await conn.execute(text(sql_nodes))
         await conn.execute(
             text(
                 f"""
@@ -207,18 +219,19 @@ class Graph(GraphBase):
                     updated_at TIMESTAMP
                 )
                 """
+                # nosec B608
             )
         )
         await conn.execute(
             text(
-                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_from "
-                f"ON {edges_table}(from_node)"
+                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_from ON {edges_table}(from_node)"
+                # nosec B608
             )
         )
         await conn.execute(
             text(
-                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_to "
-                f"ON {edges_table}(to_node)"
+                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_to ON {edges_table}(to_node)"
+                # nosec B608
             )
         )
 
@@ -280,12 +293,12 @@ class Graph(GraphBase):
         params = parameters or {}
         async with self._connection() as conn:
             if timeout:
-                await conn.execute(text(f"PRAGMA statement_timeout={int(timeout * 1000)}"))
+                await conn.execute(
+                    text(f"PRAGMA statement_timeout={int(timeout * 1000)}")
+                )
             stripped = query.lstrip()
             if stripped.upper().startswith("MATCH"):
-                stmt = text(
-                    "SELECT * FROM GRAPH_QUERY(:graph_name, :pgq_query)"
-                )
+                stmt = text("SELECT * FROM GRAPH_QUERY(:graph_name, :pgq_query)")
                 result = await conn.execute(
                     stmt,
                     {
@@ -318,16 +331,16 @@ class Graph(GraphBase):
         properties: dict[str, t.Any],
     ) -> GraphNodeModel:
         node_id = str(uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC)
         async with self._connection() as conn:
+            sql = (
+                "INSERT INTO "
+                + _safe_ident(self._settings.nodes_table)
+                + " (id, labels, properties, created_at, updated_at) "
+                + "VALUES (:id, :labels, :properties, :created_at, :updated_at)"
+            )  # nosec B608
             await conn.execute(
-                text(
-                    f"""
-                    INSERT INTO {self._settings.nodes_table}
-                    (id, labels, properties, created_at, updated_at)
-                    VALUES (:id, :labels, :properties, :created_at, :updated_at)
-                    """
-                ),
+                text(sql),
                 {
                     "id": node_id,
                     "labels": json.dumps(labels),
@@ -346,14 +359,13 @@ class Graph(GraphBase):
 
     async def _get_node(self, node_id: str) -> GraphNodeModel | None:
         async with self._connection() as conn:
+            sql = (
+                "SELECT id, labels, properties, created_at, updated_at FROM "
+                + _safe_ident(self._settings.nodes_table)
+                + " WHERE id = :id"
+            )  # nosec B608
             result = await conn.execute(
-                text(
-                    f"""
-                    SELECT id, labels, properties, created_at, updated_at
-                    FROM {self._settings.nodes_table}
-                    WHERE id = :id
-                    """
-                ),
+                text(sql),
                 {"id": node_id},
             )
             row = result.mappings().first()
@@ -372,17 +384,15 @@ class Graph(GraphBase):
         node_id: str,
         properties: dict[str, t.Any],
     ) -> GraphNodeModel:
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC)
         async with self._connection() as conn:
+            sql = (
+                "UPDATE "
+                + _safe_ident(self._settings.nodes_table)
+                + " SET properties = :properties, updated_at = :updated_at WHERE id = :id"
+            )  # nosec B608
             await conn.execute(
-                text(
-                    f"""
-                    UPDATE {self._settings.nodes_table}
-                    SET properties = :properties,
-                        updated_at = :updated_at
-                    WHERE id = :id
-                    """
-                ),
+                text(sql),
                 {
                     "id": node_id,
                     "properties": json.dumps(properties),
@@ -397,19 +407,22 @@ class Graph(GraphBase):
 
     async def _delete_node(self, node_id: str) -> bool:
         async with self._connection() as conn:
+            sql = (
+                "DELETE FROM "
+                + _safe_ident(self._settings.edges_table)
+                + " WHERE from_node = :id OR to_node = :id"
+            )  # nosec B608
             await conn.execute(
-                text(
-                    f"""
-                    DELETE FROM {self._settings.edges_table}
-                    WHERE from_node = :id OR to_node = :id
-                    """
-                ),
+                text(sql),
                 {"id": node_id},
             )
+            sql2 = (
+                "DELETE FROM "
+                + _safe_ident(self._settings.nodes_table)
+                + " WHERE id = :id"
+            )  # nosec B608
             result = await conn.execute(
-                text(
-                    f"DELETE FROM {self._settings.nodes_table} WHERE id = :id"
-                ),
+                text(sql2),
                 {"id": node_id},
             )
         return result.rowcount > 0
@@ -422,16 +435,18 @@ class Graph(GraphBase):
         properties: dict[str, t.Any],
     ) -> GraphEdgeModel:
         edge_id = str(uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC)
         async with self._connection() as conn:
+            sql = (
+                "INSERT INTO "
+                + _safe_ident(self._settings.edges_table)
+                + (
+                    " (id, type, from_node, to_node, properties, created_at, updated_at) "
+                    "VALUES (:id, :type, :from_node, :to_node, :properties, :created_at, :updated_at)"
+                )
+            )  # nosec B608
             await conn.execute(
-                text(
-                    f"""
-                    INSERT INTO {self._settings.edges_table}
-                    (id, type, from_node, to_node, properties, created_at, updated_at)
-                    VALUES (:id, :type, :from_node, :to_node, :properties, :created_at, :updated_at)
-                    """
-                ),
+                text(sql),
                 {
                     "id": edge_id,
                     "type": edge_type,
@@ -454,14 +469,13 @@ class Graph(GraphBase):
 
     async def _get_edge(self, edge_id: str) -> GraphEdgeModel | None:
         async with self._connection() as conn:
+            sql = (
+                "SELECT id, type, from_node, to_node, properties, created_at, updated_at FROM "
+                + _safe_ident(self._settings.edges_table)
+                + " WHERE id = :id"
+            )  # nosec B608
             result = await conn.execute(
-                text(
-                    f"""
-                    SELECT id, type, from_node, to_node, properties, created_at, updated_at
-                    FROM {self._settings.edges_table}
-                    WHERE id = :id
-                    """
-                ),
+                text(sql),
                 {"id": edge_id},
             )
             row = result.mappings().first()
@@ -482,17 +496,15 @@ class Graph(GraphBase):
         edge_id: str,
         properties: dict[str, t.Any],
     ) -> GraphEdgeModel:
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC)
         async with self._connection() as conn:
+            sql = (
+                "UPDATE "
+                + _safe_ident(self._settings.edges_table)
+                + " SET properties = :properties, updated_at = :updated_at WHERE id = :id"
+            )  # nosec B608
             await conn.execute(
-                text(
-                    f"""
-                    UPDATE {self._settings.edges_table}
-                    SET properties = :properties,
-                        updated_at = :updated_at
-                    WHERE id = :id
-                    """
-                ),
+                text(sql),
                 {
                     "id": edge_id,
                     "properties": json.dumps(properties),
@@ -507,10 +519,13 @@ class Graph(GraphBase):
 
     async def _delete_edge(self, edge_id: str) -> bool:
         async with self._connection() as conn:
+            sql = (
+                "DELETE FROM "
+                + _safe_ident(self._settings.edges_table)
+                + " WHERE id = :id"
+            )  # nosec B608
             result = await conn.execute(
-                text(
-                    f"DELETE FROM {self._settings.edges_table} WHERE id = :id"
-                ),
+                text(sql),
                 {"id": edge_id},
             )
         return result.rowcount > 0
@@ -576,14 +591,13 @@ class Graph(GraphBase):
         placeholders = ", ".join(f":id_{index}" for index in range(len(node_ids)))
         params = {f"id_{index}": value for index, value in enumerate(node_ids)}
         async with self._connection() as conn:
+            sql = (
+                "SELECT id, labels, properties, created_at, updated_at FROM "
+                + _safe_ident(self._settings.nodes_table)
+                + f" WHERE id IN ({placeholders})"
+            )  # nosec B608
             result = await conn.execute(
-                text(
-                    f"""
-                    SELECT id, labels, properties, created_at, updated_at
-                    FROM {self._settings.nodes_table}
-                    WHERE id IN ({placeholders})
-                    """
-                ),
+                text(sql),
                 params,
             )
             rows = result.mappings().all()
@@ -601,16 +615,16 @@ class Graph(GraphBase):
 
     async def _get_schema(self) -> GraphSchemaModel:
         async with self._connection() as conn:
-            node_rows = await conn.execute(
-                text(
-                    f"SELECT DISTINCT labels FROM {self._settings.nodes_table} WHERE labels IS NOT NULL"
-                )
-            )
-            edge_rows = await conn.execute(
-                text(
-                    f"SELECT DISTINCT type FROM {self._settings.edges_table}"
-                )
-            )
+            sql_nodes = (
+                "SELECT DISTINCT labels FROM "
+                + _safe_ident(self._settings.nodes_table)
+                + " WHERE labels IS NOT NULL"
+            )  # nosec B608
+            node_rows = await conn.execute(text(sql_nodes))
+            sql_edges = "SELECT DISTINCT type FROM " + _safe_ident(
+                self._settings.edges_table
+            )  # nosec B608
+            edge_rows = await conn.execute(text(sql_edges))
         node_labels: set[str] = set()
         for row in node_rows.fetchall():
             if row[0]:
@@ -644,38 +658,32 @@ class Graph(GraphBase):
         self,
         nodes: list[dict[str, t.Any]],
     ) -> list[GraphNodeModel]:
-        created: list[GraphNodeModel] = []
-        for node in nodes:
-            created.append(
-                await self._create_node(
-                    node.get("labels", []),
-                    node.get("properties", {}),
-                )
+        return [
+            await self._create_node(
+                node.get("labels", []),
+                node.get("properties", {}),
             )
-        return created
+            for node in nodes
+        ]
 
     async def _bulk_create_edges(
         self,
         edges: list[dict[str, t.Any]],
     ) -> list[GraphEdgeModel]:
-        created: list[GraphEdgeModel] = []
-        for edge in edges:
-            created.append(
-                await self._create_edge(
-                    edge.get("type", "RELATES"),
-                    edge["from_node"],
-                    edge["to_node"],
-                    edge.get("properties", {}),
-                )
+        return [
+            await self._create_edge(
+                edge.get("type", "RELATES"),
+                edge["from_node"],
+                edge["to_node"],
+                edge.get("properties", {}),
             )
-        return created
+            for edge in edges
+        ]
 
     async def _count_nodes(self, labels: list[str] | None) -> int:
         async with self._connection() as conn:
             result = await conn.execute(
-                text(
-                    f"SELECT labels FROM {self._settings.nodes_table}"
-                )
+                text(f"SELECT labels FROM {self._settings.nodes_table}")
             )
             rows = result.fetchall()
         if not labels:
@@ -700,8 +708,10 @@ class Graph(GraphBase):
 
     async def _clear_graph(self) -> bool:
         async with self._connection() as conn:
-            await conn.execute(text(f"DELETE FROM {self._settings.edges_table}"))
-            await conn.execute(text(f"DELETE FROM {self._settings.nodes_table}"))
+            sql_edges = "DELETE FROM " + _safe_ident(self._settings.edges_table)  # nosec B608
+            sql_nodes = "DELETE FROM " + _safe_ident(self._settings.nodes_table)  # nosec B608
+            await conn.execute(text(sql_edges))
+            await conn.execute(text(sql_nodes))
         return True
 
     async def _search_paths(
@@ -728,7 +738,13 @@ class Graph(GraphBase):
             ]
 
         edges = await self._fetch_edges()
+        adjacency = self._build_adjacency_list(edges, direction)
+        found_paths = self._bfs_paths(adjacency, start, goal, max_depth, shortest_only)
+        return await self._paths_to_models(found_paths, weight_property)
 
+    def _build_adjacency_list(
+        self, edges: list[dict[str, t.Any]], direction: GraphTraversalDirection
+    ) -> dict[str, list[dict[str, t.Any]]]:
         adjacency: dict[str, list[dict[str, t.Any]]] = {}
         for edge in edges:
             adjacency.setdefault(edge["from_node"], []).append(edge)
@@ -737,11 +753,19 @@ class Graph(GraphBase):
                 reverse["from_node"] = edge["to_node"]
                 reverse["to_node"] = edge["from_node"]
                 adjacency.setdefault(reverse["from_node"], []).append(reverse)
+        return adjacency
 
+    def _bfs_paths(
+        self,
+        adjacency: dict[str, list[dict[str, t.Any]]],
+        start: str,
+        goal: str,
+        max_depth: int | None,
+        shortest_only: bool,
+    ) -> list[list[dict[str, str | None]]]:
         queue: list[list[dict[str, str | None]]] = [[{"node": start, "edge": None}]]
         visited: set[str] = {start}
         found_paths: list[list[dict[str, str | None]]] = []
-
         while queue:
             path = queue.pop(0)
             current: str = path[-1]["node"]  # type: ignore[assignment]
@@ -758,7 +782,13 @@ class Graph(GraphBase):
                     new_path = path + [{"node": neighbor, "edge": edge["id"]}]
                     queue.append(new_path)
                     visited.add(neighbor)
+        return found_paths
 
+    async def _paths_to_models(
+        self,
+        found_paths: list[list[dict[str, str | None]]],
+        weight_property: str | None,
+    ) -> list[GraphPathModel]:
         graph_paths: list[GraphPathModel] = []
         for raw_path in found_paths:
             node_ids = [step["node"] for step in raw_path if step["node"] is not None]
@@ -778,7 +808,7 @@ class Graph(GraphBase):
                 GraphPathModel(
                     nodes=[n for n in nodes if n is not None],
                     edges=[e for e in edge_models if e is not None],
-                    length=len(edge_models or []),
+                    length=len(edge_models),
                     weight=weight,
                 )
             )
@@ -786,14 +816,10 @@ class Graph(GraphBase):
 
     async def _fetch_edges(self) -> list[dict[str, t.Any]]:
         async with self._connection() as conn:
-            result = await conn.execute(
-                text(
-                    f"""
-                    SELECT id, type, from_node, to_node, properties
-                    FROM {self._settings.edges_table}
-                    """
-                )
-            )
+            sql = "SELECT id, type, from_node, to_node, properties FROM " + _safe_ident(
+                self._settings.edges_table
+            )  # nosec B608
+            result = await conn.execute(text(sql))
             rows = result.mappings().all()
         return [
             {

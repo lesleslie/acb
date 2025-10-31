@@ -13,15 +13,16 @@ import typing as t
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-# Import enhanced query functionality
-from acb.adapters.models._hybrid import ACBQuery, HybridQueryOptions, QueryStyle
-from acb.adapters.models._query import QueryOperator
 from acb.adapters.models._repository import Repository
 from acb.adapters.models._specification import (
     Specification,
     field,
     range_spec,
 )
+
+# Import enhanced query functionality
+from acb.adapters.models._hybrid import ACBQuery, HybridQueryOptions, QueryStyle
+from acb.adapters.models._query import QueryOperator
 
 
 # Example models

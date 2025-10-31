@@ -21,7 +21,7 @@ Vector database adapters provide interfaces for working with vector databases fo
 To use vector database adapters, install the optional dependencies:
 
 ```bash
-uv add "acb[vector]"
+uv add acb --group vector
 ```
 
 ## Configuration

@@ -29,8 +29,11 @@ def json_filter(value: t.Any, indent: int | None = None) -> Markup:
     """
     import json
 
-    # Return as Markup (safe HTML) to prevent auto-escaping of JSON quotes
-    return Markup(json.dumps(value, indent=indent, default=str))
+    # Encode to JSON and escape HTML-significant characters to prevent XSS
+    raw = json.dumps(value, indent=indent, default=str)
+    safe = raw.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    # Mark as safe for templates after sanitization
+    return Markup(safe)
 
 
 def datetime_filter(value: t.Any, format: str = "%Y-%m-%d %H:%M:%S") -> str:

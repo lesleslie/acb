@@ -45,16 +45,10 @@ The ACB Secret adapter offers:
 
 ```bash
 # Install with Secret support
-uv add "acb[secret]"
+uv add acb --group secret
 
-# Or with specific implementation
-uv add "acb[azure]"
-uv add "acb[cloudflare]"
-uv add "acb[infisical]"
-uv add "acb[secretmanager]"
-
-# Or include it with other dependencies
-uv add "acb[secret,config]"
+# Or include it with configuration helpers
+uv add acb --group secret --group config
 ```
 
 ## Configuration

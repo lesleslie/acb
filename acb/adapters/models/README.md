@@ -30,13 +30,13 @@ The ACB Models adapter offers intelligent model type detection and management:
 
 ```bash
 # Install with Models support
-uv add "acb[models]"
+uv add acb --group models
 
 # Or include it with database dependencies
-uv add "acb[models,sql,nosql]"
+uv add acb --group models --group sql --group nosql
 
 # Complete database stack
-uv add "acb[models,sql,nosql,cache]"
+uv add acb --group models --group sql --group nosql --group cache
 ```
 
 ## Configuration

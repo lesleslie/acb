@@ -187,33 +187,33 @@ ACB includes the following adapter categories:
 
 ## Installation
 
-Install ACB with specific adapter dependencies:
+Install ACB with specific adapter groups:
 
 ```bash
-# Install with specific adapter dependencies
-uv add "acb[cache,sql,storage]"
+# Install with specific adapter groups
+uv add acb --group cache --group sql --group storage
 
-# Install with all adapter dependencies
-uv add "acb[all]"
+# Install with all adapter groups
+uv add acb --group all
 ```
 
 The following adapter-specific dependency groups are available:
 
 | Feature Group | Components | Installation Command |
 | ------------- | --------------------------------------------- | -------------------------- |
-| cache | Redis, memory | `uv add "acb[cache]"` |
-| dns | Cloud DNS, Cloudflare | `uv add "acb[dns]"` |
-| ftpd | FTP, SFTP servers | `uv add "acb[ftpd]"` |
-| monitoring | Sentry, Logfire | `uv add "acb[monitoring]"` |
-| nosql | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `uv add "acb[nosql]"` |
-| requests | HTTPX, Niquests HTTP clients | `uv add "acb[requests]"` |
-| secret | Infisical, Secret Manager | `uv add "acb[secret]"` |
-| smtp | Gmail, Mailgun email sending | `uv add "acb[smtp]"` |
-| sql | MySQL, PostgreSQL, SQLite (including Turso) | `uv add "acb[sql]"` |
-| storage | S3, GCS, Azure, Local | `uv add "acb[storage]"` |
-| vector | DuckDB, Weaviate, OpenSearch, Qdrant | `uv add "acb[vector]"` |
-| demo | Demo/example utilities | `uv add "acb[demo]"` |
-| dev | Development tools | `uv add "acb[dev]"` |
+| cache | Redis, memory | `uv add acb --group cache` |
+| dns | Cloud DNS, Cloudflare | `uv add acb --group dns` |
+| ftpd | FTP, SFTP servers | `uv add acb --group ftpd` |
+| monitoring | Sentry, Logfire | `uv add acb --group monitoring` |
+| nosql | MongoDB (Beanie), Firestore, Redis (Redis-OM) | `uv add acb --group nosql` |
+| requests | HTTPX, Niquests HTTP clients | `uv add acb --group requests` |
+| secret | Infisical, Secret Manager | `uv add acb --group secret` |
+| smtp | Gmail, Mailgun email sending | `uv add acb --group smtp` |
+| sql | MySQL, PostgreSQL, SQLite (including Turso) | `uv add acb --group sql` |
+| storage | S3, GCS, Azure, Local | `uv add acb --group storage` |
+| vector | DuckDB, Weaviate, OpenSearch, Qdrant | `uv add acb --group vector` |
+| demo | Demo/example utilities | `uv add acb --group demo` |
+| dev | Development tools | `uv add acb --group dev` |
 
 ## Configuration
 

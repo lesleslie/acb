@@ -54,10 +54,10 @@ The ACB SQL adapter offers a consistent way to interact with relational database
 
 ```bash
 # Install with SQL database support
-uv add "acb[sql]"
+uv add acb --group sql
 
 # Or include it with other dependencies
-uv add "acb[sql,cache,storage]"
+uv add acb --group sql --group cache --group storage
 ```
 
 ## Configuration

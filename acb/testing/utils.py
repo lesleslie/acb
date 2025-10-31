@@ -34,18 +34,19 @@ def assert_adapter_interface(
         ]
 
     for method_name in expected_methods:
-        assert hasattr(adapter_class, method_name), (
-            f"Adapter missing method: {method_name}"
-        )
+        if not hasattr(adapter_class, method_name):
+            raise AssertionError(f"Adapter missing method: {method_name}")
 
         method = getattr(adapter_class, method_name)
-        assert callable(method), f"Adapter method {method_name} is not callable"
+        if not callable(method):
+            raise AssertionError(
+                f"Adapter method {method_name} is not callable",
+            )
 
         # Check if async method
         if method_name.startswith("_") or asyncio.iscoroutinefunction(method):
-            assert asyncio.iscoroutinefunction(method), (
-                f"Method {method_name} should be async"
-            )
+            if not asyncio.iscoroutinefunction(method):
+                raise AssertionError(f"Method {method_name} should be async")
 
 
 def assert_service_interface(
@@ -60,17 +61,22 @@ def assert_service_interface(
     # Check that service has SERVICE_METADATA if it's a discoverable service
     if hasattr(service_class, "SERVICE_METADATA"):
         metadata = service_class.SERVICE_METADATA
-        assert metadata is not None, "Service metadata should not be None"
-        assert hasattr(metadata, "name"), "Service metadata should have name"
-        assert hasattr(metadata, "category"), "Service metadata should have category"
+        if metadata is None:
+            raise AssertionError("Service metadata should not be None")
+        if not hasattr(metadata, "name"):
+            raise AssertionError("Service metadata should have name")
+        if not hasattr(metadata, "category"):
+            raise AssertionError("Service metadata should have category")
 
     for method_name in expected_methods:
-        assert hasattr(service_class, method_name), (
-            f"Service missing method: {method_name}"
-        )
+        if not hasattr(service_class, method_name):
+            raise AssertionError(f"Service missing method: {method_name}")
 
         method = getattr(service_class, method_name)
-        assert callable(method), f"Service method {method_name} is not callable"
+        if not callable(method):
+            raise AssertionError(
+                f"Service method {method_name} is not callable",
+            )
 
 
 def assert_action_interface(
@@ -83,12 +89,14 @@ def assert_action_interface(
         expected_functions = []
 
     for function_name in expected_functions:
-        assert hasattr(action_module, function_name), (
-            f"Action missing function: {function_name}"
-        )
+        if not hasattr(action_module, function_name):
+            raise AssertionError(f"Action missing function: {function_name}")
 
         function = getattr(action_module, function_name)
-        assert callable(function), f"Action function {function_name} is not callable"
+        if not callable(function):
+            raise AssertionError(
+                f"Action function {function_name} is not callable",
+            )
 
 
 def create_test_config(overrides: dict[str, t.Any] | None = None) -> Config:
@@ -417,17 +425,19 @@ def validate_test_result(
     expected_status: str = "passed",
 ) -> None:
     """Validate that a test result meets expectations."""
-    assert "status" in result, "Test result missing status"
-    assert result["status"] == expected_status, (
-        f"Expected {expected_status}, got {result['status']}"
-    )
+    if "status" not in result:
+        raise AssertionError("Test result missing status")
+    if result["status"] != expected_status:
+        raise AssertionError(
+            f"Expected {expected_status}, got {result['status']}",
+        )
 
     if expected_status == "passed":
-        assert "error" not in result or result["error"] is None, (
-            "Passed test should not have errors"
-        )
+        if "error" in result and result["error"] is not None:
+            raise AssertionError("Passed test should not have errors")
     elif expected_status == "failed":
-        assert "error" in result, "Failed test should have error information"
+        if "error" not in result:
+            raise AssertionError("Failed test should have error information")
 
 
 def create_mock_dependency(
@@ -451,7 +461,10 @@ def create_mock_dependency(
 def assert_dependency_injected(dependency_type: type) -> t.Any:
     """Assert that a dependency is properly injected."""
     instance = depends.get(dependency_type)
-    assert instance is not None, f"Dependency {dependency_type.__name__} not injected"
+    if instance is None:
+        raise AssertionError(
+            f"Dependency {dependency_type.__name__} not injected",
+        )
     return instance
 
 

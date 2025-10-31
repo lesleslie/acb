@@ -45,10 +45,10 @@ The ACB Requests adapter offers a consistent way to make HTTP requests:
 
 ```bash
 # Install with Requests support
-uv add "acb[requests]"
+uv add acb --group requests
 
-# Or include it with other dependencies
-uv add "acb[requests,redis,cache]"
+# Or include it with cache support
+uv add acb --group requests --group cache
 ```
 
 ## Configuration

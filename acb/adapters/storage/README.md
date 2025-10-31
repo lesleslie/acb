@@ -49,15 +49,10 @@ The ACB Storage adapter offers a consistent way to interact with various storage
 
 ```bash
 # Install with storage support
-uv add "acb[storage]"
-
-# With specific cloud provider
-uv add "acb[storage,gcp]"  # For Google Cloud Storage
-uv add "acb[storage,aws]"  # For Amazon S3
-uv add "acb[storage,azure]"  # For Azure Blob Storage
+uv add acb --group storage
 
 # Or include it with other dependencies
-uv add "acb[storage,redis,sql]"
+uv add acb --group storage --group cache --group sql
 ```
 
 ## Configuration

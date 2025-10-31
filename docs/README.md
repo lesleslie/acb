@@ -1,6 +1,6 @@
 # ACB Documentation
 
-> **Current Version:** 0.23.0 | **Python:** 3.13+
+> **Current Version:** 0.27.0 | **Python:** 3.13+
 
 Welcome to the ACB (Asynchronous Component Base) documentation. This directory contains essential guides and templates for working with ACB.
 
@@ -10,6 +10,8 @@ Welcome to the ACB (Asynchronous Component Base) documentation. This directory c
 - **Upgrading?** See [MIGRATION.md](<./MIGRATION.md>) for version-specific upgrade guides
 - **Performance tuning?** Check [PERFORMANCE-GUIDE.md](<./PERFORMANCE-GUIDE.md>)
 - **Having issues?** Review [TROUBLESHOOTING.md](<./TROUBLESHOOTING.md>)
+- **Monitoring?** See [MONITORING.md](<./MONITORING.md>) for health and HTTP checks
+- **Testing?** See [TESTING.md](<./TESTING.md>) for commands and coverage
 
 ## Documentation Index
 
@@ -44,6 +46,18 @@ Welcome to the ACB (Asynchronous Component Base) documentation. This directory c
   - Adapter troubleshooting
   - Testing issues
 
+- **[MONITORING.md](<./MONITORING.md>)** - Health primitives and HTTP checks
+
+  - Health status and aggregation
+  - HTTP client and connectivity checks
+  - Provider-agnostic patterns
+
+- **[TESTING.md](<./TESTING.md>)** - Test workflow and coverage policy
+
+  - Commands for lint, type, and tests
+  - Coverage gates and focused runs
+  - Common fixtures and DI patterns
+
 ### Templates
 
 - **[ACTION_TEMPLATE.md](<./ACTION_TEMPLATE.md>)** - Template for creating ACB actions
@@ -66,9 +80,11 @@ Welcome to the ACB (Asynchronous Component Base) documentation. This directory c
 /docs
 ├── ACTION_TEMPLATE.md      # Template for creating actions
 ├── ADAPTER_TEMPLATE.md     # Template for creating adapters
-├── ARCHITECTURE.md         # Core architecture guide (NEW)
-├── MIGRATION.md           # Version migration guide (NEW)
+├── ARCHITECTURE.md         # Core architecture guide
+├── MIGRATION.md            # Version migration guide
 ├── PERFORMANCE-GUIDE.md   # Performance optimization
+├── MONITORING.md           # Health primitives and HTTP checks
+├── TESTING.md              # Test workflow and coverage policy
 ├── TROUBLESHOOTING.md     # Common issues & solutions
 └── README.md             # This file
 ```
@@ -96,33 +112,6 @@ Each adapter category has detailed documentation in the source tree:
 - [Main README](<../README.md>) - Project overview and quick start
 - [CHANGELOG](<../CHANGELOG.md>) - Version history and changes
 - [CLAUDE.md](<../CLAUDE.md>) - Development guidelines for AI assistants
-
-## What's New in v0.19.1+
-
-ACB underwent a **major simplification** in v0.19.1, removing complex enterprise features to focus on its core mission:
-
-### ✅ What Remains (Core Features)
-
-- Clean adapter interfaces for external systems
-- Dependency injection via `bevy`
-- Configuration management with hot-reload
-- Async-first design
-- Action utilities
-- Simple resource cleanup
-- Essential SSL/TLS support
-
-### ❌ What Was Removed
-
-- Services layer
-- Event system
-- Task queue system
-- Workflow engine
-- Complex health checking
-- Advanced retry mechanisms
-- Multi-tier caching
-- Distributed tracing
-
-See [MIGRATION.md](<./MIGRATION.md>) for detailed upgrade instructions.
 
 ## Getting Help
 

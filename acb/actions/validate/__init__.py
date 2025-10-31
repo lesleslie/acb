@@ -6,7 +6,6 @@ including emails, URLs, SQL injection detection, XSS detection, and path travers
 
 import re
 import typing as t
-from html import escape
 from urllib.parse import urlparse
 
 __all__: list[str] = ["validate"]
@@ -204,31 +203,7 @@ class Validate:
         except re.error:
             return False
 
-    @staticmethod
-    def sanitize_html(value: str) -> str:
-        """Sanitize HTML by escaping dangerous characters.
-
-        Args:
-            value: String to sanitize
-
-        Returns:
-            Sanitized string with HTML escaped
-        """
-        return escape(value, quote=True)
-
-    @staticmethod
-    def sanitize_sql(value: str) -> str:
-        """Basic SQL sanitization by escaping quotes.
-
-        Args:
-            value: String to sanitize
-
-        Returns:
-            Sanitized string with SQL quotes escaped
-        """
-        # Basic SQL quote escaping
-        value = value.replace("'", "''")
-        return value.replace('"', '""')
+    # Note: Sanitization functions have moved to acb.security.sanitization
 
 
 # Export an instance

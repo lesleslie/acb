@@ -26,14 +26,10 @@ The ACB SMTP adapter offers:
 
 ```bash
 # Install with SMTP support
-uv add "acb[smtp]"
+uv add acb --group smtp
 
-# Or with specific implementation
-uv add "acb[gmail]"
-uv add "acb[mailgun]"
-
-# Or include it with other dependencies
-uv add "acb[smtp,templates]"
+# Or include it with templates
+uv add acb --group smtp --group templates
 ```
 
 ## Configuration

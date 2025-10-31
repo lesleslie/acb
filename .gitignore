@@ -29,6 +29,7 @@
 /NOTES.md
 /.obsidian/
 /.smart-env/
+/.venv/
 
 # SQLite databases and test artifacts
 *.db

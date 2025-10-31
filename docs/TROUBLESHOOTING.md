@@ -1,6 +1,6 @@
 # ACB Troubleshooting Guide
 
-> **Version:** 0.25.2 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
+> **Version:** 0.27.0 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
 
 This guide helps you troubleshoot common issues when working with ACB v0.25.2 with comprehensive services, events, and workflow architecture.
 
@@ -31,29 +31,27 @@ python --version
 
 **Problem**: `uv: command not found`
 
-**Solution**: Install UV first:
+**Solution**: Install UV using the official installer:
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
-# Or using pip
-pip install uv
 ```
 
 ### Optional Dependencies Not Installing
 
 **Problem**: Import errors for specific adapters
 
-**Solution**: Install the correct optional dependencies:
+**Solution**: Install ACB with the correct dependency groups:
 
 ```bash
 # For cache features
-uv add "acb[cache]"
+uv add acb --group cache
 
 # For SQL database features
-uv add "acb[sql]"
+uv add acb --group sql
 
 # For all features
-uv add "acb[all]"
+uv add acb --group all
 ```
 
 ## Configuration Issues

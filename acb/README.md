@@ -76,13 +76,13 @@ ACB uses a robust configuration system based on [Pydantic](https://pydantic-docs
 
 ```bash
 # Install with secret management support
-uv add "acb[secret]"
+uv add acb --group secret
 
 # Install with YAML and configuration support
-uv add "acb[config]"
+uv add acb --group config
 
 # Install with multiple configuration options
-uv add "acb[secret,config]"
+uv add acb --group secret --group config
 ```
 
 For more detailed configuration information, refer to [Configuration Documentation](<./CONFIGURATION.md>).
@@ -311,13 +311,10 @@ An alternative logging adapter using `structlog` is available as a placeholder, 
 
 ```bash
 # Install with Loguru support (default)
-uv add "acb[loguru]"
+uv add acb --group logger
 
-# Install with structlog support
-uv add "acb[structlog]"
-
-# Install with multiple logging options for testing
-uv add "acb[loguru,structlog]"
+# Install with multiple logging options for testing (structlog via logger group)
+uv add acb --group logger
 ```
 
 For more details on logging configuration and customization, see the [Logging Documentation](<./LOGGING.md>).

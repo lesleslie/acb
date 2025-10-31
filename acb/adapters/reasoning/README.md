@@ -85,7 +85,7 @@ Each concrete adapter may extend `ReasoningBaseSettings` with its own specific s
 - **Description**: Integrates the powerful LangChain framework for advanced LLM orchestration, supporting agents, chains, and memory management.
 - **Strengths**: Flexible, extensive ecosystem, good for complex multi-step reasoning and agentic workflows.
 - **Key Settings (`LangChainReasoningSettings`)**: `agent_type`, `memory_type`, `max_memory_tokens`, `verbose`, `chain_type`, `prompt_template`, `tool_return_direct`, `enable_streaming`.
-- **Installation**: `pip install langchain langchain-openai` (or `pip install 'acb[reasoning]'`).
+- **Installation**: `uv add acb --group reasoning`.
 
 ### LlamaIndex Reasoning (`acb.adapters.reasoning.llamaindex`)
 
@@ -93,7 +93,7 @@ Each concrete adapter may extend `ReasoningBaseSettings` with its own specific s
 - **Description**: Focuses on Retrieval-Augmented Generation (RAG) workflows, enabling efficient interaction with knowledge bases and document indexing.
 - **Strengths**: Excellent for querying large datasets, context retrieval, and citation tracking.
 - **Key Settings (`LlamaIndexReasoningSettings`)**: `chunk_size`, `chunk_overlap`, `similarity_top_k`, `response_mode`, `streaming`, `chat_memory_token_limit`, `max_function_calls`, `enable_citation_tracking`, `persist_index`.
-- **Installation**: `pip install llama-index llama-index-llms-openai` (or `pip install 'acb[reasoning]'`).
+- **Installation**: `uv add acb --group reasoning`.
 
 ### OpenAI Function Calling Reasoning (`acb.adapters.reasoning.openai_functions`)
 
@@ -101,7 +101,7 @@ Each concrete adapter may extend `ReasoningBaseSettings` with its own specific s
 - **Description**: Leverages OpenAI's native function calling capabilities for structured reasoning, tool integration, and precise output control.
 - **Strengths**: Direct integration with OpenAI models, robust tool execution, structured JSON output.
 - **Key Settings (`OpenAIFunctionReasoningSettings`)**: `max_function_calls`, `function_call_strategy`, `enable_parallel_calls`, `response_format`, `presence_penalty`, `frequency_penalty`, `top_p`, `max_retries`.
-- **Installation**: `pip install openai` (or `pip install 'acb[reasoning]'`).
+- **Installation**: `uv add acb --group reasoning`.
 
 ## Usage
 

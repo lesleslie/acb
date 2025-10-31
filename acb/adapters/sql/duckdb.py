@@ -106,7 +106,7 @@ class SqlSettings(SqlBaseSettings):
         """Normalise URLs for sync and async engines."""
         raw_url = make_url(self.database_url)
         # Ensure directories exist for on-disk databases.
-        if raw_url.database and raw_url.database not in (":memory:",):
+        if raw_url.database and raw_url.database != ":memory:":
             db_path = Path(raw_url.database)
             if not db_path.parent.exists():
                 db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -121,7 +121,7 @@ class SqlSettings(SqlBaseSettings):
         async_driver = self._async_driver
 
         self._url = raw_url.set(drivername=sync_driver, query=query)
-        async_query = dict(query)
+        async_query = query.copy()
         if self.threads is not None:
             async_query.setdefault("threads", str(self.threads))
         self._async_url = raw_url.set(drivername=async_driver, query=async_query)
@@ -158,6 +158,42 @@ class SqlSettings(SqlBaseSettings):
 class Sql(SqlBase):
     """DuckDB adapter implementation."""
 
+    async def _set_threads(self, conn: t.Any) -> None:
+        if self.config.sql.threads is None:
+            return
+        threads = int(self.config.sql.threads)
+        await conn.execute(text(f"PRAGMA threads={threads}"))
+
+    async def _apply_pragmas(self, conn: t.Any) -> None:
+        if not self.config.sql.pragmas:
+            return
+        for pragma, value in self.config.sql.pragmas.items():
+            value_str = value if isinstance(value, str) else str(value)
+            numeric_check = value_str.lstrip("-+").replace(".", "", 1).isdigit()
+            if isinstance(value, (int, float)) or numeric_check:
+                clause = value_str
+            else:
+                escaped = value_str.replace("'", "''")
+                clause = f"'{escaped}'"
+            await conn.execute(text(f"PRAGMA {pragma}={clause}"))
+
+    async def _install_extensions(self, conn: t.Any) -> None:
+        if not self.config.sql.extensions or self.config.sql.read_only:
+            return
+        for extension in self.config.sql.extensions:
+            safe_ext = extension.replace('"', "").replace("'", "")
+            await conn.execute(text(f"INSTALL {safe_ext}"))
+            await conn.execute(text(f"LOAD {safe_ext}"))
+
+    async def _set_temp_directory(self, conn: t.Any) -> None:
+        if not self.config.sql.temp_directory:
+            return
+        await conn.execute(
+            text("SET temp_directory=:temp_directory").bindparams(
+                temp_directory=self.config.sql.temp_directory,
+            )
+        )
+
     async def _create_client(self) -> t.Any:
         from sqlalchemy.ext.asyncio import create_async_engine
 
@@ -167,30 +203,10 @@ class Sql(SqlBase):
         )
 
         async with engine.begin() as conn:
-            if self.config.sql.threads is not None:
-                threads = int(self.config.sql.threads)
-                await conn.execute(text(f"PRAGMA threads={threads}"))
-            if self.config.sql.pragmas:
-                for pragma, value in self.config.sql.pragmas.items():
-                    value_str = str(value)
-                    numeric_check = value_str.lstrip("-+").replace(".", "", 1).isdigit()
-                    if isinstance(value, (int, float)) or numeric_check:
-                        clause = value_str
-                    else:
-                        escaped = value_str.replace("'", "''")
-                        clause = f"'{escaped}'"
-                    await conn.execute(text(f"PRAGMA {pragma}={clause}"))
-            if self.config.sql.extensions and not self.config.sql.read_only:
-                for extension in self.config.sql.extensions:
-                    safe_ext = extension.replace('"', "").replace("'", "")
-                    await conn.execute(text(f"INSTALL {safe_ext}"))
-                    await conn.execute(text(f"LOAD {safe_ext}"))
-            if self.config.sql.temp_directory:
-                await conn.execute(
-                    text("SET temp_directory=:temp_directory").bindparams(
-                        temp_directory=self.config.sql.temp_directory,
-                    )
-                )
+            await self._set_threads(conn)
+            await self._apply_pragmas(conn)
+            await self._install_extensions(conn)
+            await self._set_temp_directory(conn)
 
         return engine
 
@@ -200,7 +216,9 @@ class Sql(SqlBase):
         from acb.adapters import import_adapter
 
         if self.config.sql.read_only:
-            self.logger.info("DuckDB adapter running in read-only mode; skipping schema sync")
+            self.logger.info(
+                "DuckDB adapter running in read-only mode; skipping schema sync"
+            )
             return
 
         sqlalchemy_log._add_default_handler = lambda logger: None  # type: ignore[assignment,misc]

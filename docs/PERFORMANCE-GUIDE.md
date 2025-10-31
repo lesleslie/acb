@@ -1,6 +1,6 @@
 # ACB Performance Guide
 
-> **Version:** 0.25.2 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
+> **Version:** 0.27.0 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
 
 This guide provides best practices and techniques for optimizing ACB application performance with comprehensive services, events, and workflow architecture.
 

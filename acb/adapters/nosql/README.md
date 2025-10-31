@@ -53,16 +53,11 @@ The ACB NoSQL adapter offers:
 ## Installation
 
 ```bash
-# Install with NoSQL support
-uv add "acb[nosql]"
-
-# Or with specific implementation
-uv add "acb[mongodb]"
-uv add "acb[firestore]"
-uv add "acb[redis]"
+# Install with NoSQL support (MongoDB, Firestore, Redis)
+uv add acb --group nosql
 
 # Or include it with other dependencies
-uv add "acb[nosql,sql,storage]"
+uv add acb --group nosql --group sql --group storage
 ```
 
 ## Configuration
