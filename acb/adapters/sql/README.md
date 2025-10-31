@@ -2,7 +2,7 @@
 
 # SQL Adapter
 
-The SQL adapter provides a standardized interface for relational database operations in ACB applications, with support for MySQL/MariaDB, PostgreSQL, and SQLite (including Turso). It integrates seamlessly with ACB's universal query interface, providing both traditional database operations and modern query patterns.
+The SQL adapter provides a standardized interface for relational database operations in ACB applications, with support for MySQL/MariaDB, PostgreSQL, SQLite (including Turso), and DuckDB. It integrates seamlessly with ACB's universal query interface, providing both traditional database operations and modern query patterns.
 
 ## Table of Contents
 
@@ -37,7 +37,7 @@ The ACB SQL adapter offers a consistent way to interact with relational database
 - **Multiple Query Styles**: Simple, Repository, Specification, and Advanced patterns
 - **Asynchronous Operations**: Built on SQLAlchemy and SQLModel
 - **Type Safety**: Full TypeScript-style type checking with Python generics
-- **Multiple Database Support**: MySQL, PostgreSQL, SQLite, and Turso
+- **Multiple Database Support**: MySQL, PostgreSQL, SQLite, DuckDB, and Turso
 - **Connection Management**: Automatic pooling and session management
 - **Transaction Support**: Robust transaction handling with rollback capabilities
 
@@ -48,6 +48,7 @@ The ACB SQL adapter offers a consistent way to interact with relational database
 | **MySQL** | MySQL/MariaDB database adapter | Applications using MySQL/MariaDB |
 | **PostgreSQL** | PostgreSQL database adapter | Applications using PostgreSQL |
 | **SQLite** | SQLite/Turso database adapter | Local development, testing, edge deployments, Turso cloud databases |
+| **DuckDB** | DuckDB analytics adapter | Embedded analytics, columnar workloads, read-heavy pipelines |
 
 ## Installation
 
@@ -74,6 +75,9 @@ sql: pgsql
 
 # Or use SQLite implementation (local or Turso)
 sql: sqlite
+
+# Or use DuckDB implementation
+sql: duckdb
 ```
 
 ### SQL Settings
@@ -93,6 +97,14 @@ sql:
   database_url: "sqlite:///data/app.db"
   # Or Turso cloud database
   # database_url: "libsql://mydb.turso.io?authToken=your_token&secure=true"
+
+  # For DuckDB:
+  # database_url: "duckdb:///data/warehouse.duckdb"
+  # threads: 4
+  # pragmas:
+  #   memory_limit: "4GB"
+  # extensions:
+  #   - httpfs
 
   # Connection pool settings
   pool_pre_ping: true

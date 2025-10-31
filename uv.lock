@@ -11,7 +11,7 @@ prerelease-mode = "allow"
 
 [[package]]
 name = "acb"
-version = "0.25.2"
+version = "0.26.0"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -237,6 +237,8 @@ gcp = [
 ]
 graph = [
     { name = "boto3" },
+    { name = "duckdb" },
+    { name = "duckdb-engine" },
     { name = "neo4j" },
     { name = "py2neo" },
     { name = "python-arango" },
@@ -329,6 +331,8 @@ sql = [
     { name = "aiomysql" },
     { name = "aiosqlite" },
     { name = "babel" },
+    { name = "duckdb" },
+    { name = "duckdb-engine" },
     { name = "greenlet" },
     { name = "logfire", extra = ["sqlalchemy"] },
     { name = "pymysql" },
@@ -653,6 +657,8 @@ gcp = [
 ]
 graph = [
     { name = "boto3", specifier = ">=1.26" },
+    { name = "duckdb", specifier = ">=0.10.2" },
+    { name = "duckdb-engine", specifier = ">=0.11.2" },
     { name = "neo4j", specifier = ">=5" },
     { name = "py2neo", specifier = ">=2021" },
     { name = "python-arango", specifier = ">=7" },
@@ -748,6 +754,8 @@ sql = [
     { name = "aiomysql", specifier = ">=0.2" },
     { name = "aiosqlite", specifier = ">=0.21" },
     { name = "babel", specifier = ">=2.17" },
+    { name = "duckdb", specifier = ">=0.10.2" },
+    { name = "duckdb-engine", specifier = ">=0.11.2" },
     { name = "greenlet", specifier = ">=3.2.3" },
     { name = "logfire", extras = ["sqlalchemy"], specifier = ">=3.24" },
     { name = "pymysql", specifier = ">=1.1.1" },
@@ -2030,6 +2038,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/63/cf65087502696a7ee04bde481c6852a841b00c235cb2cec41bf88db61e55/duckdb-1.5.0.dev90-cp314-cp314-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:256ca9095d89d511f56fdcfd95cde9298da15158e0e39b5761d35cb4c6ef6543", size = 18537466, upload-time = "2025-10-30T07:53:35.204Z" },
     { url = "https://files.pythonhosted.org/packages/61/e1/7ef0403b61e9d5fa5e3de90dd8896e90178652398b47d925d92f3a8c123a/duckdb-1.5.0.dev90-cp314-cp314-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:61f71f77946843f40beb643daab2b720078d72c9972a3ac7c8ef26b9564e4805", size = 20533171, upload-time = "2025-10-30T07:53:37.708Z" },
     { url = "https://files.pythonhosted.org/packages/d0/22/8ba999ffcd81cebe667e29f2524ce364d380534727d5eead0eb096e2a847/duckdb-1.5.0.dev90-cp314-cp314-win_amd64.whl", hash = "sha256:d766159f61e0a94616c3b95fb09ac4f98b36f966e1dc4b45f1c2de6054684d76", size = 12856783, upload-time = "2025-10-30T07:53:40.005Z" },
+]
+
+[[package]]
+name = "duckdb-engine"
+version = "0.17.0"
+source = { registry = "https://pypi.org/simple/" }
+dependencies = [
+    { name = "duckdb" },
+    { name = "packaging" },
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/89/d5/c0d8d0a4ca3ffea92266f33d92a375e2794820ad89f9be97cf0c9a9697d0/duckdb_engine-0.17.0.tar.gz", hash = "sha256:396b23869754e536aa80881a92622b8b488015cf711c5a40032d05d2cf08f3cf", size = 48054, upload-time = "2025-03-29T09:49:17.663Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/a2/e90242f53f7ae41554419b1695b4820b364df87c8350aa420b60b20cab92/duckdb_engine-0.17.0-py3-none-any.whl", hash = "sha256:3aa72085e536b43faab635f487baf77ddc5750069c16a2f8d9c6c3cb6083e979", size = 49676, upload-time = "2025-03-29T09:49:15.564Z" },
 ]
 
 [[package]]

@@ -315,7 +315,7 @@ Each adapter has detailed README with examples:
 - **[Cache](<./acb/adapters/cache/README.md>)**: Memory, Redis caching
 - **[SQL](<./acb/adapters/sql/README.md>)**: MySQL, PostgreSQL, SQLite
 - **[Storage](<./acb/adapters/storage/README.md>)**: S3, GCS, Azure, file
-- **[Messaging](acb/adapters/messaging/README.md)**: Memory, Redis, RabbitMQ
+- **[Messaging](<./acb/adapters/messaging/README.md>)**: Memory, Redis, RabbitMQ
 - **[Models](<./acb/adapters/models/README.md>)**: Universal query interface
 - **[Secret](<./acb/adapters/secret/README.md>)**: Infisical, GCP, Azure, Cloudflare
 - **[Monitoring](<./acb/adapters/monitoring/README.md>)**: Sentry, Logfire

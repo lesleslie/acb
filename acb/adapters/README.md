@@ -121,7 +121,7 @@ ACB includes the following adapter categories:
 ### Logging
 
 - **Loguru**: ACB uses Loguru as its core logging module for structured logging and error tracking. Refer to the Logging section for configuration details.
-- [**Logger**](./logger/README.md): Application logging
+- [**Logger**](<./logger/README.md>): Application logging
   - **Loguru**: Structured logging with Loguru (default)
   - **Structlog**: Alternative structured logging with structlog
 

@@ -19,6 +19,7 @@ class GraphQueryLanguage(str, Enum):
     GREMLIN = "gremlin"
     AQL = "aql"
     SPARQL = "sparql"
+    PGQ = "pgq"
 
 
 class GraphTraversalDirection(str, Enum):

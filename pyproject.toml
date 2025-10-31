@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.26.0"
+version = "0.27.0"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 authors = [
@@ -133,6 +133,8 @@ sql = [
     "aiomysql>=0.2",
     "aiosqlite>=0.21",
     "babel>=2.17",
+    "duckdb>=0.10.2",
+    "duckdb-engine>=0.11.2",
     "greenlet>=3.2.3",
     "logfire[sqlalchemy]>=3.24",
     "pymysql>=1.1.1",
@@ -157,6 +159,8 @@ vector = [
 ]
 graph = [
     "boto3>=1.26",
+    "duckdb>=0.10.2",
+    "duckdb-engine>=0.11.2",
     "neo4j>=5",
     "py2neo>=2021",
     "python-arango>=7",

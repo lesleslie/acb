@@ -236,5 +236,5 @@ class MonitoringBase:
 
 - [Sentry Documentation](https://docs.sentry.io/platforms/python/)
 - [Performance Monitoring Best Practices](https://docs.sentry.io/product/performance/)
-- [ACB Logger Adapter](../logger/README.md)
+- [ACB Logger Adapter](<../logger/README.md>)
 - [ACB Adapters Overview](<../README.md>)
