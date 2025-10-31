@@ -23,18 +23,23 @@ class Console(RichConsole):
                     # Try to get existing event loop first
                     loop = None
                     with suppress(RuntimeError):
-                        # No running loop, safe to use asyncio.run
                         loop = asyncio.get_running_loop()
 
                     if loop is not None:
                         # Event loop is running, schedule the coroutine
-                        # and use synchronous print as fallback
-                        print(text, file=self.file)
+                        try:
+                            asyncio.run_coroutine_threadsafe(aprint(text, end=""), loop)
+                        except RuntimeError:
+                            # and use synchronous write as fallback
+                            self.file.write(text)
                     else:
                         # No running loop, safe to use asyncio.run
-                        asyncio.run(aprint(text))
+                        asyncio.run(aprint(text, end=""))
                 except UnicodeEncodeError as error:
-                    error.reason = f"{error.reason}\n*** You may need to add PYTHONIOENCODING=utf-8 to your environment ***"
+                    error.reason = (
+                        f"{error.reason}\n*** You may need to add"
+                        f" PYTHONIOENCODING=utf-8 to your environment ***"
+                    )
                     raise
                 self.file.flush()
                 del self._buffer[:]
