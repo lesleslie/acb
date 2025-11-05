@@ -159,14 +159,22 @@ class Vector(VectorBase):
         filter_expr: dict[str, t.Any] | None,
         limit: int,
     ) -> str:
-        """Build the main search query with VSS."""
+        """Build the main search query with VSS.
+
+        Note: Uses cosine similarity which returns higher scores for more similar vectors.
+        DuckDB's array_cosine_similarity returns values in range [0.0, 1.0] where
+        1.0 is identical and 0.0 is orthogonal.
+        """
         # Validate inputs to prevent SQL injection
         safe_table_name = self._validate_table_name(table_name)
         safe_select_fields = self._validate_select_fields(select_fields)
 
+        # Get dimension from config for proper type casting
+        dimension = self.config.vector.default_dimension
+
         query = f"""
             SELECT {safe_select_fields},
-                   array_distance(vector, $1::FLOAT[]) as score
+                   array_cosine_similarity(vector, $1::FLOAT[{dimension}]) as score
             FROM {safe_table_name}
         """  # nosec B608 - table and field names are validated
 
@@ -175,7 +183,7 @@ class Vector(VectorBase):
             if filter_conditions:
                 query += " WHERE " + " AND ".join(filter_conditions)
 
-        query += f" ORDER BY score ASC LIMIT {limit}"  # nosec B608
+        query += f" ORDER BY score DESC LIMIT {limit}"  # nosec B608 - DESC for similarity
         return query
 
     def _build_fallback_query(

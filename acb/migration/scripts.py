@@ -7,7 +7,13 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import anyio
-from acb.logger import logger
+from acb.depends import depends
+from acb.logger import Logger as LoggerAdapter
+
+if TYPE_CHECKING:
+    pass
+
+logger = depends.get_sync(LoggerAdapter)
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -5,9 +5,16 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
-from acb.logger import logger
+from acb.depends import depends
+from acb.logger import Logger as LoggerAdapter
+
+if TYPE_CHECKING:
+    pass
+
+logger = depends.get_sync(LoggerAdapter)
 from acb.migration._base import (
     MigrationConfig,
     MigrationMetrics,

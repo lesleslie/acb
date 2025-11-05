@@ -90,12 +90,14 @@ def create_pattern_validator(pattern: str | re.Pattern[str]) -> t.Callable[[str]
     Example:
         _validate_api_key = field_validator("api_key")(create_pattern_validator(r"^sk-\w+$"))
     """
-    regex = re.compile(pattern) if isinstance(pattern, str) else pattern
+    regex = (
+        re.compile(pattern) if isinstance(pattern, str) else pattern
+    )  # REGEX OK: Dynamic pattern validator - caller provides pattern, used for field validation
 
     def _validate(value: str) -> str:
         if not isinstance(value, str):
             raise ValueError("Expected string")
-        if not regex.match(value):
+        if not regex.match(value):  # REGEX OK: Using pre-compiled pattern from above
             raise ValueError("Value does not match required pattern")
         return value
 

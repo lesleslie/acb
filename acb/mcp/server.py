@@ -6,12 +6,15 @@ exposing ACB's capabilities through the Model Context Protocol.
 
 import importlib.util
 from contextlib import suppress
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastmcp import FastMCP
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
+
+if TYPE_CHECKING:
+    from acb.adapters.logger import LoggerProtocol as Logger
 
 from .registry import ComponentRegistry
 

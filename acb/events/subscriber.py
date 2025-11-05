@@ -74,7 +74,7 @@ class SubscriberSettings(ServiceSettings):
     handler_timeout: float = Field(default=30.0)
 
     # Health monitoring
-    enable_health_checks: bool = Field(default=True)
+    health_check_enabled: bool = Field(default=True)
 
     # Retry configuration
     enable_retries: bool = Field(default=True)
@@ -473,7 +473,7 @@ class EventSubscriber(ServiceBase):
     async def _initialize(self) -> None:
         """Initialize the event subscriber (ServiceBase requirement)."""
         # Start health monitoring if enabled
-        if self._settings.enable_health_checks:
+        if self._settings.health_check_enabled:
             self._health_check_task = asyncio.create_task(self._health_check_worker())
 
         self._logger.info("Event subscriber started")

@@ -24,7 +24,7 @@ from acb.adapters.reasoning._base import (
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    from acb.logger import LoggerType
+    from acb.adapters.logger import LoggerProtocol as LoggerType
 else:
     from acb.logger import Logger as LoggerType
 

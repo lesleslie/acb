@@ -83,7 +83,17 @@ class GraphQueryResult(BaseModel):
 
 
 class GraphBaseSettings(Settings, SSLConfigMixin):
-    """Base settings for graph database adapters."""
+    """Base settings for graph database adapters.
+
+    Note: SSL configuration fields are defined for documentation purposes but are
+    excluded from Pydantic validation to avoid conflicts with SSLConfigMixin properties.
+    These fields are handled manually in __init__.
+    """
+
+    # Pydantic config to exclude SSL fields from validation (handled in __init__)
+    model_config = {
+        "extra": "allow",  # Allow extra fields for SSL config
+    }
 
     # Connection settings
     host: SecretStr = SecretStr("127.0.0.1")
@@ -115,13 +125,14 @@ class GraphBaseSettings(Settings, SSLConfigMixin):
     batch_size: int = 1000
     parallel_queries: bool = False
 
-    # SSL/TLS Configuration
-    ssl_enabled: bool = False
-    ssl_cert_path: str | None = None
-    ssl_key_path: str | None = None
-    ssl_ca_path: str | None = None
-    ssl_verify_mode: str = "required"
-    tls_version: str = "TLSv1.2"
+    # SSL/TLS Configuration (handled manually in __init__, not validated by Pydantic)
+    # These are not Pydantic fields - they are popped in __init__ before validation
+    # ssl_enabled: bool = False
+    # ssl_cert_path: str | None = None
+    # ssl_key_path: str | None = None
+    # ssl_ca_path: str | None = None
+    # ssl_verify_mode: str = "required"
+    # tls_version: str = "TLSv1.2"
 
     @depends.inject
     def __init__(self, config: Inject[Config], **values: t.Any) -> None:

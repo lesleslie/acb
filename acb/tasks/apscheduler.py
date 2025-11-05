@@ -21,10 +21,10 @@ try:
 
     APSCHEDULER_AVAILABLE = True
 except ImportError:
-    AsyncIOScheduler = None  # type: ignore[assignment,misc]
-    CronTrigger = None  # type: ignore[assignment,misc]
-    DateTrigger = None  # type: ignore[assignment,misc]
-    IntervalTrigger = None  # type: ignore[assignment,misc]
+    AsyncIOScheduler = None  # type: ignore[assignment,misc,no-redef]
+    CronTrigger = None  # type: ignore[assignment,misc,no-redef]
+    DateTrigger = None  # type: ignore[assignment,misc,no-redef]
+    IntervalTrigger = None  # type: ignore[assignment,misc,no-redef]
     APSCHEDULER_AVAILABLE = False
 
 
@@ -346,15 +346,15 @@ class Queue(QueueBase):
 
         # Create trigger based on task scheduling
         if task.scheduled_at:
-            trigger = DateTrigger(run_date=task.scheduled_at)
+            trigger = DateTrigger(run_date=task.scheduled_at)  # type: ignore[call-arg]
         elif task.delay > 0:
             from datetime import timedelta
 
             run_date = datetime.now(tz=UTC) + timedelta(seconds=task.delay)
-            trigger = DateTrigger(run_date=run_date)
+            trigger = DateTrigger(run_date=run_date)  # type: ignore[call-arg]
         else:
             # Immediate execution
-            trigger = DateTrigger(run_date=datetime.now(tz=UTC))
+            trigger = DateTrigger(run_date=datetime.now(tz=UTC))  # type: ignore[call-arg]
 
         # Add job to scheduler
         scheduler.add_job(
@@ -678,7 +678,7 @@ class Queue(QueueBase):
             queue_name=queue_name,
         )
 
-        trigger = IntervalTrigger(
+        trigger = IntervalTrigger(  # type: ignore[call-arg]
             seconds=interval_seconds,
             timezone=self.settings.timezone,
         )

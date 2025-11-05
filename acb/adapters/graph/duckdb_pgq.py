@@ -77,7 +77,9 @@ def _safe_ident(name: str) -> str:
     Allows only letters, numbers, and underscores, starting with a letter or underscore.
     Raises ValueError if the identifier is unsafe.
     """
-    if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):  # nosec B108
+    if not re.match(
+        r"^[A-Za-z_][A-Za-z0-9_]*$", name
+    ):  # REGEX OK: SQL identifier validation - anchored character classes only  # nosec B108
         msg = f"Unsafe SQL identifier: {name!r}"
         raise ValueError(msg)
     return name

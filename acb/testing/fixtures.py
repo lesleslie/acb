@@ -18,14 +18,14 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from acb.adapters.discovery import (
+from acb.config import Config
+from acb.depends import depends
+from acb.discovery_common import (
     adapter_registry,
     disable_adapter,
     enable_adapter,
     initialize_adapter_registry,
 )
-from acb.config import Config
-from acb.depends import depends
 from acb.services.discovery import (
     disable_service,
     enable_service,

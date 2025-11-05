@@ -1,12 +1,15 @@
 """Component registry for ACB MCP server."""
 
 from contextlib import suppress
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
+
+if TYPE_CHECKING:
+    from acb.adapters.logger import LoggerProtocol as Logger
 
 
 class ComponentRegistry:

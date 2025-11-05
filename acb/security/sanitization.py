@@ -27,11 +27,21 @@ __all__ = [
 
 # Common sensitive key/token patterns
 SENSITIVE_PATTERNS: dict[str, re.Pattern[str]] = {
-    "openai": re.compile(r"sk-[A-Za-z0-9]{48}"),  # OpenAI API key pattern
-    "anthropic": re.compile(r"sk-ant-[A-Za-z0-9\-_]{95,}"),  # Anthropic API key pattern
-    "github": re.compile(r"gh[ps]_[A-Za-z0-9]{36,255}"),  # GitHub token pattern
-    "jwt": re.compile(r"eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+"),
-    "generic_hex": re.compile(r"\b[0-9a-f]{32,}\b"),  # Generic hex token
+    "openai": re.compile(
+        r"sk-[A-Za-z0-9]{48}"
+    ),  # REGEX OK: OpenAI API key pattern - fixed length, character classes only
+    "anthropic": re.compile(
+        r"sk-ant-[A-Za-z0-9\-_]{95,}"
+    ),  # REGEX OK: Anthropic API key pattern - bounded quantifier with character class
+    "github": re.compile(
+        r"gh[ps]_[A-Za-z0-9]{36,255}"
+    ),  # REGEX OK: GitHub token pattern - bounded quantifier with character class
+    "jwt": re.compile(
+        r"eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+"
+    ),  # REGEX OK: JWT pattern - structure-based, no nested quantifiers
+    "generic_hex": re.compile(
+        r"\b[0-9a-f]{32,}\b"
+    ),  # REGEX OK: Generic hex token - word boundaries with character class
 }
 
 
@@ -77,13 +87,17 @@ def sanitize_input(
 
     cleaned = value
     if strip_html:
-        cleaned = re.sub(r"<[^>]+>", "", cleaned)
+        cleaned = re.sub(
+            r"<[^>]+>", "", cleaned
+        )  # REGEX OK: HTML tag removal - negated character class with bounded match
 
     if max_length is not None and len(cleaned) > max_length:
         msg = f"Input exceeds maximum length of {max_length}"
         raise ValueError(msg)
 
-    if allowed_chars is not None and not re.match(rf"^[{allowed_chars}]*$", cleaned):
+    if allowed_chars is not None and not re.match(
+        rf"^[{allowed_chars}]*$", cleaned
+    ):  # REGEX OK: Character allowlist validation - anchored with character class
         msg = f"Input contains disallowed characters. Allowed: {allowed_chars}"
         raise ValueError(msg)
 
@@ -166,7 +180,9 @@ def _sanitize_string(
 
     if mask_patterns:
         for cp in mask_patterns:
-            s = re.sub(cp, "[REDACTED]", s)
+            s = re.sub(
+                cp, "[REDACTED]", s
+            )  # REGEX OK: User-provided patterns for custom masking - caller responsibility
     return s
 
 

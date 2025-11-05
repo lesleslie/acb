@@ -140,6 +140,7 @@ class PublisherMetrics(BaseModel):
     requests_handled: int = 0
     errors_count: int = 0
     last_error: str | None = None
+    custom_metrics: dict[str, t.Any] = Field(default_factory=dict)
 
     # Publisher-specific metrics
     events_published: int = 0
@@ -237,7 +238,7 @@ class EventPublisher(EventPublisherBase):
         return self._pubsub
 
     @property
-    def metrics(self) -> PublisherMetrics:
+    def metrics(self) -> PublisherMetrics:  # type: ignore[override]
         """Get publisher metrics."""
         self._metrics.subscriptions_active = len(
             [s for s in self._subscriptions if s.active],
