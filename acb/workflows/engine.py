@@ -38,9 +38,9 @@ class BasicWorkflowEngine(WorkflowEngine):
         self._action_registry: dict[str, t.Callable[..., t.Awaitable[t.Any]]] = {}
 
         # Initialize logger if not already set by dependency injection
-        if not hasattr(self, "logger") or isinstance(self.logger, type(depends())):
+        if not hasattr(self, "logger") or self.logger is None:
             try:
-                self.logger = depends.get(Logger)
+                self.logger = depends.get_sync(Logger)
             except Exception:
                 # Fallback to basic logger if DI not configured (e.g. in tests)
                 import logging

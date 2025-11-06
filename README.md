@@ -12,11 +12,17 @@
 
 ## What is ACB?
 
-ACB is a modular Python framework for building asynchronous applications with pluggable components. It provides a collection of self-contained **actions** and flexible **adapters** that integrate with various systems, along with a dynamic configuration and dependency injection system.
+ACB is a comprehensive asynchronous application platform for building production-ready Python applications with enterprise-grade capabilities. It provides a **complete architectural stack** from low-level utilities to high-level orchestration:
 
-In simpler terms, ACB helps you build Python applications by providing ready-made components that you can easily plug together, configure, and extend.
+- **Foundation Layer**: Self-contained **actions** (utilities) and flexible **adapters** (integrations)
+- **Services Layer**: Long-running components with lifecycle management, health monitoring, and metrics
+- **Orchestration Layer**: Event-driven messaging (**Events**), background job processing (**Tasks**), and complex workflow management (**Workflows**)
+- **Infrastructure Layer**: Dynamic configuration, dependency injection, and resource management
+- **Integration Layer**: Model Context Protocol (MCP) server for AI assistant integration
 
-ACB can be used as a standalone framework or as a foundation for higher-level frameworks. For example, [FastBlocks](https://github.com/lesleslie/fastblocks) builds on ACB to create a web application framework specifically designed for server-side rendered HTMX applications.
+In simpler terms, ACB evolved from a component framework into a **full application platform** that handles everything from data compression to complex multi-step business processes, all with a consistent, type-safe, async-first API.
+
+ACB can be used as a standalone platform or as a foundation for higher-level frameworks. For example, [FastBlocks](https://github.com/lesleslie/fastblocks) builds on ACB to create a web application framework specifically designed for server-side rendered HTMX applications.
 
 ## Key Concepts
 
@@ -34,16 +40,36 @@ If you're new to ACB, here are the key concepts to understand:
 
 ## Key Features
 
-- **Modular Architecture**: Mix and match components to build your application
-- **Asynchronous First**: Built for high-performance async operations
-- **Pluggable Adapters**: Swap implementations without changing your code
+### Foundation & Infrastructure
+
+- **Modular Architecture**: Mix and match components across all architectural layers
+- **Asynchronous First**: Built for high-performance async operations throughout the stack
+- **Pluggable Adapters**: Swap implementations without changing your code (20+ adapter categories)
 - **Dynamic Discovery**: Convention-based adapter detection and configuration-driven selection
-- **Configuration-Driven**: Change behavior through configuration rather than code
-- **Type Safety**: Built on Pydantic for validation and type safety
+- **Configuration-Driven**: Change behavior through YAML configuration with hot-reloading support
+- **Type Safety**: Built on Pydantic with Protocol-based dependency injection for robust typing
 - **Performance Optimized**: Streamlined initialization and reduced overhead (0.18.0+)
-- **Simple & Reliable**: Focused on core adapter functionality without over-engineering (0.19.3+)
-- **Basic Security**: Essential SSL/TLS configuration and secure defaults
-- **Resource Cleanup**: Simple resource management patterns with automatic cleanup
+
+### Services Layer (v0.20.0+)
+
+- **Enterprise Services**: Production-ready services with lifecycle management and health monitoring
+- **Repository Pattern**: Multi-database coordination with Unit of Work pattern and caching integration
+- **Validation Services**: Schema validation, input sanitization, and security-focused data processing
+- **Performance Services**: Metrics collection, cache optimization, and query performance analysis
+
+### Orchestration Layer (v0.20.0+)
+
+- **Event-Driven Architecture**: Pub-sub messaging with multiple delivery modes and error handling
+- **Background Task Processing**: Reliable job queue with priority support, scheduling, and retry mechanisms
+- **Workflow Management**: Complex multi-step process orchestration with state persistence
+- **Multiple Backends**: Memory, Redis, RabbitMQ, and APScheduler support for flexible deployment
+
+### Integration & AI (v0.23.0+)
+
+- **MCP Server**: Model Context Protocol integration for AI assistants like Claude
+- **Universal Component Discovery**: Single interface to discover and execute all ACB capabilities
+- **AI/ML Adapters**: Seamless integration with LLMs, embedding models, and ML serving platforms
+- **Real-time Monitoring**: WebSocket-based dashboards and progress tracking
 
 ## Table of Contents
 
@@ -122,22 +148,83 @@ ACB supports various optional dependencies for different adapters and functional
 
 ## Architecture Overview
 
-ACB follows a component-based architecture with automatic discovery and registration of modules:
+ACB follows a **layered architecture** with automatic discovery and registration of components. The platform is organized into distinct layers, each building on the previous one to provide increasingly sophisticated capabilities:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    APPLICATION LAYER                        │
+│              (Your Code Using ACB Platform)                 │
+└─────────────────────────────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│              INTEGRATION LAYER (v0.23.0+)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │  MCP Server  │  │  AI/ML       │  │  Monitoring  │    │
+│  │  (Claude AI) │  │  Adapters    │  │  Dashboards  │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│            ORCHESTRATION LAYER (v0.20.0+)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Events     │  │    Tasks     │  │  Workflows   │    │
+│  │  (Pub/Sub)   │  │  (Job Queue) │  │  (Process)   │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│              SERVICES LAYER (v0.20.0+)                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │  Repository  │  │  Validation  │  │ Performance  │    │
+│  │   (Data)     │  │   (Schema)   │  │  (Metrics)   │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│              FOUNDATION LAYER (Core)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Actions    │  │   Adapters   │  │   Models     │    │
+│  │  (Utilities) │  │ (20+ Types)  │  │ (Universal)  │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│            INFRASTRUCTURE LAYER (Core)                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │    Config    │  │  Dependency  │  │   Resource   │    │
+│  │   (YAML)     │  │  Injection   │  │   Cleanup    │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Directory Structure
 
 ```text
 acb/
-├── actions/         # Reusable utility functions (compress, encode, hash)
-├── adapters/        # Integration modules for external systems
-│   ├── cache/       # Memory and Redis caching
-│   ├── dns/         # DNS management
-│   ├── sql/         # Database adapters (MySQL, PostgreSQL)
-│   ├── nosql/       # NoSQL adapters (MongoDB, Firestore, Redis)
-│   ├── storage/     # Storage adapters (S3, GCS, Azure, local)
-│   ├── vector/      # Vector database adapters (DuckDB with VSS)
-│   └── ...          # Additional adapter categories
-├── config.py        # Configuration system using Pydantic
-├── depends.py       # Dependency injection framework
-└── ...
+├── actions/             # Foundation: Utility functions (compress, encode, hash)
+├── adapters/            # Foundation: Integration modules (20+ categories)
+│   ├── cache/           # Memory, Redis caching
+│   ├── sql/             # MySQL, PostgreSQL, SQLite
+│   ├── nosql/           # MongoDB, Firestore, Redis
+│   ├── storage/         # S3, GCS, Azure, local file
+│   ├── messaging/       # Memory, Redis, RabbitMQ pub-sub
+│   ├── queue/           # Memory, Redis, APScheduler task queues
+│   ├── ai/              # Anthropic, OpenAI, Gemini, Ollama
+│   ├── models/          # Universal query interface
+│   └── ...              # 12+ additional categories
+├── services/            # Services Layer: Enterprise components
+│   ├── repository/      # Data access with Unit of Work pattern
+│   ├── validation/      # Schema validation and sanitization
+│   ├── performance/     # Metrics and optimization
+│   └── _base.py         # ServiceBase for lifecycle management
+├── events/              # Orchestration: Event-driven messaging
+├── tasks/               # Orchestration: Background job processing
+├── workflows/           # Orchestration: Multi-step process management
+├── mcp/                 # Integration: Model Context Protocol server
+├── config.py            # Infrastructure: Configuration system
+├── depends.py           # Infrastructure: Dependency injection
+├── cleanup.py           # Infrastructure: Resource management
+└── logger.py            # Infrastructure: Structured logging
 ```
 
 ## Core Components

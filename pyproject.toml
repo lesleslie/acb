@@ -55,6 +55,7 @@ dependencies = [
     "uvicorn>=0.30",
     "fastmcp>=2.0.0",
     "mcp-common>=0.2.0",
+    "urllib3>=2.5.0",
 ]
 
 [project.license]
