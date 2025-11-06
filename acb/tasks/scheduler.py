@@ -17,7 +17,7 @@ try:
 
     CRONITER_AVAILABLE = True
 except ImportError:
-    croniter = None
+    croniter = None  # type: ignore[assignment]
     CRONITER_AVAILABLE = False
 
 import contextlib

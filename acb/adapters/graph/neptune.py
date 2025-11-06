@@ -27,8 +27,12 @@ from acb.config import Config
 from acb.depends import Inject, depends
 
 if t.TYPE_CHECKING:
-    from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
-    from gremlin_python.process.graph_traversal import GraphTraversalSource
+    from gremlin_python.driver.driver_remote_connection import (
+        DriverRemoteConnection,  # type: ignore[import-not-found]
+    )
+    from gremlin_python.process.graph_traversal import (
+        GraphTraversalSource,  # type: ignore[import-not-found]
+    )
 
 
 MODULE_METADATA = AdapterMetadata(
@@ -123,10 +127,12 @@ class Graph(GraphBase):
     async def _create_client(self) -> "GraphTraversalSource":
         """Create Neptune connection and graph traversal source."""
         try:
-            from gremlin_python.driver.driver_remote_connection import (
+            from gremlin_python.driver.driver_remote_connection import (  # type: ignore[import-not-found]
                 DriverRemoteConnection,
             )
-            from gremlin_python.process.anonymous_traversal import traversal
+            from gremlin_python.process.anonymous_traversal import (
+                traversal,  # type: ignore[import-not-found]
+            )
         except ImportError as e:
             msg = "gremlinpython package is required for Neptune adapter"
             raise ImportError(msg) from e

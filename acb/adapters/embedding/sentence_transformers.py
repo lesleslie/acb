@@ -26,16 +26,21 @@ from acb.config import Config
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    pass
+    import torch  # type: ignore[import-not-found]
+    from sentence_transformers import (
+        SentenceTransformer,  # type: ignore[import-not-found]
+    )
 
 try:
-    import torch
-    from sentence_transformers import SentenceTransformer
+    import torch  # type: ignore[import-not-found,no-redef]
+    from sentence_transformers import (
+        SentenceTransformer,  # type: ignore[import-not-found,no-redef]
+    )
 
     _sentence_transformers_available = True
 except ImportError:
-    SentenceTransformer = None
-    torch = None
+    SentenceTransformer = None  # type: ignore[assignment,misc]
+    torch = None  # type: ignore[assignment,misc]
     _sentence_transformers_available = False
 
 MODULE_METADATA = AdapterMetadata(

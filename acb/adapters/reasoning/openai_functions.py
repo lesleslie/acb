@@ -259,7 +259,8 @@ class Reasoning(ReasoningBase):
             return response
 
         except Exception as e:
-            self.logger.exception(f"OpenAI function calling reasoning failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"OpenAI function calling reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=reasoning_chain,
@@ -389,9 +390,10 @@ class Reasoning(ReasoningBase):
                     break
 
             except Exception as e:
-                self.logger.exception(
-                    f"Error in function calling iteration {call_count}: {e}",
-                )
+                if self.logger is not None:
+                    self.logger.exception(
+                        f"Error in function calling iteration {call_count}: {e}",
+                    )
                 reasoning_chain.append(
                     ReasoningStep(
                         step_id=f"error_{call_count}",
@@ -492,7 +494,8 @@ Show your reasoning process explicitly at each step.
             )
 
         except Exception as e:
-            self.logger.exception(f"Chain-of-thought reasoning failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"Chain-of-thought reasoning failed: {e}")
             raise
 
     async def _react_reasoning(self, request: ReasoningRequest) -> ReasoningResponse:
@@ -653,7 +656,8 @@ Available tools will be provided as function calls. Use them when you need to ga
                     )
 
             except Exception as e:
-                self.logger.exception(f"Error in ReAct step {step_count}: {e}")
+                if self.logger is not None:
+                    self.logger.exception(f"Error in ReAct step {step_count}: {e}")
                 break
 
         # If we exit the loop without a final answer

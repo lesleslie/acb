@@ -8,7 +8,7 @@ from uuid import UUID
 
 logly_logger: t.Any = None
 with suppress(ImportError):
-    from logly import logger as _real_logly_logger
+    from logly import logger as _real_logly_logger  # type: ignore[import-not-found]
 
     logly_logger = _real_logly_logger
 

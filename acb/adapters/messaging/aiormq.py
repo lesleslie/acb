@@ -136,7 +136,7 @@ def _get_aiormq_imports() -> dict[str, t.Any]:
     """Lazy import of aiormq dependencies."""
     if not _aiormq_imports:
         try:
-            import aiormq
+            import aiormq  # type: ignore[import-not-found]
 
             _aiormq_imports.update(
                 {

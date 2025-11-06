@@ -174,7 +174,7 @@ async def get_adapter_info(adapter_name: str) -> dict[str, Any]:
         raise ValueError(msg)
 
     # Return adapter information
-    info = {
+    info: dict[str, Any] = {
         "name": adapter_name,
         "type": type(adapter).__name__,
         "module": type(adapter).__module__,
@@ -183,7 +183,7 @@ async def get_adapter_info(adapter_name: str) -> dict[str, Any]:
     # Include MODULE_METADATA if available
     if hasattr(adapter, "MODULE_METADATA"):
         metadata = adapter.MODULE_METADATA
-        info["metadata"] = {
+        metadata_dict: dict[str, Any] = {
             "module_id": str(metadata.module_id),
             "name": metadata.name,
             "category": metadata.category,
@@ -198,6 +198,7 @@ async def get_adapter_info(adapter_name: str) -> dict[str, Any]:
             ],
             "description": metadata.description,
         }
+        info["metadata"] = metadata_dict
 
     return info
 
@@ -240,7 +241,7 @@ async def execute_workflow(
             logger.info(f"Executing step {i + 1}/{len(steps)}: {step_name}")
 
             # Execute based on component type
-            if component_type == "action":
+            if component_type == "action" and component_name and action_name:
                 result = await execute_action(component_name, action_name, **parameters)
                 results[step_name] = result
 
@@ -406,7 +407,7 @@ class ACBMCPServer:
             with suppress(Exception):
                 self.logger.info(f"Starting ACB MCP Server with {transport} transport")
 
-        mcp.run(transport=transport, **kwargs)
+        mcp.run(transport=transport, **kwargs)  # type: ignore[arg-type]
 
     async def cleanup(self) -> None:
         """Clean up server resources."""

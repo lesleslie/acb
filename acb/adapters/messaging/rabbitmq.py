@@ -130,8 +130,11 @@ def _get_aio_pika_imports() -> dict[str, t.Any]:
     """Lazy import of aio-pika dependencies."""
     if not _aio_pika_imports:
         try:
-            import aio_pika
-            from aio_pika import DeliveryMode, ExchangeType
+            import aio_pika  # type: ignore[import-not-found]
+            from aio_pika import (  # type: ignore[import-not-found]
+                DeliveryMode,
+                ExchangeType,
+            )
 
             _aio_pika_imports.update(
                 {

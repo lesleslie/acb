@@ -30,18 +30,26 @@ else:
 
 # Conditional imports for LangChain
 try:
-    from langchain.agents import AgentExecutor, initialize_agent
-    from langchain.agents.agent_types import AgentType
-    from langchain.callbacks import AsyncCallbackHandler
-    from langchain.chains import ConversationChain, LLMChain
-    from langchain.chains.conversation.memory import (
+    from langchain.agents import (  # type: ignore[import-not-found,attr-defined]
+        AgentExecutor,
+        initialize_agent,
+    )
+    from langchain.agents.agent_types import AgentType  # type: ignore[import-not-found]
+    from langchain.callbacks import (  # type: ignore[import-not-found]
+        AsyncCallbackHandler,
+    )
+    from langchain.chains import (  # type: ignore[import-not-found]
+        ConversationChain,
+        LLMChain,
+    )
+    from langchain.chains.conversation.memory import (  # type: ignore[import-not-found]
         ConversationBufferMemory,
         ConversationSummaryMemory,
     )
-    from langchain.llms.base import LLM
-    from langchain.prompts import PromptTemplate
-    from langchain.tools import Tool
-    from langchain_openai import ChatOpenAI
+    from langchain.llms.base import LLM  # type: ignore[import-not-found]
+    from langchain.prompts import PromptTemplate  # type: ignore[import-not-found]
+    from langchain.tools import Tool  # type: ignore[import-not-found,attr-defined]
+    from langchain_openai import ChatOpenAI  # type: ignore[import-not-found]
 
     LANGCHAIN_AVAILABLE = True
 except ImportError:
@@ -125,7 +133,7 @@ class LangChainReasoningSettings(ReasoningBaseSettings):
 class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
     """Async callback handler for LangChain operations."""
 
-    def __init__(self, logger: LoggerType) -> None:
+    def __init__(self, logger: LoggerType | None) -> None:
         self.logger = logger
         self.steps: list[ReasoningStep] = []
         self.current_step: ReasoningStep | None = None
@@ -144,7 +152,8 @@ class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
             description=f"Chain started: {serialized.get('name', 'Unknown')}",
             input_data=inputs,
         )
-        self.logger.debug(f"Chain started: {serialized.get('name', 'Unknown')}")
+        if self.logger is not None:
+            self.logger.debug(f"Chain started: {serialized.get('name', 'Unknown')}")
 
     async def on_chain_end(self, outputs: dict[str, t.Any], **kwargs: t.Any) -> None:
         """Called when a chain ends running."""
@@ -152,7 +161,8 @@ class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
             self.current_step.output_data = outputs
             self.steps.append(self.current_step)
             self.current_step = None
-        self.logger.debug(f"Chain ended with outputs: {list(outputs.keys())}")
+        if self.logger is not None:
+            self.logger.debug(f"Chain ended with outputs: {list(outputs.keys())}")
 
     async def on_chain_error(self, error: Exception, **kwargs: t.Any) -> None:
         """Called when a chain errors."""
@@ -160,7 +170,8 @@ class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
             self.current_step.error = str(error)
             self.steps.append(self.current_step)
             self.current_step = None
-        self.logger.error(f"Chain error: {error}")
+        if self.logger is not None:
+            self.logger.error(f"Chain error: {error}")
 
     async def on_tool_start(
         self,
@@ -170,23 +181,30 @@ class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
     ) -> None:
         """Called when a tool starts running."""
         tool_name = serialized.get("name", "Unknown Tool")
-        self.logger.debug(f"Tool started: {tool_name} with input: {input_str[:100]}...")
+        if self.logger is not None:
+            self.logger.debug(
+                f"Tool started: {tool_name} with input: {input_str[:100]}..."
+            )
 
     async def on_tool_end(self, output: str, **kwargs: t.Any) -> None:
         """Called when a tool ends running."""
-        self.logger.debug(f"Tool ended with output: {output[:100]}...")
+        if self.logger is not None:
+            self.logger.debug(f"Tool ended with output: {output[:100]}...")
 
     async def on_tool_error(self, error: Exception, **kwargs: t.Any) -> None:
         """Called when a tool errors."""
-        self.logger.error(f"Tool error: {error}")
+        if self.logger is not None:
+            self.logger.error(f"Tool error: {error}")
 
     async def on_agent_action(self: t.Any, action: t.Any, **kwargs: t.Any) -> None:
         """Called when an agent takes an action."""
-        self.logger.debug(f"Agent action: {action.tool} - {action.tool_input}")
+        if self.logger is not None:
+            self.logger.debug(f"Agent action: {action.tool} - {action.tool_input}")
 
     async def on_agent_finish(self: t.Any, finish: t.Any, **kwargs: t.Any) -> None:
         """Called when an agent finishes."""
-        self.logger.debug(f"Agent finished: {finish.return_values}")
+        if self.logger is not None:
+            self.logger.debug(f"Agent finished: {finish.return_values}")
 
 
 class Reasoning(ReasoningBase):
@@ -233,7 +251,7 @@ class Reasoning(ReasoningBase):
                 )
 
         # Create ChatOpenAI instance for better chat capabilities
-        return ChatOpenAI(
+        return ChatOpenAI(  # type: ignore[call-arg]
             model=settings.model,
             temperature=settings.temperature,
             max_tokens=settings.max_tokens_per_step,
@@ -292,7 +310,8 @@ class Reasoning(ReasoningBase):
             return response
 
         except Exception as e:
-            self.logger.exception(f"Reasoning failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"Reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=callback.steps,
@@ -490,7 +509,8 @@ Answer:
             )
 
         except Exception as e:
-            self.logger.exception(f"RAG workflow failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"RAG workflow failed: {e}")
             # Fall back to regular reasoning
             return await self._chain_of_thought_reasoning(request, llm, callback)
 

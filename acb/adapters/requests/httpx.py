@@ -2,8 +2,12 @@ import typing as t
 from uuid import UUID
 
 import httpx
-from hishel import AsyncCacheClient, AsyncRedisStorage, Controller
-from hishel._utils import generate_key
+from hishel import (  # type: ignore[import-not-found]
+    AsyncCacheClient,
+    AsyncRedisStorage,
+    Controller,
+)
+from hishel._utils import generate_key  # type: ignore[import-not-found]
 from httpcore import Request
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr

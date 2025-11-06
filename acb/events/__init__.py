@@ -182,7 +182,7 @@ from acb.services import (
     ServiceMetadata,
     ServiceSettings,
 )
-from acb.services.discovery import generate_service_id
+from acb.services.discovery import ServiceStatus, generate_service_id
 
 
 class EventsServiceSettings(ServiceSettings):
@@ -227,7 +227,7 @@ class EventsService(ServiceBase):
         author="ACB Framework",
         created_date="2024-01-01",
         last_modified="2024-01-01",
-        status="stable",
+        status=ServiceStatus.STABLE,
         capabilities=[
             ServiceCapability.ASYNC_OPERATIONS,
             ServiceCapability.HEALTH_MONITORING,
@@ -244,10 +244,8 @@ class EventsService(ServiceBase):
         self._publisher: EventPublisher | None = None
         self._subscriber: EventSubscriber | None = None
 
-    async def start(self) -> None:
-        """Start the events service."""
-        await super().start()
-
+    async def _initialize(self) -> None:
+        """Initialize the events service."""
         # Start publisher if enabled
         if self._settings.enable_publisher:
             publisher_settings = EventPublisherSettings(
@@ -257,7 +255,7 @@ class EventsService(ServiceBase):
                 default_retry_delay=self._settings.retry_delay,
             )
             self._publisher = EventPublisher(publisher_settings)
-            await self._publisher.start()
+            await self._publisher.initialize()
 
         # Start subscriber if enabled
         if self._settings.enable_subscriber:
@@ -275,19 +273,17 @@ class EventsService(ServiceBase):
                 retry_delay=self._settings.retry_delay,
             )
             self._subscriber = EventSubscriber(subscriber_settings)
-            await self._subscriber.start()
+            await self._subscriber.initialize()
 
-    async def stop(self) -> None:
-        """Stop the events service."""
+    async def _shutdown(self) -> None:
+        """Shutdown the events service."""
         if self._publisher:
-            await self._publisher.stop()
+            await self._publisher.shutdown()
             self._publisher = None
 
         if self._subscriber:
-            await self._subscriber.stop()
+            await self._subscriber.shutdown()
             self._subscriber = None
-
-        await super().stop()
 
     @property
     def publisher(self) -> EventPublisher | None:
@@ -349,11 +345,11 @@ async def setup_events_service(
         settings: Events service settings
 
     Returns:
-        Started EventsService instance
+        Initialized EventsService instance
     """
     global _events_service
     _events_service = EventsService(settings)
-    await _events_service.start()
+    await _events_service.initialize()
 
     # Register with ACB dependency injection
     from acb.depends import depends

@@ -270,7 +270,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
     def _has_cuda(self) -> bool:
         """Check if CUDA is available (simulation)."""
         try:
-            import torch
+            import torch  # type: ignore[import-not-found]
 
             result: bool = torch.cuda.is_available()
             return result

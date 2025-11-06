@@ -6,7 +6,6 @@ import typing as t
 from contextlib import suppress
 from datetime import datetime
 
-import torch
 from pydantic import Field
 from acb.adapters import (
     AdapterCapability,
@@ -26,11 +25,16 @@ from acb.config import Config
 from acb.depends import depends
 
 if t.TYPE_CHECKING:
-    pass
+    import torch  # type: ignore[import-not-found]
 
 try:
-    import torch.nn.functional as F
-    from transformers import AutoModel, AutoTokenizer, BatchEncoding
+    import torch  # type: ignore[import-not-found,no-redef]
+    import torch.nn.functional as F  # type: ignore[import-not-found]
+    from transformers import (  # type: ignore[import-not-found]
+        AutoModel,
+        AutoTokenizer,
+        BatchEncoding,
+    )
 
     _transformers_available = True
 except ImportError:

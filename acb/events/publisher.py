@@ -184,8 +184,8 @@ class EventPublisher(EventPublisherBase):
 
     def __init__(self, settings: EventPublisherSettings | None = None) -> None:
         super().__init__()
-        self._settings = settings or EventPublisherSettings()
-        self._metrics = PublisherMetrics()
+        self._settings: EventPublisherSettings = settings or EventPublisherSettings()
+        self._metrics: PublisherMetrics = PublisherMetrics()  # type: ignore[assignment]
 
         # PubSub adapter integration (lazy initialization)
         self._pubsub: t.Any = None
@@ -203,15 +203,15 @@ class EventPublisher(EventPublisherBase):
 
         # Subscription management
         self._subscription_lock = asyncio.Lock()
-        self._subscription_tasks: dict[UUID, list[asyncio.Task[None]]] = defaultdict(
-            list
+        self._subscription_tasks: dict[UUID, list[asyncio.Task[EventHandlerResult]]] = (
+            defaultdict(list)
         )
 
         # Event routing maps for performance
         self._type_subscriptions: dict[str, list[EventSubscription]] = defaultdict(list)
         self._wildcard_subscriptions: list[EventSubscription] = []
 
-        self._logger = logging.getLogger(__name__)
+        self._logger: logging.Logger = logging.getLogger(__name__)
 
     def _ensure_pubsub(self) -> t.Any:
         """Ensure pubsub adapter is initialized with lazy loading."""
@@ -297,14 +297,14 @@ class EventPublisher(EventPublisherBase):
         self._subscription_tasks.clear()
 
     @staticmethod
-    def _cancel_tasks(tasks: list[asyncio.Task[None]]) -> None:
+    def _cancel_tasks(tasks: list[asyncio.Task[t.Any]]) -> None:
         """Cancel a list of tasks."""
         for task in tasks:
             if not task.done():
                 task.cancel()
 
     @staticmethod
-    async def _wait_for_tasks(tasks: list[asyncio.Task[None]]) -> None:
+    async def _wait_for_tasks(tasks: list[asyncio.Task[t.Any]]) -> None:
         """Wait for tasks to complete, ignoring exceptions."""
         if tasks:
             with suppress(Exception):
@@ -350,10 +350,10 @@ class EventPublisher(EventPublisherBase):
             "critical": MessagePriority.CRITICAL,
         }
         # Handle both EventPriority enum and string (after serialization)
-        priority_value = (
+        priority_value: str = (
             event.metadata.priority.value
             if hasattr(event.metadata.priority, "value")
-            else event.metadata.priority
+            else str(event.metadata.priority)
         )
         queue_priority = priority_map.get(priority_value, MessagePriority.NORMAL)
 
@@ -495,9 +495,9 @@ class EventPublisher(EventPublisherBase):
             )
 
             # Convert exceptions to failed results
-            processed_results = []
+            processed_results: list[EventHandlerResult] = []
             for result in results:
-                if isinstance(result, Exception):
+                if isinstance(result, BaseException):
                     processed_results.append(
                         EventHandlerResult(
                             success=False,
@@ -583,7 +583,14 @@ class EventPublisher(EventPublisherBase):
 
         # Execute and process results
         try:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Convert exceptions to EventHandlerResult
+            results: list[EventHandlerResult] = [
+                EventHandlerResult(success=False, error_message=str(r))
+                if isinstance(r, BaseException)
+                else r
+                for r in raw_results
+            ]
             success_count = self._count_successful_results(results, event)
 
             if success_count > 0:
@@ -621,21 +628,21 @@ class EventPublisher(EventPublisherBase):
 
     def _count_successful_results(
         self,
-        results: list[EventHandlerResult | Exception],
+        results: list[EventHandlerResult],
         event: Event,
     ) -> int:
         """Count successful handler results."""
         success_count = 0
         for result in results:
-            match result:
-                case Exception() as e:
-                    self._logger.error(
-                        "Handler error for event %s: %s",
-                        event.metadata.event_id,
-                        e,
-                    )
-                case EventHandlerResult(success=True):
-                    success_count += 1
+            # All exceptions are already converted to EventHandlerResult above
+            if result.success:
+                success_count += 1
+            elif result.error_message:
+                self._logger.error(
+                    "Handler error for event %s: %s",
+                    event.metadata.event_id,
+                    result.error_message,
+                )
         return success_count
 
     def _cleanup_completed_tasks(self, subscriptions: list[EventSubscription]) -> None:
@@ -708,7 +715,7 @@ class EventPublisher(EventPublisherBase):
 
             # Re-publish with delay for retry
             topic = f"{self._settings.event_topic_prefix}.{event.metadata.event_type}"
-            payload = msgpack.packb(event.model_dump(mode="json"))
+            payload = msgpack.encode(event.model_dump(mode="json"))
 
             await self._pubsub.enqueue(
                 topic=topic,

@@ -469,7 +469,8 @@ class Reasoning(ReasoningBase):
             return response
 
         except Exception as e:
-            self.logger.exception(f"Custom reasoning failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"Custom reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=reasoning_chain,
@@ -815,12 +816,14 @@ class Reasoning(ReasoningBase):
 
                 elif action.action_type == ActionType.LOG_MESSAGE:
                     message = action.parameters.get("message", "")
-                    self.logger.info(f"Rule action log: {message}")
+                    if self.logger is not None:
+                        self.logger.info(f"Rule action log: {message}")
                     executed_actions.append(f"Logged: {message}")
 
                 elif action.action_type == ActionType.RAISE_ALERT:
                     alert_message = action.parameters.get("message", "Alert triggered")
-                    self.logger.warning(f"Rule alert: {alert_message}")
+                    if self.logger is not None:
+                        self.logger.warning(f"Rule alert: {alert_message}")
                     executed_actions.append(f"Alert: {alert_message}")
 
                 else:
@@ -829,9 +832,10 @@ class Reasoning(ReasoningBase):
                     )
 
             except Exception as e:
-                self.logger.exception(
-                    f"Error executing action {action.action_type}: {e}"
-                )
+                if self.logger is not None:
+                    self.logger.exception(
+                        f"Error executing action {action.action_type}: {e}"
+                    )
                 executed_actions.append(
                     f"Error in {action.action_type}: {e}",
                 )

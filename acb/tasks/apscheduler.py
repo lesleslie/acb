@@ -14,10 +14,14 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 try:
-    from apscheduler.schedulers.asyncio import AsyncIOScheduler
-    from apscheduler.triggers.cron import CronTrigger
-    from apscheduler.triggers.date import DateTrigger
-    from apscheduler.triggers.interval import IntervalTrigger
+    from apscheduler.schedulers.asyncio import (
+        AsyncIOScheduler,  # type: ignore[import-not-found]
+    )
+    from apscheduler.triggers.cron import CronTrigger  # type: ignore[import-not-found]
+    from apscheduler.triggers.date import DateTrigger  # type: ignore[import-not-found]
+    from apscheduler.triggers.interval import (
+        IntervalTrigger,  # type: ignore[import-not-found]
+    )
 
     APSCHEDULER_AVAILABLE = True
 except ImportError:
@@ -187,12 +191,16 @@ class Queue(QueueBase):
         stores = {}
 
         if self.settings.job_store_type == "memory":
-            from apscheduler.jobstores.memory import MemoryJobStore
+            from apscheduler.jobstores.memory import (
+                MemoryJobStore,  # type: ignore[import-not-found]
+            )
 
             stores["default"] = MemoryJobStore()
 
         elif self.settings.job_store_type == "sqlalchemy":
-            from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+            from apscheduler.jobstores.sqlalchemy import (
+                SQLAlchemyJobStore,  # type: ignore[import-not-found]
+            )
 
             if not self.settings.job_store_url:
                 msg = "job_store_url required for SQLAlchemy job store"
@@ -206,8 +214,10 @@ class Queue(QueueBase):
             )
 
         elif self.settings.job_store_type == "mongodb":
-            import pymongo
-            from apscheduler.jobstores.mongodb import MongoDBJobStore
+            import pymongo  # type: ignore[import-not-found]
+            from apscheduler.jobstores.mongodb import (
+                MongoDBJobStore,  # type: ignore[import-not-found]
+            )
 
             client_options = self.settings.mongodb_client_options.copy()
             # Extract connection URL if provided in job_store_url
@@ -226,8 +236,10 @@ class Queue(QueueBase):
             )
 
         elif self.settings.job_store_type == "redis":
-            import redis
-            from apscheduler.jobstores.redis import RedisJobStore
+            import redis  # type: ignore[import-not-found]
+            from apscheduler.jobstores.redis import (
+                RedisJobStore,  # type: ignore[import-not-found]
+            )
 
             # Extract connection parameters if URL provided
             if self.settings.job_store_url:
@@ -257,19 +269,25 @@ class Queue(QueueBase):
         executors = {}
 
         if self.settings.executor_type == "asyncio":
-            from apscheduler.executors.asyncio import AsyncIOExecutor
+            from apscheduler.executors.asyncio import (
+                AsyncIOExecutor,  # type: ignore[import-not-found]
+            )
 
             executors["default"] = AsyncIOExecutor()
 
         elif self.settings.executor_type == "thread":
-            from apscheduler.executors.pool import ThreadPoolExecutor
+            from apscheduler.executors.pool import (
+                ThreadPoolExecutor,  # type: ignore[import-not-found]
+            )
 
             executors["default"] = ThreadPoolExecutor(
                 max_workers=self.settings.thread_pool_max_workers,
             )
 
         elif self.settings.executor_type == "process":
-            from apscheduler.executors.pool import ProcessPoolExecutor
+            from apscheduler.executors.pool import (
+                ProcessPoolExecutor,  # type: ignore[import-not-found]
+            )
 
             executors["default"] = ProcessPoolExecutor(
                 max_workers=self.settings.process_pool_max_workers,
@@ -285,7 +303,7 @@ class Queue(QueueBase):
 
     def _setup_event_listeners(self, scheduler: AsyncIOScheduler) -> None:
         """Set up event listeners for job tracking."""
-        from apscheduler.events import (
+        from apscheduler.events import (  # type: ignore[import-not-found]
             EVENT_JOB_ERROR,
             EVENT_JOB_EXECUTED,
             EVENT_JOB_MISSED,

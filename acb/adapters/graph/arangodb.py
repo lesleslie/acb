@@ -27,8 +27,8 @@ from acb.config import Config
 from acb.depends import Inject, depends
 
 if t.TYPE_CHECKING:
-    from arango.database import StandardDatabase
-    from arango.graph import Graph as ArangoGraph
+    from arango.database import StandardDatabase  # type: ignore[import-not-found]
+    from arango.graph import Graph as ArangoGraph  # type: ignore[import-not-found]
 
     # For type checking purposes, we define ArangoClient as Any to avoid import errors
     # because arango module doesn't explicitly export ArangoClient

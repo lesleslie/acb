@@ -53,12 +53,22 @@ class WorkflowOrchestrator:
 
                 # Execute the step based on component type
                 if component_type == "action":
+                    if not isinstance(component_name, str) or not isinstance(
+                        action, str
+                    ):
+                        msg = "Action step requires string 'component' and 'action' fields"
+                        raise ValueError(msg)
                     result = await self._execute_action_step(
                         component_name,
                         action,
                         parameters,
                     )
                 elif component_type == "adapter":
+                    if not isinstance(component_name, str) or not isinstance(
+                        action, str
+                    ):
+                        msg = "Adapter step requires string 'component' and 'action' fields"
+                        raise ValueError(msg)
                     result = await self._execute_adapter_step(
                         component_name,
                         action,

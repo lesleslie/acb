@@ -14,7 +14,6 @@ Features:
 """
 
 import asyncio
-import logging
 import typing as t
 from collections import defaultdict, deque
 from collections.abc import AsyncGenerator
@@ -468,15 +467,13 @@ class EventSubscriber(ServiceBase):
         # Health monitoring
         self._health_check_task: asyncio.Task[None] | None = None
 
-        self._logger = logging.getLogger(__name__)
-
     async def _initialize(self) -> None:
         """Initialize the event subscriber (ServiceBase requirement)."""
         # Start health monitoring if enabled
         if self._settings.health_check_enabled:
             self._health_check_task = asyncio.create_task(self._health_check_worker())
 
-        self._logger.info("Event subscriber started")
+        self.logger.info("Event subscriber started")
 
     async def _shutdown(self) -> None:
         """Shutdown the event subscriber (ServiceBase requirement)."""
@@ -488,7 +485,7 @@ class EventSubscriber(ServiceBase):
             with suppress(asyncio.CancelledError):
                 await self._health_check_task
 
-        self._logger.info("Event subscriber stopped")
+        self.logger.info("Event subscriber stopped")
 
     async def start(self) -> None:
         """Start the event subscriber (public API)."""
@@ -553,7 +550,7 @@ class EventSubscriber(ServiceBase):
         self._subscriptions[subscription.subscription_id] = managed_sub
         self._router.add_subscription(managed_sub)
 
-        self._logger.debug(
+        self.logger.debug(
             "Added subscription: %s (handler=%s, event_type=%s)",
             subscription.subscription_id,
             handler.handler_name,
@@ -584,7 +581,7 @@ class EventSubscriber(ServiceBase):
         if managed_sub.buffer:
             await managed_sub.buffer.clear()
 
-        self._logger.debug("Removed subscription: %s", subscription_id)
+        self.logger.debug("Removed subscription: %s", subscription_id)
         return True
 
     async def deliver_event(self, event: Event) -> dict[UUID, EventHandlerResult]:
@@ -712,14 +709,14 @@ class EventSubscriber(ServiceBase):
                 ]
 
                 if unhealthy_subs:
-                    self._logger.warning(
+                    self.logger.warning(
                         "Found %d unhealthy subscriptions: %s",
                         len(unhealthy_subs),
                         unhealthy_subs,
                     )
 
             except Exception as e:
-                self._logger.exception("Health check error: %s", e)
+                self.logger.exception("Health check error: %s", e)
 
     # Subscription management methods
     async def pause_subscription(self, subscription_id: UUID) -> bool:

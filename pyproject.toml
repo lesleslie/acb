@@ -81,6 +81,7 @@ dev = [
     "refurb>=2.1",
     "ruff>=0.12.3",
     "session-mgmt-mcp>=0.3",
+    "types-croniter>=6.0.0.20250809",
 ]
 cache = [
     "acb",
@@ -472,6 +473,16 @@ all = [
     "qdrant-client>=1.7",
     "weaviate-client>=4",
     "fastmcp>=2.0.0",
+]
+reasoning-apscheduler = [
+    "apscheduler>=4.0.0a6",
+]
+reasoning-langchain = [
+    "langchain>=1.0.3",
+    "langchain-openai>=1.0.2",
+]
+graph-neptune = [
+    "gremlinpython>=3.7.4",
 ]
 
 [tool.ruff]

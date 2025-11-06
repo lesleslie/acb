@@ -1,9 +1,8 @@
-from typing import Any
-
 """Neo4j graph database adapter."""
 
 import typing as t
 from datetime import datetime
+from typing import Any
 from uuid import uuid4
 
 from pydantic import SecretStr
@@ -28,7 +27,7 @@ from acb.config import Config
 from acb.depends import Inject, depends
 
 if t.TYPE_CHECKING:
-    from neo4j import AsyncDriver, AsyncTransaction
+    from neo4j import AsyncDriver, AsyncTransaction  # type: ignore[import-not-found]
 
 
 MODULE_METADATA = AdapterMetadata(
@@ -118,7 +117,7 @@ class Graph(GraphBase):
     async def _create_client(self) -> "AsyncDriver":
         """Create Neo4j driver connection."""
         try:
-            from neo4j import AsyncGraphDatabase
+            from neo4j import AsyncGraphDatabase  # type: ignore[import-not-found]
         except ImportError as e:
             msg = "neo4j package is required for Neo4j adapter"
             raise ImportError(msg) from e

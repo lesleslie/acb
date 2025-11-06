@@ -543,7 +543,8 @@ class ReasoningBase(CleanupMixin, ABC):
                 for result in results
             ]
         except Exception as e:
-            self.logger.warning(f"Failed to retrieve contexts: {e}")
+            if self.logger is not None:
+                self.logger.warning(f"Failed to retrieve contexts: {e}")
             return []
 
     async def _evaluate_decision_tree(
@@ -568,7 +569,8 @@ class ReasoningBase(CleanupMixin, ABC):
                 if self._evaluate_condition(rule.condition, input_data):
                     return rule.action
             except Exception as e:
-                self.logger.warning(f"Error evaluating rule {rule.name}: {e}")
+                if self.logger is not None:
+                    self.logger.warning(f"Error evaluating rule {rule.name}: {e}")
                 continue
 
         return tree.default_action or "no_action"

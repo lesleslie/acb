@@ -518,7 +518,13 @@ def _load_event_settings() -> dict[str, t.Any]:
         for settings_path in settings_paths:
             if settings_path.exists():
                 content = settings_path.read_text()
-                return yaml.safe_load(content) or {}
+                loaded = yaml.safe_load(content)
+                # Ensure we always return dict[str, Any], not Any
+                if loaded is None:
+                    return {}
+                if isinstance(loaded, dict):
+                    return loaded
+                return {}
 
     return {}
 

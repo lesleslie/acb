@@ -10,15 +10,22 @@ from acb.ssl_config import SSLConfigMixin
 
 if t.TYPE_CHECKING:
     try:
-        from acb.adapters.vector.cache import VectorCache
+        from acb.adapters.vector.cache import (
+            VectorCache,  # type: ignore[import-not-found]
+        )
     except ImportError:
         VectorCache = t.Any  # type: ignore[misc]
     try:
-        from acb.adapters.vector.hybrid import HybridSearch
+        from acb.adapters.vector.hybrid import (
+            HybridSearch,  # type: ignore[import-not-found]
+        )
     except ImportError:
         HybridSearch = t.Any  # type: ignore[misc]
     try:
-        from acb.adapters.vector.scaling import AutoScaler, ConnectionPool
+        from acb.adapters.vector.scaling import (  # type: ignore[import-not-found]
+            AutoScaler,
+            ConnectionPool,
+        )
     except ImportError:
         AutoScaler = t.Any  # type: ignore[misc]
         ConnectionPool = t.Any  # type: ignore[misc]
@@ -287,7 +294,7 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
 
         if self._cache is None:
             try:
-                from acb.adapters.vector.cache import (
+                from acb.adapters.vector.cache import (  # type: ignore[import-not-found]
                     VectorCache,
                     VectorCacheSettings,
                 )
@@ -307,7 +314,10 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
 
         if self._hybrid_search is None:
             try:
-                from acb.adapters.vector.hybrid import HybridSearch, HybridSearchConfig
+                from acb.adapters.vector.hybrid import (  # type: ignore[import-not-found]
+                    HybridSearch,
+                    HybridSearchConfig,
+                )
 
                 config = HybridSearchConfig()
                 self._hybrid_search = HybridSearch(self, config)
@@ -323,7 +333,10 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
 
         if self._auto_scaler is None:
             try:
-                from acb.adapters.vector.scaling import AutoScaler, AutoScalingSettings
+                from acb.adapters.vector.scaling import (  # type: ignore[import-not-found]
+                    AutoScaler,
+                    AutoScalingSettings,
+                )
 
                 # Auto scaler needs a connection pool
                 connection_pool = await self.get_connection_pool()
@@ -344,7 +357,7 @@ class VectorBase(AdapterBase, CleanupMixin):  # type: ignore[misc]
 
         if self._connection_pool is None:
             try:
-                from acb.adapters.vector.scaling import (
+                from acb.adapters.vector.scaling import (  # type: ignore[import-not-found]
                     ConnectionPool,
                     ConnectionPoolSettings,
                 )

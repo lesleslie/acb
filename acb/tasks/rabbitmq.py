@@ -14,9 +14,16 @@ from typing import Any
 from uuid import UUID
 
 try:
-    import aio_pika
-    from aio_pika import Channel, Connection, DeliveryMode, ExchangeType, Message, Queue
-    from aio_pika.abc import (
+    import aio_pika  # type: ignore[import-not-found]
+    from aio_pika import (  # type: ignore[import-not-found]
+        Channel,
+        Connection,
+        DeliveryMode,
+        ExchangeType,
+        Message,
+        Queue,
+    )
+    from aio_pika.abc import (  # type: ignore[import-not-found]
         AbstractExchange,
         AbstractIncomingMessage,
         AbstractQueueIterator,
@@ -24,9 +31,9 @@ try:
 
     RABBITMQ_AVAILABLE = True
 except ImportError:
-    aio_pika = None
-    Connection = None
-    Channel = None
+    aio_pika = None  # type: ignore[assignment]
+    Connection = None  # type: ignore[assignment,misc]
+    Channel = None  # type: ignore[assignment,misc]
     Queue = None
     Message = None
     DeliveryMode = None

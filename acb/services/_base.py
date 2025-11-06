@@ -55,6 +55,43 @@ class ServiceSettings(Settings):
     health_check_enabled: bool = True
     health_check_interval: float = 60.0
 
+    # Events system settings (used by EventsServiceSettings and subclasses)
+    # These are default values that can be overridden by child classes
+    # Publisher settings
+    enable_publisher: bool = True
+    event_topic_prefix: str = "events"
+    max_concurrent_events: int = 100
+    default_max_retries: int = 3
+    default_retry_delay: float = 1.0
+    max_retry_delay: float = 30.0
+    exponential_backoff: bool = True
+    log_events: bool = False
+    default_timeout: float = 30.0
+
+    # Subscriber settings
+    enable_subscriber: bool = True
+    max_subscriptions: int = 1000
+    default_subscription_mode: t.Any = "push"  # Can be str or SubscriptionMode enum
+    subscription_timeout: float = 30.0
+    handler_timeout: float = 30.0
+    default_mode: t.Any = "push"  # Can be str or SubscriptionMode enum
+
+    # Buffer configuration
+    enable_buffering: bool = True
+    buffer_size: int = 1000
+    buffer_timeout: float = 5.0
+
+    # Batch processing
+    enable_batching: bool = False
+    batch_size: int = 10
+
+    # Retry configuration (events-specific)
+    enable_retries: bool = True
+    max_retries: int = 3
+
+    # Alternative naming for health checks (used by some event subsystems)
+    enable_health_checks: bool = True
+
     @depends.inject
     def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)

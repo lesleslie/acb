@@ -280,7 +280,8 @@ class CloudAI(AIBase):
             return response
 
         except Exception as e:
-            self.logger.exception(f"Text generation failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"Text generation failed: {e}")
             raise
 
     async def _generate_text_stream(self, request: AIRequest) -> StreamingResponse:

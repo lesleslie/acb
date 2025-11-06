@@ -30,22 +30,32 @@ else:
 
 # Conditional imports for LlamaIndex
 try:
-    from llama_index.core import (
+    from llama_index.core import (  # type: ignore[import-not-found]
         Document,
         PromptTemplate,
         Settings,
         VectorStoreIndex,
         get_response_synthesizer,
     )
-    from llama_index.core.agent import ReActAgent
-    from llama_index.core.chat_engine import SimpleChatEngine
-    from llama_index.core.indices.query.base import BaseQueryEngine
-    from llama_index.core.memory import ChatMemoryBuffer
-    from llama_index.core.query_engine import RetrieverQueryEngine
-    from llama_index.core.retrievers import VectorIndexRetriever
-    from llama_index.core.schema import NodeWithScore
-    from llama_index.core.tools import FunctionTool
-    from llama_index.llms.openai import OpenAI
+    from llama_index.core.agent import ReActAgent  # type: ignore[import-not-found]
+    from llama_index.core.chat_engine import (
+        SimpleChatEngine,  # type: ignore[import-not-found]
+    )
+    from llama_index.core.indices.query.base import (
+        BaseQueryEngine,  # type: ignore[import-not-found]
+    )
+    from llama_index.core.memory import (
+        ChatMemoryBuffer,  # type: ignore[import-not-found]
+    )
+    from llama_index.core.query_engine import (
+        RetrieverQueryEngine,  # type: ignore[import-not-found]
+    )
+    from llama_index.core.retrievers import (
+        VectorIndexRetriever,  # type: ignore[import-not-found]
+    )
+    from llama_index.core.schema import NodeWithScore  # type: ignore[import-not-found]
+    from llama_index.core.tools import FunctionTool  # type: ignore[import-not-found]
+    from llama_index.llms.openai import OpenAI  # type: ignore[import-not-found]
 
     LLAMAINDEX_AVAILABLE = True
 except ImportError:
@@ -145,7 +155,7 @@ class LlamaIndexReasoningSettings(ReasoningBaseSettings):
 class LlamaIndexCallback:
     """Callback handler for LlamaIndex operations."""
 
-    def __init__(self, logger: LoggerType) -> None:
+    def __init__(self, logger: LoggerType | None) -> None:
         self.logger = logger
         self.steps: list[ReasoningStep] = []
         self.step_counter = 0
@@ -160,7 +170,8 @@ class LlamaIndexCallback:
             input_data={"query": query},
         )
         self.steps.append(step)
-        self.logger.debug(f"Starting retrieval for query: {query[:100]}...")
+        if self.logger is not None:
+            self.logger.debug(f"Starting retrieval for query: {query[:100]}...")
 
     def on_retrieve_end(self, nodes: list[NodeWithScore]) -> None:
         """Called when retrieval ends."""
@@ -181,7 +192,8 @@ class LlamaIndexCallback:
                 for node in nodes
             ]
 
-        self.logger.debug(f"Retrieved {len(nodes)} nodes")
+        if self.logger is not None:
+            self.logger.debug(f"Retrieved {len(nodes)} nodes")
 
     def on_synthesis_start(self, query: str) -> None:
         """Called when response synthesis starts."""
@@ -192,14 +204,16 @@ class LlamaIndexCallback:
             input_data={"query": query},
         )
         self.steps.append(step)
-        self.logger.debug("Starting response synthesis")
+        if self.logger is not None:
+            self.logger.debug("Starting response synthesis")
 
     def on_synthesis_end(self, response: str) -> None:
         """Called when response synthesis ends."""
         if self.steps:
             last_step = self.steps[-1]
             last_step.output_data = {"response": response[:200]}
-        self.logger.debug("Response synthesis completed")
+        if self.logger is not None:
+            self.logger.debug("Response synthesis completed")
 
 
 class Reasoning(ReasoningBase):
@@ -303,7 +317,8 @@ class Reasoning(ReasoningBase):
             return response
 
         except Exception as e:
-            self.logger.exception(f"LlamaIndex reasoning failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"LlamaIndex reasoning failed: {e}")
             return ReasoningResponse(
                 final_answer="",
                 reasoning_chain=callback.steps,
@@ -355,7 +370,8 @@ class Reasoning(ReasoningBase):
             )
 
         except Exception as e:
-            self.logger.exception(f"RAG workflow failed: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"RAG workflow failed: {e}")
             raise
 
     async def _chain_of_thought_reasoning(
@@ -488,7 +504,8 @@ Let's work through this:
                 return index
 
         except Exception as e:
-            self.logger.warning(f"Failed to integrate with vector DB: {e}")
+            if self.logger is not None:
+                self.logger.warning(f"Failed to integrate with vector DB: {e}")
 
         # Fallback: create empty index
         index = VectorStoreIndex.from_documents([])
@@ -519,7 +536,8 @@ Let's work through this:
             return documents
 
         except Exception as e:
-            self.logger.exception(f"Failed to get documents from vector DB: {e}")
+            if self.logger is not None:
+                self.logger.exception(f"Failed to get documents from vector DB: {e}")
             return []
 
     async def _get_or_create_query_engine(
