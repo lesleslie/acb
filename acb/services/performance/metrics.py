@@ -14,7 +14,7 @@ from statistics import mean, median
 
 from pydantic import BaseModel, ConfigDict, Field
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
@@ -106,7 +106,7 @@ class MetricsCollectorSettings(ServiceSettings):
     metrics_retention_hours: int = 24
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
 
 

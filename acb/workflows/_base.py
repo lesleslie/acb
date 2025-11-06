@@ -15,9 +15,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
@@ -77,6 +77,8 @@ class WorkflowResult:
 class WorkflowStep(BaseModel):
     """Definition of a workflow step."""
 
+    model_config = ConfigDict(extra="forbid")
+
     step_id: str = Field(description="Unique step identifier")
     name: str = Field(description="Human-readable step name")
     action: str = Field(description="Action to execute (function/method name)")
@@ -103,12 +105,11 @@ class WorkflowStep(BaseModel):
         description="Can execute in parallel with other steps",
     )
 
-    class Config:
-        extra = "forbid"
-
 
 class WorkflowDefinition(BaseModel):
     """Complete workflow definition."""
+
+    model_config = ConfigDict(extra="forbid")
 
     workflow_id: str = Field(description="Unique workflow identifier")
     name: str = Field(description="Human-readable workflow name")
@@ -132,9 +133,6 @@ class WorkflowDefinition(BaseModel):
         description="Additional workflow metadata",
     )
 
-    class Config:
-        extra = "forbid"
-
 
 class WorkflowSettings(ServiceSettings):
     """Settings for workflow engine."""
@@ -147,7 +145,7 @@ class WorkflowSettings(ServiceSettings):
     persist_state: bool = True
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
 
 
@@ -273,12 +271,12 @@ class WorkflowService(ServiceBase):
     Provides workflow orchestration with integration to Events System and Task Queue.
     """
 
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore[valid-type]
-
+    @depends.inject
     def __init__(
         self,
         engine: WorkflowEngine,
+        config: Inject[Config],
+        logger: Inject[Logger],
         settings: WorkflowSettings | None = None,
         service_config: WorkflowConfig | None = None,
     ) -> None:
@@ -287,6 +285,10 @@ class WorkflowService(ServiceBase):
             or WorkflowConfig(service_id="workflow", name="Workflow Service"),
             settings=settings or WorkflowSettings(),
         )
+
+        # Store injected dependencies
+        self.config = config
+        self.logger = logger
 
         self._engine = engine
         self._settings: WorkflowSettings = self._settings  # type: ignore

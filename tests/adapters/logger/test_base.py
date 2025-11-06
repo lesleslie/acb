@@ -14,6 +14,7 @@ class MockLogger(LoggerBase):
         super().__init__()
         self.logged_messages = []
         self.bound_context = {}
+        self.config = Mock()  # Mock config for tests that patch it
 
     def _debug(self, msg: str, *args, **kwargs):
         self.logged_messages.append(("debug", msg, args, kwargs))

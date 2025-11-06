@@ -10,7 +10,7 @@ from devtools.prettier import pformat as devtools_pformat
 from icecream import colorize, supportTerminalColorsInWindows
 from icecream import ic as debug
 
-from .depends import depends
+from .depends import Inject, depends
 from .logger import Logger
 
 _pformat = devtools_pformat
@@ -55,7 +55,7 @@ def get_calling_module() -> Path | None:
 def patch_record(
     mod: Path | None,
     msg: str,
-    logger: Logger = depends(),  # type: ignore[valid-type]
+    logger: Inject[Logger],
 ) -> None:
     with suppress(Exception):
         if mod is not None:

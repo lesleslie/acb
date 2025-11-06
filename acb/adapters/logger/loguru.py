@@ -282,3 +282,7 @@ def configure_stdlib_logging_interception() -> None:
 
 # Note: Call configure_stdlib_logging_interception() after app initialization
 # to enable standard library logging interception
+
+
+# Backward compatibility alias for tests
+LoguruSettings = LoggerSettings

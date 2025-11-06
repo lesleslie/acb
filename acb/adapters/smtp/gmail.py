@@ -92,7 +92,7 @@ class SmtpSettings(SmtpBaseSettings):
 
 
 class Smtp(SmtpBase):
-    requests: Requests = depends()  # type: ignore[valid-type]
+    requests: Inject[Requests]
 
     def _get_gmail_service(self) -> t.Any:
         credentials = Credentials(
@@ -180,7 +180,7 @@ class Smtp(SmtpBase):
         return records
 
     @depends.inject
-    async def create_dns_records(self, dns: DnsProtocol = depends()) -> None:
+    async def create_dns_records(self, dns: Inject[DnsProtocol]) -> None:
         records = await self.get_dns_records(self.config.smtp.domain)
         await dns.create_records(records)
         self.logger.info("Created DNS records for Gmail configuration")

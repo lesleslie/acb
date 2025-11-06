@@ -100,7 +100,7 @@ class TestLoguruLogger:
 
         assert corr_logger._bound_context == {"correlation_id": "test-correlation-id"}
 
-    @patch("acb.adapters.logger.loguru.sys.modules", {"pytest": Mock()})
+    @patch("sys.modules", {"pytest": Mock()})
     def test_init_testing_mode(self):
         """Test initialization in testing mode."""
         logger = Logger()

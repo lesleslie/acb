@@ -6,7 +6,7 @@ from uuid import UUID
 
 from infisical_sdk import InfisicalError, InfisicalSDKClient
 from acb.adapters import AdapterStatus
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import SecretBase, SecretBaseSettings
 
@@ -77,7 +77,7 @@ class Secret(SecretBase):
         return self._client
 
     @depends.inject
-    async def init(self, logger: t.Any = depends()) -> None:
+    async def init(self, logger: Inject[t.Any]) -> None:
         try:
             await self.get_client()
             await self.list()

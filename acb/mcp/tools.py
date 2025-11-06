@@ -7,7 +7,7 @@ from acb.depends import depends
 from acb.logger import Logger
 
 if TYPE_CHECKING:
-    from acb.adapters.logger import LoggerProtocol as Logger
+    from acb.adapters.logger import LoggerProtocol
 
 from .registry import ComponentRegistry
 
@@ -18,7 +18,7 @@ class ACBMCPTools:
     def __init__(self, component_registry: ComponentRegistry) -> None:
         """Initialize the MCP tools."""
         self.component_registry = component_registry
-        self.logger: Logger = depends.get(Logger)
+        self.logger: LoggerProtocol = depends.get(Logger)  # type: ignore[assignment]
         self._initialized = False
 
     async def initialize(self) -> None:

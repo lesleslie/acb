@@ -28,7 +28,7 @@ Example:
 
 
     @depends.inject
-    async def process_tasks(queue: Queue = depends()):
+    async def process_tasks(queue: Inject[Queue]):
         # Enqueue task with priority
         await queue.enqueue(
             "tasks", b"task payload", priority=MessagePriority.HIGH, delay_seconds=10

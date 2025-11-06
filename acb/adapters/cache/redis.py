@@ -27,7 +27,7 @@ Example:
 
 
     @depends.inject
-    async def my_function(cache: Cache = depends()):
+    async def my_function(cache: Inject[Cache]):
         await cache.set("user:123", {"name": "John"}, ttl=300)
         user_data = await cache.get("user:123")
         return user_data

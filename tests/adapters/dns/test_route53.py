@@ -149,7 +149,7 @@ class TestRoute53Dns:
         mock_logger = MagicMock()
         # Patch sys.modules to exclude pytest for this test
         with (
-            patch("acb.adapters.dns.route53.sys.modules", {}),
+            patch("sys.modules", {}),
             patch("acb.adapters.dns.route53.os.getenv", return_value="False"),
             patch.object(route53_dns, "get_client") as mock_get_client,
             patch.object(route53_dns, "_get_zone_id") as mock_get_zone_id,
@@ -170,7 +170,7 @@ class TestRoute53Dns:
         mock_logger = MagicMock()
         # Patch sys.modules to exclude pytest for this test
         with (
-            patch("acb.adapters.dns.route53.sys.modules", {}),
+            patch("sys.modules", {}),
             patch("acb.adapters.dns.route53.os.getenv", return_value="False"),
             patch.object(route53_dns, "get_client") as mock_get_client,
         ):
@@ -194,7 +194,7 @@ class TestRoute53Dns:
     ) -> None:
         # Patch to disable test mode for this test
         with (
-            patch("acb.adapters.dns.route53.sys.modules", {}),
+            patch("sys.modules", {}),
             patch("acb.adapters.dns.route53.os.getenv", return_value="False"),
         ):
             mock_boto3_client.list_resource_record_sets.return_value = {
@@ -252,7 +252,7 @@ class TestRoute53Dns:
     ) -> None:
         # Patch to disable test mode for this test
         with (
-            patch("acb.adapters.dns.route53.sys.modules", {}),
+            patch("sys.modules", {}),
             patch("acb.adapters.dns.route53.os.getenv", return_value="False"),
         ):
             # Mock waiter
@@ -299,7 +299,7 @@ class TestRoute53Dns:
     ) -> None:
         # Patch to disable test mode for this test
         with (
-            patch("acb.adapters.dns.route53.sys.modules", {}),
+            patch("sys.modules", {}),
             patch("acb.adapters.dns.route53.os.getenv", return_value="False"),
         ):
             # Mock waiter
@@ -353,7 +353,7 @@ class TestRoute53Dns:
     ) -> None:
         # Patch to disable test mode for this test
         with (
-            patch("acb.adapters.dns.route53.sys.modules", {}),
+            patch("sys.modules", {}),
             patch("acb.adapters.dns.route53.os.getenv", return_value="False"),
         ):
             mock_boto3_client.change_resource_record_sets.return_value = {

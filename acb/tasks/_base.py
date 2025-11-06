@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, field_validator
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 if t.TYPE_CHECKING:
     from acb.logger import Logger as LoggerType
@@ -380,7 +380,7 @@ class QueueSettings(Settings):
     queue_settings: dict[str, t.Any] = Field(default_factory=dict)
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
 
 

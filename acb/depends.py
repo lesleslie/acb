@@ -122,6 +122,29 @@ class Depends:
         """
         return _DEPENDENCY_SENTINEL
 
+    @staticmethod
+    def clear() -> None:
+        """Clear the dependency container (testing helper).
+
+        Some tests register temporary dependencies (e.g., a mock logger).
+        Provide a best-effort cleanup hook that resets or clears the
+        underlying Bevy container when available. If the container does not
+        expose a reset/clear API, this is a no-op.
+        """
+        try:
+            container = get_container()
+        except Exception:
+            return
+
+        # Try common container reset/clear operations, ignoring failures.
+        with suppress(Exception):
+            # Newer Bevy releases may expose `reset()`
+            container.reset()  # type: ignore[attr-defined]
+            return
+        with suppress(Exception):
+            # Older variants may expose `clear()`
+            container.clear()  # type: ignore[attr-defined]
+
 
 def _get_dependency_sync(category: t.Any, module: str | None = None) -> t.Any:
     """Get dependency synchronously (for non-adapter dependencies)."""

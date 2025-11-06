@@ -73,7 +73,7 @@ class SmtpSettings(SmtpBaseSettings):
 
 
 class Smtp(SmtpBase):
-    requests: Requests = depends()  # type: ignore[valid-type]  # type: ignore[valid-type]
+    requests: Inject[Requests]
 
     async def get_response(
         self,
@@ -179,7 +179,7 @@ class Smtp(SmtpBase):
         return records
 
     @depends.inject
-    async def create_dns_records(self, dns: DnsProtocol = depends()) -> None:
+    async def create_dns_records(self, dns: Inject[DnsProtocol]) -> None:
         await self.create_domain(self.config.smtp.domain)
         await self.create_domain_credentials(self.config.smtp.domain)
         records = await self.get_dns_records(self.config.smtp.domain)

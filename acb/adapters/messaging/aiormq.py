@@ -25,14 +25,14 @@ Example:
     Basic task queue usage:
 
     ```python
-    from acb.depends import depends
+    from acb.depends import Inject, depends
     from acb.adapters import import_adapter
 
     Queue = import_adapter("queue")
 
 
     @depends.inject
-    async def process_tasks(queue: Queue = depends()):
+    async def process_tasks(queue: Inject[Queue]):
         # Enqueue task with priority and delay
         await queue.enqueue(
             "tasks",

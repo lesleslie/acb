@@ -258,7 +258,12 @@ class AIBase(CleanupMixin, ABC):
         self._template_cache: dict[str, PromptTemplate] = {}
         # Get logger if available, otherwise None (for testing)
         try:
-            self.logger = depends.get_sync(Logger)
+            logger_instance = depends.get_sync(Logger)
+            # Verify it's actually a logger instance, not a string
+            if isinstance(logger_instance, str):
+                self.logger = None
+            else:
+                self.logger = logger_instance
         except Exception:
             self.logger = None
 

@@ -1,15 +1,15 @@
 """Component registry for ACB MCP server."""
 
+from __future__ import annotations
+
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from acb.adapters import import_adapter
+from acb.adapters.logger import LoggerProtocol
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
-
-if TYPE_CHECKING:
-    from acb.adapters.logger import LoggerProtocol as Logger
 
 
 class ComponentRegistry:
@@ -23,21 +23,21 @@ class ComponentRegistry:
         self._events: dict[str, Any] = {}
         self._initialized = False
         self._config: Config | None = None
-        self._logger: Logger | None = None
+        self._logger: LoggerProtocol | None = None
 
     @property
     def config(self) -> Config:
         """Lazy-initialize config."""
         if self._config is None:
-            self._config = depends.get(Config)
-        return self._config
+            self._config = depends.get(Config)  # type: ignore[assignment]
+        return self._config  # type: ignore[return-value]
 
     @property
-    def logger(self) -> Logger:
+    def logger(self) -> LoggerProtocol:
         """Lazy-initialize logger."""
         if self._logger is None:
-            self._logger = depends.get(Logger)
-        return self._logger
+            self._logger = depends.get(Logger)  # type: ignore[assignment]
+        return self._logger  # type: ignore[return-value]
 
     async def initialize(self) -> None:
         """Initialize the component registry."""

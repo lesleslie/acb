@@ -6,15 +6,13 @@ exposing ACB's capabilities through the Model Context Protocol.
 
 import importlib.util
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from fastmcp import FastMCP
+from acb.adapters.logger import LoggerProtocol
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
-
-if TYPE_CHECKING:
-    from acb.adapters.logger import LoggerProtocol as Logger
 
 from .registry import ComponentRegistry
 
@@ -115,7 +113,7 @@ async def execute_action(
     """
     import asyncio
 
-    logger: Logger = depends.get(Logger)
+    logger: LoggerProtocol = depends.get(Logger)  # type: ignore[assignment]
     registry = get_registry()
     if not registry._initialized:
         await registry.initialize()
@@ -223,7 +221,7 @@ async def execute_workflow(
     Returns:
         Dictionary containing workflow results and metadata
     """
-    logger: Logger = depends.get(Logger)
+    logger: LoggerProtocol = depends.get(Logger)  # type: ignore[assignment]
     registry = get_registry()
     if not registry._initialized:
         await registry.initialize()
@@ -323,7 +321,7 @@ async def get_app_config() -> str:
     """
     import json
 
-    config: Config = depends.get(Config)
+    config: Config = depends.get(Config)  # type: ignore[assignment]
 
     # Return safe configuration data (exclude secrets)
     data = {
@@ -345,14 +343,14 @@ class ACBMCPServer:
     def __init__(self) -> None:
         """Initialize the MCP server wrapper."""
         self.registry = get_registry()
-        self._logger: Logger | None = None
+        self._logger: LoggerProtocol | None = None
 
     @property
-    def logger(self) -> Logger:
+    def logger(self) -> LoggerProtocol:
         """Lazy-initialize logger."""
         if self._logger is None:
-            self._logger = depends.get(Logger)
-        return self._logger
+            self._logger = depends.get(Logger)  # type: ignore[assignment]
+        return self._logger  # type: ignore[return-value]
 
     async def initialize(self) -> None:
         """Initialize the server and components."""

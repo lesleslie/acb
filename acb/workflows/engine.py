@@ -13,7 +13,7 @@ import time
 import typing as t
 from datetime import datetime
 
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.logger import Logger
 from acb.workflows._base import (
     StepResult,
@@ -29,7 +29,7 @@ from acb.workflows._base import (
 class BasicWorkflowEngine(WorkflowEngine):
     """Basic workflow engine with dependency resolution and parallel execution."""
 
-    logger: Logger = depends()  # type: ignore[valid-type]
+    logger: Inject[Logger]
 
     def __init__(self, max_concurrent_steps: int = 5) -> None:
         self._max_concurrent_steps = max_concurrent_steps
@@ -38,7 +38,7 @@ class BasicWorkflowEngine(WorkflowEngine):
         self._action_registry: dict[str, t.Callable[..., t.Awaitable[t.Any]]] = {}
 
         # Initialize logger if not already set by dependency injection
-        if isinstance(self.logger, type(depends())):
+        if not hasattr(self, "logger") or isinstance(self.logger, type(depends())):
             try:
                 self.logger = depends.get(Logger)
             except Exception:

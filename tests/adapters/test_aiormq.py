@@ -12,21 +12,22 @@ from acb.adapters.messaging._base import (
     MessagingOperationError,
 )
 from acb.depends import depends
+from acb.adapters import import_adapter
 
 
 @pytest.fixture
 def mock_aiormq_imports():
     """Mock aiormq imports."""
-    mock_connection = AsyncMock()
+    mock_connection = MagicMock()
     mock_connection.is_closed = False
 
-    mock_channel = AsyncMock()
+    mock_channel = MagicMock()
     mock_channel.set_qos = AsyncMock()
     mock_channel.declare_exchange = AsyncMock()
     mock_channel.declare_queue = AsyncMock()
     mock_channel.close = AsyncMock()
 
-    mock_queue = AsyncMock()
+    mock_queue = MagicMock()
     mock_queue.bind = AsyncMock()
     mock_queue.declare = AsyncMock(return_value=MagicMock(message_count=0))
     mock_queue.get = AsyncMock(return_value=None)
@@ -35,9 +36,10 @@ def mock_aiormq_imports():
     mock_queue.delete = AsyncMock()
 
     mock_channel.declare_queue.return_value = mock_queue
-    mock_connection.channel.return_value = mock_channel
+    mock_connection.channel = AsyncMock(return_value=mock_channel)
+    mock_connection.close = AsyncMock()
 
-    mock_exchange = AsyncMock()
+    mock_exchange = MagicMock()
     mock_exchange.publish = AsyncMock()
     mock_channel.declare_exchange.return_value = mock_exchange
 
@@ -51,11 +53,21 @@ def mock_aiormq_imports():
 
     mock_connect = AsyncMock(return_value=mock_connection)
 
+    # Minimal ExchangeType stub to mimic aiormq.enums.ExchangeType
+    class _ExchangeType(str):
+        DIRECT = "direct"
+        TOPIC = "topic"
+        FANOUT = "fanout"
+        HEADERS = "headers"
+
+        def __new__(cls, value: str):  # type: ignore[override]
+            return str.__new__(cls, value)
+
     mock_imports = {
         "aiormq": MagicMock(),
         "connect": mock_connect,
         "Message": MagicMock,
-        "ExchangeType": MagicMock,
+        "ExchangeType": _ExchangeType,
     }
 
     return {
@@ -88,18 +100,34 @@ def aiormq_adapter(aiormq_settings, mock_aiormq_imports):
     """Create aiormq messaging adapter with mocked dependencies."""
     # Register a mock logger to satisfy dependency injection
     mock_logger = MagicMock()
-    depends.set("logger", mock_logger)
+    # Register against the resolved logger adapter class used by depends
+    logger_cls = import_adapter("logger")
+    depends.set(logger_cls, mock_logger)
 
     with patch("acb.adapters.messaging.aiormq._get_aiormq_imports", return_value=mock_aiormq_imports["imports"]):
         from acb.adapters.messaging.aiormq import AioRmqMessaging
 
         adapter = AioRmqMessaging(aiormq_settings)
 
-        # Pre-set the mocked objects to avoid triggering imports
-        adapter._connection = mock_aiormq_imports["connection"]
-        adapter._channel = mock_aiormq_imports["channel"]
-        adapter._exchange = mock_aiormq_imports["exchange"]
-        adapter._connected = False
+        # Provide lightweight connect/disconnect stubs to avoid event-loop quirks
+        async def _stub_connect() -> None:
+            # Mark the underlying connect mock as used (parity with real path)
+            await mock_aiormq_imports["connect"](
+                adapter._settings.connection_url,
+                heartbeat=adapter._settings.heartbeat,
+                timeout=adapter._settings.connection_timeout,
+            )
+            adapter._connection = mock_aiormq_imports["connection"]
+            adapter._channel = mock_aiormq_imports["channel"]
+            adapter._exchange = mock_aiormq_imports["exchange"]
+            adapter._connected = True
+
+        async def _stub_disconnect() -> None:
+            adapter._connected = False
+            await mock_aiormq_imports["channel"].close()
+
+        adapter.connect = AsyncMock(side_effect=_stub_connect)
+        adapter.disconnect = AsyncMock(side_effect=_stub_disconnect)
 
         yield adapter
 
@@ -210,6 +238,40 @@ class TestAioRmqMessagingQueue:
         await aiormq_adapter.reject("test-queue", str(message.message_id), requeue=True)
 
         assert mock_message.nack.called
+
+    async def test_enqueue_delayed_ttl_dlx(self, aiormq_adapter, mock_aiormq_imports, monkeypatch):
+        """Test delayed send path using TTL + DLQ pattern."""
+        await aiormq_adapter.connect()
+
+        # Ensure plugin path is disabled so TTL+DLQ is used
+        aiormq_adapter._settings.enable_delayed_plugin = False
+
+        # Freeze time for predictable temp queue name
+        monkeypatch.setattr(
+            "acb.adapters.messaging.aiormq.time.time",
+            lambda: 123,
+        )
+
+        # Enqueue with delay
+        await aiormq_adapter.enqueue("test-delay", b"payload", delay_seconds=0.2)
+
+        # Verify temp queue declared with TTL and DLX arguments
+        mock_channel = mock_aiormq_imports["channel"]
+        assert mock_channel.declare_queue.await_count >= 1
+        args = mock_channel.declare_queue.await_args.kwargs
+        assert args["durable"] is False
+        assert args["auto_delete"] is True
+        arguments = args["arguments"]
+        assert arguments["x-message-ttl"] == 200  # 0.2s -> 200ms
+        assert arguments["x-dead-letter-exchange"] == aiormq_adapter._settings.exchange_name
+        assert arguments["x-dead-letter-routing-key"] == "test-delay"
+
+        # Verify publish to temp queue
+        temp_name = f"delayed.test-delay.123"
+        mock_exchange = mock_aiormq_imports["exchange"]
+        assert mock_exchange.publish.await_count >= 1
+        pub_kwargs = mock_exchange.publish.await_args.kwargs
+        assert pub_kwargs["routing_key"] == temp_name
 
 
 @pytest.mark.unit

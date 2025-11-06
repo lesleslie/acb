@@ -10,7 +10,7 @@ import asyncio
 import time
 import typing as t
 
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.services._base import ServiceBase, ServiceConfig
 from acb.services.validation._base import (
     ValidationConfig,
@@ -84,7 +84,7 @@ class ValidationService(ServiceBase, ValidationProtocol):
     - <5ms schema compilation for complex schemas
     """
 
-    config: Config = depends()
+    config: Inject[Config]
 
     def __init__(
         self,

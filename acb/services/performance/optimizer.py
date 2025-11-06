@@ -14,7 +14,7 @@ from functools import wraps
 from pydantic import BaseModel, ConfigDict, Field
 from acb.adapters import import_adapter
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
@@ -106,7 +106,7 @@ class PerformanceOptimizerSettings(ServiceSettings):
     optimization_interval_seconds: float = 300.0  # 5 minutes
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
 
 

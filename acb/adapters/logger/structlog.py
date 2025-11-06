@@ -365,3 +365,7 @@ class Logger(LoggerBase):
 
 
 depends.set(Logger, "structlog")
+
+
+# Backward compatibility alias for tests
+StructlogSettings = LoggerSettings

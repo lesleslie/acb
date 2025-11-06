@@ -271,7 +271,16 @@ class ReasoningBase(CleanupMixin, ABC):
         self._memory_store: dict[str, dict[MemoryType, t.Any]] = {}
         self._tool_registry: dict[str, ToolDefinition] = {}
         self._decision_trees: dict[str, DecisionTree] = {}
-        self.logger = depends.get_sync(Logger)
+        # Get logger if available, otherwise None (for testing)
+        try:
+            logger_instance = depends.get_sync(Logger)
+            # Verify it's actually a logger instance, not a string
+            if isinstance(logger_instance, str):
+                self.logger = None
+            else:
+                self.logger = logger_instance
+        except Exception:
+            self.logger = None
 
     @property
     def settings(self) -> ReasoningBaseSettings:

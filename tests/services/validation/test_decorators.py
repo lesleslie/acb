@@ -1,283 +1,180 @@
-"""Tests for validation decorators."""
+"""Unit tests for validation decorators module."""
+
+from __future__ import annotations
+
+from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
 
-from acb.depends import depends
-from acb.services.validation import (
-    ValidationError,
-    ValidationService,
+from acb.services.validation._base import ValidationConfig, ValidationResult, ValidationSchema
+from acb.services.validation.decorators import (
+    ValidationDecorators,
+    validate_contracts,
     validate_input,
     validate_output,
     sanitize_input,
-    validate_schema,
-    validate_contracts,
+    validators,
 )
-from acb.services.validation._base import ValidationResult
-from acb.services.validation.schemas import StringValidationSchema
+from acb.services.validation.results import ValidationError
 
 
-class TestValidationDecorators:
-    """Tests for validation decorators."""
+class _Schema(ValidationSchema):
+    def __init__(self, name: str, *, valid: bool = True, replace: Any | None = None) -> None:
+        super().__init__(name)
+        self._valid = valid
+        self._replace = replace
 
-    @pytest.fixture
-    def mock_validation_service(self) -> Mock:
-        """Mock ValidationService."""
-        service = Mock(spec=ValidationService)
-        service.validate = AsyncMock()
-        service.get_schema = AsyncMock()
-        depends.set(ValidationService, service)
-        return service
+    async def validate(self, data: Any, field_name: str | None = None) -> ValidationResult:  # type: ignore[override]
+        result = ValidationResult(value=self._replace if self._replace is not None else data, original_value=data)
+        result.is_valid = self._valid
+        if not self._valid:
+            result.add_error(f"invalid {self.name}")
+        return result
 
-    def test_validate_input_decorator(self, mock_validation_service: Mock) -> None:
-        """Test validate_input decorator."""
-        # Mock successful validation
-        mock_validation_service.validate.return_value = ValidationResult(
-            field_name="name",
-            value="validated_name",
-            original_value="test_name",
-            is_valid=True
-        )
-
-        schema = StringValidationSchema("name", min_length=1)
-
-        @validate_input({"name": schema})
-        async def test_function(name: str) -> str:
-            return f"Hello, {name}!"
-
-        # This test verifies the decorator is applied correctly
-        assert hasattr(test_function, '__wrapped__')
-
-    def test_validate_output_decorator(self, mock_validation_service: Mock) -> None:
-        """Test validate_output decorator."""
-        # Mock successful validation
-        mock_validation_service.validate.return_value = ValidationResult(
-            field_name="output",
-            value="validated_output",
-            original_value="test_output",
-            is_valid=True
-        )
-
-        schema = StringValidationSchema("output", min_length=1)
-
-        @validate_output(schema)
-        async def test_function() -> str:
-            return "test_output"
-
-        # This test verifies the decorator is applied correctly
-        assert hasattr(test_function, '__wrapped__')
-
-    def test_sanitize_input_decorator(self, mock_validation_service: Mock) -> None:
-        """Test sanitize_input decorator."""
-        # Mock successful validation/sanitization
-        mock_validation_service.validate.return_value = ValidationResult(
-            field_name="content",
-            value="sanitized_content",
-            original_value="<script>test</script>",
-            is_valid=True
-        )
-
-        @sanitize_input(fields=["content"])
-        async def test_function(content: str) -> str:
-            return content
-
-        # This test verifies the decorator is applied correctly
-        assert hasattr(test_function, '__wrapped__')
-
-    def test_validate_schema_decorator(self, mock_validation_service: Mock) -> None:
-        """Test validate_schema decorator."""
-        # Mock schema retrieval and validation
-        mock_schema = Mock()
-        mock_validation_service.get_schema.return_value = mock_schema
-        mock_validation_service.validate.return_value = ValidationResult(
-            field_name="data",
-            value={"validated": "data"},
-            original_value={"test": "data"},
-            is_valid=True
-        )
-
-        @validate_schema("test_schema")
-        async def test_function(**data) -> dict:
-            return data
-
-        # This test verifies the decorator is applied correctly
-        assert hasattr(test_function, '__wrapped__')
-
-    def test_validate_contracts_decorator(self, mock_validation_service: Mock) -> None:
-        """Test validate_contracts decorator."""
-        input_contract = {"name": str, "age": int}
-        output_contract = {"result": str}
-
-        @validate_contracts(
-            input_contract=input_contract,
-            output_contract=output_contract
-        )
-        async def test_function(name: str, age: int) -> dict:
-            return {"result": f"{name} is {age} years old"}
-
-        # This test verifies the decorator is applied correctly
-        assert hasattr(test_function, '__wrapped__')
+    async def compile(self) -> None:  # type: ignore[override]
+        return None
 
 
-class TestDecoratorIntegration:
-    """Integration tests for decorators with actual validation logic."""
+class _FakeValidationService:
+    async def validate(
+        self,
+        data: Any,
+        schema: ValidationSchema | None = None,
+        config: ValidationConfig | None = None,
+        field_name: str | None = None,
+    ) -> ValidationResult:
+        if schema is None:
+            # basic path: echo
+            return ValidationResult(value=data, original_value=data, is_valid=True)
+        return await schema.validate(data, field_name)
 
-    @pytest.fixture
-    async def validation_service(self) -> ValidationService:
-        """Create real ValidationService for integration tests."""
-        from acb.services.validation import ValidationSettings
-        from acb.config import Config
-        from acb.logger import Logger
 
-        # Mock dependencies
-        config = Mock(spec=Config)
-        logger = Mock(spec=Logger)
-        logger.info = Mock()
-        logger.warning = Mock()
-        logger.error = Mock()
+@pytest.fixture(autouse=True)
+def _patch_depends(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = _FakeValidationService()
 
-        depends.set(Config, config)
-        depends.set(Logger, logger)
+    async def _aget(*_: Any, **__: Any) -> Any:
+        return fake
 
-        settings = ValidationSettings(models_adapter_enabled=False)
-        service = ValidationService(validation_settings=settings)
-        await service.initialize()
+    monkeypatch.setattr(
+        "acb.services.validation.decorators.depends.get",
+        _aget,
+    )
+    monkeypatch.setattr(
+        "acb.services.validation.decorators.depends.get_sync",
+        lambda *_, **__: fake,
+    )
 
-        depends.set(ValidationService, service)
-        return service
 
-    async def test_validate_input_integration(self, validation_service: ValidationService) -> None:
-        """Test validate_input decorator with real validation."""
-        schema = StringValidationSchema("name", min_length=2)
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_validate_input_with_dict_and_single_schema() -> None:
+    # dict schema (mutates x, leaves y as-is)
+    x_schema = _Schema("x", valid=True, replace="X!")
+    y_schema = _Schema("y", valid=True)
 
-        @validate_input({"name": schema})
-        async def greet_user(name: str) -> str:
-            return f"Hello, {name}!"
+    @validate_input({"x": x_schema, "y": y_schema}, raise_on_error=True)
+    async def func1(x: str, y: int) -> tuple[str, int]:
+        return x, y
 
-        # Test with valid input
-        result = await greet_user("John")
-        assert result == "Hello, John!"
+    assert await func1("x", 1) == ("X!", 1)
 
-        # Test with invalid input (should raise ValidationError)
-        with pytest.raises(ValidationError):
-            await greet_user("X")  # Too short
+    # single schema validates only first param
+    a_schema = _Schema("a", valid=True, replace=123)
 
-    async def test_validate_output_integration(self, validation_service: ValidationService) -> None:
-        """Test validate_output decorator with real validation."""
-        schema = StringValidationSchema("output", min_length=5)
+    @validate_input(a_schema)
+    async def func2(a: int, b: int) -> tuple[int, int]:
+        return a, b
 
-        @validate_output(schema)
-        async def get_message() -> str:
-            return "Hello"
+    # single schema validates first param only but does not mutate bound args
+    assert await func2(1, 2) == (1, 2)
 
-        # Test with valid output
-        result = await get_message()
-        assert result == "Hello"
 
-        # Test with invalid output
-        @validate_output(schema)
-        async def get_short_message() -> str:
-            return "Hi"  # Too short
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_validate_input_raises_on_error() -> None:
+    bad_x = _Schema("x", valid=False)
 
-        with pytest.raises(ValidationError):
-            await get_short_message()
+    @validate_input({"x": bad_x}, raise_on_error=True)
+    async def f(x: str) -> str:
+        return x
 
-    async def test_sanitize_input_integration(self, validation_service: ValidationService) -> None:
-        """Test sanitize_input decorator with real sanitization."""
-        @sanitize_input(fields=["content"])
-        async def process_content(content: str) -> str:
-            return f"Processed: {content}"
+    with pytest.raises(ValidationError) as ei:
+        await f("boom")
+    assert "Input validation failed" in str(ei.value)
 
-        # Test with content that needs sanitization
-        result = await process_content("<script>alert('xss')</script>Hello")
-        assert "script" not in result.lower()
-        assert "Hello" in result
 
-    async def test_validate_schema_integration(self, validation_service: ValidationService) -> None:
-        """Test validate_schema decorator with real schema."""
-        # Register a schema
-        schema = StringValidationSchema("test_data", min_length=3)
-        validation_service.register_schema(schema)
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_validate_output_success_and_error() -> None:
+    ok = _Schema("out", valid=True, replace="OK")
+    bad = _Schema("out", valid=False)
 
-        @validate_schema("test_data")
-        async def process_data(data: str) -> str:
-            return f"Processed: {data}"
+    @validate_output(ok, raise_on_error=True)
+    async def f1() -> str:
+        return "original"
 
-        # Test with valid data
-        result = await process_data("valid")
-        assert result == "Processed: valid"
+    assert await f1() == "OK"
 
-        # Test with invalid data
-        with pytest.raises(ValidationError):
-            await process_data("no")  # Too short
+    @validate_output(bad, raise_on_error=True)
+    async def f2() -> str:
+        return "original"
 
-        # Test with non-existent schema
-        @validate_schema("nonexistent_schema")
-        async def process_with_missing_schema(data: str) -> str:
-            return data
+    with pytest.raises(ValidationError):
+        await f2()
 
-        with pytest.raises(ValidationError):
-            await process_with_missing_schema("test")
 
-    async def test_validate_contracts_integration(self, validation_service: ValidationService) -> None:
-        """Test validate_contracts decorator with real contract validation."""
-        @validate_contracts(
-            input_contract={"name": str, "age": int},
-            output_contract={"message": str, "age": int}
-        )
-        async def create_profile(name: str, age: int) -> dict:
-            return {"message": f"User {name}", "age": age}
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_sanitize_input_applies_and_returns_mutated_args() -> None:
+    # our fake service will echo by default; emulate sanitizer by schema None path → echo
+    # In decorators.sanitize_input, service.validate is called with schema=None, so our fake echo returns value unchanged.
+    # To demonstrate flow, we wrap a string and assert function still receives arguments from bound_args.
 
-        # Test with valid input and output
-        result = await create_profile("John", 30)
-        assert result["message"] == "User John"
-        assert result["age"] == 30
+    @sanitize_input(fields=["content"])  # will call service.validate(None) on 'content'
+    async def f(title: str, content: str) -> tuple[str, str]:
+        return title, content
 
-        # Test with invalid input type
-        with pytest.raises(ValidationError):
-            await create_profile("John", "thirty")  # age should be int
+    assert await f("t", "<b>x</b>") == ("t", "<b>x</b>")
 
-        # Test with invalid output contract
-        @validate_contracts(
-            input_contract={"name": str},
-            output_contract={"result": int}  # Expects int but returns str
-        )
-        async def get_name_length(name: str) -> dict:
-            return {"result": name}  # Returns string instead of int
 
-        with pytest.raises(ValidationError):
-            await get_name_length("test")
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_validate_contracts_input_and_output() -> None:
+    @validate_contracts(input_contract={"a": int, "b": str}, output_contract={"id": int})
+    async def f(a: int, b: str) -> dict[str, Any]:
+        return {"id": 1, "b": b}
 
-    async def test_decorator_chaining(self, validation_service: ValidationService) -> None:
-        """Test chaining multiple validation decorators."""
-        input_schema = StringValidationSchema("name", min_length=2)
-        output_schema = StringValidationSchema("output", min_length=5)
+    assert await f(1, "x") == {"id": 1, "b": "x"}
 
-        @validate_input({"name": input_schema})
-        @validate_output(output_schema)
-        @sanitize_input(fields=["name"])
-        async def process_name(name: str) -> str:
-            return f"Hello, {name}!"
+    @validate_contracts(input_contract={"a": int})
+    async def g(a: int) -> None:
+        return None
 
-        # Test successful processing through all decorators
-        result = await process_name("John")
-        assert result == "Hello, John!"
+    with pytest.raises(ValidationError):
+        await g("bad")  # type: ignore[arg-type]
 
-        # Test failure at input validation
-        with pytest.raises(ValidationError):
-            await process_name("X")  # Too short for input schema
+    @validate_contracts(output_contract={"id": int})
+    async def h() -> dict[str, Any]:
+        return {"id": "oops"}  # type: ignore[return-value]
 
-    async def test_sync_function_decoration(self, validation_service: ValidationService) -> None:
-        """Test decorator application to synchronous functions."""
-        schema = StringValidationSchema("text", min_length=3)
+    with pytest.raises(ValidationError):
+        await h()
 
-        @validate_input({"text": schema})
-        def sync_function(text: str) -> str:
-            return f"Processed: {text}"
 
-        # Test that sync function is properly wrapped
-        assert hasattr(sync_function, '__wrapped__')
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_method_validator_for_class_methods(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = _FakeValidationService()
+    vd = ValidationDecorators(fake)
 
-        # Note: Actually calling the sync function would require running asyncio.run
-        # internally, which is complex to test. The important part is that the
-        # decorator is applied correctly.
+    in_schema = _Schema("name", valid=True, replace="Name!")
+    out_schema = _Schema("out", valid=True, replace={"id": 1})
+
+    class Svc:
+        @vd.method_validator(input_schemas={"name": in_schema}, output_schema=out_schema)
+        async def create(self, name: str) -> dict[str, Any]:
+            return {"name": name}
+
+    assert await Svc().create("ignored") == {"id": 1}

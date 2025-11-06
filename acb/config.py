@@ -56,7 +56,7 @@ from .adapters import (
 
 # Global state is now managed by ACBContext - these are kept for backward compatibility
 from .context import get_context
-from .depends import depends
+from .depends import Inject, depends
 
 # Module-level variables that delegate to context
 # These maintain backward compatibility
@@ -720,7 +720,7 @@ Logger = None
 
 @rich.repr.auto
 class AdapterBase:
-    config: Config = depends()
+    config: Inject[Config]
 
     @property
     def logger(self) -> t.Any:

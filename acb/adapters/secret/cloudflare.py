@@ -3,7 +3,7 @@ import typing as t
 from uuid import UUID
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import SecretBase, SecretBaseSettings
 
@@ -112,7 +112,7 @@ class Secret(SecretBase):
         return full_key.removeprefix(prefix)
 
     @depends.inject
-    async def init(self, logger: t.Any = depends()) -> None:
+    async def init(self, logger: Inject[t.Any]) -> None:
         try:
             await self.get_client()
             # Test connection by attempting to list keys

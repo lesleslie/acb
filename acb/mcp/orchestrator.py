@@ -7,7 +7,7 @@ from acb.depends import depends
 from acb.logger import Logger
 
 if TYPE_CHECKING:
-    from acb.adapters.logger import LoggerProtocol as Logger
+    from acb.adapters.logger import LoggerProtocol
 
 from .registry import ComponentRegistry
 
@@ -18,7 +18,7 @@ class WorkflowOrchestrator:
     def __init__(self, component_registry: ComponentRegistry) -> None:
         """Initialize the workflow orchestrator."""
         self.component_registry = component_registry
-        self.logger: Logger = depends.get(Logger)
+        self.logger: LoggerProtocol = depends.get(Logger)  # type: ignore[assignment]
         self._active_workflows: dict[str, asyncio.Task] = {}
         self._initialized = False
 

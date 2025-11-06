@@ -15,7 +15,7 @@ from operator import itemgetter
 from pydantic import Field
 from acb.adapters import import_adapter
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 # Service metadata for discovery system
@@ -100,7 +100,7 @@ class CacheOptimizerSettings(ServiceSettings):
     time_window_for_analysis_seconds: int = 3600
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
 
 
