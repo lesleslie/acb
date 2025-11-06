@@ -66,7 +66,7 @@ def test_utils_timer_and_create_and_combine_and_config() -> None:
     assert t.elapsed_ms >= 0.0
     assert t.stop() >= 0.0
 
-    r = create_validation_result(value="x", field_name="f", is_valid=False, errors=["e"]) 
+    r = create_validation_result(value="x", field_name="f", is_valid=False, errors=["e"])
     assert r.field_name == "f" and not r.is_valid and r.errors == ["e"]
 
     r2 = create_validation_result(value="y")

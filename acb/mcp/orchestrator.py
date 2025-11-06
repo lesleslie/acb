@@ -40,7 +40,13 @@ class WorkflowOrchestrator:
         """Execute a complex workflow consisting of multiple steps."""
         try:
             self.logger.info(f"Starting workflow: {workflow_name}")
-            results = {}
+            results: dict[str, Any] = {}
+
+            # Dispatch table for component types
+            dispatch = {
+                "action": self._execute_action_step,
+                "adapter": self._execute_adapter_step,
+            }
 
             for i, step in enumerate(steps):
                 step_name = step.get("name", f"step_{i}")
@@ -51,33 +57,16 @@ class WorkflowOrchestrator:
 
                 self.logger.info(f"Executing step {i + 1}/{len(steps)}: {step_name}")
 
-                # Execute the step based on component type
-                if component_type == "action":
-                    if not isinstance(component_name, str) or not isinstance(
-                        action, str
-                    ):
-                        msg = "Action step requires string 'component' and 'action' fields"
-                        raise ValueError(msg)
-                    result = await self._execute_action_step(
-                        component_name,
-                        action,
-                        parameters,
-                    )
-                elif component_type == "adapter":
-                    if not isinstance(component_name, str) or not isinstance(
-                        action, str
-                    ):
-                        msg = "Adapter step requires string 'component' and 'action' fields"
-                        raise ValueError(msg)
-                    result = await self._execute_adapter_step(
-                        component_name,
-                        action,
-                        parameters,
-                    )
-                else:
+                exec_fn = dispatch.get(component_type)
+                if exec_fn is None:
                     msg = f"Unsupported component type: {component_type}"
                     raise ValueError(msg)
 
+                if not isinstance(component_name, str) or not isinstance(action, str):
+                    msg = "Step requires string 'component' and 'action' fields"
+                    raise ValueError(msg)
+
+                result = await exec_fn(component_name, action, parameters)
                 results[step_name] = result
 
             self.logger.info(f"Workflow {workflow_name} completed successfully")

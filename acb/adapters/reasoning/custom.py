@@ -798,49 +798,60 @@ class Reasoning(ReasoningBase):
     ) -> dict[str, Any]:
         """Execute rule actions."""
         results: dict[str, Any] = {"executed_actions": [], "final_result": ""}
-        executed_actions: list[str] = []
+        executed: list[str] = []
+
+        def _log_info(message: str) -> None:
+            if self.logger is not None:
+                self.logger.info(message)
+
+        def _log_warning(message: str) -> None:
+            if self.logger is not None:
+                self.logger.warning(message)
+
+        def _handle_return_value(action: RuleAction) -> str:
+            value = action.parameters.get("value", "")
+            results["final_result"] = str(value)
+            return f"Returned value: {value}"
+
+        def _handle_set_variable(action: RuleAction) -> str:
+            var_name = action.parameters.get("variable")
+            var_value = action.parameters.get("value")
+            if var_name is not None:
+                data[var_name] = var_value
+            return f"Set {var_name} = {var_value}"
+
+        def _handle_log_message(action: RuleAction) -> str:
+            message = action.parameters.get("message", "")
+            _log_info(f"Rule action log: {message}")
+            return f"Logged: {message}"
+
+        def _handle_raise_alert(action: RuleAction) -> str:
+            alert_message = action.parameters.get("message", "Alert triggered")
+            _log_warning(f"Rule alert: {alert_message}")
+            return f"Alert: {alert_message}"
+
+        handlers = {
+            ActionType.RETURN_VALUE: _handle_return_value,
+            ActionType.SET_VARIABLE: _handle_set_variable,
+            ActionType.LOG_MESSAGE: _handle_log_message,
+            ActionType.RAISE_ALERT: _handle_raise_alert,
+        }
 
         for action in actions:
+            handler = handlers.get(action.action_type)
             try:
-                if action.action_type == ActionType.RETURN_VALUE:
-                    value = action.parameters.get("value", "")
-                    results["final_result"] = str(value)
-                    executed_actions.append(f"Returned value: {value}")
-
-                elif action.action_type == ActionType.SET_VARIABLE:
-                    var_name = action.parameters.get("variable")
-                    var_value = action.parameters.get("value")
-                    if var_name is not None:
-                        data[var_name] = var_value
-                    executed_actions.append(f"Set {var_name} = {var_value}")
-
-                elif action.action_type == ActionType.LOG_MESSAGE:
-                    message = action.parameters.get("message", "")
-                    if self.logger is not None:
-                        self.logger.info(f"Rule action log: {message}")
-                    executed_actions.append(f"Logged: {message}")
-
-                elif action.action_type == ActionType.RAISE_ALERT:
-                    alert_message = action.parameters.get("message", "Alert triggered")
-                    if self.logger is not None:
-                        self.logger.warning(f"Rule alert: {alert_message}")
-                    executed_actions.append(f"Alert: {alert_message}")
-
+                if handler is None:
+                    executed.append(f"Unknown action type: {action.action_type}")
                 else:
-                    executed_actions.append(
-                        f"Unknown action type: {action.action_type}",
-                    )
-
+                    executed.append(handler(action))
             except Exception as e:
                 if self.logger is not None:
                     self.logger.exception(
                         f"Error executing action {action.action_type}: {e}"
                     )
-                executed_actions.append(
-                    f"Error in {action.action_type}: {e}",
-                )
+                executed.append(f"Error in {action.action_type}: {e}")
 
-        results["executed_actions"] = executed_actions
+        results["executed_actions"] = executed
         return results
 
     # Additional methods for rule management

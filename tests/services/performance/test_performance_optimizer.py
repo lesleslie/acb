@@ -17,7 +17,7 @@ async def test_optimize_cache_operation_hit_miss_and_decorator(monkeypatch: pyte
     po.logger = MagicMock()
     fake_cache = AsyncMock()
     # First call: miss -> set; Second call: hit
-    fake_cache.get = AsyncMock(side_effect=[None, "VAL"]) 
+    fake_cache.get = AsyncMock(side_effect=[None, "VAL"])
     fake_cache.set = AsyncMock()
     po._cache_adapter = fake_cache
 
@@ -40,7 +40,7 @@ async def test_optimize_cache_operation_hit_miss_and_decorator(monkeypatch: pyte
         return f"R{a}"
 
     # First call -> miss (calls function), second -> hit (not call function again)
-    fake_cache.get = AsyncMock(side_effect=[None, "R1"]) 
+    fake_cache.get = AsyncMock(side_effect=[None, "R1"])
     await f(1)
     v = await f(1)
     assert v == "R1" and called["n"] == 1
@@ -62,4 +62,3 @@ async def test_optimize_query_batch_error_and_success() -> None:
     po._sql_adapter = fake_sql
     res_ok = await po.optimize_query_batch(["select 1", "select 2"], parameters=[{"a": 1}, {"b": 2}])
     assert res_ok.success and res_ok.metadata["queries_count"] == 2
-

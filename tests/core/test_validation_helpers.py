@@ -72,4 +72,3 @@ def test_create_pattern_validator_and_length_validator() -> None:
     with pytest.raises(ValueError):
         lv('toolong')
     assert lv('just') == 'just'
-

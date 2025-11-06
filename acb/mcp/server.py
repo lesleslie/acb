@@ -5,6 +5,8 @@ exposing ACB's capabilities through the Model Context Protocol.
 """
 
 import importlib.util
+import typing as t
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from typing import Any
 
@@ -242,7 +244,13 @@ async def execute_workflow(
 
             # Execute based on component type
             if component_type == "action" and component_name and action_name:
-                result = await execute_action(component_name, action_name, **parameters)
+                exec_action: Callable[
+                    [str, str, dict[str, Any] | None], Awaitable[Any]
+                ] = t.cast(
+                    Callable[[str, str, dict[str, Any] | None], Awaitable[Any]],
+                    execute_action,
+                )  # type: ignore[no-redef]
+                result = await exec_action(component_name, action_name, parameters)
                 results[step_name] = result
 
         logger.info(f"Workflow '{workflow_name}' completed successfully")

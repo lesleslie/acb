@@ -63,4 +63,3 @@ async def test_collect_render_chunks_variants() -> None:
             yield part
 
     assert await tpl._collect_render_chunks(_agen()) == ["a", "b", "c"]
-

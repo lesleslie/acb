@@ -8,33 +8,13 @@ from acb.config import AdapterBase, Config, Settings
 from acb.depends import Inject, depends
 from acb.ssl_config import SSLConfigMixin
 
-if t.TYPE_CHECKING:
-    try:
-        from acb.adapters.vector.cache import (
-            VectorCache,  # type: ignore[import-not-found]
-        )
-    except ImportError:
-        VectorCache = t.Any  # type: ignore[misc]
-    try:
-        from acb.adapters.vector.hybrid import (
-            HybridSearch,  # type: ignore[import-not-found]
-        )
-    except ImportError:
-        HybridSearch = t.Any  # type: ignore[misc]
-    try:
-        from acb.adapters.vector.scaling import (  # type: ignore[import-not-found]
-            AutoScaler,
-            ConnectionPool,
-        )
-    except ImportError:
-        AutoScaler = t.Any  # type: ignore[misc]
-        ConnectionPool = t.Any  # type: ignore[misc]
-else:
-    # Define placeholder types for runtime
-    VectorCache = t.Any
-    HybridSearch = t.Any
-    AutoScaler = t.Any
-    ConnectionPool = t.Any
+# Avoid static imports for optional submodules to keep type checkers happy
+# when extras are not installed. Use broad aliases for types here; concrete
+# implementations are imported dynamically where needed.
+VectorCache = t.Any
+HybridSearch = t.Any
+AutoScaler = t.Any
+ConnectionPool = t.Any
 
 
 class VectorSearchResult(BaseModel):

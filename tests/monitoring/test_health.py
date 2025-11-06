@@ -98,4 +98,3 @@ def test_is_healthy_and_is_ready() -> None:
     assert resp_ok.is_ready() is True
     assert resp_bad.is_healthy() is False
     assert resp_bad.is_ready() is False
-

@@ -28,63 +28,60 @@ if t.TYPE_CHECKING:
 else:
     from acb.logger import Logger as LoggerType
 
-# Conditional imports for LlamaIndex
-try:
-    from llama_index.core import (  # type: ignore[import-not-found]
-        Document,
-        PromptTemplate,
-        Settings,
-        VectorStoreIndex,
-        get_response_synthesizer,
-    )
-    from llama_index.core.agent import ReActAgent  # type: ignore[import-not-found]
-    from llama_index.core.chat_engine import (
-        SimpleChatEngine,  # type: ignore[import-not-found]
-    )
-    from llama_index.core.indices.query.base import (
-        BaseQueryEngine,  # type: ignore[import-not-found]
-    )
-    from llama_index.core.memory import (
-        ChatMemoryBuffer,  # type: ignore[import-not-found]
-    )
-    from llama_index.core.query_engine import (
-        RetrieverQueryEngine,  # type: ignore[import-not-found]
-    )
-    from llama_index.core.retrievers import (
-        VectorIndexRetriever,  # type: ignore[import-not-found]
-    )
-    from llama_index.core.schema import NodeWithScore  # type: ignore[import-not-found]
-    from llama_index.core.tools import FunctionTool  # type: ignore[import-not-found]
-    from llama_index.llms.openai import OpenAI  # type: ignore[import-not-found]
+# Conditional imports for LlamaIndex via dynamic loading to avoid static
+# import errors when optional dependency is not installed.
+import importlib
+import importlib.util as _il_util
 
-    LLAMAINDEX_AVAILABLE = True
-except ImportError:
-    LLAMAINDEX_AVAILABLE = False
+LLAMAINDEX_AVAILABLE = _il_util.find_spec("llama_index") is not None
 
-    # Mock classes for type hints when llama-index is not installed
-    class VectorStoreIndex:  # type: ignore[no-redef]
-        pass
+if LLAMAINDEX_AVAILABLE:
+    try:
+        _li_core = importlib.import_module("llama_index.core")
+        _li_agent = importlib.import_module("llama_index.core.agent")
+        _li_chat = importlib.import_module("llama_index.core.chat_engine")
+        _li_qi = importlib.import_module("llama_index.core.indices.query.base")
+        _li_mem = importlib.import_module("llama_index.core.memory")
+        _li_qe = importlib.import_module("llama_index.core.query_engine")
+        _li_ret = importlib.import_module("llama_index.core.retrievers")
+        _li_schema = importlib.import_module("llama_index.core.schema")
+        _li_tools = importlib.import_module("llama_index.core.tools")
+        _li_openai = importlib.import_module("llama_index.llms.openai")
 
-    class BaseQueryEngine:  # type: ignore[no-redef]
-        pass
+        Document = getattr(_li_core, "Document")
+        PromptTemplate = getattr(_li_core, "PromptTemplate")
+        Settings = getattr(_li_core, "Settings")
+        VectorStoreIndex = getattr(_li_core, "VectorStoreIndex")
+        get_response_synthesizer = getattr(_li_core, "get_response_synthesizer")
+        ReActAgent = getattr(_li_agent, "ReActAgent")
+        SimpleChatEngine = getattr(_li_chat, "SimpleChatEngine")
+        BaseQueryEngine = getattr(_li_qi, "BaseQueryEngine")
+        ChatMemoryBuffer = getattr(_li_mem, "ChatMemoryBuffer")
+        RetrieverQueryEngine = getattr(_li_qe, "RetrieverQueryEngine")
+        VectorIndexRetriever = getattr(_li_ret, "VectorIndexRetriever")
+        NodeWithScore = getattr(_li_schema, "NodeWithScore")
+        FunctionTool = getattr(_li_tools, "FunctionTool")
+        OpenAI = getattr(_li_openai, "OpenAI")
+    except Exception:
+        # If dynamic import fails at runtime, mark as unavailable and fall back
+        LLAMAINDEX_AVAILABLE = False
 
-    class ReActAgent:  # type: ignore[no-redef]
-        pass
-
-    class OpenAI:  # type: ignore[no-redef]
-        pass
-
-    class NodeWithScore:  # type: ignore[no-redef]
-        pass
-
-    class Document:  # type: ignore[no-redef]
-        pass
-
-    class PromptTemplate:  # type: ignore[no-redef]
-        pass
-
-    class SimpleChatEngine:  # type: ignore[no-redef]
-        pass
+if not LLAMAINDEX_AVAILABLE:
+    # Lightweight fallbacks to satisfy type usages when llama-index is missing
+    Document = t.Any
+    PromptTemplate = t.Any
+    Settings = t.Any
+    VectorStoreIndex = t.Any
+    get_response_synthesizer = t.Any  # type: ignore[assignment]
+    ReActAgent = t.Any
+    SimpleChatEngine = t.Any
+    BaseQueryEngine = t.Any
+    ChatMemoryBuffer = t.Any
+    RetrieverQueryEngine = t.Any
+    VectorIndexRetriever = t.Any
+    NodeWithScore = t.Any
+    FunctionTool = t.Any
+    OpenAI = t.Any
 
 
 MODULE_METADATA = AdapterMetadata(
@@ -173,7 +170,7 @@ class LlamaIndexCallback:
         if self.logger is not None:
             self.logger.debug(f"Starting retrieval for query: {query[:100]}...")
 
-    def on_retrieve_end(self, nodes: list[NodeWithScore]) -> None:
+    def on_retrieve_end(self, nodes: list[t.Any]) -> None:
         """Called when retrieval ends."""
         if self.steps:
             last_step = self.steps[-1]
@@ -226,11 +223,11 @@ class Reasoning(ReasoningBase):
     ) -> None:
         super().__init__(**kwargs)
         self._settings = settings or LlamaIndexReasoningSettings()
-        self._llm: OpenAI | None = None
-        self._indices: dict[str, VectorStoreIndex] = {}
-        self._query_engines: dict[str, BaseQueryEngine] = {}
-        self._agents: dict[str, ReActAgent] = {}
-        self._chat_engines: dict[str, SimpleChatEngine] = {}
+        self._llm: t.Any | None = None
+        self._indices: dict[str, t.Any] = {}
+        self._query_engines: dict[str, t.Any] = {}
+        self._agents: dict[str, t.Any] = {}
+        self._chat_engines: dict[str, t.Any] = {}
 
         if not LLAMAINDEX_AVAILABLE:
             msg = (
@@ -241,7 +238,7 @@ class Reasoning(ReasoningBase):
                 msg,
             )
 
-    async def _create_client(self) -> OpenAI:
+    async def _create_client(self) -> t.Any:
         """Create LlamaIndex OpenAI LLM client."""
         settings = self._settings
         if settings is None:
@@ -468,7 +465,7 @@ Let's work through this:
             confidence_score=0.85,
         )
 
-    async def _get_or_create_index(self, knowledge_base_name: str) -> VectorStoreIndex:
+    async def _get_or_create_index(self, knowledge_base_name: str) -> t.Any:
         """Get existing index or create new one for knowledge base."""
         if knowledge_base_name in self._indices:
             return self._indices[knowledge_base_name]
@@ -516,7 +513,7 @@ Let's work through this:
         self,
         collection_name: str,
         vector_adapter: t.Any,
-    ) -> list[Document]:
+    ) -> list[t.Any]:
         """Get documents from vector database and convert to LlamaIndex format."""
         try:
             # Get all documents from collection (simplified)
@@ -543,8 +540,8 @@ Let's work through this:
     async def _get_or_create_query_engine(
         self,
         knowledge_base_name: str,
-        index: VectorStoreIndex,
-    ) -> BaseQueryEngine:
+        index: t.Any,
+    ) -> t.Any:
         """Get existing query engine or create new one."""
         if knowledge_base_name in self._query_engines:
             return self._query_engines[knowledge_base_name]
@@ -579,9 +576,9 @@ Let's work through this:
 
     def _create_simple_query_engine(
         self,
-        llm: OpenAI,
-        template: PromptTemplate | None = None,
-    ) -> BaseQueryEngine:
+        llm: t.Any,
+        template: t.Any | None = None,
+    ) -> t.Any:
         """Create a simple query engine for general reasoning."""
         # Create empty index for simple querying
         index = VectorStoreIndex.from_documents([])
@@ -610,7 +607,7 @@ Let's work through this:
         self,
         session_id: str,
         knowledge_base: str | None = None,
-    ) -> SimpleChatEngine:
+    ) -> t.Any:
         """Create a chat engine for conversational reasoning."""
         if session_id in self._chat_engines:
             return self._chat_engines[session_id]

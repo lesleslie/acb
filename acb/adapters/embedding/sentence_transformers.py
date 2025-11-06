@@ -1,6 +1,9 @@
 """Sentence Transformers embeddings adapter implementation."""
 
 import asyncio
+
+# Avoid static imports of optional heavy dependencies; detect availability
+import importlib.util as _il_util
 import time
 import typing as t
 from contextlib import suppress
@@ -25,23 +28,10 @@ from acb.adapters.embedding._base import (
 from acb.config import Config
 from acb.depends import depends
 
-if t.TYPE_CHECKING:
-    import torch  # type: ignore[import-not-found]
-    from sentence_transformers import (
-        SentenceTransformer,  # type: ignore[import-not-found]
-    )
-
-try:
-    import torch  # type: ignore[import-not-found,no-redef]
-    from sentence_transformers import (
-        SentenceTransformer,  # type: ignore[import-not-found,no-redef]
-    )
-
-    _sentence_transformers_available = True
-except ImportError:
-    SentenceTransformer = None  # type: ignore[assignment,misc]
-    torch = None  # type: ignore[assignment,misc]
-    _sentence_transformers_available = False
+SentenceTransformer = t.cast(t.Any, None)
+_sentence_transformers_available = (
+    _il_util.find_spec("sentence_transformers") is not None
+)
 
 MODULE_METADATA = AdapterMetadata(
     module_id=generate_adapter_id(),
@@ -123,10 +113,10 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
 
         super().__init__(settings)
         self._settings: SentenceTransformersSettings = settings
-        self._model: SentenceTransformer | None = None
+        self._model: t.Any | None = None
         self._device: str | None = None
 
-    async def _ensure_client(self) -> SentenceTransformer:
+    async def _ensure_client(self) -> t.Any:
         """Ensure Sentence Transformer model is loaded."""
         if self._model is None:
             await self._load_model()
@@ -138,6 +128,13 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
         logger: t.Any = depends.get("logger")
 
         try:
+            # Import dependencies dynamically to avoid static type errors
+            import importlib
+
+            torch = importlib.import_module("torch")  # type: ignore[assignment]
+            st_mod = importlib.import_module("sentence_transformers")
+            STClass = getattr(st_mod, "SentenceTransformer")
+
             # Determine device
             if self._settings.device == "auto":
                 self._device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -162,7 +159,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
 
             self._model = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda: SentenceTransformer(self._settings.model, **model_kwargs),
+                lambda: STClass(self._settings.model, **model_kwargs),
             )
 
             # Apply optimizations
@@ -445,8 +442,15 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
             self._model = None
 
         # Clear CUDA cache if using GPU
-        if torch and torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        # Best effort GPU cache cleanup if available
+        from contextlib import suppress as _suppress
+
+        with _suppress(Exception):
+            import importlib
+
+            torch = importlib.import_module("torch")
+            if torch and torch.cuda.is_available():  # type: ignore[truthy-bool]
+                torch.cuda.empty_cache()
 
         await super().cleanup()
 

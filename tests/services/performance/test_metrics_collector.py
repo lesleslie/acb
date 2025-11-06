@@ -1,4 +1,4 @@
-"""Unit tests for MetricsCollector helper summaries.""" 
+"""Unit tests for MetricsCollector helper summaries."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ async def test_metrics_record_and_summary(monkeypatch: pytest.MonkeyPatch) -> No
     mc = MetricsCollector()
     mc.logger = MagicMock()
     now = {"t": time.time()}
-    monkeypatch.setattr("acb.services.performance.metrics.time.time", lambda: now["t"]) 
+    monkeypatch.setattr("acb.services.performance.metrics.time.time", lambda: now["t"])
 
     # Record response times and errors
     await mc.record_response_time(100.0, endpoint="/x")

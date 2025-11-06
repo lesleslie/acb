@@ -90,4 +90,3 @@ async def test_service_registry_register_lookup_health_and_order() -> None:
 
     with pytest.raises(ServiceNotFoundError):
         reg.get_service_config('A')
-

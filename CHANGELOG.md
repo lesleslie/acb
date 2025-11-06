@@ -1,5 +1,16 @@
 ______________________________________________________________________
 
+## [0.29.1] - 2025-11-05
+
+### Changed
+
+- Acb (quality: 69/100) - 2025-11-05 20:30:48
+
+### Fixed
+
+- Resolve test failures and logger DI issues
+- test: Update 25 files
+
 ## [0.29.0] - 2025-11-05
 
 ### Documentation
