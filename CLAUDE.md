@@ -376,6 +376,143 @@ uv run python -m acb.mcp.server
 }
 ```
 
+## Logging Output Strategy
+
+**Version**: 0.25.3+ | **Default Behavior**: Dual output (stdout + stderr)
+
+### Stream Configuration
+
+ACB logger adapters (Loguru, Logly, Structlog) support dual-sink output:
+
+- **stdout**: Human-readable formatted logs with colors (Rich/pretty printing)
+- **stderr**: Structured JSON logs for AI/machine consumption (enabled by default)
+
+### Default Behavior (v0.25.3+)
+
+**Both streams are active by default** for optimal human + AI workflows:
+
+```bash
+# Humans see pretty logs on stdout, AI parses JSON from stderr
+python -m acb.workflow 2>structured.jsonl
+
+# Later, AI can analyze the structured logs
+jq -r 'select(.level=="ERROR") | .message' structured.jsonl
+```
+
+### Environment Variable Configuration
+
+**Opt-out of stderr structured logging**:
+```bash
+ACB_DISABLE_STRUCTURED_STDERR=1 python -m acb.workflow
+# Only stdout (human-readable) logs will be generated
+```
+
+**Stderr-only mode** (disable stdout):
+```bash
+ACB_STRUCTURED_ONLY=1 python -m acb.workflow 2>logs.jsonl
+# Only JSON logs to stderr, no stdout output
+```
+
+**Enable OpenTelemetry trace context** (Phase 2):
+```bash
+ACB_ENABLE_OTEL=1 python -m acb.workflow 2>logs.jsonl
+# JSON logs include trace_id and span_id fields
+```
+
+### JSON Log Format
+
+Structured logs follow OpenTelemetry-compatible schema:
+
+```json
+{
+  "timestamp": "2025-11-07T10:30:00.123456Z",
+  "level": "INFO",
+  "event": "acb.workflow.execute",
+  "message": "Processing workflow step",
+  "attributes": {
+    "line": 42,
+    "module": "acb.workflow",
+    "correlation_id": "abc123",
+    "custom_field": "value"
+  },
+  "version": "1.0.0",
+  "trace_id": "a1b2c3d4e5f6...",  // Optional (if ACB_ENABLE_OTEL=1)
+  "span_id": "1234567890abcdef"   // Optional (if ACB_ENABLE_OTEL=1)
+}
+```
+
+### Configuration in settings/logger.yml
+
+```yaml
+logger:
+  # Stdout configuration (human-readable)
+  log_level: INFO
+  colorize: true
+
+  # Stderr structured logging (enabled by default)
+  enable_stderr_sink: true  # Set to false to disable
+  stderr_level: INFO
+  stderr_format: json  # or "msgpack"
+
+  # Advanced: Disable stdout, stderr-only
+  disable_stdout_sink: false  # Set to true for stderr-only
+
+  # OpenTelemetry integration (opt-in)
+  enable_otel: false  # Set to true for trace context
+  otel_trace_propagation: true
+  otel_service_name: my-service  # Optional
+
+  # Additional sinks (optional)
+  additional_sinks:
+    - type: file
+      path: /var/log/app.log
+      level: WARNING
+      rotation: "1 day"
+```
+
+### Usage Scenarios
+
+**Human Development**:
+```bash
+# Default - see pretty logs in terminal
+python -m acb.workflow
+```
+
+**AI Analysis**:
+```bash
+# Capture JSON for post-processing
+python -m acb.workflow 2>analysis.jsonl
+
+# Filter errors
+jq 'select(.level=="ERROR")' analysis.jsonl
+
+# Extract metrics
+jq '.attributes | select(.duration_ms)' analysis.jsonl
+```
+
+**Hybrid (Human + AI)**:
+```bash
+# Human watches stdout, AI gets stderr data
+python -m acb.workflow 2>monitoring.jsonl &
+tail -f monitoring.jsonl | jq -r '.message'  # AI monitoring
+```
+
+**CI/CD Pipelines**:
+```bash
+# Separate human logs from machine logs
+python -m acb.workflow \
+  > human_readable.log \
+  2> structured.jsonl
+```
+
+### Why Stderr for Structured Logs?
+
+1. **Stream Separation**: stdout = presentation, stderr = data
+2. **Standard Practice**: nginx, systemd, many observability tools
+3. **Easy Redirection**: `2>logs.jsonl` captures only structured data
+4. **AI Parsing**: No Rich markup filtering needed
+5. **Backward Compatible**: Opt-out available via environment variable
+
 ## Common Issues
 
 **Quick fixes**:

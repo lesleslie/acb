@@ -10,6 +10,8 @@ try:
 except ImportError:
     structlog = None  # type: ignore[assignment]
 
+from datetime import UTC
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
@@ -293,6 +295,9 @@ class Logger(LoggerBase):
         if self.settings.context_vars:
             structlog.contextvars.clear_contextvars()
 
+        # Configure output sinks
+        self._configure_sinks()
+
     def _setup_stdlib_integration(self) -> None:
         """Set up integration with Python standard library logging."""
         if not structlog:
@@ -319,6 +324,72 @@ class Logger(LoggerBase):
             deployed=self.config.deployed,
             logger_type="structlog",
         )
+
+    def _add_primary_sink(self) -> None:
+        """Add primary stdout sink (human-readable or JSON based on config)."""
+        # Structlog's primary output is already configured via _setup_stdlib_integration()
+        # which sets up logging.basicConfig() to stdout
+        pass
+
+    def _add_stderr_sink(self) -> None:
+        """Add stderr sink for structured JSON logging (AI/machine consumption)."""
+        import json
+        from datetime import datetime
+
+        # Create a handler for stderr with JSON formatting
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setLevel(getattr(logging, self.settings.stderr_level))
+
+        class StructlogJSONFormatter(logging.Formatter):
+            """Custom formatter for structlog JSON output."""
+
+            def __init__(self, enable_otel: bool = False) -> None:
+                super().__init__()
+                self.enable_otel = enable_otel
+
+            def format(self, record: logging.LogRecord) -> str:
+                """Format log record as JSON for AI consumption."""
+                event = {
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "level": record.levelname,
+                    "event": f"{record.name}.{record.funcName}",
+                    "message": record.getMessage(),
+                    "attributes": {
+                        "line": record.lineno,
+                        "module": record.module,
+                        "pathname": record.pathname,
+                    },
+                    "version": "1.0.0",
+                }
+
+                # Add extra fields from structlog context
+                if hasattr(record, "extra") and record.extra and isinstance(record.extra, dict):
+                    attributes = t.cast(dict[str, t.Any], event["attributes"])
+                    attributes.update(record.extra)
+
+                # Add OpenTelemetry trace context if enabled
+                if self.enable_otel:
+                    try:
+                        from opentelemetry.trace import get_current_span
+
+                        span = get_current_span()
+                        if span.is_recording():
+                            ctx = span.get_span_context()
+                            event["trace_id"] = format(ctx.trace_id, "032x")
+                            event["span_id"] = format(ctx.span_id, "016x")
+                    except ImportError:
+                        pass  # OpenTelemetry not installed
+
+                return json.dumps(event)
+
+        handler.setFormatter(
+            StructlogJSONFormatter(enable_otel=self.settings.enable_otel)
+        )
+
+        # Add handler to root logger
+        root_logger = logging.getLogger()
+        root_logger.addHandler(handler)
+        self._active_sinks.append(handler)
 
     # Additional structured logging methods specific to structlog
     def log_event(self, event: str, **context: t.Any) -> None:

@@ -2,6 +2,7 @@
 
 import logging
 import typing as t
+from datetime import UTC
 from inspect import currentframe
 from uuid import UUID
 
@@ -182,7 +183,8 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
             m: "DEBUG" if v else self.config.logger.log_level for m, v in debug.items()
         }
 
-        self._add_logger_sink()
+        # Use new sink management system
+        self._configure_sinks()
 
     def _patch_name(self, record: dict[str, t.Any]) -> str:
         """Extract and clean module name from log record."""
@@ -197,14 +199,15 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
 
         return self._should_log_level(record["level"].name, name)
 
-    def _add_logger_sink(self) -> None:
-        """Add the primary logger sink."""
+    def _add_primary_sink(self) -> None:
+        """Add the primary stdout sink (human-readable)."""
         try:
-            self.add(  # type: ignore[no-untyped-call]
+            sink_id = self.add(  # type: ignore[no-untyped-call]
                 self.async_sink,
                 filter=t.cast("t.Any", self._filter_by_module),
                 **self.settings.settings,
             )
+            self._active_sinks.append(sink_id)
         except ValueError as e:
             if "event loop is required" in str(e):
                 self._add_sync_sink()
@@ -219,6 +222,51 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
             filter=t.cast("t.Any", self._filter_by_module),
             **settings,
         )
+
+    def _add_stderr_sink(self) -> None:
+        """Add stderr sink for structured JSON logging (AI/machine consumption)."""
+        import json
+        import sys
+        from datetime import datetime
+
+        def json_formatter(record: dict[str, t.Any]) -> str:
+            """Format log record as JSON for AI consumption."""
+            event = {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "level": record["level"].name,
+                "event": f"{record['extra'].get('mod_name', 'unknown')}.{record['function']}",
+                "message": record["message"],
+                "attributes": {
+                    "line": record["line"],
+                    "module": record["name"],
+                    **record["extra"],
+                },
+                "version": "1.0.0",
+            }
+
+            # Add OpenTelemetry trace context if enabled (Phase 2)
+            if self.settings.enable_otel:
+                try:
+                    from opentelemetry.trace import get_current_span
+
+                    span = get_current_span()
+                    if span.is_recording():
+                        ctx = span.get_span_context()
+                        event["trace_id"] = format(ctx.trace_id, "032x")
+                        event["span_id"] = format(ctx.span_id, "016x")
+                except ImportError:
+                    pass  # OpenTelemetry not installed
+
+            return json.dumps(event) + "\n"
+
+        sink_id = self.add(  # type: ignore[no-untyped-call]
+            sys.stderr,
+            format=json_formatter,
+            level=self.settings.stderr_level,
+            colorize=False,
+            serialize=False,
+        )
+        self._active_sinks.append(sink_id)
 
     def _setup_level_colors(self) -> None:
         """Configure level-specific colors."""

@@ -143,7 +143,13 @@ class TestLoguruLogger:
         """Test module-based filtering."""
         logger = Logger()
 
-        with patch.object(logger, "_should_log_level", return_value=True) as mock_should_log:
+        # Mock config to prevent DI initialization
+        with patch.object(logger, "config") as mock_config:
+            mock_config.logger.level_per_module = {}
+            mock_config.logger.log_level = "INFO"
+            mock_config.deployed = False
+            mock_config.debug = None
+
             record = {
                 "name": "test.module.function",
                 "level": Mock(name="INFO")
@@ -152,7 +158,6 @@ class TestLoguruLogger:
             result = logger._filter_by_module(record)
 
             assert result is True
-            mock_should_log.assert_called_once_with("INFO", "module")
 
     @pytest.mark.asyncio
     async def test_async_sink(self):
@@ -162,33 +167,33 @@ class TestLoguruLogger:
 
             mock_aprint.assert_called_once_with("test message", end="")
 
-    def test_add_logger_sink_success(self):
-        """Test successful sink addition."""
+    def test_add_primary_sink_success(self):
+        """Test successful primary sink addition."""
         logger = Logger()
 
         with patch.object(logger, "add") as mock_add:
-            logger._add_logger_sink()
+            logger._add_primary_sink()
 
             mock_add.assert_called_once()
 
-    def test_add_logger_sink_fallback(self):
+    def test_add_primary_sink_fallback(self):
         """Test fallback to sync sink on event loop error."""
         logger = Logger()
 
         with patch.object(logger, "add", side_effect=ValueError("event loop is required")), \
              patch.object(logger, "_add_sync_sink") as mock_sync:
 
-            logger._add_logger_sink()
+            logger._add_primary_sink()
 
             mock_sync.assert_called_once()
 
-    def test_add_logger_sink_other_error(self):
+    def test_add_primary_sink_other_error(self):
         """Test other ValueError is re-raised."""
         logger = Logger()
 
         with patch.object(logger, "add", side_effect=ValueError("other error")):
             with pytest.raises(ValueError, match="other error"):
-                logger._add_logger_sink()
+                logger._add_primary_sink()
 
     def test_add_sync_sink(self):
         """Test sync sink addition."""

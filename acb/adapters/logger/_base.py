@@ -54,8 +54,35 @@ class LoggerBaseSettings(Settings):
     context_vars: bool = True
     correlation_id_header: str = "X-Correlation-ID"
 
+    # Dual sink configuration (DEFAULT: stderr enabled)
+    enable_stderr_sink: bool = True  # Enable structured JSON to stderr
+    stderr_level: str = "INFO"  # Minimum level for stderr
+    stderr_format: t.Literal["json", "msgpack"] = "json"
+    disable_stdout_sink: bool = False  # Set True for stderr-only mode
+
+    # OpenTelemetry integration (Phase 2)
+    enable_otel: bool = False  # Enable OpenTelemetry trace context
+    otel_trace_propagation: bool = True  # Propagate trace context
+    otel_service_name: str | None = None  # Service name for OTEL
+
+    # Additional sinks configuration
+    additional_sinks: list[dict[str, t.Any]] | None = None
+
     def __init__(self, **values: t.Any) -> None:
         super().__init__(**values)
+
+        # Check environment variables for opt-out
+        import os
+
+        if os.getenv("ACB_DISABLE_STRUCTURED_STDERR") in ("1", "true", "True"):
+            self.enable_stderr_sink = False
+
+        if os.getenv("ACB_STRUCTURED_ONLY") in ("1", "true", "True"):
+            self.disable_stdout_sink = True
+
+        if os.getenv("ACB_ENABLE_OTEL") in ("1", "true", "True"):
+            self.enable_otel = True
+
         self.settings = self._build_adapter_settings()
 
     def _build_adapter_settings(self) -> dict[str, t.Any]:
@@ -104,6 +131,7 @@ class LoggerBase(CleanupMixin):
         self._settings: LoggerBaseSettings | None = None
         self._initialized = False
         self._context: dict[str, t.Any] = {}
+        self._active_sinks: list[t.Any] = []  # Track active sinks for cleanup
 
     @property
     def settings(self) -> LoggerBaseSettings:
@@ -206,6 +234,53 @@ class LoggerBase(CleanupMixin):
     def _init(self) -> None:
         """Implementation-specific initialization."""
         ...
+
+    # Sink management methods (optional to implement)
+    def _configure_sinks(self) -> None:
+        """Configure all output sinks (stdout, stderr, additional).
+
+        This method orchestrates sink setup. Subclasses should override
+        if they need custom sink configuration logic.
+        """
+        # Add stdout sink (unless disabled)
+        if not self.settings.disable_stdout_sink:
+            self._add_primary_sink()
+
+        # Add stderr sink (enabled by default)
+        if self.settings.enable_stderr_sink:
+            self._add_stderr_sink()
+
+        # Add any additional configured sinks
+        if self.settings.additional_sinks:
+            for sink_config in self.settings.additional_sinks:
+                self._add_additional_sink(sink_config)
+
+    def _add_primary_sink(self) -> None:
+        """Add primary stdout sink (human-readable).
+
+        Default implementation does nothing. Subclasses should override
+        to configure their stdout sink.
+        """
+        pass
+
+    def _add_stderr_sink(self) -> None:
+        """Add stderr sink for structured JSON logging (AI/machine consumption).
+
+        Default implementation does nothing. Subclasses should override
+        to configure their stderr sink.
+        """
+        pass
+
+    def _add_additional_sink(self, config: dict[str, t.Any]) -> None:
+        """Add additional sink from configuration (file, remote, etc).
+
+        Args:
+            config: Sink configuration dict with keys like 'type', 'path', 'level'
+
+        Default implementation does nothing. Subclasses should override
+        to support additional sinks.
+        """
+        pass
 
     # Utility methods
     def _is_testing_mode(self) -> bool:

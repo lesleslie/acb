@@ -12,6 +12,8 @@ with suppress(ImportError):
 
     logly_logger = _real_logly_logger
 
+from datetime import UTC
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
@@ -248,30 +250,82 @@ class Logger(LoggerBase):
 
     def _setup_sinks(self) -> None:
         """Set up logging sinks (console, file, etc.)."""
-        logger = self._ensure_logger()
+        # Use new sink management system
+        self._configure_sinks()
 
-        # Add console sink
+    def _add_primary_sink(self) -> None:
+        """Add primary stdout sink (human-readable)."""
+        logger = self._ensure_logger()
         sink_config = self.settings.settings.copy()
 
         # Add file sink if configured
         if self.settings.log_file_path:
-            logger.add(
+            sink_id = logger.add(
                 self.settings.log_file_path,
                 rotation=self.settings.log_file_rotation,
                 retention=self.settings.log_file_retention,
                 compression=self.settings.compression,
                 **sink_config,
             )
+            self._active_sinks.append(sink_id)
         else:
             # Add console sink
             try:
-                logger.add(
+                sink_id = logger.add(
                     lambda msg: print(msg, end=""),
                     **sink_config,
                 )
+                self._active_sinks.append(sink_id)
             except Exception as e:
                 # Fallback to simple print if configuration fails
                 print(f"Warning: Failed to configure Logly sink: {e}")
+
+    def _add_stderr_sink(self) -> None:
+        """Add stderr sink for structured JSON logging (AI/machine consumption)."""
+        import json
+        import sys
+        from datetime import datetime
+
+        logger = self._ensure_logger()
+
+        def json_formatter(record: dict[str, t.Any]) -> str:
+            """Format log record as JSON for AI consumption."""
+            event = {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "level": record["level"].name,
+                "event": f"{record['extra'].get('mod_name', 'unknown')}.{record['function']}",
+                "message": record["message"],
+                "attributes": {
+                    "line": record["line"],
+                    "module": record["name"],
+                    **record["extra"],
+                },
+                "version": "1.0.0",
+            }
+
+            # Add OpenTelemetry trace context if enabled (Phase 2)
+            if self.settings.enable_otel:
+                try:
+                    from opentelemetry.trace import get_current_span
+
+                    span = get_current_span()
+                    if span.is_recording():
+                        ctx = span.get_span_context()
+                        event["trace_id"] = format(ctx.trace_id, "032x")
+                        event["span_id"] = format(ctx.span_id, "016x")
+                except ImportError:
+                    pass  # OpenTelemetry not installed
+
+            return json.dumps(event) + "\n"
+
+        sink_id = logger.add(
+            sys.stderr,
+            format=json_formatter,
+            level=self.settings.stderr_level,
+            colorize=False,
+            serialize=False,
+        )
+        self._active_sinks.append(sink_id)
 
     def _setup_callbacks(self) -> None:
         """Set up async callbacks if enabled."""
