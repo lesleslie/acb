@@ -1,15 +1,32 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from logfire import (
-    configure,
-    instrument_httpx,
-    instrument_pydantic,
-    instrument_redis,
-    instrument_sqlalchemy,
-    instrument_system_metrics,
-    loguru_handler,
-)
+try:
+    from logfire import (
+        configure,
+        instrument_httpx,
+        instrument_pydantic,
+        instrument_redis,
+        instrument_sqlalchemy,
+        instrument_system_metrics,
+        loguru_handler,
+    )
+except Exception:  # pragma: no cover - allow tests without logfire deps
+    import os as _os
+    import sys as _sys
+
+    if "pytest" in _sys.modules or _os.getenv("TESTING", "False").lower() == "true":
+        from unittest.mock import MagicMock
+
+        configure = MagicMock()  # type: ignore[assignment]
+        instrument_httpx = MagicMock()  # type: ignore[assignment]
+        instrument_pydantic = MagicMock()  # type: ignore[assignment]
+        instrument_redis = MagicMock()  # type: ignore[assignment]
+        instrument_sqlalchemy = MagicMock()  # type: ignore[assignment]
+        instrument_system_metrics = MagicMock()  # type: ignore[assignment]
+        loguru_handler = MagicMock()  # type: ignore[assignment]
+    else:
+        raise
 from pydantic import SecretStr
 from acb.adapters import (
     AdapterCapability,

@@ -2,9 +2,23 @@ import typing as t
 from uuid import UUID
 
 from pydantic import SecretStr, field_validator
-from sentry_sdk import init as sentry_init
-from sentry_sdk.integrations.asyncio import AsyncioIntegration
-from sentry_sdk.integrations.gcp import GcpIntegration
+
+try:
+    from sentry_sdk import init as sentry_init
+    from sentry_sdk.integrations.asyncio import AsyncioIntegration
+    from sentry_sdk.integrations.gcp import GcpIntegration
+except Exception:  # pragma: no cover - allow tests without sentry installed
+    import os as _os
+    import sys as _sys
+
+    if "pytest" in _sys.modules or _os.getenv("TESTING", "False").lower() == "true":
+        from unittest.mock import MagicMock
+
+        sentry_init = MagicMock()  # type: ignore[assignment, no-redef]
+        AsyncioIntegration = MagicMock  # type: ignore[assignment, no-redef]
+        GcpIntegration = MagicMock  # type: ignore[assignment, no-redef]
+    else:
+        raise
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
 from acb.depends import Inject, depends

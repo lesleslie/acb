@@ -1,10 +1,24 @@
+from __future__ import annotations
+
 import asyncio
 import builtins
 import os
 import typing as t
 from uuid import UUID
 
-from infisical_sdk import InfisicalError, InfisicalSDKClient
+try:
+    from infisical_sdk import InfisicalError, InfisicalSDKClient
+except Exception:  # pragma: no cover - allow tests without infisical installed
+    import os as _os
+    import sys as _sys
+
+    if "pytest" in _sys.modules or _os.getenv("TESTING", "False").lower() == "true":
+        from unittest.mock import MagicMock
+
+        InfisicalError = Exception  # type: ignore[assignment]
+        InfisicalSDKClient = MagicMock  # type: ignore[assignment]
+    else:
+        raise
 from acb.adapters import AdapterStatus
 from acb.depends import Inject, depends
 

@@ -24,7 +24,8 @@ class MockEmbeddingAdapter(EmbeddingAdapter):
         self._mock_client = MagicMock()
 
     async def _ensure_client(self):
-        return self._mock_client
+        self._client = self._mock_client
+        return self._client
 
     async def _embed_texts(self, texts, model, normalize, batch_size, **kwargs):
         # Generate mock embeddings
@@ -51,6 +52,42 @@ class MockEmbeddingAdapter(EmbeddingAdapter):
             model=model,
             batch_size=len(results),
         )
+
+    async def _embed_documents(self, documents, chunk_size, chunk_overlap, model, **kwargs):
+        batches = []
+        for i, document in enumerate(documents):
+            chunks = self._chunk_text(document, chunk_size, chunk_overlap)
+            # Generate embeddings for chunks using the base _embed_texts implementation
+            original_batch = await self._embed_texts(chunks, model, normalize=True, batch_size=32, **kwargs)
+
+            # Create new results with updated metadata
+            updated_results = []
+            for j, result in enumerate(original_batch.results):
+                updated_result = EmbeddingResult(
+                    text=result.text,
+                    embedding=result.embedding,
+                    model=result.model,
+                    dimensions=result.dimensions,
+                    tokens=result.tokens,
+                    metadata={
+                        **result.metadata,  # Preserve original metadata
+                        "is_chunk": True,
+                        "document_id": i,
+                        "chunk_index": j,
+                    },
+                )
+                updated_results.append(updated_result)
+
+            # Create a new batch with updated results
+            updated_batch = EmbeddingBatch(
+                results=updated_results,
+                total_tokens=original_batch.total_tokens,
+                processing_time=original_batch.processing_time,
+                model=original_batch.model,
+                batch_size=original_batch.batch_size,
+            )
+            batches.append(updated_batch)
+        return batches
 
     async def _embed_documents(self, documents, chunk_size, chunk_overlap, model, **kwargs):
         batches = []

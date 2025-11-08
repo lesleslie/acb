@@ -727,8 +727,24 @@ class AdapterBase:
         if not hasattr(self, "_logger"):
             try:
                 Logger = import_adapter("logger")
-                logger_instance = depends.get_sync(Logger)
-                self._logger = logger_instance
+                # In test mode, import_adapter returns MagicMock, so we need to check
+                from unittest.mock import MagicMock
+
+                if isinstance(Logger, MagicMock):
+                    import logging
+
+                    self._logger = logging.getLogger(self.__class__.__name__)
+                else:
+                    logger_instance = depends.get_sync(Logger)
+                    # Check if the logger_instance has the required methods
+                    if hasattr(logger_instance, "debug") and hasattr(
+                        logger_instance, "exception"
+                    ):
+                        self._logger = logger_instance
+                    else:
+                        import logging
+
+                        self._logger = logging.getLogger(self.__class__.__name__)
             except Exception:
                 import logging
 

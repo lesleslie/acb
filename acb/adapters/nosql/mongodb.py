@@ -1,10 +1,24 @@
+from __future__ import annotations
+
 import typing as t
 from contextlib import asynccontextmanager, suppress
 from functools import cached_property
 from uuid import UUID
 
-from beanie import init_beanie
-from motor.motor_asyncio import AsyncIOMotorClient
+try:
+    from beanie import init_beanie
+    from motor.motor_asyncio import AsyncIOMotorClient
+except Exception:  # pragma: no cover - allow tests without Mongo deps
+    import os as _os
+    import sys as _sys
+
+    if "pytest" in _sys.modules or _os.getenv("TESTING", "False").lower() == "true":
+        from unittest.mock import MagicMock
+
+        init_beanie = MagicMock()  # type: ignore[assignment, no-redef]
+        AsyncIOMotorClient = MagicMock  # type: ignore[assignment, no-redef]
+    else:
+        raise
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.config import Config
 from acb.depends import Inject, depends
