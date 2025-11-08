@@ -6,15 +6,35 @@ from contextlib import suppress
 from typing import Any, Literal
 
 from aioconsole import aprint
+from pydantic import Field
 from rich.console import Console as RichConsole
 from rich.style import Style
 from rich.text import Text
 from rich.traceback import install
+from acb.config import Settings
 from acb.depends import depends
+
+
+class ConsoleSettings(Settings):
+    """Configuration for ACB Console.
+
+    Console width can be configured via (in order of precedence):
+    1. Environment variable: CONSOLE_WIDTH (runtime override)
+    2. settings/console.yaml (project default)
+    3. Fallback: Auto-detected terminal width
+    """
+
+    width: int | None = Field(
+        default=None,
+        description="Console width in characters. None = auto-detect terminal width",
+    )
 
 
 class Console(RichConsole):
     def __init__(self) -> None:
+        # Load console configuration
+        self._settings = self._load_settings()
+
         # Detect non-interactive/plain environments early
         plain = False
         try:
@@ -37,10 +57,14 @@ class Console(RichConsole):
             Literal["auto", "standard", "256", "truecolor", "windows"] | None
         ) = "auto" if not plain else None
 
+        # Get configured width
+        width = self._get_console_width()
+
         super().__init__(
             no_color=no_color,
             force_terminal=force_terminal,
             color_system=color_system,
+            width=width,
         )
 
         # Cache for quick checks during print calls
@@ -49,6 +73,34 @@ class Console(RichConsole):
         self._ansi_re = re.compile(
             r"\x1b\[[0-9;]*m"
         )  # REGEX OK: ANSI escape sequence stripping - simple character class pattern, no backtracking risk
+
+    def _load_settings(self) -> ConsoleSettings:
+        """Load console settings with fallback for library mode."""
+        try:
+            return ConsoleSettings()
+        except Exception:
+            # Fallback to defaults if settings loading fails (e.g., in library mode)
+            return ConsoleSettings(width=None)
+
+    def _get_console_width(self) -> int | None:
+        """Get console width from configuration with precedence.
+
+        1. Environment variable CONSOLE_WIDTH
+        2. settings/console.yaml
+        3. None (auto-detect terminal width).
+        """
+        # Priority 1: Environment variable
+        env_width = os.environ.get("CONSOLE_WIDTH")
+        if env_width is not None:
+            with suppress(ValueError, TypeError):
+                return int(env_width)
+
+        # Priority 2: Settings file (already loaded in self._settings)
+        if self._settings.width is not None:
+            return self._settings.width
+
+        # Priority 3: None = auto-detect
+        return None
 
     def print(  # type: ignore[override]
         self,

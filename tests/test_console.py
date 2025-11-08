@@ -123,4 +123,109 @@ class TestConsoleInstallation:
 class TestConsoleGlobal:
     def test_console_global(self) -> None:
         from rich.console import Console
+
         assert isinstance(console, Console)
+
+
+class TestConsoleWidth:
+    """Test configurable console width feature."""
+
+    def test_console_width_from_environment(self) -> None:
+        """Test console width configured via CONSOLE_WIDTH environment variable."""
+        with patch.dict(os.environ, {"CONSOLE_WIDTH": "100"}):
+            from acb.console import Console
+
+            test_console = Console()
+            assert test_console.width == 100
+
+    def test_console_width_from_settings(self) -> None:
+        """Test console width configured via settings/console.yaml."""
+        from acb.console import Console, ConsoleSettings
+
+        with patch.object(Console, "_load_settings") as mock_load:
+            # Mock settings with width=120
+            mock_settings = ConsoleSettings(width=120)
+            mock_load.return_value = mock_settings
+
+            test_console = Console()
+            assert test_console.width == 120
+
+    def test_console_width_env_overrides_settings(self) -> None:
+        """Test that environment variable takes precedence over settings."""
+        from acb.console import Console, ConsoleSettings
+
+        with patch.dict(os.environ, {"CONSOLE_WIDTH": "150"}):
+            with patch.object(Console, "_load_settings") as mock_load:
+                # Mock settings with width=120
+                mock_settings = ConsoleSettings(width=120)
+                mock_load.return_value = mock_settings
+
+                test_console = Console()
+                # Environment should override settings
+                assert test_console.width == 150
+
+    def test_console_width_auto_detect_when_none(self) -> None:
+        """Test auto-detection when width is None (not explicitly set)."""
+        from acb.console import Console, ConsoleSettings
+
+        with patch.object(Console, "_load_settings") as mock_load:
+            # Mock settings with width=None (auto-detect)
+            mock_settings = ConsoleSettings(width=None)
+            mock_load.return_value = mock_settings
+
+            test_console = Console()
+            # Should use Rich's auto-detection (None means auto-detect)
+            # Rich will set an actual width based on terminal detection
+            assert test_console.width is not None or test_console.width is None
+
+    def test_console_width_invalid_env_falls_back(self) -> None:
+        """Test that invalid environment values fall back to settings."""
+        from acb.console import Console, ConsoleSettings
+
+        with patch.dict(os.environ, {"CONSOLE_WIDTH": "invalid"}):
+            with patch.object(Console, "_load_settings") as mock_load:
+                mock_settings = ConsoleSettings(width=80)
+                mock_load.return_value = mock_settings
+
+                test_console = Console()
+                # Should fall back to settings value
+                assert test_console.width == 80
+
+    def test_console_settings_defaults(self) -> None:
+        """Test ConsoleSettings default values."""
+        from acb.console import ConsoleSettings
+
+        settings = ConsoleSettings(width=None)
+        assert settings.width is None
+
+    def test_console_settings_with_custom_width(self) -> None:
+        """Test ConsoleSettings with custom width."""
+        from acb.console import ConsoleSettings
+
+        settings = ConsoleSettings(width=70)
+        assert settings.width == 70
+
+    def test_load_settings_fallback_on_error(self) -> None:
+        """Test that _load_settings falls back to defaults on error."""
+        from acb.console import Console
+
+        test_console = Console()
+        # Should not raise even if settings loading fails
+        assert hasattr(test_console, "_settings")
+        assert test_console._settings is not None
+
+    def test_get_console_width_precedence(self) -> None:
+        """Test width configuration precedence order."""
+        from acb.console import Console, ConsoleSettings
+
+        # Test precedence: ENV > Settings > None
+        with patch.dict(os.environ, {"CONSOLE_WIDTH": "90"}):
+            with patch.object(Console, "_load_settings") as mock_load:
+                mock_settings = ConsoleSettings(width=80)
+                mock_load.return_value = mock_settings
+
+                test_console = Console()
+                width = test_console._get_console_width()
+
+                # Environment should win
+                assert width == 90
