@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quick Reference
 
-**Version**: 0.25.2 | **Python**: 3.13+ | **Featured**: [FastBlocks](https://github.com/lesleslie/fastblocks)
+**Version**: 0.29.2 | **Python**: 3.13+ | **Featured**: [FastBlocks](https://github.com/lesleslie/fastblocks)
 
 ### Essential Commands
 
@@ -278,10 +278,12 @@ async def infrastructure_code(cache: Inject[Cache]):
 
 ## Version Information
 
-### Current: 0.25.2
+### Current: 0.29.2
 
 **Key improvements**:
 
+- Comprehensive test coverage improvements and bug fixes (v0.29.x)
+- Enhanced logger adapter with DI integration (v0.29.x)
 - Model Context Protocol (MCP) server for AI integration
 - Logly logger adapter with Rust-powered performance (v0.23.1)
 - APScheduler queue adapter for enterprise task scheduling (v0.23.1)
@@ -378,7 +380,7 @@ uv run python -m acb.mcp.server
 
 ## Logging Output Strategy
 
-**Version**: 0.25.3+ | **Default Behavior**: Dual output (stdout + stderr)
+**Version**: 0.29.2+ | **Default Behavior**: Dual output (stdout + stderr)
 
 ### Stream Configuration
 
@@ -402,18 +404,21 @@ jq -r 'select(.level=="ERROR") | .message' structured.jsonl
 ### Environment Variable Configuration
 
 **Opt-out of stderr structured logging**:
+
 ```bash
 ACB_DISABLE_STRUCTURED_STDERR=1 python -m acb.workflow
 # Only stdout (human-readable) logs will be generated
 ```
 
 **Stderr-only mode** (disable stdout):
+
 ```bash
 ACB_STRUCTURED_ONLY=1 python -m acb.workflow 2>logs.jsonl
 # Only JSON logs to stderr, no stdout output
 ```
 
 **Enable OpenTelemetry trace context** (Phase 2):
+
 ```bash
 ACB_ENABLE_OTEL=1 python -m acb.workflow 2>logs.jsonl
 # JSON logs include trace_id and span_id fields
@@ -473,12 +478,14 @@ logger:
 ### Usage Scenarios
 
 **Human Development**:
+
 ```bash
 # Default - see pretty logs in terminal
 python -m acb.workflow
 ```
 
 **AI Analysis**:
+
 ```bash
 # Capture JSON for post-processing
 python -m acb.workflow 2>analysis.jsonl
@@ -491,6 +498,7 @@ jq '.attributes | select(.duration_ms)' analysis.jsonl
 ```
 
 **Hybrid (Human + AI)**:
+
 ```bash
 # Human watches stdout, AI gets stderr data
 python -m acb.workflow 2>monitoring.jsonl &
@@ -498,6 +506,7 @@ tail -f monitoring.jsonl | jq -r '.message'  # AI monitoring
 ```
 
 **CI/CD Pipelines**:
+
 ```bash
 # Separate human logs from machine logs
 python -m acb.workflow \
@@ -508,10 +517,10 @@ python -m acb.workflow \
 ### Why Stderr for Structured Logs?
 
 1. **Stream Separation**: stdout = presentation, stderr = data
-2. **Standard Practice**: nginx, systemd, many observability tools
-3. **Easy Redirection**: `2>logs.jsonl` captures only structured data
-4. **AI Parsing**: No Rich markup filtering needed
-5. **Backward Compatible**: Opt-out available via environment variable
+1. **Standard Practice**: nginx, systemd, many observability tools
+1. **Easy Redirection**: `2>logs.jsonl` captures only structured data
+1. **AI Parsing**: No Rich markup filtering needed
+1. **Backward Compatible**: Opt-out available via environment variable
 
 ## Common Issues
 

@@ -14,7 +14,6 @@ class MockLogger(LoggerBase):
         super().__init__()
         self.logged_messages = []
         self.bound_context = {}
-        self.config = Mock()  # Mock config for tests that patch it
 
     def _debug(self, msg: str, *args, **kwargs):
         self.logged_messages.append(("debug", msg, args, kwargs))
@@ -30,6 +29,9 @@ class MockLogger(LoggerBase):
 
     def _critical(self, msg: str, *args, **kwargs):
         self.logged_messages.append(("critical", msg, args, kwargs))
+
+    def exception(self, msg: str, *args, **kwargs):
+        self.logged_messages.append(("exception", msg, args, kwargs))
 
     def _log_structured(self, level: str, msg: str, **context):
         self.logged_messages.append(("structured", level, msg, context))
@@ -202,29 +204,30 @@ class TestLoggerBase:
 
         assert logger._is_testing_mode() is True
 
-    def test_get_effective_level(self):
+    def test_get_effective_level(self, mock_config):
         """Test effective level calculation."""
+        from acb.depends import depends
+
+        # Register mock config in DI so property can access it
+        depends.set(Config, mock_config)
+
         logger = MockLogger()
 
-        # Mock config
-        with patch.object(logger, "config") as mock_config:
-            mock_config.deployed = False
-            mock_config.debug = None
+        level = logger._get_effective_level()
+        assert level == "INFO"
 
-            level = logger._get_effective_level()
-            assert level == "INFO"
-
-    def test_get_effective_level_deployed(self):
+    def test_get_effective_level_deployed(self, mock_config):
         """Test effective level in deployed environment."""
+        from acb.depends import depends
+
+        # Register mock config in DI so property can access it
+        mock_config.deployed = True
+        depends.set(Config, mock_config)
+
         logger = MockLogger()
 
-        # Mock config for deployed environment
-        with patch.object(logger, "config") as mock_config:
-            mock_config.deployed = True
-            mock_config.debug = None
-
-            level = logger._get_effective_level()
-            assert level == "WARNING"
+        level = logger._get_effective_level()
+        assert level == "WARNING"
 
     def test_should_log_level(self):
         """Test level filtering logic."""
@@ -291,9 +294,11 @@ class TestLoggerBaseIntegration:
 
         logger = MockLogger()
 
-        # Should not raise an exception
-        assert logger.config is not None
-        assert isinstance(logger.config, Config)
+        # Config should be available through depends, not as logger attribute
+        # The config: Inject[Config] annotation is for type hints only
+        retrieved_config = depends.get_sync(Config)
+        assert retrieved_config is not None
+        assert isinstance(retrieved_config, Config)
 
     def test_settings_integration(self):
         """Test settings integration with config."""

@@ -1,5 +1,20 @@
 ______________________________________________________________________
 
+## [0.29.2] - 2025-11-07
+
+### Documentation
+
+- docs: Update documentation to v0.29.2, remove outdated implementation docs
+- docs: Consolidate and clean up documentation for consistency
+
+### Changed
+
+- Acb (quality: 69/100) - 2025-11-07 11:43:28
+
+### Fixed
+
+- bandit: Add B112 (try-except-continue) to skips for intentional robust iteration patterns
+
 ## [0.29.1] - 2025-11-05
 
 ### Changed

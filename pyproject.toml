@@ -707,6 +707,7 @@ skips = [
     "B603",
     "B602",
     "B607",
+    "B112",  # try-except-continue pattern - intentional for robust iteration
 ]
 exclude_dirs = [
     "tests/",

@@ -462,7 +462,8 @@ If you encounter issues during migration:
 
 | ACB Version | Python Version | Key Changes |
 |-------------|---------------|-------------|
-| 0.25.2 | 3.13+ | Current stable release with services, events, tasks, workflows |
+| 0.29.2 | 3.13+ | Current stable release - enhanced test coverage, logger DI integration |
+| 0.25.2 | 3.13+ | MCP server, services, events, tasks, workflows |
 | 0.20.0+ | 3.13+ | **Services reintroduced** - Services, Events, Tasks, and Workflows restored |
 | 0.19.1 | 3.13+ | **Major simplification** - temporarily removed enterprise features |
 | 0.16.17 | 3.12+ | Static adapter mappings, performance improvements |
@@ -475,7 +476,7 @@ ACB's evolution focuses on **simplicity, performance, and comprehensive service 
 - **v0.20.0+**: Services, Events, Tasks, and Workflows reintroduced with improved architecture
 - **v0.19.1**: Simplified architecture, temporarily removed complex features
 - **v0.16.17+**: Performance optimizations, static mappings
-- **Current (v0.25.2)**: Stable, production-ready with services, events, tasks, workflows
+- **Current (v0.29.2)**: Stable, production-ready with enhanced test coverage and DI improvements
 
 For detailed changes, always refer to:
 

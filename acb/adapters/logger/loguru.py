@@ -2,6 +2,7 @@
 
 import logging
 import typing as t
+from contextlib import suppress
 from datetime import UTC
 from inspect import currentframe
 from uuid import UUID
@@ -246,7 +247,7 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
 
             # Add OpenTelemetry trace context if enabled (Phase 2)
             if self.settings.enable_otel:
-                try:
+                with suppress(ImportError):
                     from opentelemetry.trace import get_current_span
 
                     span = get_current_span()
@@ -254,8 +255,6 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
                         ctx = span.get_span_context()
                         event["trace_id"] = format(ctx.trace_id, "032x")
                         event["span_id"] = format(ctx.span_id, "016x")
-                except ImportError:
-                    pass  # OpenTelemetry not installed
 
             return json.dumps(event) + "\n"
 

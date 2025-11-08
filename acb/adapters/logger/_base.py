@@ -6,7 +6,6 @@ from abc import abstractmethod
 from pydantic import SecretStr
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
-from acb.depends import Inject
 
 
 class LoggerBaseSettings(Settings):
@@ -124,8 +123,6 @@ class LoggerProtocol(t.Protocol):
 class LoggerBase(CleanupMixin):
     """Base class for all logger adapters."""
 
-    config: Inject[Config]
-
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__()
         self._settings: LoggerBaseSettings | None = None
@@ -139,6 +136,13 @@ class LoggerBase(CleanupMixin):
         if self._settings is None:
             self._settings = LoggerBaseSettings()
         return self._settings
+
+    @property
+    def config(self) -> Config:
+        """Get config from dependency injection system."""
+        from acb.depends import depends
+
+        return depends.get_sync(Config)
 
     # Public methods that delegate to private implementations
     def debug(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None:
@@ -160,6 +164,10 @@ class LoggerBase(CleanupMixin):
     def critical(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None:
         """Log critical message."""
         return self._critical(msg, *args, **kwargs)
+
+    def exception(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None:
+        """Log exception with traceback."""
+        return self._error(msg, *args, exc_info=True, **kwargs)
 
     def log_structured(self, level: str, msg: str, **context: t.Any) -> None:
         """Log structured message with context."""
@@ -302,7 +310,7 @@ class LoggerBase(CleanupMixin):
         """Extract module name from log record."""
         mod_parts = record.get("name", "").split(".")
         mod_name = ".".join(mod_parts[:-1])
-        if len(mod_parts) > 3:
+        if len(mod_parts) > 4:
             mod_name = ".".join(mod_parts[1:-1])
         return mod_name.replace("_sdk", "")
 
