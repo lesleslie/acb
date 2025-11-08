@@ -103,4 +103,3 @@ async def test_decorators_circuit_retry_fallback_and_bulkhead(monkeypatch: pytes
         return v * 2
 
     assert await task(2) == 4
-

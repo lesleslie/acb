@@ -565,6 +565,7 @@ STATIC_ADAPTER_MAPPINGS = {
         "acb.adapters.reasoning.openai_functions",
         "Reasoning",
     ),
+    "type.zuban": ("acb.adapters.type.zuban", "ZubanAdapter"),
 }
 
 

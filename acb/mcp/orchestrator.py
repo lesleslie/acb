@@ -57,7 +57,9 @@ class WorkflowOrchestrator:
 
                 self.logger.info(f"Executing step {i + 1}/{len(steps)}: {step_name}")
 
-                exec_fn = dispatch.get(component_type)
+                exec_fn = (
+                    dispatch.get(component_type) if component_type is not None else None
+                )
                 if exec_fn is None:
                     msg = f"Unsupported component type: {component_type}"
                     raise ValueError(msg)

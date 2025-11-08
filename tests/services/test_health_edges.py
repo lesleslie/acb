@@ -50,4 +50,3 @@ def test_get_system_health_with_fresh_results_paths() -> None:
     assert system2["components"]["critical"] == 1
     assert system2["components"]["unhealthy"] == 1
     assert system2["components"]["degraded"] == 1
-
