@@ -28,6 +28,7 @@ class TestEncode:
     def async_tmp_path(self, tmp_path: Path) -> Path:
         return tmp_path
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_encode(self) -> None:
         result_bytes: bytes = await encode.json(TEST_DATA)
@@ -39,6 +40,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_encode_with_indent(self) -> None:
         result_bytes: bytes = await encode.json(TEST_DATA, indent=4)
@@ -50,6 +52,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_encode_to_file(self, async_tmp_path: Path) -> None:
         output_file: Path = async_tmp_path / "test.json"
@@ -63,6 +66,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_encode(self) -> None:
         result_bytes: bytes = await encode.yaml(TEST_DATA)
@@ -74,6 +78,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_encode_to_file(self, async_tmp_path: Path) -> None:
         output_file: Path = async_tmp_path / "test.yaml"
@@ -87,6 +92,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_encode(self) -> None:
         result_bytes: bytes = await encode.toml(TEST_DATA)
@@ -98,6 +104,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_encode_to_file(self, async_tmp_path: Path) -> None:
         output_file: Path = async_tmp_path / "test.toml"
@@ -111,6 +118,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_msgpack_encode(self) -> None:
         result_bytes: bytes = await encode.msgpack(TEST_DATA)
@@ -122,6 +130,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_msgpack_encode_to_file(self, async_tmp_path: Path) -> None:
         output_file: Path = async_tmp_path / "test.msgpack"
@@ -135,6 +144,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_pickle_encode(self) -> None:
         result_bytes: bytes = await encode.pickle(TEST_DATA)
@@ -146,6 +156,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_pickle_encode_to_file(self, async_tmp_path: Path) -> None:
         output_file: Path = async_tmp_path / "test.pickle"
@@ -159,6 +170,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_nested_data_json_encode(self) -> None:
         result_bytes: bytes = await encode.json(NESTED_TEST_DATA)
@@ -170,6 +182,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == NESTED_TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_nested_data_yaml_encode(self) -> None:
         result_bytes: bytes = await encode.yaml(NESTED_TEST_DATA)
@@ -181,6 +194,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == NESTED_TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_nested_data_toml_encode(self) -> None:
         result_bytes: bytes = await encode.toml(NESTED_TEST_DATA)
@@ -192,6 +206,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == NESTED_TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_nested_data_msgpack_encode(self) -> None:
         result_bytes: bytes = await encode.msgpack(NESTED_TEST_DATA)
@@ -203,6 +218,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == NESTED_TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_nested_data_pickle_encode(self) -> None:
         result_bytes: bytes = await encode.pickle(NESTED_TEST_DATA)
@@ -214,6 +230,7 @@ class TestEncode:
             dict_result: dict[str, t.Any] = {}
         assert dict_result == NESTED_TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_encode_with_mock(self) -> None:
         with patch("json.dumps") as mock_dumps:
@@ -227,6 +244,7 @@ class TestEncode:
                 assert result_bytes == b'{"mocked": true}'
                 mock_encode.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_encode_with_mock(self) -> None:
         with patch("msgspec.yaml.encode") as mock_encode:
@@ -237,6 +255,7 @@ class TestEncode:
             assert result_bytes == b"mocked: true"
             mock_encode.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_encode_with_mock(self) -> None:
         with patch("msgspec.toml.encode") as mock_encode:
@@ -247,6 +266,7 @@ class TestEncode:
             assert result_bytes == b'mocked = "true"'
             mock_encode.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_msgpack_encode_with_mock(self) -> None:
         with patch("msgspec.msgpack.encode") as mock_encode:
@@ -257,6 +277,7 @@ class TestEncode:
             assert result_bytes == b"mocked data"
             mock_encode.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_pickle_encode_with_mock(self) -> None:
         with patch("acb.actions.encode.serializers.pickle.encode") as mock_dumps:
@@ -267,6 +288,7 @@ class TestEncode:
             assert result_bytes == b"mocked pickle data"
             mock_dumps.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_pickle_encode_invalid(self) -> None:
         class InvalidClass:
@@ -277,21 +299,25 @@ class TestEncode:
         with pytest.raises(ValueError):
             await encode.pickle(InvalidClass())
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_encode_invalid(self) -> None:
         with pytest.raises(TypeError):
             await encode.json(object())
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_encode_invalid(self) -> None:
         with pytest.raises(TypeError):
             await encode.yaml(object())
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_encode_invalid(self) -> None:
         with pytest.raises(TypeError):
             await encode.toml(object())
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_msgpack_encode_invalid(self) -> None:
         with pytest.raises(TypeError):
@@ -309,6 +335,7 @@ class TestEncode:
             (None, type(None)),
         ],
     )
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_encode_type_errors(
         self,
@@ -335,6 +362,7 @@ class TestEncode:
             (None, type(None)),
         ],
     )
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_encode_type_errors(
         self,
@@ -361,6 +389,7 @@ class TestEncode:
             (None, type(None)),
         ],
     )
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_encode_type_errors(
         self,
@@ -387,6 +416,7 @@ class TestEncode:
             (None, type(None)),
         ],
     )
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_msgpack_encode_type_errors(
         self,
@@ -413,6 +443,7 @@ class TestEncode:
             (None, type(None)),
         ],
     )
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_pickle_encode_type_errors(
         self,
@@ -427,6 +458,7 @@ class TestEncode:
 
             assert "Failed to encode" in str(excinfo.value)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_error_handling_file_operations(self, async_tmp_path: Path) -> None:
         output_file: Path = async_tmp_path / "nonexistent_dir" / "test.json"

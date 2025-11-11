@@ -42,7 +42,7 @@ from acb.events import (
 )
 
 
-class TestEventHandler(EventHandler):
+class SampleEventHandler(EventHandler):
     """Test event handler for integration tests."""
 
     def __init__(self, handler_id: str = "test_handler"):
@@ -92,7 +92,7 @@ class TestEndToEndEventFlow:
         async with event_publisher_context() as publisher:
             async with event_subscriber_context() as subscriber:
                 # Create handler
-                handler = TestEventHandler("basic_flow")
+                handler = SampleEventHandler("basic_flow")
 
                 # Subscribe handler to publisher
                 publisher_sub_id = await publisher.subscribe(handler)
@@ -127,7 +127,7 @@ class TestEndToEndEventFlow:
             # Create specialized handlers
             user_handler = SpecializedEventHandler("user.created")
             order_handler = SpecializedEventHandler("order.created")
-            all_handler = TestEventHandler("catch_all")
+            all_handler = SampleEventHandler("catch_all")
 
             # Subscribe handlers with filters
             await publisher.subscribe(user_handler, event_type="user.created")
@@ -162,7 +162,7 @@ class TestEndToEndEventFlow:
     async def test_priority_based_processing(self):
         """Test priority-based event processing."""
         async with event_publisher_context() as publisher:
-            handler = TestEventHandler("priority_test")
+            handler = SampleEventHandler("priority_test")
             await publisher.subscribe(handler)
 
             # Create events with different priorities
@@ -236,7 +236,7 @@ class TestEndToEndEventFlow:
     async def test_concurrent_event_processing(self):
         """Test concurrent event processing capabilities."""
         async with event_publisher_context() as publisher:
-            handler = TestEventHandler("concurrent_test")
+            handler = SampleEventHandler("concurrent_test")
             await publisher.subscribe(handler)
 
             # Create multiple events
@@ -266,7 +266,7 @@ class TestEndToEndEventFlow:
     async def test_event_correlation_workflow(self):
         """Test event correlation in workflow scenarios."""
         async with event_publisher_context() as publisher:
-            workflow_handler = TestEventHandler("workflow")
+            workflow_handler = SampleEventHandler("workflow")
             await publisher.subscribe(workflow_handler)
 
             correlation_id = "workflow-123"
@@ -306,7 +306,7 @@ class TestEndToEndEventFlow:
     async def test_delivery_modes(self):
         """Test different event delivery modes."""
         async with event_publisher_context() as publisher:
-            handler = TestEventHandler("delivery_modes")
+            handler = SampleEventHandler("delivery_modes")
             await publisher.subscribe(handler)
 
             # Test different delivery modes
@@ -394,7 +394,7 @@ class TestEventsServiceIntegration:
 
         try:
             # Create handler
-            handler = TestEventHandler("service_integration")
+            handler = SampleEventHandler("service_integration")
 
             # Subscribe through service
             subscription_id = await service.subscribe(handler, event_type="service.test")
@@ -476,7 +476,7 @@ class TestEventsServiceIntegration:
 
         try:
             # Trying to subscribe should raise error
-            handler = TestEventHandler()
+            handler = SampleEventHandler()
             with pytest.raises(RuntimeError, match="Subscriber not enabled"):
                 await service.subscribe(handler)
 
@@ -488,7 +488,7 @@ class TestEventsServiceIntegration:
             await service.stop()
 
 
-class TestEventHandlerDecorators:
+class SampleEventHandlerDecorators:
     """Test event handler decorators integration."""
 
     async def test_event_handler_decorator_basic(self):
@@ -641,7 +641,7 @@ class TestDiscoveryIntegration:
             # Create multiple handlers using different methods
 
             # 1. Direct handler class
-            direct_handler = TestEventHandler("direct")
+            direct_handler = SampleEventHandler("direct")
 
             # 2. Decorated handler
             @event_handler(event_type="decorated.event")
@@ -692,7 +692,7 @@ class TestPerformanceAndScalability:
     async def test_high_volume_event_processing(self):
         """Test processing high volume of events."""
         async with event_publisher_context() as publisher:
-            handler = TestEventHandler("high_volume")
+            handler = SampleEventHandler("high_volume")
             await publisher.subscribe(handler)
 
             # Create many events
@@ -734,7 +734,7 @@ class TestPerformanceAndScalability:
         import gc
 
         async with event_publisher_context() as publisher:
-            handler = TestEventHandler("memory_test")
+            handler = SampleEventHandler("memory_test")
             await publisher.subscribe(handler)
 
             # Process events in batches to test memory stability
@@ -790,7 +790,7 @@ class TestPerformanceAndScalability:
             subscribers.append(subscriber)
 
             # Create handler for each subscriber
-            handler = TestEventHandler(f"subscriber_{i}")
+            handler = SampleEventHandler(f"subscriber_{i}")
             await subscriber.subscribe(handler)
             handlers.append(handler)
 

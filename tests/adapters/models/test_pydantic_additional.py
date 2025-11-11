@@ -12,8 +12,8 @@ from acb.adapters.models._pydantic import (
 )
 
 
-# Define test models
-class TestUser(BaseModel):
+# Define test models (using "Sample" prefix to avoid pytest collection warnings)
+class SampleUser(BaseModel):
     id: int
     name: str
     email: str
@@ -21,19 +21,19 @@ class TestUser(BaseModel):
     is_active: bool = True
 
 
-class TestProfile(BaseModel):
+class SampleProfile(BaseModel):
     bio: str
     website: Optional[str] = None
 
 
-class TestUserWithProfile(BaseModel):
+class SampleUserWithProfile(BaseModel):
     id: int
     name: str
-    profile: TestProfile
-    profiles: List[TestProfile]
+    profile: SampleProfile
+    profiles: List[SampleProfile]
 
 
-class TestUserWithConfig(BaseModel):
+class SampleUserWithConfig(BaseModel):
     id: int
     name: str
 
@@ -42,7 +42,7 @@ class TestUserWithConfig(BaseModel):
         primary_key = "id"
 
 
-class TestUserWithModelConfig(BaseModel):
+class SampleUserWithModelConfig(BaseModel):
     id: int
     name: str
 
@@ -52,7 +52,7 @@ class TestUserWithModelConfig(BaseModel):
     }
 
 
-class TestUserWithMethods(BaseModel):
+class SampleUserWithMethods(BaseModel):
     id: int
     name: str
 
@@ -66,16 +66,16 @@ class TestUserWithMethods(BaseModel):
 
 
 # Define models with aliases
-class TestUserWithAlias(BaseModel):
+class SampleUserWithAlias(BaseModel):
     user_id: int = Field(alias="id")
     full_name: str = Field(alias="name")
 
 
-# Test for nested models
-class TestCompany(BaseModel):
+# Sample for nested models
+class SampleCompany(BaseModel):
     id: int
     name: str
-    employees: List[TestUser]
+    employees: List[SampleUser]
 
 
 class TestPydanticModelAdapter:
@@ -96,9 +96,9 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        instance = adapter.create_instance(TestUser, id=1, name="John", email="john@example.com")
+        instance = adapter.create_instance(SampleUser, id=1, name="John", email="john@example.com")
 
-        assert isinstance(instance, TestUser)
+        assert isinstance(instance, SampleUser)
         assert instance.id == 1
         assert instance.name == "John"
         assert instance.email == "john@example.com"
@@ -110,7 +110,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        user = TestUser(id=1, name="John", email="john@example.com", age=30)
+        user = SampleUser(id=1, name="John", email="john@example.com", age=30)
 
         assert adapter.get_field_value(user, "id") == 1
         assert adapter.get_field_value(user, "name") == "John"
@@ -123,7 +123,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        user = TestUser(id=1, name="John", email="john@example.com", age=30)
+        user = SampleUser(id=1, name="John", email="john@example.com", age=30)
 
         # Serialize should use model_dump method for Pydantic v2
         serialized = adapter.serialize(user)
@@ -141,7 +141,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        user = TestUser(id=1, name="John", email="john@example.com", age=30)
+        user = SampleUser(id=1, name="John", email="john@example.com", age=30)
 
         # Pydantic v2 has model_dump, test serialization with the real method
         serialized = adapter.serialize(user)
@@ -159,7 +159,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        user = TestUser(id=1, name="John", email="john@example.com", age=30)
+        user = SampleUser(id=1, name="John", email="john@example.com", age=30)
 
         # Test serialization - should use model_dump for Pydantic v2
         serialized = adapter.serialize(user)
@@ -177,7 +177,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        profile = TestProfile(bio="Software developer", website="https://example.com")
+        profile = SampleProfile(bio="Software developer", website="https://example.com")
         user = TestUserWithProfile(
             id=1,
             name="John",
@@ -234,8 +234,8 @@ class TestPydanticModelAdapter:
         adapter = PydanticModelAdapter()
         data = {"id": 1, "name": "John", "email": "john@example.com", "age": 30}
 
-        user = adapter.deserialize_to_class(TestUser, data)
-        assert isinstance(user, TestUser)
+        user = adapter.deserialize_to_class(SampleUser, data)
+        assert isinstance(user, SampleUser)
         assert user.id == 1
         assert user.name == "John"
         assert user.email == "john@example.com"
@@ -255,8 +255,8 @@ class TestPydanticModelAdapter:
             "another_extra": "also_filtered"
         }
 
-        user = adapter.deserialize_to_class(TestUser, data)
-        assert isinstance(user, TestUser)
+        user = adapter.deserialize_to_class(SampleUser, data)
+        assert isinstance(user, SampleUser)
         assert user.id == 1
         assert user.name == "John"
         assert user.email == "john@example.com"
@@ -276,7 +276,7 @@ class TestPydanticModelAdapter:
         }
 
         # Pydantic v2 models have model_fields, test filtering works properly
-        filtered_data = adapter._filter_data_for_model(TestUser, data)
+        filtered_data = adapter._filter_data_for_model(SampleUser, data)
         assert filtered_data == {"id": 1, "name": "John", "email": "john@example.com"}
 
     def test_filter_data_for_model_with_model_fields(self) -> None:
@@ -300,12 +300,12 @@ class TestPydanticModelAdapter:
         mock_field_info3 = Mock()
         mock_field_info3.name = "email"
 
-        with patch.object(TestUser, "model_fields", {
+        with patch.object(SampleUser, "model_fields", {
             "id": mock_field_info1,
             "name": mock_field_info2,
             "email": mock_field_info3
         }):
-            filtered_data = adapter._filter_data_for_model(TestUser, data)
+            filtered_data = adapter._filter_data_for_model(SampleUser, data)
             assert filtered_data == {"id": 1, "name": "John", "email": "john@example.com"}
 
     def test_get_entity_name_with_tablename(self) -> None:
@@ -374,7 +374,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        name = adapter.get_entity_name(TestUser)
+        name = adapter.get_entity_name(SampleUser)
         assert name == "testuser"
 
     def test_get_field_mapping_with_model_fields(self) -> None:
@@ -383,7 +383,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        mapping = adapter.get_field_mapping(TestUser)
+        mapping = adapter.get_field_mapping(SampleUser)
 
         # Should have all the standard fields
         assert "id" in mapping
@@ -433,7 +433,7 @@ class TestPydanticModelAdapter:
         adapter = PydanticModelAdapter()
         data = {"id": 1, "name": "John", "email": "john@example.com"}
 
-        validated_data = adapter.validate_data(TestUser, data)
+        validated_data = adapter.validate_data(SampleUser, data)
         assert "id" in validated_data
         assert "name" in validated_data
         assert "email" in validated_data
@@ -451,7 +451,7 @@ class TestPydanticModelAdapter:
             "extra_field": "filtered"
         }
 
-        validated_data = adapter.validate_data(TestUser, data)
+        validated_data = adapter.validate_data(SampleUser, data)
         assert "id" in validated_data
         assert "name" in validated_data
         assert "email" in validated_data
@@ -490,7 +490,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        pk_field = adapter.get_primary_key_field(TestUser)
+        pk_field = adapter.get_primary_key_field(SampleUser)
         assert pk_field == "id"
 
     def test_get_primary_key_field_default(self) -> None:
@@ -515,9 +515,9 @@ class TestPydanticModelAdapter:
         adapter = PydanticModelAdapter()
 
         # Test different field types
-        id_type = adapter.get_field_type(TestUser, "id")
-        name_type = adapter.get_field_type(TestUser, "name")
-        age_type = adapter.get_field_type(TestUser, "age")
+        id_type = adapter.get_field_type(SampleUser, "id")
+        name_type = adapter.get_field_type(SampleUser, "name")
+        age_type = adapter.get_field_type(SampleUser, "age")
 
         assert id_type is int
         assert name_type is str
@@ -529,7 +529,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        age_type = adapter.get_field_type(TestUser, "age")
+        age_type = adapter.get_field_type(SampleUser, "age")
         assert age_type is int  # Should unwrap Optional[int] to int
 
     def test_get_field_type_with_union(self) -> None:
@@ -584,7 +584,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        is_relationship = adapter.is_relationship_field(TestUser, "name")
+        is_relationship = adapter.is_relationship_field(SampleUser, "name")
         assert is_relationship is False
 
     def test_get_nested_model_class_list(self) -> None:
@@ -594,7 +594,7 @@ class TestPydanticModelAdapter:
 
         adapter = PydanticModelAdapter()
         nested_class = adapter.get_nested_model_class(TestUserWithProfile, "profiles")
-        assert nested_class is TestProfile
+        assert nested_class is SampleProfile
 
     def test_get_nested_model_class_single(self) -> None:
         """Test getting nested model class for single model fields."""
@@ -603,7 +603,7 @@ class TestPydanticModelAdapter:
 
         adapter = PydanticModelAdapter()
         nested_class = adapter.get_nested_model_class(TestUserWithProfile, "profile")
-        assert nested_class is TestProfile
+        assert nested_class is SampleProfile
 
     def test_get_nested_model_class_non_model(self) -> None:
         """Test getting nested model class for non-model fields."""
@@ -611,7 +611,7 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        nested_class = adapter.get_nested_model_class(TestUser, "name")
+        nested_class = adapter.get_nested_model_class(SampleUser, "name")
         assert nested_class is None
 
 
@@ -627,7 +627,7 @@ def test_base_model_alias() -> None:
     if PYDANTIC_AVAILABLE:
         # Should be the real Pydantic BaseModel
         assert LocalBaseModel is BaseModel
-        assert issubclass(TestUser, LocalBaseModel)
+        assert issubclass(SampleUser, LocalBaseModel)
     else:
         # Should be a fallback class
         assert LocalBaseModel is not None

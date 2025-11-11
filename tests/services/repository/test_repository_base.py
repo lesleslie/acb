@@ -18,25 +18,25 @@ from acb.services.repository._base import (
 
 
 @dataclass
-class TestEntity:
+class SampleEntity:
     """Test entity for repository tests."""
     id: int | None = None
     name: str = ""
     active: bool = True
 
 
-class TestRepository(RepositoryBase[TestEntity, int]):
+class SampleRepository(RepositoryBase[SampleEntity, int]):
     """Test repository implementation."""
 
     def __init__(self):
-        super().__init__(TestEntity, RepositorySettings())
-        self._entities: Dict[int, TestEntity] = {}
+        super().__init__(SampleEntity, RepositorySettings())
+        self._entities: Dict[int, SampleEntity] = {}
         self._next_id = 1
 
-    async def create(self, entity: TestEntity) -> TestEntity:
+    async def create(self, entity: SampleEntity) -> SampleEntity:
         """Create test entity."""
         if entity.id and entity.id in self._entities:
-            raise DuplicateEntityError("TestEntity", "id", entity.id)
+            raise DuplicateEntityError("SampleEntity", "id", entity.id)
 
         if not entity.id:
             entity.id = self._next_id
@@ -46,15 +46,15 @@ class TestRepository(RepositoryBase[TestEntity, int]):
         await self._increment_metric("create", True)
         return entity
 
-    async def get_by_id(self, entity_id: int) -> TestEntity | None:
+    async def get_by_id(self, entity_id: int) -> SampleEntity | None:
         """Get test entity by ID."""
         await self._increment_metric("get_by_id", True)
         return self._entities.get(entity_id)
 
-    async def update(self, entity: TestEntity) -> TestEntity:
+    async def update(self, entity: SampleEntity) -> SampleEntity:
         """Update test entity."""
         if not entity.id or entity.id not in self._entities:
-            raise EntityNotFoundError("TestEntity", entity.id)
+            raise EntityNotFoundError("SampleEntity", entity.id)
 
         self._entities[entity.id] = entity
         await self._increment_metric("update", True)
@@ -73,7 +73,7 @@ class TestRepository(RepositoryBase[TestEntity, int]):
         filters: Dict[str, Any] | None = None,
         sort: List[SortCriteria] | None = None,
         pagination: PaginationInfo | None = None
-    ) -> List[TestEntity]:
+    ) -> List[SampleEntity]:
         """List test entities."""
         entities = list(self._entities.values())
 
@@ -129,16 +129,16 @@ class TestRepository(RepositoryBase[TestEntity, int]):
 @pytest.fixture
 def repository():
     """Create test repository."""
-    return TestRepository()
+    return SampleRepository()
 
 
 @pytest.fixture
 def test_entity():
     """Create test entity."""
-    return TestEntity(name="Test Entity", active=True)
+    return SampleEntity(name="Test Entity", active=True)
 
 
-class TestRepositoryBase:
+class SampleRepositoryBase:
     """Test RepositoryBase functionality."""
 
     @pytest.mark.asyncio
@@ -180,7 +180,7 @@ class TestRepositoryBase:
         with pytest.raises(EntityNotFoundError) as exc_info:
             await repository.get_by_id_or_raise(999)
 
-        assert exc_info.value.entity_type == "TestEntity"
+        assert exc_info.value.entity_type == "SampleEntity"
         assert exc_info.value.entity_id == 999
 
     @pytest.mark.asyncio
@@ -195,7 +195,7 @@ class TestRepositoryBase:
     @pytest.mark.asyncio
     async def test_update_entity_not_found(self, repository):
         """Test update entity when not found."""
-        entity = TestEntity(id=999, name="Not Found")
+        entity = SampleEntity(id=999, name="Not Found")
 
         with pytest.raises(EntityNotFoundError):
             await repository.update(entity)
@@ -238,8 +238,8 @@ class TestRepositoryBase:
     async def test_list_entities(self, repository):
         """Test listing entities."""
         # Create test entities
-        entity1 = TestEntity(name="Entity 1", active=True)
-        entity2 = TestEntity(name="Entity 2", active=False)
+        entity1 = SampleEntity(name="Entity 1", active=True)
+        entity2 = SampleEntity(name="Entity 2", active=False)
 
         await repository.create(entity1)
         await repository.create(entity2)
@@ -252,8 +252,8 @@ class TestRepositoryBase:
     async def test_list_entities_with_filters(self, repository):
         """Test listing entities with filters."""
         # Create test entities
-        entity1 = TestEntity(name="Entity 1", active=True)
-        entity2 = TestEntity(name="Entity 2", active=False)
+        entity1 = SampleEntity(name="Entity 1", active=True)
+        entity2 = SampleEntity(name="Entity 2", active=False)
 
         await repository.create(entity1)
         await repository.create(entity2)
@@ -267,8 +267,8 @@ class TestRepositoryBase:
     async def test_list_entities_with_sorting(self, repository):
         """Test listing entities with sorting."""
         # Create test entities
-        entity1 = TestEntity(name="B Entity")
-        entity2 = TestEntity(name="A Entity")
+        entity1 = SampleEntity(name="B Entity")
+        entity2 = SampleEntity(name="A Entity")
 
         await repository.create(entity1)
         await repository.create(entity2)
@@ -285,7 +285,7 @@ class TestRepositoryBase:
         """Test listing entities with pagination."""
         # Create test entities
         for i in range(5):
-            entity = TestEntity(name=f"Entity {i}")
+            entity = SampleEntity(name=f"Entity {i}")
             await repository.create(entity)
 
         # Get first page
@@ -297,8 +297,8 @@ class TestRepositoryBase:
     async def test_count_entities(self, repository):
         """Test counting entities."""
         # Create test entities
-        entity1 = TestEntity(name="Entity 1", active=True)
-        entity2 = TestEntity(name="Entity 2", active=False)
+        entity1 = SampleEntity(name="Entity 1", active=True)
+        entity2 = SampleEntity(name="Entity 2", active=False)
 
         await repository.create(entity1)
         await repository.create(entity2)
@@ -330,7 +330,7 @@ class TestRepositoryBase:
         """Test paginated listing."""
         # Create test entities
         for i in range(5):
-            entity = TestEntity(name=f"Entity {i}")
+            entity = SampleEntity(name=f"Entity {i}")
             await repository.create(entity)
 
         # Get paginated results
@@ -348,9 +348,9 @@ class TestRepositoryBase:
     async def test_batch_create(self, repository):
         """Test batch entity creation."""
         entities = [
-            TestEntity(name="Entity 1"),
-            TestEntity(name="Entity 2"),
-            TestEntity(name="Entity 3")
+            SampleEntity(name="Entity 1"),
+            SampleEntity(name="Entity 2"),
+            SampleEntity(name="Entity 3")
         ]
 
         created_entities = await repository.batch_create(entities)
@@ -364,8 +364,8 @@ class TestRepositoryBase:
         """Test batch entity update."""
         # Create entities first
         entities = [
-            TestEntity(name="Entity 1"),
-            TestEntity(name="Entity 2")
+            SampleEntity(name="Entity 1"),
+            SampleEntity(name="Entity 2")
         ]
         created_entities = await repository.batch_create(entities)
 
@@ -381,9 +381,9 @@ class TestRepositoryBase:
         """Test batch entity deletion."""
         # Create entities first
         entities = [
-            TestEntity(name="Entity 1"),
-            TestEntity(name="Entity 2"),
-            TestEntity(name="Entity 3")
+            SampleEntity(name="Entity 1"),
+            SampleEntity(name="Entity 2"),
+            SampleEntity(name="Entity 3")
         ]
         created_entities = await repository.batch_create(entities)
 
@@ -407,7 +407,7 @@ class TestRepositoryBase:
 
         metrics = await repository.get_metrics()
 
-        assert metrics["entity_type"] == "TestEntity"
+        assert metrics["entity_type"] == "SampleEntity"
         assert "operations" in metrics
         assert metrics["operations"]["create_success"] >= 1
         assert metrics["operations"]["get_by_id_success"] >= 1
@@ -446,7 +446,7 @@ class TestPaginationInfo:
         assert pagination.has_previous is True
 
 
-class TestRepositorySettings:
+class SampleRepositorySettings:
     """Test RepositorySettings functionality."""
 
     def test_repository_settings_defaults(self):
@@ -465,24 +465,24 @@ class TestRepositorySettings:
             RepositorySettings(default_page_size=2000, max_page_size=1000)
 
 
-class TestRepositoryErrors:
+class SampleRepositoryErrors:
     """Test repository error handling."""
 
     def test_entity_not_found_error(self):
         """Test EntityNotFoundError."""
-        error = EntityNotFoundError("TestEntity", 123)
+        error = EntityNotFoundError("SampleEntity", 123)
 
-        assert error.entity_type == "TestEntity"
+        assert error.entity_type == "SampleEntity"
         assert error.entity_id == 123
         assert error.operation == "find"
-        assert "TestEntity with ID 123 not found" in str(error)
+        assert "SampleEntity with ID 123 not found" in str(error)
 
     def test_duplicate_entity_error(self):
         """Test DuplicateEntityError."""
-        error = DuplicateEntityError("TestEntity", "email", "test@example.com")
+        error = DuplicateEntityError("SampleEntity", "email", "test@example.com")
 
-        assert error.entity_type == "TestEntity"
+        assert error.entity_type == "SampleEntity"
         assert error.conflict_field == "email"
         assert error.value == "test@example.com"
         assert error.operation == "create"
-        assert "TestEntity with email=test@example.com already exists" in str(error)
+        assert "SampleEntity with email=test@example.com already exists" in str(error)
