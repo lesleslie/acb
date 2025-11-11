@@ -650,7 +650,7 @@ ______________________________________________________________________
 
 ## See Also
 
-- **[Plugin Architecture Guide](<./PLUGIN_ARCHITECTURE.md>)**: Complete guide to building ACB plugins
+- **[Plugin Architecture Guide](./PLUGIN_ARCHITECTURE.md)**: Complete guide to building ACB plugins
 - **[FastBlocks Example](../../fastblocks/docs/ACB_PLUGIN_EXAMPLE.md)**: Reference implementation
 - **[ACB Documentation](https://github.com/lesleslie/acb)**: Full ACB framework docs
 

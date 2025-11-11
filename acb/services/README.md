@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../README.md>) | [Core Systems](<../README.md>) | [Services](<./README.md>) | [Workflows](<../workflows/README.md>) | [Testing](<../testing/README.md>)
+> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Services](./README.md) | [Workflows](../workflows/README.md) | [Testing](../testing/README.md)
 
 # ACB: Services
 
@@ -7,13 +7,13 @@ coordinate adapters, workflows, and background tasks across an ACB deployment.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Core Building Blocks](<#core-building-blocks>)
-- [Lifecycle & Discovery](<#lifecycle--discovery>)
-- [Featured Subpackages](<#featured-subpackages>)
-- [Usage Patterns](<#usage-patterns>)
-- [Best Practices](<#best-practices>)
-- [Related Resources](<#related-resources>)
+- [Overview](#overview)
+- [Core Building Blocks](#core-building-blocks)
+- [Lifecycle & Discovery](#lifecycle--discovery)
+- [Featured Subpackages](#featured-subpackages)
+- [Usage Patterns](#usage-patterns)
+- [Best Practices](#best-practices)
+- [Related Resources](#related-resources)
 
 ## Overview
 
@@ -39,9 +39,9 @@ injection, health checks, and metrics.
 
 ## Featured Subpackages
 
-- [Performance](<./performance/README.md>): Optimizers, metrics, and serverless helpers
-- [Repository](<./repository/README.md>): Repository pattern, registry, and unit of work
-- [Validation](<./validation/README.md>): Schema validation, sanitization, and contracts
+- [Performance](./performance/README.md): Optimizers, metrics, and serverless helpers
+- [Repository](./repository/README.md): Repository pattern, registry, and unit of work
+- [Validation](./validation/README.md): Schema validation, sanitization, and contracts
 
 ## Usage Patterns
 
@@ -97,7 +97,7 @@ async def main() -> None:
 
 ## Related Resources
 
-- [Performance Services](<./performance/README.md>)
-- [Repository Services](<./repository/README.md>)
-- [Validation Services](<./validation/README.md>)
-- [Main Documentation](<../../README.md>)
+- [Performance Services](./performance/README.md)
+- [Repository Services](./repository/README.md)
+- [Validation Services](./validation/README.md)
+- [Main Documentation](../../README.md)

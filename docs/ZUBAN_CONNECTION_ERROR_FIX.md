@@ -1,17 +1,21 @@
 # Fix for Zuban Type Checking Connection Errors in Crackerjack Comp Hooks
 
 ## Problem
+
 The issue was that zuban type checking in crackerjack's comprehensive hooks (comp hooks) was failing due to API connection errors. This typically occurred when the zuban type checker attempted to connect to external resources or services during type checking, causing the comprehensive hooks to fail with connection-related exceptions.
 
 ## Solution
 
 ### 1. Created a robust ZubanAdapter
+
 - Implemented proper timeout handling (30 seconds by default)
 - Added retry logic with exponential backoff (3 attempts by default)
 - Added comprehensive connection error detection
 
 ### 2. Connection Error Detection
+
 The adapter now properly detects connection-related errors including:
+
 - "connection timeout"
 - "ssl certificate verify failed"
 - "name or service not known"
@@ -21,11 +25,13 @@ The adapter now properly detects connection-related errors including:
 - "http error" and "api error"
 
 ### 3. Graceful Error Handling
+
 - When connection errors occur, the adapter handles them gracefully
 - Returns a partial result indicating the connection issue while not causing complete failure
 - Maintains operation flow during comprehensive hook runs
 
 ### 4. Retry Logic
+
 - Implements configurable retry attempts (default: 3)
 - Uses exponential backoff for retries (1s, 2s, 4s)
 - Respects connection timeouts to prevent hanging
@@ -33,6 +39,7 @@ The adapter now properly detects connection-related errors including:
 ## Key Features
 
 ### Timeout Configuration
+
 ```python
 class ZubanSettings(ToolAdapterSettings):
     connection_timeout: int = 30  # seconds
@@ -41,33 +48,35 @@ class ZubanSettings(ToolAdapterSettings):
 ```
 
 ### Connection Error Detection
+
 ```python
 def _is_connection_error(self, error: Exception) -> bool:
     """Check if the error is related to network/API connection issues."""
     error_str = str(error).lower()
-    
+
     connection_error_indicators = [
         "connection",
-        "timeout", 
+        "timeout",
         "network",
         "api",
         "http",
         "ssl",
-        "certificate", 
+        "certificate",
         "resolve",
         "socket",
-        "errno"
+        "errno",
     ]
-    
+
     return any(indicator in error_str for indicator in connection_error_indicators)
 ```
 
 ### Retry with Exponential Backoff
+
 ```python
 async def _run_zuban_with_retries(self, file_path: Path) -> ServiceResponse:
     """Run zuban with retry logic for API connection errors."""
     last_exception = None
-    
+
     for attempt in range(self.settings.api_retry_attempts):
         try:
             # Execute zuban command with timeout
@@ -77,7 +86,7 @@ async def _run_zuban_with_retries(self, file_path: Path) -> ServiceResponse:
             last_exception = e
             if attempt < self.settings.api_retry_attempts - 1:
                 # Wait before retrying with exponential backoff
-                delay = self.settings.api_retry_delay * (2 ** attempt)
+                delay = self.settings.api_retry_delay * (2**attempt)
                 await asyncio.sleep(delay)
             else:
                 # All retries exhausted
@@ -87,17 +96,17 @@ async def _run_zuban_with_retries(self, file_path: Path) -> ServiceResponse:
 ## Files Modified
 
 1. `acb/adapters/type/zuban.py` - Main adapter implementation
-2. `acb/adapters/type/__init__.py` - Module initialization
-3. `acb/adapters/_tool_adapter_base.py` - Base adapter class with ServiceResponse
-4. `acb/adapters/__init__.py` - Added type.zuban to STATIC_ADAPTER_MAPPINGS
-5. `tests/test_zuban_connection_error_handling.py` - Comprehensive tests
+1. `acb/adapters/type/__init__.py` - Module initialization
+1. `acb/adapters/_tool_adapter_base.py` - Base adapter class with ServiceResponse
+1. `acb/adapters/__init__.py` - Added type.zuban to STATIC_ADAPTER_MAPPINGS
+1. `tests/test_zuban_connection_error_handling.py` - Comprehensive tests
 
 ## Benefits
 
 1. **Robustness**: The comprehensive hooks can now handle temporary network issues without complete failure
-2. **Reliability**: Automatic retries with exponential backoff for transient issues
-3. **Graceful Degradation**: When connection errors occur, the system provides informative feedback instead of crashing
-4. **Configurability**: Timeout and retry parameters can be adjusted based on network conditions
-5. **Compatibility**: Works with crackerjack's comprehensive hook system
+1. **Reliability**: Automatic retries with exponential backoff for transient issues
+1. **Graceful Degradation**: When connection errors occur, the system provides informative feedback instead of crashing
+1. **Configurability**: Timeout and retry parameters can be adjusted based on network conditions
+1. **Compatibility**: Works with crackerjack's comprehensive hook system
 
 This solution ensures that zuban type checking in comprehensive hooks is resilient to API connection errors while maintaining the reliability of the overall quality checking process.
