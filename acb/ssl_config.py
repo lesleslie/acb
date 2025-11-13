@@ -87,20 +87,20 @@ class MongoDBSSLKwargs(TypedDict, total=False):
     ssl_match_hostname: NotRequired[bool]
 
 
-class NiquestsSSLKwargs(TypedDict, total=False):
-    """TypedDict for Niquests SSL connection parameters."""
+class HTTPClientSSLKwargs(TypedDict, total=False):
+    """TypedDict for HTTP client SSL connection parameters.
+
+    Used by both Niquests and HTTPX, which share the same SSL interface.
+    """
 
     cert: NotRequired[str | tuple[str, str]]
     verify: NotRequired[bool | str]
     ciphers: NotRequired[str]
 
 
-class HTTPXSSLKwargs(TypedDict, total=False):
-    """TypedDict for HTTPX SSL connection parameters."""
-
-    cert: NotRequired[str | tuple[str, str]]
-    verify: NotRequired[bool | str]
-    ciphers: NotRequired[str]
+# Type aliases for backwards compatibility
+NiquestsSSLKwargs = HTTPClientSSLKwargs
+HTTPXSSLKwargs = HTTPClientSSLKwargs
 
 
 class SSLConfig(BaseModel):
@@ -346,18 +346,18 @@ class SSLConfig(BaseModel):
 
         return ssl_kwargs
 
-    def to_niquests_kwargs(self) -> NiquestsSSLKwargs:
-        """Convert SSL configuration to Niquests client SSL kwargs.
+    def to_http_client_kwargs(self) -> HTTPClientSSLKwargs:
+        """Convert SSL configuration to HTTP client (Niquests/HTTPX) SSL kwargs.
 
         Returns:
-            Dictionary of SSL kwargs for Niquests client.
+            Dictionary of SSL kwargs for HTTP clients (Niquests/HTTPX).
         """
         if not self.enabled:
             return {}
 
-        ssl_kwargs: NiquestsSSLKwargs = {}
+        ssl_kwargs: HTTPClientSSLKwargs = {}
 
-        # Map SSL configuration to Niquests SSL kwargs
+        # Map SSL configuration to HTTP client SSL kwargs
         if self.cert_path and self.key_path:
             ssl_kwargs["cert"] = (self.cert_path, self.key_path)
         elif self.cert_path:
@@ -375,36 +375,20 @@ class SSLConfig(BaseModel):
             ssl_kwargs["ciphers"] = self.ciphers
 
         return ssl_kwargs
+
+    def to_niquests_kwargs(self) -> NiquestsSSLKwargs:
+        """Convert SSL configuration to Niquests client SSL kwargs.
+
+        Alias for to_http_client_kwargs() for backwards compatibility.
+        """
+        return self.to_http_client_kwargs()
 
     def to_httpx_kwargs(self) -> HTTPXSSLKwargs:
         """Convert SSL configuration to HTTPX client SSL kwargs.
 
-        Returns:
-            Dictionary of SSL kwargs for HTTPX client.
+        Alias for to_http_client_kwargs() for backwards compatibility.
         """
-        if not self.enabled:
-            return {}
-
-        ssl_kwargs: HTTPXSSLKwargs = {}
-
-        # Map SSL configuration to HTTPX SSL kwargs
-        if self.cert_path and self.key_path:
-            ssl_kwargs["cert"] = (self.cert_path, self.key_path)
-        elif self.cert_path:
-            ssl_kwargs["cert"] = self.cert_path
-
-        if self.ca_path:
-            ssl_kwargs["verify"] = self.ca_path
-        elif self.verify_mode == SSLVerifyMode.NONE:
-            ssl_kwargs["verify"] = False
-        else:
-            ssl_kwargs["verify"] = True
-
-        # Handle ciphers
-        if self.ciphers:
-            ssl_kwargs["ciphers"] = self.ciphers
-
-        return ssl_kwargs
+        return self.to_http_client_kwargs()
 
 
 class SSLConfigMixin:
