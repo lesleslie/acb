@@ -488,6 +488,84 @@ class TestSSLConfig:
         kwargs = config.to_httpx_kwargs()
         assert kwargs["verify"] is False
 
+    def test_to_http_client_kwargs_disabled(self) -> None:
+        """Test consolidated HTTP client kwargs when SSL is disabled."""
+        config = SSLConfig(enabled=False)
+
+        kwargs = config.to_http_client_kwargs()
+        assert kwargs == {}
+
+    def test_to_http_client_kwargs_with_cert_and_key(self, tmp_path) -> None:
+        """Test consolidated HTTP client kwargs with cert and key."""
+        cert_file = tmp_path / "cert.pem"
+        key_file = tmp_path / "key.pem"
+        cert_file.write_text("cert")
+        key_file.write_text("key")
+
+        config = SSLConfig(
+            enabled=True,
+            cert_path=str(cert_file),
+            key_path=str(key_file)
+        )
+
+        kwargs = config.to_http_client_kwargs()
+        assert kwargs["cert"] == (str(cert_file), str(key_file))
+        assert kwargs["verify"] is True
+
+    def test_to_http_client_kwargs_with_ca_path(self, tmp_path) -> None:
+        """Test consolidated HTTP client kwargs with CA path."""
+        ca_file = tmp_path / "ca.pem"
+        ca_file.write_text("ca")
+
+        config = SSLConfig(
+            enabled=True,
+            ca_path=str(ca_file)
+        )
+
+        kwargs = config.to_http_client_kwargs()
+        assert kwargs["verify"] == str(ca_file)
+
+    def test_to_http_client_kwargs_with_ciphers(self) -> None:
+        """Test consolidated HTTP client kwargs with ciphers."""
+        config = SSLConfig(
+            enabled=True,
+            ciphers="HIGH:!aNULL:!eNULL"
+        )
+
+        kwargs = config.to_http_client_kwargs()
+        assert kwargs["ciphers"] == "HIGH:!aNULL:!eNULL"
+
+    def test_backward_compatibility_type_aliases(self) -> None:
+        """Test that Niquests and HTTPX type aliases work correctly."""
+        from acb.ssl_config import NiquestsSSLKwargs, HTTPXSSLKwargs, HTTPClientSSLKwargs
+
+        # Verify type aliases point to the same class
+        assert NiquestsSSLKwargs is HTTPClientSSLKwargs
+        assert HTTPXSSLKwargs is HTTPClientSSLKwargs
+
+    def test_niquests_httpx_methods_delegate_correctly(self, tmp_path) -> None:
+        """Test that to_niquests_kwargs and to_httpx_kwargs delegate to to_http_client_kwargs."""
+        cert_file = tmp_path / "cert.pem"
+        key_file = tmp_path / "key.pem"
+        cert_file.write_text("cert")
+        key_file.write_text("key")
+
+        config = SSLConfig(
+            enabled=True,
+            cert_path=str(cert_file),
+            key_path=str(key_file),
+            ciphers="HIGH"
+        )
+
+        # All three methods should return identical results
+        http_kwargs = config.to_http_client_kwargs()
+        niquests_kwargs = config.to_niquests_kwargs()
+        httpx_kwargs = config.to_httpx_kwargs()
+
+        assert http_kwargs == niquests_kwargs
+        assert http_kwargs == httpx_kwargs
+        assert niquests_kwargs == httpx_kwargs
+
 
 class TestSSLConfigMixin:
     """Test the SSLConfigMixin class."""

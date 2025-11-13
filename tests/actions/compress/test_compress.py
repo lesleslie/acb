@@ -197,3 +197,31 @@ def test_brotli_compression_level_comparison() -> None:
     assert len(result11) <= len(result1), "Higher compression level should produce smaller or equal size"
     assert brotli.decompress(result1).decode() == test_data, "Level 1 decompression should match original"
     assert brotli.decompress(result11).decode() == test_data, "Level 11 decompression should match original"
+
+
+@pytest.mark.unit
+def test_normalize_input_with_path_object(tmp_path: Path) -> None:
+    """Test that _normalize_input correctly handles Path objects."""
+    file_path: Path = tmp_path / "test.txt"
+    file_path.write_text("test content")
+
+    # Test with Path object for gzip
+    result = compress.gzip(file_path)
+    assert isinstance(result, bytes), "Should handle Path objects"
+    assert gzip.decompress(result).decode() == "test content"
+
+    # Test with Path object for brotli
+    result_br: bytes = compress.brotli(file_path)
+    assert isinstance(result_br, bytes), "Should handle Path objects"
+    assert brotli.decompress(result_br).decode() == "test content"
+
+
+@pytest.mark.unit
+def test_compress_with_special_characters_in_path(tmp_path: Path) -> None:
+    """Test compression with special characters in file path."""
+    file_path: Path = tmp_path / "test file with spaces.txt"
+    file_path.write_text("content with spaces")
+
+    result = compress.gzip(file_path)
+    assert isinstance(result, bytes)
+    assert gzip.decompress(result).decode() == "content with spaces"
