@@ -69,37 +69,7 @@ _library_usage_mode: bool = (
     _testing or "pytest" in sys.modules or Path.cwd().name != "acb"
 )
 
-
-def _sync_context_to_globals() -> None:
-    """Sync context values to module globals for backward compatibility."""
-    global project, app_name, debug
-    context = get_context()
-    project = context.project
-    app_name = context.app_name
-    debug = context.debug_settings
-
-
-def _sync_globals_to_context() -> None:
-    """Sync module globals to context."""
-    context = get_context()
-    context.project = project
-    context.app_name = app_name
-    context.debug_settings = debug
-
-
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
-
-
-def _detect_library_usage() -> bool:
-    """Detect if ACB is being used as a library (deprecated - use context.is_library_mode())."""
-    context = get_context()
-    return context.is_library_mode()
-
-
-def _is_pytest_test_context() -> bool:
-    """Check if running in pytest context (deprecated - use context.is_testing_mode())."""
-    context = get_context()
-    return context.is_testing_mode()
 
 
 def _is_main_module_local() -> bool:
@@ -116,11 +86,12 @@ def _is_main_module_local() -> bool:
 
 
 def _should_initialize_eagerly() -> bool:
-    if _is_pytest_test_context():
+    context = get_context()
+    if context.is_testing_mode():
         return True
     if _testing:
         return True
-    if _detect_library_usage():
+    if context.is_library_mode():
         return False
     return _is_main_module_local()
 
