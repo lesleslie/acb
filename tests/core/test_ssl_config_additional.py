@@ -174,6 +174,8 @@ class TestSSLConfig:
     @pytest.mark.skipif(not hasattr(ssl, 'TLSVersion'), reason="ssl.TLSVersion not available")
     def test_create_ssl_context_with_certificates(self, tmp_path) -> None:
         """Test creating SSL context with certificate files."""
+        from unittest.mock import patch
+
         # Create temporary certificate files
         cert_file = tmp_path / "cert.pem"
         key_file = tmp_path / "key.pem"
@@ -189,8 +191,15 @@ class TestSSLConfig:
             ca_path=str(ca_file)
         )
 
-        context = config.create_ssl_context()
-        # Just ensure no exception is raised
+        # Mock the SSL context methods to avoid loading invalid certs
+        with patch.object(ssl.SSLContext, 'load_cert_chain') as mock_load_cert:
+            with patch.object(ssl.SSLContext, 'load_verify_locations') as mock_load_ca:
+                context = config.create_ssl_context()
+
+                # Verify the context methods were called with correct paths
+                mock_load_cert.assert_called_once_with(str(cert_file), str(key_file))
+                mock_load_ca.assert_called_once_with(str(ca_file))
+                assert isinstance(context, ssl.SSLContext)
 
     def test_create_ssl_context_with_ciphers(self) -> None:
         """Test creating SSL context with ciphers."""
