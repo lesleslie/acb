@@ -365,11 +365,15 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         }
 
     @staticmethod
-    def _should_create_settings_file(dump_settings: dict[str, t.Any]) -> bool:
-        return bool(dump_settings) and any(
+    def _has_valid_settings(settings: dict[str, t.Any]) -> bool:
+        """Check if settings dict contains any non-empty, non-None values."""
+        return bool(settings) and any(
             value is not None and value not in ({}, [])
-            for value in dump_settings.values()
+            for value in settings.values()
         )
+
+    def _should_create_settings_file(self, dump_settings: dict[str, t.Any]) -> bool:
+        return self._has_valid_settings(dump_settings)
 
     @staticmethod
     async def _load_settings_from_file(yaml_path: AsyncPath) -> dict[str, t.Any]:
@@ -395,20 +399,11 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         yaml_path: AsyncPath,
         yaml_settings: dict[str, t.Any],
     ) -> None:
-        if not self._should_update_settings_file(yaml_settings):
-            return
-        await dump.yaml(yaml_settings, yaml_path, sort_keys=True)
+        if self._should_update_settings_file(yaml_settings):
+            await dump.yaml(yaml_settings, yaml_path, sort_keys=True)
 
-    @staticmethod
-    def _should_update_settings_file(yaml_settings: dict[str, t.Any]) -> bool:
-        return (
-            not _deployed
-            and bool(yaml_settings)
-            and any(
-                value is not None and value not in ({}, [])
-                for value in yaml_settings.values()
-            )
-        )
+    def _should_update_settings_file(self, yaml_settings: dict[str, t.Any]) -> bool:
+        return not _deployed and self._has_valid_settings(yaml_settings)
 
     async def __call__(self) -> dict[str, t.Any]:
         data = {}
