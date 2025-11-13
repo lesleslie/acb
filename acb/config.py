@@ -264,12 +264,17 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             if info.annotation is not SecretStr
         }
 
+    @staticmethod
+    def _is_special_mode() -> bool:
+        """Check if in testing or library mode (skip YAML settings)."""
+        return get_context().is_testing_mode() or get_context().is_library_mode()
+
     def _update_global_variables(self, settings: dict[str, t.Any]) -> None:
         global project, app_name, debug
         if self.adapter_name == "debug":
             debug = settings
         elif self.adapter_name == "app":
-            if get_context().is_testing_mode() or get_context().is_library_mode():
+            if self._is_special_mode():
                 project = "test_project" if _testing else "library_project"
                 app_name = "test_app" if _testing else "library_app"
             else:
@@ -308,7 +313,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             return None
 
     async def _load_secrets(self) -> dict[str, t.Any]:
-        if get_context().is_testing_mode() or get_context().is_library_mode():
+        if self._is_special_mode():
             return self._get_test_secret_data()
         data: dict[str, t.Any] = {}
         model_secrets = self.get_model_secrets()
@@ -334,7 +339,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
     async def _load_yaml_settings(self) -> dict[str, t.Any]:
         if self.adapter_name == "secret":
             return {}
-        if get_context().is_testing_mode() or get_context().is_library_mode():
+        if self._is_special_mode():
             return self._handle_testing_mode()
         yaml_path = AsyncPath(str(settings_path / f"{self.adapter_name}.yaml"))
         await self._create_default_settings_file(yaml_path)
@@ -406,16 +411,11 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         return not _deployed and self._has_valid_settings(yaml_settings)
 
     async def __call__(self) -> dict[str, t.Any]:
-        data = {}
-        data.update(self.init_kwargs)
+        data = self.init_kwargs.copy()
         if _testing or _library_usage_mode or Path.cwd().name != "acb":
             yaml_data = await self._load_yaml_settings()
-            for field_name, field in yaml_data.items():
-                if field is not None:
-                    data[field_name] = field
-        secrets_data = await self._load_secrets()
-        data.update(secrets_data)
-
+            data.update({k: v for k, v in yaml_data.items() if v is not None})
+        data.update(await self._load_secrets())
         return data
 
 
