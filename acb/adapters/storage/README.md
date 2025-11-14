@@ -49,10 +49,10 @@ The ACB Storage adapter offers a consistent way to interact with various storage
 
 ```bash
 # Install with storage support
-uv add acb --group storage
+uv add --group storage
 
 # Or include it with other dependencies
-uv add acb --group storage --group cache --group sql
+uv add --group storage --group cache --group sql
 ```
 
 ## Configuration
@@ -240,6 +240,7 @@ signed_url = await file.get_signed_url(expires=1800)  # 30 minutes
 The Storage adapter makes it easy to migrate files between different storage providers:
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from anyio import Path as AsyncPath
@@ -249,6 +250,11 @@ from anyio import Path as AsyncPath
 Storage = import_adapter("storage")
 
 storage = depends.get(Storage)
+
+# For this example, assume we have separate storage instances configured
+# In practice, you would configure these in settings/adapters.yaml
+s3_storage = storage  # Source storage (S3)
+gcs_storage = storage  # Destination storage (GCS)
 
 
 async def migrate_files(source_path: str, destination_path: str) -> None:

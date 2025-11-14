@@ -1,6 +1,6 @@
 # ACB Architecture Guide
 
-> **Version:** 0.27.0 | **Architecture:** Simplified Adapter Pattern
+> **Version:** 0.31.1 | **Architecture:** Simplified Adapter Pattern
 
 This guide explains ACB's simplified architecture and core design patterns.
 

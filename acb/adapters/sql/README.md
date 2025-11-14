@@ -54,10 +54,10 @@ The ACB SQL adapter offers a consistent way to interact with relational database
 
 ```bash
 # Install with SQL database support
-uv add acb --group sql
+uv add --group sql
 
 # Or include it with other dependencies
-uv add acb --group sql --group cache --group storage
+uv add --group sql --group cache --group storage
 ```
 
 ## Configuration
@@ -472,8 +472,8 @@ The SQL adapter integrates seamlessly with other ACB adapters:
 
 ## Additional Resources
 
-- [Universal Query Interface Documentation](../../models/README.md)
-- [Specification Pattern Examples](../../models/_specification.py)
-- [Repository Pattern Examples](../../models/_repository.py)
+- [Universal Query Interface Documentation](../models/README.md)
+- [Specification Pattern Examples](../models/README.md#specification-pattern)
+- [Repository Pattern Examples](../models/README.md#repository-pattern)
 - [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
 - [SQLAlchemy Async Documentation](https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html)

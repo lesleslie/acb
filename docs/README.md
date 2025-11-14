@@ -1,6 +1,6 @@
 # ACB Documentation
 
-> **Current Version:** 0.27.0 | **Python:** 3.13+
+> **Current Version:** 0.31.1 | **Python:** 3.13+
 
 Welcome to the ACB (Asynchronous Component Base) documentation. This directory contains essential guides and templates for working with ACB.
 

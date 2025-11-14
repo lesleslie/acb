@@ -43,10 +43,10 @@ Caching is a crucial component of high-performance applications. The ACB Cache a
 
 ```bash
 # Install cache support (memory + Redis)
-uv add acb --group cache
+uv add --group cache
 
 # Or include it with other dependencies
-uv add acb --group cache --group sql --group storage
+uv add --group cache --group sql --group storage
 ```
 
 ## Configuration
@@ -243,9 +243,9 @@ await user_cache.clear()  # Removes all keys with prefix "users:"
 
 ## Implementation Details
 
-### ACB 0.16.17+ Architecture
+### Modern Architecture
 
-Starting with ACB 0.16.17, the cache adapter has been completely rewritten to use the aiocache library interface for both memory and Redis implementations. This provides:
+The cache adapter uses the aiocache library interface for both memory and Redis implementations. This provides:
 
 - **Unified Interface**: Both implementations use the same aiocache BaseCache abstract methods
 - **Consistent Behavior**: Memory and Redis caches behave identically from an API perspective

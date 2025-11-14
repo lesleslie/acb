@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quick Reference
 
-**Version**: 0.29.2 | **Python**: 3.13+ | **Featured**: [FastBlocks](https://github.com/lesleslie/fastblocks)
+**Version**: 0.31.1 | **Python**: 3.13+ | **Featured**: [FastBlocks](https://github.com/lesleslie/fastblocks)
 
 ### Essential Commands
 

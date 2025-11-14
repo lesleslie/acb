@@ -20,6 +20,16 @@ portable across vendors and deployment topologies.
 - [Best Practices](<#best-practices>)
 - [Related Adapters](<#related-adapters>)
 
+## Installation
+
+```bash
+# Install with AI support
+uv add --group ai
+
+# Or include it with other dependencies
+uv add --group ai --group cache --group embedding
+```
+
 ## Overview
 
 The adapter exposes the `AIBase` interface with helpers for token estimation,
@@ -74,6 +84,22 @@ automatic fallback if constraints are violated.
 
 Configuration is usually sourced from `settings/adapters.yaml` and injected via
 `depends.get()` or service constructors.
+
+Example configuration:
+
+```yaml
+# settings/adapters.yaml
+ai: cloud  # Options: cloud, edge, hybrid
+
+# Optional: Provider-specific settings
+# settings/ai.yaml (if needed)
+ai:
+  default_model: "gpt-4"
+  max_tokens: 4096
+  temperature: 0.7
+  api_key: "${AI_API_KEY}"  # Use environment variable
+  deployment_strategy: "CLOUD"  # or "EDGE" or "HYBRID"
+```
 
 ## Built-in Implementations
 

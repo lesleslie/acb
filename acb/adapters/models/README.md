@@ -30,13 +30,13 @@ The ACB Models adapter offers intelligent model type detection and management:
 
 ```bash
 # Install with Models support
-uv add acb --group models
+uv add --group models
 
 # Or include it with database dependencies
-uv add acb --group models --group sql --group nosql
+uv add --group models --group sql --group nosql
 
 # Complete database stack
-uv add acb --group models --group sql --group nosql --group cache
+uv add --group models --group sql --group nosql --group cache
 ```
 
 ## Configuration
@@ -202,11 +202,11 @@ Use any model type with the universal query interface:
 
 ```python
 from acb.adapters.models._query import QueryBuilder, registry
-from acb.adapters.sql._query import SqlDatabaseAdapter
+from acb.adapters.sql._query import SQLDatabaseAdapter
 from acb.adapters.models._sqlmodel import SQLModelAdapter
 
 # Register adapters for universal query interface
-sql_adapter = SqlDatabaseAdapter()
+sql_adapter = SQLDatabaseAdapter()
 model_adapter = SQLModelAdapter()
 
 registry.register_database_adapter("sql", sql_adapter, is_default=True)

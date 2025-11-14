@@ -6,7 +6,7 @@ Production code lives under `acb/`, grouped by concern: `acb/actions/` (orchestr
 
 ## Build, Test, and Development Commands
 
-- `uv sync --extra dev` – install the pinned Python 3.13 toolchain plus dev dependencies into `.venv/`.
+- `uv sync --group dev` – install the pinned Python 3.13 toolchain plus dev dependencies into `.venv/`.
 - `uv run ruff format` / `uv run ruff check` – format and lint the codebase.
 - `uv run pyright` – run strict static typing across `acb/` and `tests/`.
 - `uv run pytest --cov=acb --cov-fail-under=42` – execute the full suite with coverage gate; narrow scope with `-m` or `-k` while iterating.
