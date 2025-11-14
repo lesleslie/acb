@@ -344,8 +344,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
     def _has_valid_settings(settings: dict[str, t.Any]) -> bool:
         """Check if settings dict contains any non-empty, non-None values."""
         return bool(settings) and any(
-            value is not None and value not in ({}, [])
-            for value in settings.values()
+            value is not None and value not in ({}, []) for value in settings.values()
         )
 
     def _should_create_settings_file(self, dump_settings: dict[str, t.Any]) -> bool:
