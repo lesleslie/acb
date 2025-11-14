@@ -3,8 +3,11 @@ from __future__ import annotations
 import re
 
 import pytest
-
-from acb.validation import ValidationMixin, create_length_validator, create_pattern_validator
+from acb.validation import (
+    ValidationMixin,
+    create_length_validator,
+    create_pattern_validator,
+)
 
 
 class TestValidationMixin:
