@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Services](<../README.md>) | [Repository Services](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Services](../README.md) | [Repository Services](./README.md)
 
 # ACB Services: Repository
 
@@ -7,12 +7,12 @@ access patterns across SQL, NoSQL, and in-memory stores.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Patterns & Building Blocks](<#patterns--building-blocks>)
-- [Coordination & Caching](<#coordination--caching>)
-- [Usage Patterns](<#usage-patterns>)
-- [Best Practices](<#best-practices>)
-- [Related Resources](<#related-resources>)
+- [Overview](#overview)
+- [Patterns & Building Blocks](#patterns--building-blocks)
+- [Coordination & Caching](#coordination--caching)
+- [Usage Patterns](#usage-patterns)
+- [Best Practices](#best-practices)
+- [Related Resources](#related-resources)
 
 ## Overview
 
@@ -114,7 +114,7 @@ async def main() -> None:
 
 ## Related Resources
 
-- [Services Layer](<../README.md>)
-- [Performance Services](<../performance/README.md>)
-- [Validation Services](<../validation/README.md>)
-- [Main Documentation](<../../../README.md>)
+- [Services Layer](../README.md)
+- [Performance Services](../performance/README.md)
+- [Validation Services](../validation/README.md)
+- [Main Documentation](../../../README.md)

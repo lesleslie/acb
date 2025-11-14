@@ -132,6 +132,7 @@ class MockCache(CacheBase):
 
 
 class TestCacheBaseSettings:
+    @pytest.mark.unit
     def test_init(self) -> None:
         val: int = 300
         settings: MockCacheBaseSettings = MockCacheBaseSettings(default_ttl=val)

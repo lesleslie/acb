@@ -17,7 +17,7 @@ from acb.services.repository._base import RepositoryBase
 
 
 @dataclass
-class TestEntity:
+class SampleEntity:
     """Test entity for UoW tests."""
     id: int | None = None
     name: str = ""
@@ -27,7 +27,7 @@ class MockRepository(RepositoryBase):
     """Mock repository for testing."""
 
     def __init__(self):
-        super().__init__(TestEntity)
+        super().__init__(SampleEntity)
         self.operations = []
 
     async def create(self, entity):
@@ -43,7 +43,7 @@ class MockRepository(RepositoryBase):
         return True
 
     async def get_by_id(self, entity_id):
-        return TestEntity(id=entity_id, name=f"Entity {entity_id}")
+        return SampleEntity(id=entity_id, name=f"Entity {entity_id}")
 
     async def list(self, filters=None, sort=None, pagination=None):
         return []
@@ -162,14 +162,14 @@ class TestUnitOfWork:
     @pytest.mark.asyncio
     async def test_uow_add_operation(self, uow):
         """Test adding operation to UoW."""
-        uow.add_operation("create", "TestEntity", {"name": "test"})
+        uow.add_operation("create", "SampleEntity", {"name": "test"})
 
         assert uow._metrics.operations_count == 1
         assert len(uow._operations) == 1
 
         operation = uow._operations[0]
         assert operation["operation"] == "create"
-        assert operation["entity_type"] == "TestEntity"
+        assert operation["entity_type"] == "SampleEntity"
 
     @pytest.mark.asyncio
     async def test_uow_add_rollback_operation(self, uow):
@@ -210,8 +210,8 @@ class TestUnitOfWork:
     @pytest.mark.asyncio
     async def test_uow_get_metrics(self, uow):
         """Test UoW metrics."""
-        uow.add_operation("create", "TestEntity")
-        uow.add_operation("update", "TestEntity")
+        uow.add_operation("create", "SampleEntity")
+        uow.add_operation("update", "SampleEntity")
 
         metrics = await uow.get_metrics()
 

@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Monitoring](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Monitoring](./README.md)
 
 # Monitoring Adapter
 
@@ -233,5 +233,5 @@ class MonitoringBase:
 
 - [Sentry Documentation](https://docs.sentry.io/platforms/python/)
 - [Performance Monitoring Best Practices](https://docs.sentry.io/product/performance/)
-- [ACB Logger Adapter](<../logger/README.md>)
-- [ACB Adapters Overview](<../README.md>)
+- [ACB Logger Adapter](../logger/README.md)
+- [ACB Adapters Overview](../README.md)

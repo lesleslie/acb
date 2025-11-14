@@ -1,4 +1,4 @@
-Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/dns/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [DNS](<./README.md>)
+Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/dns/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [DNS](./README.md)
 
 # DNS Adapter
 
@@ -324,4 +324,4 @@ class DnsBase:
 - [Route53 API Reference](https://docs.aws.amazon.com/Route53/latest/APIReference/)
 - [Boto3 Route53 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/route53.html)
 - [DNS Best Practices](https://www.cloudflare.com/learning/dns/dns-best-practices/)
-- [ACB Adapters Overview](<../README.md>)
+- [ACB Adapters Overview](../README.md)

@@ -60,8 +60,9 @@ class Depends:
         """Get dependency asynchronously.
 
         This method is async for proper async initialization of adapters.
+        Alias for get_async() for convenience.
         """
-        return await self.get_async(category, module)
+        return await Depends.get_async(category, module)
 
     @staticmethod
     def get_sync(category: t.Any, module: str | None = None) -> t.Any:
@@ -166,9 +167,12 @@ def _get_dependency_sync(category: t.Any, module: str | None = None) -> t.Any:
     return get_container().get(category, qualifier=module)
 
 
-@lru_cache(maxsize=256)
 async def _get_adapter_class_async(category: str) -> t.Any:
-    """Get adapter class with async import."""
+    """Get adapter class with async import.
+
+    Note: lru_cache removed as it doesn't work with async functions.
+    Caching happens at the container level instead.
+    """
     from .adapters import _import_adapter
 
     return await _import_adapter(category)

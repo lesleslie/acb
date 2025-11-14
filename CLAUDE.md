@@ -314,18 +314,18 @@ async def infrastructure_code(cache: Inject[Cache]):
 
 Each adapter has detailed README with examples:
 
-- **[Cache](<./acb/adapters/cache/README.md>)**: Memory, Redis caching
-- **[SQL](<./acb/adapters/sql/README.md>)**: MySQL, PostgreSQL, SQLite
-- **[Storage](<./acb/adapters/storage/README.md>)**: S3, GCS, Azure, file
-- **[Messaging](<./acb/adapters/messaging/README.md>)**: Memory, Redis, RabbitMQ
-- **[Models](<./acb/adapters/models/README.md>)**: Universal query interface
-- **[Secret](<./acb/adapters/secret/README.md>)**: Infisical, GCP, Azure, Cloudflare
-- **[Monitoring](<./acb/adapters/monitoring/README.md>)**: Sentry, Logfire
-- **[DNS](<./acb/adapters/dns/README.md>)**: Cloud DNS, Cloudflare, Route53
-- **[SMTP](<./acb/adapters/smtp/README.md>)**: Gmail, Mailgun
-- **[NoSQL](<./acb/adapters/nosql/README.md>)**: MongoDB, Firestore, Redis
-- **[Requests](<./acb/adapters/requests/README.md>)**: HTTPX, Niquests
-- **[FTPD](<./acb/adapters/ftpd/README.md>)**: FTP, SFTP
+- **[Cache](./acb/adapters/cache/README.md)**: Memory, Redis caching
+- **[SQL](./acb/adapters/sql/README.md)**: MySQL, PostgreSQL, SQLite
+- **[Storage](./acb/adapters/storage/README.md)**: S3, GCS, Azure, file
+- **[Messaging](./acb/adapters/messaging/README.md)**: Memory, Redis, RabbitMQ
+- **[Models](./acb/adapters/models/README.md)**: Universal query interface
+- **[Secret](./acb/adapters/secret/README.md)**: Infisical, GCP, Azure, Cloudflare
+- **[Monitoring](./acb/adapters/monitoring/README.md)**: Sentry, Logfire
+- **[DNS](./acb/adapters/dns/README.md)**: Cloud DNS, Cloudflare, Route53
+- **[SMTP](./acb/adapters/smtp/README.md)**: Gmail, Mailgun
+- **[NoSQL](./acb/adapters/nosql/README.md)**: MongoDB, Firestore, Redis
+- **[Requests](./acb/adapters/requests/README.md)**: HTTPX, Niquests
+- **[FTPD](./acb/adapters/ftpd/README.md)**: FTP, SFTP
 
 ### Recent Adapter Additions
 

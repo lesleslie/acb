@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../README.md>) | [Core Systems](<../README.md>) | [Events](<./README.md>) | [Services](<../services/README.md>) | [Adapters](<../adapters/README.md>)
+> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Events](./README.md) | [Services](../services/README.md) | [Adapters](../adapters/README.md)
 
 # ACB: Events
 
@@ -9,14 +9,14 @@ queue adapters such as Redis, RabbitMQ, Kafka, or in-memory backends.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Core Building Blocks](<#core-building-blocks>)
-- [Discovery & Metadata](<#discovery--metadata>)
-- [Publishing Events](<#publishing-events>)
-- [Consuming & Routing](<#consuming--routing>)
-- [Integration Patterns](<#integration-patterns>)
-- [Best Practices](<#best-practices>)
-- [Related Resources](<#related-resources>)
+- [Overview](#overview)
+- [Core Building Blocks](#core-building-blocks)
+- [Discovery & Metadata](#discovery--metadata)
+- [Publishing Events](#publishing-events)
+- [Consuming & Routing](#consuming--routing)
+- [Integration Patterns](#integration-patterns)
+- [Best Practices](#best-practices)
+- [Related Resources](#related-resources)
 
 ## Overview
 
@@ -137,7 +137,7 @@ async with EventSubscriber() as subscriber:
 
 ## Related Resources
 
-- [Services](<../services/README.md>)
-- [Adapters](<../adapters/README.md>)
-- [Tasks](<../tasks/README.md>)
-- [Main Documentation](<../../README.md>)
+- [Services](../services/README.md)
+- [Adapters](../adapters/README.md)
+- [Tasks](../tasks/README.md)
+- [Main Documentation](../../README.md)

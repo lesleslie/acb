@@ -69,37 +69,7 @@ _library_usage_mode: bool = (
     _testing or "pytest" in sys.modules or Path.cwd().name != "acb"
 )
 
-
-def _sync_context_to_globals() -> None:
-    """Sync context values to module globals for backward compatibility."""
-    global project, app_name, debug
-    context = get_context()
-    project = context.project
-    app_name = context.app_name
-    debug = context.debug_settings
-
-
-def _sync_globals_to_context() -> None:
-    """Sync module globals to context."""
-    context = get_context()
-    context.project = project
-    context.app_name = app_name
-    context.debug_settings = debug
-
-
 _app_secrets: ContextVar[set[str]] = ContextVar("_app_secrets", default=set())
-
-
-def _detect_library_usage() -> bool:
-    """Detect if ACB is being used as a library (deprecated - use context.is_library_mode())."""
-    context = get_context()
-    return context.is_library_mode()
-
-
-def _is_pytest_test_context() -> bool:
-    """Check if running in pytest context (deprecated - use context.is_testing_mode())."""
-    context = get_context()
-    return context.is_testing_mode()
 
 
 def _is_main_module_local() -> bool:
@@ -116,11 +86,12 @@ def _is_main_module_local() -> bool:
 
 
 def _should_initialize_eagerly() -> bool:
-    if _is_pytest_test_context():
+    context = get_context()
+    if context.is_testing_mode():
         return True
     if _testing:
         return True
-    if _detect_library_usage():
+    if context.is_library_mode():
         return False
     return _is_main_module_local()
 
@@ -264,12 +235,17 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             if info.annotation is not SecretStr
         }
 
+    @staticmethod
+    def _is_special_mode() -> bool:
+        """Check if in testing or library mode (skip YAML settings)."""
+        return get_context().is_testing_mode() or get_context().is_library_mode()
+
     def _update_global_variables(self, settings: dict[str, t.Any]) -> None:
         global project, app_name, debug
         if self.adapter_name == "debug":
             debug = settings
         elif self.adapter_name == "app":
-            if get_context().is_testing_mode() or get_context().is_library_mode():
+            if self._is_special_mode():
                 project = "test_project" if _testing else "library_project"
                 app_name = "test_app" if _testing else "library_app"
             else:
@@ -308,7 +284,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
             return None
 
     async def _load_secrets(self) -> dict[str, t.Any]:
-        if get_context().is_testing_mode() or get_context().is_library_mode():
+        if self._is_special_mode():
             return self._get_test_secret_data()
         data: dict[str, t.Any] = {}
         model_secrets = self.get_model_secrets()
@@ -334,7 +310,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
     async def _load_yaml_settings(self) -> dict[str, t.Any]:
         if self.adapter_name == "secret":
             return {}
-        if get_context().is_testing_mode() or get_context().is_library_mode():
+        if self._is_special_mode():
             return self._handle_testing_mode()
         yaml_path = AsyncPath(str(settings_path / f"{self.adapter_name}.yaml"))
         await self._create_default_settings_file(yaml_path)
@@ -365,11 +341,15 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         }
 
     @staticmethod
-    def _should_create_settings_file(dump_settings: dict[str, t.Any]) -> bool:
-        return bool(dump_settings) and any(
+    def _has_valid_settings(settings: dict[str, t.Any]) -> bool:
+        """Check if settings dict contains any non-empty, non-None values."""
+        return bool(settings) and any(
             value is not None and value not in ({}, [])
-            for value in dump_settings.values()
+            for value in settings.values()
         )
+
+    def _should_create_settings_file(self, dump_settings: dict[str, t.Any]) -> bool:
+        return self._has_valid_settings(dump_settings)
 
     @staticmethod
     async def _load_settings_from_file(yaml_path: AsyncPath) -> dict[str, t.Any]:
@@ -395,32 +375,18 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         yaml_path: AsyncPath,
         yaml_settings: dict[str, t.Any],
     ) -> None:
-        if not self._should_update_settings_file(yaml_settings):
-            return
-        await dump.yaml(yaml_settings, yaml_path, sort_keys=True)
+        if self._should_update_settings_file(yaml_settings):
+            await dump.yaml(yaml_settings, yaml_path, sort_keys=True)
 
-    @staticmethod
-    def _should_update_settings_file(yaml_settings: dict[str, t.Any]) -> bool:
-        return (
-            not _deployed
-            and bool(yaml_settings)
-            and any(
-                value is not None and value not in ({}, [])
-                for value in yaml_settings.values()
-            )
-        )
+    def _should_update_settings_file(self, yaml_settings: dict[str, t.Any]) -> bool:
+        return not _deployed and self._has_valid_settings(yaml_settings)
 
     async def __call__(self) -> dict[str, t.Any]:
-        data = {}
-        data.update(self.init_kwargs)
+        data = self.init_kwargs.copy()
         if _testing or _library_usage_mode or Path.cwd().name != "acb":
             yaml_data = await self._load_yaml_settings()
-            for field_name, field in yaml_data.items():
-                if field is not None:
-                    data[field_name] = field
-        secrets_data = await self._load_secrets()
-        data.update(secrets_data)
-
+            data.update({k: v for k, v in yaml_data.items() if v is not None})
+        data.update(await self._load_secrets())
         return data
 
 

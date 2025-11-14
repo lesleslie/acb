@@ -24,18 +24,21 @@ def mock_logger() -> MagicMock:
 
 
 class TestCacheSettings:
+    @pytest.mark.unit
     def test_default_values(self) -> None:
         settings = CacheSettings()
         assert settings.default_ttl == 86400
         assert settings.query_ttl == 600
         assert settings.template_ttl == 86400
 
+    @pytest.mark.unit
     def test_custom_values(self) -> None:
         settings = CacheSettings(default_ttl=3600, query_ttl=300, template_ttl=7200)
         assert settings.default_ttl == 3600
         assert settings.query_ttl == 300
         assert settings.template_ttl == 7200
 
+    @pytest.mark.unit
     def test_response_ttl_with_config(self, mock_config: MagicMock) -> None:
         from acb.config import Config
         from acb.depends import depends

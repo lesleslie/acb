@@ -12,6 +12,7 @@ from acb.config import Config
 
 
 class TestMsgPackSerializer:
+    @pytest.mark.unit
     def test_init(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
         assert serializer.use_list
@@ -19,6 +20,7 @@ class TestMsgPackSerializer:
         serializer = MsgPackSerializer(use_list=False)
         assert not serializer.use_list
 
+    @pytest.mark.unit
     def test_dumps(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
         test_data: dict[str, t.Any] = {
@@ -37,6 +39,7 @@ class TestMsgPackSerializer:
             mock_compress.assert_called_once_with(b"encoded_data")
             assert result == "compressed_data"
 
+    @pytest.mark.unit
     def test_loads(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
         test_data: str = "compressed_data"
@@ -50,16 +53,19 @@ class TestMsgPackSerializer:
             mock_decompress.assert_called_once_with(test_data.encode("latin-1"))
             assert result == {"key": "value"}
 
+    @pytest.mark.unit
     def test_loads_empty_string(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
         result: t.Any = serializer.loads("")
         assert result is None
 
+    @pytest.mark.unit
     def test_loads_none_value(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
         result: t.Any = serializer.loads(None)  # type: ignore
         assert result is None
 
+    @pytest.mark.unit
     def test_loads_no_decompressed_data(self) -> None:
         """Test handling when decompress.brotli returns empty data."""
         serializer: MsgPackSerializer = MsgPackSerializer()
@@ -71,6 +77,7 @@ class TestMsgPackSerializer:
             result: t.Any = serializer.loads(test_data)
             assert result is None
 
+    @pytest.mark.unit
     def test_integration(self) -> None:
         serializer: MsgPackSerializer = MsgPackSerializer()
         test_data: dict[str, t.Any] = {
@@ -93,6 +100,7 @@ class TestCacheBaseSettings:
         config.deployed = False
         return config
 
+    @pytest.mark.unit
     def test_init_default_values(self, mock_config: MagicMock) -> None:
         with patch("acb.adapters.cache._base.depends.get", return_value=mock_config):
             settings = CacheBaseSettings()
@@ -101,6 +109,7 @@ class TestCacheBaseSettings:
             assert settings.host.get_secret_value() == "127.0.0.1"
             assert settings.response_ttl == 1  # Not deployed, so 1
 
+    @pytest.mark.unit
     def test_init_custom_values(self, mock_config: MagicMock) -> None:
         with patch("acb.adapters.cache._base.depends.get", return_value=mock_config):
             settings = CacheBaseSettings(
@@ -112,6 +121,7 @@ class TestCacheBaseSettings:
             assert settings.host.get_secret_value() == "custom.host"
             assert settings.port == 1234
 
+    @pytest.mark.unit
     def test_init_deployed(self) -> None:
         # Create a mock config with deployed=True
         mock_config = MagicMock(spec=Config)
@@ -141,6 +151,7 @@ class TestCacheBase:
         """Create a mock cache instance."""
         return self.MockCache()
 
+    @pytest.mark.unit
     def test_init(self) -> None:
         """Test CacheBase initialization."""
         cache = self.MockCache()
@@ -194,6 +205,7 @@ class TestCacheBase:
 
 
 class TestMemoryCache:
+    @pytest.mark.unit
     def test_init(self) -> None:
         cache = MemoryCache()
         assert cache is not None

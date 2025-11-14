@@ -10,8 +10,8 @@ from acb.config import (
     AppSettings,
     DebugSettings,
     Settings,
-    _detect_library_usage,
 )
+from acb.context import get_context
 
 
 @pytest.mark.unit
@@ -128,7 +128,7 @@ class TestConfig:
         with patch("sys.argv", ["setup.py"]):
             with patch("acb.config._testing", False):
                 with patch.dict(os.environ, {}, clear=True):
-                    assert _detect_library_usage()
+                    assert get_context().is_library_mode()
 
     def test_library_usage_detection_env_var(self) -> None:
         # Reset context to ensure fresh state
@@ -140,7 +140,7 @@ class TestConfig:
                 # We need to temporarily remove pytest from sys.modules
                 pytest_module = sys.modules.pop("pytest", None)
                 try:
-                    assert _detect_library_usage()
+                    assert get_context().is_library_mode()
                 finally:
                     if pytest_module is not None:
                         sys.modules["pytest"] = pytest_module
@@ -149,7 +149,7 @@ class TestConfig:
         with patch.dict(os.environ, {}, clear=True):
             with patch("acb.config.Path") as mock_path:
                 mock_path.cwd.return_value.glob.return_value = []
-                result = _detect_library_usage()
+                result = get_context().is_library_mode()
                 # This should return False for normal usage
                 assert isinstance(result, bool)  # Allow both since environment can vary
 

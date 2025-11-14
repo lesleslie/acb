@@ -62,46 +62,55 @@ class TestDecode:
     def pickle_bytes(self) -> bytes:
         return pickle.dumps(TEST_DATA)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_decode_string(self, json_string: str) -> None:
         result = await decode.json(json_string)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_decode_bytes(self, json_bytes: bytes) -> None:
         result = await decode.json(json_bytes)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_decode_string(self, yaml_string: str) -> None:
         result = await decode.yaml(yaml_string)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_decode_bytes(self, yaml_bytes: bytes) -> None:
         result = await decode.yaml(yaml_bytes)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_decode_string(self, toml_string: str) -> None:
         result = await decode.toml(toml_string)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_decode_bytes(self, toml_bytes: bytes) -> None:
         result = await decode.toml(toml_bytes)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_msgpack_decode(self, msgpack_bytes: bytes) -> None:
         result = await decode.msgpack(msgpack_bytes)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_pickle_decode(self, pickle_bytes: bytes) -> None:
         result = await decode.pickle(pickle_bytes)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_json_decode_from_file(self, async_tmp_path: AsyncPath) -> None:
         file_path: AsyncPath = async_tmp_path / "test_data.json"
@@ -109,6 +118,7 @@ class TestDecode:
         result = await decode.json(file_path)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_yaml_decode_from_file(self, async_tmp_path: AsyncPath) -> None:
         file_path: AsyncPath = async_tmp_path / "test_data.yaml"
@@ -119,6 +129,7 @@ class TestDecode:
         result = await decode.yaml(file_path)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_toml_decode_from_file(self, async_tmp_path: AsyncPath) -> None:
         file_path: AsyncPath = async_tmp_path / "test_data.toml"
@@ -126,6 +137,7 @@ class TestDecode:
         result = await decode.toml(file_path)
         assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_complex_data_roundtrip(self) -> None:
         json_bytes: bytes = await encode.json(NESTED_TEST_DATA)
@@ -148,6 +160,7 @@ class TestDecode:
         pickle_result = await decode.pickle(pickle_bytes)
         assert pickle_result == NESTED_TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_file_operations_with_mocks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -164,6 +177,7 @@ class TestDecode:
                 result = await decode.json(mock_path)
                 assert result == TEST_DATA
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         ("invalid_input", "format_name"),
@@ -183,6 +197,7 @@ class TestDecode:
         with pytest.raises(Exception):
             await getattr(decode, format_name)(invalid_input)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_file_not_found(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -190,6 +205,7 @@ class TestDecode:
             with pytest.raises(FileNotFoundError):
                 await decode.json(nonexistent_path)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_empty_input_handling(self) -> None:
         with pytest.raises(Exception):
@@ -199,6 +215,7 @@ class TestDecode:
         with pytest.raises(Exception):
             await decode.toml("")
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         ("input_value", "expected_type"),
@@ -228,6 +245,7 @@ class TestDecode:
                 result = await decode.json(input_value)
                 assert isinstance(result, dict)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_write_text_type(self, async_tmp_path: AsyncPath) -> None:
         file_path: AsyncPath = async_tmp_path / "test.txt"
@@ -236,6 +254,7 @@ class TestDecode:
         result = await file_path.read_text()
         assert isinstance(result, str)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_write_bytes_type(self, async_tmp_path: AsyncPath) -> None:
         file_path: AsyncPath = async_tmp_path / "test.bin"
@@ -244,6 +263,7 @@ class TestDecode:
         result = await file_path.read_bytes()
         assert isinstance(result, bytes)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_write_text_str_only(self, async_tmp_path: AsyncPath) -> None:
         file_path: AsyncPath = async_tmp_path / "test_str.txt"
