@@ -184,6 +184,40 @@ class MySettings(Settings):
 1. **Keep secrets out of version control** using `.gitignore`
 1. **Use environment-specific configurations** for different deployment stages
 1. **Document all configuration options** with clear descriptions
+1. **Configure timeouts appropriately** for long-running operations like quality checks, security scans, and analysis tools
+
+## Timeout Configuration
+
+ACB includes configurable timeouts across various components, particularly important for long-running operations like code quality checks:
+
+```python
+from pydantic import Field
+
+class QABaseSettings(Settings):
+    timeout_seconds: int = Field(60, ge=1, le=3600)  # Default 60 seconds
+```
+
+For quality assurance tools like Bandit and Refurb which may take longer than the default 60 seconds to complete:
+
+```yaml
+# settings/adapters.yml
+bandit:
+  timeout_seconds: 300  # 5 minutes for security scans
+
+refurb:
+  timeout_seconds: 240  # 4 minutes for refactoring suggestions
+```
+
+Or when configuring adapters programmatically:
+
+```python
+from crackerjack.adapters.security.bandit import BanditSettings
+
+bandit_settings = BanditSettings(
+    timeout_seconds=300,  # Override default of 60 seconds
+    # other settings...
+)
+```
 
 ## Library vs. Application Usage Modes (ACB 0.16.17+)
 

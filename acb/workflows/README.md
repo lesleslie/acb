@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Workflows](./README.md) | [Services](../services/README.md) | [Testing](../testing/README.md)
+> **ACB Documentation**: [Main](<../../README.md>) | [Core Systems](<../README.md>) | [Workflows](<./README.md>) | [Services](<../services/README.md>) | [Testing](<../testing/README.md>)
 
 # ACB: Workflows
 
@@ -7,12 +7,12 @@ automatic retries, and full integration with the services layer.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Concepts](#core-concepts)
-- [Usage Patterns](#usage-patterns)
-- [Integration Points](#integration-points)
-- [Extensibility](#extensibility)
-- [Related Resources](#related-resources)
+- [Overview](<#overview>)
+- [Core Concepts](<#core-concepts>)
+- [Usage Patterns](<#usage-patterns>)
+- [Integration Points](<#integration-points>)
+- [Extensibility](<#extensibility>)
+- [Related Resources](<#related-resources>)
 
 ## Overview
 
@@ -32,6 +32,47 @@ ACB services.
 - `WorkflowSettings` / `WorkflowConfig`: Control concurrency, persistence, and
   engine selection
 - `WorkflowResult` / `StepResult`: Captured execution state, errors, and metadata
+
+## Timeout Configuration
+
+Workflows and individual steps can be configured with specific timeout values to prevent long-running operations from hanging indefinitely:
+
+```python
+from acb.workflows import WorkflowDefinition, WorkflowStep
+
+workflow = WorkflowDefinition(
+    workflow_id="publish-report",
+    name="Publish Report",
+    timeout=3600.0,  # 1 hour total workflow timeout
+    steps=[
+        WorkflowStep(
+            step_id="security_scan",
+            name="Security Scan",
+            action="actions.run_security_scan",
+            params={"target": "src/"},
+            timeout=300.0,  # 5 minutes timeout for this step
+            retry_attempts=2,
+            retry_delay=5.0,
+        ),
+        WorkflowStep(
+            step_id="render_pdf",
+            name="Render PDF",
+            action="actions.render_pdf",
+            depends_on=["security_scan"],
+            timeout=120.0,  # 2 minutes timeout for this step
+        ),
+    ],
+)
+```
+
+For quality assurance tools that run in workflow steps, it's important to configure appropriate timeouts:
+
+```yaml
+# settings/app.yaml - Configure default workflow timeouts
+workflow:
+  default_timeout: 3600.0  # 1 hour
+  default_step_timeout: 600.0  # 10 minutes per step
+```
 
 ## Usage Patterns
 
@@ -100,7 +141,7 @@ async with WorkflowService(engine, WorkflowSettings(max_concurrent_workflows=5))
 
 ## Related Resources
 
-- [Services Layer](../services/README.md)
-- [Testing Layer](../testing/README.md)
-- [Actions Documentation](../actions/README.md)
-- [Main Documentation](../../README.md)
+- [Services Layer](<../services/README.md>)
+- [Testing Layer](<../testing/README.md>)
+- [Actions Documentation](<../actions/README.md>)
+- [Main Documentation](<../../README.md>)

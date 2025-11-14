@@ -1,17 +1,17 @@
 {
   "mcpServers": {
     "acb": {
-      "command": "uv",
       "args": [
         "run",
         "python",
         "-m",
         "acb.mcp.server"
       ],
+      "command": "uv",
       "env": {
+        "ACB_ENV": "development",
         "ACB_MCP_HOST": "127.0.0.1",
-        "ACB_MCP_PORT": "8000",
-        "ACB_ENV": "development"
+        "ACB_MCP_PORT": "8000"
       }
     }
   }

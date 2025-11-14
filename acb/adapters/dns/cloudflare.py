@@ -142,7 +142,7 @@ class Dns(DnsBase):
 
     def list_records(self) -> list[DnsRecord]:
         if not self.zone_id:
-            self.logger.error("Zone ID not found. Initialize the adapter first.")
+            self.logger.error("Zone ID not found. Initialize the adapter first")
             msg = "Zone ID not found"
             raise ValueError(msg)
         try:
@@ -166,7 +166,7 @@ class Dns(DnsBase):
 
     async def _delete_record(self, record_id: str) -> None:
         if not self.zone_id:
-            self.logger.error("Zone ID not found. Initialize the adapter first.")
+            self.logger.error("Zone ID not found. Initialize the adapter first")
             msg = "Zone ID not found"
             raise ValueError(msg)
         try:
@@ -181,7 +181,7 @@ class Dns(DnsBase):
 
     async def _create_record(self, record: DnsRecord) -> None:
         if not self.zone_id:
-            self.logger.error("Zone ID not found. Initialize the adapter first.")
+            self.logger.error("Zone ID not found. Initialize the adapter first")
             msg = "Zone ID not found"
             raise ValueError(msg)
         try:

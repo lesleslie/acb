@@ -402,6 +402,52 @@ Your application code remains exactly the same!
 
 For more detailed documentation on adapters, see the [Adapters README](<./acb/adapters/README.md>).
 
+### Quality Assurance Adapters
+
+ACB includes specialized adapters for code quality, security scanning, and refactoring suggestions through the crackerjack integration:
+
+#### Quality Assurance Tools
+
+| Tool Category | Description | Examples |
+| ----------------- | ----------------------- | ------------------------ |
+| **Security** | Security vulnerability scanning | Bandit |
+| **Refactoring** | Modern Python idioms and best practices | Refurb |
+| **Type Checking** | Static type analysis | Pyright/Zuban |
+| **Code Quality** | Linting and formatting | Ruff, Black |
+
+#### Configuring Quality Tools
+
+Quality assurance adapters often require longer timeouts than standard operations. Configure them appropriately:
+
+```yaml
+# settings/adapters.yml
+bandit:
+  timeout_seconds: 300  # Security scanning can take time
+  severity_level: "medium"
+  confidence_level: "medium"
+
+refurb:
+  timeout_seconds: 240  # Refactoring suggestions
+  enable_all: false
+  explain: false
+```
+
+#### Using Quality Adapters
+
+```python
+from acb.depends import depends, Inject
+from crackerjack.adapters.security.bandit import BanditAdapter
+
+@depends.inject
+async def run_security_scan(
+    files: list[Path],
+    bandit: Inject[BanditAdapter]
+):
+    # Execute security scanning
+    result = await bandit.check(files=files)
+    return result
+```
+
 ### Universal Query Interface
 
 ACB provides a powerful Universal Query Interface that allows you to write database queries that work consistently across both SQL and NoSQL databases, while maintaining full type safety and supporting multiple query patterns.

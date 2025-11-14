@@ -96,6 +96,54 @@ rate_limit_status = cache.get_rate_limit_status("get", "current_user")
 
 All existing adapter operations remain available and unchanged, ensuring backward compatibility.
 
+## Quality Assurance Adapters
+
+ACB includes specialized adapters for quality assurance tools through the crackerjack integration. These adapters follow the same dependency injection and configuration patterns as other adapters but are optimized for code quality, security scanning, and refactoring tools.
+
+### Quality Tool Categories
+
+| Category | Description | Default Timeout | Example Use |
+| -------- | ----------- | --------------- | ----------- |
+| **Security** | Security vulnerability scanning | 60s (override recommended) | Bandit |
+| **Refactoring** | Modern Python idioms and suggestions | 60s (override recommended) | Refurb |
+| **Type Checking** | Static type analysis | 60s (override recommended) | Pyright/Zuban |
+
+### Configuring Quality Tool Timeouts
+
+Quality tools often require longer timeouts than standard operations. The default 60-second timeout is often insufficient for large codebases:
+
+```yaml
+# settings/adapters.yml
+bandit:
+  timeout_seconds: 300  # 5 minutes for security scans
+  severity_level: "medium"
+  confidence_level: "medium"
+
+refurb:
+  timeout_seconds: 240  # 4 minutes for refactoring analysis
+  enable_all: false
+  explain: false
+```
+
+### Base QA Adapter Configuration
+
+All QA adapters inherit from `QABaseSettings` which provides common configuration options:
+
+```python
+from crackerjack.adapters._qa_adapter_base import QABaseSettings
+
+class QABaseSettings(Settings):
+    enabled: bool = True
+    timeout_seconds: int = Field(60, ge=1, le=3600)  # Default 60s
+    file_patterns: list[str] = Field(default_factory=lambda: ["**/*.py"])
+    exclude_patterns: list[str] = Field(default_factory=list)
+    fail_on_error: bool = True
+    verbose: bool = False
+    cache_enabled: bool = True
+    cache_ttl: int = 3600
+    max_workers: int = Field(4, ge=1, le=16)
+```
+
 ## Available Adapters
 
 ACB includes the following adapter categories:

@@ -1,79 +1,79 @@
 {
   "mcpServers": {
-    "session-mgmt": {
-      "url": "http://localhost:8678/mcp",
-      "type": "http"
-    },
-    "crackerjack": {
-      "url": "http://localhost:8676/mcp",
-      "type": "http"
-    },
-    "macos_automator": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@steipete/macos-automator-mcp@0.4.1"
-      ],
-      "type": "stdio"
-    },
-    "memory": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-memory@2025.9.25"
-      ],
-      "type": "stdio"
-    },
-    "mermaid": {
-      "url": "http://localhost:3033/mcp",
-      "type": "http"
-    },
-    "context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp@1.0.20"
-      ],
-      "type": "stdio"
-    },
-    "excalidraw": {
-      "url": "http://localhost:3032/mcp",
-      "type": "http"
-    },
     "cloud-run": {
-      "command": "npx",
       "args": [
         "-y",
         "https://github.com/GoogleCloudPlatform/cloud-run-mcp"
       ],
+      "command": "npx",
       "type": "stdio"
     },
+    "context7": {
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@1.0.20"
+      ],
+      "command": "npx",
+      "type": "stdio"
+    },
+    "crackerjack": {
+      "type": "http",
+      "url": "http://localhost:8676/mcp"
+    },
+    "excalidraw": {
+      "type": "http",
+      "url": "http://localhost:3032/mcp"
+    },
     "logfire": {
-      "command": "uvx",
       "args": [
         "logfire-mcp@0.6.0"
       ],
+      "command": "uvx",
       "type": "stdio"
     },
+    "macos_automator": {
+      "args": [
+        "-y",
+        "@steipete/macos-automator-mcp@0.4.1"
+      ],
+      "command": "npx",
+      "type": "stdio"
+    },
+    "memory": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory@2025.9.25"
+      ],
+      "command": "npx",
+      "type": "stdio"
+    },
+    "mermaid": {
+      "type": "http",
+      "url": "http://localhost:3033/mcp"
+    },
     "sentry": {
-      "url": "https://mcp.sentry.dev/mcp",
-      "type": "http"
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp"
+    },
+    "session-mgmt": {
+      "type": "http",
+      "url": "http://localhost:8678/mcp"
     },
     "turso-cloud": {
-      "command": "npx",
       "args": [
         "-y",
         "mcp-turso-cloud@0.0.10"
       ],
+      "command": "npx",
       "type": "stdio"
     },
     "upstash": {
-      "command": "npx",
       "args": [
         "-y",
         "@upstash/mcp-server@0.2.0",
         "run"
       ],
+      "command": "npx",
       "type": "stdio"
     }
   }

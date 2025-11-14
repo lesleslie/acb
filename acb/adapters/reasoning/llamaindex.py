@@ -168,7 +168,7 @@ class LlamaIndexCallback:
         )
         self.steps.append(step)
         if self.logger is not None:
-            self.logger.debug(f"Starting retrieval for query: {query[:100]}...")
+            self.logger.debug(f"Starting retrieval for query: {query[:100]}")
 
     def on_retrieve_end(self, nodes: list[t.Any]) -> None:
         """Called when retrieval ends."""

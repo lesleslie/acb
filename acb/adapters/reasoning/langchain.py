@@ -189,7 +189,7 @@ class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
     async def on_tool_end(self, output: str, **kwargs: t.Any) -> None:
         """Called when a tool ends running."""
         if self.logger is not None:
-            self.logger.debug(f"Tool ended with output: {output[:100]}...")
+            self.logger.debug(f"Tool ended with output: {output[:100]}")
 
     async def on_tool_error(self, error: Exception, **kwargs: t.Any) -> None:
         """Called when a tool errors."""

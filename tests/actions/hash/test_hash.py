@@ -1,5 +1,6 @@
 """Tests for hashing functionality."""
 
+import asyncio
 import hashlib
 from collections.abc import Callable
 from pathlib import Path
@@ -347,107 +348,124 @@ class TestHashBenchmarks:
         return file_path
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_blake3_large_text_performance(
+    def test_blake3_large_text_performance(
         self,
         benchmark: BenchmarkFixture,
         large_text_data: str,
     ) -> None:
-        result = await benchmark(hash.blake3, large_text_data)
+        async def async_func():
+            return await hash.blake3(large_text_data)
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 64
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_blake3_large_binary_performance(
+    def test_blake3_large_binary_performance(
         self,
         benchmark: BenchmarkFixture,
         large_binary_data: bytes,
     ) -> None:
-        result = await benchmark(hash.blake3, large_binary_data)
+        async def async_func():
+            return await hash.blake3(large_binary_data)
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 64
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_blake3_large_file_performance(
+    def test_blake3_large_file_performance(
         self,
         benchmark: BenchmarkFixture,
         large_test_file: AsyncPath,
     ) -> None:
-        result = await benchmark(hash.blake3, str(large_test_file))
+        async def async_func():
+            return await hash.blake3(str(large_test_file))
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 64
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_crc32c_large_text_performance(
+    def test_crc32c_large_text_performance(
         self,
         benchmark: BenchmarkFixture,
         large_text_data: str,
     ) -> None:
-        result = await benchmark(hash.crc32c, large_text_data)
+        async def async_func():
+            return await hash.crc32c(large_text_data)
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 8
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_crc32c_large_binary_performance(
+    def test_crc32c_large_binary_performance(
         self,
         benchmark: BenchmarkFixture,
         large_binary_data: bytes,
     ) -> None:
-        result = await benchmark(hash.crc32c, large_binary_data)
+        async def async_func():
+            return await hash.crc32c(large_binary_data)
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 8
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_crc32c_large_file_performance(
+    def test_crc32c_large_file_performance(
         self,
         benchmark: BenchmarkFixture,
         large_test_file: AsyncPath,
     ) -> None:
-        result = await benchmark(hash.crc32c, str(large_test_file))
+        async def async_func():
+            return await hash.crc32c(str(large_test_file))
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 8
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_md5_large_text_performance(
+    def test_md5_large_text_performance(
         self,
         benchmark: BenchmarkFixture,
         large_text_data: str,
     ) -> None:
-        result = await benchmark(hash.md5, large_text_data)
+        async def async_func():
+            return await hash.md5(large_text_data)
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 32
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_md5_large_binary_performance(
+    def test_md5_large_binary_performance(
         self,
         benchmark: BenchmarkFixture,
         large_binary_data: bytes,
     ) -> None:
-        result = await benchmark(hash.md5, large_binary_data)
+        async def async_func():
+            return await hash.md5(large_binary_data)
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 32
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_md5_large_file_performance(
+    def test_md5_large_file_performance(
         self,
         benchmark: BenchmarkFixture,
         large_test_file: AsyncPath,
     ) -> None:
-        result = await benchmark(hash.md5, str(large_test_file))
+        async def async_func():
+            return await hash.md5(str(large_test_file))
+
+        result = benchmark(lambda: asyncio.run(async_func()))
         assert isinstance(result, str)
         assert len(result) == 32
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_hash_algorithms_comparison_performance(
+    def test_hash_algorithms_comparison_performance(
         self,
         benchmark: BenchmarkFixture,
         large_text_data: str,
@@ -458,15 +476,14 @@ class TestHashBenchmarks:
             md5_result = await hash.md5(large_text_data)
             return blake3_result, crc32c_result, md5_result
 
-        results = await benchmark(hash_with_all_algorithms)
-        assert len(results) == 3
-        assert len(results[0]) == 64  # blake3
-        assert len(results[1]) == 8  # crc32c
-        assert len(results[2]) == 32  # md5
+        result = benchmark(lambda: asyncio.run(hash_with_all_algorithms()))
+        assert len(result) == 3
+        assert len(result[0]) == 64  # blake3
+        assert len(result[1]) == 8  # crc32c
+        assert len(result[2]) == 32  # md5
 
     @pytest.mark.benchmark
-    @pytest.mark.asyncio
-    async def test_bulk_hash_operations_performance(
+    def test_bulk_hash_operations_performance(
         self,
         benchmark: BenchmarkFixture,
     ) -> None:
@@ -479,6 +496,6 @@ class TestHashBenchmarks:
                 results.append(blake3_result)
             return results
 
-        results = await benchmark(bulk_hash_operations)
+        results = benchmark(lambda: asyncio.run(bulk_hash_operations()))
         assert len(results) == 10
         assert all(len(result) == 64 for result in results)

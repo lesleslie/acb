@@ -417,7 +417,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
     async def _optimize_memory(self) -> None:
         """Optimize memory usage when approaching limits."""
         logger: t.Any = await depends.get("logger")
-        await logger.info("Memory limit approached, optimizing...")
+        await logger.info("Memory limit approached, optimizing")
 
         # LFM-specific memory optimization strategies would go here
         if self._memory_monitor:
