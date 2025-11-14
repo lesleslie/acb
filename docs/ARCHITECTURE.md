@@ -6,14 +6,14 @@ This guide explains ACB's simplified architecture and core design patterns.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Design Principles](#core-design-principles)
-- [Architecture Layers](#architecture-layers)
-- [Core Systems](#core-systems)
-- [Adapter Pattern](#adapter-pattern)
-- [Actions System](#actions-system)
-- [Testing Infrastructure](#testing-infrastructure)
-- [Integration Patterns](#integration-patterns)
+- [Overview](<#overview>)
+- [Core Design Principles](<#core-design-principles>)
+- [Architecture Layers](<#architecture-layers>)
+- [Core Systems](<#core-systems>)
+- [Adapter Pattern](<#adapter-pattern>)
+- [Actions System](<#actions-system>)
+- [Testing Infrastructure](<#testing-infrastructure>)
+- [Integration Patterns](<#integration-patterns>)
 
 ## Overview
 
@@ -398,7 +398,7 @@ blake3_hash = await hash.blake3("some data")
 - `acb.actions.encode`: JSON, YAML, TOML, MsgPack serialization
 - `acb.actions.hash`: blake3, crc32c, md5 hashing
 
-See [ACTION_TEMPLATE.md](./ACTION_TEMPLATE.md) for creating custom actions.
+See [ACTION_TEMPLATE.md](<./ACTION_TEMPLATE.md>) for creating custom actions.
 
 ## Testing Infrastructure
 
@@ -522,9 +522,9 @@ ACB's comprehensive architecture (v0.20.0+) focuses on:
 
 For implementation guidance:
 
-- [ARCHITECTURE_IMPLEMENTATION_GUIDE.md](./ARCHITECTURE_IMPLEMENTATION_GUIDE.md) - Complete guide to architectural layers and implementation patterns
-- [ACTION_TEMPLATE.md](./ACTION_TEMPLATE.md) - Creating custom actions
-- [ADAPTER_TEMPLATE.md](./ADAPTER_TEMPLATE.md) - Creating custom adapters
-- [PERFORMANCE-GUIDE.md](./PERFORMANCE-GUIDE.md) - Performance optimization
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and solutions
+- [ARCHITECTURE_IMPLEMENTATION_GUIDE.md](<./ARCHITECTURE_IMPLEMENTATION_GUIDE.md>) - Complete guide to architectural layers and implementation patterns
+- [ACTION_TEMPLATE.md](<./ACTION_TEMPLATE.md>) - Creating custom actions
+- [ADAPTER_TEMPLATE.md](<./ADAPTER_TEMPLATE.md>) - Creating custom adapters
+- [PERFORMANCE-GUIDE.md](<./PERFORMANCE-GUIDE.md>) - Performance optimization
+- [TROUBLESHOOTING.md](<./TROUBLESHOOTING.md>) - Common issues and solutions
 - [Individual adapter READMEs](../acb/adapters/) - Adapter-specific documentation

@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Services](../README.md) | [Validation Services](./README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Services](<../README.md>) | [Validation Services](<./README.md>)
 
 # ACB Services: Validation
 
@@ -7,12 +7,12 @@ enforcement built on top of the services layer.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Components](#core-components)
-- [Decorators & Shortcuts](#decorators--shortcuts)
-- [Usage Patterns](#usage-patterns)
-- [Performance & Metrics](#performance--metrics)
-- [Related Resources](#related-resources)
+- [Overview](<#overview>)
+- [Core Components](<#core-components>)
+- [Decorators & Shortcuts](<#decorators--shortcuts>)
+- [Usage Patterns](<#usage-patterns>)
+- [Performance & Metrics](<#performance--metrics>)
+- [Related Resources](<#related-resources>)
 
 ## Overview
 
@@ -76,7 +76,7 @@ async def handle_event(payload: dict[str, Any]) -> dict[str, Any]:
 
 ## Related Resources
 
-- [Services Layer](../README.md)
-- [Repository Services](../repository/README.md)
-- [Performance Services](../performance/README.md)
-- [Main Documentation](../../../README.md)
+- [Services Layer](<../README.md>)
+- [Repository Services](<../repository/README.md>)
+- [Performance Services](<../performance/README.md>)
+- [Main Documentation](<../../../README.md>)

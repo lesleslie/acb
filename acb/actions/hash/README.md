@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
 
 # Hash Action
 
@@ -6,20 +6,20 @@ The Hash action provides secure hashing functions for data integrity and checksu
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Usage](#usage)
-  - [Basic Hashing](#basic-hashing)
-  - [File Hashing](#file-hashing)
-  - [Checksum Verification](#checksum-verification)
-- [API Reference](#api-reference)
-  - [blake3](#blake3)
-  - [crc32c](#crc32c)
-  - [md5](#md5)
-- [Examples](#examples)
-- [Security Considerations](#security-considerations)
-- [Performance Comparison](#performance-comparison)
-- [Related Actions](#related-actions)
+- [Overview](<#overview>)
+- [Features](<#features>)
+- [Usage](<#usage>)
+  - [Basic Hashing](<#basic-hashing>)
+  - [File Hashing](<#file-hashing>)
+  - [Checksum Verification](<#checksum-verification>)
+- [API Reference](<#api-reference>)
+  - [blake3](<#blake3>)
+  - [crc32c](<#crc32c>)
+  - [md5](<#md5>)
+- [Examples](<#examples>)
+- [Security Considerations](<#security-considerations>)
+- [Performance Comparison](<#performance-comparison>)
+- [Related Actions](<#related-actions>)
 
 ## Overview
 
@@ -275,5 +275,5 @@ Approximate performance for 1GB of data on modern hardware:
 
 ## Related Actions
 
-- [Compress Action](../compress/README.md): Compression and decompression utilities
-- [Encode Action](../encode/README.md): Data serialization with formats like JSON, YAML, and MsgPack
+- [Compress Action](<../compress/README.md>): Compression and decompression utilities
+- [Encode Action](<../encode/README.md>): Data serialization with formats like JSON, YAML, and MsgPack

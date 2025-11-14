@@ -308,9 +308,9 @@ Common issues and solutions:
 
 For more detailed documentation:
 
-- [Main ACB Documentation](./README.md)
-- [Core Systems](./acb/README.md)
-- [Actions](./acb/actions/README.md)
-- [Adapters](./acb/adapters/README.md)
-- [Performance Guide](./docs/PERFORMANCE-GUIDE.md)
-- [Troubleshooting Guide](./docs/TROUBLESHOOTING.md)
+- [Main ACB Documentation](<./README.md>)
+- [Core Systems](<./acb/README.md>)
+- [Actions](<./acb/actions/README.md>)
+- [Adapters](<./acb/adapters/README.md>)
+- [Performance Guide](<./docs/PERFORMANCE-GUIDE.md>)
+- [Troubleshooting Guide](<./docs/TROUBLESHOOTING.md>)

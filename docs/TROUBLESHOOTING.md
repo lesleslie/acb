@@ -1,18 +1,18 @@
 # ACB Troubleshooting Guide
 
-> **Version:** 0.27.0 | **Documentation**: [README](../README.md) | [Architecture](./ARCHITECTURE.md) | [Migration](./MIGRATION.md)
+> **Version:** 0.27.0 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
 
 This guide helps you troubleshoot common issues when working with ACB v0.25.2 with comprehensive services, events, and workflow architecture.
 
 ## Table of Contents
 
-- [Installation Issues](#installation-issues)
-- [Configuration Issues](#configuration-issues)
-- [Dependency Injection Issues](#dependency-injection-issues)
-- [Adapter Issues](#adapter-issues)
-- [Testing Issues](#testing-issues)
-- [Performance Issues](#performance-issues)
-- [Common Error Messages](#common-error-messages)
+- [Installation Issues](<#installation-issues>)
+- [Configuration Issues](<#configuration-issues>)
+- [Dependency Injection Issues](<#dependency-injection-issues>)
+- [Adapter Issues](<#adapter-issues>)
+- [Testing Issues](<#testing-issues>)
+- [Performance Issues](<#performance-issues>)
+- [Common Error Messages](<#common-error-messages>)
 
 ## Installation Issues
 
@@ -327,9 +327,9 @@ debug:
 
 If you continue to experience issues:
 
-1. Check the [ACB Documentation](../README.md)
-1. Review [Architecture Guide](./ARCHITECTURE.md) for design patterns
-1. Check [Migration Guide](./MIGRATION.md) for breaking changes
+1. Check the [ACB Documentation](<../README.md>)
+1. Review [Architecture Guide](<./ARCHITECTURE.md>) for design patterns
+1. Check [Migration Guide](<./MIGRATION.md>) for breaking changes
 1. Review adapter-specific documentation in `acb/adapters/`
 1. Enable debug logging for more details
 1. Create a minimal reproduction case
