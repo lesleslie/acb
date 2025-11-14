@@ -278,3 +278,49 @@ class TestLoggerInternals:
 
         # Test that basic attributes are accessible
         assert logger.config is not None
+
+
+class TestLoggerModule:
+    """Test the logger module initialization and fallback."""
+
+    def test_get_logger_adapter_fallback(self) -> None:
+        """Test _get_logger_adapter fallback when import fails."""
+        from acb import logger as logger_module
+
+        with patch("acb.logger.import_adapter", side_effect=Exception("Import failed")):
+            # This should trigger the fallback path (lines 34, 36, 38)
+            result = logger_module._get_logger_adapter()
+            from acb.adapters.logger.loguru import Logger as LoguruLogger
+
+            assert result == LoguruLogger
+
+    def test_initialize_logger_not_in_testing_mode(self) -> None:
+        """Test _initialize_logger when not in testing mode."""
+        from acb import logger as logger_module
+
+        # Temporarily remove pytest from sys.modules to simulate non-test environment
+        pytest_module = sys.modules.get("pytest")
+        if pytest_module:
+            del sys.modules["pytest"]
+
+        try:
+            with patch.dict("os.environ", {"TESTING": "False"}):
+                # This should initialize the logger (lines 53-65)
+                logger_module._initialize_logger()
+        finally:
+            # Restore pytest module
+            if pytest_module:
+                sys.modules["pytest"] = pytest_module
+
+    def test_initialize_logger_already_registered(self) -> None:
+        """Test _initialize_logger when logger is already registered."""
+        from acb import logger as logger_module
+        from acb.depends import depends
+
+        # Register a logger instance
+        logger_class = logger_module._get_logger_adapter()
+        test_logger = logger_class()
+        depends.set(logger_class, test_logger)
+
+        # This should return early (line 58)
+        logger_module._initialize_logger()

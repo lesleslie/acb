@@ -548,7 +548,7 @@ ignore-words-list = "crate,uptodate,nd,nin,anull"
 column_width = 120
 indent = 4
 
-[tool.pytest.ini_options]
+[tool.pytest]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 python_files = [
@@ -570,9 +570,12 @@ markers = [
     "benchmark: mark test as a benchmark (disables parallel execution)",
     "integration: marks test as an integration test",
 ]
-timeout = 300
+timeout = "300"
 timeout_method = "thread"
-addopts = "--cov=acb --cov-report=term"
+addopts = [
+    "--cov=acb",
+    "--cov-report=term",
+]
 filterwarnings = [
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
 ]

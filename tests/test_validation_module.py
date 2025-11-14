@@ -38,6 +38,11 @@ class TestValidatorFactories:
         with pytest.raises(ValueError):
             validator("nope")
 
+    def test_pattern_validator_non_string(self) -> None:
+        validator = create_pattern_validator(re.compile(r"^sk-\w+$"))
+        with pytest.raises(ValueError, match="Expected string"):
+            validator(123)  # type: ignore[arg-type]
+
     def test_length_validator(self) -> None:
         validator = create_length_validator(2, 4)
         assert validator("abc") == "abc"
@@ -45,3 +50,8 @@ class TestValidatorFactories:
             validator("a")
         with pytest.raises(ValueError):
             validator("abcde")
+
+    def test_length_validator_non_string(self) -> None:
+        validator = create_length_validator(2, 4)
+        with pytest.raises(ValueError, match="Expected string"):
+            validator(123)  # type: ignore[arg-type]

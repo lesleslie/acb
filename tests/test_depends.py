@@ -172,3 +172,38 @@ class TestDepends:
 
         assert "requires async initialization" in str(exc_info.value)
         assert "Use 'await depends.get_async" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_get_async_with_cached_string_category(self) -> None:
+        """Test get_async with a cached string category."""
+        from bevy import get_container
+
+        # Register a string category in the container
+        service = SampleService(name="cached_service")
+        get_container().add("test_category", service)
+
+        # This should hit the cache path (lines 101-102)
+        result = await depends.get_async("test_category")
+        assert result is service
+        assert result.name == "cached_service"
+
+    def test_get_sync_with_cached_string_category(self) -> None:
+        """Test get_sync with a cached string category."""
+        from bevy import get_container
+
+        # Register a string category in the container
+        service = SampleService(name="sync_cached_service")
+        get_container().add("sync_test_category", service)
+
+        # This should hit the cache path (lines 156-157)
+        result = depends.get_sync("sync_test_category")
+        assert result is service
+        assert result.name == "sync_cached_service"
+
+    def test_clear(self) -> None:
+        """Test the clear method."""
+        service = SampleService(name="clear_test")
+        depends.set(SampleService, service)
+
+        # Clear should not raise an error
+        depends.clear()

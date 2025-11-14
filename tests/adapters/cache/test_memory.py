@@ -39,27 +39,42 @@ class TestCacheSettings:
         assert settings.template_ttl == 7200
 
     @pytest.mark.unit
-    def test_response_ttl_with_config(self, mock_config: MagicMock) -> None:
+    def test_response_ttl_deployed_false(self) -> None:
         from acb.config import Config
         from acb.depends import depends
 
         # Test with deployed=False
+        mock_config = MagicMock()
         mock_config.deployed = False
         depends.set(Config, mock_config)
         try:
             settings = CacheBaseSettings()
             assert settings.response_ttl == 1
         finally:
-            depends.set(Config, Config())
+            # Reset to avoid affecting other tests
+            try:
+                depends.set(Config, Config())
+            except Exception:
+                pass
+
+    @pytest.mark.unit
+    def test_response_ttl_deployed_true(self) -> None:
+        from acb.config import Config
+        from acb.depends import depends
 
         # Test with deployed=True
+        mock_config = MagicMock()
         mock_config.deployed = True
         depends.set(Config, mock_config)
         try:
             settings = CacheBaseSettings()
             assert settings.response_ttl == settings.default_ttl
         finally:
-            depends.set(Config, Config())
+            # Reset to avoid affecting other tests
+            try:
+                depends.set(Config, Config())
+            except Exception:
+                pass
 
 
 class TestMemoryCache:
