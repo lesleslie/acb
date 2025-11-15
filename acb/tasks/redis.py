@@ -203,7 +203,7 @@ class RedisQueue(QueueBase):
             )
 
             # Create Redis client
-            self._redis = Redis(
+            self._redis = Redis(  # type: ignore[abstract]
                 connection_pool=self._connection_pool,
                 decode_responses=True,
             )

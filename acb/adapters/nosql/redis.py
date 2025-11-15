@@ -155,7 +155,7 @@ class Nosql(NosqlBase):
     def client(self) -> t.Any:
         if not self._client:
             ssl_kwargs = self._build_ssl_kwargs()
-            self._client = redis.from_url(
+            self._client = redis.from_url(  # type: ignore[misc]
                 self.config.nosql.connection_string,
                 decode_responses=self.config.nosql.decode_responses,
                 encoding=self.config.nosql.encoding,

@@ -75,7 +75,7 @@ class Requests(RequestsBase):
         self._client_cache: dict[str, AsyncCacheClient] = {}
 
     async def _create_storage(self) -> AsyncRedisStorage:
-        redis_client = AsyncRedis(
+        redis_client = AsyncRedis(  # type: ignore[abstract]
             host=self.config.cache.host.get_secret_value(),
             port=self.config.cache.port,
         )
