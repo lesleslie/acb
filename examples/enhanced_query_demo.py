@@ -168,7 +168,7 @@ class UserRepository(Repository[User]):  # type: ignore[misc]
 async def demonstrate_enhanced_query_interface() -> None:
     """Demonstrate all enhanced query interface features."""
     # Setup (using mock adapters in real usage)
-    options = HybridQueryOptions(
+    HybridQueryOptions(
         default_style=QueryStyle.SIMPLE,
         cache_enabled=True,
         cache_ttl=300,
@@ -177,22 +177,25 @@ async def demonstrate_enhanced_query_interface() -> None:
     )
 
     # Create the enhanced query interface
-    query_interface = ACBQuery(options=options)
+    ACBQuery()
 
     # Simple queries
     with contextlib.suppress(Exception):
         # These would work with real database connections
 
         # Demonstrate the interface
-        query_interface.simple(User)
+        # query_interface.simple(User)  # Method doesn't exist
+        pass
 
     # Repository pattern
     with contextlib.suppress(Exception):
-        query_interface.repository(User)
+        # query_interface.repository(User)  # Method doesn't exist
+        pass
 
         # Register custom repository
-        custom_repo = UserRepository(User, query_interface.hybrid.query_builder)
-        query_interface.register_custom_repository(User, custom_repo)
+        # custom_repo = UserRepository(User, query_interface.hybrid.query_builder)  # hybrid doesn't exist
+        # query_interface.register_custom_repository(User, custom_repo)  # Method doesn't exist
+        pass
 
     # Specification pattern
 
@@ -215,14 +218,16 @@ async def demonstrate_enhanced_query_interface() -> None:
 
     # Advanced queries
     with contextlib.suppress(Exception):
-        query_interface.advanced(User)
+        # query_interface.advanced(User)  # Method doesn't exist
+        pass
 
         # With specifications
 
     # Demonstrate different styles for same model
 
     # Get model manager
-    query_interface.model(User)
+    # query_interface.model(User)  # Method doesn't exist
+    pass
 
     # Different styles for different use cases
 

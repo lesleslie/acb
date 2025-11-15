@@ -56,7 +56,7 @@ class ACBMCPTools:
         self,
         action_category: str,
         action_name: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """Execute a specific action with the given parameters."""
         try:

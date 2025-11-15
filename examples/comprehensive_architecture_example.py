@@ -15,7 +15,7 @@ from acb.adapters import import_adapter
 from acb.depends import depends
 from acb.events import EventHandlerResult, EventPublisher, create_event, event_handler
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
-from acb.tasks import TaskData, create_task_queue, task_handler
+from acb.tasks import TaskData, task_handler
 
 
 class UserManagementSettings(ServiceSettings):
@@ -29,7 +29,7 @@ class UserManagementSettings(ServiceSettings):
 class UserManagementService(ServiceBase):
     """Service for managing users with full lifecycle management."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         service_config = ServiceConfig(
             service_id="user_management_service",
             name="User Management Service",
@@ -58,10 +58,14 @@ class UserManagementService(ServiceBase):
 
     async def _health_check(self) -> dict[str, Any]:
         """Check service health."""
+        # Type the settings to the specific subclass
+        settings = self._settings
         return {
             "status": "healthy",
             "users_created": self._users_created,
-            "email_notifications_enabled": self._settings.enable_email_notifications,
+            "email_notifications_enabled": getattr(
+                settings, "enable_email_notifications", True
+            ),
         }
 
     @property
@@ -71,51 +75,70 @@ class UserManagementService(ServiceBase):
 
     async def create_user(self, user_data: dict[str, Any]) -> dict[str, Any]:
         """Create a new user and emit event."""
-        # Use adapters
+        # Import adapters for typing
         Cache = import_adapter("cache")
         SQL = import_adapter("sql")
 
-        cache = depends.get(Cache)
-        sql = depends.get(SQL)
-
         # Create user record
+        settings = self._settings
         user = {
             "id": user_data.get("id", self._users_created + 1),
             "name": user_data.get("name"),
             "email": user_data.get("email"),
-            "role": user_data.get("role", self._settings.default_user_role),
+            "role": user_data.get(
+                "role", getattr(settings, "default_user_role", "user")
+            ),
             "created_at": datetime.now().isoformat(),
         }
 
-        # Save to database
-        async with sql.get_session():
-            # This is a simplified example - in real app you'd use proper ORM patterns
-            print(f"Saving user to database: {user}")
+        # Save to database and cache - access them through dependency injection
+        # For this simplified example, we'll assume they have the expected interface
+        try:
+            sql: Any = depends.get(SQL)
+            if hasattr(sql, "get_session") and callable(getattr(sql, "get_session")):
+                # For demonstration purposes only - in real usage, handle properly
+                print(f"Saving user to database: {user}")
+        except Exception:
+            print("Could not access SQL adapter, skipping database save")
 
-        # Save to cache
-        await cache.set(f"user:{user['id']}", user, ttl=3600)
+        try:
+            cache: Any = depends.get(Cache)
+            if hasattr(cache, "set") and callable(getattr(cache, "set")):
+                await cache.set(f"user:{user['id']}", user, ttl=3600)
+            else:
+                print(
+                    f"Cache doesn't have set method, skipping cache update for user {user['id']}"
+                )
+        except Exception:
+            print(
+                f"Could not access cache adapter, skipping cache update for user {user['id']}"
+            )
 
         # Update service metrics
         self._users_created += 1
 
         # Emit event
-        user_event = create_event(
-            "user.created",
-            "user_management_service",
-            {
-                "user_id": user["id"],
-                "email": user["email"],
-                "name": user["name"],
-                "timestamp": user["created_at"],
-            },
-        )
-        await self._publisher.publish(user_event)
+        if self._publisher:
+            user_event = create_event(
+                "user.created",
+                "user_management_service",
+                {
+                    "user_id": user["id"],
+                    "email": user["email"],
+                    "name": user["name"],
+                    "timestamp": user["created_at"],
+                },
+            )
+            await self._publisher.publish(user_event)
 
         return user
 
 
+from acb.events import Event
+
+
 @event_handler("user.created")
-async def handle_user_created(event):
+async def handle_user_created(event: Event) -> EventHandlerResult:
     """Handle user creation event."""
     user_id = event.payload.get("user_id")
     email = event.payload.get("email")
@@ -126,9 +149,12 @@ async def handle_user_created(event):
     # For demo, we'll simulate with a task
     if True:  # Assuming email notifications are enabled
         # Enqueue a task to send welcome email
-        async with create_task_queue("memory") as queue:
+        from acb.tasks import create_queue
+
+        async with create_queue("memory") as queue:
             email_task = TaskData(
                 task_type="send_welcome_email",
+                queue_name="default",
                 payload={"user_email": email, "user_id": user_id},
             )
             await queue.enqueue(email_task)
@@ -151,7 +177,7 @@ async def send_welcome_email_task(task_data: TaskData) -> dict[str, Any]:
     return {"status": "email_sent", "user_email": user_email, "user_id": user_id}
 
 
-async def main():
+async def main() -> None:
     """Demonstrate the complete architecture."""
     print("=== ACB Architecture Example ===")
     print("Demonstrating Services + Events + Tasks + Adapters working together\n")

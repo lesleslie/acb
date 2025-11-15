@@ -176,6 +176,8 @@ ACB_MIN_VERSION = "0.19.1"
 
 
 # Service integration with ACB Services Layer
+import typing as t
+
 from acb.services import (
     ServiceBase,
     ServiceCapability,
@@ -306,7 +308,7 @@ class EventsService(ServiceBase):
         self,
         handler: EventHandler,
         event_type: str | None = None,
-        **kwargs,
+        **kwargs: t.Any,
     ) -> str:
         """Subscribe to events."""
         if not self._subscriber:

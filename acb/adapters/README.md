@@ -132,6 +132,7 @@ All QA adapters inherit from `QABaseSettings` which provides common configuratio
 ```python
 from crackerjack.adapters._qa_adapter_base import QABaseSettings
 
+
 class QABaseSettings(Settings):
     enabled: bool = True
     timeout_seconds: int = Field(60, ge=1, le=3600)  # Default 60s

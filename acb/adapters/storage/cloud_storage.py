@@ -66,7 +66,8 @@ class Storage(StorageBase):
     def get_client(config: Config = depends()) -> Client:
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
-            return Client(project=config.app.project)
+            project = config.app.project if config.app else None
+            return Client(project=project)
 
     def set_cors(self, bucket_name: str, cors_config: str) -> None:
         bucket = self.get_client().get_bucket(bucket_name)

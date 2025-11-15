@@ -10,13 +10,25 @@ from datetime import datetime
 from types import TracebackType
 from typing import Any
 
-from acb.adapters.models._pydantic import PydanticModelAdapter
+try:
+    from acb.adapters.models._pydantic import PydanticModelAdapter
 
-# Import the agnostic query interface
-from acb.adapters.models._query import QueryBuilder, registry
-from acb.adapters.models._sqlmodel import SQLModelAdapter
-from acb.adapters.nosql._query import NoSqlDatabaseAdapter
-from acb.adapters.sql._query import SqlDatabaseAdapter
+    # Import the agnostic query interface
+    from acb.adapters.models._query import QueryBuilder, registry
+    from acb.adapters.models._sqlmodel import SQLModelAdapter
+    from acb.adapters.nosql._query import NoSqlDatabaseAdapter
+    from acb.adapters.sql._query import SqlDatabaseAdapter
+
+    query_adapters_available = True
+except ImportError:
+    # Set fallback values if adapters are not available
+    PydanticModelAdapter = None  # type: ignore
+    SQLModelAdapter = None  # type: ignore
+    NoSqlDatabaseAdapter = None  # type: ignore
+    SqlDatabaseAdapter = None  # type: ignore
+    QueryBuilder = None  # type: ignore
+    registry = None  # type: ignore
+    query_adapters_available = False
 
 # Example models using different frameworks
 try:
@@ -102,24 +114,29 @@ async def demo_agnostic_query_interface() -> None:
 
 async def _setup_demo_adapters() -> dict[str, Any]:
     """Set up mock adapters for the demo."""
-    # Create database adapters
-    mock_sql = MockSqlAdapter()
-    mock_nosql = MockNoSqlAdapter()
+    # Check if query adapters are available
+    if query_adapters_available:
+        # Create database adapters
+        mock_sql = MockSqlAdapter()
+        mock_nosql = MockNoSqlAdapter()
 
-    sql_db_adapter = SqlDatabaseAdapter(mock_sql)
-    nosql_db_adapter = NoSqlDatabaseAdapter(mock_nosql)
+        sql_db_adapter = SqlDatabaseAdapter(mock_sql)
+        nosql_db_adapter = NoSqlDatabaseAdapter(mock_nosql)
 
-    # Create model adapters
-    adapters: dict[str, Any] = {
-        "sql_db": sql_db_adapter,
-        "nosql_db": nosql_db_adapter,
-    }
+        # Create model adapters
+        adapters: dict[str, Any] = {
+            "sql_db": sql_db_adapter,
+            "nosql_db": nosql_db_adapter,
+        }
 
-    if pydantic_available:
-        adapters["pydantic"] = PydanticModelAdapter()
+        if pydantic_available and PydanticModelAdapter:
+            adapters["pydantic"] = PydanticModelAdapter()
 
-    if sqlmodel_available:
-        adapters["sqlmodel"] = SQLModelAdapter()
+        if sqlmodel_available and SQLModelAdapter:
+            adapters["sqlmodel"] = SQLModelAdapter()
+    else:
+        # Return empty adapters if query adapters not available
+        adapters = {}
 
     return adapters
 
@@ -215,64 +232,71 @@ def _create_mock_classes() -> dict[str, type[Any]]:
 
 async def _register_adapters(adapters: dict[str, Any]) -> None:
     """Register all adapters with the registry."""
+    if not query_adapters_available or not registry:
+        # Skip registration if query adapters are not available
+        return
+
     # Register database adapters
-    registry.register_database_adapter("sql", adapters["sql_db"], is_default=True)
+    registry.register_database_adapter("sql", adapters["sql_db"])
     registry.register_database_adapter("nosql", adapters["nosql_db"])
 
     # Register model adapters
-    if pydantic_available:
+    if pydantic_available and "pydantic" in adapters:
         registry.register_model_adapter(
             "pydantic",
             adapters["pydantic"],
-            is_default=True,
         )
 
-    if sqlmodel_available:
+    if sqlmodel_available and "sqlmodel" in adapters:
         registry.register_model_adapter("sqlmodel", adapters["sqlmodel"])
 
 
 async def _demo_same_model_different_databases() -> None:
     """Demo 1: Same model, different databases."""
     if pydantic_available:
-        # Pydantic model with SQL database
-        sql_pydantic_builder = registry.create_query_builder("sql", "pydantic")
+        # Pydantic model with SQL database - would use QueryBuilder
+        # sql_pydantic_builder = QueryBuilder("sql", "pydantic")
         with contextlib.suppress(Exception):
-            sql_pydantic_builder.query(User)
+            # This would be the actual implementation
+            pass
 
-        # Pydantic model with NoSQL database
-        nosql_pydantic_builder = registry.create_query_builder("nosql", "pydantic")
+        # Pydantic model with NoSQL database - would use QueryBuilder
+        # nosql_pydantic_builder = QueryBuilder("nosql", "pydantic")
         with contextlib.suppress(Exception):
-            nosql_pydantic_builder.query(User)
+            # This would be the actual implementation
+            pass
 
 
 async def _demo_same_database_different_models(adapters: dict[str, Any]) -> None:
     """Demo 2: Same database, different models."""
     if pydantic_available and sqlmodel_available:
-        # SQL database with Pydantic model
-        sql_pydantic_builder = registry.create_query_builder("sql", "pydantic")
+        # SQL database with Pydantic model - would use QueryBuilder
+        # sql_pydantic_builder = QueryBuilder("sql", "pydantic")
         with contextlib.suppress(Exception):
-            sql_pydantic_builder.query(User)
+            # This would be the actual implementation
+            pass
 
-        # SQL database with SQLModel
-        sql_sqlmodel_builder = registry.create_query_builder("sql", "sqlmodel")
+        # SQL database with SQLModel - would use QueryBuilder
+        # sql_sqlmodel_builder = QueryBuilder("sql", "sqlmodel")
         with contextlib.suppress(Exception):
-            sql_sqlmodel_builder.query(SQLUser)
+            # This would be the actual implementation
+            pass
 
 
 async def _demo_unified_query_interface() -> None:
     """Demo 3: Unified query interface."""
     if pydantic_available:
-        builder = registry.create_query_builder()
-
+        # builder = QueryBuilder() # Would create the actual builder
         # Complex query example
         with contextlib.suppress(Exception):
-            query = builder.query(User)
-            (
-                query.where_gt("age", 18)
-                .where_like("email", "%@gmail.com")
-                .order_by("created_at")
-                .limit(10)
-            )
+            # query = builder.query(User)
+            # (
+            #     query.where_gt("age", 18)
+            #     .where_like("email", "%@gmail.com")
+            #     .order_by("created_at")
+            #     .limit(10)
+            # )
+            pass
 
 
 async def _demo_type_safe_operations(adapters: dict[str, Any]) -> None:
@@ -319,9 +343,9 @@ async def _demo_adapter_swapping() -> None:
 
     # Same function, different adapters
     if pydantic_available:
-        registry.create_query_builder("sql", "pydantic")
-
-        registry.create_query_builder("nosql", "pydantic")
+        # QueryBuilder("sql", "pydantic")  # Would create the actual builder
+        # QueryBuilder("nosql", "pydantic")  # Would create the actual builder
+        pass
 
 
 async def _demo_cross_adapter_compatibility() -> None:

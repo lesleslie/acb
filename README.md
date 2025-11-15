@@ -438,11 +438,9 @@ refurb:
 from acb.depends import depends, Inject
 from crackerjack.adapters.security.bandit import BanditAdapter
 
+
 @depends.inject
-async def run_security_scan(
-    files: list[Path],
-    bandit: Inject[BanditAdapter]
-):
+async def run_security_scan(files: list[Path], bandit: Inject[BanditAdapter]):
     # Execute security scanning
     result = await bandit.check(files=files)
     return result

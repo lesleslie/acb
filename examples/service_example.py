@@ -6,6 +6,7 @@ and dependency injection.
 """
 
 import asyncio
+import typing as t
 from typing import Any
 
 from acb.adapters import import_adapter
@@ -24,7 +25,7 @@ class ExampleServiceSettings(ServiceSettings):
 class ExampleService(ServiceBase):
     """An example service demonstrating ACB service patterns."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         service_config = ServiceConfig(
             service_id="example_service",
             name="Example Service",
@@ -36,8 +37,8 @@ class ExampleService(ServiceBase):
         super().__init__(service_config, settings)
 
         # Service-specific state
-        self._items_processed = 0
-        self._processing_queue = asyncio.Queue()
+        self._items_processed: int = 0
+        self._processing_queue: asyncio.Queue[t.Any] = asyncio.Queue()
 
     async def _initialize(self) -> None:
         """Service-specific initialization logic."""
@@ -62,13 +63,13 @@ class ExampleService(ServiceBase):
 
     async def _health_check(self) -> dict[str, Any]:
         """Service-specific health check logic."""
+        # Type the settings to the specific subclass
+        settings: ExampleServiceSettings = self._settings  # type: ignore
         return {
             "status": "healthy",
             "items_processed": self._items_processed,
             "queue_size": self._processing_queue.qsize(),
-            "processing_delay": self._settings.processing_delay
-            if hasattr(self, "_settings")
-            else 1.0,
+            "processing_delay": settings.processing_delay,
         }
 
     async def add_item(self, item: Any) -> None:
@@ -94,7 +95,8 @@ class ExampleService(ServiceBase):
     async def _process_item(self, item: Any) -> None:
         """Process a single item."""
         # Simulate processing with delay
-        await asyncio.sleep(self._settings.processing_delay)
+        settings: ExampleServiceSettings = self._settings  # type: ignore
+        await asyncio.sleep(settings.processing_delay)
         self.logger.info(f"Processed item: {item}")
 
     @property
@@ -107,12 +109,12 @@ class ExampleService(ServiceBase):
 @depends.inject
 async def use_example_service(
     example_service: ExampleService = depends(),
-    cache=depends(),  # Will auto-detect cache adapter
-):
+    cache: t.Any = depends(),  # Will auto-detect cache adapter
+) -> int:
     """Example function showing how to use the service."""
-    # Initialize cache adapter
+    # Import cache adapter type for proper typing
     Cache = import_adapter("cache")
-    cache = depends.get(Cache)
+    typed_cache: Cache = cache  # type: ignore
 
     # Add some items to the service
     await example_service.add_item({"id": 1, "data": "example 1"})
@@ -123,13 +125,17 @@ async def use_example_service(
     processed_count = await example_service.process_items()
     print(f"Processed {processed_count} items")
 
-    # Update metrics in cache
-    await cache.set("example_service:last_processed", processed_count)
+    # Update metrics in cache - use hasattr to ensure method exists
+    if hasattr(typed_cache, "set"):  # type: ignore
+        await typed_cache.set("example_service:last_processed", processed_count)  # type: ignore
+    else:
+        # Fallback if the cache doesn't have a set method
+        print("Cache doesn't have set method, skipping cache update")
 
     return processed_count
 
 
-async def main():
+async def main() -> None:
     """Main function to demonstrate the service."""
     # Create and initialize the service
     service = ExampleService()

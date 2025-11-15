@@ -19,7 +19,7 @@ class WorkflowOrchestrator:
         """Initialize the workflow orchestrator."""
         self.component_registry = component_registry
         self.logger: LoggerProtocol = depends.get(Logger)  # type: ignore[assignment]
-        self._active_workflows: dict[str, asyncio.Task] = {}
+        self._active_workflows: dict[str, asyncio.Task[Any]] = {}
         self._initialized = False
 
     async def initialize(self) -> None:
@@ -144,7 +144,7 @@ class WorkflowOrchestrator:
     ) -> None:
         """Start a workflow in the background."""
 
-        async def _run_workflow():
+        async def _run_workflow() -> dict[str, Any]:
             return await self.execute_workflow(workflow_id, steps)
 
         task = asyncio.create_task(_run_workflow())

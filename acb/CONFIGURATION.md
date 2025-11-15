@@ -193,6 +193,7 @@ ACB includes configurable timeouts across various components, particularly impor
 ```python
 from pydantic import Field
 
+
 class QABaseSettings(Settings):
     timeout_seconds: int = Field(60, ge=1, le=3600)  # Default 60 seconds
 ```

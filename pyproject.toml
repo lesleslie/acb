@@ -56,6 +56,7 @@ dependencies = [
     "fastmcp>=2.0.0",
     "mcp-common>=0.2.0",
     "urllib3>=2.5.0",
+    "crackerjack",
 ]
 
 [project.license]
@@ -69,7 +70,7 @@ Repository = "https://github.com/lesleslie/acb"
 [dependency-groups]
 dev = [
     "complexipy>=3.2",
-    "crackerjack>=0.31",
+    "crackerjack>=0.44.16",
     "excalidraw-mcp>=0.34.0",
     "pre-commit>=4.2",
     "pytest>=8.4.1",
@@ -85,7 +86,6 @@ dev = [
     "types-croniter>=6.0.0.20250809",
 ]
 cache = [
-    "acb",
     "aiocache[redis]>=0.12.3",
     "coredis>=4.24",
     "logfire[redis]>=3.24",
@@ -131,7 +131,6 @@ templates = [
     "jinja2-async-environment>=0.14.3",
 ]
 sql = [
-    "acb",
     "aiomysql>=0.2",
     "aiosqlite>=0.21",
     "babel>=2.17",
@@ -147,7 +146,6 @@ sql = [
     "sqlmodel>=0.0.24",
 ]
 nosql = [
-    "acb",
     "beanie>=1.30",
     "google-cloud-firestore>=2.21",
     "motor>=3.7.1",
@@ -540,7 +538,7 @@ max-complexity = 15
 convention = "google"
 
 [tool.codespell]
-skip = "*/data/*,tests/*,.git/*,.mypy_cache/*,htmlcov/*,test_*.py,*_test.py"
+skip = "*/data/*,tests/*,.git/*,.mypy_cache/*,htmlcov/**/*,test_*.py,*_test.py"
 quiet-level = 3
 ignore-words-list = "crate,uptodate,nd,nin,anull"
 
@@ -735,6 +733,9 @@ ignore_names = [
 [tool.uv]
 keyring-provider = "subprocess"
 index-url = "https://pypi.org/simple/"
+
+[tool.uv.sources]
+crackerjack = { path = "../crackerjack", editable = true }
 
 [tool.uv.sources.acb]
 workspace = true

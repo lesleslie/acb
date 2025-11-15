@@ -472,8 +472,8 @@ The SQL adapter integrates seamlessly with other ACB adapters:
 
 ## Additional Resources
 
-- [Universal Query Interface Documentation](../models/README.md)
-- [Specification Pattern Examples](../models/README.md#specification-pattern)
-- [Repository Pattern Examples](../models/README.md#repository-pattern)
+- [Universal Query Interface Documentation](<../models/README.md>)
+- [Specification Pattern Examples](<../models/README.md#specification-pattern>)
+- [Repository Pattern Examples](<../models/README.md#repository-pattern>)
 - [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
 - [SQLAlchemy Async Documentation](https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html)

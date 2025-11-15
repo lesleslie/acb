@@ -431,17 +431,27 @@ class Settings(BaseModel):
             # This creates a minimal instance that will be properly initialized later
             try:
                 import asyncio
+                import threading
 
+                # Check if we're in a running event loop
                 asyncio.get_running_loop()
-                # We're in an async context but being called synchronously
-                # This is problematic - defer to create_async()
-                msg = (
-                    "Settings require async initialization. "
-                    "Use 'await Settings.create_async()' instead."
-                )
-                raise RuntimeError(
-                    msg,
-                )
+
+                # If we're in a different thread than the event loop's thread (like from asyncio.to_thread),
+                # allow sync initialization to prevent issues with cross-thread contexts
+                # We can check if we're in the main thread which typically runs the event loop
+                if threading.current_thread() != threading.main_thread():
+                    # We're in a different thread context (e.g., from asyncio.to_thread)
+                    # Allow sync initialization to prevent blocking crackerjack workflows
+                    super().__init__(**values)
+                else:
+                    # We're in the same thread as the event loop - require async initialization
+                    msg = (
+                        "Settings require async initialization. "
+                        "Use 'await Settings.create_async()' instead."
+                    )
+                    raise RuntimeError(
+                        msg,
+                    )
             except RuntimeError as e:
                 if "no running event loop" in str(e):
                     # No event loop - create minimal instance for now

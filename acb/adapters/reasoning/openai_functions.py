@@ -278,10 +278,38 @@ class Reasoning(ReasoningBase):
         reasoning_chain: list[ReasoningStep],
     ) -> ReasoningResponse:
         """Perform reasoning with function calling."""
-        # Prepare messages
-        messages = await self._prepare_messages(request)
+        messages = await self._initialize_function_calling(request, reasoning_chain)
+        functions = self._prepare_functions(request.tools or [])
+        max_calls = min(request.max_steps, self._settings.max_function_calls)
 
-        # Prepare functions
+        final_answer = await self._process_function_calls(
+            request,
+            client,
+            functions,
+            function_tracker,
+            reasoning_chain,
+            messages,
+            max_calls,
+        )
+
+        if not final_answer:
+            final_answer = "Reasoning completed through function calls"
+
+        return ReasoningResponse(
+            final_answer=final_answer,
+            reasoning_chain=[],  # Will be set by caller
+            strategy_used=ReasoningStrategy.FUNCTION_CALLING,
+            provider=ReasoningProvider.OPENAI_FUNCTIONS,
+            confidence_score=0.9,  # High confidence with function calling
+        )
+
+    async def _initialize_function_calling(
+        self,
+        request: ReasoningRequest,
+        reasoning_chain: list[ReasoningStep],
+    ) -> list[dict]:
+        """Initialize function calling by preparing messages and adding to reasoning chain."""
+        messages = await self._prepare_messages(request)
         functions = self._prepare_functions(request.tools or [])
 
         reasoning_chain.append(
@@ -300,121 +328,182 @@ class Reasoning(ReasoningBase):
                 reasoning="Set up function calling with available tools and conversation context",
             ),
         )
+        return messages
 
-        final_answer = ""
+    async def _process_function_calls(
+        self,
+        request: ReasoningRequest,
+        client: AsyncOpenAI,
+        functions: list,
+        function_tracker: FunctionCallTracker,
+        reasoning_chain: list[ReasoningStep],
+        messages: list,
+        max_calls: int,
+    ) -> str:
+        """Process function calls iteratively."""
         call_count = 0
-        max_calls = min(request.max_steps, self._settings.max_function_calls)
+        final_answer = ""
 
         while call_count < max_calls:
-            try:
-                # Make API call
-                response = await client.chat.completions.create(  # type: ignore[call-overload]
-                    model=request.model or self._settings.model,
-                    messages=messages,  # type: ignore[arg-type]
-                    tools=functions or None,  # type: ignore[arg-type]
-                    tool_choice=self._settings.function_call_strategy
-                    if functions
-                    else None,
-                    temperature=request.temperature,
-                    max_tokens=request.max_tokens,
-                    presence_penalty=self._settings.presence_penalty,
-                    frequency_penalty=self._settings.frequency_penalty,
-                    top_p=self._settings.top_p,
-                )
+            iteration_result = await self._execute_single_iteration(
+                request,
+                client,
+                functions,
+                function_tracker,
+                reasoning_chain,
+                messages,
+                call_count,
+            )
 
-                message = response.choices[0].message
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": message.content,
-                        "tool_calls": [
-                            {
-                                "id": tool_call.id,
-                                "type": tool_call.type,
-                                "function": {
-                                    "name": tool_call.function.name,
-                                    "arguments": tool_call.function.arguments,
-                                },
-                            }
-                            for tool_call in (message.tool_calls or [])
-                        ]
-                        if message.tool_calls
-                        else None,
-                    },
-                )
+            final_answer = iteration_result["final_answer"]
+            call_count = iteration_result["new_call_count"]
 
-                # Check if function calls were made
-                if message.tool_calls:
-                    # Execute function calls
-                    tool_results = await self._execute_tool_calls(
-                        message.tool_calls,
-                        request.tools or [],
-                        function_tracker,
-                    )
-
-                    reasoning_chain.append(
-                        ReasoningStep(
-                            step_id=f"function_calls_{call_count + 1}",
-                            description=f"Execute {len(message.tool_calls)} function calls",
-                            input_data={
-                                "tool_calls": [
-                                    {
-                                        "name": tc.function.name,
-                                        "arguments": tc.function.arguments,
-                                    }
-                                    for tc in message.tool_calls
-                                ],
-                            },
-                            output_data={"results": tool_results},
-                            reasoning=f"Executed {len(message.tool_calls)} tool calls to gather information",
-                            tools_used=[tc.function.name for tc in message.tool_calls],
-                        ),
-                    )
-
-                    # Add tool results to messages
-                    for tool_call, result in zip(
-                        message.tool_calls, tool_results, strict=False
-                    ):
-                        messages.append(
-                            {
-                                "role": "tool",
-                                "tool_call_id": tool_call.id,
-                                "content": json.dumps(result),
-                            },
-                        )
-
-                    call_count += 1
-                else:
-                    # No more function calls, we have the final answer
-                    final_answer = message.content or ""
-                    break
-
-            except Exception as e:
-                if self.logger is not None:
-                    self.logger.exception(
-                        f"Error in function calling iteration {call_count}: {e}",
-                    )
-                reasoning_chain.append(
-                    ReasoningStep(
-                        step_id=f"error_{call_count}",
-                        description="Error in function calling",
-                        input_data={"iteration": call_count},
-                        output_data={},
-                        reasoning=f"Error occurred during function calling: {e!s}",
-                        error=str(e),
-                    ),
-                )
+            # If we have final answer or hit max count, break
+            if final_answer or call_count >= max_calls:
                 break
 
-        if not final_answer:
-            final_answer = "Reasoning completed through function calls"
+        return final_answer
 
-        return ReasoningResponse(
-            final_answer=final_answer,
-            reasoning_chain=[],  # Will be set by caller
-            strategy_used=ReasoningStrategy.FUNCTION_CALLING,
-            provider=ReasoningProvider.OPENAI_FUNCTIONS,
-            confidence_score=0.9,  # High confidence with function calling
+    async def _execute_single_iteration(
+        self,
+        request: ReasoningRequest,
+        client: AsyncOpenAI,
+        functions: list,
+        function_tracker: FunctionCallTracker,
+        reasoning_chain: list[ReasoningStep],
+        messages: list,
+        call_count: int,
+    ) -> dict[str, t.Any]:
+        """Execute a single iteration of function calling."""
+        try:
+            response = await client.chat.completions.create(  # type: ignore[call-overload]
+                model=request.model or self._settings.model,
+                messages=messages,  # type: ignore[arg-type]
+                tools=functions or None,  # type: ignore[arg-type]
+                tool_choice=self._settings.function_call_strategy
+                if functions
+                else None,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                presence_penalty=self._settings.presence_penalty,
+                frequency_penalty=self._settings.frequency_penalty,
+                top_p=self._settings.top_p,
+            )
+
+            message = response.choices[0].message
+            messages.append(self._format_assistant_message(message))
+
+            if message.tool_calls:
+                return await self._handle_tool_calls(
+                    message,
+                    request,
+                    function_tracker,
+                    reasoning_chain,
+                    messages,
+                    call_count,
+                )
+            else:
+                # No more function calls, we have the final answer
+                return {
+                    "final_answer": message.content or "",
+                    "new_call_count": call_count + 1,
+                }
+
+        except Exception as e:
+            self._handle_error(e, call_count, reasoning_chain)
+            return {"final_answer": "", "new_call_count": call_count + 1}
+
+    def _format_assistant_message(self, message) -> dict:
+        """Format the assistant message for inclusion in conversation."""
+        return {
+            "role": "assistant",
+            "content": message.content,
+            "tool_calls": [
+                {
+                    "id": tool_call.id,
+                    "type": tool_call.type,
+                    "function": {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    },
+                }
+                for tool_call in (message.tool_calls or [])
+            ]
+            if message.tool_calls
+            else None,
+        }
+
+    async def _handle_tool_calls(
+        self,
+        message,
+        request: ReasoningRequest,
+        function_tracker: FunctionCallTracker,
+        reasoning_chain: list[ReasoningStep],
+        messages: list,
+        call_count: int,
+    ) -> dict[str, t.Any]:
+        """Handle the execution and processing of tool calls."""
+        # Execute function calls
+        tool_results = await self._execute_tool_calls(
+            message.tool_calls,
+            request.tools or [],
+            function_tracker,
+        )
+
+        reasoning_chain.append(
+            self._create_tool_call_step(message, tool_results, call_count)
+        )
+
+        # Add tool results to messages
+        for tool_call, result in zip(message.tool_calls, tool_results, strict=False):
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps(result),
+                },
+            )
+
+        return {"final_answer": "", "new_call_count": call_count + 1}
+
+    def _create_tool_call_step(
+        self, message, tool_results: list, call_count: int
+    ) -> ReasoningStep:
+        """Create a reasoning step for the tool calls."""
+        return ReasoningStep(
+            step_id=f"function_calls_{call_count + 1}",
+            description=f"Execute {len(message.tool_calls)} function calls",
+            input_data={
+                "tool_calls": [
+                    {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    }
+                    for tc in message.tool_calls
+                ],
+            },
+            output_data={"results": tool_results},
+            reasoning=f"Executed {len(message.tool_calls)} tool calls to gather information",
+            tools_used=[tc.function.name for tc in message.tool_calls],
+        )
+
+    def _handle_error(
+        self, e: Exception, call_count: int, reasoning_chain: list[ReasoningStep]
+    ) -> None:
+        """Handle exceptions during function calling."""
+        if self.logger is not None:
+            self.logger.exception(
+                f"Error in function calling iteration {call_count}: {e}",
+            )
+        reasoning_chain.append(
+            ReasoningStep(
+                step_id=f"error_{call_count}",
+                description="Error in function calling",
+                input_data={"iteration": call_count},
+                output_data={},
+                reasoning=f"Error occurred during function calling: {e!s}",
+                error=str(e),
+            ),
         )
 
     async def _chain_of_thought_reasoning(

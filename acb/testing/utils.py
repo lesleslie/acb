@@ -58,25 +58,45 @@ def assert_service_interface(
         # Common service methods vary by type, but check basic structure
         expected_methods = []
 
-    # Check that service has SERVICE_METADATA if it's a discoverable service
+    _validate_service_metadata(service_class)
+    _validate_expected_methods(service_class, expected_methods)
+
+
+def _validate_service_metadata(service_class: type) -> None:
+    """Validate service metadata if present."""
     if hasattr(service_class, "SERVICE_METADATA"):
         metadata = service_class.SERVICE_METADATA
         if metadata is None:
             raise AssertionError("Service metadata should not be None")
-        if not hasattr(metadata, "name"):
-            raise AssertionError("Service metadata should have name")
-        if not hasattr(metadata, "category"):
-            raise AssertionError("Service metadata should have category")
+        _validate_metadata_attributes(metadata)
 
+
+def _validate_metadata_attributes(metadata: t.Any) -> None:
+    """Validate that metadata has required attributes."""
+    if not hasattr(metadata, "name"):
+        raise AssertionError("Service metadata should have name")
+    if not hasattr(metadata, "category"):
+        raise AssertionError("Service metadata should have category")
+
+
+def _validate_expected_methods(
+    service_class: type, expected_methods: list[str]
+) -> None:
+    """Validate that all expected methods exist and are callable."""
     for method_name in expected_methods:
-        if not hasattr(service_class, method_name):
-            raise AssertionError(f"Service missing method: {method_name}")
+        _validate_single_method(service_class, method_name)
 
-        method = getattr(service_class, method_name)
-        if not callable(method):
-            raise AssertionError(
-                f"Service method {method_name} is not callable",
-            )
+
+def _validate_single_method(service_class: type, method_name: str) -> None:
+    """Validate a single method."""
+    if not hasattr(service_class, method_name):
+        raise AssertionError(f"Service missing method: {method_name}")
+
+    method = getattr(service_class, method_name)
+    if not callable(method):
+        raise AssertionError(
+            f"Service method {method_name} is not callable",
+        )
 
 
 def assert_action_interface(

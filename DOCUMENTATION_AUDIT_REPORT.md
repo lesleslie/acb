@@ -5,7 +5,7 @@
 **Auditor**: Claude Code AI
 **Scope**: All 64 documentation files (root, docs/, adapters/)
 
----
+______________________________________________________________________
 
 ## Executive Summary
 
@@ -17,7 +17,7 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
 
 **Key Finding**: The v0.24.0 breaking change (dependency group syntax) was not consistently applied across documentation, with 10 installation command errors found.
 
----
+______________________________________________________________________
 
 ## Critical Issues (Priority 1)
 
@@ -35,7 +35,7 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
 
 **Recommendation**: Establish single source of truth for version (CHANGELOG.md) and auto-update badges/references.
 
----
+______________________________________________________________________
 
 ### 2. Installation Command Syntax Errors (v0.24.0 Breaking Change)
 
@@ -45,24 +45,28 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
 **Affected Files (10 instances)**:
 
 #### acb/adapters/cache/README.md
+
 - **Line 46**: `uv add acb --group cache`
   - **Fix**: `uv add --group cache`
 - **Line 49**: `uv add acb --group cache --group sql --group storage`
   - **Fix**: `uv add --group cache --group sql --group storage`
 
 #### acb/adapters/sql/README.md
+
 - **Line 57**: `uv add acb --group sql`
   - **Fix**: `uv add --group sql`
 - **Line 60**: `uv add acb --group sql --group cache --group storage`
   - **Fix**: `uv add --group sql --group cache --group storage`
 
 #### acb/adapters/storage/README.md
+
 - **Line 52**: `uv add acb --group storage`
   - **Fix**: `uv add --group storage`
 - **Line 55**: `uv add acb --group storage --group cache --group sql`
   - **Fix**: `uv add --group storage --group cache --group sql`
 
 #### acb/adapters/models/README.md
+
 - **Line 33**: `uv add acb --group models`
   - **Fix**: `uv add --group models`
 - **Line 36**: `uv add acb --group models --group sql --group nosql`
@@ -73,11 +77,12 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
 **Root Cause**: v0.24.0 breaking change not propagated to all adapter READMEs.
 
 **Recommendation**:
-1. Fix all 10 instances immediately
-2. Create documentation update checklist for future breaking changes
-3. Consider automated linting for installation commands
 
----
+1. Fix all 10 instances immediately
+1. Create documentation update checklist for future breaking changes
+1. Consider automated linting for installation commands
+
+______________________________________________________________________
 
 ### 3. AGENTS.md Outdated Syntax
 
@@ -91,7 +96,7 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
 
 **Recommendation**: Update immediately as this affects AI-assisted development.
 
----
+______________________________________________________________________
 
 ## High Priority Issues (Priority 2)
 
@@ -101,11 +106,13 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
 **Impact**: Copy-paste code will fail
 
 #### SQL and Models Adapter - Incorrect Class Name
+
 - **Files**: acb/adapters/sql/README.md (line 206), acb/adapters/models/README.md (line 206)
 - **Error**: `SqlDatabaseAdapter` (incorrect casing)
-- **Fix**: `SQLDatabaseAdapter` (verified in acb/adapters/sql/_query.py:20)
+- **Fix**: `SQLDatabaseAdapter` (verified in acb/adapters/sql/\_query.py:20)
 
 #### Storage Adapter - Undefined Variables
+
 - **File**: acb/adapters/storage/README.md
 - **Lines**: 254-278
 - **Issues**:
@@ -113,7 +120,7 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
   - Line 257: Type annotation `list[dict[str, t.Any]]` uses `t.Any` but `typing as t` not imported
 - **Fix**: Add variable definitions or mark as pseudocode; add import statement
 
----
+______________________________________________________________________
 
 ### 5. Missing Critical Sections
 
@@ -121,11 +128,12 @@ This comprehensive audit identified **37 documentation issues** across 3 severit
 **Impact**: Incomplete adapter documentation
 
 #### AI Adapter Missing Installation Section
+
 - **File**: acb/adapters/ai/README.md
 - **Issue**: No Installation section (present in all other adapter READMEs)
 - **Fix**: Add Installation section:
 
-```markdown
+````markdown
 ## Installation
 
 ```bash
@@ -134,8 +142,9 @@ uv add --group ai
 
 # Or include it with other dependencies
 uv add --group ai --group cache
-```
-```
+````
+
+````
 
 #### AI Adapter Incomplete Configuration Section
 - **File**: acb/adapters/ai/README.md
@@ -362,3 +371,4 @@ The ACB documentation is **comprehensive and well-structured** with **37 issues*
 ---
 
 **End of Audit Report**
+````
