@@ -34,7 +34,9 @@ class Compress:
     ) -> bytes | None:
         data = _normalize_input(content)
         gzip_buffer = BytesIO()
-        with GzipFile(mode="wb", compresslevel=compresslevel, fileobj=gzip_buffer) as gz:
+        with GzipFile(
+            mode="wb", compresslevel=compresslevel, fileobj=gzip_buffer
+        ) as gz:
             gz.write(data)
         result = gzip_buffer.getvalue()
         if output_path is not None:

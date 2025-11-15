@@ -34,7 +34,7 @@ class TestActionAdapterIntegration:
         # Test encoding
         encoded_result = await encode.json(test_data)
         assert encoded_result is not None
-        
+
         # Convert to string if needed for decode
         if isinstance(encoded_result, bytes):
             str_data = encoded_result.decode('utf-8')
@@ -70,14 +70,14 @@ class TestActionAdapterIntegration:
     async def test_hashing_with_encoded_content(self) -> None:
         """Test hashing of encoded content."""
         data = {"test": "data", "value": 123}
-        
+
         # Encode to JSON - this returns bytes
         json_bytes = await encode.json(data)
         assert isinstance(json_bytes, bytes)
-        
+
         # Convert bytes to string if needed for hash function
         json_str = json_bytes.decode('utf-8')
-        
+
         # Hash the encoded string
         hash_result = await hash.blake3(json_str)
         assert isinstance(hash_result, str)
@@ -92,16 +92,16 @@ class TestActionAdapterIntegration:
         """Test dependency injection working with actions."""
         # Mock the dependency injection system
         original_get = depends.get
-        
+
         def mock_get(cls):
             if cls == Config:
                 return mock_config
             return original_get(cls)
-        
+
         # Patch the depends.get method
         with pytest.MonkeyPatch().context() as mp:
             mp.setattr(depends, 'get', mock_get)
-            
+
             # Test that we can still use actions
             test_data = {"dependency": "injection", "test": True}
             result = await encode.json(test_data)
@@ -115,7 +115,7 @@ class TestActionAdapterIntegration:
         # Encode to JSON - returns bytes
         json_result = await encode.json(test_data)
         assert json_result is not None
-        
+
         # Convert to string if needed by compress action
         json_str = json_result.decode('utf-8') if isinstance(json_result, bytes) else json_result
         assert isinstance(json_str, str)
@@ -157,11 +157,11 @@ class TestAdapterIntegration:
         """Test integration with mock adapters."""
         # This test verifies that adapter integration works conceptually
         # For a real integration test we would test actual functionality rather than mocking the import
-        
+
         # Just verify we can import adapter functionality
         # The import_adapter function is what's important for integration
         assert callable(import_adapter)
-        
+
         # Test that import_adapter can be called (even if it fails due to missing dependencies)
         try:
             # This will likely throw an error due to missing dependencies, but we can catch it

@@ -1,6 +1,5 @@
 import typing as t
 from contextlib import suppress
-from functools import lru_cache
 
 from bevy import Inject, auto_inject, get_container
 
