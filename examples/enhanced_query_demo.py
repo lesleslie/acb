@@ -19,7 +19,6 @@ from acb.adapters.models._specification import (
     field,
     range_spec,
 )
-
 # Import enhanced query functionality
 from acb.adapters.models._hybrid import ACBQuery, HybridQueryOptions, QueryStyle
 from acb.adapters.models._query import QueryOperator
