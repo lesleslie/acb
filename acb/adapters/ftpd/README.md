@@ -1,4 +1,4 @@
-**ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [FTPD](<./README.md>)
+**ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [FTPD](./README.md)
 
 # FTPD Adapter
 
@@ -269,6 +269,6 @@ class FtpdBase(AdapterBase):
 - [asyncssh Documentation](https://asyncssh.readthedocs.io/)
 - [FTP Protocol Documentation](https://tools.ietf.org/html/rfc959)
 - [SFTP Protocol Documentation](https://tools.ietf.org/html/draft-ietf-secsh-filexfer-13)
-- [ACB Storage Adapter](<../storage/README.md>)
+- [ACB Storage Adapter](../storage/README.md)
 - [ACB Auth Adapter](../auth/README.md)
-- [ACB Adapters Overview](<../README.md>)
+- [ACB Adapters Overview](../README.md)
