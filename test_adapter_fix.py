@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""
-Test script to check if the adapter registry fix works correctly.
-"""
+"""Test script to check if the adapter registry fix works correctly."""
 
 from contextvars import ContextVar
+
 
 # Simulate the fixed code structure
 class MockAdapter:
@@ -13,11 +12,19 @@ class MockAdapter:
         self.enabled = True
         self.installed = True
 
+
 # Initialize ContextVars with None default (just like the original code)
 adapter_registry: ContextVar[list] = ContextVar("adapter_registry", default=None)
-_enabled_adapters_cache: ContextVar[dict] = ContextVar("_enabled_adapters_cache", default=None)
-_installed_adapters_cache: ContextVar[dict] = ContextVar("_installed_adapters_cache", default=None)
-_adapter_import_locks: ContextVar[dict] = ContextVar("_adapter_import_locks", default=None)
+_enabled_adapters_cache: ContextVar[dict] = ContextVar(
+    "_enabled_adapters_cache", default=None
+)
+_installed_adapters_cache: ContextVar[dict] = ContextVar(
+    "_installed_adapters_cache", default=None
+)
+_adapter_import_locks: ContextVar[dict] = ContextVar(
+    "_adapter_import_locks", default=None
+)
+
 
 def _ensure_adapter_registry_initialized() -> list:
     """Ensure the adapter registry is initialized with an empty list if needed."""
@@ -96,4 +103,6 @@ locks = _ensure_adapter_import_locks_initialized()
 locks["test_category"] = "test_lock"
 print("SUCCESS: Adapter import locks work correctly!")
 
-print("\nThe fix successfully resolves the original issue where adapter_registry.get() returned None!")
+print(
+    "\nThe fix successfully resolves the original issue where adapter_registry.get() returned None!"
+)

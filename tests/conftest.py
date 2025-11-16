@@ -11,12 +11,12 @@ from _pytest.config.argparsing import Parser
 from _pytest.main import Session
 from _pytest.monkeypatch import MonkeyPatch
 from contextlib import suppress
-from typing import Any, TypeAlias, cast
+from typing import Any, cast
 
 from acb.config import Config
 
-TaskSet: TypeAlias = set[asyncio.Task[object]]
-MarkerTuple: TypeAlias = tuple[str, str]
+type TaskSet = set[asyncio.Task[object]]
+type MarkerTuple = tuple[str, str]
 
 original_exists = os.path.exists
 

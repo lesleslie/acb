@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [AI](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [AI](./README.md)
 
 # AI Adapter
 
@@ -9,16 +9,16 @@ portable across vendors and deployment topologies.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Core Components](<#core-components>)
-- [Deployment Strategies](<#deployment-strategies>)
-- [Requests, Responses, and Streaming](<#requests-responses-and-streaming>)
-- [Settings & Configuration](<#settings--configuration>)
-- [Built-in Implementations](<#built-in-implementations>)
-- [Usage Examples](<#usage-examples>)
-- [Hybrid Routing Example](<#hybrid-routing-example>)
-- [Best Practices](<#best-practices>)
-- [Related Adapters](<#related-adapters>)
+- [Overview](#overview)
+- [Core Components](#core-components)
+- [Deployment Strategies](#deployment-strategies)
+- [Requests, Responses, and Streaming](#requests-responses-and-streaming)
+- [Settings & Configuration](#settings--configuration)
+- [Built-in Implementations](#built-in-implementations)
+- [Usage Examples](#usage-examples)
+- [Hybrid Routing Example](#hybrid-routing-example)
+- [Best Practices](#best-practices)
+- [Related Adapters](#related-adapters)
 
 ## Installation
 
@@ -179,6 +179,6 @@ falling back to cloud providers if latency or quality thresholds cannot be met.
 
 ## Related Adapters
 
-- [Embedding](<../embedding/README.md>)
-- [Reasoning](<../reasoning/README.md>)
-- [Vector](<../vector/README.md>)
+- [Embedding](../embedding/README.md)
+- [Reasoning](../reasoning/README.md)
+- [Vector](../vector/README.md)

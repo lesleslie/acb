@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Storage](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Storage](./README.md)
 
 # Storage Adapter
 
@@ -6,23 +6,23 @@ The Storage adapter provides a standardized interface for file and object storag
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Available Implementations](<#available-implementations>)
-- [Installation](<#installation>)
-- [Configuration](<#configuration>)
-- [Basic Usage](<#basic-usage>)
-- [Advanced Usage](<#advanced-usage>)
-  - [Working with File Metadata](<#working-with-file-metadata>)
-  - [Generating URLs](<#generating-urls>)
-  - [Listing Files](<#listing-files>)
-  - [Using StorageFile Objects](<#using-storagefile-objects>)
-- [Migration Between Storage Providers](<#migration-between-storage-providers>)
-- [Security Best Practices](<#security-best-practices>)
-- [Troubleshooting](<#troubleshooting>)
-- [Performance Considerations](<#performance-considerations>)
-- [Implementation Details](<#implementation-details>)
-- [Related Adapters](<#related-adapters>)
-- [Additional Resources](<#additional-resources>)
+- [Overview](#overview)
+- [Available Implementations](#available-implementations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Basic Usage](#basic-usage)
+- [Advanced Usage](#advanced-usage)
+  - [Working with File Metadata](#working-with-file-metadata)
+  - [Generating URLs](#generating-urls)
+  - [Listing Files](#listing-files)
+  - [Using StorageFile Objects](#using-storagefile-objects)
+- [Migration Between Storage Providers](#migration-between-storage-providers)
+- [Security Best Practices](#security-best-practices)
+- [Troubleshooting](#troubleshooting)
+- [Performance Considerations](#performance-considerations)
+- [Implementation Details](#implementation-details)
+- [Related Adapters](#related-adapters)
+- [Additional Resources](#additional-resources)
 
 ## Overview
 
@@ -455,10 +455,10 @@ class StorageBucket:
 
 The Storage adapter works well with these other ACB adapters:
 
-- [**FTPD Adapter**](<../ftpd/README.md>): Transfer files between FTP servers and storage
-- [**Cache Adapter**](<../cache/README.md>): Cache file metadata to improve performance
-- [**SQL Adapter**](<../sql/README.md>): Store file metadata in a database
-- [**Secret Adapter**](<../secret/README.md>): Manage credentials for cloud storage providers
+- [**FTPD Adapter**](../ftpd/README.md): Transfer files between FTP servers and storage
+- [**Cache Adapter**](../cache/README.md): Cache file metadata to improve performance
+- [**SQL Adapter**](../sql/README.md): Store file metadata in a database
+- [**Secret Adapter**](../secret/README.md): Manage credentials for cloud storage providers
 
 Integration example:
 
@@ -488,6 +488,6 @@ async def get_file_with_caching(file_path):
 - [Google Cloud Storage Documentation](https://cloud.google.com/storage/docs)
 - [Azure Blob Storage Documentation](https://docs.microsoft.com/en-us/azure/storage/blobs/)
 - [AIOHTTP Documentation](https://docs.aiohttp.org/)
-- [ACB FTPD Adapter](<../ftpd/README.md>)
-- [ACB Cache Adapter](<../cache/README.md>)
-- [ACB Adapters Overview](<../README.md>)
+- [ACB FTPD Adapter](../ftpd/README.md)
+- [ACB Cache Adapter](../cache/README.md)
+- [ACB Adapters Overview](../README.md)

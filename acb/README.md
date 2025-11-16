@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../README.md>) | [Core Systems](<./README.md>) | [Actions](<./actions/README.md>) | [Adapters](<./adapters/README.md>)
+> **ACB Documentation**: [Main](../README.md) | [Core Systems](./README.md) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
 
 # ACB: Core Systems
 
@@ -6,14 +6,14 @@ This document provides in-depth details about the core systems in the Asynchrono
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Configuration and Settings](<#1-configuration-and-settings>)
-- [Dependency Injection](<#2-dependency-injection>)
-- [Debugging Tools](<#3-debugging-tools>)
-- [Logging](<#4-logging>)
-- [MCP Server](<#5-mcp-server>)
-- [Related Projects](<#related-projects>)
-- [Further Reading](<#further-reading>)
+- [Overview](#overview)
+- [Configuration and Settings](#1-configuration-and-settings)
+- [Dependency Injection](#2-dependency-injection)
+- [Debugging Tools](#3-debugging-tools)
+- [Logging](#4-logging)
+- [MCP Server](#5-mcp-server)
+- [Related Projects](#related-projects)
+- [Further Reading](#further-reading)
 
 ## Overview
 
@@ -85,7 +85,7 @@ uv add acb --group config
 uv add acb --group secret --group config
 ```
 
-For more detailed configuration information, refer to [Configuration Documentation](<./CONFIGURATION.md>).
+For more detailed configuration information, refer to [Configuration Documentation](./CONFIGURATION.md).
 
 ______________________________________________________________________
 
@@ -133,7 +133,7 @@ async def process_file(
     return cached_data
 ```
 
-For more information on dependency injection, please see the [Dependency Injection Documentation](<./DEPENDENCY-INJECTION.md>).
+For more information on dependency injection, please see the [Dependency Injection Documentation](./DEPENDENCY-INJECTION.md).
 
 ______________________________________________________________________
 
@@ -281,7 +281,7 @@ init_debug()  # Configures debug output based on environment
 
 1. **Performance Considerations**: In production environments, be selective about what you debug to avoid performance impacts.
 
-For detailed examples and further instructions, refer to the [Debug Documentation](<./DEBUG.md>).
+For detailed examples and further instructions, refer to the [Debug Documentation](./DEBUG.md).
 
 ______________________________________________________________________
 
@@ -317,7 +317,7 @@ uv add acb --group logger
 uv add acb --group logger
 ```
 
-For more details on logging configuration and customization, see the [Logging Documentation](<./LOGGING.md>).
+For more details on logging configuration and customization, see the [Logging Documentation](./LOGGING.md).
 
 ______________________________________________________________________
 
@@ -345,7 +345,7 @@ The MCP server is built on top of ACB's existing architecture and integrates wit
 - **Configuration**: Centralized configuration management
 - **Logging**: Structured logging and monitoring
 
-For more details on the MCP server implementation, see the [MCP Server Documentation](<./mcp/README.md>).
+For more details on the MCP server implementation, see the [MCP Server Documentation](./mcp/README.md).
 
 ______________________________________________________________________
 
@@ -359,6 +359,6 @@ ______________________________________________________________________
 
 ## Further Reading
 
-- [Main ACB Documentation](<../README.md>): Overview of the entire ACB framework
-- [Actions Documentation](<./actions/README.md>): Details about built-in actions and creating custom ones
-- [Adapters Documentation](<./adapters/README.md>): Information about adapter interfaces and implementations
+- [Main ACB Documentation](../README.md): Overview of the entire ACB framework
+- [Actions Documentation](./actions/README.md): Details about built-in actions and creating custom ones
+- [Adapters Documentation](./adapters/README.md): Information about adapter interfaces and implementations

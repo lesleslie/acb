@@ -1,20 +1,20 @@
 # ACB Performance Guide
 
-> **Version:** 0.27.0 | **Documentation**: [README](<../README.md>) | [Architecture](<./ARCHITECTURE.md>) | [Migration](<./MIGRATION.md>)
+> **Version:** 0.27.0 | **Documentation**: [README](../README.md) | [Architecture](./ARCHITECTURE.md) | [Migration](./MIGRATION.md)
 
 This guide provides best practices and techniques for optimizing ACB application performance with comprehensive services, events, and workflow architecture.
 
 ## Table of Contents
 
-- [General Performance Principles](<#general-performance-principles>)
-- [Dependency Injection Performance](<#dependency-injection-performance>)
-- [Adapter Performance](<#adapter-performance>)
-- [Universal Query Interface Performance](<#universal-query-interface-performance>)
-- [Configuration Optimization](<#configuration-optimization>)
-- [Async Best Practices](<#async-best-practices>)
-- [Monitoring and Profiling](<#monitoring-and-profiling>)
-- [Service and Events Performance](<#service-and-events-performance>)
-- [Production Deployment](<#production-deployment>)
+- [General Performance Principles](#general-performance-principles)
+- [Dependency Injection Performance](#dependency-injection-performance)
+- [Adapter Performance](#adapter-performance)
+- [Universal Query Interface Performance](#universal-query-interface-performance)
+- [Configuration Optimization](#configuration-optimization)
+- [Async Best Practices](#async-best-practices)
+- [Monitoring and Profiling](#monitoring-and-profiling)
+- [Service and Events Performance](#service-and-events-performance)
+- [Production Deployment](#production-deployment)
 
 ## General Performance Principles
 
