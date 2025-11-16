@@ -5,6 +5,7 @@ allowing the universal query interface to work with SQLAlchemy declarative class
 """
 
 import inspect
+
 import typing as t
 from contextlib import suppress
 from typing import Any, TypeVar, get_args, get_origin

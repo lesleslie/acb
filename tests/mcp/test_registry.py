@@ -1,6 +1,8 @@
 """Tests for the ACB MCP registry module."""
+
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
 
 from acb.mcp.registry import ComponentRegistry
 
@@ -17,8 +19,8 @@ class TestComponentRegistry:
         assert registry._services == {}
         assert registry._events == {}
         assert registry._initialized is False
-        assert hasattr(registry, 'config')
-        assert hasattr(registry, 'logger')
+        assert hasattr(registry, "config")
+        assert hasattr(registry, "logger")
 
     @pytest.mark.asyncio
     async def test_initialize_first_time(self) -> None:
@@ -27,9 +29,9 @@ class TestComponentRegistry:
 
         # Mock the dependencies to avoid actual dependency injection
         with (
-            patch.object(registry, 'logger') as mock_logger,
-            patch('acb.mcp.registry.import_adapter'),
-            patch('acb.mcp.registry.depends') as mock_depends,
+            patch.object(registry, "logger") as mock_logger,
+            patch("acb.mcp.registry.import_adapter"),
+            patch("acb.mcp.registry.depends"),
         ):
             # Mock the actions imports to work without actual modules
             mock_compress = Mock()
@@ -37,26 +39,32 @@ class TestComponentRegistry:
             mock_hash = Mock()
 
             with (
-                patch.dict('sys.modules', {
-                    'acb.actions.compress': mock_compress,
-                    'acb.actions.encode': mock_encode,
-                    'acb.actions.hash': mock_hash,
-                }),
-                patch('builtins.__import__', side_effect=[
-                    Mock(),  # For acb.actions
-                    mock_compress,  # For acb.actions.compress
-                    Mock(),  # For acb.actions
-                    mock_encode,  # For acb.actions.encode
-                    Mock(),  # For acb.actions
-                    mock_hash,  # For acb.actions.hash
-                ])
+                patch.dict(
+                    "sys.modules",
+                    {
+                        "acb.actions.compress": mock_compress,
+                        "acb.actions.encode": mock_encode,
+                        "acb.actions.hash": mock_hash,
+                    },
+                ),
+                patch(
+                    "builtins.__import__",
+                    side_effect=[
+                        Mock(),  # For acb.actions
+                        mock_compress,  # For acb.actions.compress
+                        Mock(),  # For acb.actions
+                        mock_encode,  # For acb.actions.encode
+                        Mock(),  # For acb.actions
+                        mock_hash,  # For acb.actions.hash
+                    ],
+                ),
             ):
                 await registry.initialize()
 
                 assert registry._initialized is True
-                assert 'compress' in registry._actions
-                assert 'encode' in registry._actions
-                assert 'hash' in registry._actions
+                assert "compress" in registry._actions
+                assert "encode" in registry._actions
+                assert "hash" in registry._actions
                 mock_logger.info.assert_called()
 
     @pytest.mark.asyncio
@@ -65,7 +73,7 @@ class TestComponentRegistry:
         registry = ComponentRegistry()
         registry._initialized = True
 
-        with patch.object(registry, 'logger') as mock_logger:
+        with patch.object(registry, "logger") as mock_logger:
             await registry.initialize()
             # The logger should not have been called since it was already initialized
             mock_logger.info.assert_not_called()
@@ -81,19 +89,22 @@ class TestComponentRegistry:
         mock_hash = Mock()
 
         with (
-            patch('sys.modules', {}),  # Clear the sys.modules cache
-            patch('builtins.__import__', side_effect=lambda name, *args, **kwargs: {
-                'acb.actions.compress': mock_compress,
-                'acb.actions.encode': mock_encode,
-                'acb.actions.hash': mock_hash,
-            }.get(name, Mock())),
-            patch.object(registry, 'logger') as mock_logger,
+            patch("sys.modules", {}),  # Clear the sys.modules cache
+            patch(
+                "builtins.__import__",
+                side_effect=lambda name, *args, **kwargs: {
+                    "acb.actions.compress": mock_compress,
+                    "acb.actions.encode": mock_encode,
+                    "acb.actions.hash": mock_hash,
+                }.get(name, Mock()),
+            ),
+            patch.object(registry, "logger") as mock_logger,
         ):
             await registry._register_builtin_actions()
 
-            assert 'compress' in registry._actions
-            assert 'encode' in registry._actions
-            assert 'hash' in registry._actions
+            assert "compress" in registry._actions
+            assert "encode" in registry._actions
+            assert "hash" in registry._actions
             mock_logger.debug.assert_called()
 
     @pytest.mark.asyncio
@@ -102,8 +113,8 @@ class TestComponentRegistry:
         registry = ComponentRegistry()
 
         with (
-            patch('builtins.__import__', side_effect=ImportError("Module not found")),
-            patch.object(registry, 'logger') as mock_logger,
+            patch("builtins.__import__", side_effect=ImportError("Module not found")),
+            patch.object(registry, "logger") as mock_logger,
         ):
             await registry._register_builtin_actions()
             mock_logger.warning.assert_called()
@@ -123,11 +134,12 @@ class TestComponentRegistry:
         mock_storage_adapter = Mock()
 
         with (
-            patch('acb.mcp.registry.import_adapter', side_effect=[
-                mock_cache_adapter, mock_storage_adapter
-            ]),
-            patch('acb.mcp.registry.depends') as mock_depends,
-            patch.object(registry, 'logger') as mock_logger,
+            patch(
+                "acb.mcp.registry.import_adapter",
+                side_effect=[mock_cache_adapter, mock_storage_adapter],
+            ),
+            patch("acb.mcp.registry.depends") as mock_depends,
+            patch.object(registry, "logger") as mock_logger,
         ):
             mock_depends.get.side_effect = [mock_cache_adapter, mock_storage_adapter]
 
@@ -148,8 +160,10 @@ class TestComponentRegistry:
         registry.config = mock_config
 
         with (
-            patch('acb.mcp.registry.import_adapter', side_effect=ImportError("Not found")),
-            patch.object(registry, 'logger') as mock_logger,
+            patch(
+                "acb.mcp.registry.import_adapter", side_effect=ImportError("Not found")
+            ),
+            patch.object(registry, "logger") as mock_logger,
         ):
             await registry._register_configured_adapters()
             mock_logger.warning.assert_called()
@@ -159,7 +173,7 @@ class TestComponentRegistry:
         """Test the service registration placeholder."""
         registry = ComponentRegistry()
 
-        with patch.object(registry, 'logger') as mock_logger:
+        with patch.object(registry, "logger") as mock_logger:
             await registry._register_services()
             mock_logger.debug.assert_called_with("Services registration placeholder")
 
@@ -257,7 +271,7 @@ class TestComponentRegistry:
         registry._events = {"test": "value"}
         registry._initialized = True
 
-        with patch.object(registry, 'logger') as mock_logger:
+        with patch.object(registry, "logger") as mock_logger:
             await registry.cleanup()
 
             assert registry._actions == {}

@@ -12,15 +12,16 @@ Features:
 - Integration with ACB's dependency injection
 """
 
-import asyncio
-import typing as t
 from abc import ABC, abstractmethod
-from contextlib import suppress
-from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
+import asyncio
+import typing as t
+from contextlib import suppress
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
+
 from acb.services import ServiceBase, ServiceCapability, ServiceMetadata
 from acb.services.discovery import ServiceStatus
 

@@ -1,7 +1,8 @@
 """Tests for ValidationService."""
 
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from acb.config import Config
 from acb.depends import depends
@@ -9,12 +10,14 @@ from acb.logger import Logger
 from acb.services._base import ServiceStatus
 from acb.services.validation import (
     ValidationConfig,
-    ValidationError,
     ValidationLevel,
     ValidationService,
     ValidationSettings,
 )
-from acb.services.validation.schemas import BasicValidationSchema, StringValidationSchema
+from acb.services.validation.schemas import (
+    BasicValidationSchema,
+    StringValidationSchema,
+)
 
 
 class TestValidationService:
@@ -44,7 +47,7 @@ class TestValidationService:
             validation_enabled=True,
             default_validation_level=ValidationLevel.STRICT,
             max_validation_time_ms=10.0,
-            models_adapter_enabled=False  # Disable for testing
+            models_adapter_enabled=False,  # Disable for testing
         )
 
     @pytest.fixture
@@ -52,7 +55,7 @@ class TestValidationService:
         self,
         mock_config: Mock,
         mock_logger: Mock,
-        validation_settings: ValidationSettings
+        validation_settings: ValidationSettings,
     ) -> ValidationService:
         """Create ValidationService instance."""
         service = ValidationService(validation_settings=validation_settings)
@@ -60,8 +63,7 @@ class TestValidationService:
         return service
 
     async def test_service_initialization(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test service initialization."""
         assert validation_service.status == ServiceStatus.ACTIVE
@@ -70,16 +72,14 @@ class TestValidationService:
         assert validation_service._initialized is True
 
     async def test_service_shutdown(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test service shutdown."""
         await validation_service.shutdown()
         assert validation_service.status == ServiceStatus.STOPPED
 
     async def test_basic_validation_success(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test basic validation with valid data."""
         result = await validation_service.validate("test string")
@@ -90,12 +90,13 @@ class TestValidationService:
         assert len(result.errors) == 0
 
     async def test_basic_validation_with_sanitization(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test basic validation with XSS sanitization."""
         config = ValidationConfig(enable_xss_protection=True)
-        result = await validation_service.validate("<script>alert('xss')</script>test", config=config)
+        result = await validation_service.validate(
+            "<script>alert('xss')</script>test", config=config
+        )
 
         assert result.is_valid is True
         assert "<script>" not in result.value
@@ -103,15 +104,10 @@ class TestValidationService:
         assert any("security" in warning.lower() for warning in result.warnings)
 
     async def test_validation_with_schema(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test validation with specific schema."""
-        schema = StringValidationSchema(
-            name="test_string",
-            min_length=3,
-            max_length=10
-        )
+        schema = StringValidationSchema(name="test_string", min_length=3, max_length=10)
 
         result = await validation_service.validate("hello", schema)
 
@@ -119,14 +115,11 @@ class TestValidationService:
         assert result.value == "hello"
 
     async def test_validation_with_schema_failure(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test validation failure with schema."""
         schema = StringValidationSchema(
-            name="test_string",
-            min_length=10,
-            max_length=20
+            name="test_string", min_length=10, max_length=20
         )
 
         result = await validation_service.validate("hi", schema)
@@ -135,10 +128,7 @@ class TestValidationService:
         assert len(result.errors) > 0
         assert any("too short" in error.lower() for error in result.errors)
 
-    async def test_validation_many(
-        self,
-        validation_service: ValidationService
-    ) -> None:
+    async def test_validation_many(self, validation_service: ValidationService) -> None:
         """Test bulk validation."""
         data_list = ["hello", "world", "test"]
         results = await validation_service.validate_many(data_list)
@@ -147,15 +137,10 @@ class TestValidationService:
         assert all(result.is_valid for result in results)
 
     async def test_schema_registration(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test schema registration and retrieval."""
-        schema = BasicValidationSchema(
-            name="test_schema",
-            data_type=str,
-            required=True
-        )
+        schema = BasicValidationSchema(name="test_schema", data_type=str, required=True)
 
         # Register schema
         validation_service.register_schema(schema)
@@ -165,10 +150,7 @@ class TestValidationService:
         assert retrieved_schema is not None
         assert retrieved_schema.name == "test_schema"
 
-    async def test_schema_listing(
-        self,
-        validation_service: ValidationService
-    ) -> None:
+    async def test_schema_listing(self, validation_service: ValidationService) -> None:
         """Test listing registered schemas."""
         schema1 = BasicValidationSchema("schema1", data_type=str)
         schema2 = BasicValidationSchema("schema2", data_type=int)
@@ -180,10 +162,7 @@ class TestValidationService:
         assert "schema1" in schemas
         assert "schema2" in schemas
 
-    async def test_schema_removal(
-        self,
-        validation_service: ValidationService
-    ) -> None:
+    async def test_schema_removal(self, validation_service: ValidationService) -> None:
         """Test schema removal."""
         schema = BasicValidationSchema("test_schema", data_type=str)
         validation_service.register_schema(schema)
@@ -198,8 +177,7 @@ class TestValidationService:
         assert "test_schema" not in validation_service.list_schemas()
 
     async def test_metrics_tracking(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test metrics tracking."""
         initial_metrics = validation_service.get_metrics()
@@ -214,10 +192,7 @@ class TestValidationService:
         assert updated_metrics.successful_validations == 2
         assert updated_metrics.failed_validations == 0
 
-    async def test_metrics_reset(
-        self,
-        validation_service: ValidationService
-    ) -> None:
+    async def test_metrics_reset(self, validation_service: ValidationService) -> None:
         """Test metrics reset."""
         # Perform validation to generate metrics
         await validation_service.validate("test")
@@ -232,10 +207,7 @@ class TestValidationService:
         reset_metrics = validation_service.get_metrics()
         assert reset_metrics.total_validations == 0
 
-    async def test_health_check(
-        self,
-        validation_service: ValidationService
-    ) -> None:
+    async def test_health_check(self, validation_service: ValidationService) -> None:
         """Test service health check."""
         health = await validation_service.health_check()
 
@@ -246,15 +218,14 @@ class TestValidationService:
         assert "performance_ok" in health["service_specific"]
 
     async def test_performance_monitoring(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test performance monitoring."""
         # Enable performance monitoring
         validation_service._performance_monitoring_enabled = True
         validation_service._performance_threshold_ms = 1.0  # Very low threshold
 
-        with patch('acb.logger.Logger.warning') as mock_warning:
+        with patch("acb.logger.Logger.warning"):
             # This should trigger performance warning due to low threshold
             await validation_service.validate("test data")
 
@@ -264,8 +235,7 @@ class TestValidationService:
             assert metrics.total_validations > 0
 
     async def test_validation_error_handling(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test validation error handling."""
         # Test error handling at the public validate() method level
@@ -285,8 +255,7 @@ class TestValidationService:
         assert any("exception" in error.lower() for error in result.errors)
 
     async def test_models_adapter_integration_disabled(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test models adapter integration when disabled."""
         # Models adapter should be disabled in test settings
@@ -296,18 +265,15 @@ class TestValidationService:
         # Test validation with model class (should fail gracefully)
         result = await validation_service.validate_model(
             {"name": "test"},
-            str  # Dummy model class
+            str,  # Dummy model class
         )
 
         assert result.is_valid is False
         assert "Models adapter not available" in result.errors
 
-    @patch('acb.adapters.import_adapter')
+    @patch("acb.adapters.import_adapter")
     async def test_models_adapter_integration_enabled(
-        self,
-        mock_import_adapter: Mock,
-        mock_config: Mock,
-        mock_logger: Mock
+        self, mock_import_adapter: Mock, mock_config: Mock, mock_logger: Mock
     ) -> None:
         """Test models adapter integration when enabled."""
         # Create a mock ModelsAdapter class
@@ -335,15 +301,14 @@ class TestValidationService:
         # Test model validation
         result = await service.validate_model(
             {"name": "test"},
-            str  # Dummy model class
+            str,  # Dummy model class
         )
 
         assert result.is_valid is True
         assert result.value == "created_instance"
 
     async def test_string_length_validation(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test string length validation."""
         config = ValidationConfig(max_string_length=5)
@@ -358,8 +323,7 @@ class TestValidationService:
         assert any("too long" in error.lower() for error in result2.errors)
 
     async def test_list_length_validation(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test list length validation."""
         config = ValidationConfig(max_list_length=3)
@@ -374,8 +338,7 @@ class TestValidationService:
         assert any("too long" in error.lower() for error in result2.errors)
 
     async def test_dict_depth_validation(
-        self,
-        validation_service: ValidationService
+        self, validation_service: ValidationService
     ) -> None:
         """Test dictionary depth validation."""
         config = ValidationConfig(max_dict_depth=2)

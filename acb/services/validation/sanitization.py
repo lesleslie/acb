@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import html
 import re
-import typing as t
 import urllib.parse
 from pathlib import Path
+
+import typing as t
 
 from acb.services.validation._base import ValidationConfig, ValidationResult
 

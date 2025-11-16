@@ -1,7 +1,5 @@
 """Tests for workflow discovery system."""
 
-import pytest
-
 from acb.workflows.discovery import (
     WorkflowCapability,
     WorkflowEngineStatus,

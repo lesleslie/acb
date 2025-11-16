@@ -1,15 +1,13 @@
 """Tests for ACB services layer base functionality."""
 
-import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 from acb.services._base import (
     ServiceBase,
     ServiceConfig,
+    ServiceMetrics,
     ServiceSettings,
     ServiceStatus,
-    ServiceMetrics
 )
 
 
@@ -31,7 +29,7 @@ class TestServiceBase:
             name="Test Service",
             description="A test service",
             dependencies=["cache", "sql"],
-            priority=50
+            priority=50,
         )
 
         assert config.service_id == "test_service"
@@ -66,13 +64,13 @@ class TestServiceBase:
         # Initialize
         await service.initialize()
         assert service.status == ServiceStatus.ACTIVE
-        assert hasattr(service, 'initialized')
+        assert hasattr(service, "initialized")
         assert service.initialized is True
 
         # Shutdown
         await service.shutdown()
         assert service.status == ServiceStatus.STOPPED
-        assert hasattr(service, 'shutdown_called')
+        assert hasattr(service, "shutdown_called")
         assert service.shutdown_called is True
 
     @pytest.mark.asyncio
@@ -160,12 +158,12 @@ class TestServiceBase:
 
         async with ContextService() as service:
             assert service.status == ServiceStatus.ACTIVE
-            assert hasattr(service, 'init_called')
+            assert hasattr(service, "init_called")
             assert service.init_called is True
 
         # After context exit
         assert service.status == ServiceStatus.STOPPED
-        assert hasattr(service, 'shutdown_called')
+        assert hasattr(service, "shutdown_called")
         assert service.shutdown_called is True
 
     @pytest.mark.asyncio

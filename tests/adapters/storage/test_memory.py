@@ -1,9 +1,10 @@
 """Tests for the Memory Storage adapter."""
 
-import typing as t
 from unittest.mock import MagicMock, patch
 
 import pytest
+import typing as t
+
 from acb.adapters.storage.memory import Storage
 from acb.config import Settings
 from tests.test_interfaces import StorageAdapterProtocol, StorageTestInterface

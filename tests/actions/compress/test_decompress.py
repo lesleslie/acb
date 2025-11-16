@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import brotli
 import pytest
+
 from acb.actions.compress import decompress
 
 TEST_STRING: str = "This is a test string to decompress."
@@ -43,7 +44,9 @@ def test_gzip_decompress_file(tmp_gzip_file: Path) -> None:
     """Test gzip decompression from file."""
     result: str = decompress.gzip(tmp_gzip_file.read_bytes())
     assert isinstance(result, str), "Decompressed result must be a string"
-    assert result == TEST_BYTES.decode(), "Decompressed file content should match original"
+    assert result == TEST_BYTES.decode(), (
+        "Decompressed file content should match original"
+    )
 
 
 @pytest.mark.unit
@@ -53,7 +56,9 @@ def test_gzip_decompress_with_path_output(tmp_path: Path, tmp_gzip_file: Path) -
     result: str = decompress.gzip(tmp_gzip_file.read_bytes())
     output_path.write_text(result)
     assert output_path.exists(), "Output file should be created"
-    assert output_path.read_text() == TEST_BYTES.decode(), "Output file content should match original"
+    assert output_path.read_text() == TEST_BYTES.decode(), (
+        "Output file content should match original"
+    )
 
 
 @pytest.mark.unit
@@ -69,7 +74,9 @@ def test_gzip_decompress_pathlib_path(tmp_gzip_file: Path) -> None:
     """Test gzip decompression with pathlib.Path."""
     result: str = decompress.gzip(tmp_gzip_file.read_bytes())
     assert isinstance(result, str), "Decompressed result must be a string"
-    assert result == TEST_BYTES.decode(), "Path-based decompression should match original"
+    assert result == TEST_BYTES.decode(), (
+        "Path-based decompression should match original"
+    )
 
 
 @pytest.mark.unit
@@ -80,7 +87,9 @@ def test_gzip_decompress_async_path(tmp_gzip_file: Path) -> None:
     AsyncPath(str(tmp_gzip_file))
     result: str = decompress.gzip(tmp_gzip_file.read_bytes())
     assert isinstance(result, str), "Decompressed result must be a string"
-    assert result == TEST_BYTES.decode(), "Async path decompression should match original"
+    assert result == TEST_BYTES.decode(), (
+        "Async path decompression should match original"
+    )
 
 
 @pytest.mark.unit
@@ -108,4 +117,6 @@ def test_brotli_decompress_bytes(tmp_brotli_file: Path) -> None:
     """Test brotli decompression of compressed bytes."""
     result: str = decompress.brotli(tmp_brotli_file.read_bytes())
     assert isinstance(result, str), "Decompressed result must be a string"
-    assert result == TEST_BYTES.decode(), "Brotli decompressed content should match original"
+    assert result == TEST_BYTES.decode(), (
+        "Brotli decompressed content should match original"
+    )

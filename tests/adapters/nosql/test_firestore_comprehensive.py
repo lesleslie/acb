@@ -1,9 +1,10 @@
 """Comprehensive tests for Firestore NoSQL adapter."""
 
-import typing as t
 from unittest.mock import MagicMock, patch
 
 import pytest
+import typing as t
+
 from acb.adapters.nosql.firestore import Nosql, NosqlSettings
 from acb.config import Config
 

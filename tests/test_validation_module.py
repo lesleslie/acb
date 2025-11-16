@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 import pytest
+
 from acb.validation import (
     ValidationMixin,
     create_length_validator,

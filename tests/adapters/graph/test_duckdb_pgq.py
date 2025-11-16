@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
-from contextlib import asynccontextmanager
-from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from contextlib import asynccontextmanager
+from datetime import datetime
 from sqlalchemy.pool import NullPool
+
 from acb.adapters.graph._base import (
     GraphEdgeModel,
     GraphNodeModel,
@@ -263,9 +264,7 @@ async def test_execute_query_returns_records(duckdb_graph_adapter: Graph) -> Non
     ctx, _ = _connection_context(result)
 
     with patch.object(duckdb_graph_adapter, "_connection", ctx):
-        query_result = await duckdb_graph_adapter.execute_query(
-            "SELECT 1 AS total"
-        )
+        query_result = await duckdb_graph_adapter.execute_query("SELECT 1 AS total")
 
     assert query_result.records == [{"total": 1}]
     assert query_result.metadata["rowcount"] == 1

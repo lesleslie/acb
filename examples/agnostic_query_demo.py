@@ -4,10 +4,11 @@ This example demonstrates the truly agnostic query interface that works with
 any combination of database adapters and model frameworks.
 """
 
+from types import TracebackType
+
 import asyncio
 import contextlib
 from datetime import datetime
-from types import TracebackType
 from typing import Any
 
 try:

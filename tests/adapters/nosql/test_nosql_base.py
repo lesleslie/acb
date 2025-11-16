@@ -1,10 +1,11 @@
 """Tests for the NoSQL Base adapter."""
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
 from pydantic import SecretStr
+
 from acb.adapters.nosql._base import NosqlBase, NosqlBaseSettings, NosqlCollection
 
 

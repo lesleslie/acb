@@ -1,19 +1,15 @@
 """Tests for the edge AI adapter."""
 
-import asyncio
-import json
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from acb.adapters.ai._base import (
     AIRequest,
-    AIResponse,
     DeploymentStrategy,
-    ModelCapability,
     ModelProvider,
 )
-from acb.adapters.ai.edge import EdgeAI, EdgeAISettings, MODULE_METADATA
+from acb.adapters.ai.edge import MODULE_METADATA, EdgeAI, EdgeAISettings
 
 
 class TestEdgeAISettings:
@@ -176,7 +172,9 @@ class TestEdgeAI:
 
         with patch("asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.run_in_executor = AsyncMock(
-                return_value=[{"generated_text": "Test prompt Generated local response"}]
+                return_value=[
+                    {"generated_text": "Test prompt Generated local response"}
+                ]
             )
 
             response = await adapter._local_generate(mock_client, request)
@@ -186,7 +184,9 @@ class TestEdgeAI:
             assert response.strategy == DeploymentStrategy.EDGE
 
     @pytest.mark.asyncio
-    async def test_generate_text_with_edge_limits(self, mock_http_client: MagicMock) -> None:
+    async def test_generate_text_with_edge_limits(
+        self, mock_http_client: MagicMock
+    ) -> None:
         with patch("acb.adapters.ai.edge.validate_request") as mock_validate:
             mock_validate.return_value = None
 
@@ -239,7 +239,9 @@ class TestEdgeAI:
     @pytest.mark.asyncio
     async def test_liquid_ai_stream(self, mock_liquid_ai_client: MagicMock) -> None:
         adapter = EdgeAI(provider=ModelProvider.LIQUID_AI)
-        request = AIRequest(prompt="Test streaming", model="lfm2")  # Use the model that's in the mock
+        request = AIRequest(
+            prompt="Test streaming", model="lfm2"
+        )  # Use the model that's in the mock
 
         # The LFM streaming method should return a generator that chunks the response
         generator = adapter._liquid_ai_stream(mock_liquid_ai_client, request)
@@ -366,7 +368,9 @@ class TestEdgeAI:
         assert adapter._model_loaded
 
     @pytest.mark.asyncio
-    async def test_preload_model_pull_required(self, mock_http_client: MagicMock) -> None:
+    async def test_preload_model_pull_required(
+        self, mock_http_client: MagicMock
+    ) -> None:
         # Mock that model doesn't exist locally
         tags_response = MagicMock()
         tags_response.status_code = 200

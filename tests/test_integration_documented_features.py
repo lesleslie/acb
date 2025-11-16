@@ -1,9 +1,10 @@
 """Integration tests for documented ACB features."""
 
 import tempfile
-from typing import Any
 
 import pytest
+from typing import Any
+
 from acb.actions.compress import compress, decompress
 from acb.actions.encode import decode, encode
 from acb.actions.hash import hash
@@ -313,7 +314,6 @@ class TestAdapterAgnosticDocumentedExamples:
         """Test dynamic adapter access example from actions README."""
         # Example from acb/actions/README.md lines 255-286
         import typing as t
-
         from pydantic import BaseModel
 
         class FileAction(BaseModel):

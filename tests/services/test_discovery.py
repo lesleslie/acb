@@ -1,29 +1,31 @@
 """Tests for Service Discovery System."""
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from acb.services.discovery import (
-    ServiceMetadata,
-    ServiceStatus,
-    ServiceCapability,
     Service,
+    ServiceCapability,
+    ServiceMetadata,
     ServiceNotFound,
     ServiceNotInstalled,
-    generate_service_id,
+    ServiceStatus,
+    apply_service_overrides,
     create_service_metadata_template,
-    import_service,
-    try_import_service,
+    disable_service,
+    enable_service,
+    generate_service_id,
     get_service_class,
-    list_services,
+    get_service_descriptor,
+    get_service_info,
+    get_service_override,
+    import_service,
+    initialize_service_registry,
     list_available_services,
     list_enabled_services,
-    get_service_info,
-    enable_service,
-    disable_service,
-    get_service_descriptor,
-    get_service_override,
-    apply_service_overrides,
-    initialize_service_registry
+    list_services,
+    try_import_service,
 )
 
 
@@ -46,12 +48,14 @@ class TestServiceMetadata:
             status=ServiceStatus.STABLE,
             capabilities=[ServiceCapability.ASYNC_OPERATIONS],
             description="Test service description",
-            settings_class="TestSettings"
+            settings_class="TestSettings",
         )
 
         assert metadata.name == "Test Service"
         assert metadata.category == "test"
-        assert metadata.status == ServiceStatus.STABLE.value  # Pydantic converts enum to value
+        assert (
+            metadata.status == ServiceStatus.STABLE.value
+        )  # Pydantic converts enum to value
         assert ServiceCapability.ASYNC_OPERATIONS.value in metadata.capabilities
 
     def test_create_service_metadata_template(self):
@@ -62,7 +66,7 @@ class TestServiceMetadata:
             service_type="template_type",
             author="Template Author",
             description="Template description",
-            version="2.0.0"
+            version="2.0.0",
         )
 
         assert metadata.name == "Template Service"
@@ -108,7 +112,9 @@ class TestServiceDiscovery:
 
         # Check that it's enabled
         enabled_services = list_enabled_services()
-        performance_services = [s for s in enabled_services if s.category == "performance" and s.enabled]
+        performance_services = [
+            s for s in enabled_services if s.category == "performance" and s.enabled
+        ]
         assert len(performance_services) > 0
 
     def test_disable_service(self):
@@ -119,7 +125,9 @@ class TestServiceDiscovery:
 
         # Check that it's disabled
         enabled_services = list_enabled_services()
-        performance_services = [s for s in enabled_services if s.category == "performance" and s.enabled]
+        performance_services = [
+            s for s in enabled_services if s.category == "performance" and s.enabled
+        ]
         assert len(performance_services) == 0
 
     def test_get_service_descriptor(self):
@@ -216,7 +224,8 @@ class TestServiceInfo:
 
         # Check if module has SERVICE_METADATA (it's defined at module level)
         import acb.services.performance.optimizer as optimizer_module
-        assert hasattr(optimizer_module, 'SERVICE_METADATA')
+
+        assert hasattr(optimizer_module, "SERVICE_METADATA")
         assert optimizer_module.SERVICE_METADATA is not None
 
         info = get_service_info(service_class)
@@ -241,22 +250,16 @@ class TestServiceRegistry:
     def test_service_equality(self):
         """Test service equality comparison."""
         service1 = Service(
-            name="test",
-            class_name="TestService",
-            category="test",
-            module="test.module"
+            name="test", class_name="TestService", category="test", module="test.module"
         )
         service2 = Service(
-            name="test",
-            class_name="TestService",
-            category="test",
-            module="test.module"
+            name="test", class_name="TestService", category="test", module="test.module"
         )
         service3 = Service(
             name="different",
             class_name="TestService",
             category="test",
-            module="test.module"
+            module="test.module",
         )
 
         assert service1 == service2
@@ -265,10 +268,7 @@ class TestServiceRegistry:
     def test_service_hash(self):
         """Test service hash functionality."""
         service = Service(
-            name="test",
-            class_name="TestService",
-            category="test",
-            module="test.module"
+            name="test", class_name="TestService", category="test", module="test.module"
         )
 
         # Should be hashable
@@ -281,9 +281,11 @@ class TestServiceAutoDetection:
 
     def test_import_service_auto_detection_mock(self):
         """Test auto-detection of service from context (mocked)."""
-        with patch('builtins.open', side_effect=OSError("File not found")):
+        with patch("builtins.open", side_effect=OSError("File not found")):
             # Should fall back to ValueError when auto-detection fails
-            with pytest.raises(ValueError, match="Could not determine category from context"):
+            with pytest.raises(
+                ValueError, match="Could not determine category from context"
+            ):
                 import_service()  # No arguments, should try auto-detection
 
 
@@ -331,6 +333,7 @@ class TestServiceConfigOverrides:
         """Test getting service override when no config exists."""
         # Clear the cache first
         from acb.services.discovery import _load_service_settings
+
         _load_service_settings.cache_clear()
 
         override = get_service_override("nonexistent")
@@ -343,7 +346,8 @@ class TestServiceConfigOverrides:
 
     def test_service_override_config_example(self):
         """Test service override functionality with example config."""
-        from unittest.mock import patch, mock_open
+        from unittest.mock import patch
+
         from acb.services.discovery import _load_service_settings
 
         # Clear cache
@@ -375,6 +379,7 @@ validation: validation_service
     def test_apply_service_overrides_with_config(self):
         """Test applying service overrides with configuration."""
         from unittest.mock import patch
+
         from acb.services.discovery import _load_service_settings
 
         # Clear cache

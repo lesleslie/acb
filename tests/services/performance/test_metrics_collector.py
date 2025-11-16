@@ -56,6 +56,7 @@ def test_percentile_and_cleanup(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Cleanup old metrics
     import asyncio
+
     now = time.time()
     old = now - (mc._settings.metrics_retention_hours * 3600 + 10)  # type: ignore[attr-defined]
     recent = now

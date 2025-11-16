@@ -1,16 +1,14 @@
 """Additional tests for the depends module to improve coverage."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from acb.depends import (
     Depends,
+    _get_adapter_class_async,
+    _get_dependency_sync,
     depends,
     fast_depends,
-    _get_dependency_sync,
-    _get_adapter_class_async,
 )
-from acb.config import Config
 
 
 class TestDependsClass:
@@ -23,6 +21,7 @@ class TestDependsClass:
 
     def test_depends_inject_decorator(self) -> None:
         """Test Depends.inject decorator."""
+
         def sample_function(value: str) -> str:
             return f"processed: {value}"
 
@@ -31,6 +30,7 @@ class TestDependsClass:
 
     def test_depends_set_with_instance(self) -> None:
         """Test Depends.set with instance."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -42,6 +42,7 @@ class TestDependsClass:
 
     def test_depends_set_without_instance(self) -> None:
         """Test Depends.set without instance."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -50,9 +51,12 @@ class TestDependsClass:
         # The result might be wrapped, so just check it's not None
         assert result is not None
 
-    @pytest.mark.skip(reason="Depends.get() with class pattern changed after refactoring")
+    @pytest.mark.skip(
+        reason="Depends.get() with class pattern changed after refactoring"
+    )
     def test_depends_get_with_class(self) -> None:
         """Test Depends.get with class."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -67,6 +71,7 @@ class TestDependsClass:
     @pytest.mark.asyncio
     async def test_depends_get_async_with_class(self) -> None:
         """Test Depends.get_async with class."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -103,11 +108,16 @@ class TestDependsClass:
         with pytest.raises(RuntimeError) as exc_info:
             _get_dependency_sync("test_category")
 
-        assert "Adapter 'test_category' requires async initialization" in str(exc_info.value)
-        assert "Use 'await depends.get_async(\"test_category\")' instead" in str(exc_info.value)
+        assert "Adapter 'test_category' requires async initialization" in str(
+            exc_info.value
+        )
+        assert "Use 'await depends.get_async(\"test_category\")' instead" in str(
+            exc_info.value
+        )
 
     def test_get_dependency_sync_with_class(self) -> None:
         """Test _get_dependency_sync with class."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -136,7 +146,9 @@ class TestDependsClass:
             assert result1 is not None
             assert result2 is not None
         except Exception:
-            pytest.fail("_get_adapter_class_async should not raise unhandled exceptions")
+            pytest.fail(
+                "_get_adapter_class_async should not raise unhandled exceptions"
+            )
 
 
 class TestDependsInstance:
@@ -149,6 +161,7 @@ class TestDependsInstance:
     @pytest.mark.skip(reason="Depends instance.get() pattern changed after refactoring")
     def test_depends_instance_get(self) -> None:
         """Test depends instance get method."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -163,6 +176,7 @@ class TestDependsInstance:
     @pytest.mark.asyncio
     async def test_depends_instance_get_async(self) -> None:
         """Test depends instance get_async method."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -176,6 +190,7 @@ class TestDependsInstance:
 
     def test_depends_instance_inject(self) -> None:
         """Test depends instance inject method."""
+
         def sample_function(value: str) -> str:
             return f"processed: {value}"
 
@@ -184,6 +199,7 @@ class TestDependsInstance:
 
     def test_depends_instance_set(self) -> None:
         """Test depends instance set method."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -206,6 +222,7 @@ class TestFastDepends:
     @pytest.mark.skip(reason="fast_depends pattern changed after refactoring")
     def test_fast_depends_with_class(self) -> None:
         """Test fast_depends with class."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value
@@ -220,6 +237,7 @@ class TestFastDepends:
     @pytest.mark.skip(reason="fast_depends alias behavior changed after refactoring")
     def test_fast_depends_alias_behavior(self) -> None:
         """Test that fast_depends is an alias for depends.get."""
+
         class TestClass:
             def __init__(self, value: str = "test") -> None:
                 self.value = value

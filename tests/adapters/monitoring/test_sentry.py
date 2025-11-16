@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import SecretStr, ValidationError
+
 from acb.adapters.monitoring.sentry import Monitoring, MonitoringSettings
 from acb.config import Config
 

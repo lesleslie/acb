@@ -11,15 +11,15 @@ Features:
 - Metrics collection and analysis
 """
 
-import asyncio
 import os
 import time
+from statistics import mean, median, stdev
+
+import asyncio
+import psutil
 import typing as t
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
-from statistics import mean, median, stdev
-
-import psutil
 
 
 @dataclass

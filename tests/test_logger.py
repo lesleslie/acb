@@ -1,10 +1,11 @@
 import sys
 import tempfile
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
 from anyio import Path as AsyncPath
+
 from acb.adapters.logger.loguru import LoggerSettings as LoguruSettings
 from acb.logger import (
     Logger,
@@ -141,7 +142,9 @@ class TestLogger:
 
     @pytest.mark.asyncio
     async def test_async_sink(self) -> None:
-        with patch("acb.adapters.logger.loguru.aprint", new_callable=AsyncMock) as mock_aprint:
+        with patch(
+            "acb.adapters.logger.loguru.aprint", new_callable=AsyncMock
+        ) as mock_aprint:
             await Logger.async_sink("Test message")
 
             mock_aprint.assert_called_once_with("Test message", end="")

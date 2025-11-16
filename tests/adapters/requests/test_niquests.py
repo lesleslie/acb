@@ -1,9 +1,9 @@
 """Tests for the Niquests requests adapter."""
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from acb.adapters.requests.niquests import Requests, RequestsSettings
 
 
@@ -51,7 +51,9 @@ class TestRequests:
     @pytest.mark.asyncio
     async def test_create_client(self, requests_adapter: Requests) -> None:
         """Test client creation."""
-        with patch("acb.adapters.requests.niquests.niquests.AsyncSession") as mock_session:
+        with patch(
+            "acb.adapters.requests.niquests.niquests.AsyncSession"
+        ) as mock_session:
             mock_client = AsyncMock()
             mock_session.return_value = mock_client
 
@@ -63,7 +65,9 @@ class TestRequests:
     @pytest.mark.asyncio
     async def test_get_client(self, requests_adapter: Requests) -> None:
         """Test client retrieval."""
-        with patch.object(requests_adapter, "_ensure_client", AsyncMock()) as mock_ensure:
+        with patch.object(
+            requests_adapter, "_ensure_client", AsyncMock()
+        ) as mock_ensure:
             mock_client = AsyncMock()
             mock_ensure.return_value = mock_client
 
@@ -96,7 +100,9 @@ class TestRequests:
         mock_client.get.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.get("https://example.com", timeout=5)
 
             mock_client.get.assert_called_once_with(
@@ -104,7 +110,7 @@ class TestRequests:
                 timeout=5,
                 params=None,
                 headers=None,
-                cookies=None
+                cookies=None,
             )
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response
@@ -117,14 +123,15 @@ class TestRequests:
         mock_client.post.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.post("https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.post(
+                "https://example.com", data={"key": "value"}
+            )
 
             mock_client.post.assert_called_once_with(
-                "https://example.com",
-                data={"key": "value"},
-                json=None,
-                timeout=10
+                "https://example.com", data={"key": "value"}, json=None, timeout=10
             )
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response
@@ -137,14 +144,15 @@ class TestRequests:
         mock_client.put.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.put("https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.put(
+                "https://example.com", data={"key": "value"}
+            )
 
             mock_client.put.assert_called_once_with(
-                "https://example.com",
-                data={"key": "value"},
-                json=None,
-                timeout=10
+                "https://example.com", data={"key": "value"}, json=None, timeout=10
             )
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response
@@ -157,13 +165,12 @@ class TestRequests:
         mock_client.delete.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.delete("https://example.com", timeout=5)
 
-            mock_client.delete.assert_called_once_with(
-                "https://example.com",
-                timeout=5
-            )
+            mock_client.delete.assert_called_once_with("https://example.com", timeout=5)
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response
 
@@ -175,14 +182,15 @@ class TestRequests:
         mock_client.patch.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.patch("https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.patch(
+                "https://example.com", data={"key": "value"}
+            )
 
             mock_client.patch.assert_called_once_with(
-                "https://example.com",
-                timeout=10,
-                data={"key": "value"},
-                json=None
+                "https://example.com", timeout=10, data={"key": "value"}, json=None
             )
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response
@@ -195,13 +203,12 @@ class TestRequests:
         mock_client.head.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.head("https://example.com", timeout=5)
 
-            mock_client.head.assert_called_once_with(
-                "https://example.com",
-                timeout=5
-            )
+            mock_client.head.assert_called_once_with("https://example.com", timeout=5)
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response
 
@@ -213,12 +220,13 @@ class TestRequests:
         mock_client.options.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.options("https://example.com", timeout=5)
 
             mock_client.options.assert_called_once_with(
-                "https://example.com",
-                timeout=5
+                "https://example.com", timeout=5
             )
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response
@@ -231,15 +239,19 @@ class TestRequests:
         mock_client.request.return_value = mock_response
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(requests_adapter, "get_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.request("PUT", "https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "get_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.request(
+                "PUT", "https://example.com", data={"key": "value"}
+            )
 
             mock_client.request.assert_called_once_with(
                 "PUT",
                 "https://example.com",
                 data={"key": "value"},
                 json=None,
-                timeout=10
+                timeout=10,
             )
             mock_response.raise_for_status.assert_called_once()
             assert response == mock_response

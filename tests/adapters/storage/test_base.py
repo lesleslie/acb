@@ -2,11 +2,12 @@
 
 from io import BytesIO
 from types import TracebackType
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from anyio import Path as AsyncPath
+from typing import Any
+
 from acb.adapters.storage._base import (
     StorageBase,
     StorageBaseSettings,

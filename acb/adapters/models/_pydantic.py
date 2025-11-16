@@ -7,6 +7,7 @@ allowing the universal query interface to work with Pydantic classes.
 from __future__ import annotations
 
 import inspect
+
 from typing import TYPE_CHECKING, Any, TypeVar, Union, get_args, get_origin
 
 from acb.adapters.models._attrs import ModelAdapter

@@ -1,7 +1,8 @@
 """Tests for logger base adapter functionality."""
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import Mock, patch
 
 from acb.adapters.logger._base import LoggerBase, LoggerBaseSettings, LoggerProtocol
 from acb.config import Config
@@ -79,9 +80,7 @@ class TestLoggerBaseSettings:
     def test_structured_logging_settings(self):
         """Test structured logging configuration."""
         settings = LoggerBaseSettings(
-            json_output=True,
-            include_metadata=True,
-            include_caller_info=True
+            json_output=True, include_metadata=True, include_caller_info=True
         )
 
         assert settings.json_output is True
@@ -90,10 +89,7 @@ class TestLoggerBaseSettings:
 
     def test_remote_logging_settings(self):
         """Test remote logging configuration."""
-        settings = LoggerBaseSettings(
-            remote_batch_size=50,
-            remote_flush_interval=10.0
-        )
+        settings = LoggerBaseSettings(remote_batch_size=50, remote_flush_interval=10.0)
 
         assert settings.remote_batch_size == 50
         assert settings.remote_flush_interval == 10.0
@@ -101,9 +97,7 @@ class TestLoggerBaseSettings:
     def test_adapter_settings_building(self):
         """Test that adapter-specific settings are built correctly."""
         settings = LoggerBaseSettings(
-            serialize=True,
-            async_logging=False,
-            json_output=True
+            serialize=True, async_logging=False, json_output=True
         )
 
         adapter_settings = settings.settings
@@ -292,7 +286,7 @@ class TestLoggerBaseIntegration:
         config = Config()
         depends.set(Config, config)
 
-        logger = MockLogger()
+        MockLogger()
 
         # Config should be available through depends, not as logger attribute
         # The config: Inject[Config] annotation is for type hints only

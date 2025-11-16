@@ -1,10 +1,9 @@
 """Additional tests for the ACB SSL configuration module."""
+
 import ssl
-import tempfile
-from pathlib import Path
+from unittest.mock import patch
 
 import pytest
-from unittest.mock import Mock, patch
 
 from acb.ssl_config import (
     SSLConfig,
@@ -70,9 +69,7 @@ class TestSSLConfig:
         ca_file.write_text("ca content")
 
         config = SSLConfig(
-            cert_path=str(cert_file),
-            key_path=str(key_file),
-            ca_path=str(ca_file)
+            cert_path=str(cert_file), key_path=str(key_file), ca_path=str(ca_file)
         )
 
         errors = config.validate_files()
@@ -87,7 +84,7 @@ class TestSSLConfig:
         config = SSLConfig(
             cert_path=str(cert_file),
             key_path="/nonexistent/key.pem",
-            ca_path="/nonexistent/ca.pem"
+            ca_path="/nonexistent/ca.pem",
         )
 
         errors = config.validate_files()
@@ -100,7 +97,7 @@ class TestSSLConfig:
         config = SSLConfig(
             cert_path="/nonexistent/cert.pem",
             key_path="/nonexistent/key.pem",
-            ca_path="/nonexistent/ca.pem"
+            ca_path="/nonexistent/ca.pem",
         )
 
         errors = config.validate_files()
@@ -138,9 +135,7 @@ class TestSSLConfig:
     def test_create_ssl_context_verify_none(self) -> None:
         """Test creating SSL context with no verification."""
         config = SSLConfig(
-            enabled=True,
-            verify_mode=SSLVerifyMode.NONE,
-            check_hostname=False
+            enabled=True, verify_mode=SSLVerifyMode.NONE, check_hostname=False
         )
 
         context = config.create_ssl_context()
@@ -150,9 +145,7 @@ class TestSSLConfig:
     def test_create_ssl_context_verify_optional(self) -> None:
         """Test creating SSL context with optional verification."""
         config = SSLConfig(
-            enabled=True,
-            verify_mode=SSLVerifyMode.OPTIONAL,
-            check_hostname=True
+            enabled=True, verify_mode=SSLVerifyMode.OPTIONAL, check_hostname=True
         )
 
         context = config.create_ssl_context()
@@ -162,20 +155,18 @@ class TestSSLConfig:
     def test_create_ssl_context_verify_required(self) -> None:
         """Test creating SSL context with required verification."""
         config = SSLConfig(
-            enabled=True,
-            verify_mode=SSLVerifyMode.REQUIRED,
-            check_hostname=True
+            enabled=True, verify_mode=SSLVerifyMode.REQUIRED, check_hostname=True
         )
 
         context = config.create_ssl_context()
         assert context.verify_mode == ssl.CERT_REQUIRED
         assert context.check_hostname is True
 
-    @pytest.mark.skipif(not hasattr(ssl, 'TLSVersion'), reason="ssl.TLSVersion not available")
+    @pytest.mark.skipif(
+        not hasattr(ssl, "TLSVersion"), reason="ssl.TLSVersion not available"
+    )
     def test_create_ssl_context_with_certificates(self, tmp_path) -> None:
         """Test creating SSL context with certificate files."""
-        from unittest.mock import patch
-
         # Create temporary certificate files
         cert_file = tmp_path / "cert.pem"
         key_file = tmp_path / "key.pem"
@@ -188,12 +179,12 @@ class TestSSLConfig:
             enabled=True,
             cert_path=str(cert_file),
             key_path=str(key_file),
-            ca_path=str(ca_file)
+            ca_path=str(ca_file),
         )
 
         # Mock the SSL context methods to avoid loading invalid certs
-        with patch.object(ssl.SSLContext, 'load_cert_chain') as mock_load_cert:
-            with patch.object(ssl.SSLContext, 'load_verify_locations') as mock_load_ca:
+        with patch.object(ssl.SSLContext, "load_cert_chain") as mock_load_cert:
+            with patch.object(ssl.SSLContext, "load_verify_locations") as mock_load_ca:
                 context = config.create_ssl_context()
 
                 # Verify the context methods were called with correct paths
@@ -203,12 +194,9 @@ class TestSSLConfig:
 
     def test_create_ssl_context_with_ciphers(self) -> None:
         """Test creating SSL context with ciphers."""
-        config = SSLConfig(
-            enabled=True,
-            ciphers="HIGH:!aNULL"
-        )
+        config = SSLConfig(enabled=True, ciphers="HIGH:!aNULL")
 
-        context = config.create_ssl_context()
+        config.create_ssl_context()
         # Just ensure no exception is raised when setting ciphers
 
     def test_to_redis_kwargs_disabled(self) -> None:
@@ -235,7 +223,7 @@ class TestSSLConfig:
             verify_mode=SSLVerifyMode.NONE,
             check_hostname=False,
             tls_version=TLSVersion.TLS_1_2,
-            ciphers="HIGH:!aNULL"
+            ciphers="HIGH:!aNULL",
         )
 
         kwargs = config.to_redis_kwargs()
@@ -280,7 +268,7 @@ class TestSSLConfig:
             cert_path=str(cert_file),
             key_path=str(key_file),
             ca_path=str(ca_file),
-            mode=SSLMode.VERIFY_FULL
+            mode=SSLMode.VERIFY_FULL,
         )
 
         kwargs = config.to_postgresql_kwargs()
@@ -325,7 +313,7 @@ class TestSSLConfig:
             cert_path=str(cert_file),
             key_path=str(key_file),
             ca_path=str(ca_file),
-            mode=SSLMode.VERIFY_FULL
+            mode=SSLMode.VERIFY_FULL,
         )
 
         kwargs = config.to_mysql_kwargs()
@@ -381,7 +369,7 @@ class TestSSLConfig:
             cert_path=str(cert_file),
             key_path=str(key_file),
             ca_path=str(ca_file),
-            verify_mode=SSLVerifyMode.NONE
+            verify_mode=SSLVerifyMode.NONE,
         )
 
         kwargs = config.to_mongodb_kwargs()
@@ -418,9 +406,7 @@ class TestSSLConfig:
         key_file.write_text("key")
 
         config = SSLConfig(
-            enabled=True,
-            cert_path=str(cert_file),
-            key_path=str(key_file)
+            enabled=True, cert_path=str(cert_file), key_path=str(key_file)
         )
 
         kwargs = config.to_niquests_kwargs()
@@ -432,20 +418,14 @@ class TestSSLConfig:
         ca_file = tmp_path / "ca.pem"
         ca_file.write_text("ca")
 
-        config = SSLConfig(
-            enabled=True,
-            ca_path=str(ca_file)
-        )
+        config = SSLConfig(enabled=True, ca_path=str(ca_file))
 
         kwargs = config.to_niquests_kwargs()
         assert kwargs["verify"] == str(ca_file)
 
     def test_to_niquests_kwargs_verify_false(self) -> None:
         """Test Niquests kwargs with verify false."""
-        config = SSLConfig(
-            enabled=True,
-            verify_mode=SSLVerifyMode.NONE
-        )
+        config = SSLConfig(enabled=True, verify_mode=SSLVerifyMode.NONE)
 
         kwargs = config.to_niquests_kwargs()
         assert kwargs["verify"] is False
@@ -465,9 +445,7 @@ class TestSSLConfig:
         key_file.write_text("key")
 
         config = SSLConfig(
-            enabled=True,
-            cert_path=str(cert_file),
-            key_path=str(key_file)
+            enabled=True, cert_path=str(cert_file), key_path=str(key_file)
         )
 
         kwargs = config.to_httpx_kwargs()
@@ -479,20 +457,14 @@ class TestSSLConfig:
         ca_file = tmp_path / "ca.pem"
         ca_file.write_text("ca")
 
-        config = SSLConfig(
-            enabled=True,
-            ca_path=str(ca_file)
-        )
+        config = SSLConfig(enabled=True, ca_path=str(ca_file))
 
         kwargs = config.to_httpx_kwargs()
         assert kwargs["verify"] == str(ca_file)
 
     def test_to_httpx_kwargs_verify_false(self) -> None:
         """Test HTTPX kwargs with verify false."""
-        config = SSLConfig(
-            enabled=True,
-            verify_mode=SSLVerifyMode.NONE
-        )
+        config = SSLConfig(enabled=True, verify_mode=SSLVerifyMode.NONE)
 
         kwargs = config.to_httpx_kwargs()
         assert kwargs["verify"] is False
@@ -512,9 +484,7 @@ class TestSSLConfig:
         key_file.write_text("key")
 
         config = SSLConfig(
-            enabled=True,
-            cert_path=str(cert_file),
-            key_path=str(key_file)
+            enabled=True, cert_path=str(cert_file), key_path=str(key_file)
         )
 
         kwargs = config.to_http_client_kwargs()
@@ -526,27 +496,25 @@ class TestSSLConfig:
         ca_file = tmp_path / "ca.pem"
         ca_file.write_text("ca")
 
-        config = SSLConfig(
-            enabled=True,
-            ca_path=str(ca_file)
-        )
+        config = SSLConfig(enabled=True, ca_path=str(ca_file))
 
         kwargs = config.to_http_client_kwargs()
         assert kwargs["verify"] == str(ca_file)
 
     def test_to_http_client_kwargs_with_ciphers(self) -> None:
         """Test consolidated HTTP client kwargs with ciphers."""
-        config = SSLConfig(
-            enabled=True,
-            ciphers="HIGH:!aNULL:!eNULL"
-        )
+        config = SSLConfig(enabled=True, ciphers="HIGH:!aNULL:!eNULL")
 
         kwargs = config.to_http_client_kwargs()
         assert kwargs["ciphers"] == "HIGH:!aNULL:!eNULL"
 
     def test_backward_compatibility_type_aliases(self) -> None:
         """Test that Niquests and HTTPX type aliases work correctly."""
-        from acb.ssl_config import NiquestsSSLKwargs, HTTPXSSLKwargs, HTTPClientSSLKwargs
+        from acb.ssl_config import (
+            HTTPClientSSLKwargs,
+            HTTPXSSLKwargs,
+            NiquestsSSLKwargs,
+        )
 
         # Verify type aliases point to the same class
         assert NiquestsSSLKwargs is HTTPClientSSLKwargs
@@ -563,7 +531,7 @@ class TestSSLConfig:
             enabled=True,
             cert_path=str(cert_file),
             key_path=str(key_file),
-            ciphers="HIGH"
+            ciphers="HIGH",
         )
 
         # All three methods should return identical results
@@ -581,6 +549,7 @@ class TestSSLConfigMixin:
 
     def test_mixin_initialization(self) -> None:
         """Test initialization of SSLConfigMixin."""
+
         class TestClass(SSLConfigMixin):
             pass
 
@@ -590,6 +559,7 @@ class TestSSLConfigMixin:
 
     def test_get_ssl_config_default(self) -> None:
         """Test getting default SSL config."""
+
         class TestClass(SSLConfigMixin):
             pass
 
@@ -601,6 +571,7 @@ class TestSSLConfigMixin:
 
     def test_get_ssl_config_cached(self) -> None:
         """Test that SSL config is cached."""
+
         class TestClass(SSLConfigMixin):
             pass
 
@@ -612,6 +583,7 @@ class TestSSLConfigMixin:
 
     def test_get_ssl_context(self) -> None:
         """Test getting SSL context."""
+
         class TestClass(SSLConfigMixin):
             pass
 
@@ -623,6 +595,7 @@ class TestSSLConfigMixin:
 
     def test_get_ssl_context_cached(self) -> None:
         """Test that SSL context is cached."""
+
         class TestClass(SSLConfigMixin):
             pass
 
@@ -634,6 +607,7 @@ class TestSSLConfigMixin:
 
     def test_configure_ssl(self) -> None:
         """Test configuring SSL settings."""
+
         class TestClass(SSLConfigMixin):
             pass
 
@@ -643,7 +617,7 @@ class TestSSLConfigMixin:
             enabled=True,
             mode=SSLMode.REQUIRED,
             cert_path="/path/to/cert",
-            verify_mode=SSLVerifyMode.OPTIONAL
+            verify_mode=SSLVerifyMode.OPTIONAL,
         )
 
         config = obj._get_ssl_config()
@@ -654,6 +628,7 @@ class TestSSLConfigMixin:
 
     def test_configure_ssl_resets_context(self) -> None:
         """Test that configuring SSL resets the context."""
+
         class TestClass(SSLConfigMixin):
             pass
 
@@ -674,14 +649,12 @@ class TestSSLConfigMixin:
 
     def test_validate_ssl_config(self) -> None:
         """Test validating SSL configuration."""
+
         class TestClass(SSLConfigMixin):
             pass
 
         obj = TestClass()
-        obj.configure_ssl(
-            cert_path="/nonexistent/cert",
-            key_path="/nonexistent/key"
-        )
+        obj.configure_ssl(cert_path="/nonexistent/cert", key_path="/nonexistent/key")
 
         errors = obj.validate_ssl_config()
         assert len(errors) == 2
@@ -690,6 +663,7 @@ class TestSSLConfigMixin:
 
     def test_ssl_enabled_property(self) -> None:
         """Test the ssl_enabled property."""
+
         class TestClass(SSLConfigMixin):
             pass
 

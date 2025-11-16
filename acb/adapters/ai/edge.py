@@ -1,12 +1,13 @@
 """Edge deployment strategy for AI models (Ollama, LFM, local models)."""
 
-import asyncio
 import json
-import typing as t
 from uuid import UUID
 
+import asyncio
 import httpx
+import typing as t
 from pydantic import SecretStr
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 

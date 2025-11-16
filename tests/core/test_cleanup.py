@@ -1,9 +1,9 @@
 """Tests for the cleanup module."""
 
-import asyncio
 import logging
 from unittest.mock import AsyncMock, MagicMock
 
+import asyncio
 import pytest
 
 from acb.cleanup import CleanupMixin
@@ -49,7 +49,9 @@ class TestCleanupMixin:
         assert cleanup_mixin._resources[1] is resource2
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_close_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_close_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with close method."""
         resource = MagicMock()
         resource.close = MagicMock()
@@ -58,7 +60,9 @@ class TestCleanupMixin:
         resource.close.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_aclose_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_aclose_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with aclose method."""
         resource = AsyncMock()
         resource.close = None  # Remove sync close method
@@ -68,7 +72,9 @@ class TestCleanupMixin:
         resource.aclose.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_disconnect_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_disconnect_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with disconnect method."""
         resource = MagicMock()
         resource.close = None  # Remove sync close method
@@ -79,7 +85,9 @@ class TestCleanupMixin:
         resource.disconnect.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_shutdown_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_shutdown_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with shutdown method."""
         resource = MagicMock()
         for method in ["close", "aclose", "disconnect"]:
@@ -90,7 +98,9 @@ class TestCleanupMixin:
         resource.shutdown.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_dispose_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_dispose_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with dispose method."""
         resource = MagicMock()
         for method in ["close", "aclose", "disconnect", "shutdown"]:
@@ -101,7 +111,9 @@ class TestCleanupMixin:
         resource.dispose.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_terminate_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_terminate_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with terminate method."""
         resource = MagicMock()
         for method in ["close", "aclose", "disconnect", "shutdown", "dispose"]:
@@ -112,10 +124,19 @@ class TestCleanupMixin:
         resource.terminate.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_quit_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_quit_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with quit method."""
         resource = MagicMock()
-        for method in ["close", "aclose", "disconnect", "shutdown", "dispose", "terminate"]:
+        for method in [
+            "close",
+            "aclose",
+            "disconnect",
+            "shutdown",
+            "dispose",
+            "terminate",
+        ]:
             setattr(resource, method, None)
         resource.quit = MagicMock()
 
@@ -123,10 +144,20 @@ class TestCleanupMixin:
         resource.quit.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_with_release_method(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_resource_with_release_method(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up a resource with release method."""
         resource = MagicMock()
-        for method in ["close", "aclose", "disconnect", "shutdown", "dispose", "terminate", "quit"]:
+        for method in [
+            "close",
+            "aclose",
+            "disconnect",
+            "shutdown",
+            "dispose",
+            "terminate",
+            "quit",
+        ]:
             setattr(resource, method, None)
         resource.release = MagicMock()
 
@@ -140,7 +171,9 @@ class TestCleanupMixin:
         # Should not raise any exception
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_method_exception(self, cleanup_mixin: CleanupMixin, caplog) -> None:
+    async def test_cleanup_resource_method_exception(
+        self, cleanup_mixin: CleanupMixin, caplog
+    ) -> None:
         """Test cleaning up a resource when methods raise exceptions."""
         resource = MagicMock()
         resource.close = MagicMock(side_effect=Exception("Close failed"))
@@ -153,7 +186,9 @@ class TestCleanupMixin:
         assert "Failed to cleanup using close()" in caplog.text
 
     @pytest.mark.asyncio
-    async def test_cleanup_multiple_resources(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_multiple_resources(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleaning up multiple resources."""
         resource1 = MagicMock()
         resource1.close = MagicMock()
@@ -188,7 +223,9 @@ class TestCleanupMixin:
         resource.close.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_cleanup_with_resource_exception(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_with_resource_exception(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test cleanup when a resource raises an exception."""
         # Just test that the method doesn't crash when there are exceptions
         resource1 = MagicMock()
@@ -239,7 +276,9 @@ class TestCleanupMixin:
         resource.close.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_cleanup_logging_warnings(self, cleanup_mixin: CleanupMixin, caplog) -> None:
+    async def test_cleanup_logging_warnings(
+        self, cleanup_mixin: CleanupMixin, caplog
+    ) -> None:
         """Test that cleanup logs warnings when resources fail to cleanup."""
         resource = MagicMock()
         resource.close = MagicMock(side_effect=Exception("Cleanup failed"))
@@ -248,6 +287,7 @@ class TestCleanupMixin:
 
         # Mock cleanup_resource to raise an exception
         original_cleanup_resource = cleanup_mixin.cleanup_resource
+
         async def mock_cleanup_resource_raises(resource):
             raise Exception("Cleanup resource failed")
 
@@ -261,11 +301,17 @@ class TestCleanupMixin:
         cleanup_mixin.cleanup_resource = original_cleanup_resource
 
         # Check that warning was logged
-        warning_logged = any("Resource cleanup errors" in record.message for record in caplog.records)
-        assert warning_logged, f"Expected warning message not found in logs: {[record.message for record in caplog.records]}"
+        warning_logged = any(
+            "Resource cleanup errors" in record.message for record in caplog.records
+        )
+        assert warning_logged, (
+            f"Expected warning message not found in logs: {[record.message for record in caplog.records]}"
+        )
 
     @pytest.mark.asyncio
-    async def test_cleanup_resource_logging_debug(self, cleanup_mixin: CleanupMixin, caplog) -> None:
+    async def test_cleanup_resource_logging_debug(
+        self, cleanup_mixin: CleanupMixin, caplog
+    ) -> None:
         """Test that cleanup logs debug messages when resources are cleaned up."""
         resource = MagicMock()
         resource.close = MagicMock()
@@ -276,7 +322,9 @@ class TestCleanupMixin:
         assert "Cleaned up resource using close()" in caplog.text
 
     @pytest.mark.asyncio
-    async def test_cleanup_lock_initialization(self, cleanup_mixin: CleanupMixin) -> None:
+    async def test_cleanup_lock_initialization(
+        self, cleanup_mixin: CleanupMixin
+    ) -> None:
         """Test that cleanup lock is properly initialized."""
         assert cleanup_mixin._cleanup_lock is None
 

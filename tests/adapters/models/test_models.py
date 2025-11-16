@@ -3,6 +3,7 @@
 from unittest.mock import Mock
 
 import pytest
+
 from acb.adapters.models import ModelsAdapter, _cached_auto_detect_model_type
 
 

@@ -1,13 +1,14 @@
 """ONNX Runtime embeddings adapter implementation for optimized inference."""
 
-import asyncio
 import time
+
+import asyncio
+import numpy as np
 import typing as t
 from contextlib import suppress
 from datetime import datetime
-
-import numpy as np
 from pydantic import Field
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -341,7 +342,7 @@ class ONNXEmbedding(EmbeddingAdapter):
                 model,
                 self._count_tokens_safe(text, tokenizer),
             )
-            for text, embedding in zip(batch_texts, embeddings)
+            for text, embedding in zip(batch_texts, embeddings, strict=False)
         ]
 
     async def _process_all_batches(

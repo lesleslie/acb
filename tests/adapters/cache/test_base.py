@@ -1,12 +1,11 @@
 """Tests for the base cache components."""
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from aiocache.backends.memory import SimpleMemoryCache
-from aiocache.serializers import PickleSerializer
-from acb.adapters.cache._base import CacheBaseSettings, MsgPackSerializer, CacheBase
+import typing as t
+
+from acb.adapters.cache._base import CacheBase, CacheBaseSettings, MsgPackSerializer
 from acb.adapters.cache.memory import Cache as MemoryCache
 from acb.config import Config
 
@@ -170,6 +169,7 @@ class TestCacheBase:
     @pytest.mark.asyncio
     async def test_create_client_not_implemented(self) -> None:
         """Test that _create_client raises NotImplementedError."""
+
         class IncompleteCache(CacheBase):
             pass
 
@@ -181,7 +181,7 @@ class TestCacheBase:
     async def test_cleanup_resources(self, mock_cache: MockCache) -> None:
         """Test _cleanup_resources method."""
         # First ensure we have a client
-        client = await mock_cache._ensure_client()
+        await mock_cache._ensure_client()
         assert mock_cache._client is not None
 
         # Test cleanup

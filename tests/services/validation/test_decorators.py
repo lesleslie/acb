@@ -2,31 +2,39 @@
 
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import MagicMock
-
 import pytest
+from typing import Any
 
-from acb.services.validation._base import ValidationConfig, ValidationResult, ValidationSchema
+from acb.services.validation._base import (
+    ValidationConfig,
+    ValidationResult,
+    ValidationSchema,
+)
 from acb.services.validation.decorators import (
     ValidationDecorators,
+    sanitize_input,
     validate_contracts,
     validate_input,
     validate_output,
-    sanitize_input,
-    validators,
 )
 from acb.services.validation.results import ValidationError
 
 
 class _Schema(ValidationSchema):
-    def __init__(self, name: str, *, valid: bool = True, replace: Any | None = None) -> None:
+    def __init__(
+        self, name: str, *, valid: bool = True, replace: Any | None = None
+    ) -> None:
         super().__init__(name)
         self._valid = valid
         self._replace = replace
 
-    async def validate(self, data: Any, field_name: str | None = None) -> ValidationResult:  # type: ignore[override]
-        result = ValidationResult(value=self._replace if self._replace is not None else data, original_value=data)
+    async def validate(
+        self, data: Any, field_name: str | None = None
+    ) -> ValidationResult:  # type: ignore[override]
+        result = ValidationResult(
+            value=self._replace if self._replace is not None else data,
+            original_value=data,
+        )
         result.is_valid = self._valid
         if not self._valid:
             result.add_error(f"invalid {self.name}")
@@ -142,7 +150,9 @@ async def test_sanitize_input_applies_and_returns_mutated_args() -> None:
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_validate_contracts_input_and_output() -> None:
-    @validate_contracts(input_contract={"a": int, "b": str}, output_contract={"id": int})
+    @validate_contracts(
+        input_contract={"a": int, "b": str}, output_contract={"id": int}
+    )
     async def f(a: int, b: str) -> dict[str, Any]:
         return {"id": 1, "b": b}
 
@@ -165,7 +175,9 @@ async def test_validate_contracts_input_and_output() -> None:
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_method_validator_for_class_methods(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_method_validator_for_class_methods(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     fake = _FakeValidationService()
     vd = ValidationDecorators(fake)
 
@@ -173,7 +185,9 @@ async def test_method_validator_for_class_methods(monkeypatch: pytest.MonkeyPatc
     out_schema = _Schema("out", valid=True, replace={"id": 1})
 
     class Svc:
-        @vd.method_validator(input_schemas={"name": in_schema}, output_schema=out_schema)
+        @vd.method_validator(
+            input_schemas={"name": in_schema}, output_schema=out_schema
+        )
         async def create(self, name: str) -> dict[str, Any]:
             return {"name": name}
 

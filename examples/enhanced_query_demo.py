@@ -13,15 +13,15 @@ import typing as t
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+# Import enhanced query functionality
+from acb.adapters.models._hybrid import ACBQuery, HybridQueryOptions, QueryStyle
+from acb.adapters.models._query import QueryOperator, QuerySpec
 from acb.adapters.models._repository import Repository
 from acb.adapters.models._specification import (
     Specification,
     field,
     range_spec,
 )
-# Import enhanced query functionality
-from acb.adapters.models._hybrid import ACBQuery, HybridQueryOptions, QueryStyle
-from acb.adapters.models._query import QueryOperator
 
 
 # Example models
@@ -55,8 +55,8 @@ class ActiveUserSpec(Specification[User]):  # type: ignore[misc]
     def is_satisfied_by(self, candidate: User) -> bool:
         return candidate.status == "active"
 
-    def to_query_spec(self) -> QuerySpec:  # type: ignore[name-defined]
-        from acb.adapters.models._query import QueryCondition, QuerySpec
+    def to_query_spec(self) -> QuerySpec:
+        from acb.adapters.models._query import QueryCondition
 
         spec = QuerySpec()
         spec.filter.conditions.append(
@@ -71,8 +71,8 @@ class PremiumUserSpec(Specification[User]):  # type: ignore[misc]
     def is_satisfied_by(self, candidate: User) -> bool:
         return candidate.is_premium or candidate.subscription_type == "premium"
 
-    def to_query_spec(self) -> QuerySpec:  # type: ignore[name-defined]
-        from acb.adapters.models._query import QueryCondition, QuerySpec
+    def to_query_spec(self) -> QuerySpec:
+        from acb.adapters.models._query import QueryCondition
 
         spec = QuerySpec()
         # This would need OR logic in a real implementation
@@ -94,8 +94,8 @@ class RecentUserSpec(Specification[User]):  # type: ignore[misc]
         cutoff = datetime.now() - timedelta(days=self.days)
         return candidate.created_at >= cutoff
 
-    def to_query_spec(self) -> QuerySpec:  # type: ignore[name-defined]
-        from acb.adapters.models._query import QueryCondition, QuerySpec
+    def to_query_spec(self) -> QuerySpec:
+        from acb.adapters.models._query import QueryCondition
 
         spec = QuerySpec()
         cutoff = datetime.now() - timedelta(days=self.days)

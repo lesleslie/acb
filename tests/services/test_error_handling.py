@@ -3,32 +3,36 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
-
 import pytest
+from typing import Any
 
 from acb.services.error_handling import (
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitBreakerError,
     ErrorHandlingService,
-    RetryConfig,
-    RetryExhaustedError,
-    classify_error_severity,
-    suggest_recovery_strategy,
     ErrorSeverity,
     RecoveryStrategy,
+    RetryConfig,
+    classify_error_severity,
+    suggest_recovery_strategy,
 )
 
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_circuit_breaker_open_half_open_close(monkeypatch: pytest.MonkeyPatch) -> None:
-    cfg = CircuitBreakerConfig(failure_threshold=1, success_threshold=1, timeout=0.1, min_requests=0)
+async def test_circuit_breaker_open_half_open_close(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cfg = CircuitBreakerConfig(
+        failure_threshold=1, success_threshold=1, timeout=0.1, min_requests=0
+    )
     cb = CircuitBreaker("t", cfg)
 
     now = {"t": 0.0}
-    monkeypatch.setattr("acb.services.error_handling.time.perf_counter", lambda: now["t"])
+    monkeypatch.setattr(
+        "acb.services.error_handling.time.perf_counter", lambda: now["t"]
+    )
 
     async def boom() -> None:
         raise RuntimeError("boom")
@@ -36,7 +40,10 @@ async def test_circuit_breaker_open_half_open_close(monkeypatch: pytest.MonkeyPa
     # First call fails and opens the circuit
     with pytest.raises(RuntimeError):
         await cb.call(boom)
-    assert cb.state.name in ("OPEN", "HALF_OPEN")  # may transition during check-after-failure
+    assert cb.state.name in (
+        "OPEN",
+        "HALF_OPEN",
+    )  # may transition during check-after-failure
 
     # Next immediate call should be blocked (OPEN)
     now["t"] = 0.05
@@ -45,6 +52,7 @@ async def test_circuit_breaker_open_half_open_close(monkeypatch: pytest.MonkeyPa
 
     # After timeout, state moves to HALF_OPEN; a success closes it
     now["t"] = 1.0
+
     async def ok() -> str:
         return "ok"
 
@@ -55,7 +63,9 @@ async def test_circuit_breaker_open_half_open_close(monkeypatch: pytest.MonkeyPa
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_error_handling_retry_and_exhaustion(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_error_handling_retry_and_exhaustion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     svc = ErrorHandlingService()
     attempts = {"n": 0}
 
@@ -70,7 +80,9 @@ async def test_error_handling_retry_and_exhaustion(monkeypatch: pytest.MonkeyPat
         return None
 
     monkeypatch.setattr(asyncio, "sleep", _nosleep)
-    res = await svc.with_retry(sometimes, config=RetryConfig(max_attempts=5, base_delay=0.01))
+    res = await svc.with_retry(
+        sometimes, config=RetryConfig(max_attempts=5, base_delay=0.01)
+    )
     assert res == "ok" and attempts["n"] == 3
 
     # Exhaustion
@@ -81,8 +93,11 @@ async def test_error_handling_retry_and_exhaustion(monkeypatch: pytest.MonkeyPat
         raise ValueError("nope")
 
     from acb.services.error_handling import RetryableError
+
     with pytest.raises(RetryableError):
-        await svc.with_retry(always_fail, config=RetryConfig(max_attempts=2, base_delay=0.01))
+        await svc.with_retry(
+            always_fail, config=RetryConfig(max_attempts=2, base_delay=0.01)
+        )
 
 
 @pytest.mark.unit

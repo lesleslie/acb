@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
 
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path

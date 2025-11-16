@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import time
+from enum import Enum
+
 import typing as t
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
 
 
 class HealthStatus(str, Enum):

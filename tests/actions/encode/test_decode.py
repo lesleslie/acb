@@ -3,16 +3,17 @@
 import json
 import pickle
 import tempfile
-import typing as t
-from typing import Final
 from unittest.mock import AsyncMock, patch
 
 import msgspec
 import msgspec.msgpack
 import pytest
 import toml
+import typing as t
 import yaml
 from anyio import Path as AsyncPath
+from typing import Final
+
 from acb.actions.encode import decode, encode
 
 TEST_DATA: Final[dict[str, t.Any]] = {"name": "Test", "value": 123, "active": True}

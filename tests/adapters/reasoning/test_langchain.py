@@ -1,7 +1,8 @@
 """Tests for LangChain reasoning adapter."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from acb.adapters.reasoning._base import (
     ReasoningContext,
@@ -13,24 +14,27 @@ from acb.adapters.reasoning._base import (
 )
 
 # Mock LangChain imports
-with patch.dict('sys.modules', {
-    'langchain.agents': MagicMock(),
-    'langchain.agents.agent_types': MagicMock(),
-    'langchain.callbacks': MagicMock(),
-    'langchain.chains': MagicMock(),
-    'langchain.chains.conversation.memory': MagicMock(),
-    'langchain.llms.base': MagicMock(),
-    'langchain.memory': MagicMock(),
-    'langchain.prompts': MagicMock(),
-    'langchain.schema': MagicMock(),
-    'langchain.tools': MagicMock(),
-    'langchain_community.llms': MagicMock(),
-    'langchain_openai': MagicMock(),
-}):
+with patch.dict(
+    "sys.modules",
+    {
+        "langchain.agents": MagicMock(),
+        "langchain.agents.agent_types": MagicMock(),
+        "langchain.callbacks": MagicMock(),
+        "langchain.chains": MagicMock(),
+        "langchain.chains.conversation.memory": MagicMock(),
+        "langchain.llms.base": MagicMock(),
+        "langchain.memory": MagicMock(),
+        "langchain.prompts": MagicMock(),
+        "langchain.schema": MagicMock(),
+        "langchain.tools": MagicMock(),
+        "langchain_community.llms": MagicMock(),
+        "langchain_openai": MagicMock(),
+    },
+):
     from acb.adapters.reasoning.langchain import (
+        LangChainCallback,
         LangChainReasoningSettings,
         Reasoning,
-        LangChainCallback,
     )
 
 
@@ -80,10 +84,7 @@ class TestLangChainCallback:
         """Test chain start callback."""
         callback = LangChainCallback(mock_logger)
 
-        await callback.on_chain_start(
-            {"name": "TestChain"},
-            {"input": "test input"}
-        )
+        await callback.on_chain_start({"name": "TestChain"}, {"input": "test input"})
 
         assert callback.step_counter == 1
         assert callback.current_step is not None
@@ -161,7 +162,7 @@ class TestLangChainReasoning:
     @pytest.mark.asyncio
     async def test_client_creation(self, mock_adapter):
         """Test client creation."""
-        with patch('acb.adapters.reasoning.langchain.ChatOpenAI') as mock_chat_openai:
+        with patch("acb.adapters.reasoning.langchain.ChatOpenAI") as mock_chat_openai:
             mock_llm = MagicMock()
             mock_chat_openai.return_value = mock_llm
 
@@ -173,7 +174,7 @@ class TestLangChainReasoning:
     @pytest.mark.asyncio
     async def test_chain_of_thought_reasoning(self, mock_adapter):
         """Test chain of thought reasoning."""
-        with patch('acb.adapters.reasoning.langchain.LLMChain') as mock_chain:
+        with patch("acb.adapters.reasoning.langchain.LLMChain") as mock_chain:
             mock_chain_instance = MagicMock()
             mock_chain_instance.arun = AsyncMock(return_value="Test response")
             mock_chain.return_value = mock_chain_instance
@@ -194,7 +195,9 @@ class TestLangChainReasoning:
     @pytest.mark.asyncio
     async def test_react_reasoning_with_tools(self, mock_adapter):
         """Test ReAct reasoning with tools."""
-        with patch('acb.adapters.reasoning.langchain.initialize_agent') as mock_init_agent:
+        with patch(
+            "acb.adapters.reasoning.langchain.initialize_agent"
+        ) as mock_init_agent:
             mock_agent = MagicMock()
             mock_agent.arun = AsyncMock(return_value="Tool-based response")
             mock_init_agent.return_value = mock_agent
@@ -248,7 +251,7 @@ class TestLangChainReasoning:
     @pytest.mark.asyncio
     async def test_rag_workflow_reasoning(self, mock_adapter):
         """Test RAG workflow reasoning."""
-        with patch('acb.adapters.reasoning.langchain.LLMChain') as mock_chain:
+        with patch("acb.adapters.reasoning.langchain.LLMChain") as mock_chain:
             mock_chain_instance = MagicMock()
             mock_chain_instance.arun = AsyncMock(return_value="RAG response")
             mock_chain.return_value = mock_chain_instance
@@ -259,7 +262,7 @@ class TestLangChainReasoning:
                 retrieved_contexts=[
                     {"content": "Context 1", "score": 0.9},
                     {"content": "Context 2", "score": 0.8},
-                ]
+                ],
             )
 
             request = ReasoningRequest(
@@ -310,8 +313,8 @@ class TestLangChainReasoning:
             for i in range(3)
         ]
 
-        with patch.object(mock_adapter, '_reason', side_effect=mock_responses):
-            with patch('acb.adapters.reasoning.langchain.LLMChain') as mock_chain:
+        with patch.object(mock_adapter, "_reason", side_effect=mock_responses):
+            with patch("acb.adapters.reasoning.langchain.LLMChain") as mock_chain:
                 mock_chain_instance = MagicMock()
                 mock_chain_instance.arun = AsyncMock(return_value="Synthesized answer")
                 mock_chain.return_value = mock_chain_instance
@@ -331,7 +334,9 @@ class TestLangChainReasoning:
         )
 
         # Mock _ensure_client to raise an exception
-        mock_adapter._ensure_client = AsyncMock(side_effect=Exception("Connection failed"))
+        mock_adapter._ensure_client = AsyncMock(
+            side_effect=Exception("Connection failed")
+        )
 
         response = await mock_adapter._reason(request)
 
@@ -341,7 +346,7 @@ class TestLangChainReasoning:
     @pytest.mark.asyncio
     async def test_full_reasoning_workflow(self, mock_adapter):
         """Test full reasoning workflow."""
-        with patch.object(mock_adapter, '_chain_of_thought_reasoning') as mock_cot:
+        with patch.object(mock_adapter, "_chain_of_thought_reasoning") as mock_cot:
             mock_cot.return_value = ReasoningResponse(
                 final_answer="Final answer",
                 reasoning_chain=[],

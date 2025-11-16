@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from anyio import Path as AsyncPath
 from pydantic import SecretStr
+
 from acb.adapters.storage.s3 import Storage, StorageSettings
 
 

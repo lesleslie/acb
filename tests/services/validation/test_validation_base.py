@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import pytest
 from typing import Any
 
-import pytest
-
 from acb.services.validation._base import (
-    ValidationConfig,
-    ValidationLevel,
     ValidationMetrics,
     ValidationRegistry,
     ValidationResult,

@@ -1,10 +1,11 @@
 """Liquid AI LFM embeddings adapter implementation for memory-efficient edge deployment."""
 
 import time
+
 import typing as t
 from datetime import datetime
-
 from pydantic import Field
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,

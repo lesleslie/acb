@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
+
 from acb.adapters.smtp.gmail import Smtp, SmtpSettings
 
 

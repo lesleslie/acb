@@ -1,7 +1,8 @@
 """MCP resources implementation for ACB."""
 
-import asyncio
 from collections.abc import AsyncGenerator
+
+import asyncio
 from typing import TYPE_CHECKING, Any
 
 from acb.depends import depends

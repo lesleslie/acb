@@ -4,14 +4,15 @@ Provides SQL query optimization, analysis, and performance monitoring
 with integration to ACB's SQL adapters.
 """
 
-import asyncio
-import contextlib
 import hashlib
 import re
 import time
+from enum import Enum
+
+import asyncio
+import contextlib
 import typing as t
 from dataclasses import dataclass, field
-from enum import Enum
 
 from acb.adapters import import_adapter
 from acb.config import Config

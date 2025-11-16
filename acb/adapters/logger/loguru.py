@@ -1,15 +1,16 @@
 """Loguru-based logger adapter implementation."""
 
 import logging
-import typing as t
-from contextlib import suppress
-from datetime import UTC
 from inspect import currentframe
 from uuid import UUID
 
+import typing as t
 from aioconsole import aprint
+from contextlib import suppress
+from datetime import UTC
 from loguru._logger import Core as _Core
 from loguru._logger import Logger as _Logger
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -228,6 +229,7 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         """Add stderr sink for structured JSON logging (AI/machine consumption)."""
         import json
         import sys
+
         from datetime import datetime
 
         def json_formatter(record: dict[str, t.Any]) -> str:

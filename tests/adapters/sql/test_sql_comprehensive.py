@@ -1,13 +1,12 @@
 """Comprehensive tests for the SQL base adapter."""
 
-import typing as t
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
+from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession
-from sqlalchemy_utils import create_database, database_exists
-from sqlmodel import SQLModel
+
 from acb.adapters.sql._base import SqlBase, SqlBaseSettings
 from acb.config import Config
 
@@ -271,7 +270,9 @@ class TestSqlBase:
         # Mock get_engine to return our mock engine
         with patch.object(sql_base, "get_engine", return_value=mock_engine):
             # Mock AsyncSession constructor
-            with patch("acb.adapters.sql._base.AsyncSession", return_value=mock_session):
+            with patch(
+                "acb.adapters.sql._base.AsyncSession", return_value=mock_session
+            ):
                 session = await sql_base._ensure_session()
 
                 # Verify AsyncSession was created with correct parameters
@@ -314,12 +315,14 @@ class TestSqlBase:
     async def test_get_conn(self, sql_base: MockSqlBase) -> None:
         """Test get_conn method."""
         mock_engine = AsyncMock(spec=AsyncEngine)
-        mock_conn = AsyncMock(spec=AsyncConnection)
+        AsyncMock(spec=AsyncConnection)
 
         # Mock get_engine to return our mock engine
         with patch.object(sql_base, "get_engine", return_value=mock_engine):
             # Mock the async context manager behavior
-            mock_engine.begin = AsyncMock(return_value=asynccontextmanager(lambda: AsyncMock())())
+            mock_engine.begin = AsyncMock(
+                return_value=asynccontextmanager(lambda: AsyncMock())()
+            )
 
             async with sql_base.get_conn() as conn:
                 assert conn is not None

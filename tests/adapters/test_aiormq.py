@@ -1,18 +1,17 @@
 """Tests for aiormq messaging adapter."""
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
+
+from acb.adapters import import_adapter
 from acb.adapters.messaging._base import (
     MessagePriority,
-    QueueMessage,
-    PubSubMessage,
     MessagingConnectionError,
-    MessagingOperationError,
+    QueueMessage,
 )
 from acb.depends import depends
-from acb.adapters import import_adapter
 
 
 @pytest.fixture
@@ -104,7 +103,10 @@ def aiormq_adapter(aiormq_settings, mock_aiormq_imports):
     logger_cls = import_adapter("logger")
     depends.set(logger_cls, mock_logger)
 
-    with patch("acb.adapters.messaging.aiormq._get_aiormq_imports", return_value=mock_aiormq_imports["imports"]):
+    with patch(
+        "acb.adapters.messaging.aiormq._get_aiormq_imports",
+        return_value=mock_aiormq_imports["imports"],
+    ):
         from acb.adapters.messaging.aiormq import AioRmqMessaging
 
         adapter = AioRmqMessaging(aiormq_settings)
@@ -146,7 +148,9 @@ class TestAioRmqMessagingBasics:
 
             adapter = AioRmqMessaging(aiormq_settings)
 
-            assert adapter._settings.connection_url == "amqp://guest:guest@localhost:5672/"
+            assert (
+                adapter._settings.connection_url == "amqp://guest:guest@localhost:5672/"
+            )
             assert adapter._settings.exchange_name == "test.exchange"
             assert adapter._settings.max_priority == 10
             assert adapter._connection is None
@@ -239,7 +243,9 @@ class TestAioRmqMessagingQueue:
 
         assert mock_message.nack.called
 
-    async def test_enqueue_delayed_ttl_dlx(self, aiormq_adapter, mock_aiormq_imports, monkeypatch):
+    async def test_enqueue_delayed_ttl_dlx(
+        self, aiormq_adapter, mock_aiormq_imports, monkeypatch
+    ):
         """Test delayed send path using TTL + DLQ pattern."""
         await aiormq_adapter.connect()
 
@@ -263,11 +269,14 @@ class TestAioRmqMessagingQueue:
         assert args["auto_delete"] is True
         arguments = args["arguments"]
         assert arguments["x-message-ttl"] == 200  # 0.2s -> 200ms
-        assert arguments["x-dead-letter-exchange"] == aiormq_adapter._settings.exchange_name
+        assert (
+            arguments["x-dead-letter-exchange"]
+            == aiormq_adapter._settings.exchange_name
+        )
         assert arguments["x-dead-letter-routing-key"] == "test-delay"
 
         # Verify publish to temp queue
-        temp_name = f"delayed.test-delay.123"
+        temp_name = "delayed.test-delay.123"
         mock_exchange = mock_aiormq_imports["exchange"]
         assert mock_exchange.publish.await_count >= 1
         pub_kwargs = mock_exchange.publish.await_args.kwargs

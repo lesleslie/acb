@@ -10,6 +10,7 @@ from uuid import UUID
 import pytest
 from anyio import Path as AsyncPath
 from gcsfs.core import GCSFileSystem
+
 from acb.adapters import AdapterStatus
 from acb.adapters.storage._base import StorageBase, StorageBaseSettings
 from acb.adapters.storage.gcs import (

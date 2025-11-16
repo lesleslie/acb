@@ -4,8 +4,9 @@ This module provides simple resource cleanup patterns for adapter connections
 and other resources that need proper lifecycle management.
 """
 
-import asyncio
 import logging
+
+import asyncio
 import typing as t
 
 logger = logging.getLogger(__name__)

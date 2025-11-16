@@ -1,6 +1,4 @@
-"""
-Test to verify that MCP tools can be imported correctly.
-"""
+"""Test to verify that MCP tools can be imported correctly."""
 
 import sys
 from pathlib import Path
@@ -9,10 +7,16 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+
 def test_mcp_tools_imports():
     """Test that MCP tools can be imported."""
     try:
-        from acb.mcp.tools import ComponentDiscoveryTool, ActionExecutionTool, AdapterManagementTool, HealthCheckTool
+        from acb.mcp.tools import (
+            ActionExecutionTool,
+            AdapterManagementTool,
+            ComponentDiscoveryTool,
+            HealthCheckTool,
+        )
 
         # Just test that we can import the classes
         assert ComponentDiscoveryTool is not None
@@ -26,6 +30,7 @@ def test_mcp_tools_imports():
         print(f"✗ Error importing MCP tools: {e}")
         raise
 
+
 def main():
     """Main test function."""
     try:
@@ -35,6 +40,7 @@ def main():
     except Exception as e:
         print(f"Error running MCP tools import tests: {e}")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

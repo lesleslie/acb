@@ -10,6 +10,7 @@ import pytest
 from adlfs import AzureBlobFileSystem
 from anyio import Path as AsyncPath
 from pydantic import SecretStr, ValidationError
+
 from acb.adapters import AdapterStatus
 from acb.adapters.storage._base import StorageBase, StorageBaseSettings
 from acb.adapters.storage.azure import (

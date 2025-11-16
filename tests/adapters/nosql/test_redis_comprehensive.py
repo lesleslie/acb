@@ -1,10 +1,11 @@
 """Comprehensive tests for Redis NoSQL adapter."""
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
 from pydantic import SecretStr
+
 from acb.adapters.nosql.redis import Nosql, NosqlSettings
 from acb.config import Config
 

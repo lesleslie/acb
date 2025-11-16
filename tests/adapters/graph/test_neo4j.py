@@ -1,15 +1,16 @@
 """Tests for Neo4j graph adapter."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
 
-from acb.adapters.graph.neo4j import Graph, Neo4jSettings, MODULE_METADATA
 from acb.adapters.graph._base import (
-    GraphQueryLanguage,
-    GraphNodeModel,
     GraphEdgeModel,
+    GraphNodeModel,
+    GraphQueryLanguage,
 )
+from acb.adapters.graph.neo4j import MODULE_METADATA, Graph, Neo4jSettings
 
 
 class MockNeo4jDriver:
@@ -136,7 +137,14 @@ class MockNeo4jNode:
 class MockNeo4jRelationship:
     """Mock Neo4j relationship for testing."""
 
-    def __init__(self, element_id="1", type="RELATES_TO", start_node=None, end_node=None, properties=None):
+    def __init__(
+        self,
+        element_id="1",
+        type="RELATES_TO",
+        start_node=None,
+        end_node=None,
+        properties=None,
+    ):
         self.element_id = element_id
         self.type = type
         self.start_node = start_node or MockNeo4jNode("start")
@@ -191,7 +199,7 @@ class TestNeo4jAdapter:
         assert "transactions" in features
         assert "graph_algorithms" in features
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_create_client(self, mock_graph_db, neo4j_adapter):
         """Test Neo4j client creation."""
         mock_driver = MockNeo4jDriver()
@@ -203,7 +211,7 @@ class TestNeo4jAdapter:
         mock_graph_db.driver.assert_called_once()
         assert mock_driver.verify_connectivity.called
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_execute_query(self, mock_graph_db, neo4j_adapter):
         """Test query execution."""
         mock_driver = MockNeo4jDriver()
@@ -211,17 +219,19 @@ class TestNeo4jAdapter:
 
         # Mock result with node
         mock_result = MockNeo4jResult()
-        mock_record = MockNeo4jRecord({"n": MockNeo4jNode("1", ["Person"], {"name": "John"})})
+        mock_record = MockNeo4jRecord(
+            {"n": MockNeo4jNode("1", ["Person"], {"name": "John"})}
+        )
         mock_result._records = [mock_record]
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             result = await neo4j_adapter._execute_query("MATCH (n) RETURN n")
 
         assert result.query_language == GraphQueryLanguage.CYPHER
         assert result.execution_time is not None
         assert len(result.records) == 1
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_create_node(self, mock_graph_db, neo4j_adapter):
         """Test node creation."""
         mock_driver = MockNeo4jDriver()
@@ -233,14 +243,14 @@ class TestNeo4jAdapter:
         mock_record = MockNeo4jRecord({"n": mock_node})
         mock_result._records = [mock_record]
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             node = await neo4j_adapter._create_node(["Person"], {"name": "John"})
 
         assert isinstance(node, GraphNodeModel)
         assert "Person" in node.labels
         assert node.properties["name"] == "John"
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_get_node(self, mock_graph_db, neo4j_adapter):
         """Test node retrieval."""
         mock_driver = MockNeo4jDriver()
@@ -252,13 +262,13 @@ class TestNeo4jAdapter:
         mock_record = MockNeo4jRecord({"n": mock_node})
         mock_result._records = [mock_record]
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             node = await neo4j_adapter._get_node("test_id")
 
         assert node is not None
         assert isinstance(node, GraphNodeModel)
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_get_node_not_found(self, mock_graph_db, neo4j_adapter):
         """Test node retrieval when not found."""
         mock_driver = MockNeo4jDriver()
@@ -268,12 +278,12 @@ class TestNeo4jAdapter:
         mock_result = MockNeo4jResult()
         mock_result._records = []
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             node = await neo4j_adapter._get_node("non_existent")
 
         assert node is None
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_update_node(self, mock_graph_db, neo4j_adapter):
         """Test node update."""
         mock_driver = MockNeo4jDriver()
@@ -285,13 +295,13 @@ class TestNeo4jAdapter:
         mock_record = MockNeo4jRecord({"n": mock_node})
         mock_result._records = [mock_record]
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             node = await neo4j_adapter._update_node("test_id", {"name": "Jane"})
 
         assert isinstance(node, GraphNodeModel)
         assert node.properties["name"] == "Jane"
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_delete_node(self, mock_graph_db, neo4j_adapter):
         """Test node deletion."""
         mock_driver = MockNeo4jDriver()
@@ -300,12 +310,12 @@ class TestNeo4jAdapter:
         # Mock successful deletion
         mock_result = MockNeo4jResult()
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             result = await neo4j_adapter._delete_node("test_id")
 
         assert result is True
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_create_edge(self, mock_graph_db, neo4j_adapter):
         """Test edge creation."""
         mock_driver = MockNeo4jDriver()
@@ -321,15 +331,17 @@ class TestNeo4jAdapter:
         mock_record = MockNeo4jRecord({"r": mock_relationship})
         mock_result._records = [mock_record]
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
-            edge = await neo4j_adapter._create_edge("KNOWS", "node1", "node2", {"since": "2020"})
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
+            edge = await neo4j_adapter._create_edge(
+                "KNOWS", "node1", "node2", {"since": "2020"}
+            )
 
         assert isinstance(edge, GraphEdgeModel)
         assert edge.type == "KNOWS"
         assert edge.from_node == "node1"
         assert edge.to_node == "node2"
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_get_edge(self, mock_graph_db, neo4j_adapter):
         """Test edge retrieval."""
         mock_driver = MockNeo4jDriver()
@@ -345,13 +357,13 @@ class TestNeo4jAdapter:
         mock_record = MockNeo4jRecord({"r": mock_relationship})
         mock_result._records = [mock_record]
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             edge = await neo4j_adapter._get_edge("edge_id")
 
         assert edge is not None
         assert isinstance(edge, GraphEdgeModel)
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_find_path(self, mock_graph_db, neo4j_adapter):
         """Test path finding."""
         mock_driver = MockNeo4jDriver()
@@ -365,12 +377,14 @@ class TestNeo4jAdapter:
         mock_record = MockNeo4jRecord({"p": mock_path})
         mock_result._records = [mock_record]
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
-            paths = await neo4j_adapter._find_path("node1", "node2", max_depth=5, direction="both")
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
+            paths = await neo4j_adapter._find_path(
+                "node1", "node2", max_depth=5, direction="both"
+            )
 
         assert isinstance(paths, list)
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_get_schema(self, mock_graph_db, neo4j_adapter):
         """Test schema retrieval."""
         mock_driver = MockNeo4jDriver()
@@ -380,16 +394,20 @@ class TestNeo4jAdapter:
         def mock_run(query, parameters=None):
             mock_result = MockNeo4jResult()
             if "db.labels()" in query:
-                mock_result._records = [MockNeo4jRecord({"labels": ["Person", "Company"]})]
+                mock_result._records = [
+                    MockNeo4jRecord({"labels": ["Person", "Company"]})
+                ]
             elif "db.relationshipTypes()" in query:
-                mock_result._records = [MockNeo4jRecord({"types": ["WORKS_FOR", "KNOWS"]})]
+                mock_result._records = [
+                    MockNeo4jRecord({"types": ["WORKS_FOR", "KNOWS"]})
+                ]
             elif "SHOW CONSTRAINTS" in query:
                 mock_result._records = []
             elif "SHOW INDEXES" in query:
                 mock_result._records = []
             return mock_result
 
-        with patch.object(MockNeo4jSession, 'run', side_effect=mock_run):
+        with patch.object(MockNeo4jSession, "run", side_effect=mock_run):
             schema = await neo4j_adapter._get_schema()
 
         assert "Person" in schema.node_types
@@ -397,7 +415,7 @@ class TestNeo4jAdapter:
         assert "WORKS_FOR" in schema.edge_types
         assert "KNOWS" in schema.edge_types
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_transaction_operations(self, mock_graph_db, neo4j_adapter):
         """Test transaction operations."""
         mock_driver = MockNeo4jDriver()
@@ -415,7 +433,7 @@ class TestNeo4jAdapter:
         await neo4j_adapter.rollback_transaction()
         assert neo4j_adapter._transaction is None
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_bulk_operations(self, mock_graph_db, neo4j_adapter):
         """Test bulk operations."""
         mock_driver = MockNeo4jDriver()
@@ -431,7 +449,7 @@ class TestNeo4jAdapter:
                 updated_at=datetime.now(),
             )
 
-        with patch.object(neo4j_adapter, '_create_node', side_effect=mock_create_node):
+        with patch.object(neo4j_adapter, "_create_node", side_effect=mock_create_node):
             nodes_data = [
                 {"labels": ["Person"], "properties": {"name": "John"}},
                 {"labels": ["Person"], "properties": {"name": "Jane"}},
@@ -441,7 +459,7 @@ class TestNeo4jAdapter:
         assert len(nodes) == 2
         assert all(isinstance(n, GraphNodeModel) for n in nodes)
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_count_operations(self, mock_graph_db, neo4j_adapter):
         """Test count operations."""
         mock_driver = MockNeo4jDriver()
@@ -456,14 +474,14 @@ class TestNeo4jAdapter:
                 mock_result._records = [MockNeo4jRecord({"count": 5})]
             return mock_result
 
-        with patch.object(MockNeo4jSession, 'run', side_effect=mock_run):
+        with patch.object(MockNeo4jSession, "run", side_effect=mock_run):
             node_count = await neo4j_adapter._count_nodes(["Person"])
             edge_count = await neo4j_adapter._count_edges(["KNOWS"])
 
         assert node_count == 10
         assert edge_count == 5
 
-    @patch('acb.adapters.graph.neo4j.AsyncGraphDatabase')
+    @patch("acb.adapters.graph.neo4j.AsyncGraphDatabase")
     async def test_clear_graph(self, mock_graph_db, neo4j_adapter):
         """Test graph clearing."""
         mock_driver = MockNeo4jDriver()
@@ -472,7 +490,7 @@ class TestNeo4jAdapter:
         # Mock clear operation
         mock_result = MockNeo4jResult()
 
-        with patch.object(MockNeo4jSession, 'run', return_value=mock_result):
+        with patch.object(MockNeo4jSession, "run", return_value=mock_result):
             result = await neo4j_adapter._clear_graph()
 
         assert result is True
@@ -482,7 +500,7 @@ class TestNeo4jAdapter:
         mock_node = MockNeo4jNode(
             "1",
             ["Person"],
-            {"id": "test_id", "name": "John", "created_at": "2023-01-01T00:00:00"}
+            {"id": "test_id", "name": "John", "created_at": "2023-01-01T00:00:00"},
         )
 
         model = neo4j_adapter._neo4j_node_to_model(mock_node)
@@ -497,11 +515,7 @@ class TestNeo4jAdapter:
         start_node = MockNeo4jNode("1")
         end_node = MockNeo4jNode("2")
         mock_rel = MockNeo4jRelationship(
-            "rel1",
-            "KNOWS",
-            start_node,
-            end_node,
-            {"id": "edge_id", "since": "2020"}
+            "rel1", "KNOWS", start_node, end_node, {"id": "edge_id", "since": "2020"}
         )
 
         model = neo4j_adapter._neo4j_relationship_to_model(mock_rel)

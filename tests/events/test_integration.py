@@ -1,44 +1,30 @@
 """Integration tests for Events System."""
 
+from unittest.mock import Mock, patch
+
 import asyncio
 import pytest
-from datetime import datetime
-from uuid import UUID
-from unittest.mock import Mock, patch
 
 from acb.events import (
     # Core events
     Event,
-    EventMetadata,
+    EventDeliveryMode,
     EventHandler,
     EventHandlerResult,
-    EventStatus,
     EventPriority,
-    EventDeliveryMode,
-    create_event,
-    event_handler,
-
     # Publisher/Subscriber
-    EventPublisher,
-    EventSubscriber,
-    EventPublisherSettings,
-    SubscriberSettings,
-    SubscriptionMode,
-    create_event_publisher,
-    create_event_subscriber,
-    event_publisher_context,
-    event_subscriber_context,
-
-    # Service integration
     EventsService,
     EventsServiceSettings,
+    create_event,
+    create_event_publisher,
+    create_event_subscriber,
+    event_handler,
+    event_publisher_context,
+    event_subscriber_context,
     get_events_service,
-    setup_events_service,
-
     # Discovery
     import_event_handler,
-    EventCapability,
-    EventHandlerStatus,
+    setup_events_service,
 )
 
 
@@ -61,7 +47,9 @@ class SampleEventHandler(EventHandler):
     async def handle(self, event: Event) -> EventHandlerResult:
         self.handled_events.append(event)
         self.handle_call_count += 1
-        return EventHandlerResult(success=True, metadata={"handler_id": self._handler_id})
+        return EventHandlerResult(
+            success=True, metadata={"handler_id": self._handler_id}
+        )
 
 
 class SpecializedEventHandler(EventHandler):
@@ -78,8 +66,7 @@ class SpecializedEventHandler(EventHandler):
     async def handle(self, event: Event) -> EventHandlerResult:
         self.handled_events.append(event)
         return EventHandlerResult(
-            success=True,
-            metadata={"specialized_for": self.event_type}
+            success=True, metadata={"specialized_for": self.event_type}
         )
 
 
@@ -95,16 +82,14 @@ class TestEndToEndEventFlow:
                 handler = SampleEventHandler("basic_flow")
 
                 # Subscribe handler to publisher
-                publisher_sub_id = await publisher.subscribe(handler)
+                await publisher.subscribe(handler)
 
                 # Subscribe handler to subscriber
-                subscriber_sub_id = await subscriber.subscribe(handler)
+                await subscriber.subscribe(handler)
 
                 # Create and publish event
                 event = create_event(
-                    "test.integration",
-                    "integration_test",
-                    {"test_data": "basic_flow"}
+                    "test.integration", "integration_test", {"test_data": "basic_flow"}
                 )
 
                 # Publish via publisher
@@ -118,8 +103,14 @@ class TestEndToEndEventFlow:
 
                 # Verify event was handled by both
                 assert len(handler.handled_events) == 2
-                assert all(e.metadata.event_type == "test.integration" for e in handler.handled_events)
-                assert all(e.payload["test_data"] == "basic_flow" for e in handler.handled_events)
+                assert all(
+                    e.metadata.event_type == "test.integration"
+                    for e in handler.handled_events
+                )
+                assert all(
+                    e.payload["test_data"] == "basic_flow"
+                    for e in handler.handled_events
+                )
 
     async def test_event_filtering_and_routing(self):
         """Test event filtering and routing between handlers."""
@@ -136,8 +127,12 @@ class TestEndToEndEventFlow:
 
             # Create different event types
             user_event = create_event("user.created", "user_service", {"user_id": 123})
-            order_event = create_event("order.created", "order_service", {"order_id": 456})
-            system_event = create_event("system.started", "system_service", {"version": "1.0"})
+            order_event = create_event(
+                "order.created", "order_service", {"order_id": 456}
+            )
+            system_event = create_event(
+                "system.started", "system_service", {"version": "1.0"}
+            )
 
             # Publish events
             await publisher.publish(user_event)
@@ -167,10 +162,27 @@ class TestEndToEndEventFlow:
 
             # Create events with different priorities
             events = [
-                create_event("low.priority", "service", {"order": 4}, priority=EventPriority.LOW),
-                create_event("normal.priority", "service", {"order": 3}, priority=EventPriority.NORMAL),
-                create_event("high.priority", "service", {"order": 2}, priority=EventPriority.HIGH),
-                create_event("critical.priority", "service", {"order": 1}, priority=EventPriority.CRITICAL),
+                create_event(
+                    "low.priority", "service", {"order": 4}, priority=EventPriority.LOW
+                ),
+                create_event(
+                    "normal.priority",
+                    "service",
+                    {"order": 3},
+                    priority=EventPriority.NORMAL,
+                ),
+                create_event(
+                    "high.priority",
+                    "service",
+                    {"order": 2},
+                    priority=EventPriority.HIGH,
+                ),
+                create_event(
+                    "critical.priority",
+                    "service",
+                    {"order": 1},
+                    priority=EventPriority.CRITICAL,
+                ),
             ]
 
             # Publish in mixed order
@@ -182,8 +194,15 @@ class TestEndToEndEventFlow:
             # Verify events were processed in priority order
             assert len(handler.handled_events) == 4
 
-            processed_orders = [event.payload["order"] for event in handler.handled_events]
-            assert processed_orders == [1, 2, 3, 4]  # Should be processed in priority order
+            processed_orders = [
+                event.payload["order"] for event in handler.handled_events
+            ]
+            assert processed_orders == [
+                1,
+                2,
+                3,
+                4,
+            ]  # Should be processed in priority order
 
     async def test_error_handling_and_retries(self):
         """Test error handling and retry mechanisms."""
@@ -204,7 +223,7 @@ class TestEndToEndEventFlow:
                 if self.attempt_count <= self.fail_count:
                     return EventHandlerResult(
                         success=False,
-                        error_message=f"Attempt {self.attempt_count} failed"
+                        error_message=f"Attempt {self.attempt_count} failed",
                     )
 
                 self.handled_events.append(event)
@@ -228,7 +247,9 @@ class TestEndToEndEventFlow:
 
             # Verify event was eventually handled after retries
             assert len(failing_handler.handled_events) == 1
-            assert failing_handler.attempt_count == 3  # Failed twice, succeeded on third
+            assert (
+                failing_handler.attempt_count == 3
+            )  # Failed twice, succeeded on third
 
             # Verify retry metrics
             assert publisher.metrics.events_retried > 0
@@ -241,7 +262,9 @@ class TestEndToEndEventFlow:
 
             # Create multiple events
             events = [
-                create_event(f"concurrent.event.{i}", "concurrent_service", {"index": i})
+                create_event(
+                    f"concurrent.event.{i}", "concurrent_service", {"index": i}
+                )
                 for i in range(20)
             ]
 
@@ -255,7 +278,9 @@ class TestEndToEndEventFlow:
             assert len(handler.handled_events) == 20
 
             # Verify all events were processed
-            handled_indices = {event.payload["index"] for event in handler.handled_events}
+            handled_indices = {
+                event.payload["index"] for event in handler.handled_events
+            }
             expected_indices = set(range(20))
             assert handled_indices == expected_indices
 
@@ -273,14 +298,30 @@ class TestEndToEndEventFlow:
 
             # Create related events with same correlation ID
             workflow_events = [
-                create_event("workflow.started", "workflow_service",
-                           {"step": "start"}, correlation_id=correlation_id),
-                create_event("workflow.step1.completed", "workflow_service",
-                           {"step": "step1"}, correlation_id=correlation_id),
-                create_event("workflow.step2.completed", "workflow_service",
-                           {"step": "step2"}, correlation_id=correlation_id),
-                create_event("workflow.completed", "workflow_service",
-                           {"step": "end"}, correlation_id=correlation_id),
+                create_event(
+                    "workflow.started",
+                    "workflow_service",
+                    {"step": "start"},
+                    correlation_id=correlation_id,
+                ),
+                create_event(
+                    "workflow.step1.completed",
+                    "workflow_service",
+                    {"step": "step1"},
+                    correlation_id=correlation_id,
+                ),
+                create_event(
+                    "workflow.step2.completed",
+                    "workflow_service",
+                    {"step": "step2"},
+                    correlation_id=correlation_id,
+                ),
+                create_event(
+                    "workflow.completed",
+                    "workflow_service",
+                    {"step": "end"},
+                    correlation_id=correlation_id,
+                ),
             ]
 
             # Publish workflow events
@@ -314,21 +355,21 @@ class TestEndToEndEventFlow:
                 "delivery.fire_forget",
                 "delivery_service",
                 {"mode": "fire_and_forget"},
-                delivery_mode=EventDeliveryMode.FIRE_AND_FORGET
+                delivery_mode=EventDeliveryMode.FIRE_AND_FORGET,
             )
 
             at_least_once_event = create_event(
                 "delivery.at_least_once",
                 "delivery_service",
                 {"mode": "at_least_once"},
-                delivery_mode=EventDeliveryMode.AT_LEAST_ONCE
+                delivery_mode=EventDeliveryMode.AT_LEAST_ONCE,
             )
 
             exactly_once_event = create_event(
                 "delivery.exactly_once",
                 "delivery_service",
                 {"mode": "exactly_once"},
-                delivery_mode=EventDeliveryMode.EXACTLY_ONCE
+                delivery_mode=EventDeliveryMode.EXACTLY_ONCE,
             )
 
             # Publish events with different delivery modes
@@ -342,7 +383,9 @@ class TestEndToEndEventFlow:
             assert len(handler.handled_events) == 3
 
             # Verify delivery modes
-            delivery_modes = [event.metadata.delivery_mode for event in handler.handled_events]
+            delivery_modes = [
+                event.metadata.delivery_mode for event in handler.handled_events
+            ]
             assert EventDeliveryMode.FIRE_AND_FORGET in delivery_modes
             assert EventDeliveryMode.AT_LEAST_ONCE in delivery_modes
             assert EventDeliveryMode.EXACTLY_ONCE in delivery_modes
@@ -397,14 +440,14 @@ class TestEventsServiceIntegration:
             handler = SampleEventHandler("service_integration")
 
             # Subscribe through service
-            subscription_id = await service.subscribe(handler, event_type="service.test")
+            subscription_id = await service.subscribe(
+                handler, event_type="service.test"
+            )
             assert subscription_id is not None
 
             # Create and publish event through service
             event = create_event(
-                "service.test",
-                "events_service",
-                {"integration": "test"}
+                "service.test", "events_service", {"integration": "test"}
             )
 
             await service.publish(event)
@@ -493,11 +536,12 @@ class SampleEventHandlerDecorators:
 
     async def test_event_handler_decorator_basic(self):
         """Test basic event handler decorator functionality."""
+
         @event_handler()
         def handle_any_event(event: Event) -> EventHandlerResult:
             return EventHandlerResult(
                 success=True,
-                metadata={"decorated": True, "event_type": event.metadata.event_type}
+                metadata={"decorated": True, "event_type": event.metadata.event_type},
             )
 
         async with event_publisher_context() as publisher:
@@ -506,7 +550,9 @@ class SampleEventHandlerDecorators:
             assert subscription_id is not None
 
             # Publish event
-            event = create_event("decorator.test", "test_service", {"test": "decorator"})
+            event = create_event(
+                "decorator.test", "test_service", {"test": "decorator"}
+            )
             await publisher.publish(event)
 
             await asyncio.sleep(0.1)
@@ -516,6 +562,7 @@ class SampleEventHandlerDecorators:
 
     async def test_event_handler_decorator_with_type(self):
         """Test event handler decorator with event type filtering."""
+
         @event_handler(event_type="user.created")
         def handle_user_created(event: Event) -> EventHandlerResult:
             return EventHandlerResult(success=True, metadata={"user_handler": True})
@@ -545,6 +592,7 @@ class SampleEventHandlerDecorators:
 
     async def test_event_handler_decorator_with_predicate(self):
         """Test event handler decorator with custom predicate."""
+
         def is_high_priority(event: Event) -> bool:
             return event.metadata.priority == EventPriority.HIGH
 
@@ -556,8 +604,12 @@ class SampleEventHandlerDecorators:
             await publisher.subscribe(handle_high_priority)
 
             # Publish events with different priorities
-            normal_event = create_event("test.normal", "service", priority=EventPriority.NORMAL)
-            high_event = create_event("test.high", "service", priority=EventPriority.HIGH)
+            normal_event = create_event(
+                "test.normal", "service", priority=EventPriority.NORMAL
+            )
+            high_event = create_event(
+                "test.high", "service", priority=EventPriority.HIGH
+            )
 
             await publisher.publish(normal_event)
             await publisher.publish(high_event)
@@ -569,13 +621,11 @@ class SampleEventHandlerDecorators:
 
     async def test_event_handler_decorator_async(self):
         """Test event handler decorator with async function."""
+
         @event_handler()
         async def handle_async_event(event: Event) -> EventHandlerResult:
             await asyncio.sleep(0.01)  # Simulate async work
-            return EventHandlerResult(
-                success=True,
-                metadata={"async_handled": True}
-            )
+            return EventHandlerResult(success=True, metadata={"async_handled": True})
 
         async with event_publisher_context() as publisher:
             await publisher.subscribe(handle_async_event)
@@ -591,7 +641,7 @@ class SampleEventHandlerDecorators:
 class TestDiscoveryIntegration:
     """Test Events discovery system integration."""
 
-    @patch('acb.events.discovery.try_import_event_handler')
+    @patch("acb.events.discovery.try_import_event_handler")
     def test_import_event_handler_integration(self, mock_try_import):
         """Test event handler import integration."""
         # Mock successful import
@@ -599,7 +649,9 @@ class TestDiscoveryIntegration:
         mock_try_import.return_value = mock_class
 
         # Mock the descriptor lookup
-        with patch('acb.events.discovery.get_event_handler_descriptor') as mock_get_descriptor:
+        with patch(
+            "acb.events.discovery.get_event_handler_descriptor"
+        ) as mock_get_descriptor:
             mock_descriptor = Mock()
             mock_descriptor.name = "mock_publisher"
             mock_get_descriptor.return_value = mock_descriptor
@@ -613,7 +665,7 @@ class TestDiscoveryIntegration:
 
     async def test_events_service_discovery_integration(self):
         """Test Events Service integration with service discovery."""
-        from acb.services.discovery import get_service_descriptor, enable_service
+        from acb.services.discovery import enable_service, get_service_descriptor
 
         # Enable events service
         enable_service("events", "events_service")
@@ -660,7 +712,9 @@ class TestDiscoveryIntegration:
             events = [
                 create_event("general.event", "service", {"handler": "direct"}),
                 create_event("decorated.event", "service", {"handler": "decorated"}),
-                create_event("specialized.event", "service", {"handler": "specialized"}),
+                create_event(
+                    "specialized.event", "service", {"handler": "specialized"}
+                ),
                 create_event("broadcast.event", "service", {"handler": "all"}),
             ]
 
@@ -804,7 +858,7 @@ class TestPerformanceAndScalability:
                     event = create_event(
                         f"concurrent.pub{pub_idx}.event{event_idx}",
                         f"publisher_{pub_idx}",
-                        {"publisher": pub_idx, "event": event_idx}
+                        {"publisher": pub_idx, "event": event_idx},
                     )
                     publish_tasks.append(publisher.publish(event))
 
@@ -818,7 +872,7 @@ class TestPerformanceAndScalability:
                     event = create_event(
                         f"concurrent.pub{pub_idx}.event{event_idx}",
                         f"publisher_{pub_idx}",
-                        {"publisher": pub_idx, "event": event_idx}
+                        {"publisher": pub_idx, "event": event_idx},
                     )
 
                     # Deliver to all subscribers

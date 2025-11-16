@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
-import typing as t
-from contextlib import asynccontextmanager
 from functools import cached_property
 from uuid import UUID
+
+import typing as t
+from contextlib import asynccontextmanager
 
 try:
     from google.cloud import firestore

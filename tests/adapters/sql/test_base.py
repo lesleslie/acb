@@ -1,10 +1,11 @@
 """Tests for the SQL base adapter."""
 
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncConnection
+
 from acb.adapters.sql._base import SqlBase
 
 
@@ -75,7 +76,9 @@ class TestSqlBase:
 
         # Mock database_exists and create_database
         with (
-            patch("acb.adapters.sql._base.database_exists", return_value=False) as mock_db_exists,
+            patch(
+                "acb.adapters.sql._base.database_exists", return_value=False
+            ) as mock_db_exists,
             patch("acb.adapters.sql._base.create_database") as mock_create_db,
             patch("acb.adapters.sql._base.create_async_engine") as mock_create_engine,
         ):
@@ -106,7 +109,9 @@ class TestSqlBase:
 
         # Mock database_exists to return True (database already exists)
         with (
-            patch("acb.adapters.sql._base.database_exists", return_value=True) as mock_db_exists,
+            patch(
+                "acb.adapters.sql._base.database_exists", return_value=True
+            ) as mock_db_exists,
             patch("acb.adapters.sql._base.create_database") as mock_create_db,
             patch("acb.adapters.sql._base.create_async_engine") as mock_create_engine,
         ):
@@ -165,7 +170,9 @@ class TestSqlBase:
         # Mock get_engine to return our mock engine
         with patch.object(sql_base, "get_engine", return_value=mock_engine):
             # Mock AsyncSession constructor
-            with patch("acb.adapters.sql._base.AsyncSession", return_value=mock_session):
+            with patch(
+                "acb.adapters.sql._base.AsyncSession", return_value=mock_session
+            ):
                 session = await sql_base._ensure_session()
 
                 # Verify AsyncSession was created with correct parameters
@@ -296,7 +303,7 @@ class TestSqlBase:
     async def test_cleanup_resources_no_resources(self, sql_base: MockSqlBase) -> None:
         """Test _cleanup_resources method when no resources exist."""
         sql_base._session = None  # No session
-        sql_base._client = None   # No engine
+        sql_base._client = None  # No engine
         # Mock the _resource_cache clear method
         sql_base._resource_cache.clear = MagicMock()
 

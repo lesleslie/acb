@@ -5,12 +5,13 @@ exposing ACB's capabilities through the Model Context Protocol.
 """
 
 import importlib.util
-import typing as t
 from collections.abc import Awaitable, Callable
+
+import typing as t
 from contextlib import suppress
+from fastmcp import FastMCP
 from typing import Any
 
-from fastmcp import FastMCP
 from acb.adapters.logger import LoggerProtocol
 from acb.config import Config
 from acb.depends import depends
@@ -302,8 +303,9 @@ async def get_system_metrics() -> str:
     Returns:
         JSON string containing system metrics
     """
-    import asyncio
     import json
+
+    import asyncio
 
     registry = get_registry()
     if not registry._initialized:

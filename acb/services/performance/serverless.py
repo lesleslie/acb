@@ -6,15 +6,16 @@ optimization patterns for adaptive connection pooling, tiered caching, and
 memory-efficient processing.
 """
 
-import asyncio
 import time
-import typing as t
-from contextlib import asynccontextmanager, suppress
-from dataclasses import dataclass, field
 from functools import wraps
 from weakref import WeakSet
 
+import asyncio
+import typing as t
+from contextlib import asynccontextmanager, suppress
+from dataclasses import dataclass, field
 from pydantic import Field
+
 from acb.cleanup import CleanupMixin
 from acb.config import Config
 from acb.depends import Inject, depends

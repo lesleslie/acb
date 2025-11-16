@@ -1,11 +1,12 @@
 """ArangoDB graph database adapter."""
 
+from uuid import uuid4
+
 import typing as t
 from contextlib import suppress
 from datetime import datetime
-from uuid import uuid4
-
 from pydantic import SecretStr
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,

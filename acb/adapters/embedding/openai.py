@@ -1,11 +1,12 @@
 """OpenAI embeddings adapter implementation."""
 
-import asyncio
 import time
+
+import asyncio
 import typing as t
 from datetime import datetime
-
 from pydantic import Field
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,

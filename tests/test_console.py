@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from rich.segment import Segment
+
 from acb.console import RichConsole, console
 
 
@@ -10,6 +11,7 @@ class TestRichConsole:
     def test_rich_console_init(self) -> None:
         rich_console = RichConsole()
         from rich.console import Console
+
         assert isinstance(rich_console, Console)
 
     @patch("acb.console.aprint")

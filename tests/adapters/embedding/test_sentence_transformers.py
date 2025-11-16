@@ -1,15 +1,15 @@
 """Tests for Sentence Transformers embedding adapter."""
 
-import asyncio
-import pytest
-import numpy as np
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import numpy as np
+import pytest
+
+from acb.adapters.embedding._base import EmbeddingBatch
 from acb.adapters.embedding.sentence_transformers import (
     SentenceTransformersEmbedding,
     SentenceTransformersSettings,
 )
-from acb.adapters.embedding._base import EmbeddingBatch, EmbeddingResult
 from acb.config import Config
 from acb.depends import depends
 
@@ -50,11 +50,17 @@ def mock_config():
 @pytest.fixture
 async def sentence_transformers_adapter(mock_config, mock_sentence_transformer):
     """Create Sentence Transformers embedding adapter with mocked dependencies."""
-    with patch("acb.adapters.embedding.sentence_transformers._sentence_transformers_available", True), \
-         patch("acb.adapters.embedding.sentence_transformers.SentenceTransformer") as mock_st_class, \
-         patch("acb.adapters.embedding.sentence_transformers.torch") as mock_torch, \
-         patch.object(depends, "get") as mock_depends:
-
+    with (
+        patch(
+            "acb.adapters.embedding.sentence_transformers._sentence_transformers_available",
+            True,
+        ),
+        patch(
+            "acb.adapters.embedding.sentence_transformers.SentenceTransformer"
+        ) as mock_st_class,
+        patch("acb.adapters.embedding.sentence_transformers.torch") as mock_torch,
+        patch.object(depends, "get") as mock_depends,
+    ):
         mock_depends.return_value = mock_config
         mock_torch.cuda.is_available.return_value = False
         mock_st_class.return_value = mock_sentence_transformer
@@ -79,9 +85,13 @@ class TestSentenceTransformersEmbedding:
 
     async def test_initialization(self, mock_config):
         """Test adapter initialization."""
-        with patch("acb.adapters.embedding.sentence_transformers._sentence_transformers_available", True), \
-             patch.object(depends, "get", return_value=mock_config):
-
+        with (
+            patch(
+                "acb.adapters.embedding.sentence_transformers._sentence_transformers_available",
+                True,
+            ),
+            patch.object(depends, "get", return_value=mock_config),
+        ):
             settings = SentenceTransformersSettings(
                 model="all-MiniLM-L6-v2",
                 device="cpu",
@@ -93,18 +103,27 @@ class TestSentenceTransformersEmbedding:
 
     async def test_initialization_without_sentence_transformers(self):
         """Test adapter initialization when Sentence Transformers is not available."""
-        with patch("acb.adapters.embedding.sentence_transformers._sentence_transformers_available", False):
-            with pytest.raises(ImportError, match="Sentence Transformers library not available"):
+        with patch(
+            "acb.adapters.embedding.sentence_transformers._sentence_transformers_available",
+            False,
+        ):
+            with pytest.raises(
+                ImportError, match="Sentence Transformers library not available"
+            ):
                 SentenceTransformersEmbedding()
 
     async def test_load_model_cpu(self, mock_config):
         """Test model loading on CPU."""
-        with patch("acb.adapters.embedding.sentence_transformers._sentence_transformers_available", True), \
-             patch("acb.adapters.embedding.sentence_transformers.SentenceTransformer") as mock_st_class, \
-             patch("acb.adapters.embedding.sentence_transformers.torch") as mock_torch, \
-             patch.object(depends, "get", return_value=mock_config), \
-             patch("asyncio.get_event_loop") as mock_loop:
-
+        with (
+            patch(
+                "acb.adapters.embedding.sentence_transformers._sentence_transformers_available",
+                True,
+            ),
+            patch("acb.adapters.embedding.sentence_transformers.SentenceTransformer"),
+            patch("acb.adapters.embedding.sentence_transformers.torch") as mock_torch,
+            patch.object(depends, "get", return_value=mock_config),
+            patch("asyncio.get_event_loop") as mock_loop,
+        ):
             mock_torch.cuda.is_available.return_value = False
             mock_executor = AsyncMock()
             mock_loop.return_value.run_in_executor = mock_executor
@@ -118,12 +137,16 @@ class TestSentenceTransformersEmbedding:
 
     async def test_load_model_cuda(self, mock_config):
         """Test model loading on CUDA."""
-        with patch("acb.adapters.embedding.sentence_transformers._sentence_transformers_available", True), \
-             patch("acb.adapters.embedding.sentence_transformers.SentenceTransformer") as mock_st_class, \
-             patch("acb.adapters.embedding.sentence_transformers.torch") as mock_torch, \
-             patch.object(depends, "get", return_value=mock_config), \
-             patch("asyncio.get_event_loop") as mock_loop:
-
+        with (
+            patch(
+                "acb.adapters.embedding.sentence_transformers._sentence_transformers_available",
+                True,
+            ),
+            patch("acb.adapters.embedding.sentence_transformers.SentenceTransformer"),
+            patch("acb.adapters.embedding.sentence_transformers.torch") as mock_torch,
+            patch.object(depends, "get", return_value=mock_config),
+            patch("asyncio.get_event_loop") as mock_loop,
+        ):
             mock_torch.cuda.is_available.return_value = True
             mock_executor = AsyncMock()
             mock_loop.return_value.run_in_executor = mock_executor
@@ -160,7 +183,9 @@ class TestSentenceTransformersEmbedding:
             assert result.metadata["device"] == "cpu"
             assert result.metadata["normalized"] is True
 
-    async def test_embed_texts_without_normalization(self, sentence_transformers_adapter):
+    async def test_embed_texts_without_normalization(
+        self, sentence_transformers_adapter
+    ):
         """Test text embedding without normalization."""
         adapter, mock_model = sentence_transformers_adapter
 
@@ -317,10 +342,16 @@ class TestSentenceTransformersEmbedding:
 
     async def test_precision_settings(self, mock_config):
         """Test model precision settings."""
-        with patch("acb.adapters.embedding.sentence_transformers._sentence_transformers_available", True), \
-             patch("acb.adapters.embedding.sentence_transformers.SentenceTransformer") as mock_st_class, \
-             patch.object(depends, "get", return_value=mock_config):
-
+        with (
+            patch(
+                "acb.adapters.embedding.sentence_transformers._sentence_transformers_available",
+                True,
+            ),
+            patch(
+                "acb.adapters.embedding.sentence_transformers.SentenceTransformer"
+            ) as mock_st_class,
+            patch.object(depends, "get", return_value=mock_config),
+        ):
             mock_model = MagicMock()
             mock_model.half = MagicMock()
             mock_st_class.return_value = mock_model
@@ -370,7 +401,9 @@ class TestSentenceTransformersSettings:
 
     def test_environment_prefix(self):
         """Test environment variable prefix."""
-        assert SentenceTransformersSettings.Config.env_prefix == "SENTENCE_TRANSFORMERS_"
+        assert (
+            SentenceTransformersSettings.Config.env_prefix == "SENTENCE_TRANSFORMERS_"
+        )
 
 
 @pytest.mark.asyncio

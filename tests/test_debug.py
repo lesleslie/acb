@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Any, Final
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from typing import Any, Final
+
 from acb.debug import (
     colorized_stderr_print,
     debug,
@@ -19,6 +20,7 @@ TEST_DEBUG_MSG: Final[str] = "test debug message"
 @pytest.fixture
 def mock_console() -> MagicMock:
     from rich.console import Console
+
     console = MagicMock(spec=Console)
     console.print = MagicMock()
     return console
@@ -80,7 +82,9 @@ class TestColorizedStderrPrint:
                     try:
                         colorized_stderr_print("Test message")
                     except Exception:
-                        pytest.fail("colorized_stderr_print should not raise exceptions")
+                        pytest.fail(
+                            "colorized_stderr_print should not raise exceptions"
+                        )
 
     def test_colorized_stderr_print_with_no_color_support(self) -> None:
         with patch("acb.debug.colorize", side_effect=ImportError):
@@ -337,7 +341,9 @@ class TestInitDebugEnhancements:
             try:
                 colorized_stderr_print("test message")
             except Exception as e:
-                pytest.fail(f"colorized_stderr_print should suppress ImportError, but raised: {e}")
+                pytest.fail(
+                    f"colorized_stderr_print should suppress ImportError, but raised: {e}"
+                )
 
         # Test exception in asyncio.run - function should suppress the error
         with patch("acb.debug.colorize", return_value="colored message"):
@@ -350,4 +356,6 @@ class TestInitDebugEnhancements:
                     try:
                         colorized_stderr_print("test message")
                     except Exception as e:
-                        pytest.fail(f"colorized_stderr_print should suppress asyncio errors, but raised: {e}")
+                        pytest.fail(
+                            f"colorized_stderr_print should suppress asyncio errors, but raised: {e}"
+                        )

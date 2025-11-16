@@ -12,13 +12,13 @@ Features:
 - Thread-safe registry using ContextVar
 """
 
-import typing as t
 from contextvars import ContextVar
-from datetime import datetime
 from enum import Enum
 from functools import lru_cache
 from uuid import UUID
 
+import typing as t
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 # UUID7 support (backport to UUID4 if not available)
@@ -161,10 +161,19 @@ class WorkflowMetadata(BaseModel):
 
 
 # Thread-safe workflow engine registry
-_workflow_engine_registry: ContextVar[dict[str, WorkflowMetadata]] = ContextVar(
+_workflow_engine_registry: ContextVar[dict[str, WorkflowMetadata] | None] = ContextVar(
     "_workflow_engine_registry",
-    default={},
+    default=None,
 )
+
+
+def _ensure_workflow_engine_registry_initialized() -> dict[str, WorkflowMetadata]:
+    """Ensure the workflow engine registry is initialized with an empty dict if needed."""
+    registry = _workflow_engine_registry.get()
+    if registry is None:
+        registry = {}
+        _workflow_engine_registry.set(registry)
+    return registry
 
 
 def generate_engine_id() -> UUID:
@@ -187,7 +196,7 @@ def register_workflow_engine(metadata: WorkflowMetadata) -> None:
     Args:
         metadata: Engine metadata for registration
     """
-    registry = _workflow_engine_registry.get()
+    registry = _ensure_workflow_engine_registry_initialized()
     registry[metadata.name] = metadata
     _workflow_engine_registry.set(registry)
 
@@ -201,7 +210,7 @@ def get_workflow_engine_descriptor(name: str) -> WorkflowMetadata | None:
     Returns:
         WorkflowMetadata if found, None otherwise
     """
-    registry = _workflow_engine_registry.get()
+    registry = _ensure_workflow_engine_registry_initialized()
     return registry.get(name)
 
 
@@ -211,7 +220,7 @@ def list_workflow_engines() -> list[WorkflowMetadata]:
     Returns:
         List of all registered engine metadata
     """
-    registry = _workflow_engine_registry.get()
+    registry = _ensure_workflow_engine_registry_initialized()
     return list(registry.values())
 
 

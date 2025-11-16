@@ -1,7 +1,7 @@
-import typing as t
 from contextvars import ContextVar
 from importlib import import_module, util
 
+import typing as t
 from anyio import Path as AsyncPath
 from pydantic import BaseModel, ConfigDict
 
@@ -18,7 +18,18 @@ class Action(BaseModel):
     path: AsyncPath = AsyncPath(__file__) / "actions"
 
 
-action_registry: ContextVar[list[Action]] = ContextVar("action_registry", default=[])
+action_registry: ContextVar[list[Action] | None] = ContextVar(
+    "action_registry", default=None
+)
+
+
+def _ensure_action_registry_initialized() -> list[Action]:
+    """Ensure the action registry is initialized with an empty list if needed."""
+    registry = action_registry.get(None)
+    if registry is None:
+        registry = []
+        action_registry.set(registry)
+    return registry
 
 
 @t.runtime_checkable
@@ -55,7 +66,7 @@ async def register_actions(path: AsyncPath) -> list[Action]:
         async for a in actions_path.iterdir()
         if await a.is_dir() and (not a.name.startswith("_"))
     }
-    registry = action_registry.get()
+    registry = _ensure_action_registry_initialized()
     _actions: list[Action] = []
     for action_name, path in found_actions.items():
         action_index = next(

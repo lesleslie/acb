@@ -4,15 +4,16 @@ Provides comprehensive performance monitoring and metrics collection
 for ACB applications with FastBlocks integration.
 """
 
-import asyncio
-import contextlib
 import time
-import typing as t
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
 from statistics import mean, median
 
+import asyncio
+import contextlib
+import typing as t
+from dataclasses import dataclass, field
 from pydantic import BaseModel, ConfigDict, Field
+
 from acb.config import Config
 from acb.depends import Inject, depends
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings

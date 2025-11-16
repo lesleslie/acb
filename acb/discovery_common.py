@@ -5,8 +5,9 @@ across the three discovery systems and reduce cognitive complexity.
 """
 
 import inspect
-import typing as t
 from pathlib import Path
+
+import typing as t
 from typing import Protocol
 
 

@@ -6,12 +6,11 @@ together correctly in realistic application patterns.
 
 from __future__ import annotations
 
-import asyncio
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
+import asyncio
 import pytest
+
 from acb.adapters import import_adapter
 from acb.depends import depends
 
@@ -60,7 +59,7 @@ class TestCacheStorageIntegration:
         await asyncio.sleep(1.5)
 
         # Value should be expired (returned None in most implementations)
-        expired_value = await cache.get(test_key)
+        await cache.get(test_key)
         # Note: Some cache implementations return None, others raise
         # This test demonstrates the pattern
 
@@ -188,12 +187,14 @@ class TestAdapterErrorHandling:
     async def test_adapter_initialization_errors_handled(self) -> None:
         """Test handling of adapter initialization failures."""
         # Simulate adapter that fails to initialize
-        with patch.object(type(depends), "get", side_effect=Exception("Connection failed")):
+        with patch.object(
+            type(depends), "get", side_effect=Exception("Connection failed")
+        ):
             # Application should handle gracefully
             try:
                 Cache = import_adapter("cache")
                 # This will raise, demonstrating error handling pattern
-                cache = await depends.get(Cache)
+                await depends.get(Cache)
             except Exception as e:
                 assert "Connection failed" in str(e)
 
@@ -258,9 +259,9 @@ class TestMultipleAdapterWorkflow:
 
         # Prepare batch items
         items_to_cache = {
-            f"batch:item:1": {"value": 1, "timestamp": 1000},
-            f"batch:item:2": {"value": 2, "timestamp": 2000},
-            f"batch:item:3": {"value": 3, "timestamp": 3000},
+            "batch:item:1": {"value": 1, "timestamp": 1000},
+            "batch:item:2": {"value": 2, "timestamp": 2000},
+            "batch:item:3": {"value": 3, "timestamp": 3000},
         }
 
         # Batch set

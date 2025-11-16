@@ -1,6 +1,7 @@
 """Simplified tests for the Monitoring adapters."""
 
 import pytest
+
 from tests.test_interfaces import MockMonitoring, MonitoringTestInterface
 
 

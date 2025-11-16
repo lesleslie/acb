@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from pydantic import SecretStr
+
 from acb.adapters.dns._base import DnsRecord
 from acb.adapters.dns.cloudflare import Dns, DnsSettings
 from acb.config import Config

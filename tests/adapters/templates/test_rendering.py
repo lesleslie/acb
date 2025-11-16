@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from pathlib import Path
-
 import pytest
+from datetime import datetime
 
 
 class TestBasicRendering:
@@ -205,6 +203,6 @@ class TestTemplateSettings:
         new_dir = tmp_path / "new_templates"
         assert not new_dir.exists()
 
-        templates = TemplatesAdapter(template_dir=new_dir)
+        TemplatesAdapter(template_dir=new_dir)
         assert new_dir.exists()
         assert new_dir.is_dir()

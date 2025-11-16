@@ -1,18 +1,18 @@
 """Tests for the ACB vector base module."""
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Any, Dict, List, Optional
-import pytest
 
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 from pydantic import SecretStr
 
 from acb.adapters.vector._base import (
-    VectorSearchResult,
-    VectorDocument,
+    VectorBase,
     VectorBaseSettings,
     VectorCollection,
-    VectorBase,
+    VectorDocument,
+    VectorSearchResult,
 )
-from acb.config import Config, AppSettings, DebugSettings
+from acb.config import AppSettings, Config, DebugSettings
 
 
 class TestVectorSearchResult:
@@ -30,10 +30,7 @@ class TestVectorSearchResult:
     def test_vector_search_result_with_values(self) -> None:
         """Test VectorSearchResult with custom values."""
         result = VectorSearchResult(
-            id="test-id",
-            score=0.85,
-            metadata={"key": "value"},
-            vector=[1.0, 2.0, 3.0]
+            id="test-id", score=0.85, metadata={"key": "value"}, vector=[1.0, 2.0, 3.0]
         )
 
         assert result.id == "test-id"
@@ -66,7 +63,7 @@ class TestVectorDocument:
         doc = VectorDocument(
             id="test-id",
             vector=[1.0, 2.0, 3.0],
-            metadata={"key": "value", "category": "test"}
+            metadata={"key": "value", "category": "test"},
         )
 
         assert doc.id == "test-id"
@@ -112,7 +109,7 @@ class TestVectorBaseSettings:
             enable_caching=False,
             enable_hybrid_search=True,
             enable_auto_scaling=True,
-            enable_connection_pooling=False
+            enable_connection_pooling=False,
         )
 
         assert settings.host.get_secret_value() == "vector-db.example.com"
@@ -203,7 +200,9 @@ class TestVectorCollection:
 
         result = await collection.get(["id1", "id2"])
 
-        mock_adapter.get.assert_called_once_with("test_collection", ["id1", "id2"], False)
+        mock_adapter.get.assert_called_once_with(
+            "test_collection", ["id1", "id2"], False
+        )
         assert result == [Mock()]
 
     @pytest.mark.asyncio
@@ -251,7 +250,9 @@ class TestVectorBase:
         assert vector_base._auto_scaler is None
         assert vector_base._connection_pool is None
 
-    def test_vector_base_dynamic_collection_access(self, vector_base: VectorBase) -> None:
+    def test_vector_base_dynamic_collection_access(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase dynamic collection access."""
         # First access should create a new collection
         collection1 = vector_base.test_collection
@@ -267,12 +268,16 @@ class TestVectorBase:
     async def test_vector_base_get_client(self, vector_base: VectorBase) -> None:
         """Test VectorBase get_client method."""
         mock_client = Mock()
-        with patch.object(vector_base, "_ensure_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            vector_base, "_ensure_client", AsyncMock(return_value=mock_client)
+        ):
             client = await vector_base.get_client()
             assert client == mock_client
 
     @pytest.mark.asyncio
-    async def test_vector_base_get_cache_disabled(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_get_cache_disabled(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase get_cache when caching is disabled."""
         vector_base.settings.enable_caching = False
 
@@ -289,7 +294,9 @@ class TestVectorBase:
         assert cache == vector_base._cache
 
     @pytest.mark.asyncio
-    async def test_vector_base_get_hybrid_search_disabled(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_get_hybrid_search_disabled(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase get_hybrid_search when disabled."""
         vector_base.settings.enable_hybrid_search = False
 
@@ -297,7 +304,9 @@ class TestVectorBase:
         assert hybrid_search is None
 
     @pytest.mark.asyncio
-    async def test_vector_base_get_hybrid_search_enabled(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_get_hybrid_search_enabled(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase get_hybrid_search when enabled."""
         vector_base.settings.enable_hybrid_search = True
         vector_base._hybrid_search = Mock()
@@ -306,7 +315,9 @@ class TestVectorBase:
         assert hybrid_search == vector_base._hybrid_search
 
     @pytest.mark.asyncio
-    async def test_vector_base_get_auto_scaler_disabled(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_get_auto_scaler_disabled(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase get_auto_scaler when disabled."""
         vector_base.settings.enable_auto_scaling = False
 
@@ -314,7 +325,9 @@ class TestVectorBase:
         assert auto_scaler is None
 
     @pytest.mark.asyncio
-    async def test_vector_base_get_auto_scaler_enabled(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_get_auto_scaler_enabled(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase get_auto_scaler when enabled."""
         vector_base.settings.enable_auto_scaling = True
         vector_base._auto_scaler = Mock()
@@ -323,7 +336,9 @@ class TestVectorBase:
         assert auto_scaler == vector_base._auto_scaler
 
     @pytest.mark.asyncio
-    async def test_vector_base_get_connection_pool_disabled(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_get_connection_pool_disabled(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase get_connection_pool when disabled."""
         vector_base.settings.enable_connection_pooling = False
 
@@ -331,7 +346,9 @@ class TestVectorBase:
         assert connection_pool is None
 
     @pytest.mark.asyncio
-    async def test_vector_base_get_connection_pool_enabled(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_get_connection_pool_enabled(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase get_connection_pool when enabled."""
         vector_base.settings.enable_connection_pooling = True
         vector_base._connection_pool = Mock()
@@ -364,10 +381,14 @@ class TestVectorBase:
             vector_base.search.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_vector_base_transaction_context_manager(self, vector_base: VectorBase) -> None:
+    async def test_vector_base_transaction_context_manager(
+        self, vector_base: VectorBase
+    ) -> None:
         """Test VectorBase transaction context manager."""
         mock_client = Mock()
-        with patch.object(vector_base, "get_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            vector_base, "get_client", AsyncMock(return_value=mock_client)
+        ):
             async with vector_base.transaction() as client:
                 assert client == mock_client
 
@@ -378,6 +399,7 @@ class TestVectorBase:
         assert hasattr(VectorBase, "init")
         # The method should be abstract
         import inspect
+
         assert inspect.iscoroutinefunction(VectorBase.init)
 
 
@@ -399,10 +421,7 @@ class TestVectorBaseEdgeCases:
     def test_vector_search_result_with_vector(self) -> None:
         """Test VectorSearchResult with vector data."""
         result = VectorSearchResult(
-            id="test",
-            score=0.75,
-            metadata={"category": "test"},
-            vector=[0.1, 0.2, 0.3]
+            id="test", score=0.75, metadata={"category": "test"}, vector=[0.1, 0.2, 0.3]
         )
         assert result.vector == [0.1, 0.2, 0.3]
 
@@ -434,6 +453,7 @@ class TestVectorBaseEdgeCases:
     def test_vector_base_settings_ssl_config_mixin(self) -> None:
         """Test that VectorBaseSettings inherits from SSLConfigMixin."""
         from acb.ssl_config import SSLConfigMixin
+
         assert issubclass(VectorBaseSettings, SSLConfigMixin)
 
     def test_vector_base_settings_secrets(self) -> None:

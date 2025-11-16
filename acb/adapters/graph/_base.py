@@ -1,11 +1,12 @@
 """Graph database adapter base classes."""
 
-import typing as t
 from abc import ABC, abstractmethod
-from datetime import datetime
 from enum import Enum
 
+import typing as t
+from datetime import datetime
 from pydantic import BaseModel, Field, SecretStr
+
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
 from acb.depends import Inject, depends

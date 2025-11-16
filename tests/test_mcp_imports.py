@@ -1,6 +1,5 @@
-"""
-Test to verify that all MCP modules can be imported correctly.
-"""
+"""Test to verify that all MCP modules can be imported correctly."""
+
 
 def test_mcp_module_imports():
     """Test that all MCP modules can be imported."""
@@ -22,16 +21,19 @@ def test_mcp_module_imports():
             print(f"✗ Failed to import {module_name}: {e}")
             raise
 
+
 def test_mcp_server_creation():
     """Test that the MCP server can be created."""
     try:
         from acb.mcp import create_mcp_server
+
         app = create_mcp_server()
         assert app is not None
         print("✓ MCP server created successfully")
     except Exception as e:
         print(f"✗ Failed to create MCP server: {e}")
         raise
+
 
 if __name__ == "__main__":
     test_mcp_module_imports()

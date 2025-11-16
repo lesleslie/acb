@@ -1,10 +1,11 @@
 """Integration tests for embedding adapters."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from acb.adapters.embedding import EmbeddingAdapter, EmbeddingBatch, EmbeddingResult
+import pytest
+
 from acb.adapters import import_adapter
+from acb.adapters.embedding import EmbeddingResult
 from acb.config import Config
 from acb.depends import depends
 
@@ -29,9 +30,10 @@ class TestEmbeddingAdapterIntegration:
 
     async def test_import_adapter_discovery(self, mock_config):
         """Test embedding adapter discovery through import_adapter."""
-        with patch.object(depends, "get", return_value=mock_config), \
-             patch("acb.adapters.embedding.openai._openai_available", True):
-
+        with (
+            patch.object(depends, "get", return_value=mock_config),
+            patch("acb.adapters.embedding.openai._openai_available", True),
+        ):
             # Test that embedding adapter can be imported
             Embedding = import_adapter("embedding")
             assert Embedding is not None
@@ -79,7 +81,13 @@ class TestEmbeddingAdapterIntegration:
 
     async def test_embedding_metadata_compliance(self):
         """Test that all embedding adapters have proper metadata."""
-        from acb.adapters.embedding import openai, huggingface, sentence_transformers, onnx, lfm
+        from acb.adapters.embedding import (
+            huggingface,
+            lfm,
+            onnx,
+            openai,
+            sentence_transformers,
+        )
 
         modules = [openai, huggingface, sentence_transformers, onnx, lfm]
 
@@ -165,8 +173,7 @@ class TestEmbeddingAdapterIntegration:
 
         # ONNX settings should have optimization features
         onnx_settings = ONNXEmbeddingSettings(
-            model_path="/fake/path",
-            tokenizer_name="test-tokenizer"
+            model_path="/fake/path", tokenizer_name="test-tokenizer"
         )
         assert hasattr(onnx_settings, "optimize_for_inference")
         assert hasattr(onnx_settings, "enable_quantization")
@@ -262,11 +269,14 @@ class TestEmbeddingWorkflows:
     async def test_document_chunking_workflow(self, mock_embedding_adapter):
         """Test document chunking workflow for large texts."""
         # Large document
-        large_document = """
+        large_document = (
+            """
         This is a very long document that needs to be chunked for embedding generation.
         It contains multiple paragraphs and sections that discuss various topics.
         The document is too long to process in a single embedding call.
-        """ * 50  # Make it very long
+        """
+            * 50
+        )  # Make it very long
 
         # Embed with chunking
         doc_batches = await mock_embedding_adapter.embed_documents(
@@ -291,14 +301,17 @@ class TestEmbeddingWorkflows:
     async def test_batch_processing_workflow(self, mock_embedding_adapter):
         """Test efficient batch processing workflow."""
         # Large number of texts to process
-        texts = [f"Document {i}: This is content for document number {i}." for i in range(100)]
+        texts = [
+            f"Document {i}: This is content for document number {i}."
+            for i in range(100)
+        ]
 
         # Process in batches
         batch_size = 20
         all_results = []
 
         for i in range(0, len(texts), batch_size):
-            batch_texts = texts[i:i + batch_size]
+            batch_texts = texts[i : i + batch_size]
             batch_result = await mock_embedding_adapter.embed_texts(batch_texts)
             all_results.extend(batch_result.results)
 

@@ -1,6 +1,7 @@
 """Simplified tests for the DNS adapters."""
 
 import pytest
+
 from tests.test_interfaces import DNSTestInterface, MockDNS
 
 

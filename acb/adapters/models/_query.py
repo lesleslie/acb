@@ -8,6 +8,7 @@ model frameworks (Pydantic, SQLModel, etc.) through a unified interface.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+
 from typing import Any, TypeVar
 
 T = TypeVar("T")

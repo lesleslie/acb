@@ -6,11 +6,12 @@ identify bottlenecks and track performance improvements over time.
 
 from __future__ import annotations
 
-import asyncio
 import time
+
+import asyncio
+import pytest
 import typing as t
 
-import pytest
 from acb.adapters import import_adapter
 from acb.depends import depends
 
@@ -58,7 +59,9 @@ class CacheBenchmarks:
         result = benchmark(sync_wrapper)
         assert result == "benchmark_value"
 
-    def test_cache_delete_operation(self, benchmark: t.Any, cache_adapter: t.Any) -> None:
+    def test_cache_delete_operation(
+        self, benchmark: t.Any, cache_adapter: t.Any
+    ) -> None:
         """Benchmark cache delete operation.
 
         Measures: Time to delete a key from cache.
@@ -105,9 +108,7 @@ class CacheBenchmarks:
         async def concurrent_ops() -> None:
             tasks = []
             for i in range(10):
-                tasks.append(
-                    cache_adapter.set(f"concurrent:{i}", f"value:{i}", ttl=60)
-                )
+                tasks.append(cache_adapter.set(f"concurrent:{i}", f"value:{i}", ttl=60))
             await asyncio.gather(*tasks)
 
         def sync_wrapper() -> None:
@@ -161,7 +162,9 @@ class AdapterOperationBenchmarks:
 
         benchmark(sync_wrapper)
 
-    def test_cache_with_large_values(self, benchmark: t.Any, cache_adapter: t.Any) -> None:
+    def test_cache_with_large_values(
+        self, benchmark: t.Any, cache_adapter: t.Any
+    ) -> None:
         """Benchmark cache operations with large values.
 
         Measures: Time to cache a large string (1MB).

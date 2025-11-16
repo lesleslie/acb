@@ -2,19 +2,15 @@
 
 from __future__ import annotations
 
-import asyncio
-from typing import Any
-
 import pytest
 
-from acb.services.validation._base import ValidationLevel, ValidationResult
+from acb.services.validation._base import ValidationResult
 from acb.services.validation.results import (
     ValidationError,
     ValidationReport,
     ValidationResultBuilder,
 )
 from acb.services.validation.utils import (
-    SchemaValidator,
     ValidationCache,
     ValidationHelper,
     ValidationTimer,
@@ -66,12 +62,16 @@ def test_utils_timer_and_create_and_combine_and_config() -> None:
     assert t.elapsed_ms >= 0.0
     assert t.stop() >= 0.0
 
-    r = create_validation_result(value="x", field_name="f", is_valid=False, errors=["e"])
+    r = create_validation_result(
+        value="x", field_name="f", is_valid=False, errors=["e"]
+    )
     assert r.field_name == "f" and not r.is_valid and r.errors == ["e"]
 
     r2 = create_validation_result(value="y")
     combo = combine_validation_results([r, r2], field_name="combo")
-    assert combo.field_name == "combo" and combo.is_valid is False and "e" in combo.errors
+    assert (
+        combo.field_name == "combo" and combo.is_valid is False and "e" in combo.errors
+    )
 
     cfg = create_validation_config_from_dict({"level": "lenient"})
     assert cfg.level.name == "LENIENT"

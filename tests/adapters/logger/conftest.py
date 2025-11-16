@@ -1,7 +1,8 @@
 """Pytest fixtures for logger adapter tests."""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 
 @pytest.fixture
@@ -33,5 +34,5 @@ def setup_logger_config(logger, mock_config):
         logger = Logger()
         setup_logger_config(logger, mock_config)
     """
-    logger.__dict__['config'] = mock_config
+    logger.__dict__["config"] = mock_config
     return logger

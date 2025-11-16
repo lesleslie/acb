@@ -1,13 +1,14 @@
 """Tests for PostgreSQL SQL adapter."""
 
-import typing as t
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
+from contextlib import asynccontextmanager
 from pydantic import SecretStr
 from pytest_benchmark.fixture import BenchmarkFixture
 from sqlmodel import SQLModel
+
 from acb.adapters.sql.pgsql import Sql, SqlSettings
 from acb.config import Config
 

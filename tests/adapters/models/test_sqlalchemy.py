@@ -1,8 +1,8 @@
 """Test SQLAlchemy Model Adapter."""
 
+import pytest
 from typing import Any
 
-import pytest
 from acb.adapters.models._sqlalchemy import SQLALCHEMY_AVAILABLE, SQLAlchemyModelAdapter
 
 # Global type variables to avoid redeclaration issues

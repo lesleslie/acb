@@ -1,6 +1,7 @@
 """Simple tests for the depends module."""
 
 import pytest
+
 from acb.depends import Inject, depends, fast_depends
 
 

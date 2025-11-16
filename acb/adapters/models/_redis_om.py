@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import inspect
 import warnings
+
 from typing import Any, TypeVar, get_args, get_origin
 
 from acb.adapters.models._attrs import ModelAdapter

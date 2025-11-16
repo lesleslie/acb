@@ -1,9 +1,9 @@
 import typing as t
-
 from aiocache import BaseCache
 from aiocache.serializers import BaseSerializer
 from msgspec import msgpack
 from pydantic import SecretStr
+
 from acb.actions.compress import compress, decompress
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings

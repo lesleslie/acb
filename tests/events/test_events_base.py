@@ -1,18 +1,18 @@
 """Tests for base event classes and functionality."""
 
-import asyncio
-import pytest
-from datetime import datetime
 from uuid import UUID
+
+import asyncio
+from datetime import datetime
 
 from acb.events import (
     Event,
+    EventDeliveryMode,
     EventHandler,
     EventHandlerResult,
     EventMetadata,
     EventPriority,
     EventStatus,
-    EventDeliveryMode,
     FunctionalEventHandler,
     TypedEventHandler,
     create_event,
@@ -127,6 +127,7 @@ class TestEvent:
             timeout=0.001,  # 1ms
         )
         import time
+
         time.sleep(0.002)  # Wait longer than timeout
         assert event.is_expired()
 
@@ -254,6 +255,7 @@ class TestFunctionalEventHandler:
 
     async def test_functional_handler_sync_function(self):
         """Test functional handler with synchronous function."""
+
         def sync_handler(event: Event) -> EventHandlerResult:
             return EventHandlerResult(success=True, metadata={"handled": True})
 
@@ -266,6 +268,7 @@ class TestFunctionalEventHandler:
 
     async def test_functional_handler_async_function(self):
         """Test functional handler with asynchronous function."""
+
         async def async_handler(event: Event) -> EventHandlerResult:
             await asyncio.sleep(0.01)  # Simulate async work
             return EventHandlerResult(success=True, metadata={"async_handled": True})
@@ -279,6 +282,7 @@ class TestFunctionalEventHandler:
 
     async def test_functional_handler_with_event_type(self):
         """Test functional handler with event type filtering."""
+
         def handler_func(event: Event) -> EventHandlerResult:
             return EventHandlerResult(success=True)
 
@@ -294,6 +298,7 @@ class TestFunctionalEventHandler:
 
     async def test_functional_handler_with_predicate(self):
         """Test functional handler with custom predicate."""
+
         def handler_func(event: Event) -> EventHandlerResult:
             return EventHandlerResult(success=True)
 
@@ -303,15 +308,20 @@ class TestFunctionalEventHandler:
         handler = FunctionalEventHandler(handler_func, predicate=predicate)
 
         # Should handle event matching predicate
-        matching_event = create_event("test.event", "test_service", {"priority": "high"})
+        matching_event = create_event(
+            "test.event", "test_service", {"priority": "high"}
+        )
         assert handler.can_handle(matching_event)
 
         # Should not handle event not matching predicate
-        non_matching_event = create_event("test.event", "test_service", {"priority": "low"})
+        non_matching_event = create_event(
+            "test.event", "test_service", {"priority": "low"}
+        )
         assert not handler.can_handle(non_matching_event)
 
     async def test_functional_handler_error_handling(self):
         """Test functional handler error handling."""
+
         def failing_handler(event: Event) -> EventHandlerResult:
             raise ValueError("Handler error")
 
@@ -328,6 +338,7 @@ class TestEventHandlerDecorator:
 
     async def test_event_handler_decorator_basic(self):
         """Test basic event handler decorator usage."""
+
         @event_handler()
         def handle_any_event(event: Event) -> EventHandlerResult:
             return EventHandlerResult(success=True, metadata={"decorated": True})
@@ -343,6 +354,7 @@ class TestEventHandlerDecorator:
 
     async def test_event_handler_decorator_with_type(self):
         """Test event handler decorator with event type."""
+
         @event_handler(event_type="user.created")
         def handle_user_created(event: Event) -> EventHandlerResult:
             return EventHandlerResult(success=True)
@@ -357,6 +369,7 @@ class TestEventHandlerDecorator:
 
     async def test_event_handler_decorator_with_predicate(self):
         """Test event handler decorator with predicate."""
+
         def is_high_priority(event: Event) -> bool:
             return event.metadata.priority == EventPriority.HIGH
 
@@ -366,9 +379,7 @@ class TestEventHandlerDecorator:
 
         # Should handle high priority event
         high_priority_event = create_event(
-            "test.event",
-            "test_service",
-            priority=EventPriority.HIGH
+            "test.event", "test_service", priority=EventPriority.HIGH
         )
         assert handle_high_priority.can_handle(high_priority_event)
 

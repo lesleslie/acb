@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import typing as t
 from pathlib import Path
 
 import pytest
+import typing as t
 
 if t.TYPE_CHECKING:
     from acb.adapters.templates import TemplatesAdapter

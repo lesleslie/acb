@@ -1,7 +1,8 @@
 import os
 import sys
-import typing as t
 from uuid import UUID
+
+import typing as t
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import Inject, depends

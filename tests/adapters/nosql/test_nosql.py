@@ -1,6 +1,7 @@
 """Simplified tests for the NoSQL adapters."""
 
 import pytest
+
 from tests.test_interfaces import MockNoSQL, NoSQLTestInterface
 
 

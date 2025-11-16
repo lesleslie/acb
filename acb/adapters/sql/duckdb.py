@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-import typing as t
 from pathlib import Path
 from uuid import UUID
 
+import typing as t
 from pydantic import Field, SecretStr, field_validator
 from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.pool import NullPool
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
@@ -213,6 +214,7 @@ class Sql(SqlBase):
     async def init(self) -> None:
         from sqlalchemy import log as sqlalchemy_log
         from sqlmodel import SQLModel
+
         from acb.adapters import import_adapter
 
         if self.config.sql.read_only:

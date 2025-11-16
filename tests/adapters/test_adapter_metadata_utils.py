@@ -7,10 +7,10 @@ and testing-mode behavior for `import_adapter`.
 from __future__ import annotations
 
 import re
-from typing import Any
 from uuid import UUID
 
 import pytest
+from typing import Any
 
 from acb.adapters import (
     AdapterCapability,
@@ -20,9 +20,9 @@ from acb.adapters import (
     generate_adapter_id,
     generate_adapter_report,
     get_adapter_info,
+    import_adapter,
     list_adapter_capabilities,
     validate_version_compatibility,
-    import_adapter,
 )
 
 

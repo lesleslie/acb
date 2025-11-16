@@ -13,15 +13,15 @@ Features:
 - Capability-based event processing detection
 """
 
-import typing as t
-from contextlib import suppress
 from contextvars import ContextVar
-from datetime import datetime
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from uuid import UUID
 
+import typing as t
+from contextlib import suppress
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 # Event discovery system imports

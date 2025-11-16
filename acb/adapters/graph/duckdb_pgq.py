@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
+from uuid import UUID, uuid4
+
 import typing as t
 from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
-from uuid import UUID, uuid4
-
 from pydantic import Field
 from sqlalchemy import text
 from sqlalchemy.engine import URL
@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncTransaction,
     create_async_engine,
 )
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.adapters.graph._base import (
     GraphBase,

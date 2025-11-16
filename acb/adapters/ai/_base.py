@@ -1,12 +1,13 @@
 """Base AI adapter interface for unified AI/ML operations."""
 
-import typing as t
 from abc import ABC, abstractmethod
-from asyncio import Event as AsyncEvent
-from dataclasses import dataclass
 from enum import Enum
 
+import typing as t
+from asyncio import Event as AsyncEvent
+from dataclasses import dataclass
 from pydantic import BaseModel, Field, SecretStr
+
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
 from acb.depends import Inject, depends

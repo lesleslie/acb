@@ -1,9 +1,9 @@
 """Tests for the HTTPX requests adapter."""
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from acb.adapters.requests.httpx import Requests, RequestsSettings
 
 
@@ -61,8 +61,10 @@ class TestRequests:
     @pytest.mark.asyncio
     async def test_create_storage(self, requests_adapter: Requests) -> None:
         """Test storage creation."""
-        with patch("acb.adapters.requests.httpx.AsyncRedis") as mock_redis, \
-             patch("acb.adapters.requests.httpx.AsyncRedisStorage") as mock_storage:
+        with (
+            patch("acb.adapters.requests.httpx.AsyncRedis") as mock_redis,
+            patch("acb.adapters.requests.httpx.AsyncRedisStorage") as mock_storage,
+        ):
             mock_redis_client = AsyncMock()
             mock_redis.return_value = mock_redis_client
             mock_storage_instance = AsyncMock()
@@ -71,10 +73,7 @@ class TestRequests:
             storage = await requests_adapter._create_storage()
 
             mock_redis.assert_called_once_with(host="localhost", port=6379)
-            mock_storage.assert_called_once_with(
-                client=mock_redis_client,
-                ttl=7200
-            )
+            mock_storage.assert_called_once_with(client=mock_redis_client, ttl=7200)
             assert storage == mock_storage_instance
 
     @pytest.mark.asyncio
@@ -103,9 +102,15 @@ class TestRequests:
     @pytest.mark.asyncio
     async def test_get_cached_client(self, requests_adapter: Requests) -> None:
         """Test cached client retrieval."""
-        with patch.object(requests_adapter, "get_storage", AsyncMock()) as mock_get_storage, \
-             patch.object(requests_adapter, "get_controller", AsyncMock()) as mock_get_controller, \
-             patch("acb.adapters.requests.httpx.AsyncCacheClient") as mock_client_class:
+        with (
+            patch.object(
+                requests_adapter, "get_storage", AsyncMock()
+            ) as mock_get_storage,
+            patch.object(
+                requests_adapter, "get_controller", AsyncMock()
+            ) as mock_get_controller,
+            patch("acb.adapters.requests.httpx.AsyncCacheClient") as mock_client_class,
+        ):
             mock_storage = AsyncMock()
             mock_controller = AsyncMock()
             mock_client = AsyncMock()
@@ -129,7 +134,9 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.get.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.get("https://example.com", timeout=5)
 
             mock_client.get.assert_called_once_with(
@@ -137,7 +144,7 @@ class TestRequests:
                 timeout=5,
                 params=None,
                 headers=None,
-                cookies=None
+                cookies=None,
             )
             assert response == mock_response
 
@@ -148,14 +155,15 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.post.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.post("https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.post(
+                "https://example.com", data={"key": "value"}
+            )
 
             mock_client.post.assert_called_once_with(
-                "https://example.com",
-                data={"key": "value"},
-                json=None,
-                timeout=5
+                "https://example.com", data={"key": "value"}, json=None, timeout=5
             )
             assert response == mock_response
 
@@ -166,14 +174,15 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.put.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.put("https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.put(
+                "https://example.com", data={"key": "value"}
+            )
 
             mock_client.put.assert_called_once_with(
-                "https://example.com",
-                data={"key": "value"},
-                json=None,
-                timeout=5
+                "https://example.com", data={"key": "value"}, json=None, timeout=5
             )
             assert response == mock_response
 
@@ -184,13 +193,12 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.delete.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.delete("https://example.com", timeout=5)
 
-            mock_client.delete.assert_called_once_with(
-                "https://example.com",
-                timeout=5
-            )
+            mock_client.delete.assert_called_once_with("https://example.com", timeout=5)
             assert response == mock_response
 
     @pytest.mark.asyncio
@@ -200,14 +208,15 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.patch.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.patch("https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.patch(
+                "https://example.com", data={"key": "value"}
+            )
 
             mock_client.patch.assert_called_once_with(
-                "https://example.com",
-                timeout=5,
-                data={"key": "value"},
-                json=None
+                "https://example.com", timeout=5, data={"key": "value"}, json=None
             )
             assert response == mock_response
 
@@ -218,13 +227,12 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.head.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.head("https://example.com", timeout=5)
 
-            mock_client.head.assert_called_once_with(
-                "https://example.com",
-                timeout=5
-            )
+            mock_client.head.assert_called_once_with("https://example.com", timeout=5)
             assert response == mock_response
 
     @pytest.mark.asyncio
@@ -234,12 +242,13 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.options.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
             response = await requests_adapter.options("https://example.com", timeout=5)
 
             mock_client.options.assert_called_once_with(
-                "https://example.com",
-                timeout=5
+                "https://example.com", timeout=5
             )
             assert response == mock_response
 
@@ -250,15 +259,19 @@ class TestRequests:
         mock_response = AsyncMock()
         mock_client.request.return_value = mock_response
 
-        with patch.object(requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)):
-            response = await requests_adapter.request("PUT", "https://example.com", data={"key": "value"})
+        with patch.object(
+            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+        ):
+            response = await requests_adapter.request(
+                "PUT", "https://example.com", data={"key": "value"}
+            )
 
             mock_client.request.assert_called_once_with(
                 "PUT",
                 "https://example.com",
                 timeout=5,
                 data={"key": "value"},
-                json=None
+                json=None,
             )
             assert response == mock_response
 
@@ -307,7 +320,7 @@ class TestRequests:
         mock_client2 = AsyncMock()
         requests_adapter._client_cache = {
             "client1": mock_client1,
-            "client2": mock_client2
+            "client2": mock_client2,
         }
 
         await requests_adapter.close()

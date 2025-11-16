@@ -3,20 +3,19 @@
 import asyncio
 import pytest
 from datetime import datetime, timedelta
-from uuid import uuid4
 
+from acb.tasks._base import (
+    TaskData,
+    TaskHandler,
+    TaskPriority,
+    TaskResult,
+    TaskStatus,
+)
 from acb.tasks.memory import (
     MemoryQueue,
     MemoryQueueSettings,
     PriorityTaskItem,
     create_memory_queue,
-)
-from acb.tasks._base import (
-    TaskData,
-    TaskPriority,
-    TaskStatus,
-    TaskHandler,
-    TaskResult,
 )
 
 
@@ -94,14 +93,10 @@ class TestPriorityTaskItem:
 
         # Create tasks with different priorities
         low_task = TaskData(
-            task_type="low",
-            queue_name="test",
-            priority=TaskPriority.LOW
+            task_type="low", queue_name="test", priority=TaskPriority.LOW
         )
         high_task = TaskData(
-            task_type="high",
-            queue_name="test",
-            priority=TaskPriority.HIGH
+            task_type="high", queue_name="test", priority=TaskPriority.HIGH
         )
 
         low_item = PriorityTaskItem(low_task, current_time)
@@ -188,19 +183,19 @@ class TestMemoryQueue:
             task_type="low",
             queue_name="test",
             priority=TaskPriority.LOW,
-            payload={"order": 3}
+            payload={"order": 3},
         )
         high_task = TaskData(
             task_type="high",
             queue_name="test",
             priority=TaskPriority.HIGH,
-            payload={"order": 1}
+            payload={"order": 1},
         )
         normal_task = TaskData(
             task_type="normal",
             queue_name="test",
             priority=TaskPriority.NORMAL,
-            payload={"order": 2}
+            payload={"order": 2},
         )
 
         # Enqueue in random order
@@ -215,7 +210,7 @@ class TestMemoryQueue:
 
         assert first.payload["order"] == 1  # High priority
         assert second.payload["order"] == 2  # Normal priority
-        assert third.payload["order"] == 3   # Low priority
+        assert third.payload["order"] == 3  # Low priority
 
     @pytest.mark.asyncio
     async def test_delayed_tasks(self, memory_queue):
@@ -225,7 +220,7 @@ class TestMemoryQueue:
             task_type="delayed",
             queue_name="test",
             delay=0.1,  # 100ms delay
-            payload={"delayed": True}
+            payload={"delayed": True},
         )
 
         # Enqueue delayed task
@@ -252,7 +247,7 @@ class TestMemoryQueue:
             task_type="scheduled",
             queue_name="test",
             scheduled_at=scheduled_time,
-            payload={"scheduled": True}
+            payload={"scheduled": True},
         )
 
         # Enqueue scheduled task
@@ -322,9 +317,7 @@ class TestMemoryQueue:
         # Add multiple tasks
         for i in range(5):
             task = TaskData(
-                task_type="test",
-                queue_name="test_queue",
-                payload={"index": i}
+                task_type="test", queue_name="test_queue", payload={"index": i}
             )
             await memory_queue.enqueue(task)
 
@@ -362,7 +355,7 @@ class TestMemoryQueue:
             large_task = TaskData(
                 task_type="large",
                 queue_name="test",
-                payload={"data": "x" * 10000}  # 10KB payload
+                payload={"data": "x" * 10000},  # 10KB payload
             )
 
             # First task might fit
@@ -387,17 +380,13 @@ class TestMemoryQueue:
             # Add tasks up to limit
             for i in range(2):
                 task = TaskData(
-                    task_type="test",
-                    queue_name="limited_queue",
-                    payload={"index": i}
+                    task_type="test", queue_name="limited_queue", payload={"index": i}
                 )
                 await queue.enqueue(task)
 
             # Third task should fail
             task = TaskData(
-                task_type="test",
-                queue_name="limited_queue",
-                payload={"index": 3}
+                task_type="test", queue_name="limited_queue", payload={"index": 3}
             )
 
             with pytest.raises(RuntimeError, match="Queue limited_queue is full"):
@@ -420,17 +409,13 @@ class TestMemoryQueue:
             # First two tasks should succeed
             for i in range(2):
                 task = TaskData(
-                    task_type="test",
-                    queue_name="rate_limited",
-                    payload={"index": i}
+                    task_type="test", queue_name="rate_limited", payload={"index": i}
                 )
                 await queue.enqueue(task)
 
             # Third task should fail due to rate limit
             task = TaskData(
-                task_type="test",
-                queue_name="rate_limited",
-                payload={"index": 3}
+                task_type="test", queue_name="rate_limited", payload={"index": 3}
             )
 
             with pytest.raises(RuntimeError, match="Rate limit exceeded"):
@@ -451,7 +436,7 @@ class TestMemoryQueue:
             task_type="failing_task",
             queue_name="test",
             max_retries=0,  # No retries
-            payload={"should_fail": True}
+            payload={"should_fail": True},
         )
 
         # Process task (should fail and go to DLQ)
@@ -560,7 +545,7 @@ class TestMemoryQueueIntegration:
                 task = TaskData(
                     task_type="integration_task",
                     queue_name="integration",
-                    payload={"index": i}
+                    payload={"index": i},
                 )
                 task_id = await queue.enqueue(task)
                 task_ids.append(task_id)
@@ -582,13 +567,14 @@ class TestMemoryQueueIntegration:
     @pytest.mark.asyncio
     async def test_concurrent_operations(self, memory_queue):
         """Test concurrent queue operations."""
+
         # Create tasks concurrently
         async def enqueue_tasks(start_index, count):
             for i in range(count):
                 task = TaskData(
                     task_type="concurrent",
                     queue_name="test",
-                    payload={"index": start_index + i}
+                    payload={"index": start_index + i},
                 )
                 await memory_queue.enqueue(task)
 

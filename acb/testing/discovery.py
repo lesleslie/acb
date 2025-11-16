@@ -12,15 +12,15 @@ Features:
 - Thread-safe registry using ContextVar
 """
 
-import typing as t
-from contextlib import suppress
 from contextvars import ContextVar
-from datetime import datetime
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from uuid import UUID
 
+import typing as t
+from contextlib import suppress
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 # Test provider discovery system imports
@@ -236,18 +236,48 @@ class TestProvider(BaseModel):
 
 
 # Test provider registry using ContextVar for thread safety
-test_provider_registry: ContextVar[list[TestProvider]] = ContextVar(
+test_provider_registry: ContextVar[list[TestProvider] | None] = ContextVar(
     "test_provider_registry",
-    default=[],
+    default=None,
 )
-_enabled_test_providers_cache: ContextVar[dict[str, TestProvider]] = ContextVar(
+_enabled_test_providers_cache: ContextVar[dict[str, TestProvider] | None] = ContextVar(
     "_enabled_test_providers_cache",
-    default={},
+    default=None,
 )
-_installed_test_providers_cache: ContextVar[dict[str, TestProvider]] = ContextVar(
-    "_installed_test_providers_cache",
-    default={},
+_installed_test_providers_cache: ContextVar[dict[str, TestProvider] | None] = (
+    ContextVar(
+        "_installed_test_providers_cache",
+        default=None,
+    )
 )
+
+
+def _ensure_test_provider_registry_initialized() -> list[TestProvider]:
+    """Ensure the test provider registry is initialized with an empty list if needed."""
+    registry = test_provider_registry.get(None)
+    if registry is None:
+        registry = []
+        test_provider_registry.set(registry)
+    return registry
+
+
+def _ensure_enabled_test_providers_cache_initialized() -> dict[str, TestProvider]:
+    """Ensure the enabled test providers cache is initialized with an empty dict if needed."""
+    cache = _enabled_test_providers_cache.get(None)
+    if cache is None:
+        cache = {}
+        _enabled_test_providers_cache.set(cache)
+    return cache
+
+
+def _ensure_installed_test_providers_cache_initialized() -> dict[str, TestProvider]:
+    """Ensure the installed test providers cache is initialized with an empty dict if needed."""
+    cache = _installed_test_providers_cache.get(None)
+    if cache is None:
+        cache = {}
+        _installed_test_providers_cache.set(cache)
+    return cache
+
 
 # Core test providers registry - static mappings like adapters
 core_test_providers = [
@@ -313,7 +343,7 @@ core_test_providers = [
 # Test provider Discovery Functions (mirrors adapter pattern)
 def get_test_provider_descriptor(category: str) -> TestProvider | None:
     """Get test provider descriptor by category."""
-    providers = test_provider_registry.get()
+    providers = _ensure_test_provider_registry_initialized()
     for provider in providers:
         if provider.category == category and provider.enabled:
             return provider
@@ -322,17 +352,17 @@ def get_test_provider_descriptor(category: str) -> TestProvider | None:
 
 def list_test_providers() -> list[TestProvider]:
     """List all registered test providers."""
-    return test_provider_registry.get().copy()
+    return _ensure_test_provider_registry_initialized().copy()
 
 
 def list_available_test_providers() -> list[TestProvider]:
     """List all available (installed) test providers."""
-    return [p for p in test_provider_registry.get() if p.installed]
+    return [p for p in _ensure_test_provider_registry_initialized() if p.installed]
 
 
 def list_enabled_test_providers() -> list[TestProvider]:
     """List all enabled test providers."""
-    return [p for p in test_provider_registry.get() if p.enabled]
+    return [p for p in _ensure_test_provider_registry_initialized() if p.enabled]
 
 
 def get_test_provider_class(category: str, name: str | None = None) -> type[t.Any]:
@@ -346,7 +376,7 @@ def get_test_provider_class(category: str, name: str | None = None) -> type[t.An
 
     if name and provider.name != name:
         # Look for specific named provider
-        providers = test_provider_registry.get()
+        providers = _ensure_test_provider_registry_initialized()
         for p in providers:
             if p.category == category and p.name == name:
                 provider = p
@@ -401,7 +431,7 @@ def import_test_provider(provider_categories: str | list[str] | None = None) -> 
     config = RegistryConfig(
         get_descriptor=get_test_provider_descriptor,
         try_import=try_import_test_provider,
-        get_all_descriptors=test_provider_registry.get,
+        get_all_descriptors=_ensure_test_provider_registry_initialized,
         not_found_exception=TestNotFound,
     )
     return import_from_registry(provider_categories, config)
@@ -423,7 +453,7 @@ def get_test_provider_info(provider_class: type[t.Any]) -> dict[str, t.Any]:
 
     # Check for metadata
     if hasattr(provider_class, "PROVIDER_METADATA"):
-        metadata = getattr(provider_class, "PROVIDER_METADATA")
+        metadata = provider_class.PROVIDER_METADATA
         if isinstance(metadata, TestProviderMetadata):
             info["metadata"] = metadata.model_dump()
 
@@ -433,7 +463,7 @@ def get_test_provider_info(provider_class: type[t.Any]) -> dict[str, t.Any]:
 # Update provider cache
 def _update_test_provider_caches() -> None:
     """Update test provider caches for faster lookups."""
-    providers = test_provider_registry.get()
+    providers = _ensure_test_provider_registry_initialized()
 
     enabled_cache = {}
     installed_cache = {}
@@ -451,7 +481,7 @@ def _update_test_provider_caches() -> None:
 # Enable providers based on configuration
 def enable_test_provider(category: str, name: str | None = None) -> None:
     """Enable a test provider by category and optional name."""
-    providers = test_provider_registry.get()
+    providers = _ensure_test_provider_registry_initialized()
     for provider in providers:
         if provider.category == category:
             if name is None or provider.name == name:
@@ -462,7 +492,7 @@ def enable_test_provider(category: str, name: str | None = None) -> None:
 
 def disable_test_provider(category: str) -> None:
     """Disable a test provider by category."""
-    providers = test_provider_registry.get()
+    providers = _ensure_test_provider_registry_initialized()
     for provider in providers:
         if provider.category == category:
             provider.enabled = False
@@ -535,8 +565,8 @@ def apply_test_provider_overrides() -> None:
 
 def initialize_test_provider_registry() -> None:
     """Initialize the test provider registry with core providers."""
-    if not test_provider_registry.get():
-        test_provider_registry.set(core_test_providers.copy())
+    if not _ensure_test_provider_registry_initialized():
+        _ensure_test_provider_registry_initialized().extend(core_test_providers)
         _update_test_provider_caches()
         # Apply any configuration overrides
         apply_test_provider_overrides()

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-
 import pytest
 
 
@@ -62,9 +61,7 @@ class TestAsyncRendering:
         template_file.write_text("Result: {{ value }}")
 
         # Render 100 templates concurrently
-        tasks = [
-            templates.render("concurrent.html", value=i) for i in range(100)
-        ]
+        tasks = [templates.render("concurrent.html", value=i) for i in range(100)]
 
         results = await asyncio.gather(*tasks)
 
@@ -141,7 +138,9 @@ class TestAsyncPerformance:
         """Test template cache size limit."""
         from acb.adapters.templates import TemplatesAdapter
 
-        templates_small_cache = TemplatesAdapter(template_dir=template_dir, cache_size=2)
+        templates_small_cache = TemplatesAdapter(
+            template_dir=template_dir, cache_size=2
+        )
 
         # Create 3 templates
         for i in range(3):
@@ -182,16 +181,14 @@ class TestAsyncEdgeCases:
     async def test_unicode_content(self, templates):
         """Test rendering templates with unicode content."""
         template = "{{ greeting }} 世界! {{ emoji }}"
-        result = await templates.render_string(
-            template, greeting="你好", emoji="🌍"
-        )
+        result = await templates.render_string(template, greeting="你好", emoji="🌍")
 
         assert "你好 世界! 🌍" in result
 
     @pytest.mark.asyncio
     async def test_special_characters_escaped(self, templates):
         """Test that special HTML characters are escaped."""
-        content = '< > & " \''
+        content = "< > & \" '"
         result = await templates.render_string("{{ content }}", content=content)
 
         assert "&lt;" in result
@@ -219,8 +216,8 @@ class TestAsyncEdgeCases:
         # Create 5 levels of inheritance
         for i in range(1, 6):
             content = (
-                f'{{% extends "level{i-1}.html" %}}\n'
-                f'{{% block content %}}Level {i}{{% endblock %}}'
+                f'{{% extends "level{i - 1}.html" %}}\n'
+                f"{{% block content %}}Level {i}{{% endblock %}}"
             )
             (template_dir / f"level{i}.html").write_text(content)
 

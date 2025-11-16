@@ -34,7 +34,9 @@ def _install_dummy_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.asyncio
-async def test_check_http_client_health_without_url(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_check_http_client_health_without_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _install_dummy_adapter(monkeypatch)
     result = await check_http_client_health(test_url=None)
     assert result.status.value in ("healthy", "degraded")
@@ -44,6 +46,8 @@ async def test_check_http_client_health_without_url(monkeypatch: pytest.MonkeyPa
 @pytest.mark.asyncio
 async def test_check_http_connectivity_success(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_dummy_adapter(monkeypatch)
-    result = await check_http_connectivity(url="https://example.com/health", expected_status=200)
+    result = await check_http_connectivity(
+        url="https://example.com/health", expected_status=200
+    )
     assert result.status.value == "healthy"
     assert "connectivity test successful" in (result.message or "").lower()

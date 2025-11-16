@@ -1,19 +1,18 @@
 """Tests for Custom reasoning adapter."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from acb.adapters.reasoning.custom import Reasoning, RuleEngine
+
 from acb.adapters.reasoning._base import (
-    ReasoningRequest,
-    ReasoningResponse,
-    ReasoningContext,
-    ReasoningStrategy,
-    ReasoningStep,
-    MemoryType,
     DecisionTree,
-    DecisionRule,
+    MemoryType,
+    ReasoningContext,
+    ReasoningRequest,
+    ReasoningStep,
+    ReasoningStrategy,
 )
-import typing as t
+from acb.adapters.reasoning.custom import Reasoning, RuleEngine
 
 
 class MockCustomSettings:
@@ -87,9 +86,7 @@ def sample_decision_tree():
                     id="low_income", action="standard_approve", confidence=0.7
                 ),
             ),
-            false_branch=DecisionNode(
-                id="minor", action="reject", confidence=0.95
-            ),
+            false_branch=DecisionNode(id="minor", action="reject", confidence=0.95),
         ),
     )
 
@@ -197,8 +194,16 @@ class TestRuleEngine:
             ({"field": "value", "operator": "<", "value": 10}, {"value": 5}, True),
             ({"field": "value", "operator": ">=", "value": 10}, {"value": 10}, True),
             ({"field": "value", "operator": "<=", "value": 10}, {"value": 10}, True),
-            ({"field": "name", "operator": "in", "value": ["Alice", "Bob"]}, {"name": "Alice"}, True),
-            ({"field": "tags", "operator": "contains", "value": "test"}, {"tags": ["test", "other"]}, True),
+            (
+                {"field": "name", "operator": "in", "value": ["Alice", "Bob"]},
+                {"name": "Alice"},
+                True,
+            ),
+            (
+                {"field": "tags", "operator": "contains", "value": "test"},
+                {"tags": ["test", "other"]},
+                True,
+            ),
         ]
 
         for condition, data, expected in test_cases:
@@ -213,13 +218,17 @@ class TestRuleEngine:
             )
 
             result = engine.evaluate_rule(rule, data)
-            assert result.matched == expected, f"Failed for condition {condition} with data {data}"
+            assert result.matched == expected, (
+                f"Failed for condition {condition} with data {data}"
+            )
 
 
 class TestDecisionTree:
     """Test decision tree functionality."""
 
-    async def test_decision_tree_evaluation(self, reasoning_adapter, sample_decision_tree):
+    async def test_decision_tree_evaluation(
+        self, reasoning_adapter, sample_decision_tree
+    ):
         """Test decision tree evaluation."""
         reasoning_adapter._decision_trees["test_tree"] = sample_decision_tree
 
@@ -231,7 +240,9 @@ class TestDecisionTree:
         assert result.confidence == 0.9
         assert "high_income" in result.path
 
-    async def test_decision_tree_low_income_path(self, reasoning_adapter, sample_decision_tree):
+    async def test_decision_tree_low_income_path(
+        self, reasoning_adapter, sample_decision_tree
+    ):
         """Test decision tree low income path."""
         reasoning_adapter._decision_trees["test_tree"] = sample_decision_tree
 
@@ -242,7 +253,9 @@ class TestDecisionTree:
         assert result.confidence == 0.7
         assert "low_income" in result.path
 
-    async def test_decision_tree_minor_path(self, reasoning_adapter, sample_decision_tree):
+    async def test_decision_tree_minor_path(
+        self, reasoning_adapter, sample_decision_tree
+    ):
         """Test decision tree minor path."""
         reasoning_adapter._decision_trees["test_tree"] = sample_decision_tree
 
@@ -253,7 +266,9 @@ class TestDecisionTree:
         assert result.confidence == 0.95
         assert "minor" in result.path
 
-    async def test_decision_tree_missing_data(self, reasoning_adapter, sample_decision_tree):
+    async def test_decision_tree_missing_data(
+        self, reasoning_adapter, sample_decision_tree
+    ):
         """Test decision tree with missing data."""
         reasoning_adapter._decision_trees["test_tree"] = sample_decision_tree
 
@@ -278,9 +293,7 @@ class TestReasoningOperations:
         request = ReasoningRequest(
             query="Should we approve this user?",
             strategy=ReasoningStrategy.RULE_BASED,
-            context=ReasoningContext(
-                data={"age": 25, "status": "active"}
-            ),
+            context=ReasoningContext(data={"age": 25, "status": "active"}),
         )
 
         response = await reasoning_adapter.reason(request)
@@ -289,7 +302,9 @@ class TestReasoningOperations:
         assert response.confidence >= 0.9
         assert response.strategy == ReasoningStrategy.RULE_BASED
 
-    async def test_decision_tree_reasoning(self, reasoning_adapter, sample_decision_tree):
+    async def test_decision_tree_reasoning(
+        self, reasoning_adapter, sample_decision_tree
+    ):
         """Test decision tree reasoning strategy."""
         reasoning_adapter._decision_trees["test_tree"] = sample_decision_tree
 
@@ -297,8 +312,7 @@ class TestReasoningOperations:
             query="What should we do with this application?",
             strategy=ReasoningStrategy.DECISION_TREE,
             context=ReasoningContext(
-                decision_tree_id="test_tree",
-                data={"age": 25, "income": 75000}
+                decision_tree_id="test_tree", data={"age": 25, "income": 75000}
             ),
         )
 
@@ -394,8 +408,12 @@ class TestMemoryOperations:
             MemoryType.SEMANTIC: ["Fact 1"],
         }
 
-        episodic = await reasoning_adapter.retrieve_memory("session_1", MemoryType.EPISODIC)
-        semantic = await reasoning_adapter.retrieve_memory("session_1", MemoryType.SEMANTIC)
+        episodic = await reasoning_adapter.retrieve_memory(
+            "session_1", MemoryType.EPISODIC
+        )
+        semantic = await reasoning_adapter.retrieve_memory(
+            "session_1", MemoryType.SEMANTIC
+        )
 
         assert len(episodic) == 2
         assert len(semantic) == 1
@@ -458,9 +476,15 @@ class TestSelfReflection:
     async def test_confidence_calculation(self, reasoning_adapter):
         """Test confidence calculation from steps."""
         steps = [
-            ReasoningStep(step_number=1, description="", reasoning="", result="", confidence=0.9),
-            ReasoningStep(step_number=2, description="", reasoning="", result="", confidence=0.8),
-            ReasoningStep(step_number=3, description="", reasoning="", result="", confidence=0.7),
+            ReasoningStep(
+                step_number=1, description="", reasoning="", result="", confidence=0.9
+            ),
+            ReasoningStep(
+                step_number=2, description="", reasoning="", result="", confidence=0.8
+            ),
+            ReasoningStep(
+                step_number=3, description="", reasoning="", result="", confidence=0.7
+            ),
         ]
 
         confidence = reasoning_adapter._calculate_overall_confidence(steps)
@@ -471,9 +495,27 @@ class TestSelfReflection:
     async def test_identify_weak_steps(self, reasoning_adapter):
         """Test identification of weak reasoning steps."""
         steps = [
-            ReasoningStep(step_number=1, description="Strong step", reasoning="", result="", confidence=0.9),
-            ReasoningStep(step_number=2, description="Weak step", reasoning="", result="", confidence=0.4),
-            ReasoningStep(step_number=3, description="Medium step", reasoning="", result="", confidence=0.7),
+            ReasoningStep(
+                step_number=1,
+                description="Strong step",
+                reasoning="",
+                result="",
+                confidence=0.9,
+            ),
+            ReasoningStep(
+                step_number=2,
+                description="Weak step",
+                reasoning="",
+                result="",
+                confidence=0.4,
+            ),
+            ReasoningStep(
+                step_number=3,
+                description="Medium step",
+                reasoning="",
+                result="",
+                confidence=0.7,
+            ),
         ]
 
         weak_steps = reasoning_adapter._identify_weak_steps(steps, threshold=0.6)
@@ -487,6 +529,7 @@ class TestToolIntegration:
 
     async def test_register_decision_tool(self, reasoning_adapter):
         """Test registering a decision tool."""
+
         def approval_tool(data: dict) -> dict:
             return {"approved": data.get("score", 0) > 70}
 
@@ -497,6 +540,7 @@ class TestToolIntegration:
 
     async def test_execute_tool(self, reasoning_adapter):
         """Test executing a registered tool."""
+
         def simple_tool(data: dict) -> dict:
             return {"result": data.get("value", 0) * 2}
 
@@ -632,7 +676,7 @@ class TestIntegration:
         await reasoning_adapter.store_memory(
             "user_123",
             "Previous application was rejected for insufficient income",
-            MemoryType.EPISODIC
+            MemoryType.EPISODIC,
         )
 
         reasoning_adapter._rule_engine.add_rule(sample_rule)

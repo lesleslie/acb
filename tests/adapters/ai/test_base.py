@@ -1,10 +1,11 @@
 """Tests for the base AI adapter components."""
 
-import asyncio
-import typing as t
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
+import asyncio
 import pytest
+import typing as t
+
 from acb.adapters.ai._base import (
     AIBase,
     AIBaseSettings,
@@ -20,7 +21,6 @@ from acb.adapters.ai._base import (
     estimate_tokens,
     validate_request,
 )
-from acb.config import Config
 
 
 class TestModelInfo:

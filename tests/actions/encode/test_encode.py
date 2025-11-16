@@ -2,7 +2,6 @@
 
 import json
 import pickle
-import typing as t
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,7 +9,9 @@ import msgspec
 import msgspec.msgpack
 import pytest
 import toml
+import typing as t
 import yaml
+
 from acb.actions.encode import encode
 
 TEST_DATA: t.Final[dict[str, t.Any]] = {"name": "Test", "value": 123, "active": True}

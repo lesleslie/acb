@@ -7,9 +7,8 @@ rather than testing internal adapter behavior.
 from __future__ import annotations
 
 import asyncio
-import typing as t
-
 import pytest
+import typing as t
 
 
 class TestCacheUsagePatterns:
@@ -236,7 +235,9 @@ class TestConcurrentCacheAccess:
         cache: dict[str, t.Any] = {}
         loading: dict[str, asyncio.Future[t.Any]] = {}
 
-        async def get_with_lock(key: str, loader: t.Callable[[], t.Awaitable[t.Any]]) -> t.Any:
+        async def get_with_lock(
+            key: str, loader: t.Callable[[], t.Awaitable[t.Any]]
+        ) -> t.Any:
             """Get from cache, with stampede prevention.
 
             If multiple tasks request the same missing key,
@@ -303,7 +304,9 @@ class TestAdapterErrorRecovery:
         """
         cache: dict[str, t.Any] = {}
 
-        async def get_with_fallback(key: str, fallback: t.Callable[[], t.Awaitable[t.Any]]) -> t.Any:
+        async def get_with_fallback(
+            key: str, fallback: t.Callable[[], t.Awaitable[t.Any]]
+        ) -> t.Any:
             """Get from cache, or load from fallback."""
             try:
                 if key in cache:

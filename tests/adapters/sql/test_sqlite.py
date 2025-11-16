@@ -1,12 +1,13 @@
 """Tests for the SQLite adapter."""
 
-import typing as t
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
+from contextlib import asynccontextmanager
 from pytest_benchmark.fixture import BenchmarkFixture
 from sqlmodel import SQLModel
+
 from acb.adapters.sql.sqlite import Sql, SqlSettings
 from acb.config import Config
 
@@ -79,7 +80,9 @@ class TestSqliteSettings:
         mock_config.logger.verbose = False
         mock_config.deployed = False
 
-        settings = SqlSettings(config=mock_config, database_url="libsql://mydb.turso.io")
+        settings = SqlSettings(
+            config=mock_config, database_url="libsql://mydb.turso.io"
+        )
         assert settings._driver == "sqlite+libsql"
         assert settings._async_driver == "sqlite+libsql"
         assert settings.is_turso

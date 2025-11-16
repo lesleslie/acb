@@ -1,7 +1,6 @@
 import typing as t
-from contextlib import suppress
-
 from bevy import Inject, auto_inject, get_container
+from contextlib import suppress
 
 
 # Sentinel object for dependency injection markers

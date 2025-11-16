@@ -7,6 +7,7 @@ allowing the universal query interface to work with attrs-decorated classes.
 from __future__ import annotations
 
 import inspect
+
 from typing import Any, Protocol, TypeVar, get_args, get_origin
 
 T = TypeVar("T")

@@ -1,10 +1,11 @@
 """Comprehensive tests for Redis Cache adapter."""
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
 from pydantic import SecretStr
+
 from acb.adapters.cache.redis import Cache, CacheSettings
 from acb.config import Config
 
@@ -512,8 +513,10 @@ class TestRedisCache:
 
         with (
             patch.object(redis_cache, "get_client", return_value=mock_client),
-            patch("acb.adapters.cache.redis._get_redis_imports", return_value=mock_imports),
-            patch.object(redis_cache, "_setup_serializer") as mock_setup_serializer,
+            patch(
+                "acb.adapters.cache.redis._get_redis_imports", return_value=mock_imports
+            ),
+            patch.object(redis_cache, "_setup_serializer"),
         ):
             # Set the mock serializer directly
             redis_cache._serializer = mock_serializer
@@ -675,12 +678,15 @@ class TestRedisCache:
         _redis_imports.clear()
 
         with (
-            patch.dict("sys.modules", {
-                "aiocache.backends.redis": None,
-                "aiocache.serializers": None,
-                "coredis.cache": None,
-                "coredis.client": None,
-            }),
+            patch.dict(
+                "sys.modules",
+                {
+                    "aiocache.backends.redis": None,
+                    "aiocache.serializers": None,
+                    "coredis.cache": None,
+                    "coredis.client": None,
+                },
+            ),
             patch("acb.adapters.cache.redis.debug") as mock_debug,
         ):
             from acb.adapters.cache.redis import _get_redis_imports

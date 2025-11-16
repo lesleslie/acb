@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import typing as t
 from pathlib import Path
 
+import typing as t
 from jinja2 import FileSystemLoader, select_autoescape
 from jinja2_async_environment import AsyncEnvironment
 

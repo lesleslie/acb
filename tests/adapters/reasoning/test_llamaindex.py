@@ -1,15 +1,16 @@
 """Tests for LlamaIndex reasoning adapter."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from acb.adapters.reasoning.llamaindex import Reasoning
+
+import pytest
+
 from acb.adapters.reasoning._base import (
-    ReasoningRequest,
-    ReasoningContext,
-    ReasoningStrategy,
     MemoryType,
+    ReasoningContext,
+    ReasoningRequest,
+    ReasoningStrategy,
 )
-import typing as t
+from acb.adapters.reasoning.llamaindex import Reasoning
 
 
 class MockLlamaIndexSettings:
@@ -279,9 +280,7 @@ class TestReasoningOperations:
         assert response.strategy == ReasoningStrategy.RAG_WORKFLOW
         mock_query_engine.query.assert_called_once_with("Test query")
 
-    async def test_chain_of_thought_reasoning(
-        self, reasoning_adapter, mock_llm
-    ):
+    async def test_chain_of_thought_reasoning(self, reasoning_adapter, mock_llm):
         """Test chain of thought reasoning."""
         reasoning_adapter._client = mock_llm
         mock_response = MagicMock()
@@ -309,9 +308,7 @@ class TestReasoningOperations:
         mock_index.as_query_engine.return_value = mock_query_engine
         mock_query_engine.query = AsyncMock(return_value=mock_response)
 
-        response = await reasoning_adapter.rag_workflow(
-            "Test query", "test_kb"
-        )
+        response = await reasoning_adapter.rag_workflow("Test query", "test_kb")
 
         assert response.result == "RAG response"
         assert response.strategy == ReasoningStrategy.RAG_WORKFLOW
@@ -344,9 +341,7 @@ class TestMemoryOperations:
 
     async def test_clear_memory(self, reasoning_adapter):
         """Test clearing memory."""
-        reasoning_adapter._memory["session_1"] = {
-            MemoryType.CONVERSATION: ["Memory 1"]
-        }
+        reasoning_adapter._memory["session_1"] = {MemoryType.CONVERSATION: ["Memory 1"]}
 
         await reasoning_adapter.clear_memory("session_1")
 

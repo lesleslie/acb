@@ -1,9 +1,9 @@
 import builtins
-import typing as t
-from contextlib import suppress
 from functools import cached_property
 from uuid import UUID
 
+import typing as t
+from contextlib import suppress
 from google.api_core.exceptions import (
     AlreadyExists,
     GoogleAPIError,
@@ -20,6 +20,7 @@ from google.cloud.secretmanager_v1 import (
     ListSecretVersionsRequest,
     SecretManagerServiceAsyncClient,
 )
+
 from acb.adapters import AdapterStatus
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b86776ce0cc9")

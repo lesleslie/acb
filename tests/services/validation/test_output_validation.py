@@ -78,13 +78,19 @@ async def test_output_validator_list_scalar_and_custom() -> None:
 @pytest.mark.asyncio
 async def test_response_validator_basic_paths() -> None:
     rv = ResponseValidator(ValidationConfig())
-    ok = await rv.validate_http_response({"status": 200, "body": "x"}, expected_status_codes=[200])
+    ok = await rv.validate_http_response(
+        {"status": 200, "body": "x"}, expected_status_codes=[200]
+    )
     assert ok.is_valid
-    bad_status = await rv.validate_http_response({"status": 500, "body": "x"}, expected_status_codes=[200])
+    bad_status = await rv.validate_http_response(
+        {"status": 500, "body": "x"}, expected_status_codes=[200]
+    )
     assert not bad_status.is_valid
     missing_body = await rv.validate_http_response({"status": 200})
     assert not missing_body.is_valid
-    hdrs_bad = await rv.validate_http_response({"status": 200, "body": "x", "headers": []})
+    hdrs_bad = await rv.validate_http_response(
+        {"status": 200, "body": "x", "headers": []}
+    )
     assert not hdrs_bad.is_valid
 
     # API error response

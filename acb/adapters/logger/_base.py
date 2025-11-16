@@ -1,9 +1,10 @@
 """Base logger adapter interface following ACB's adapter pattern."""
 
-import typing as t
 from abc import abstractmethod
 
+import typing as t
 from pydantic import SecretStr
+
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
 

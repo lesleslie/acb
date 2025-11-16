@@ -1,11 +1,10 @@
 """Unit tests for serverless extras: AdaptiveConnectionPool, DeferredInitializer,
-and MemoryEfficientProcessor."""
+and MemoryEfficientProcessor.
+"""
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any
-
 import pytest
 
 from acb.services.performance.serverless import (
@@ -17,7 +16,9 @@ from acb.services.performance.serverless import (
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_adaptive_connection_pool_acquire_release_and_scale(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_adaptive_connection_pool_acquire_release_and_scale(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     pool = AdaptiveConnectionPool(min_connections=1, max_connections=3)
 
     class Conn:
@@ -109,9 +110,13 @@ async def test_deferred_initializer_priority_and_concurrency() -> None:
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_memory_efficient_processor_batch_and_stream(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_memory_efficient_processor_batch_and_stream(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # Batch path (items below threshold)
-    proc = MemoryEfficientProcessor(max_memory_mb=16.0, batch_size=3, stream_threshold=100)
+    proc = MemoryEfficientProcessor(
+        max_memory_mb=16.0, batch_size=3, stream_threshold=100
+    )
 
     async def processor(batch: list[int]) -> list[int]:
         # Echo results as doubled
@@ -126,7 +131,9 @@ async def test_memory_efficient_processor_batch_and_stream(monkeypatch: pytest.M
     assert stats["batches_processed"] >= 3 and stats["items_processed"] == 7
 
     # Streaming path (items above threshold)
-    proc2 = MemoryEfficientProcessor(max_memory_mb=16.0, batch_size=50, stream_threshold=5)
+    proc2 = MemoryEfficientProcessor(
+        max_memory_mb=16.0, batch_size=50, stream_threshold=5
+    )
     items2 = list(range(10))
     out2: list[int] = []
     async for r in proc2.process_items(items2, processor):

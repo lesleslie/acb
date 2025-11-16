@@ -1,6 +1,7 @@
 """Simplified tests for the Requests adapters."""
 
 import pytest
+
 from tests.test_interfaces import MockRequests, RequestsTestInterface
 
 

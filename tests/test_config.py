@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from acb.config import (
     AppSettings,
     DebugSettings,
@@ -123,6 +124,7 @@ class TestConfig:
     def test_library_usage_detection_setup_py(self) -> None:
         # Reset context to ensure fresh state
         from acb.context import reset_context
+
         reset_context()
 
         with patch("sys.argv", ["setup.py"]):
@@ -133,6 +135,7 @@ class TestConfig:
     def test_library_usage_detection_env_var(self) -> None:
         # Reset context to ensure fresh state
         from acb.context import reset_context
+
         reset_context()
 
         with patch.dict(os.environ, {"ACB_LIBRARY_MODE": "true"}):

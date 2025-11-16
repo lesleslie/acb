@@ -1,10 +1,11 @@
 """Tests for the Cache Base adapter."""
 
-import typing as t
-from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+import typing as t
+from typing import cast
+
 from acb.adapters.cache._base import CacheBase, CacheBaseSettings
 
 if t.TYPE_CHECKING:

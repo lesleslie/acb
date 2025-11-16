@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import types
-from typing import Any
-
 import pytest
+from typing import Any
 
 import acb.monitoring.http as http_mod
 
@@ -37,7 +35,9 @@ class _FakeRequests:
         return _Resp(200)
 
 
-def _set_perf_counter(monkeypatch: pytest.MonkeyPatch, start: float, end: float) -> None:
+def _set_perf_counter(
+    monkeypatch: pytest.MonkeyPatch, start: float, end: float
+) -> None:
     seq = iter((start, end))
 
     def _pc() -> float:
@@ -48,7 +48,9 @@ def _set_perf_counter(monkeypatch: pytest.MonkeyPatch, start: float, end: float)
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_check_http_client_health_init_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_check_http_client_health_init_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(http_mod, "import_adapter", lambda *_: object())
 
     def _fail_get_sync(*_: Any, **__: Any) -> Any:
@@ -62,7 +64,9 @@ async def test_check_http_client_health_init_failure(monkeypatch: pytest.MonkeyP
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_check_http_client_health_no_test_url_success(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_check_http_client_health_no_test_url_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(http_mod, "import_adapter", lambda *_: object())
     monkeypatch.setattr(http_mod.depends, "get_sync", lambda *_: _FakeRequests(200))
     _set_perf_counter(monkeypatch, 100.0, 100.1)  # 100ms
@@ -74,7 +78,9 @@ async def test_check_http_client_health_no_test_url_success(monkeypatch: pytest.
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_check_http_client_health_http_error_status(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_check_http_client_health_http_error_status(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(http_mod, "import_adapter", lambda *_: object())
     monkeypatch.setattr(http_mod.depends, "get_sync", lambda *_: _FakeRequests(503))
     _set_perf_counter(monkeypatch, 10.0, 10.2)
@@ -85,7 +91,9 @@ async def test_check_http_client_health_http_error_status(monkeypatch: pytest.Mo
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_check_http_client_health_high_latency(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_check_http_client_health_high_latency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(http_mod, "import_adapter", lambda *_: object())
     monkeypatch.setattr(http_mod.depends, "get_sync", lambda *_: _FakeRequests(200))
     _set_perf_counter(monkeypatch, 1.0, 1.3)  # 300ms
@@ -96,7 +104,9 @@ async def test_check_http_client_health_high_latency(monkeypatch: pytest.MonkeyP
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_check_http_client_health_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_check_http_client_health_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # Ensure timeout branch triggers with a controllable exception type
     class _TO(Exception):
         pass
@@ -112,9 +122,13 @@ async def test_check_http_client_health_timeout(monkeypatch: pytest.MonkeyPatch)
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_check_http_client_health_generic_exception(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_check_http_client_health_generic_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(http_mod, "import_adapter", lambda *_: object())
-    monkeypatch.setattr(http_mod.depends, "get_sync", lambda *_: _FakeRequests(RuntimeError("boom")))
+    monkeypatch.setattr(
+        http_mod.depends, "get_sync", lambda *_: _FakeRequests(RuntimeError("boom"))
+    )
     _set_perf_counter(monkeypatch, 2.0, 2.2)
     res = await http_mod.check_http_client_health(test_url="https://e")
     assert res.status == http_mod.HealthStatus.DEGRADED
@@ -143,7 +157,9 @@ async def test_check_http_connectivity_paths(monkeypatch: pytest.MonkeyPatch) ->
     # high latency -> DEGRADED
     monkeypatch.setattr(http_mod.depends, "get_sync", lambda *_: _FakeRequests(200))
     _set_perf_counter(monkeypatch, 1.0, 1.5)
-    slow = await http_mod.check_http_connectivity("https://x", expected_status=200, timeout_ms=50)
+    slow = await http_mod.check_http_connectivity(
+        "https://x", expected_status=200, timeout_ms=50
+    )
     assert slow.status == http_mod.HealthStatus.DEGRADED
 
     # success -> HEALTHY
@@ -162,13 +178,19 @@ async def test_check_http_connectivity_paths(monkeypatch: pytest.MonkeyPatch) ->
     assert tout.status == http_mod.HealthStatus.UNHEALTHY
 
     # HTTP error -> UNHEALTHY
-    monkeypatch.setattr(http_mod.depends, "get_sync", lambda *_: _FakeRequests(http_mod.HTTPRequestError("fail")))
+    monkeypatch.setattr(
+        http_mod.depends,
+        "get_sync",
+        lambda *_: _FakeRequests(http_mod.HTTPRequestError("fail")),
+    )
     _set_perf_counter(monkeypatch, 1.0, 1.05)
     herr = await http_mod.check_http_connectivity("https://x")
     assert herr.status == http_mod.HealthStatus.UNHEALTHY
 
     # generic error -> UNHEALTHY
-    monkeypatch.setattr(http_mod.depends, "get_sync", lambda *_: _FakeRequests(RuntimeError("bad")))
+    monkeypatch.setattr(
+        http_mod.depends, "get_sync", lambda *_: _FakeRequests(RuntimeError("bad"))
+    )
     _set_perf_counter(monkeypatch, 1.0, 1.05)
     gerr = await http_mod.check_http_connectivity("https://x")
     assert gerr.status == http_mod.HealthStatus.UNHEALTHY

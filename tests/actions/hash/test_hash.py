@@ -1,17 +1,18 @@
 """Tests for hashing functionality."""
 
-import asyncio
 import hashlib
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Final
 from unittest.mock import MagicMock, patch
 from warnings import catch_warnings
 
+import asyncio
 import blake3
 import pytest
 from anyio import Path as AsyncPath
 from pytest_benchmark.fixture import BenchmarkFixture
+from typing import Any, Final
+
 from acb.actions.hash import hash
 
 with catch_warnings(action="ignore", category=RuntimeWarning):

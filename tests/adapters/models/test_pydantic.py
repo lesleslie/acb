@@ -1,13 +1,13 @@
 """Tests for the Pydantic Model Adapter."""
 
-from typing import TYPE_CHECKING, Any
-
 import pytest
+from typing import TYPE_CHECKING, Any
 
 _pydantic_available = False
 try:
     from pydantic import BaseModel as PydanticBaseModel
-    from pydantic import ConfigDict, Field as PydanticField
+    from pydantic import ConfigDict
+    from pydantic import Field as PydanticField
 
     _pydantic_available = True
     BaseModel = PydanticBaseModel

@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
-
 import pytest
+from typing import Any
 
 from acb.services.validation._base import (
     ValidationConfig,
@@ -28,7 +27,9 @@ from acb.services.validation.utils import (
 
 
 class _DummySchema(ValidationSchema):
-    def __init__(self, name: str, valid: bool = True, warnings: int = 0, delay_ms: float = 0.0) -> None:
+    def __init__(
+        self, name: str, valid: bool = True, warnings: int = 0, delay_ms: float = 0.0
+    ) -> None:
         super().__init__(name)
         self._valid = valid
         self._warnings = warnings
@@ -69,7 +70,9 @@ async def test_validation_timer_context_manager() -> None:
 
 @pytest.mark.unit
 def test_create_and_combine_validation_results() -> None:
-    r1 = create_validation_result(value=1, field_name="a", is_valid=True, warnings=["w"])  # type: ignore[arg-type]
+    r1 = create_validation_result(
+        value=1, field_name="a", is_valid=True, warnings=["w"]
+    )  # type: ignore[arg-type]
     r2 = create_validation_result(value=2, field_name="b", is_valid=False, errors=["e"])  # type: ignore[arg-type]
     combined = combine_validation_results([r1, r2], field_name="combo")
     assert combined.field_name == "combo"
@@ -91,11 +94,16 @@ def test_is_validation_result_successful_levels() -> None:
     from acb.services.validation.utils import is_validation_result_successful
 
     assert is_validation_result_successful(ok, ValidationLevel.STRICT) is True
-    assert is_validation_result_successful(ok_with_warning, ValidationLevel.STRICT) is True
+    assert (
+        is_validation_result_successful(ok_with_warning, ValidationLevel.STRICT) is True
+    )
     assert is_validation_result_successful(bad, ValidationLevel.STRICT) is False
 
     # LENIENT allows warnings but no errors
-    assert is_validation_result_successful(ok_with_warning, ValidationLevel.LENIENT) is True
+    assert (
+        is_validation_result_successful(ok_with_warning, ValidationLevel.LENIENT)
+        is True
+    )
     assert is_validation_result_successful(bad, ValidationLevel.LENIENT) is False
 
     # PERMISSIVE always passes
@@ -107,7 +115,9 @@ def test_get_validation_summary_empty_and_nonempty() -> None:
     empty = get_validation_summary([])
     assert empty["total_validations"] == 0
     r_ok = create_validation_result(value="x", is_valid=True, validation_time_ms=2.0)
-    r_bad = create_validation_result(value="y", is_valid=False, errors=["e"], validation_time_ms=4.0)  # type: ignore[arg-type]
+    r_bad = create_validation_result(
+        value="y", is_valid=False, errors=["e"], validation_time_ms=4.0
+    )  # type: ignore[arg-type]
     summary = get_validation_summary([r_ok, r_bad])
     assert summary["total_validations"] == 2
     assert summary["successful_validations"] == 1
@@ -146,15 +156,21 @@ async def test_schema_validator_multiple_and_best_match() -> None:
 
     sv = SchemaValidator(ValidationConfig())
 
-    results = await sv.validate_against_multiple_schemas({"x": 1}, [s_bad, s_ok, s_warn])
+    results = await sv.validate_against_multiple_schemas(
+        {"x": 1}, [s_bad, s_ok, s_warn]
+    )
     assert len(results) == 3
     assert results[1].is_valid is True
 
     # require_all_pass False should short-circuit on first valid
-    results_short = await sv.validate_against_multiple_schemas({"x": 1}, [s_bad, s_ok, s_warn], require_all_pass=False)
+    results_short = await sv.validate_against_multiple_schemas(
+        {"x": 1}, [s_bad, s_ok, s_warn], require_all_pass=False
+    )
     assert len(results_short) == 2  # stops when s_ok passes
 
-    best_schema, best_result = await sv.find_best_matching_schema({"x": 1}, [s_warn, s_ok])
+    best_schema, best_result = await sv.find_best_matching_schema(
+        {"x": 1}, [s_warn, s_ok]
+    )
     assert best_schema is s_ok and best_result is not None and best_result.is_valid
 
 
@@ -208,4 +224,14 @@ async def test_benchmark_validation_smoke() -> None:
     result = await benchmark_validation(validate_ok, [1, 2], iterations=2)
     # basic keys exist and counts add up
     assert result["total_validations"] == 4
-    assert all(k in result for k in ("min_time_ms", "max_time_ms", "avg_time_ms", "median_time_ms", "p95_time_ms", "p99_time_ms"))
+    assert all(
+        k in result
+        for k in (
+            "min_time_ms",
+            "max_time_ms",
+            "avg_time_ms",
+            "median_time_ms",
+            "p95_time_ms",
+            "p99_time_ms",
+        )
+    )

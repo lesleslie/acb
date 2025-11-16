@@ -4,14 +4,15 @@ This module provides a RabbitMQ-backed task queue implementation suitable for
 enterprise deployments with high availability, clustering, and advanced routing.
 """
 
-import asyncio
 import logging
 import time
+from uuid import UUID
+
+import asyncio
 import typing as t
 from contextlib import suppress
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
 
 try:
     import aio_pika  # type: ignore[import-not-found]

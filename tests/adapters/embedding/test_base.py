@@ -1,17 +1,15 @@
 """Tests for base embedding adapter functionality."""
 
-import asyncio
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from acb.adapters.embedding._base import (
     EmbeddingAdapter,
     EmbeddingBaseSettings,
     EmbeddingBatch,
-    EmbeddingModel,
     EmbeddingResult,
     EmbeddingUtils,
-    PoolingStrategy,
     VectorNormalization,
 )
 
@@ -53,12 +51,16 @@ class MockEmbeddingAdapter(EmbeddingAdapter):
             batch_size=len(results),
         )
 
-    async def _embed_documents(self, documents, chunk_size, chunk_overlap, model, **kwargs):
+    async def _embed_documents(
+        self, documents, chunk_size, chunk_overlap, model, **kwargs
+    ):
         batches = []
         for i, document in enumerate(documents):
             chunks = self._chunk_text(document, chunk_size, chunk_overlap)
             # Generate embeddings for chunks using the base _embed_texts implementation
-            original_batch = await self._embed_texts(chunks, model, normalize=True, batch_size=32, **kwargs)
+            original_batch = await self._embed_texts(
+                chunks, model, normalize=True, batch_size=32, **kwargs
+            )
 
             # Create new results with updated metadata
             updated_results = []
@@ -89,7 +91,9 @@ class MockEmbeddingAdapter(EmbeddingAdapter):
             batches.append(updated_batch)
         return batches
 
-    async def _embed_documents(self, documents, chunk_size, chunk_overlap, model, **kwargs):
+    async def _embed_documents(
+        self, documents, chunk_size, chunk_overlap, model, **kwargs
+    ):
         batches = []
         for document in documents:
             chunks = self._chunk_text(document, chunk_size, chunk_overlap)
@@ -154,7 +158,9 @@ class TestEmbeddingAdapter:
     async def test_embed_documents_chunking(self, mock_embedding_adapter):
         """Test document embedding with chunking."""
         documents = ["This is a long document that should be chunked. " * 20]
-        batches = await mock_embedding_adapter.embed_documents(documents, chunk_size=100)
+        batches = await mock_embedding_adapter.embed_documents(
+            documents, chunk_size=100
+        )
 
         assert len(batches) == 1
         batch = batches[0]
@@ -170,7 +176,9 @@ class TestEmbeddingAdapter:
         embedding1 = [1.0, 0.0, 0.0]
         embedding2 = [0.0, 1.0, 0.0]
 
-        similarity = await mock_embedding_adapter.compute_similarity(embedding1, embedding2)
+        similarity = await mock_embedding_adapter.compute_similarity(
+            embedding1, embedding2
+        )
         assert isinstance(similarity, float)
         assert 0.0 <= similarity <= 1.0
 
@@ -203,15 +211,21 @@ class TestEmbeddingAdapter:
         vector = [3.0, 4.0, 0.0]
 
         # L2 normalization
-        normalized = mock_embedding_adapter._normalize_vector(vector, VectorNormalization.L2)
+        normalized = mock_embedding_adapter._normalize_vector(
+            vector, VectorNormalization.L2
+        )
         assert abs(sum(x**2 for x in normalized) - 1.0) < 1e-6
 
         # L1 normalization
-        normalized_l1 = mock_embedding_adapter._normalize_vector(vector, VectorNormalization.L1)
+        normalized_l1 = mock_embedding_adapter._normalize_vector(
+            vector, VectorNormalization.L1
+        )
         assert abs(sum(abs(x) for x in normalized_l1) - 1.0) < 1e-6
 
         # No normalization
-        no_norm = mock_embedding_adapter._normalize_vector(vector, VectorNormalization.NONE)
+        no_norm = mock_embedding_adapter._normalize_vector(
+            vector, VectorNormalization.NONE
+        )
         assert no_norm == vector
 
     async def test_chunk_text(self, mock_embedding_adapter):
@@ -220,7 +234,9 @@ class TestEmbeddingAdapter:
         chunks = mock_embedding_adapter._chunk_text(text, chunk_size=100, overlap=20)
 
         assert len(chunks) > 1
-        assert all(len(chunk) <= 100 for chunk in chunks[:-1])  # All but last should be <= chunk_size
+        assert all(
+            len(chunk) <= 100 for chunk in chunks[:-1]
+        )  # All but last should be <= chunk_size
 
     async def test_batch_texts(self, mock_embedding_adapter):
         """Test text batching."""

@@ -1,14 +1,15 @@
 """Integration tests for reasoning adapter with other ACB adapters."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from acb.adapters.reasoning._base import (
-    ReasoningRequest,
-    ReasoningContext,
-    ReasoningStrategy,
     MemoryType,
+    ReasoningContext,
+    ReasoningRequest,
+    ReasoningStrategy,
 )
-import typing as t
 
 
 @pytest.fixture
@@ -24,10 +25,12 @@ def mock_ai_adapter():
 def mock_vector_adapter():
     """Mock vector database adapter for integration testing."""
     vector = AsyncMock()
-    vector.search = AsyncMock(return_value=[
-        {"content": "Similar document 1", "score": 0.9},
-        {"content": "Similar document 2", "score": 0.8},
-    ])
+    vector.search = AsyncMock(
+        return_value=[
+            {"content": "Similar document 1", "score": 0.9},
+            {"content": "Similar document 2", "score": 0.8},
+        ]
+    )
     vector.add = AsyncMock()
     vector.delete = AsyncMock()
     return vector
@@ -46,9 +49,7 @@ class TestLangChainIntegration:
     """Test LangChain reasoning adapter integration with other ACB adapters."""
 
     @patch("acb.adapters.reasoning.langchain.Reasoning._ensure_client")
-    async def test_langchain_with_ai_adapter(
-        self, mock_ensure_client, mock_ai_adapter
-    ):
+    async def test_langchain_with_ai_adapter(self, mock_ensure_client, mock_ai_adapter):
         """Test LangChain reasoning with AI adapter integration."""
         from acb.adapters.reasoning.langchain import Reasoning
 
@@ -118,7 +119,9 @@ class TestLangChainIntegration:
         assert response.strategy == ReasoningStrategy.RAG_WORKFLOW
         assert response.result is not None
         mock_vector_adapter.search.assert_called_once()
-        mock_embedding_adapter.embed_text.assert_called_once_with("What is quantum computing?")
+        mock_embedding_adapter.embed_text.assert_called_once_with(
+            "What is quantum computing?"
+        )
 
 
 class TestLlamaIndexIntegration:
@@ -153,7 +156,7 @@ class TestLlamaIndexIntegration:
         # Mock vector adapter integration
         reasoning._vector_adapter = mock_vector_adapter
 
-        request = ReasoningRequest(
+        ReasoningRequest(
             query="Explain machine learning",
             strategy=ReasoningStrategy.RAG_WORKFLOW,
             context=ReasoningContext(knowledge_base="ml_kb"),
@@ -228,7 +231,7 @@ class TestCustomIntegration:
         assert response.confidence >= 0.9
 
         # Verify monitoring integration would be called
-        if hasattr(reasoning, '_monitoring_adapter'):
+        if hasattr(reasoning, "_monitoring_adapter"):
             reasoning._monitoring_adapter.log_event.assert_not_called()  # Not actually integrated in this test
 
     async def test_custom_with_cache_integration(self):
@@ -278,8 +281,8 @@ class TestOpenAIFunctionsIntegration:
                 id="call_123",
                 function=MagicMock(
                     name="search_knowledge_base",
-                    arguments='{"query": "machine learning", "kb": "tech"}'
-                )
+                    arguments='{"query": "machine learning", "kb": "tech"}',
+                ),
             )
         ]
         mock_choice.finish_reason = "tool_calls"
@@ -315,9 +318,7 @@ class TestOpenAIFunctionsIntegration:
         assert len(reasoning._function_calls) == 1
 
     @patch("acb.adapters.reasoning.openai_functions.AsyncOpenAI")
-    async def test_openai_functions_with_storage_integration(
-        self, mock_openai_class
-    ):
+    async def test_openai_functions_with_storage_integration(self, mock_openai_class):
         """Test OpenAI Functions reasoning with storage integration."""
         from acb.adapters.reasoning.openai_functions import Reasoning
 
@@ -390,7 +391,9 @@ class TestCrossAdapterMemoryIntegration:
 
         # Mock storage adapter for memory persistence
         mock_storage = AsyncMock()
-        mock_storage.read = AsyncMock(return_value='{"session_1": {"conversation": ["test"]}}')
+        mock_storage.read = AsyncMock(
+            return_value='{"session_1": {"conversation": ["test"]}}'
+        )
         mock_storage.write = AsyncMock()
         reasoning._storage_adapter = mock_storage
 
@@ -448,8 +451,9 @@ class TestPerformanceIntegration:
 
     async def test_concurrent_adapter_operations(self):
         """Test concurrent operations with multiple adapters."""
-        from acb.adapters.reasoning.custom import Reasoning
         import asyncio
+
+        from acb.adapters.reasoning.custom import Reasoning
 
         reasoning = Reasoning()
         reasoning._settings = MagicMock()

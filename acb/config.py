@@ -1,21 +1,41 @@
-import asyncio
 import sys
-import typing as t
-from contextlib import suppress
 from contextvars import ContextVar
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from secrets import token_bytes, token_urlsafe
 from string import punctuation
-from typing import TypeVar
 from weakref import WeakKeyDictionary
+
+import asyncio
 
 # Removed nest_asyncio import - not needed in library code
 import rich.repr
+import typing as t
 from anyio import Path as AsyncPath
+from contextlib import suppress
 from inflection import titleize, underscore
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic.dataclasses import dataclass
+from pydantic.fields import FieldInfo
+from pydantic_settings import SettingsConfigDict
+from typing import TypeVar
+
+from .actions.encode import dump, load
+from .adapters import (
+    _deployed,
+    _ensure_adapter_registry_initialized,
+    _testing,
+    import_adapter,
+    root_path,
+    secrets_path,
+    settings_path,
+    tmp_path,
+)
+
+# Global state is now managed by ACBContext - these are kept for backward compatibility
+from .context import get_context
+from .depends import Inject, depends
 
 
 # Replaced internal pydantic API with public implementation
@@ -36,27 +56,7 @@ def deep_update(*dicts: dict[str, t.Any]) -> dict[str, t.Any]:
     return result
 
 
-from pydantic.dataclasses import dataclass
-from pydantic.fields import FieldInfo
-from pydantic_settings import SettingsConfigDict
-
 T = TypeVar("T")
-
-from .actions.encode import dump, load
-from .adapters import (
-    _deployed,
-    _testing,
-    adapter_registry,
-    import_adapter,
-    root_path,
-    secrets_path,
-    settings_path,
-    tmp_path,
-)
-
-# Global state is now managed by ACBContext - these are kept for backward compatibility
-from .context import get_context
-from .depends import Inject, depends
 
 # Module-level variables that delegate to context
 # These maintain backward compatibility
@@ -364,7 +364,7 @@ class UnifiedSettingsSource(PydanticSettingsSource):
         if self.adapter_name != "debug":
             return yaml_settings
 
-        for adapter in adapter_registry.get():
+        for adapter in _ensure_adapter_registry_initialized():
             if adapter.category not in (yaml_settings.keys() or ("config", "logger")):
                 yaml_settings[adapter.category] = False
         return yaml_settings
@@ -430,8 +430,9 @@ class Settings(BaseModel):
             # For application contexts, we need to defer to async initialization
             # This creates a minimal instance that will be properly initialized later
             try:
-                import asyncio
                 import threading
+
+                import asyncio
 
                 # Check if we're in a running event loop
                 asyncio.get_running_loop()

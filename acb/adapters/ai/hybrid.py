@@ -1,12 +1,13 @@
 """Hybrid deployment strategy with intelligent routing between cloud and edge."""
 
-import asyncio
-import typing as t
-from dataclasses import dataclass
 from enum import Enum
 from uuid import UUID
 
+import asyncio
+import typing as t
+from dataclasses import dataclass
 from pydantic import Field
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 

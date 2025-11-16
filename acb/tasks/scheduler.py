@@ -5,12 +5,13 @@ system, allowing tasks to be scheduled based on time patterns, intervals,
 and complex scheduling rules.
 """
 
-import asyncio
 import logging
 from collections.abc import Callable
+from uuid import UUID, uuid4
+
+import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import UUID, uuid4
 
 try:
     import croniter
@@ -21,7 +22,6 @@ except ImportError:
     CRONITER_AVAILABLE = False
 
 import contextlib
-
 from pydantic import BaseModel, Field, field_validator
 
 from ._base import (

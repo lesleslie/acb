@@ -10,11 +10,12 @@ Provides caching capabilities for repositories:
 import builtins
 import hashlib
 import json
-from dataclasses import dataclass
 from enum import Enum
+
+from dataclasses import dataclass
+from pydantic import Field
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from pydantic import Field
 from acb.config import Settings
 from acb.depends import depends
 

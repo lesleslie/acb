@@ -1,10 +1,11 @@
 """Logly-based logger adapter implementation with Rust-powered performance."""
 
 import logging
-import typing as t
-from contextlib import suppress
 from inspect import currentframe
 from uuid import UUID
+
+import typing as t
+from contextlib import suppress
 
 logly_logger: t.Any = None
 with suppress(ImportError):
@@ -284,6 +285,7 @@ class Logger(LoggerBase):
         """Add stderr sink for structured JSON logging (AI/machine consumption)."""
         import json
         import sys
+
         from datetime import datetime
 
         logger = self._ensure_logger()

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import typing as t
-from contextlib import asynccontextmanager, suppress
 from functools import cached_property
 from uuid import UUID
+
+import typing as t
+from contextlib import asynccontextmanager, suppress
 
 try:
     from beanie import init_beanie

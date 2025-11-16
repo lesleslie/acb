@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
 import pytest
+from datetime import datetime
 
 
 class TestDefaultFilters:
@@ -54,9 +53,7 @@ class TestDefaultFilters:
     async def test_datetime_filter_custom_format(self, templates):
         """Test datetime filter with custom format."""
         dt = datetime(2025, 1, 25, 14, 30, 45)
-        result = await templates.render_string(
-            '{{ dt|datetime("%B %d, %Y") }}', dt=dt
-        )
+        result = await templates.render_string('{{ dt|datetime("%B %d, %Y") }}', dt=dt)
         assert result.strip() == "January 25, 2025"
 
     @pytest.mark.asyncio
@@ -102,9 +99,7 @@ class TestDefaultFilters:
     @pytest.mark.asyncio
     async def test_filesize_filter_decimal_units(self, templates):
         """Test filesize filter with decimal (KB) units."""
-        result = await templates.render_string(
-            "{{ size|filesize(False) }}", size=1500
-        )
+        result = await templates.render_string("{{ size|filesize(False) }}", size=1500)
         assert result.strip() == "1.5 KB"
 
     @pytest.mark.asyncio
@@ -233,9 +228,7 @@ class TestFilterEdgeCases:
     @pytest.mark.asyncio
     async def test_datetime_filter_invalid_string(self, templates):
         """Test datetime filter with invalid string."""
-        result = await templates.render_string(
-            "{{ dt|datetime }}", dt="not a datetime"
-        )
+        result = await templates.render_string("{{ dt|datetime }}", dt="not a datetime")
         assert result.strip() == "not a datetime"
 
     @pytest.mark.asyncio

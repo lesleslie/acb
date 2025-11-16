@@ -1,19 +1,16 @@
 """Integration tests for AI adapters."""
 
-import asyncio
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import asyncio
 import pytest
-from acb.adapters import import_adapter
+
 from acb.adapters.ai._base import (
     AIRequest,
     DeploymentStrategy,
     ModelProvider,
     PromptTemplate,
 )
-from acb.config import Config
-from acb.depends import depends
 
 
 class TestAIAdapterIntegration:
@@ -24,6 +21,7 @@ class TestAIAdapterIntegration:
         """Test importing cloud AI adapter."""
         try:
             from acb.adapters.ai.cloud import CloudAI
+
             assert CloudAI is not None
             assert CloudAI.__name__ == "CloudAI"
         except ImportError:
@@ -34,6 +32,7 @@ class TestAIAdapterIntegration:
         """Test importing edge AI adapter."""
         try:
             from acb.adapters.ai.edge import EdgeAI
+
             assert EdgeAI is not None
             assert EdgeAI.__name__ == "EdgeAI"
         except ImportError:
@@ -44,6 +43,7 @@ class TestAIAdapterIntegration:
         """Test importing hybrid AI adapter."""
         try:
             from acb.adapters.ai.hybrid import HybridAI
+
             assert HybridAI is not None
             assert HybridAI.__name__ == "HybridAI"
         except ImportError:
@@ -69,7 +69,9 @@ class TestAIAdapterIntegration:
                 mock_response.model = "gpt-3.5-turbo"
                 mock_response.usage.total_tokens = 25
 
-                mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+                mock_client.chat.completions.create = AsyncMock(
+                    return_value=mock_response
+                )
 
                 # Create adapter and test workflow
                 adapter = CloudAI(
@@ -166,8 +168,12 @@ class TestAIAdapterIntegration:
             mock_cloud_response.content = "Cloud response"
             mock_cloud_response.provider = ModelProvider.OPENAI
             mock_cloud_response.strategy = DeploymentStrategy.CLOUD
-            mock_cloud_adapter._generate_text = AsyncMock(return_value=mock_cloud_response)
-            mock_cloud_adapter.health_check = AsyncMock(return_value={"status": "healthy"})
+            mock_cloud_adapter._generate_text = AsyncMock(
+                return_value=mock_cloud_response
+            )
+            mock_cloud_adapter.health_check = AsyncMock(
+                return_value={"status": "healthy"}
+            )
 
             # Mock edge adapter
             mock_edge_adapter = MagicMock()
@@ -175,8 +181,12 @@ class TestAIAdapterIntegration:
             mock_edge_response.content = "Edge response"
             mock_edge_response.provider = ModelProvider.OLLAMA
             mock_edge_response.strategy = DeploymentStrategy.EDGE
-            mock_edge_adapter._generate_text = AsyncMock(return_value=mock_edge_response)
-            mock_edge_adapter.health_check = AsyncMock(return_value={"status": "healthy"})
+            mock_edge_adapter._generate_text = AsyncMock(
+                return_value=mock_edge_response
+            )
+            mock_edge_adapter.health_check = AsyncMock(
+                return_value={"status": "healthy"}
+            )
 
             mock_cloud_ai.return_value = mock_cloud_adapter
             mock_edge_ai.return_value = mock_edge_adapter
@@ -218,7 +228,9 @@ class TestAIAdapterIntegration:
                 mock_response.model = "gpt-3.5-turbo"
                 mock_response.usage.total_tokens = 20
 
-                mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+                mock_client.chat.completions.create = AsyncMock(
+                    return_value=mock_response
+                )
 
                 adapter = CloudAI(
                     provider=ModelProvider.OPENAI,
@@ -267,7 +279,9 @@ class TestAIAdapterIntegration:
                 mock_response.model = "gpt-4-vision-preview"
                 mock_response.usage.total_tokens = 30
 
-                mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+                mock_client.chat.completions.create = AsyncMock(
+                    return_value=mock_response
+                )
 
                 adapter = CloudAI(
                     provider=ModelProvider.OPENAI,
@@ -310,7 +324,9 @@ class TestAIAdapterIntegration:
             mock_edge_response.content = "Fallback response"
             mock_edge_response.provider = ModelProvider.OLLAMA
             mock_edge_response.strategy = DeploymentStrategy.EDGE
-            mock_edge_adapter._generate_text = AsyncMock(return_value=mock_edge_response)
+            mock_edge_adapter._generate_text = AsyncMock(
+                return_value=mock_edge_response
+            )
 
             mock_cloud_ai.return_value = mock_cloud_adapter
             mock_edge_ai.return_value = mock_edge_adapter
@@ -323,7 +339,9 @@ class TestAIAdapterIntegration:
             )
 
             # Force routing to cloud (which will fail)
-            request = AIRequest(prompt="Test", min_quality_score=0.95)  # Should route to cloud
+            request = AIRequest(
+                prompt="Test", min_quality_score=0.95
+            )  # Should route to cloud
             response = await adapter.generate_text(request)
 
             # Should fallback to edge
@@ -349,7 +367,9 @@ class TestAIAdapterIntegration:
             mock_edge_response.content = "Fast edge response"
             mock_edge_response.provider = ModelProvider.OLLAMA
             mock_edge_response.strategy = DeploymentStrategy.EDGE
-            mock_edge_adapter._generate_text = AsyncMock(return_value=mock_edge_response)
+            mock_edge_adapter._generate_text = AsyncMock(
+                return_value=mock_edge_response
+            )
 
             # Cloud is slower
             async def slow_cloud_generate(*args, **kwargs):
@@ -377,7 +397,7 @@ class TestAIAdapterIntegration:
 
             # First few requests to build history
             for _ in range(5):
-                response = await adapter.generate_text(request)
+                await adapter.generate_text(request)
 
             # Check that performance is being tracked
             stats = await adapter.get_routing_stats()

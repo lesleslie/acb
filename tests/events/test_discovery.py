@@ -1,35 +1,35 @@
 """Tests for Events discovery system functionality."""
 
-import pytest
-from datetime import datetime
-from uuid import UUID
 from unittest.mock import Mock, patch
+from uuid import UUID
+
+import pytest
 
 from acb.events.discovery import (
     EventCapability,
-    EventHandlerStatus,
-    EventMetadata,
     EventHandlerDescriptor,
     EventHandlerNotFound,
     EventHandlerNotInstalled,
-    generate_event_handler_id,
+    EventHandlerStatus,
+    EventMetadata,
+    apply_event_handler_overrides,
+    core_event_handlers,
     create_event_metadata_template,
-    get_event_handler_descriptor,
-    list_event_handlers,
-    list_available_event_handlers,
-    list_enabled_event_handlers,
-    list_event_handlers_by_capability,
+    disable_event_handler,
+    enable_event_handler,
+    event_handler_registry,
+    generate_event_handler_id,
     get_event_handler_class,
-    try_import_event_handler,
-    import_event_handler,
-    register_event_handlers,
+    get_event_handler_descriptor,
     get_event_handler_info,
     get_event_handler_override,
-    apply_event_handler_overrides,
-    enable_event_handler,
-    disable_event_handler,
-    core_event_handlers,
-    event_handler_registry,
+    import_event_handler,
+    list_available_event_handlers,
+    list_enabled_event_handlers,
+    list_event_handlers,
+    list_event_handlers_by_capability,
+    register_event_handlers,
+    try_import_event_handler,
 )
 
 
@@ -338,7 +338,9 @@ class TestEventHandlerRegistry:
     def test_list_event_handlers_by_capability(self):
         """Test listing event handlers by capability."""
         # Test with a common capability
-        async_handlers = list_event_handlers_by_capability(EventCapability.ASYNC_PROCESSING)
+        async_handlers = list_event_handlers_by_capability(
+            EventCapability.ASYNC_PROCESSING
+        )
 
         assert len(async_handlers) >= 0
         for handler in async_handlers:
@@ -388,7 +390,7 @@ class TestEventHandlerImport:
         with pytest.raises(ValueError):
             import_event_handler(123)  # Invalid type
 
-    @patch('acb.events.discovery.try_import_event_handler')
+    @patch("acb.events.discovery.try_import_event_handler")
     def test_import_event_handler_with_mock(self, mock_try_import):
         """Test importing event handler with mocked import."""
         # Mock a successful import
@@ -396,7 +398,9 @@ class TestEventHandlerImport:
         mock_try_import.return_value = mock_class
 
         # Mock the descriptor lookup
-        with patch('acb.events.discovery.get_event_handler_descriptor') as mock_get_descriptor:
+        with patch(
+            "acb.events.discovery.get_event_handler_descriptor"
+        ) as mock_get_descriptor:
             mock_descriptor = Mock()
             mock_descriptor.name = "test_publisher"
             mock_get_descriptor.return_value = mock_descriptor
@@ -404,7 +408,7 @@ class TestEventHandlerImport:
             result = import_event_handler("publisher")
             assert result == mock_class
 
-    @patch('acb.events.discovery.try_import_event_handler')
+    @patch("acb.events.discovery.try_import_event_handler")
     def test_import_multiple_event_handlers_with_mock(self, mock_try_import):
         """Test importing multiple event handlers with mocked import."""
         # Mock successful imports
@@ -415,7 +419,7 @@ class TestEventHandlerImport:
         result = import_event_handler(["publisher", "subscriber"])
         assert result == (mock_class1, mock_class2)
 
-    @patch('acb.events.discovery.try_import_event_handler')
+    @patch("acb.events.discovery.try_import_event_handler")
     def test_import_single_handler_from_list_with_mock(self, mock_try_import):
         """Test importing single handler from list with mocked import."""
         mock_class = Mock()
@@ -455,6 +459,7 @@ class TestEventHandlerInfo:
 
     def test_get_event_handler_info(self):
         """Test getting event handler information."""
+
         # Create a mock class with metadata
         class MockEventHandler:
             EVENT_METADATA = create_event_metadata_template(
@@ -474,6 +479,7 @@ class TestEventHandlerInfo:
 
     def test_get_event_handler_info_without_metadata(self):
         """Test getting info for handler without metadata."""
+
         class PlainEventHandler:
             pass
 
@@ -487,7 +493,7 @@ class TestEventHandlerInfo:
 class TestEventHandlerOverrides:
     """Test event handler override functionality."""
 
-    @patch('acb.events.discovery._load_event_handler_settings')
+    @patch("acb.events.discovery._load_event_handler_settings")
     def test_get_event_handler_override(self, mock_load_settings):
         """Test getting event handler override."""
         mock_load_settings.return_value = {
@@ -501,7 +507,7 @@ class TestEventHandlerOverrides:
         override = get_event_handler_override("non_existent")
         assert override is None
 
-    @patch('acb.events.discovery._load_event_handler_settings')
+    @patch("acb.events.discovery._load_event_handler_settings")
     def test_apply_event_handler_overrides(self, mock_load_settings):
         """Test applying event handler overrides."""
         mock_load_settings.return_value = {
@@ -515,7 +521,7 @@ class TestEventHandlerOverrides:
         # The function should have been called to load settings
         mock_load_settings.assert_called_once()
 
-    @patch('acb.events.discovery._load_event_handler_settings')
+    @patch("acb.events.discovery._load_event_handler_settings")
     def test_apply_empty_overrides(self, mock_load_settings):
         """Test applying empty event handler overrides."""
         mock_load_settings.return_value = {}
@@ -556,8 +562,8 @@ class TestEventHandlerExceptions:
 class TestEventHandlerSettings:
     """Test event handler settings loading."""
 
-    @patch('acb.events.discovery.yaml')
-    @patch('acb.events.discovery.Path')
+    @patch("acb.events.discovery.yaml")
+    @patch("acb.events.discovery.Path")
     def test_load_event_handler_settings_success(self, mock_path, mock_yaml):
         """Test successful loading of event handler settings."""
         # Mock file existence and content
@@ -576,8 +582,8 @@ class TestEventHandlerSettings:
         settings = _load_event_handler_settings()
         assert settings == {"publisher": "redis_publisher"}
 
-    @patch('acb.events.discovery.yaml')
-    @patch('acb.events.discovery.Path')
+    @patch("acb.events.discovery.yaml")
+    @patch("acb.events.discovery.Path")
     def test_load_event_handler_settings_no_file(self, mock_path, mock_yaml):
         """Test loading settings when no file exists."""
         # Mock no file existence
@@ -593,8 +599,8 @@ class TestEventHandlerSettings:
         settings = _load_event_handler_settings()
         assert settings == {}
 
-    @patch('acb.events.discovery.yaml')
-    @patch('acb.events.discovery.Path')
+    @patch("acb.events.discovery.yaml")
+    @patch("acb.events.discovery.Path")
     def test_load_event_handler_settings_yaml_error(self, mock_path, mock_yaml):
         """Test loading settings with YAML error."""
         # Mock file existence but YAML error

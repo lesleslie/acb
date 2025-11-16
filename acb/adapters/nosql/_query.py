@@ -6,9 +6,9 @@ for use with the ACB query interface, supporting MongoDB, Firestore, and Redis.
 
 from __future__ import annotations
 
+from pydantic import BaseModel
 from typing import Any, TypeVar
 
-from pydantic import BaseModel
 from acb.adapters.models._query import DatabaseAdapter
 
 T = TypeVar("T", bound=BaseModel)

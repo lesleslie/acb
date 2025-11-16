@@ -12,15 +12,15 @@ Features:
 - Thread-safe registry using ContextVar
 """
 
-import typing as t
-from contextlib import suppress
 from contextvars import ContextVar
-from datetime import datetime
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from uuid import UUID
 
+import typing as t
+from contextlib import suppress
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 # Service discovery system imports
@@ -231,15 +231,45 @@ class Service(BaseModel):
 
 
 # Service registry using ContextVar for thread safety
-service_registry: ContextVar[list[Service]] = ContextVar("service_registry", default=[])
-_enabled_services_cache: ContextVar[dict[str, Service]] = ContextVar(
+service_registry: ContextVar[list[Service] | None] = ContextVar(
+    "service_registry", default=None
+)
+_enabled_services_cache: ContextVar[dict[str, Service] | None] = ContextVar(
     "_enabled_services_cache",
-    default={},
+    default=None,
 )
-_installed_services_cache: ContextVar[dict[str, Service]] = ContextVar(
+_installed_services_cache: ContextVar[dict[str, Service] | None] = ContextVar(
     "_installed_services_cache",
-    default={},
+    default=None,
 )
+
+
+def _ensure_service_registry_initialized() -> list[Service]:
+    """Ensure the service registry is initialized with an empty list if needed."""
+    registry = service_registry.get()
+    if registry is None:
+        registry = []
+        service_registry.set(registry)
+    return registry
+
+
+def _ensure_enabled_services_cache_initialized() -> dict[str, Service]:
+    """Ensure the enabled services cache is initialized with an empty dict if needed."""
+    cache = _enabled_services_cache.get()
+    if cache is None:
+        cache = {}
+        _enabled_services_cache.set(cache)
+    return cache
+
+
+def _ensure_installed_services_cache_initialized() -> dict[str, Service]:
+    """Ensure the installed services cache is initialized with an empty dict if needed."""
+    cache = _installed_services_cache.get()
+    if cache is None:
+        cache = {}
+        _installed_services_cache.set(cache)
+    return cache
+
 
 # Core services registry - static mappings like adapters
 core_services = [
@@ -329,7 +359,7 @@ core_services = [
 # Service Discovery Functions (mirrors adapter pattern)
 def get_service_descriptor(category: str) -> Service | None:
     """Get service descriptor by category."""
-    services = service_registry.get()
+    services = _ensure_service_registry_initialized()
     for service in services:
         if service.category == category and service.enabled:
             return service
@@ -338,17 +368,17 @@ def get_service_descriptor(category: str) -> Service | None:
 
 def list_services() -> list[Service]:
     """List all registered services."""
-    return service_registry.get().copy()
+    return _ensure_service_registry_initialized().copy()
 
 
 def list_available_services() -> list[Service]:
     """List all available (installed) services."""
-    return [s for s in service_registry.get() if s.installed]
+    return [s for s in _ensure_service_registry_initialized() if s.installed]
 
 
 def list_enabled_services() -> list[Service]:
     """List all enabled services."""
-    return [s for s in service_registry.get() if s.enabled]
+    return [s for s in _ensure_service_registry_initialized() if s.enabled]
 
 
 def get_service_class(category: str, name: str | None = None) -> type[t.Any]:
@@ -362,7 +392,7 @@ def get_service_class(category: str, name: str | None = None) -> type[t.Any]:
 
     if name and service.name != name:
         # Look for specific named service
-        services = service_registry.get()
+        services = _ensure_service_registry_initialized()
         for s in services:
             if s.category == category and s.name == name:
                 service = s
@@ -416,7 +446,7 @@ def import_service(service_categories: str | list[str] | None = None) -> t.Any:
     config = RegistryConfig(
         get_descriptor=get_service_descriptor,
         try_import=try_import_service,
-        get_all_descriptors=service_registry.get,
+        get_all_descriptors=_ensure_service_registry_initialized,
         not_found_exception=ServiceNotFound,
     )
     return import_from_registry(service_categories, config)
@@ -448,7 +478,7 @@ def get_service_info(service_class: type) -> dict[str, t.Any]:
 # Update service cache
 def _update_service_caches() -> None:
     """Update service caches for faster lookups."""
-    services = service_registry.get()
+    services = _ensure_service_registry_initialized()
 
     enabled_cache = {}
     installed_cache = {}
@@ -466,7 +496,7 @@ def _update_service_caches() -> None:
 # Enable services based on configuration
 def enable_service(category: str, name: str | None = None) -> None:
     """Enable a service by category and optional name."""
-    services = service_registry.get()
+    services = _ensure_service_registry_initialized()
     for service in services:
         if service.category == category:
             if name is None or service.name == name:
@@ -477,7 +507,7 @@ def enable_service(category: str, name: str | None = None) -> None:
 
 def disable_service(category: str) -> None:
     """Disable a service by category."""
-    services = service_registry.get()
+    services = _ensure_service_registry_initialized()
     for service in services:
         if service.category == category:
             service.enabled = False
@@ -550,8 +580,8 @@ def apply_service_overrides() -> None:
 
 def initialize_service_registry() -> None:
     """Initialize the service registry with core services."""
-    if not service_registry.get():
-        service_registry.set(core_services.copy())
+    if not _ensure_service_registry_initialized():
+        _ensure_service_registry_initialized().extend(core_services)
         _update_service_caches()
         # Apply any configuration overrides
         apply_service_overrides()

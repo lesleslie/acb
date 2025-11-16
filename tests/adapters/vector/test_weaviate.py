@@ -1,17 +1,17 @@
 """Tests for Weaviate vector adapter."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from unittest.mock import MagicMock, patch
 
-from acb.adapters.vector.weaviate import Vector, VectorSettings
+import pytest
+
 from acb.adapters.vector._base import VectorDocument, VectorSearchResult
+from acb.adapters.vector.weaviate import Vector, VectorSettings
 
 
 class TestVectorSettings:
     """Test Weaviate VectorSettings."""
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_settings_defaults(self, mock_depends):
         """Test VectorSettings with default values."""
         mock_config = MagicMock()
@@ -28,7 +28,7 @@ class TestVectorSettings:
         assert settings.auto_create_schema is True
         assert settings.distance_metric == "cosine"
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_settings_custom_values(self, mock_depends):
         """Test VectorSettings with custom values."""
         mock_config = MagicMock()
@@ -74,7 +74,9 @@ class TestWeaviateVector:
 
         # Mock batch operations
         mock_batch_context = MagicMock()
-        mock_collection.batch.dynamic.return_value.__enter__.return_value = mock_batch_context
+        mock_collection.batch.dynamic.return_value.__enter__.return_value = (
+            mock_batch_context
+        )
         mock_collection.batch.dynamic.return_value.__exit__.return_value = None
 
         # Mock aggregate response
@@ -97,7 +99,7 @@ class TestWeaviateVector:
     @pytest.fixture
     def mock_vector_settings(self):
         """Mock Weaviate vector settings."""
-        with patch('acb.depends.depends.get') as mock_depends:
+        with patch("acb.depends.depends.get") as mock_depends:
             mock_config = MagicMock()
             mock_depends.return_value = mock_config
 
@@ -107,7 +109,7 @@ class TestWeaviateVector:
     @pytest.fixture
     def weaviate_adapter(self, mock_vector_settings):
         """Weaviate vector adapter instance."""
-        with patch.object(Vector, 'config') as mock_config:
+        with patch.object(Vector, "config") as mock_config:
             mock_config.vector = mock_vector_settings
             adapter = Vector()
             adapter.logger = MagicMock()
@@ -116,25 +118,28 @@ class TestWeaviateVector:
     @pytest.mark.asyncio
     async def test_create_client(self, weaviate_adapter, mock_weaviate_client):
         """Test Weaviate client creation."""
-        with patch('acb.adapters.vector.weaviate.weaviate') as mock_weaviate:
+        with patch("acb.adapters.vector.weaviate.weaviate") as mock_weaviate:
             mock_weaviate.connect_to_custom.return_value = mock_weaviate_client
 
             client = await weaviate_adapter._create_client()
 
             mock_weaviate.connect_to_custom.assert_called_once_with(
-                url="http://localhost:8080",
-                startup_period=60.0
+                url="http://localhost:8080", startup_period=60.0
             )
             assert client == mock_weaviate_client
 
     @pytest.mark.asyncio
-    async def test_create_client_with_auth(self, weaviate_adapter, mock_weaviate_client):
+    async def test_create_client_with_auth(
+        self, weaviate_adapter, mock_weaviate_client
+    ):
         """Test Weaviate client creation with authentication."""
         weaviate_adapter.config.vector.use_auth = True
         weaviate_adapter.config.vector.api_key = MagicMock()
-        weaviate_adapter.config.vector.api_key.get_secret_value.return_value = "test-key"
+        weaviate_adapter.config.vector.api_key.get_secret_value.return_value = (
+            "test-key"
+        )
 
-        with patch('acb.adapters.vector.weaviate.weaviate') as mock_weaviate:
+        with patch("acb.adapters.vector.weaviate.weaviate") as mock_weaviate:
             mock_weaviate.connect_to_custom.return_value = mock_weaviate_client
 
             await weaviate_adapter._create_client()
@@ -159,10 +164,14 @@ class TestWeaviateVector:
         """Test collection name to class name conversion."""
         assert weaviate_adapter._collection_to_class_name("document") == "Document"
         assert weaviate_adapter._collection_to_class_name("") == "Document"
-        assert weaviate_adapter._collection_to_class_name("myCollection") == "Mycollection"
+        assert (
+            weaviate_adapter._collection_to_class_name("myCollection") == "Mycollection"
+        )
 
     @pytest.mark.asyncio
-    async def test_ensure_class_exists_existing(self, weaviate_adapter, mock_weaviate_client):
+    async def test_ensure_class_exists_existing(
+        self, weaviate_adapter, mock_weaviate_client
+    ):
         """Test ensuring class exists when it already exists."""
         weaviate_adapter._client = mock_weaviate_client
 
@@ -181,14 +190,12 @@ class TestWeaviateVector:
             collection="document",
             query_vector=query_vector,
             limit=5,
-            include_vectors=True
+            include_vectors=True,
         )
 
         mock_collection = mock_weaviate_client.collections.get.return_value
         mock_collection.query.near_vector.assert_called_once_with(
-            near_vector=query_vector,
-            limit=5,
-            return_metadata=["distance", "certainty"]
+            near_vector=query_vector, limit=5, return_metadata=["distance", "certainty"]
         )
 
         assert len(results) == 1
@@ -206,14 +213,14 @@ class TestWeaviateVector:
         query_vector = [0.1, 0.2, 0.3]
         filter_expr = {"category": "test"}
 
-        with patch.object(weaviate_adapter, '_build_where_filter') as mock_build_filter:
+        with patch.object(weaviate_adapter, "_build_where_filter") as mock_build_filter:
             mock_filter = MagicMock()
             mock_build_filter.return_value = mock_filter
 
             await weaviate_adapter.search(
                 collection="document",
                 query_vector=query_vector,
-                filter_expr=filter_expr
+                filter_expr=filter_expr,
             )
 
             mock_build_filter.assert_called_once_with(filter_expr)
@@ -225,13 +232,11 @@ class TestWeaviateVector:
 
         documents = [
             VectorDocument(
-                id="doc1",
-                vector=[0.1, 0.2, 0.3],
-                metadata={"title": "Test Document"}
+                id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"}
             )
         ]
 
-        with patch.object(weaviate_adapter, '_ensure_class_exists') as mock_ensure:
+        with patch.object(weaviate_adapter, "_ensure_class_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             ids = await weaviate_adapter.upsert("document", documents)
@@ -245,13 +250,10 @@ class TestWeaviateVector:
         weaviate_adapter._client = mock_weaviate_client
 
         documents = [
-            VectorDocument(
-                vector=[0.1, 0.2, 0.3],
-                metadata={"title": "Test Document"}
-            )
+            VectorDocument(vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"})
         ]
 
-        with patch.object(weaviate_adapter, '_ensure_class_exists') as mock_ensure:
+        with patch.object(weaviate_adapter, "_ensure_class_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             ids = await weaviate_adapter.upsert("document", documents)
@@ -279,14 +281,11 @@ class TestWeaviateVector:
         mock_collection = mock_weaviate_client.collections.get.return_value
 
         documents = await weaviate_adapter.get(
-            "document",
-            ["doc1"],
-            include_vectors=True
+            "document", ["doc1"], include_vectors=True
         )
 
         mock_collection.query.fetch_object_by_id.assert_called_once_with(
-            "doc1",
-            include_vector=True
+            "doc1", include_vector=True
         )
 
         assert len(documents) == 1
@@ -309,7 +308,7 @@ class TestWeaviateVector:
     @pytest.mark.asyncio
     async def test_create_collection(self, weaviate_adapter):
         """Test collection creation."""
-        with patch.object(weaviate_adapter, '_ensure_class_exists') as mock_ensure:
+        with patch.object(weaviate_adapter, "_ensure_class_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             result = await weaviate_adapter.create_collection("test", 768)
@@ -353,15 +352,11 @@ class TestWeaviateVector:
         mock_collection.query.bm25.return_value.objects = [mock_obj]
 
         results = await weaviate_adapter.text_search(
-            collection="document",
-            query_text="test query",
-            limit=5
+            collection="document", query_text="test query", limit=5
         )
 
         mock_collection.query.bm25.assert_called_once_with(
-            query="test query",
-            limit=5,
-            return_metadata=["score"]
+            query="test query", limit=5, return_metadata=["score"]
         )
 
         assert len(results) == 1
@@ -398,7 +393,7 @@ class TestWeaviateVector:
 
         documents = [VectorDocument(vector=[0.1, 0.2, 0.3])]
 
-        with patch.object(weaviate_adapter, '_ensure_class_exists') as mock_ensure:
+        with patch.object(weaviate_adapter, "_ensure_class_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             ids = await weaviate_adapter.upsert("document", documents)
@@ -408,12 +403,14 @@ class TestWeaviateVector:
 
     def test_build_where_filter(self, weaviate_adapter):
         """Test building Weaviate where filters."""
-        with patch('acb.adapters.vector.weaviate.Filter') as mock_filter:
+        with patch("acb.adapters.vector.weaviate.Filter") as mock_filter:
             mock_property_filter = MagicMock()
-            mock_filter.by_property.return_value.equal.return_value = mock_property_filter
+            mock_filter.by_property.return_value.equal.return_value = (
+                mock_property_filter
+            )
 
             filter_expr = {"category": "test", "status": "active"}
-            result = weaviate_adapter._build_where_filter(filter_expr)
+            weaviate_adapter._build_where_filter(filter_expr)
 
             # Should create filters for each condition
             assert mock_filter.by_property.call_count == 2

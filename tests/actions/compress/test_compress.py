@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import brotli
 import pytest
+
 from acb.actions.compress import compress
 
 TEST_STRING: str = "This is a test string to compress."
@@ -36,7 +37,9 @@ def test_gzip_compress_file(tmp_path: Path) -> None:
     assert result is not None, "File compression should return a result"
     assert isinstance(result, bytes), "Compressed result must be bytes"
     decompressed: bytes = gzip.decompress(result)
-    assert decompressed == TEST_STRING.encode(), "Decompressed content should match file content"
+    assert decompressed == TEST_STRING.encode(), (
+        "Decompressed content should match file content"
+    )
 
 
 @pytest.mark.unit
@@ -60,7 +63,9 @@ def test_gzip_with_path_output(tmp_path: Path) -> None:
     assert result is None, "Should return None when writing to output file"
     assert output_path.exists(), "Output file should be created"
     decompressed: bytes = gzip.decompress(output_path.read_bytes())
-    assert decompressed == TEST_STRING.encode(), "Output file content should decompress correctly"
+    assert decompressed == TEST_STRING.encode(), (
+        "Output file content should decompress correctly"
+    )
 
 
 @pytest.mark.unit
@@ -81,7 +86,9 @@ def test_gzip_pathlib_path(tmp_path: Path) -> None:
     assert result is not None, "Compression should return a result"
     assert isinstance(result, bytes), "Compressed result must be bytes"
     decompressed: bytes = gzip.decompress(result)
-    assert decompressed == TEST_STRING.encode(), "Path-based compression should decompress correctly"
+    assert decompressed == TEST_STRING.encode(), (
+        "Path-based compression should decompress correctly"
+    )
 
 
 @pytest.mark.unit
@@ -104,10 +111,16 @@ def test_gzip_compression_level_comparison() -> None:
 
     assert result1 is not None, "Level 1 compression should return a result"
     assert result9 is not None, "Level 9 compression should return a result"
-    assert len(result9) <= len(result1), "Higher compression level should produce smaller or equal size"
+    assert len(result9) <= len(result1), (
+        "Higher compression level should produce smaller or equal size"
+    )
 
-    assert gzip.decompress(result1).decode() == test_data, "Level 1 decompression should match original"
-    assert gzip.decompress(result9).decode() == test_data, "Level 9 decompression should match original"
+    assert gzip.decompress(result1).decode() == test_data, (
+        "Level 1 decompression should match original"
+    )
+    assert gzip.decompress(result9).decode() == test_data, (
+        "Level 9 decompression should match original"
+    )
 
 
 @pytest.mark.unit
@@ -119,7 +132,9 @@ def test_brotli_compress_string_bytes(data: str | bytes) -> None:
     decompressed: bytes = brotli.decompress(result)
     if isinstance(data, str):
         data = data.encode()
-    assert decompressed == data, "Round-trip brotli decompression should match original data"
+    assert decompressed == data, (
+        "Round-trip brotli decompression should match original data"
+    )
 
 
 @pytest.mark.unit
@@ -130,7 +145,9 @@ def test_brotli_compress_file(tmp_path: Path) -> None:
     result: bytes = compress.brotli(str(file_path))
     assert isinstance(result, bytes), "Compressed result must be bytes"
     decompressed: bytes = brotli.decompress(result)
-    assert decompressed == TEST_STRING.encode(), "Decompressed content should match file content"
+    assert decompressed == TEST_STRING.encode(), (
+        "Decompressed content should match file content"
+    )
 
 
 @pytest.mark.unit
@@ -153,7 +170,9 @@ def test_brotli_with_path_output(tmp_path: Path) -> None:
     output_path.write_bytes(compressed)
     assert output_path.exists(), "Output file should be created"
     decompressed: bytes = brotli.decompress(output_path.read_bytes())
-    assert decompressed == TEST_STRING.encode(), "Output file content should decompress correctly"
+    assert decompressed == TEST_STRING.encode(), (
+        "Output file content should decompress correctly"
+    )
 
 
 @pytest.mark.unit
@@ -173,7 +192,9 @@ def test_brotli_pathlib_path(tmp_path: Path) -> None:
     result: bytes = compress.brotli(file_path)
     assert isinstance(result, bytes), "Compressed result must be bytes"
     decompressed: bytes = brotli.decompress(result)
-    assert decompressed == TEST_STRING.encode(), "Path-based compression should decompress correctly"
+    assert decompressed == TEST_STRING.encode(), (
+        "Path-based compression should decompress correctly"
+    )
 
 
 @pytest.mark.unit
@@ -194,9 +215,15 @@ def test_brotli_compression_level_comparison() -> None:
     result1: bytes = compress.brotli(test_data, 1)
     result11: bytes = compress.brotli(test_data, 11)
 
-    assert len(result11) <= len(result1), "Higher compression level should produce smaller or equal size"
-    assert brotli.decompress(result1).decode() == test_data, "Level 1 decompression should match original"
-    assert brotli.decompress(result11).decode() == test_data, "Level 11 decompression should match original"
+    assert len(result11) <= len(result1), (
+        "Higher compression level should produce smaller or equal size"
+    )
+    assert brotli.decompress(result1).decode() == test_data, (
+        "Level 1 decompression should match original"
+    )
+    assert brotli.decompress(result11).decode() == test_data, (
+        "Level 11 decompression should match original"
+    )
 
 
 @pytest.mark.unit

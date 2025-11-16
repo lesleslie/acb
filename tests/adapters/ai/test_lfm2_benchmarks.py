@@ -7,11 +7,12 @@ This module validates Phase 0 objectives:
 4. Cold start optimization
 """
 
-import asyncio
 import time
 from unittest.mock import MagicMock, patch
 
+import asyncio
 import pytest
+
 from acb.adapters.ai._base import DeploymentStrategy
 
 
@@ -19,9 +20,10 @@ from acb.adapters.ai._base import DeploymentStrategy
 def mock_transformers():
     """Mock transformers library for testing."""
     # Patch transformers library directly, not edge.py module attributes
-    with patch("transformers.AutoModelForCausalLM") as mock_model_class, patch(
-        "transformers.AutoTokenizer"
-    ) as mock_tokenizer_class:
+    with (
+        patch("transformers.AutoModelForCausalLM") as mock_model_class,
+        patch("transformers.AutoTokenizer") as mock_tokenizer_class,
+    ):
         # Mock model
         mock_model = MagicMock()
         mock_model.generate.return_value = [[1, 2, 3, 4, 5] * 50]  # Mock output tokens
@@ -120,8 +122,12 @@ class TestLFM2Benchmarks:
         peak_memory = await lfm_adapter.get_memory_usage()
 
         # Verify memory within budget
-        assert peak_memory["rss_mb"] < 1024, f"Memory usage too high: {peak_memory['rss_mb']}MB"
-        assert peak_memory["usage_percent"] < 200, f"Memory budget exceeded: {peak_memory['usage_percent']:.1f}%"
+        assert peak_memory["rss_mb"] < 1024, (
+            f"Memory usage too high: {peak_memory['rss_mb']}MB"
+        )
+        assert peak_memory["usage_percent"] < 200, (
+            f"Memory budget exceeded: {peak_memory['usage_percent']:.1f}%"
+        )
 
     @pytest.mark.benchmark
     @pytest.mark.skip(reason="Requires actual model download from HuggingFace")
@@ -224,7 +230,9 @@ class TestLFM2Benchmarks:
 
         # Verify caching effectiveness
         assert cached_load_time < first_load_time * 0.8, "Cache not effective"
-        assert abs(memory_after_first["rss_mb"] - memory_after_cached["rss_mb"]) < 100, "Memory leak detected"
+        assert (
+            abs(memory_after_first["rss_mb"] - memory_after_cached["rss_mb"]) < 100
+        ), "Memory leak detected"
 
     @pytest.mark.benchmark
     @pytest.mark.skip(reason="Requires actual model download from HuggingFace")
@@ -263,7 +271,9 @@ class TestLFM2Benchmarks:
             await adapter.cleanup()
 
             # Verify memory within expected range
-            assert memory["rss_mb"] < case["max_memory_mb"], f"{case['name']} memory too high: {memory['rss_mb']}MB"
+            assert memory["rss_mb"] < case["max_memory_mb"], (
+                f"{case['name']} memory too high: {memory['rss_mb']}MB"
+            )
 
     @pytest.mark.benchmark
     async def test_lfm2_edge_optimization(self, lfm_adapter):
@@ -284,8 +294,12 @@ class TestLFM2Benchmarks:
         assert optimizations["memory_budget_mb"] == 512, "Memory budget not configured"
 
         # Verify LFM-specific advantages
-        assert optimizations["memory_reduction_percent"] == 70, "Expected 70% memory reduction"
-        assert optimizations["latency_improvement_percent"] == 200, "Expected 200% latency improvement"
+        assert optimizations["memory_reduction_percent"] == 70, (
+            "Expected 70% memory reduction"
+        )
+        assert optimizations["latency_improvement_percent"] == 200, (
+            "Expected 200% latency improvement"
+        )
 
 
 class TestLFM2EdgeDeployment:

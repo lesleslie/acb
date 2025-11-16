@@ -5,13 +5,12 @@ during type checking operations, which was the original issue with crackerjack's
 comprehensive hooks.
 """
 
-import asyncio
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from acb.adapters.type.zuban import ZubanAdapter, ZubanSettings
+from acb.adapters.type.zuban import ZubanAdapter
 
 
 class TestZubanAdapterConnectionErrorHandling:
@@ -44,7 +43,7 @@ class TestZubanAdapterConnectionErrorHandling:
             "Connection reset by peer",
             "Network is unreachable",
             "errno 111",
-            "HTTP error 503"
+            "HTTP error 503",
         ]
 
         for error_msg in connection_errors:
@@ -65,12 +64,14 @@ class TestZubanAdapterConnectionErrorHandling:
             "Type error: incompatible types",
             "Import error: module not found",
             "File not found",
-            "Permission denied"
+            "Permission denied",
         ]
 
         for error_msg in non_connection_errors:
             error = Exception(error_msg)
-            assert not adapter._is_connection_error(error), f"False positive: {error_msg}"
+            assert not adapter._is_connection_error(error), (
+                f"False positive: {error_msg}"
+            )
 
     @pytest.mark.asyncio
     async def test_connection_error_handling_in_check_file(self):
@@ -81,7 +82,7 @@ class TestZubanAdapterConnectionErrorHandling:
         adapter = ZubanAdapter(service=mock_service)
 
         # Mock the _run_zuban_with_retries method to raise a connection error
-        with patch.object(adapter, '_run_zuban_with_retries') as mock_run:
+        with patch.object(adapter, "_run_zuban_with_retries") as mock_run:
             mock_run.side_effect = Exception("Connection timeout error")
 
             file_path = Path("test_file.py")
@@ -101,7 +102,7 @@ class TestZubanAdapterConnectionErrorHandling:
         adapter = ZubanAdapter(service=mock_service)
 
         # Mock the check_file method to raise a connection error
-        with patch.object(adapter, 'check_file') as mock_check:
+        with patch.object(adapter, "check_file") as mock_check:
             mock_check.side_effect = Exception("SSL certificate error")
 
             file_paths = [Path("file1.py"), Path("file2.py")]
@@ -128,9 +129,12 @@ class TestZubanAdapterConnectionErrorHandling:
                 raise Exception("Connection timeout error")
             else:  # Succeed on 3rd attempt
                 from acb.adapters._tool_adapter_base import ServiceResponse
+
                 return ServiceResponse(success=True, result="Success")
 
-        with patch.object(adapter, '_run_zuban_with_retries', side_effect=mock_run_zuban_with_retries):
+        with patch.object(
+            adapter, "_run_zuban_with_retries", side_effect=mock_run_zuban_with_retries
+        ):
             file_path = Path("test_file.py")
             result = await adapter.check_file(file_path)
 
@@ -147,7 +151,7 @@ class TestZubanAdapterConnectionErrorHandling:
         adapter = ZubanAdapter(service=mock_service)
 
         # Mock the run command to always fail with connection error
-        with patch.object(adapter, '_run_zuban_with_retries') as mock_run:
+        with patch.object(adapter, "_run_zuban_with_retries") as mock_run:
             mock_run.side_effect = Exception("Connection timeout error")
 
             file_path = Path("test_file.py")
@@ -173,7 +177,6 @@ class TestZubanAdapterConnectionErrorHandling:
 
 if __name__ == "__main__":
     # Run a quick manual test
-    import sys
     from pathlib import Path
     from unittest.mock import MagicMock
 
@@ -193,13 +196,18 @@ if __name__ == "__main__":
         "SSL certificate error",
         "Network is unreachable",
         "API error occurred",
-        "Regular syntax error"  # Should not be detected as connection error
+        "Regular syntax error",  # Should not be detected as connection error
     ]
 
     for error in test_errors:
         result = adapter._is_connection_error(Exception(error))
         status = "✓" if result else "✗"
-        expected = "connection" in error.lower() or "ssl" in error.lower() or "network" in error.lower() or "api" in error.lower()
+        expected = (
+            "connection" in error.lower()
+            or "ssl" in error.lower()
+            or "network" in error.lower()
+            or "api" in error.lower()
+        )
         if ("syntax" in error.lower()) and expected:
             expected = False  # Override for non-connection error
         correct = (result and expected) or (not result and not expected)

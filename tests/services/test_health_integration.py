@@ -1,7 +1,6 @@
 """Integration tests for health monitoring with ACB adapters and services."""
 
-import asyncio
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -11,17 +10,18 @@ from acb.services import (
     HealthCheckType,
     HealthService,
     HealthStatus,
-    ServiceRegistry,
     get_registry,
     setup_services,
 )
-from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
+from acb.services._base import ServiceBase, ServiceConfig
 
 
 class HealthAwareAdapter(HealthCheckMixin):
     """Mock adapter that implements health checking."""
 
-    def __init__(self, adapter_name: str = "test_adapter", connection_healthy: bool = True):
+    def __init__(
+        self, adapter_name: str = "test_adapter", connection_healthy: bool = True
+    ):
         super().__init__()
         self._adapter_name = adapter_name
         self._connection_healthy = connection_healthy
@@ -35,12 +35,22 @@ class HealthAwareAdapter(HealthCheckMixin):
     def component_name(self) -> str:
         return f"{self._adapter_name.title()} Adapter"
 
-    async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+    async def _perform_health_check(
+        self, check_type: HealthCheckType
+    ) -> HealthCheckResult:
         """Simulate adapter health check."""
         if check_type == HealthCheckType.DEPENDENCY:
             # Check if external service is available
-            status = HealthStatus.HEALTHY if self._connection_healthy else HealthStatus.CRITICAL
-            message = "External service available" if self._connection_healthy else "External service unavailable"
+            status = (
+                HealthStatus.HEALTHY
+                if self._connection_healthy
+                else HealthStatus.CRITICAL
+            )
+            message = (
+                "External service available"
+                if self._connection_healthy
+                else "External service unavailable"
+            )
         elif check_type == HealthCheckType.READINESS:
             # Check if adapter is ready to serve requests
             status = HealthStatus.HEALTHY if self._client else HealthStatus.UNHEALTHY
@@ -58,8 +68,8 @@ class HealthAwareAdapter(HealthCheckMixin):
             details={
                 "adapter_type": self._adapter_name,
                 "client_initialized": self._client is not None,
-                "connection_healthy": self._connection_healthy
-            }
+                "connection_healthy": self._connection_healthy,
+            },
         )
 
     async def initialize(self):
@@ -74,7 +84,7 @@ class HealthAwareService(ServiceBase, HealthCheckMixin):
         config = ServiceConfig(
             service_id=service_id,
             name="Health Aware Service",
-            dependencies=["test_adapter"]
+            dependencies=["test_adapter"],
         )
         super().__init__(config)
         HealthCheckMixin.__init__(self)
@@ -96,18 +106,26 @@ class HealthAwareService(ServiceBase, HealthCheckMixin):
         """Shutdown service."""
         self._processing_requests = False
 
-    async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+    async def _perform_health_check(
+        self, check_type: HealthCheckType
+    ) -> HealthCheckResult:
         """Comprehensive health check including adapter dependencies."""
         if check_type == HealthCheckType.DEPENDENCY:
             # Check all adapter dependencies
             adapter_statuses = []
             for adapter in self._adapters:
-                adapter_result = await adapter.perform_health_check(HealthCheckType.DEPENDENCY)
+                adapter_result = await adapter.perform_health_check(
+                    HealthCheckType.DEPENDENCY
+                )
                 adapter_statuses.append(adapter_result.is_healthy)
 
             all_healthy = all(adapter_statuses)
             status = HealthStatus.HEALTHY if all_healthy else HealthStatus.CRITICAL
-            message = "All dependencies healthy" if all_healthy else "Some dependencies unhealthy"
+            message = (
+                "All dependencies healthy"
+                if all_healthy
+                else "Some dependencies unhealthy"
+            )
 
             return HealthCheckResult(
                 component_id=self.component_id,
@@ -118,15 +136,17 @@ class HealthAwareService(ServiceBase, HealthCheckMixin):
                 details={
                     "dependency_count": len(self._adapters),
                     "healthy_dependencies": sum(adapter_statuses),
-                    "service_processing": self._processing_requests
-                }
+                    "service_processing": self._processing_requests,
+                },
             )
 
         elif check_type == HealthCheckType.READINESS:
             # Service is ready if it's processing and adapters are ready
             adapter_statuses = []
             for adapter in self._adapters:
-                adapter_result = await adapter.perform_health_check(HealthCheckType.READINESS)
+                adapter_result = await adapter.perform_health_check(
+                    HealthCheckType.READINESS
+                )
                 adapter_statuses.append(adapter_result.is_healthy)
 
             ready = self._processing_requests and all(adapter_statuses)
@@ -140,11 +160,15 @@ class HealthAwareService(ServiceBase, HealthCheckMixin):
                 status=status,
                 check_type=check_type,
                 message=message,
-                details={"processing_requests": self._processing_requests}
+                details={"processing_requests": self._processing_requests},
             )
 
         else:  # LIVENESS, STARTUP, RESOURCE
-            status = HealthStatus.HEALTHY if self.status.value == "active" else HealthStatus.UNHEALTHY
+            status = (
+                HealthStatus.HEALTHY
+                if self.status.value == "active"
+                else HealthStatus.UNHEALTHY
+            )
             message = f"Service status: {self.status.value}"
 
             return HealthCheckResult(
@@ -153,7 +177,7 @@ class HealthAwareService(ServiceBase, HealthCheckMixin):
                 status=status,
                 check_type=check_type,
                 message=message,
-                details={"service_status": self.status.value}
+                details={"service_status": self.status.value},
             )
 
 
@@ -218,7 +242,9 @@ class TestHealthServiceIntegration:
         await service.initialize()
 
         # Check different health aspects
-        dependency_check = await service.perform_health_check(HealthCheckType.DEPENDENCY)
+        dependency_check = await service.perform_health_check(
+            HealthCheckType.DEPENDENCY
+        )
         assert dependency_check.status == HealthStatus.HEALTHY
         assert dependency_check.details["healthy_dependencies"] == 2
 
@@ -240,7 +266,9 @@ class TestHealthServiceIntegration:
         await service.initialize()
 
         # Dependency check should fail due to unhealthy cache
-        dependency_check = await service.perform_health_check(HealthCheckType.DEPENDENCY)
+        dependency_check = await service.perform_health_check(
+            HealthCheckType.DEPENDENCY
+        )
         assert dependency_check.status == HealthStatus.CRITICAL
         assert dependency_check.details["healthy_dependencies"] == 1
         assert dependency_check.details["dependency_count"] == 2
@@ -282,7 +310,10 @@ class TestHealthSystemIntegration:
         assert system_health["components"]["total"] == 3
 
         # Should have issues due to unhealthy cache
-        unhealthy_components = system_health["components"]["unhealthy"] + system_health["components"]["critical"]
+        unhealthy_components = (
+            system_health["components"]["unhealthy"]
+            + system_health["components"]["critical"]
+        )
         assert unhealthy_components > 0
 
         # Verify individual component results
@@ -373,6 +404,7 @@ class TestHealthSystemIntegration:
         # Disable auto_register_services to avoid picking up components from previous tests
         from acb.services import HealthServiceSettings
         from acb.services._base import ServiceConfig
+
         config = ServiceConfig(service_id="health_service", name="Health Service")
         settings = HealthServiceSettings(auto_register_services=False)
         health_service = HealthService(service_config=config, settings=settings)
@@ -411,6 +443,7 @@ class TestHealthMonitoringScenarios:
         # Disable auto_register_services to avoid picking up components from previous tests
         from acb.services import HealthServiceSettings
         from acb.services._base import ServiceConfig
+
         config = ServiceConfig(service_id="health_service", name="Health Service")
         settings = HealthServiceSettings(auto_register_services=False)
         health_service = HealthService(service_config=config, settings=settings)
@@ -451,13 +484,16 @@ class TestHealthMonitoringScenarios:
         # Disable auto_register_services to avoid picking up components from previous tests
         from acb.services import HealthServiceSettings
         from acb.services._base import ServiceConfig
+
         config = ServiceConfig(service_id="health_service", name="Health Service")
         settings = HealthServiceSettings(auto_register_services=False)
         health_service = HealthService(service_config=config, settings=settings)
         await health_service.initialize()
 
         # Start with failed component
-        recovering_component = HealthAwareAdapter("recovering", connection_healthy=False)
+        recovering_component = HealthAwareAdapter(
+            "recovering", connection_healthy=False
+        )
         await recovering_component.initialize()
         health_service.register_component(recovering_component)
 

@@ -37,9 +37,9 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-12
 """
 
-import typing as t
 from uuid import UUID
 
+import typing as t
 from pydantic import SecretStr
 
 # Lazy imports for heavy dependencies

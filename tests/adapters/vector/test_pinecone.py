@@ -1,17 +1,17 @@
 """Tests for Pinecone vector adapter."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from unittest.mock import MagicMock, patch
 
-from acb.adapters.vector.pinecone import Vector, VectorSettings
+import pytest
+
 from acb.adapters.vector._base import VectorDocument, VectorSearchResult
+from acb.adapters.vector.pinecone import Vector, VectorSettings
 
 
 class TestVectorSettings:
     """Test Pinecone VectorSettings."""
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_settings_defaults(self, mock_depends):
         """Test VectorSettings with default values."""
         mock_config = MagicMock()
@@ -28,7 +28,7 @@ class TestVectorSettings:
         assert settings.metric == "cosine"
         assert settings.upsert_batch_size == 100
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_settings_custom_values(self, mock_depends):
         """Test VectorSettings with custom values."""
         mock_config = MagicMock()
@@ -69,7 +69,7 @@ class TestPineconeVector:
                     "id": "doc1",
                     "score": 0.95,
                     "metadata": {"title": "Test Document"},
-                    "values": [0.1, 0.2, 0.3]
+                    "values": [0.1, 0.2, 0.3],
                 }
             ]
         }
@@ -82,7 +82,7 @@ class TestPineconeVector:
             "vectors": {
                 "doc1": {
                     "values": [0.1, 0.2, 0.3],
-                    "metadata": {"title": "Test Document"}
+                    "metadata": {"title": "Test Document"},
                 }
             }
         }
@@ -90,9 +90,7 @@ class TestPineconeVector:
         # Mock describe_index_stats response
         mock_index.describe_index_stats.return_value = {
             "total_vector_count": 10,
-            "namespaces": {
-                "test": {"vector_count": 5}
-            }
+            "namespaces": {"test": {"vector_count": 5}},
         }
 
         mock_client.Index.return_value = mock_index
@@ -103,7 +101,7 @@ class TestPineconeVector:
     @pytest.fixture
     def mock_vector_settings(self):
         """Mock Pinecone vector settings."""
-        with patch('acb.depends.depends.get') as mock_depends:
+        with patch("acb.depends.depends.get") as mock_depends:
             mock_config = MagicMock()
             mock_depends.return_value = mock_config
 
@@ -113,7 +111,7 @@ class TestPineconeVector:
     @pytest.fixture
     def pinecone_adapter(self, mock_vector_settings):
         """Pinecone vector adapter instance."""
-        with patch.object(Vector, 'config') as mock_config:
+        with patch.object(Vector, "config") as mock_config:
             mock_config.vector = mock_vector_settings
             adapter = Vector()
             adapter.logger = MagicMock()
@@ -122,14 +120,12 @@ class TestPineconeVector:
     @pytest.mark.asyncio
     async def test_create_client(self, pinecone_adapter, mock_pinecone_client):
         """Test Pinecone client creation."""
-        with patch('acb.adapters.vector.pinecone.pinecone') as mock_pinecone:
+        with patch("acb.adapters.vector.pinecone.pinecone") as mock_pinecone:
             mock_pinecone.Pinecone.return_value = mock_pinecone_client
 
             client = await pinecone_adapter._create_client()
 
-            mock_pinecone.Pinecone.assert_called_once_with(
-                api_key="test-api-key"
-            )
+            mock_pinecone.Pinecone.assert_called_once_with(api_key="test-api-key")
             assert client == mock_pinecone_client
 
     @pytest.mark.asyncio
@@ -150,7 +146,7 @@ class TestPineconeVector:
         mock_pinecone_client.describe_index.side_effect = Exception("Index not found")
         pinecone_adapter._client = mock_pinecone_client
 
-        with patch.object(pinecone_adapter, '_create_default_index') as mock_create:
+        with patch.object(pinecone_adapter, "_create_default_index") as mock_create:
             await pinecone_adapter.init()
 
             mock_create.assert_called_once()
@@ -163,10 +159,7 @@ class TestPineconeVector:
 
         query_vector = [0.1, 0.2, 0.3]
         results = await pinecone_adapter.search(
-            collection="test",
-            query_vector=query_vector,
-            limit=5,
-            include_vectors=True
+            collection="test", query_vector=query_vector, limit=5, include_vectors=True
         )
 
         mock_index.query.assert_called_once_with(
@@ -174,7 +167,7 @@ class TestPineconeVector:
             top_k=5,
             include_metadata=True,
             include_values=True,
-            namespace="test"
+            namespace="test",
         )
 
         assert len(results) == 1
@@ -194,9 +187,7 @@ class TestPineconeVector:
         filter_expr = {"category": "test"}
 
         await pinecone_adapter.search(
-            collection="test",
-            query_vector=query_vector,
-            filter_expr=filter_expr
+            collection="test", query_vector=query_vector, filter_expr=filter_expr
         )
 
         mock_index.query.assert_called_once_with(
@@ -205,7 +196,7 @@ class TestPineconeVector:
             include_metadata=True,
             include_values=False,
             namespace="test",
-            filter=filter_expr
+            filter=filter_expr,
         )
 
     @pytest.mark.asyncio
@@ -216,23 +207,22 @@ class TestPineconeVector:
 
         documents = [
             VectorDocument(
-                id="doc1",
-                vector=[0.1, 0.2, 0.3],
-                metadata={"title": "Test Document"}
+                id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"}
             )
         ]
 
         ids = await pinecone_adapter.upsert("test", documents)
 
-        expected_vectors = [{
-            "id": "doc1",
-            "values": [0.1, 0.2, 0.3],
-            "metadata": {"title": "Test Document"}
-        }]
+        expected_vectors = [
+            {
+                "id": "doc1",
+                "values": [0.1, 0.2, 0.3],
+                "metadata": {"title": "Test Document"},
+            }
+        ]
 
         mock_index.upsert.assert_called_once_with(
-            vectors=expected_vectors,
-            namespace="test"
+            vectors=expected_vectors, namespace="test"
         )
         assert ids == ["doc1"]
 
@@ -243,10 +233,7 @@ class TestPineconeVector:
         pinecone_adapter._client = mock_pinecone_client
 
         documents = [
-            VectorDocument(
-                vector=[0.1, 0.2, 0.3],
-                metadata={"title": "Test Document"}
-            )
+            VectorDocument(vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"})
         ]
 
         ids = await pinecone_adapter.upsert("test", documents)
@@ -271,8 +258,7 @@ class TestPineconeVector:
         result = await pinecone_adapter.delete("test", ["doc1", "doc2"])
 
         mock_index.delete.assert_called_once_with(
-            ids=["doc1", "doc2"],
-            namespace="test"
+            ids=["doc1", "doc2"], namespace="test"
         )
         assert result is True
 
@@ -282,17 +268,10 @@ class TestPineconeVector:
         mock_index = mock_pinecone_client.Index.return_value
         pinecone_adapter._client = mock_pinecone_client
 
-        documents = await pinecone_adapter.get(
-            "test",
-            ["doc1"],
-            include_vectors=True
-        )
+        documents = await pinecone_adapter.get("test", ["doc1"], include_vectors=True)
 
         mock_index.fetch.assert_called_once_with(
-            ids=["doc1"],
-            include_metadata=True,
-            include_values=True,
-            namespace="test"
+            ids=["doc1"], include_metadata=True, include_values=True, namespace="test"
         )
 
         assert len(documents) == 1
@@ -313,9 +292,10 @@ class TestPineconeVector:
         assert count == 5  # From namespace 'test'
 
     @pytest.mark.asyncio
-    async def test_count_default_namespace(self, pinecone_adapter, mock_pinecone_client):
+    async def test_count_default_namespace(
+        self, pinecone_adapter, mock_pinecone_client
+    ):
         """Test document count for default namespace."""
-        mock_index = mock_pinecone_client.Index.return_value
         pinecone_adapter._client = mock_pinecone_client
 
         count = await pinecone_adapter.count("default")
@@ -337,10 +317,7 @@ class TestPineconeVector:
 
         result = await pinecone_adapter.delete_collection("test")
 
-        mock_index.delete.assert_called_once_with(
-            delete_all=True,
-            namespace="test"
-        )
+        mock_index.delete.assert_called_once_with(delete_all=True, namespace="test")
         assert result is True
 
     @pytest.mark.asyncio

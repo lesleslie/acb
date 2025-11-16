@@ -35,9 +35,6 @@ class TestDependencyInjection:
     @pytest.mark.asyncio
     async def test_multiple_di_instances(self, template_dir):
         """Test using multiple template adapters via DI."""
-
-
-
         # Create two separate template directories
         emails_dir = template_dir / "emails"
         emails_dir.mkdir()
@@ -57,7 +54,9 @@ class TestDependencyInjection:
         # Verify they're independent
         assert (await depends.get("email_templates")) is email_templates
         assert (await depends.get("report_templates")) is report_templates
-        assert (await depends.get("email_templates")) is not (await depends.get("report_templates"))
+        assert (await depends.get("email_templates")) is not (
+            await depends.get("report_templates")
+        )
 
     def test_settings_injection(self, template_dir):
         """Test that settings use DI for Config."""
@@ -76,8 +75,9 @@ class TestSettingsConfiguration:
 
     def test_settings_defaults(self):
         """Test default settings values."""
-        from acb.adapters.templates import TemplatesBaseSettings
         from pathlib import Path
+
+        from acb.adapters.templates import TemplatesBaseSettings
 
         settings = TemplatesBaseSettings()
 
@@ -107,8 +107,9 @@ class TestSettingsConfiguration:
 
     def test_settings_path_conversion(self):
         """Test that string paths are converted to Path objects."""
-        from acb.adapters.templates import TemplatesBaseSettings
         from pathlib import Path
+
+        from acb.adapters.templates import TemplatesBaseSettings
 
         settings = TemplatesBaseSettings(template_dir="custom/templates")
 
@@ -119,9 +120,7 @@ class TestSettingsConfiguration:
         """Test adapter initialization with settings object."""
         from acb.adapters.templates import TemplatesAdapter, TemplatesBaseSettings
 
-        settings = TemplatesBaseSettings(
-            template_dir=template_dir, cache_size=500
-        )
+        settings = TemplatesBaseSettings(template_dir=template_dir, cache_size=500)
 
         templates = TemplatesAdapter(settings=settings)
 
@@ -131,8 +130,6 @@ class TestSettingsConfiguration:
 
     def test_adapter_settings_override(self, template_dir):
         """Test that adapter constructor params create settings."""
-
-
         templates = TemplatesAdapter(
             template_dir=template_dir,
             cache_size=300,
@@ -150,7 +147,7 @@ class TestDIPatterns:
     @pytest.mark.asyncio
     async def test_function_level_injection(self, templates, sample_template):
         """Test injecting templates at function level."""
-        from acb.depends import Inject, depends
+        from acb.depends import depends
 
         depends.set(TemplatesAdapter, templates)
 
@@ -171,7 +168,7 @@ class TestDIPatterns:
     @pytest.mark.asyncio
     async def test_class_method_injection(self, templates):
         """Test injecting templates into class methods."""
-        from acb.depends import Inject, depends
+        from acb.depends import depends
 
         depends.set(TemplatesAdapter, templates)
 
@@ -191,9 +188,6 @@ class TestDIPatterns:
     @pytest.mark.asyncio
     async def test_di_override_pattern(self, templates, template_dir):
         """Test DI override pattern for testing."""
-
-
-
         # Set default templates
         depends.set(TemplatesAdapter, templates)
 
@@ -211,7 +205,7 @@ class TestDIPatterns:
     @pytest.mark.asyncio
     async def test_multiple_injections(self, templates):
         """Test function with multiple DI injections."""
-        from acb.depends import Inject, depends
+        from acb.depends import depends
 
         depends.set(TemplatesAdapter, templates)
 

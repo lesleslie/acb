@@ -5,15 +5,16 @@ development, testing, and single-node deployments. Tasks are stored in
 memory and will be lost on application restart.
 """
 
-import asyncio
-import contextlib
 import heapq
 import logging
 import time
 from collections import defaultdict, deque
+from uuid import UUID
+
+import asyncio
+import contextlib
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import UUID
 
 from ._base import (
     QueueBase,

@@ -17,7 +17,11 @@ from acb.services.validation.sanitization import (
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_input_sanitizer_auto_and_specific() -> None:
-    cfg = ValidationConfig(enable_xss_protection=True, enable_sql_injection_protection=True, enable_path_traversal_protection=True)
+    cfg = ValidationConfig(
+        enable_xss_protection=True,
+        enable_sql_injection_protection=True,
+        enable_path_traversal_protection=True,
+    )
     s = InputSanitizer(cfg)
     # auto sanitization should add warnings for script tags and SQL comments
     val = "<script>alert(1)</script> SELECT * FROM users -- comment"

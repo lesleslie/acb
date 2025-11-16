@@ -1,13 +1,13 @@
 """Tests for the ACB MCP utils module."""
+
 import pytest
-from unittest.mock import Mock
 
 from acb.mcp.utils import (
-    serialize_component_info,
-    format_tool_response,
-    validate_parameters,
-    get_parameter,
     async_retry,
+    format_tool_response,
+    get_parameter,
+    serialize_component_info,
+    validate_parameters,
 )
 
 
@@ -43,6 +43,7 @@ class TestSerializeComponentInfo:
 
     def test_serialize_component_info_with_exception(self) -> None:
         """Test serialization when an exception occurs."""
+
         class ReallyBadComponent:
             def __getattribute__(self, name):
                 # This will cause issues even when trying to get the class name
@@ -83,6 +84,7 @@ class TestFormatToolResponse:
 
     def test_format_other_response(self) -> None:
         """Test formatting other types of responses."""
+
         class CustomClass:
             def __str__(self) -> str:
                 return "Custom"
@@ -145,6 +147,7 @@ class TestAsyncRetry:
     @pytest.mark.asyncio
     async def test_async_retry_success_on_first_attempt(self) -> None:
         """Test async_retry when function succeeds on first attempt."""
+
         async def successful_func():
             return "success"
 
@@ -170,6 +173,7 @@ class TestAsyncRetry:
     @pytest.mark.asyncio
     async def test_async_retry_eventual_failure(self) -> None:
         """Test async_retry when function fails all attempts."""
+
         async def failing_func():
             raise ValueError("Always fails")
 
@@ -179,6 +183,7 @@ class TestAsyncRetry:
     @pytest.mark.asyncio
     async def test_async_retry_with_args_kwargs(self) -> None:
         """Test async_retry with arguments and keyword arguments."""
+
         async def func_with_args(arg1, arg2, kwarg1=None):
             if arg1 == "fail":
                 raise ValueError("Should fail")
@@ -191,7 +196,7 @@ class TestAsyncRetry:
             0.01,  # delay
             "success",
             "arg2",
-            kwarg1="test"
+            kwarg1="test",
         )
         assert result == "success-arg2-test"
 
@@ -203,5 +208,5 @@ class TestAsyncRetry:
                 0.01,  # delay
                 "fail",
                 "arg2",
-                kwarg1="test"
+                kwarg1="test",
             )

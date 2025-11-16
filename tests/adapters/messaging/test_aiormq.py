@@ -1,15 +1,15 @@
 """Tests for aiormq messaging adapter."""
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+from acb.adapters.messaging._base import MessagePriority, MessagingConnectionError
 from acb.adapters.messaging.aiormq import (
     AioRmqMessaging,
     AioRmqMessagingSettings,
     MessagingTimeoutError,
 )
-from acb.adapters.messaging._base import MessagePriority, MessagingConnectionError
 
 
 @pytest.fixture
@@ -114,9 +114,7 @@ async def test_aiormq_enqueue(settings, mock_aiormq):
 
     # Enqueue a test message
     message_id = await adapter.enqueue(
-        "test_queue",
-        b"test message",
-        priority=MessagePriority.HIGH
+        "test_queue", b"test message", priority=MessagePriority.HIGH
     )
 
     # Verify message was sent
@@ -162,7 +160,7 @@ async def test_aiormq_timeout_error(settings, mock_aiormq):
     await adapter.connect()
 
     # Mock a timeout during message sending
-    mock_aiormq["exchange"].publish = AsyncMock(side_effect=asyncio.TimeoutError())
+    mock_aiormq["exchange"].publish = AsyncMock(side_effect=TimeoutError())
 
     with pytest.raises(MessagingTimeoutError):
         await adapter.enqueue("test_queue", b"test message")
@@ -194,6 +192,7 @@ async def test_aiormq_capabilities(settings):
     for cap in expected_capabilities:
         # Using the enum value
         from acb.adapters.messaging._base import MessagingCapability
+
         cap_enum = getattr(MessagingCapability, cap)
         assert cap_enum in capabilities
 

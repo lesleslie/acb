@@ -1,17 +1,17 @@
 """Integration tests for ACB actions and adapters working together."""
 
-import asyncio
 from pathlib import Path
-from typing import Any
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
-from acb.actions.encode import encode, decode
+import pytest
+from typing import Any
+
 from acb.actions.compress import compress, decompress
+from acb.actions.encode import decode, encode
 from acb.actions.hash import hash
+from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-from acb.adapters import import_adapter
 
 
 class TestActionAdapterIntegration:
@@ -37,7 +37,7 @@ class TestActionAdapterIntegration:
 
         # Convert to string if needed for decode
         if isinstance(encoded_result, bytes):
-            str_data = encoded_result.decode('utf-8')
+            str_data = encoded_result.decode("utf-8")
         else:
             str_data = encoded_result
 
@@ -76,7 +76,7 @@ class TestActionAdapterIntegration:
         assert isinstance(json_bytes, bytes)
 
         # Convert bytes to string if needed for hash function
-        json_str = json_bytes.decode('utf-8')
+        json_str = json_bytes.decode("utf-8")
 
         # Hash the encoded string
         hash_result = await hash.blake3(json_str)
@@ -100,7 +100,7 @@ class TestActionAdapterIntegration:
 
         # Patch the depends.get method
         with pytest.MonkeyPatch().context() as mp:
-            mp.setattr(depends, 'get', mock_get)
+            mp.setattr(depends, "get", mock_get)
 
             # Test that we can still use actions
             test_data = {"dependency": "injection", "test": True}
@@ -117,7 +117,11 @@ class TestActionAdapterIntegration:
         assert json_result is not None
 
         # Convert to string if needed by compress action
-        json_str = json_result.decode('utf-8') if isinstance(json_result, bytes) else json_result
+        json_str = (
+            json_result.decode("utf-8")
+            if isinstance(json_result, bytes)
+            else json_result
+        )
         assert isinstance(json_str, str)
 
         # Compress the JSON - sync method

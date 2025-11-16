@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from acb.adapters.dns._base import DnsBaseSettings, DnsRecord
 
 

@@ -1,5 +1,6 @@
-import typing as t
 from uuid import UUID
+
+import typing as t
 
 try:
     import niquests
@@ -14,6 +15,7 @@ except Exception:  # pragma: no cover - allow tests without niquests installed
     else:
         raise
 from pydantic import SecretStr
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 

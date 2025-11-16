@@ -7,6 +7,7 @@ allowing the universal query interface to work with SQLModel classes.
 from __future__ import annotations
 
 import inspect
+
 import typing as t
 from typing import Any, TypeVar, get_args, get_origin
 

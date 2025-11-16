@@ -1,7 +1,7 @@
-import typing as t
 from uuid import UUID
 
 import httpx
+import typing as t
 from hishel import (  # type: ignore[import-not-found]
     AsyncCacheClient,
     AsyncRedisStorage,
@@ -12,6 +12,7 @@ from httpcore import Request
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
 from redis.asyncio import Redis as AsyncRedis
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,

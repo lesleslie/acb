@@ -5,12 +5,10 @@ rather than runtime architectural layers, verifying they are stateless,
 immediately available, and organized by function.
 """
 
-import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from acb.actions.compress import compress, decompress
-from acb.actions.encode import encode, decode
+from acb.actions.encode import decode, encode
 from acb.actions.hash import hash
 
 
@@ -20,11 +18,11 @@ class TestActionsArchitecture:
     def test_actions_are_stateless_functions(self):
         """Test that actions are stateless utility functions."""
         # Actions should be available as module attributes without instantiation
-        assert hasattr(compress, 'gzip')
-        assert hasattr(compress, 'brotli')
-        assert hasattr(decode, 'json')
-        assert hasattr(encode, 'json')
-        assert hasattr(hash, 'blake3')
+        assert hasattr(compress, "gzip")
+        assert hasattr(compress, "brotli")
+        assert hasattr(decode, "json")
+        assert hasattr(encode, "json")
+        assert hasattr(hash, "blake3")
 
         # They should be callable directly
         assert callable(compress.gzip)
@@ -104,16 +102,11 @@ class TestActionsArchitecture:
     def test_actions_organized_by_function(self):
         """Test that actions are organized by function/verb categories."""
         # Verify different action categories exist
-        action_categories = [
-            'acb.actions.compress',
-            'acb.actions.encode',
-            'acb.actions.hash'
-        ]
 
         # Check that each category has the expected functions
-        assert hasattr(compress, 'gzip') or hasattr(compress, 'brotli')
-        assert hasattr(encode, 'json') or hasattr(encode, 'yaml')
-        assert hasattr(hash, 'blake3') or hasattr(hash, 'md5')
+        assert hasattr(compress, "gzip") or hasattr(compress, "brotli")
+        assert hasattr(encode, "json") or hasattr(encode, "yaml")
+        assert hasattr(hash, "blake3") or hasattr(hash, "md5")
 
     @pytest.mark.asyncio
     async def test_actions_integration_with_other_layers(self):
@@ -153,9 +146,9 @@ class TestActionsVersusServices:
             ServiceBase()
 
         # Actions don't have service lifecycle methods
-        assert not hasattr(compress, 'initialize')
-        assert not hasattr(compress, 'shutdown')
-        assert not hasattr(compress, 'health_check')
+        assert not hasattr(compress, "initialize")
+        assert not hasattr(compress, "shutdown")
+        assert not hasattr(compress, "health_check")
 
         # Actions are immediately available
         result = compress.gzip("test")
@@ -165,4 +158,5 @@ class TestActionsVersusServices:
 if __name__ == "__main__":
     # Run tests manually if executed directly
     import pytest
+
     pytest.main([__file__, "-v"])

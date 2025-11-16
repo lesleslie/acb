@@ -7,9 +7,10 @@ responses and contract compliance across applications.
 from __future__ import annotations
 
 import time
+from enum import Enum
+
 import typing as t
 from dataclasses import dataclass, field
-from enum import Enum
 
 from acb.services.validation._base import (
     ValidationConfig,

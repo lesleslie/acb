@@ -95,7 +95,7 @@ class UserManagementService(ServiceBase):
         # For this simplified example, we'll assume they have the expected interface
         try:
             sql: Any = depends.get(SQL)
-            if hasattr(sql, "get_session") and callable(getattr(sql, "get_session")):
+            if hasattr(sql, "get_session") and callable(sql.get_session):
                 # For demonstration purposes only - in real usage, handle properly
                 print(f"Saving user to database: {user}")
         except Exception:
@@ -103,7 +103,7 @@ class UserManagementService(ServiceBase):
 
         try:
             cache: Any = depends.get(Cache)
-            if hasattr(cache, "set") and callable(getattr(cache, "set")):
+            if hasattr(cache, "set") and callable(cache.set):
                 await cache.set(f"user:{user['id']}", user, ttl=3600)
             else:
                 print(

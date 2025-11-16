@@ -1,17 +1,17 @@
 """Tests for Qdrant vector adapter."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
 
-from acb.adapters.vector.qdrant import Vector, VectorSettings
+import pytest
+
 from acb.adapters.vector._base import VectorDocument, VectorSearchResult
+from acb.adapters.vector.qdrant import Vector, VectorSettings
 
 
 class TestVectorSettings:
     """Test Qdrant VectorSettings."""
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_settings_defaults(self, mock_depends):
         """Test VectorSettings with default values."""
         mock_config = MagicMock()
@@ -28,7 +28,7 @@ class TestVectorSettings:
         assert settings.on_disk_vectors is False
         assert settings.enable_quantization is False
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_settings_custom_values(self, mock_depends):
         """Test VectorSettings with custom values."""
         mock_config = MagicMock()
@@ -104,7 +104,7 @@ class TestQdrantVector:
     @pytest.fixture
     def mock_vector_settings(self):
         """Mock Qdrant vector settings."""
-        with patch('acb.depends.depends.get') as mock_depends:
+        with patch("acb.depends.depends.get") as mock_depends:
             mock_config = MagicMock()
             mock_depends.return_value = mock_config
 
@@ -114,7 +114,7 @@ class TestQdrantVector:
     @pytest.fixture
     def qdrant_adapter(self, mock_vector_settings):
         """Qdrant vector adapter instance."""
-        with patch.object(Vector, 'config') as mock_config:
+        with patch.object(Vector, "config") as mock_config:
             mock_config.vector = mock_vector_settings
             adapter = Vector()
             adapter.logger = MagicMock()
@@ -123,15 +123,13 @@ class TestQdrantVector:
     @pytest.mark.asyncio
     async def test_create_client(self, qdrant_adapter, mock_qdrant_client):
         """Test Qdrant client creation."""
-        with patch('acb.adapters.vector.qdrant.AsyncQdrantClient') as mock_client_class:
+        with patch("acb.adapters.vector.qdrant.AsyncQdrantClient") as mock_client_class:
             mock_client_class.return_value = mock_qdrant_client
 
             client = await qdrant_adapter._create_client()
 
             mock_client_class.assert_called_once_with(
-                url="http://localhost:6333",
-                timeout=30.0,
-                prefer_grpc=True
+                url="http://localhost:6333", timeout=30.0, prefer_grpc=True
             )
             assert client == mock_qdrant_client
 
@@ -143,7 +141,7 @@ class TestQdrantVector:
         qdrant_adapter.config.vector.grpc_port = 6334
         qdrant_adapter.config.vector.https = True
 
-        with patch('acb.adapters.vector.qdrant.AsyncQdrantClient') as mock_client_class:
+        with patch("acb.adapters.vector.qdrant.AsyncQdrantClient") as mock_client_class:
             mock_client_class.return_value = mock_qdrant_client
 
             await qdrant_adapter._create_client()
@@ -154,7 +152,7 @@ class TestQdrantVector:
                 prefer_grpc=True,
                 api_key="test-key",
                 grpc_port=6334,
-                https=True
+                https=True,
             )
 
     @pytest.mark.asyncio
@@ -170,7 +168,9 @@ class TestQdrantVector:
         )
 
     @pytest.mark.asyncio
-    async def test_ensure_collection_exists_existing(self, qdrant_adapter, mock_qdrant_client):
+    async def test_ensure_collection_exists_existing(
+        self, qdrant_adapter, mock_qdrant_client
+    ):
         """Test ensuring collection exists when it already exists."""
         qdrant_adapter._client = mock_qdrant_client
 
@@ -180,7 +180,9 @@ class TestQdrantVector:
         mock_qdrant_client.get_collections.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_ensure_collection_exists_create(self, qdrant_adapter, mock_qdrant_client):
+    async def test_ensure_collection_exists_create(
+        self, qdrant_adapter, mock_qdrant_client
+    ):
         """Test creating a new collection."""
         # Mock empty collections response
         mock_collections_response = MagicMock()
@@ -188,11 +190,14 @@ class TestQdrantVector:
         mock_qdrant_client.get_collections.return_value = mock_collections_response
         qdrant_adapter._client = mock_qdrant_client
 
-        with patch('acb.adapters.vector.qdrant.VectorParams') as mock_vector_params, \
-             patch('acb.adapters.vector.qdrant.Distance') as mock_distance, \
-             patch('acb.adapters.vector.qdrant.HnswConfigDiff') as mock_hnsw:
-
-            result = await qdrant_adapter._ensure_collection_exists("new_collection", 768)
+        with (
+            patch("acb.adapters.vector.qdrant.VectorParams"),
+            patch("acb.adapters.vector.qdrant.Distance"),
+            patch("acb.adapters.vector.qdrant.HnswConfigDiff"),
+        ):
+            result = await qdrant_adapter._ensure_collection_exists(
+                "new_collection", 768
+            )
 
             assert result is True
             mock_qdrant_client.create_collection.assert_called_once()
@@ -207,7 +212,7 @@ class TestQdrantVector:
             collection="documents",
             query_vector=query_vector,
             limit=5,
-            include_vectors=True
+            include_vectors=True,
         )
 
         mock_qdrant_client.search.assert_called_once_with(
@@ -217,7 +222,7 @@ class TestQdrantVector:
             query_filter=None,
             with_payload=True,
             with_vectors=True,
-            score_threshold=None
+            score_threshold=None,
         )
 
         assert len(results) == 1
@@ -235,14 +240,14 @@ class TestQdrantVector:
         query_vector = [0.1, 0.2, 0.3]
         filter_expr = {"category": "test"}
 
-        with patch.object(qdrant_adapter, '_build_qdrant_filter') as mock_build_filter:
+        with patch.object(qdrant_adapter, "_build_qdrant_filter") as mock_build_filter:
             mock_filter = MagicMock()
             mock_build_filter.return_value = mock_filter
 
             await qdrant_adapter.search(
                 collection="documents",
                 query_vector=query_vector,
-                filter_expr=filter_expr
+                filter_expr=filter_expr,
             )
 
             mock_build_filter.assert_called_once_with(filter_expr)
@@ -253,7 +258,7 @@ class TestQdrantVector:
                 query_filter=mock_filter,
                 with_payload=True,
                 with_vectors=False,
-                score_threshold=None
+                score_threshold=None,
             )
 
     @pytest.mark.asyncio
@@ -263,13 +268,11 @@ class TestQdrantVector:
 
         documents = [
             VectorDocument(
-                id="doc1",
-                vector=[0.1, 0.2, 0.3],
-                metadata={"title": "Test Document"}
+                id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"}
             )
         ]
 
-        with patch.object(qdrant_adapter, '_ensure_collection_exists') as mock_ensure:
+        with patch.object(qdrant_adapter, "_ensure_collection_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             ids = await qdrant_adapter.upsert("documents", documents)
@@ -284,13 +287,10 @@ class TestQdrantVector:
         qdrant_adapter._client = mock_qdrant_client
 
         documents = [
-            VectorDocument(
-                vector=[0.1, 0.2, 0.3],
-                metadata={"title": "Test Document"}
-            )
+            VectorDocument(vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"})
         ]
 
-        with patch.object(qdrant_adapter, '_ensure_collection_exists') as mock_ensure:
+        with patch.object(qdrant_adapter, "_ensure_collection_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             ids = await qdrant_adapter.upsert("documents", documents)
@@ -304,7 +304,7 @@ class TestQdrantVector:
         """Test document deletion."""
         qdrant_adapter._client = mock_qdrant_client
 
-        with patch('acb.adapters.vector.qdrant.PointIdsList') as mock_point_ids:
+        with patch("acb.adapters.vector.qdrant.PointIdsList") as mock_point_ids:
             result = await qdrant_adapter.delete("documents", ["doc1", "doc2"])
 
             mock_point_ids.assert_called_once_with(points=["doc1", "doc2"])
@@ -317,16 +317,14 @@ class TestQdrantVector:
         qdrant_adapter._client = mock_qdrant_client
 
         documents = await qdrant_adapter.get(
-            "documents",
-            ["doc1"],
-            include_vectors=True
+            "documents", ["doc1"], include_vectors=True
         )
 
         mock_qdrant_client.retrieve.assert_called_once_with(
             collection_name="documents",
             ids=["doc1"],
             with_payload=True,
-            with_vectors=True
+            with_vectors=True,
         )
 
         assert len(documents) == 1
@@ -343,8 +341,7 @@ class TestQdrantVector:
         count = await qdrant_adapter.count("documents")
 
         mock_qdrant_client.count.assert_called_once_with(
-            collection_name="documents",
-            count_filter=None
+            collection_name="documents", count_filter=None
         )
         assert count == 10
 
@@ -355,7 +352,7 @@ class TestQdrantVector:
 
         filter_expr = {"category": "test"}
 
-        with patch.object(qdrant_adapter, '_build_qdrant_filter') as mock_build_filter:
+        with patch.object(qdrant_adapter, "_build_qdrant_filter") as mock_build_filter:
             mock_filter = MagicMock()
             mock_build_filter.return_value = mock_filter
 
@@ -363,14 +360,13 @@ class TestQdrantVector:
 
             mock_build_filter.assert_called_once_with(filter_expr)
             mock_qdrant_client.count.assert_called_once_with(
-                collection_name="documents",
-                count_filter=mock_filter
+                collection_name="documents", count_filter=mock_filter
             )
 
     @pytest.mark.asyncio
     async def test_create_collection(self, qdrant_adapter):
         """Test collection creation."""
-        with patch.object(qdrant_adapter, '_ensure_collection_exists') as mock_ensure:
+        with patch.object(qdrant_adapter, "_ensure_collection_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             result = await qdrant_adapter.create_collection("test", 768, "euclidean")
@@ -385,7 +381,9 @@ class TestQdrantVector:
 
         result = await qdrant_adapter.delete_collection("test")
 
-        mock_qdrant_client.delete_collection.assert_called_once_with(collection_name="test")
+        mock_qdrant_client.delete_collection.assert_called_once_with(
+            collection_name="test"
+        )
         assert result is True
 
     @pytest.mark.asyncio
@@ -404,9 +402,7 @@ class TestQdrantVector:
         qdrant_adapter._client = mock_qdrant_client
 
         documents, next_offset = await qdrant_adapter.scroll(
-            collection="documents",
-            limit=100,
-            include_vectors=True
+            collection="documents", limit=100, include_vectors=True
         )
 
         mock_qdrant_client.scroll.assert_called_once_with(
@@ -415,7 +411,7 @@ class TestQdrantVector:
             offset=None,
             scroll_filter=None,
             with_payload=True,
-            with_vectors=True
+            with_vectors=True,
         )
 
         assert len(documents) == 1
@@ -425,18 +421,19 @@ class TestQdrantVector:
 
     def test_build_qdrant_filter(self, qdrant_adapter):
         """Test building Qdrant filters."""
-        with patch('acb.adapters.vector.qdrant.Filter') as mock_filter, \
-             patch('acb.adapters.vector.qdrant.FieldCondition') as mock_field_condition, \
-             patch('acb.adapters.vector.qdrant.MatchValue') as mock_match_value, \
-             patch('acb.adapters.vector.qdrant.MatchAny') as mock_match_any:
-
+        with (
+            patch("acb.adapters.vector.qdrant.Filter") as mock_filter,
+            patch("acb.adapters.vector.qdrant.FieldCondition") as mock_field_condition,
+            patch("acb.adapters.vector.qdrant.MatchValue"),
+            patch("acb.adapters.vector.qdrant.MatchAny"),
+        ):
             filter_expr = {
                 "category": "test",
                 "status": "active",
-                "tags": ["tag1", "tag2"]
+                "tags": ["tag1", "tag2"],
             }
 
-            result = qdrant_adapter._build_qdrant_filter(filter_expr)
+            qdrant_adapter._build_qdrant_filter(filter_expr)
 
             # Should create FieldConditions for each filter
             assert mock_field_condition.call_count == 3
@@ -472,7 +469,7 @@ class TestQdrantVector:
 
         documents = [VectorDocument(vector=[0.1, 0.2, 0.3])]
 
-        with patch.object(qdrant_adapter, '_ensure_collection_exists') as mock_ensure:
+        with patch.object(qdrant_adapter, "_ensure_collection_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             ids = await qdrant_adapter.upsert("documents", documents)
@@ -481,7 +478,9 @@ class TestQdrantVector:
             qdrant_adapter.logger.error.assert_called()
 
     @pytest.mark.asyncio
-    async def test_upsert_batch_failure_handling(self, qdrant_adapter, mock_qdrant_client):
+    async def test_upsert_batch_failure_handling(
+        self, qdrant_adapter, mock_qdrant_client
+    ):
         """Test upsert batch failure handling."""
         # Mock a failed operation
         mock_operation_info = MagicMock()
@@ -491,7 +490,7 @@ class TestQdrantVector:
 
         documents = [VectorDocument(id="doc1", vector=[0.1, 0.2, 0.3])]
 
-        with patch.object(qdrant_adapter, '_ensure_collection_exists') as mock_ensure:
+        with patch.object(qdrant_adapter, "_ensure_collection_exists") as mock_ensure:
             mock_ensure.return_value = True
 
             ids = await qdrant_adapter.upsert("documents", documents)

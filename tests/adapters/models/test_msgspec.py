@@ -1,9 +1,10 @@
 """Tests for msgspec model adapter."""
 
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from typing import Any
+
 from acb.adapters.models._msgspec import MSGSPEC_AVAILABLE, MsgspecModelAdapter
 
 

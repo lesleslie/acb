@@ -1,22 +1,24 @@
 """Tests for APScheduler queue implementation."""
 
+from unittest.mock import MagicMock
+from uuid import UUID
+
 import asyncio
 import pytest
-from datetime import datetime, timedelta, UTC
-from uuid import UUID
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import UTC, datetime, timedelta
 
 # Mock APScheduler availability
 try:
-    from apscheduler.schedulers.asyncio import AsyncIOScheduler
-    from apscheduler.triggers.date import DateTrigger
-    from apscheduler.triggers.cron import CronTrigger
-    from apscheduler.triggers.interval import IntervalTrigger
     from apscheduler.events import (
-        EVENT_JOB_EXECUTED,
         EVENT_JOB_ERROR,
+        EVENT_JOB_EXECUTED,
         EVENT_JOB_MISSED,
     )
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    from apscheduler.triggers.date import DateTrigger
+    from apscheduler.triggers.interval import IntervalTrigger
+
     APSCHEDULER_AVAILABLE = True
 except ImportError:
     APSCHEDULER_AVAILABLE = False
@@ -31,10 +33,10 @@ except ImportError:
 
 from acb.tasks._base import (
     TaskData,
-    TaskPriority,
-    TaskStatus,
     TaskHandler,
+    TaskPriority,
     TaskResult,
+    TaskStatus,
 )
 
 # Mock APSchedulerSettings and Queue for when apscheduler is not installed
@@ -284,7 +286,7 @@ class TestAPSchedulerQueue:
             task_type="delayed_task",
             queue_name="test",
             delay=60,  # 60 seconds delay
-            payload={"delayed": True}
+            payload={"delayed": True},
         )
 
         handler = SimpleTaskHandler()
@@ -311,7 +313,7 @@ class TestAPSchedulerQueue:
             task_type="scheduled_task",
             queue_name="test",
             scheduled_at=scheduled_time,
-            payload={"scheduled": True}
+            payload={"scheduled": True},
         )
 
         handler = SimpleTaskHandler()
@@ -423,7 +425,7 @@ class TestAPSchedulerQueue:
             task = TaskData(
                 task_type="purgeable_task",
                 queue_name="purgeable_queue",
-                payload={"index": i}
+                payload={"index": i},
             )
             task_id = await apscheduler_queue.enqueue(task)
             task_ids.append(task_id)
@@ -468,9 +470,7 @@ class TestAPSchedulerCronJobs:
 
         # Add cron job (every minute)
         task_id = await apscheduler_queue.add_cron_job(
-            task_type="cron_task",
-            cron_expression="* * * * *",
-            payload={"cron": True}
+            task_type="cron_task", cron_expression="* * * * *", payload={"cron": True}
         )
 
         assert task_id is not None
@@ -493,7 +493,7 @@ class TestAPSchedulerCronJobs:
             task_type="tz_cron_task",
             cron_expression="0 9 * * *",  # 9 AM daily
             timezone="America/New_York",
-            payload={"timezone_aware": True}
+            payload={"timezone_aware": True},
         )
 
         assert task_id is not None
@@ -507,9 +507,7 @@ class TestAPSchedulerCronJobs:
 
         # Add interval job (every 30 seconds)
         task_id = await apscheduler_queue.add_interval_job(
-            task_type="interval_task",
-            seconds=30,
-            payload={"interval": True}
+            task_type="interval_task", seconds=30, payload={"interval": True}
         )
 
         assert task_id is not None
@@ -531,7 +529,7 @@ class TestAPSchedulerCronJobs:
             task_type="complex_interval_task",
             hours=1,
             minutes=30,
-            payload={"complex": True}
+            payload={"complex": True},
         )
 
         assert task_id is not None
@@ -548,11 +546,8 @@ class TestAPSchedulerJobControl:
         apscheduler_queue.register_handler("controllable_task", handler)
 
         # Add job
-        task = TaskData(
-            task_type="controllable_task",
-            queue_name="test"
-        )
-        task_id = await apscheduler_queue.enqueue(task)
+        task = TaskData(task_type="controllable_task", queue_name="test")
+        await apscheduler_queue.enqueue(task)
 
         # Pause job
         paused = await apscheduler_queue.pause_job(task.task_id)
@@ -577,8 +572,7 @@ class TestAPSchedulerJobControl:
 
         # Modify to run every 10 minutes
         modified = await apscheduler_queue.modify_job(
-            task_id=task_id,
-            trigger=CronTrigger.from_crontab("*/10 * * * *")
+            task_id=task_id, trigger=CronTrigger.from_crontab("*/10 * * * *")
         )
         assert modified is True
 
@@ -590,17 +584,13 @@ class TestAPSchedulerJobControl:
         apscheduler_queue.register_handler("reschedulable_task", handler)
 
         # Add job
-        task = TaskData(
-            task_type="reschedulable_task",
-            queue_name="test"
-        )
-        task_id = await apscheduler_queue.enqueue(task)
+        task = TaskData(task_type="reschedulable_task", queue_name="test")
+        await apscheduler_queue.enqueue(task)
 
         # Reschedule to future time
         new_time = datetime.now(tz=UTC) + timedelta(hours=1)
         rescheduled = await apscheduler_queue.reschedule_job(
-            task_id=task.task_id,
-            trigger=DateTrigger(run_date=new_time)
+            task_id=task.task_id, trigger=DateTrigger(run_date=new_time)
         )
         assert rescheduled is True
 
@@ -617,9 +607,7 @@ class TestAPSchedulerEventListeners:
 
         # Create task
         task = TaskData(
-            task_type="event_task",
-            queue_name="test",
-            payload={"test": "event"}
+            task_type="event_task", queue_name="test", payload={"test": "event"}
         )
 
         # Enqueue and let it execute
@@ -647,10 +635,7 @@ class TestAPSchedulerEventListeners:
         apscheduler_queue.register_handler("failing_task", handler)
 
         # Create failing task
-        task = TaskData(
-            task_type="failing_task",
-            queue_name="test"
-        )
+        task = TaskData(task_type="failing_task", queue_name="test")
 
         task_id = await apscheduler_queue.enqueue(task)
 
@@ -676,10 +661,7 @@ class TestAPSchedulerDeadLetterQueue:
     @pytest.mark.asyncio
     async def test_dead_letter_task_storage(self, apscheduler_queue):
         """Test storing dead letter tasks."""
-        task = TaskData(
-            task_type="dead_letter_task",
-            queue_name="test"
-        )
+        task = TaskData(task_type="dead_letter_task", queue_name="test")
 
         result = TaskResult(
             task_id=task.task_id,
@@ -704,10 +686,7 @@ class TestAPSchedulerDeadLetterQueue:
         apscheduler_queue.register_handler("retry_task", handler)
 
         # Create and store dead letter task
-        task = TaskData(
-            task_type="retry_task",
-            queue_name="test"
-        )
+        task = TaskData(task_type="retry_task", queue_name="test")
         result = TaskResult(
             task_id=task.task_id,
             status=TaskStatus.DEAD_LETTER,
@@ -750,7 +729,7 @@ class TestAPSchedulerIntegration:
                 task = TaskData(
                     task_type="integration_task",
                     queue_name="integration",
-                    payload={"index": i}
+                    payload={"index": i},
                 )
                 task_id = await queue.enqueue(task)
                 task_ids.append(task_id)
@@ -774,24 +753,20 @@ class TestAPSchedulerIntegration:
 
         # One-time job
         one_time_task = TaskData(
-            task_type="mixed_task",
-            queue_name="test",
-            payload={"type": "one_time"}
+            task_type="mixed_task", queue_name="test", payload={"type": "one_time"}
         )
         one_time_id = await apscheduler_queue.enqueue(one_time_task)
 
         # Interval job
         interval_id = await apscheduler_queue.add_interval_job(
-            task_type="mixed_task",
-            minutes=5,
-            payload={"type": "interval"}
+            task_type="mixed_task", minutes=5, payload={"type": "interval"}
         )
 
         # Cron job
         cron_id = await apscheduler_queue.add_cron_job(
             task_type="mixed_task",
             cron_expression="0 */2 * * *",  # Every 2 hours
-            payload={"type": "cron"}
+            payload={"type": "cron"},
         )
 
         # All jobs should be scheduled
@@ -859,7 +834,7 @@ class TestAPSchedulerJobStores:
             mongodb_collection="test_jobs",
         )
 
-        queue = Queue(settings)
+        Queue(settings)
 
         # Verify configuration
         assert settings.mongodb_database == "test_scheduler"
@@ -876,7 +851,7 @@ class TestAPSchedulerJobStores:
             redis_run_times_key="scheduler:run_times",
         )
 
-        queue = Queue(settings)
+        Queue(settings)
 
         # Verify configuration
         assert settings.redis_jobs_key == "scheduler:jobs"
@@ -926,7 +901,7 @@ class TestAPSchedulerExecutors:
             process_pool_max_workers=4,
         )
 
-        queue = Queue(settings)
+        Queue(settings)
 
         # Verify executor configuration
         assert settings.process_pool_max_workers == 4
@@ -945,7 +920,7 @@ class TestAPSchedulerClustering:
             cluster_heartbeat_interval=10,
         )
 
-        queue = Queue(settings)
+        Queue(settings)
 
         # Verify clustering settings
         assert settings.enable_clustering is True
@@ -962,7 +937,7 @@ class TestAPSchedulerClustering:
             job_store_type="memory",
         )
 
-        queue = Queue(settings)
+        Queue(settings)
 
         # Clustering should work better with persistent store
         # This test verifies configuration compatibility
@@ -979,7 +954,7 @@ class TestAPSchedulerMisfireHandling:
             misfire_grace_time=1800,  # 30 minutes
         )
 
-        queue = Queue(settings)
+        Queue(settings)
 
         # Verify misfire settings
         assert settings.misfire_grace_time == 1800
@@ -990,12 +965,12 @@ class TestAPSchedulerMisfireHandling:
         """Test coalescing configuration."""
         # With coalescing
         settings = APSchedulerSettings(coalesce=True)
-        queue = Queue(settings)
+        Queue(settings)
         assert settings.coalesce is True
 
         # Without coalescing
         settings = APSchedulerSettings(coalesce=False)
-        queue = Queue(settings)
+        Queue(settings)
         assert settings.coalesce is False
 
     @pytest.mark.skipif(not APSCHEDULER_AVAILABLE, reason="APScheduler not installed")
@@ -1003,7 +978,7 @@ class TestAPSchedulerMisfireHandling:
     async def test_max_instances(self):
         """Test max instances configuration."""
         settings = APSchedulerSettings(max_instances=3)
-        queue = Queue(settings)
+        Queue(settings)
 
         # Verify max instances setting
         assert settings.max_instances == 3
@@ -1021,10 +996,7 @@ class TestAPSchedulerPerformance:
         apscheduler_queue.register_handler("bench_task", handler)
 
         def enqueue_task():
-            task = TaskData(
-                task_type="bench_task",
-                queue_name="benchmark"
-            )
+            task = TaskData(task_type="bench_task", queue_name="benchmark")
             # Note: This is sync benchmark, actual implementation is async
             return task
 
@@ -1046,9 +1018,7 @@ class TestAPSchedulerPerformance:
         tasks = []
         for i in range(100):
             task = TaskData(
-                task_type="overhead_task",
-                queue_name="overhead",
-                payload={"index": i}
+                task_type="overhead_task", queue_name="overhead", payload={"index": i}
             )
             tasks.append(task)
 
@@ -1073,7 +1043,7 @@ class TestAPSchedulerPerformance:
                 task = TaskData(
                     task_type="concurrent_task",
                     queue_name="concurrent",
-                    payload={"index": start_idx + i}
+                    payload={"index": start_idx + i},
                 )
                 await apscheduler_queue.enqueue(task)
 
@@ -1117,9 +1087,7 @@ class TestAPSchedulerCleanup:
         # Add jobs
         for i in range(5):
             task = TaskData(
-                task_type="cleanup_task",
-                queue_name="cleanup",
-                payload={"index": i}
+                task_type="cleanup_task", queue_name="cleanup", payload={"index": i}
             )
             await apscheduler_queue.enqueue(task)
 

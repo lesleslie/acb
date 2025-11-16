@@ -10,9 +10,10 @@ dependencies.
 from __future__ import annotations
 
 import re
-import typing as t
 from html import escape
 from pathlib import Path
+
+import typing as t
 
 __all__ = [
     "sanitize_input",

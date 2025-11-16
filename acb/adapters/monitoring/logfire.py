@@ -1,5 +1,6 @@
-from typing import TYPE_CHECKING
 from uuid import UUID
+
+from typing import TYPE_CHECKING
 
 try:
     from logfire import (
@@ -28,6 +29,7 @@ except Exception:  # pragma: no cover - allow tests without logfire deps
     else:
         raise
 from pydantic import SecretStr
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,

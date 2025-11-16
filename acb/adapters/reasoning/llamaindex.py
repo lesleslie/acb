@@ -1,7 +1,8 @@
 """LlamaIndex reasoning adapter for RAG-focused reasoning workflows."""
 
-import asyncio
 import time
+
+import asyncio
 import typing as t
 from datetime import datetime
 
@@ -48,20 +49,20 @@ if LLAMAINDEX_AVAILABLE:
         _li_tools = importlib.import_module("llama_index.core.tools")
         _li_openai = importlib.import_module("llama_index.llms.openai")
 
-        Document = getattr(_li_core, "Document")
-        PromptTemplate = getattr(_li_core, "PromptTemplate")
-        Settings = getattr(_li_core, "Settings")
-        VectorStoreIndex = getattr(_li_core, "VectorStoreIndex")
-        get_response_synthesizer = getattr(_li_core, "get_response_synthesizer")
-        ReActAgent = getattr(_li_agent, "ReActAgent")
-        SimpleChatEngine = getattr(_li_chat, "SimpleChatEngine")
-        BaseQueryEngine = getattr(_li_qi, "BaseQueryEngine")
-        ChatMemoryBuffer = getattr(_li_mem, "ChatMemoryBuffer")
-        RetrieverQueryEngine = getattr(_li_qe, "RetrieverQueryEngine")
-        VectorIndexRetriever = getattr(_li_ret, "VectorIndexRetriever")
-        NodeWithScore = getattr(_li_schema, "NodeWithScore")
-        FunctionTool = getattr(_li_tools, "FunctionTool")
-        OpenAI = getattr(_li_openai, "OpenAI")
+        Document = _li_core.Document
+        PromptTemplate = _li_core.PromptTemplate
+        Settings = _li_core.Settings
+        VectorStoreIndex = _li_core.VectorStoreIndex
+        get_response_synthesizer = _li_core.get_response_synthesizer
+        ReActAgent = _li_agent.ReActAgent
+        SimpleChatEngine = _li_chat.SimpleChatEngine
+        BaseQueryEngine = _li_qi.BaseQueryEngine
+        ChatMemoryBuffer = _li_mem.ChatMemoryBuffer
+        RetrieverQueryEngine = _li_qe.RetrieverQueryEngine
+        VectorIndexRetriever = _li_ret.VectorIndexRetriever
+        NodeWithScore = _li_schema.NodeWithScore
+        FunctionTool = _li_tools.FunctionTool
+        OpenAI = _li_openai.OpenAI
     except Exception:
         # If dynamic import fails at runtime, mark as unavailable and fall back
         LLAMAINDEX_AVAILABLE = False

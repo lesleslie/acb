@@ -11,9 +11,10 @@ Features:
 - Resource cleanup tracking
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import typing as t
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock, MagicMock
 
 from acb.testing.discovery import (
     TestProviderCapability,

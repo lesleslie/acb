@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from acb.adapters.monitoring._base import MonitoringBase, MonitoringBaseSettings
 
 

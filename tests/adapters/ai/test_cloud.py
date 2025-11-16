@@ -1,19 +1,17 @@
 """Tests for the cloud AI adapter."""
 
-import asyncio
 import json
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from acb.adapters.ai._base import (
     AIRequest,
-    AIResponse,
     DeploymentStrategy,
     ModelCapability,
     ModelProvider,
 )
-from acb.adapters.ai.cloud import CloudAI, CloudAISettings, MODULE_METADATA
+from acb.adapters.ai.cloud import MODULE_METADATA, CloudAI, CloudAISettings
 
 
 class TestCloudAISettings:
@@ -129,7 +127,9 @@ class TestCloudAI:
         assert response.tokens_used == 50  # input + output
 
     @pytest.mark.asyncio
-    async def test_generate_text_with_openai(self, mock_openai_client: MagicMock) -> None:
+    async def test_generate_text_with_openai(
+        self, mock_openai_client: MagicMock
+    ) -> None:
         with patch("acb.adapters.ai.cloud.validate_request") as mock_validate:
             mock_validate.return_value = None
 
@@ -226,7 +226,9 @@ class TestCloudAI:
             for chunk in chunks:
                 yield chunk
 
-        mock_openai_client.chat.completions.create = AsyncMock(return_value=mock_stream())
+        mock_openai_client.chat.completions.create = AsyncMock(
+            return_value=mock_stream()
+        )
 
         adapter = CloudAI(provider=ModelProvider.OPENAI)
         request = AIRequest(prompt="Test streaming")
@@ -278,11 +280,13 @@ class TestCloudAI:
         mock_response = {
             "body": MagicMock(),
         }
-        mock_response["body"].read.return_value = json.dumps({
-            "content": [{"text": "Bedrock response"}],
-            "usage": {"input_tokens": 10, "output_tokens": 20},
-            "stop_reason": "end_turn",
-        }).encode()
+        mock_response["body"].read.return_value = json.dumps(
+            {
+                "content": [{"text": "Bedrock response"}],
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+                "stop_reason": "end_turn",
+            }
+        ).encode()
         mock_client.invoke_model.return_value = mock_response
 
         adapter = CloudAI(provider=ModelProvider.AWS_BEDROCK)

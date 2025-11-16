@@ -1,9 +1,10 @@
 """Tests for the base Requests adapter."""
 
-import typing as t
 from unittest.mock import AsyncMock
 
 import pytest
+import typing as t
+
 from acb.adapters.requests._base import RequestsBase, RequestsBaseSettings
 
 

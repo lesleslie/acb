@@ -7,13 +7,11 @@ This module tests the recommended service architecture patterns:
 - Dependency injection integration
 """
 
-import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
-from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
-from acb.depends import depends, Inject
 from acb.adapters import import_adapter
+from acb.depends import Inject, depends
+from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 
 class TestServiceBasePattern:
@@ -21,10 +19,7 @@ class TestServiceBasePattern:
 
     def test_service_base_instantiation(self):
         """Test that ServiceBase can be instantiated properly."""
-        service_config = ServiceConfig(
-            service_id="test_service",
-            name="Test Service"
-        )
+        service_config = ServiceConfig(service_id="test_service", name="Test Service")
         settings = ServiceSettings()
 
         service = ServiceBase(service_config, settings)
@@ -35,11 +30,11 @@ class TestServiceBasePattern:
 
     async def test_service_lifecycle(self):
         """Test service lifecycle management."""
+
         class TestService(ServiceBase):
             def __init__(self):
                 service_config = ServiceConfig(
-                    service_id="lifecycle_test",
-                    name="Lifecycle Test Service"
+                    service_id="lifecycle_test", name="Lifecycle Test Service"
                 )
                 super().__init__(service_config=service_config)
                 self._initialized = False
@@ -63,7 +58,7 @@ class TestServiceBasePattern:
 
         # Test health check
         health = await service.health_check()
-        assert health["service_specific"]["test"] == True
+        assert health["service_specific"]["test"]
 
         # Test shutdown
         await service.shutdown()
@@ -78,15 +73,18 @@ class TestComplexServicePattern:
         """Test that complex services properly use the _base.py pattern."""
         # This test verifies that the pattern is correctly implemented
         # by checking that services inherit from base classes in _base.py files
-        from acb.services.repository._base import RepositoryBase
         from acb.services.repository.service import RepositoryService
 
         service = RepositoryService()
 
         # Should be an instance of both ServiceBase and RepositoryBase
         assert isinstance(service, ServiceBase)
-        assert hasattr(service, 'get_repository')  # Method from RepositoryBase functionality
-        assert hasattr(service, 'register_repository')  # Method from RepositoryBase functionality
+        assert hasattr(
+            service, "get_repository"
+        )  # Method from RepositoryBase functionality
+        assert hasattr(
+            service, "register_repository"
+        )  # Method from RepositoryBase functionality
 
 
 class TestSimpleServicePattern:
@@ -94,11 +92,11 @@ class TestSimpleServicePattern:
 
     def test_simple_service_direct_inheritance(self):
         """Test that simple services directly inherit from ServiceBase."""
+
         class SimpleTestService(ServiceBase):
             def __init__(self):
                 service_config = ServiceConfig(
-                    service_id="simple_test",
-                    name="Simple Test Service"
+                    service_id="simple_test", name="Simple Test Service"
                 )
                 super().__init__(service_config=service_config)
 
@@ -116,7 +114,7 @@ class TestSimpleServicePattern:
         # Should only inherit directly from ServiceBase
         assert isinstance(service, ServiceBase)
         # Should not have complex base classes
-        assert not hasattr(service, 'get_repository')
+        assert not hasattr(service, "get_repository")
 
 
 class TestServiceDependencyInjection:
@@ -124,11 +122,11 @@ class TestServiceDependencyInjection:
 
     async def test_service_with_dependency_injection(self):
         """Test that services work properly with dependency injection."""
+
         class DIDependencyService(ServiceBase):
             def __init__(self):
                 service_config = ServiceConfig(
-                    service_id="di_test",
-                    name="DI Test Service"
+                    service_id="di_test", name="DI Test Service"
                 )
                 super().__init__(service_config=service_config)
 
@@ -153,7 +151,7 @@ class TestServiceDependencyInjection:
         # The service should be able to request dependencies
         # In test environment, this will likely return a mock or None
         try:
-            result = await service.use_cache()
+            await service.use_cache()
             # If no exception, the pattern works
         except Exception:
             # Expected in test environment where adapters might not be configured
@@ -167,11 +165,11 @@ class TestServiceHealthMetrics:
 
     async def test_service_health_monitoring(self):
         """Test that services properly implement health checking."""
+
         class HealthTestService(ServiceBase):
             def __init__(self):
                 service_config = ServiceConfig(
-                    service_id="health_test",
-                    name="Health Test Service"
+                    service_id="health_test", name="Health Test Service"
                 )
                 super().__init__(service_config=service_config)
                 self.health_call_count = 0
@@ -187,7 +185,7 @@ class TestServiceHealthMetrics:
                 return {
                     "status": "healthy",
                     "call_count": self.health_call_count,
-                    "custom_metric": True
+                    "custom_metric": True,
                 }
 
         service = HealthTestService()
@@ -196,7 +194,7 @@ class TestServiceHealthMetrics:
         # Check initial health
         health = await service.health_check()
         assert health["service_specific"]["call_count"] == 1
-        assert health["service_specific"]["custom_metric"] == True
+        assert health["service_specific"]["custom_metric"]
 
         # Check health again
         health2 = await service.health_check()
@@ -206,9 +204,7 @@ class TestServiceHealthMetrics:
 
 
 @depends.inject
-async def use_test_service(
-    test_service: Inject[ServiceBase] = depends()
-) -> dict:
+async def use_test_service(test_service: Inject[ServiceBase] = depends()) -> dict:
     """Test function to verify service injection works."""
     if test_service:
         health = await test_service.health_check()
@@ -219,4 +215,5 @@ async def use_test_service(
 if __name__ == "__main__":
     # Run tests manually if executed directly
     import pytest
+
     pytest.main([__file__, "-v"])

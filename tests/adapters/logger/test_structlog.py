@@ -1,11 +1,11 @@
 """Tests for Structlog logger adapter."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
-from acb.adapters.logger.structlog import Logger, LoggerSettings, MODULE_METADATA
 from acb.adapters import AdapterCapability, AdapterStatus
-
+from acb.adapters.logger.structlog import MODULE_METADATA, Logger, LoggerSettings
 
 # Mock structlog if not available
 try:
@@ -32,9 +32,7 @@ class TestLoggerSettings:
     def test_processor_configuration(self):
         """Test processor configuration."""
         settings = LoggerSettings(
-            add_timestamp=False,
-            context_vars=False,
-            include_caller_info=False
+            add_timestamp=False, context_vars=False, include_caller_info=False
         )
 
         assert settings.add_timestamp is False
@@ -43,10 +41,7 @@ class TestLoggerSettings:
 
     def test_renderer_configuration(self):
         """Test renderer configuration for dev vs prod."""
-        settings = LoggerSettings(
-            dev_renderer="console",
-            prod_renderer="json"
-        )
+        settings = LoggerSettings(dev_renderer="console", prod_renderer="json")
 
         assert settings.dev_renderer == "console"
         assert settings.prod_renderer == "json"
@@ -60,16 +55,16 @@ class TestLoggerSettings:
 
         assert len(processors) > 0
         # Should include JSON renderer for JSON output
-        assert any(isinstance(p, type(structlog.processors.JSONRenderer()))
-                  for p in processors if hasattr(p, '__class__'))
+        assert any(
+            isinstance(p, type(structlog.processors.JSONRenderer()))
+            for p in processors
+            if hasattr(p, "__class__")
+        )
 
     @pytest.mark.skipif(structlog is None, reason="structlog not available")
     def test_build_processors_console_output(self):
         """Test processor building for console output."""
-        settings = LoggerSettings(
-            json_output=False,
-            pretty_print=True
-        )
+        settings = LoggerSettings(json_output=False, pretty_print=True)
 
         processors = settings._build_processors()
 
@@ -158,7 +153,9 @@ class TestStructlogLogger:
         """Test logger creation and caching."""
         logger = Logger()
 
-        with patch("acb.adapters.logger.structlog.structlog.get_logger") as mock_get_logger:
+        with patch(
+            "acb.adapters.logger.structlog.structlog.get_logger"
+        ) as mock_get_logger:
             mock_structlog_logger = Mock()
             mock_get_logger.return_value = mock_structlog_logger
 
@@ -178,9 +175,10 @@ class TestStructlogLogger:
         """Test basic logging methods."""
         logger = Logger()
 
-        with patch.object(logger, "_ensure_logger") as mock_ensure, \
-             patch.object(logger, "_log_with_context") as mock_log_context:
-
+        with (
+            patch.object(logger, "_ensure_logger") as mock_ensure,
+            patch.object(logger, "_log_with_context") as mock_log_context,
+        ):
             mock_structlog_logger = Mock()
             mock_ensure.return_value = mock_structlog_logger
 
@@ -203,13 +201,12 @@ class TestStructlogLogger:
             mock_structlog_logger.info = Mock()
             mock_ensure.return_value = mock_structlog_logger
 
-            logger._log_structured("info", "test message", user_id="456", action="login")
+            logger._log_structured(
+                "info", "test message", user_id="456", action="login"
+            )
 
             mock_structlog_logger.info.assert_called_once_with(
-                "test message",
-                session="abc123",
-                user_id="456",
-                action="login"
+                "test message", session="abc123", user_id="456", action="login"
             )
 
     @pytest.mark.skipif(structlog is None, reason="structlog not available")
@@ -230,11 +227,10 @@ class TestStructlogLogger:
             assert bound_logger._bound_context == {
                 "existing": "context",
                 "user_id": "123",
-                "action": "test"
+                "action": "test",
             }
             mock_structlog_logger.bind.assert_called_once_with(
-                user_id="123",
-                action="test"
+                user_id="123", action="test"
             )
 
     @pytest.mark.skipif(structlog is None, reason="structlog not available")
@@ -266,12 +262,14 @@ class TestStructlogLogger:
                 mock_log_method,
                 "test message %s",
                 "arg1",
-                extra={"request_id": "req123"}
+                extra={"request_id": "req123"},
             )
 
             mock_log_method.assert_called_once()
             call_args = mock_log_method.call_args
-            assert call_args[0][0] == "test message arg1"  # Message is formatted with args
+            assert (
+                call_args[0][0] == "test message arg1"
+            )  # Message is formatted with args
             # Check context includes session, extra, and module info
             context = call_args[1]
             assert "session" in context
@@ -285,9 +283,10 @@ class TestStructlogLogger:
         """Test initialization in testing mode."""
         logger = Logger()
 
-        with patch.object(logger, "_is_testing_mode", return_value=True), \
-             patch.object(logger, "_configure_for_testing") as mock_configure:
-
+        with (
+            patch.object(logger, "_is_testing_mode", return_value=True),
+            patch.object(logger, "_configure_for_testing") as mock_configure,
+        ):
             logger._init()
 
             mock_configure.assert_called_once()
@@ -297,11 +296,12 @@ class TestStructlogLogger:
         """Test initialization in normal mode."""
         logger = Logger()
 
-        with patch.object(logger, "_is_testing_mode", return_value=False), \
-             patch.object(logger, "_configure_structlog") as mock_configure, \
-             patch.object(logger, "_setup_stdlib_integration") as mock_stdlib, \
-             patch.object(logger, "_log_app_info") as mock_info:
-
+        with (
+            patch.object(logger, "_is_testing_mode", return_value=False),
+            patch.object(logger, "_configure_structlog") as mock_configure,
+            patch.object(logger, "_setup_stdlib_integration") as mock_stdlib,
+            patch.object(logger, "_log_app_info") as mock_info,
+        ):
             logger._init()
 
             mock_configure.assert_called_once()
@@ -313,7 +313,9 @@ class TestStructlogLogger:
         """Test testing configuration."""
         logger = Logger()
 
-        with patch("acb.adapters.logger.structlog.structlog.configure") as mock_configure:
+        with patch(
+            "acb.adapters.logger.structlog.structlog.configure"
+        ) as mock_configure:
             logger._configure_for_testing()
 
             mock_configure.assert_called_once()
@@ -323,9 +325,14 @@ class TestStructlogLogger:
         """Test structlog configuration."""
         logger = Logger()
 
-        with patch("acb.adapters.logger.structlog.structlog.configure") as mock_configure, \
-             patch("acb.adapters.logger.structlog.structlog.contextvars.clear_contextvars") as mock_clear:
-
+        with (
+            patch(
+                "acb.adapters.logger.structlog.structlog.configure"
+            ) as mock_configure,
+            patch(
+                "acb.adapters.logger.structlog.structlog.contextvars.clear_contextvars"
+            ) as mock_clear,
+        ):
             logger._configure_structlog()
 
             mock_configure.assert_called_once()
@@ -334,17 +341,22 @@ class TestStructlogLogger:
     @pytest.mark.skipif(structlog is None, reason="structlog not available")
     def test_setup_stdlib_integration(self, mock_config):
         """Test stdlib logging integration setup."""
-        from acb.depends import depends
         from acb.config import Config
+        from acb.depends import depends
 
         # Register mock config in DI so property can access it
         depends.set(Config, mock_config)
 
         logger = Logger()
 
-        with patch("acb.adapters.logger.structlog.logging.basicConfig") as mock_basic_config, \
-             patch("acb.adapters.logger.structlog.structlog.stdlib.recreate_defaults") as mock_recreate:
-
+        with (
+            patch(
+                "acb.adapters.logger.structlog.logging.basicConfig"
+            ) as mock_basic_config,
+            patch(
+                "acb.adapters.logger.structlog.structlog.stdlib.recreate_defaults"
+            ) as mock_recreate,
+        ):
             logger._setup_stdlib_integration()
 
             mock_basic_config.assert_called_once()
@@ -431,8 +443,8 @@ class TestStructlogIntegration:
     @pytest.mark.skip(reason="Requires full app initialization (not pytest mode)")
     def test_with_real_dependencies(self):
         """Test logger with real ACB dependencies."""
-        from acb.depends import depends
         from acb.config import Config
+        from acb.depends import depends
 
         # Ensure real config is available in DI system
         try:

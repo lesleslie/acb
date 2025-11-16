@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import typing as t
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
+
 from acb.adapters.sql.duckdb import Sql, SqlSettings
 
 
@@ -82,7 +83,7 @@ class TestDuckDBSettings:
 
     def test_read_only_settings(self, tmp_path) -> None:
         settings = SqlSettings(
-            database_url=f"duckdb:///{tmp_path/'readonly.duckdb'}",
+            database_url=f"duckdb:///{tmp_path / 'readonly.duckdb'}",
             read_only=True,
         )
         connect_args = settings.engine_kwargs["connect_args"]
@@ -116,11 +117,16 @@ async def test_create_client_applies_configuration(duckdb_sql_adapter: Sql) -> N
     assert "SET temp_directory=:temp_directory" in executed
 
     temp_call = next(
-        call for call in connection.execute.call_args_list if "temp_directory" in _collect_text(call)
+        call
+        for call in connection.execute.call_args_list
+        if "temp_directory" in _collect_text(call)
     )
     temp_stmt = temp_call.args[0]
     assert temp_stmt.text == "SET temp_directory=:temp_directory"
-    assert temp_stmt._bindparams["temp_directory"].value == duckdb_sql_adapter.config.sql.temp_directory
+    assert (
+        temp_stmt._bindparams["temp_directory"].value
+        == duckdb_sql_adapter.config.sql.temp_directory
+    )
 
 
 @pytest.mark.asyncio

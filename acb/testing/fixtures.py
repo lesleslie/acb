@@ -12,14 +12,15 @@ Features:
 - Database and storage test fixtures
 """
 
-import contextlib
-import typing as t
 from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import contextlib
 import pytest
+import typing as t
+from typing import Any
+
 from acb.adapters import adapter_registry
 from acb.config import Config
 from acb.services.discovery import (
@@ -329,7 +330,7 @@ def enable_test_adapter() -> Generator[Any]:
     yield _enable_adapter
 
     # Cleanup: disable all enabled adapters
-    for category in enabled_adapters:
+    for _category in enabled_adapters:
         with contextlib.suppress(Exception):
             pass  # disable_adapter(category)  # Function doesn't exist
 

@@ -1,16 +1,16 @@
 """Sentence Transformers embeddings adapter implementation."""
 
-import asyncio
-
 # Avoid static imports of optional heavy dependencies; detect availability
 import importlib.util as _il_util
 import time
+from operator import itemgetter
+
+import asyncio
 import typing as t
 from contextlib import suppress
 from datetime import datetime
-from operator import itemgetter
-
 from pydantic import Field
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -133,7 +133,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
 
             torch = importlib.import_module("torch")  # type: ignore[assignment]
             st_mod = importlib.import_module("sentence_transformers")
-            STClass = getattr(st_mod, "SentenceTransformer")
+            STClass = st_mod.SentenceTransformer
 
             # Determine device
             if self._settings.device == "auto":

@@ -7,9 +7,10 @@ Provides fluent query building interface:
 - Performance optimization hints
 """
 
+from enum import Enum
+
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Any, TypeVar
 
 from ._base import PaginationInfo, RepositoryBase, SortCriteria, SortDirection

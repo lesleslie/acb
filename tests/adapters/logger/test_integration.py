@@ -1,7 +1,6 @@
 """Integration tests for logger adapter system."""
 
 import pytest
-from unittest.mock import Mock, patch
 
 from acb.adapters import import_adapter
 from acb.adapters.logger import LoggerProtocol
@@ -66,6 +65,7 @@ class TestLoggerAdapterIntegration:
     def test_intercept_handler_integration(self):
         """Test InterceptHandler works with the system."""
         import logging
+
         from acb.logger import InterceptHandler, Logger
 
         # Register a Logger instance in the DI container for this test
@@ -82,7 +82,7 @@ class TestLoggerAdapterIntegration:
             lineno=1,
             msg="test message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         # Should not raise an exception
@@ -116,11 +116,13 @@ class TestLoggerAdapterIntegration:
             # Try to import specific adapters
             if adapter_name == "loguru":
                 from acb.adapters.logger.loguru import Logger
+
                 logger = Logger()
                 assert logger is not None
             elif adapter_name == "structlog":
                 try:
                     from acb.adapters.logger.structlog import Logger
+
                     logger = Logger()
                     assert logger is not None
                 except ImportError:
@@ -139,7 +141,10 @@ class TestLoggerAdapterIntegration:
         assert loguru_metadata.provider == "loguru"
 
         try:
-            from acb.adapters.logger.structlog import MODULE_METADATA as structlog_metadata
+            from acb.adapters.logger.structlog import (
+                MODULE_METADATA as structlog_metadata,
+            )
+
             assert structlog_metadata.name == "Structlog Logger"
             assert structlog_metadata.category == "logger"
             assert structlog_metadata.provider == "structlog"
@@ -148,8 +153,8 @@ class TestLoggerAdapterIntegration:
 
     def test_logger_capabilities(self):
         """Test logger adapter capabilities are properly defined."""
-        from acb.adapters.logger.loguru import MODULE_METADATA
         from acb.adapters import AdapterCapability
+        from acb.adapters.logger.loguru import MODULE_METADATA
 
         capabilities = MODULE_METADATA.capabilities
 
@@ -222,11 +227,13 @@ class TestLoggerAdapterSwitching:
         # For now, we test that both adapters can be imported
 
         from acb.adapters.logger.loguru import Logger as LoguruLogger
+
         loguru_logger = LoguruLogger()
         assert loguru_logger is not None
 
         try:
             from acb.adapters.logger.structlog import Logger as StructlogLogger
+
             structlog_logger = StructlogLogger()
             assert structlog_logger is not None
         except ImportError:
@@ -253,6 +260,7 @@ class TestLoggerPerformance:
     def test_logger_initialization_performance(self):
         """Test logger initialization is reasonably fast."""
         import time
+
         from acb.logger import Logger
 
         start_time = time.time()
@@ -271,6 +279,7 @@ class TestLoggerPerformance:
     def test_context_binding_performance(self):
         """Test context binding performance."""
         import time
+
         from acb.logger import Logger
 
         logger = Logger()
@@ -279,7 +288,7 @@ class TestLoggerPerformance:
             start_time = time.time()
 
             for i in range(100):
-                bound_logger = logger.bind(iteration=i, user_id=f"user_{i}")
+                logger.bind(iteration=i, user_id=f"user_{i}")
 
             end_time = time.time()
             total_time = end_time - start_time
@@ -297,9 +306,7 @@ class TestLoggerConfiguration:
         from acb.logger import LoggerSettings
 
         settings = LoggerSettings(
-            log_level="DEBUG",
-            json_output=True,
-            async_logging=True
+            log_level="DEBUG", json_output=True, async_logging=True
         )
 
         assert settings.log_level == "DEBUG"
@@ -308,8 +315,8 @@ class TestLoggerConfiguration:
 
     def test_logger_settings_inheritance(self):
         """Test logger settings inheritance from base."""
-        from acb.adapters.logger.loguru import LoguruSettings
         from acb.adapters.logger._base import LoggerBaseSettings
+        from acb.adapters.logger.loguru import LoguruSettings
 
         settings = LoguruSettings()
 
@@ -325,11 +332,7 @@ class TestLoggerConfiguration:
         """Test adapter-specific configuration."""
         from acb.adapters.logger.loguru import LoguruSettings
 
-        loguru_settings = LoguruSettings(
-            backtrace=True,
-            catch=True,
-            colorize=False
-        )
+        loguru_settings = LoguruSettings(backtrace=True, catch=True, colorize=False)
 
         assert loguru_settings.backtrace is True
         assert loguru_settings.catch is True
@@ -339,9 +342,7 @@ class TestLoggerConfiguration:
             from acb.adapters.logger.structlog import LoggerSettings
 
             structlog_settings = LoggerSettings(
-                json_output=True,
-                pretty_print=False,
-                add_timestamp=True
+                json_output=True, pretty_print=False, add_timestamp=True
             )
 
             assert structlog_settings.json_output is True

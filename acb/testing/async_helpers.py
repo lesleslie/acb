@@ -11,11 +11,12 @@ Features:
 - Timeout handling for async operations
 """
 
+from unittest import TestCase
+from unittest.mock import AsyncMock
+
 import asyncio
 import typing as t
 from contextlib import asynccontextmanager, suppress
-from unittest import TestCase
-from unittest.mock import AsyncMock
 
 
 class AsyncTestCase(TestCase):

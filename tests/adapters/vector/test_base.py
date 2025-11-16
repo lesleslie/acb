@@ -1,7 +1,8 @@
 """Tests for vector adapter base classes."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from acb.adapters.vector._base import (
     VectorBase,
@@ -18,9 +19,7 @@ class TestVectorDocument:
     def test_vector_document_creation(self):
         """Test creating a VectorDocument."""
         doc = VectorDocument(
-            id="test-id",
-            vector=[0.1, 0.2, 0.3],
-            metadata={"title": "Test Document"}
+            id="test-id", vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"}
         )
 
         assert doc.id == "test-id"
@@ -30,8 +29,7 @@ class TestVectorDocument:
     def test_vector_document_without_id(self):
         """Test creating a VectorDocument without ID."""
         doc = VectorDocument(
-            vector=[0.1, 0.2, 0.3],
-            metadata={"title": "Test Document"}
+            vector=[0.1, 0.2, 0.3], metadata={"title": "Test Document"}
         )
 
         assert doc.id is None
@@ -40,10 +38,7 @@ class TestVectorDocument:
 
     def test_vector_document_empty_metadata(self):
         """Test creating a VectorDocument with empty metadata."""
-        doc = VectorDocument(
-            id="test-id",
-            vector=[0.1, 0.2, 0.3]
-        )
+        doc = VectorDocument(id="test-id", vector=[0.1, 0.2, 0.3])
 
         assert doc.id == "test-id"
         assert doc.vector == [0.1, 0.2, 0.3]
@@ -59,7 +54,7 @@ class TestVectorSearchResult:
             id="test-id",
             score=0.95,
             metadata={"title": "Test Result"},
-            vector=[0.1, 0.2, 0.3]
+            vector=[0.1, 0.2, 0.3],
         )
 
         assert result.id == "test-id"
@@ -70,9 +65,7 @@ class TestVectorSearchResult:
     def test_vector_search_result_without_vector(self):
         """Test creating a VectorSearchResult without vector."""
         result = VectorSearchResult(
-            id="test-id",
-            score=0.95,
-            metadata={"title": "Test Result"}
+            id="test-id", score=0.95, metadata={"title": "Test Result"}
         )
 
         assert result.id == "test-id"
@@ -82,10 +75,7 @@ class TestVectorSearchResult:
 
     def test_vector_search_result_empty_metadata(self):
         """Test creating a VectorSearchResult with empty metadata."""
-        result = VectorSearchResult(
-            id="test-id",
-            score=0.95
-        )
+        result = VectorSearchResult(id="test-id", score=0.95)
 
         assert result.id == "test-id"
         assert result.score == 0.95
@@ -95,7 +85,7 @@ class TestVectorSearchResult:
 class TestVectorBaseSettings:
     """Test VectorBaseSettings configuration."""
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_base_settings_defaults(self, mock_depends):
         """Test VectorBaseSettings with default values."""
         mock_config = MagicMock()
@@ -114,7 +104,7 @@ class TestVectorBaseSettings:
         assert settings.batch_size == 100
         assert settings.max_connections == 10
 
-    @patch('acb.depends.depends.get')
+    @patch("acb.depends.depends.get")
     def test_vector_base_settings_custom_values(self, mock_depends):
         """Test VectorBaseSettings with custom values."""
         mock_config = MagicMock()
@@ -125,7 +115,7 @@ class TestVectorBaseSettings:
             port=9999,
             default_dimension=512,
             default_distance_metric="euclidean",
-            batch_size=50
+            batch_size=50,
         )
 
         assert settings.host.get_secret_value() == "custom-host"
@@ -149,7 +139,9 @@ class TestVectorCollection:
         adapter.upsert.return_value = ["doc1"]
         adapter.delete.return_value = True
         adapter.get.return_value = [
-            VectorDocument(id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test"})
+            VectorDocument(
+                id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test"}
+            )
         ]
         adapter.count.return_value = 1
         return adapter
@@ -175,7 +167,9 @@ class TestVectorCollection:
     async def test_collection_insert(self, collection, mock_adapter):
         """Test collection insert method."""
         documents = [
-            VectorDocument(id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test"})
+            VectorDocument(
+                id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test"}
+            )
         ]
         ids = await collection.insert(documents)
 
@@ -186,7 +180,9 @@ class TestVectorCollection:
     async def test_collection_upsert(self, collection, mock_adapter):
         """Test collection upsert method."""
         documents = [
-            VectorDocument(id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test"})
+            VectorDocument(
+                id="doc1", vector=[0.1, 0.2, 0.3], metadata={"title": "Test"}
+            )
         ]
         ids = await collection.upsert(documents)
 
@@ -226,7 +222,15 @@ class MockVectorBase(VectorBase):
         """Mock init method."""
         pass
 
-    async def search(self, collection, query_vector, limit=10, filter_expr=None, include_vectors=False, **kwargs):
+    async def search(
+        self,
+        collection,
+        query_vector,
+        limit=10,
+        filter_expr=None,
+        include_vectors=False,
+        **kwargs,
+    ):
         return []
 
     async def insert(self, collection, documents, **kwargs):
@@ -244,7 +248,9 @@ class MockVectorBase(VectorBase):
     async def count(self, collection, filter_expr=None, **kwargs):
         return 0
 
-    async def create_collection(self, name, dimension, distance_metric="cosine", **kwargs):
+    async def create_collection(
+        self, name, dimension, distance_metric="cosine", **kwargs
+    ):
         return True
 
     async def delete_collection(self, name, **kwargs):
@@ -264,8 +270,8 @@ class TestVectorBase:
 
     def test_vector_base_initialization(self, vector_base):
         """Test VectorBase initialization."""
-        assert hasattr(vector_base, '_collections')
-        assert hasattr(vector_base, '_client')
+        assert hasattr(vector_base, "_collections")
+        assert hasattr(vector_base, "_client")
         assert vector_base._collections == {}
         assert vector_base._client is None
 
@@ -287,7 +293,7 @@ class TestVectorBase:
     @pytest.mark.asyncio
     async def test_get_client(self, vector_base):
         """Test get_client method."""
-        with patch.object(vector_base, '_ensure_client') as mock_ensure:
+        with patch.object(vector_base, "_ensure_client") as mock_ensure:
             mock_ensure.return_value = "mock_client"
             client = await vector_base.get_client()
 
@@ -297,7 +303,7 @@ class TestVectorBase:
     @pytest.mark.asyncio
     async def test_transaction_context_manager(self, vector_base):
         """Test transaction context manager."""
-        with patch.object(vector_base, 'get_client') as mock_get_client:
+        with patch.object(vector_base, "get_client") as mock_get_client:
             mock_get_client.return_value = "mock_client"
 
             async with vector_base.transaction() as client:

@@ -1,9 +1,10 @@
 """Tests for the DNS Base adapter."""
 
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from typing import Any
+
 from acb.adapters.dns._base import DnsBase, DnsBaseSettings, DnsRecord
 
 

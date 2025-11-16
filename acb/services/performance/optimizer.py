@@ -4,14 +4,15 @@ Provides comprehensive performance optimization capabilities
 with FastBlocks integration and ACB adapter compatibility.
 """
 
-import asyncio
-import contextlib
 import time
-import typing as t
-from dataclasses import dataclass, field
 from functools import wraps
 
+import asyncio
+import contextlib
+import typing as t
+from dataclasses import dataclass, field
 from pydantic import BaseModel, ConfigDict, Field
+
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import Inject, depends

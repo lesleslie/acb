@@ -13,10 +13,11 @@ The adapter handles connection errors gracefully by:
 
 from __future__ import annotations
 
-import asyncio
 import subprocess
-from contextlib import suppress
 from pathlib import Path
+
+import asyncio
+from contextlib import suppress
 from typing import TYPE_CHECKING
 
 from acb.adapters._tool_adapter_base import (

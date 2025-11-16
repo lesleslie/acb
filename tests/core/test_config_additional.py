@@ -1,27 +1,25 @@
 """Additional tests for the ACB config module."""
-import asyncio
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
 
+from unittest.mock import AsyncMock, Mock, patch
+
+import asyncio
 import pytest
 from pydantic import SecretStr
 
 from acb.config import (
-    Config,
-    AppSettings,
-    DebugSettings,
-    deep_update,
-    get_version,
-    gen_password,
-    Platform,
     AdapterBase,
-    get_singleton_instance,
+    AppSettings,
+    Config,
     ConfigHotReload,
-    enable_config_hot_reload,
-    disable_config_hot_reload,
+    Platform,
     _LibraryAppSettings,
     _LibraryDebugSettings,
+    deep_update,
+    disable_config_hot_reload,
+    enable_config_hot_reload,
+    gen_password,
+    get_singleton_instance,
+    get_version,
 )
 
 
@@ -75,7 +73,10 @@ class TestUtilityFunctions:
             mock_pyproject = AsyncMock()
             mock_pyproject.exists = AsyncMock(return_value=True)
 
-            with patch("acb.config.load.toml", AsyncMock(return_value={"project": {"version": "1.2.3"}})):
+            with patch(
+                "acb.config.load.toml",
+                AsyncMock(return_value={"project": {"version": "1.2.3"}}),
+            ):
                 version = await get_version()
                 assert version == "1.2.3"
 
@@ -120,9 +121,7 @@ class TestAppSettings:
     def test_app_settings_custom_values(self) -> None:
         """Test AppSettings with custom values."""
         settings = AppSettings(
-            name="my-custom-app",
-            title="My Custom App",
-            timezone="Europe/London"
+            name="my-custom-app", title="My Custom App", timezone="Europe/London"
         )
         assert settings.name == "my-custom-app"
         assert settings.title == "My Custom App"
@@ -136,7 +135,7 @@ class TestAppSettings:
             "my_app",
             "my.app",
             "My App",
-            "my-app-with-numbers-123"
+            "my-app-with-numbers-123",
         ]
 
         for name in valid_names:
@@ -171,16 +170,14 @@ class TestConfigInitialization:
         """Test Config debug property when not initialized."""
         config = Config()
 
-        with patch.object(config, 'ensure_initialized') as mock_ensure:
-            debug = config.debug
+        with patch.object(config, "ensure_initialized") as mock_ensure:
             mock_ensure.assert_called_once()
 
     def test_config_app_property_not_initialized(self) -> None:
         """Test Config app property when not initialized."""
         config = Config()
 
-        with patch.object(config, 'ensure_initialized') as mock_ensure:
-            app = config.app
+        with patch.object(config, "ensure_initialized") as mock_ensure:
             mock_ensure.assert_called_once()
 
     def test_config_app_setter(self) -> None:
@@ -201,7 +198,7 @@ class TestConfigInitialization:
     @pytest.mark.skip(reason="Adapter access pattern changed after refactoring")
     def test_config_getattr_with_adapter_access(self) -> None:
         """Test Config __getattr__ with adapter access."""
-        config = Config()
+        Config()
 
         # Mock the adapter system
         with patch("acb.config.get_adapter") as mock_get_adapter:
@@ -213,7 +210,7 @@ class TestConfigInitialization:
             # Since we're not testing the full adapter system, we'll just ensure
             # it doesn't crash
             try:
-                result = config.some_adapter
+                pass
                 # If it gets here without crashing, that's good
             except AttributeError:
                 # This is expected since we're not setting up the full mock
@@ -316,10 +313,7 @@ class TestAdapterBase:
         mock_resource2 = Mock()
         mock_resource2.aclose = AsyncMock()
 
-        adapter._resource_cache = {
-            "res1": mock_resource1,
-            "res2": mock_resource2
-        }
+        adapter._resource_cache = {"res1": mock_resource1, "res2": mock_resource2}
         adapter._client = Mock()
         adapter._client.close = Mock()
 
@@ -412,6 +406,7 @@ class TestSingletonAndLibraryModels:
 
     def test_get_singleton_instance(self) -> None:
         """Test get_singleton_instance function."""
+
         class TestClass:
             def __init__(self, value: str = "default") -> None:
                 self.value = value

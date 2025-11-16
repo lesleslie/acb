@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from acb.adapters.secret.azure import Secret, SecretSettings
 from acb.config import Config
 

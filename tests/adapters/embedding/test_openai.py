@@ -1,11 +1,12 @@
 """Tests for OpenAI embedding adapter."""
 
-import asyncio
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import asyncio
+import pytest
+
+from acb.adapters.embedding._base import EmbeddingBatch
 from acb.adapters.embedding.openai import OpenAIEmbedding, OpenAIEmbeddingSettings
-from acb.adapters.embedding._base import EmbeddingBatch, EmbeddingResult
 from acb.config import Config
 from acb.depends import depends
 
@@ -37,10 +38,11 @@ def mock_config():
 @pytest.fixture
 async def openai_adapter(mock_config):
     """Create OpenAI embedding adapter with mocked dependencies."""
-    with patch("acb.adapters.embedding.openai._openai_available", True), \
-         patch("acb.adapters.embedding.openai.AsyncOpenAI") as mock_openai_class, \
-         patch.object(depends, "get") as mock_depends:
-
+    with (
+        patch("acb.adapters.embedding.openai._openai_available", True),
+        patch("acb.adapters.embedding.openai.AsyncOpenAI") as mock_openai_class,
+        patch.object(depends, "get") as mock_depends,
+    ):
         mock_depends.return_value = mock_config
 
         # Mock the OpenAI client
@@ -66,9 +68,10 @@ class TestOpenAIEmbedding:
 
     async def test_initialization(self, mock_config):
         """Test adapter initialization."""
-        with patch("acb.adapters.embedding.openai._openai_available", True), \
-             patch.object(depends, "get", return_value=mock_config):
-
+        with (
+            patch("acb.adapters.embedding.openai._openai_available", True),
+            patch.object(depends, "get", return_value=mock_config),
+        ):
             settings = OpenAIEmbeddingSettings(
                 api_key="test-key",
                 model="text-embedding-3-small",
@@ -119,7 +122,9 @@ class TestOpenAIEmbedding:
             assert result.model == "text-embedding-3-small"
             assert result.dimensions == 384
 
-    async def test_embed_texts_with_dimensions(self, openai_adapter, mock_openai_response):
+    async def test_embed_texts_with_dimensions(
+        self, openai_adapter, mock_openai_response
+    ):
         """Test text embedding with custom dimensions."""
         adapter, mock_client = openai_adapter
         adapter._settings.dimensions = 256
@@ -215,7 +220,7 @@ class TestOpenAIEmbedding:
         # First call should go through immediately
         start_time = asyncio.get_event_loop().time()
         await adapter._apply_rate_limit()
-        first_call_time = asyncio.get_event_loop().time() - start_time
+        asyncio.get_event_loop().time() - start_time
 
         # Second call should be rate limited
         start_time = asyncio.get_event_loop().time()

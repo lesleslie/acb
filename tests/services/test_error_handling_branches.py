@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
-
 import pytest
 
 from acb.services.error_handling import (
     CircuitBreakerConfig,
     ErrorHandlingService,
     RetryConfig,
-    RetryableError,
     bulkhead,
     circuit_breaker,
     fallback,
@@ -21,7 +18,9 @@ from acb.services.error_handling import (
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_error_service_handlers_metrics_and_status(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_error_service_handlers_metrics_and_status(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     svc = ErrorHandlingService()
 
     # Register sync and async error handlers
@@ -60,7 +59,9 @@ async def test_error_service_handlers_metrics_and_status(monkeypatch: pytest.Mon
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_decorators_circuit_retry_fallback_and_bulkhead(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_decorators_circuit_retry_fallback_and_bulkhead(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     # Speed up retries
     async def no_sleep(_: float) -> None:  # noqa: ARG001
         return None
@@ -68,7 +69,12 @@ async def test_decorators_circuit_retry_fallback_and_bulkhead(monkeypatch: pytes
     monkeypatch.setattr(asyncio, "sleep", no_sleep)
 
     # Circuit breaker decorator should allow successful call
-    @circuit_breaker("cb2", config=CircuitBreakerConfig(failure_threshold=2, success_threshold=1, timeout=0.01))
+    @circuit_breaker(
+        "cb2",
+        config=CircuitBreakerConfig(
+            failure_threshold=2, success_threshold=1, timeout=0.01
+        ),
+    )
     async def ok() -> str:
         return "ok"
 

@@ -28,7 +28,9 @@ class _DummyComponent(HealthCheckMixin):
     def component_name(self) -> str:
         return f"comp-{self._cid}"
 
-    async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:  # type: ignore[override]
+    async def _perform_health_check(
+        self, check_type: HealthCheckType
+    ) -> HealthCheckResult:  # type: ignore[override]
         return HealthCheckResult(
             component_id=self.component_id,
             component_name=self.component_name,

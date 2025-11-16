@@ -8,21 +8,15 @@ This module tests the recommended orchestration architecture patterns:
 
 import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from acb.events import (
-    create_event,
+    EventHandlerResult,
     EventPublisher,
     EventSubscriber,
+    create_event,
     event_handler,
-    EventHandlerResult,
-    EventHandler
 )
-from acb.tasks import (
-    create_task_queue,
-    TaskData,
-    task_handler
-)
+from acb.tasks import TaskData, create_task_queue, task_handler
 from acb.workflows import WorkflowService
 
 
@@ -32,10 +26,7 @@ class TestEventsArchitecture:
     def test_event_creation(self):
         """Test that events can be created properly."""
         event = create_event(
-            "test.event",
-            "test_source",
-            {"data": "value"},
-            priority="normal"
+            "test.event", "test_source", {"data": "value"}, priority="normal"
         )
 
         assert event.metadata.event_type == "test.event"
@@ -45,23 +36,21 @@ class TestEventsArchitecture:
     @pytest.mark.asyncio
     async def test_event_handler_decorator(self):
         """Test the event handler decorator pattern."""
+
         @event_handler("user.created")
         async def handle_user_created(event):
-            return EventHandlerResult(
-                success=True,
-                metadata={"handled": True}
-            )
+            return EventHandlerResult(success=True, metadata={"handled": True})
 
         # Check that the handler has the right properties
-        assert hasattr(handle_user_created, '__call__')
+        assert hasattr(handle_user_created, "__call__")
 
         # Create a test event
         test_event = create_event("user.created", "test", {"user_id": 123})
 
         # Execute the handler
         result = await handle_user_created(test_event)
-        assert result.success == True
-        assert result.metadata["handled"] == True
+        assert result.success
+        assert result.metadata["handled"]
 
     @pytest.mark.asyncio
     async def test_event_publisher_subscriber(self):
@@ -101,11 +90,7 @@ class TestTasksArchitecture:
 
     def test_task_data_creation(self):
         """Test that task data can be created properly."""
-        task = TaskData(
-            task_type="test_task",
-            payload={"data": "value"},
-            priority=1
-        )
+        task = TaskData(task_type="test_task", payload={"data": "value"}, priority=1)
 
         assert task.task_type == "test_task"
         assert task.payload["data"] == "value"
@@ -113,18 +98,13 @@ class TestTasksArchitecture:
     @pytest.mark.asyncio
     async def test_task_handler_decorator(self):
         """Test the task handler decorator pattern."""
+
         @task_handler("process_data")
         async def handle_process_data(task_data):
-            return {
-                "status": "processed",
-                "input": task_data.payload
-            }
+            return {"status": "processed", "input": task_data.payload}
 
         # Create test task data
-        task_data = TaskData(
-            task_type="process_data",
-            payload={"value": 42}
-        )
+        task_data = TaskData(task_type="process_data", payload={"value": 42})
 
         # Execute the handler
         result = await handle_process_data(task_data)
@@ -177,9 +157,9 @@ class TestWorkflowsArchitecture:
         assert workflow_service is not None
 
         # Test that it has the expected interface
-        assert hasattr(workflow_service, 'execute_workflow')
-        assert hasattr(workflow_service, 'get_state')
-        assert hasattr(workflow_service, 'set_state')
+        assert hasattr(workflow_service, "execute_workflow")
+        assert hasattr(workflow_service, "get_state")
+        assert hasattr(workflow_service, "set_state")
 
     @pytest.mark.asyncio
     async def test_simple_workflow_execution(self):
@@ -195,8 +175,7 @@ class TestWorkflowsArchitecture:
 
         # Execute the workflow
         result = await workflow_service.execute_workflow(
-            "simple_test_workflow",
-            {"input": 5}
+            "simple_test_workflow", {"input": 5}
         )
 
         # For this test, we're just ensuring no exceptions occur
@@ -221,11 +200,13 @@ class TestOrchestrationIntegration:
         # This would normally be triggered by an event
         async def handle_event_and_queue_task(event_data):
             async with create_task_queue("memory") as queue:
-                queue.register_handler("process_triggered_data", process_triggered_data_handler)
+                queue.register_handler(
+                    "process_triggered_data", process_triggered_data_handler
+                )
 
                 task = TaskData(
                     task_type="process_triggered_data",
-                    payload={"value": event_data["trigger_value"]}
+                    payload={"value": event_data["trigger_value"]},
                 )
                 await queue.enqueue(task)
 
@@ -240,4 +221,5 @@ class TestOrchestrationIntegration:
 if __name__ == "__main__":
     # Run tests manually if executed directly
     import pytest
+
     pytest.main([__file__, "-v"])

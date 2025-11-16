@@ -7,12 +7,13 @@ Provides centralized registration and discovery of repositories:
 - Repository lifecycle management
 """
 
-import contextlib
 import inspect
+from enum import Enum
+
+import contextlib
 import typing as t
 from contextlib import suppress
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, TypeVar
 
 from acb.cleanup import CleanupMixin

@@ -1,6 +1,6 @@
-import typing as t
 from uuid import UUID
 
+import typing as t
 from pydantic import SecretStr, field_validator
 
 try:

@@ -1,8 +1,6 @@
 """Tests for workflow base components and service."""
 
 import asyncio
-from unittest.mock import MagicMock
-
 import pytest
 
 from acb.workflows import (
@@ -75,7 +73,10 @@ class TestWorkflowStep:
     def test_step_parallel_flag(self):
         """Test parallel execution flag."""
         step = WorkflowStep(
-            step_id="parallel-step", name="Parallel Step", action="process", parallel=True
+            step_id="parallel-step",
+            name="Parallel Step",
+            action="process",
+            parallel=True,
         )
 
         assert step.parallel is True
@@ -309,7 +310,7 @@ class TestBasicWorkflowEngine:
         )
 
         # Execute and cancel
-        result = await engine.execute(workflow)
+        await engine.execute(workflow)
         cancelled = await engine.cancel_workflow("cancel-test")
 
         assert cancelled is True

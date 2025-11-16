@@ -7,9 +7,9 @@ across all ACB adapters for consistent and secure connections.
 import ssl
 from enum import Enum
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict
 
 from pydantic import BaseModel, Field
+from typing import Any, NotRequired, TypedDict
 
 
 class SSLMode(str, Enum):

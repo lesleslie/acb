@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import re
 import time
-import typing as t
-from contextlib import suppress
-from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from enum import Enum
 from uuid import UUID
+
+import typing as t
+from contextlib import suppress
+from datetime import UTC, datetime
 
 from acb.services.validation._base import ValidationConfig, ValidationResult
 

@@ -1,10 +1,7 @@
-import asyncio
 import os
 import sys
 import tempfile
-import typing as t
 from contextvars import ContextVar
-from datetime import datetime
 from enum import Enum
 from functools import lru_cache
 from importlib import import_module, util
@@ -12,12 +9,17 @@ from inspect import stack
 from pathlib import Path
 from uuid import UUID
 
+import asyncio
+
 # Removed nest_asyncio import - not needed in library code
 import rich.repr
+import typing as t
 from anyio import Path as AsyncPath
+from datetime import datetime
 from inflection import camelize
 from msgspec.yaml import decode as yaml_decode
 from pydantic import BaseModel, ConfigDict, Field
+
 from acb.actions.encode import yaml_encode
 from acb.depends import depends
 
@@ -362,10 +364,10 @@ secrets_path: AsyncPath = (
     if _testing or "pytest" in sys.modules
     else tmp_path / "secrets"
 )
-_install_lock: ContextVar[list[str]] = ContextVar("install_lock", default=[])
-_adapter_import_locks: ContextVar[dict[str, asyncio.Lock]] = ContextVar(
+_install_lock: ContextVar[list[str] | None] = ContextVar("install_lock", default=None)
+_adapter_import_locks: ContextVar[dict[str, asyncio.Lock] | None] = ContextVar(
     "_adapter_import_locks",
-    default={},
+    default=None,
 )
 
 
@@ -426,14 +428,16 @@ class Adapter(BaseModel):
         )
 
 
-adapter_registry: ContextVar[list[Adapter]] = ContextVar("adapter_registry", default=[])
-_enabled_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
-    "_enabled_adapters_cache",
-    default={},
+adapter_registry: ContextVar[list[Adapter] | None] = ContextVar(
+    "adapter_registry", default=None
 )
-_installed_adapters_cache: ContextVar[dict[str, Adapter]] = ContextVar(
+_enabled_adapters_cache: ContextVar[dict[str, Adapter] | None] = ContextVar(
+    "_enabled_adapters_cache",
+    default=None,
+)
+_installed_adapters_cache: ContextVar[dict[str, Adapter] | None] = ContextVar(
     "_installed_adapters_cache",
-    default={},
+    default=None,
 )
 core_adapters = [
     Adapter(
@@ -457,36 +461,77 @@ core_adapters = [
 ]
 
 
+def _ensure_adapter_registry_initialized() -> list[Adapter]:
+    """Ensure the adapter registry is initialized with an empty list if needed."""
+    registry = adapter_registry.get()
+    if registry is None:
+        registry = []
+        adapter_registry.set(registry)
+    return registry
+
+
+def _ensure_enabled_adapters_cache_initialized() -> dict[str, Adapter]:
+    """Ensure the enabled adapters cache is initialized with an empty dict if needed."""
+    cache = _enabled_adapters_cache.get()
+    if cache is None:
+        cache = {}
+        _enabled_adapters_cache.set(cache)
+    return cache
+
+
+def _ensure_installed_adapters_cache_initialized() -> dict[str, Adapter]:
+    """Ensure the installed adapters cache is initialized with an empty dict if needed."""
+    cache = _installed_adapters_cache.get()
+    if cache is None:
+        cache = {}
+        _installed_adapters_cache.set(cache)
+    return cache
+
+
+def _ensure_adapter_import_locks_initialized() -> dict[str, asyncio.Lock]:
+    """Ensure the adapter import locks are initialized with an empty dict if needed."""
+    locks = _adapter_import_locks.get()
+    if locks is None:
+        locks = {}
+        _adapter_import_locks.set(locks)
+    return locks
+
+
 def _update_adapter_caches() -> None:
     enabled_cache = {}
     installed_cache = {}
-    for adapter in adapter_registry.get():
+    for adapter in _ensure_adapter_registry_initialized():
         if adapter.enabled:
             enabled_cache[adapter.category] = adapter
         if adapter.installed:
             installed_cache[adapter.category] = adapter
-    _enabled_adapters_cache.get().update(enabled_cache)
-    _installed_adapters_cache.get().update(installed_cache)
+    _enabled_adapters_cache.set(enabled_cache)
+    _installed_adapters_cache.set(installed_cache)
 
 
-adapter_registry.get().extend([*core_adapters])
+# Initialize the registry with core adapters
+_ensure_adapter_registry_initialized().extend([*core_adapters])
 _update_adapter_caches()
 
 
 def get_adapter(category: str) -> Adapter | None:
-    return _enabled_adapters_cache.get().get(category)
+    cache = _ensure_enabled_adapters_cache_initialized()
+    return cache.get(category)
 
 
 def get_adapters() -> list[Adapter]:
-    return list(_enabled_adapters_cache.get().values())
+    cache = _ensure_enabled_adapters_cache_initialized()
+    return list(cache.values())
 
 
 def get_installed_adapter(category: str) -> Adapter | None:
-    return _installed_adapters_cache.get().get(category)
+    cache = _ensure_installed_adapters_cache_initialized()
+    return cache.get(category)
 
 
 def get_installed_adapters() -> list[Adapter]:
-    return list(_installed_adapters_cache.get().values())
+    cache = _ensure_installed_adapters_cache_initialized()
+    return list(cache.values())
 
 
 # Static adapter mappings for improved performance
@@ -637,7 +682,7 @@ def import_adapter_fast(category: str, name: str | None = None) -> type[t.Any]:
 
 
 def _get_available_adapters(category: str) -> t.Iterator[str]:
-    for adapter in adapter_registry.get():
+    for adapter in _ensure_adapter_registry_initialized():
         if adapter.category == category:
             yield adapter.name
 
@@ -710,7 +755,7 @@ async def _create_adapter_settings_if_needed(
 
     if not await cwd_adapter_settings_path.exists() and not _deployed:
         await cwd_settings_path.mkdir(exist_ok=True)
-        categories = {a.category for a in adapter_registry.get()}
+        categories = {a.category for a in _ensure_adapter_registry_initialized()}
         settings_dict = {
             cat: None for cat in categories if cat not in ("logger", "config")
         }
@@ -754,11 +799,11 @@ async def _ensure_package_registration() -> None:
 async def _collect_all_adapters() -> list[Adapter]:
     from acb import get_context
 
-    all_adapters = list(adapter_registry.get())
+    all_adapters = _ensure_adapter_registry_initialized().copy()
     for pkg in get_context().pkg_registry.get():
         for adapter in pkg.adapters:
             if adapter not in all_adapters:
-                adapter_registry.get().append(adapter)
+                _ensure_adapter_registry_initialized().append(adapter)
                 all_adapters.append(adapter)
 
     return all_adapters
@@ -777,7 +822,7 @@ async def _import_adapter_module_for_deps(adapter_category: str) -> None:
     from contextlib import suppress
 
     if adapter_category == "app":
-        for adapter in adapter_registry.get():
+        for adapter in _ensure_adapter_registry_initialized():
             if adapter.category == adapter_category:
                 with suppress(ImportError, AdapterNotFound, AdapterNotInstalled):
                     import_module(adapter.module)
@@ -870,7 +915,7 @@ async def _import_adapter(adapter_category: str) -> t.Any:
     adapter_class: t.Any = getattr(module, adapter.class_name)
     if adapter.installed:
         return adapter_class
-    locks = _adapter_import_locks.get()
+    locks = _ensure_adapter_import_locks_initialized()
     if adapter_category not in locks:
         locks[adapter_category] = asyncio.Lock()
     async with locks[adapter_category]:
@@ -1049,7 +1094,7 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
     for adapter_name, modules in pkg_adapters.items():
         _modules = extract_adapter_modules(modules, adapter_name)
         _adapters.extend(_modules)
-    registry = adapter_registry.get()
+    registry = _ensure_adapter_registry_initialized()
     for a in _adapters:
         module = ".".join(a.module.split(".")[-2:])
         remove = next(
@@ -1059,7 +1104,7 @@ async def register_adapters(path: AsyncPath) -> list[Adapter]:
         if remove:
             registry.remove(remove)
         registry.append(a)
-        _adapter_import_locks.get()[a.category] = asyncio.Lock()
+        _ensure_adapter_import_locks_initialized()[a.category] = asyncio.Lock()
     _update_adapter_caches()
     return _adapters
 

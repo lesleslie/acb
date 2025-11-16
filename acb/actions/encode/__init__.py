@@ -1,17 +1,17 @@
-import datetime as _datetime
 import json
 import linecache
 import sys
-import typing as t
-from dataclasses import dataclass
 from pathlib import Path
 from re import search
 
+import datetime as _datetime
 import dill  # nosec B403
 import msgspec
 import toml
+import typing as t
 import yaml
 from anyio import Path as AsyncPath
+from dataclasses import dataclass
 
 __all__: list[str] = ["decode", "dump", "encode", "load", "yaml_encode"]
 
@@ -172,7 +172,7 @@ class Encode:
                 return text.encode() if text else b""
         except FileNotFoundError:
             msg = f"File not found: {path}"
-            raise FileNotFoundError(msg)
+            raise FileNotFoundError(msg) from None
 
     def _read_sync_path(self, path: Path) -> bytes:
         try:
@@ -183,7 +183,7 @@ class Encode:
                 return text.encode() if text else b""
         except FileNotFoundError:
             msg = f"File not found: {path}"
-            raise FileNotFoundError(msg)
+            raise FileNotFoundError(msg) from None
 
     def _prepare_string_input(self, obj: t.Any) -> t.Any:
         if isinstance(obj, str) and self.serializer in (
@@ -202,10 +202,10 @@ class Encode:
             return self.serializer(obj, **kwargs)
         except msgspec.DecodeError as e:
             msg = f"Failed to decode: {e}"
-            raise msgspec.DecodeError(msg)
+            raise msgspec.DecodeError(msg) from None
         except toml.decoder.TomlDecodeError as e:
             msg = f"Failed to decode: {e}"
-            raise toml.decoder.TomlDecodeError(msg, "", 0)
+            raise toml.decoder.TomlDecodeError(msg, "", 0) from None
         except Exception as e:
             msg = f"Error during decoding: {e}"
             raise RuntimeError(msg) from e
@@ -268,7 +268,7 @@ class Encode:
                 self.path.write_bytes(data)
         except PermissionError:
             msg = f"Permission denied when writing to {self.path}"
-            raise PermissionError(msg)
+            raise PermissionError(msg) from None
 
     async def process(self, obj: t.Any, **kwargs: dict[str, t.Any]) -> t.Any:
         if self.action in ("load", "decode"):

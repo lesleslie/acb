@@ -2,24 +2,21 @@
 
 import asyncio
 import pytest
-from datetime import datetime
-from uuid import UUID
-from unittest.mock import AsyncMock, Mock, patch
 
 from acb.events import (
     Event,
+    EventDeliveryMode,
+    EventHandler,
+    EventHandlerResult,
+    EventPriority,
     EventPublisher,
     EventPublisherSettings,
+    EventStatus,
+    EventSubscription,
     PublisherMetrics,
     create_event,
     create_event_publisher,
     event_publisher_context,
-    EventHandler,
-    EventHandlerResult,
-    EventStatus,
-    EventPriority,
-    EventDeliveryMode,
-    EventSubscription,
 )
 
 
@@ -41,10 +38,7 @@ class MockEventHandler(EventHandler):
         self.handle_call_count += 1
 
         if not self._success:
-            return EventHandlerResult(
-                success=False,
-                error_message="Mock handler error"
-            )
+            return EventHandlerResult(success=False, error_message="Mock handler error")
 
         return EventHandlerResult(success=True)
 
@@ -316,10 +310,7 @@ class TestEventPublisher:
         await publisher.subscribe(subscription)
 
         # Publish multiple events concurrently
-        events = [
-            create_event(f"test.event.{i}", "test_service")
-            for i in range(10)
-        ]
+        events = [create_event(f"test.event.{i}", "test_service") for i in range(10)]
 
         tasks = [publisher.publish(event) for event in events]
         await asyncio.gather(*tasks)
@@ -343,6 +334,7 @@ class TestEventPublisher:
 
             # Mock the handle method to be slow
             original_handle = slow_handler.handle
+
             async def slow_handle(event):
                 await asyncio.sleep(0.5)  # Slow processing
                 return await original_handle(event)
@@ -352,10 +344,7 @@ class TestEventPublisher:
             await publisher.subscribe(subscription)
 
             # Publish more events than the limit
-            events = [
-                create_event(f"test.event.{i}", "test_service")
-                for i in range(5)
-            ]
+            events = [create_event(f"test.event.{i}", "test_service") for i in range(5)]
 
             # Start publishing tasks
             tasks = [asyncio.create_task(publisher.publish(event)) for event in events]
@@ -393,6 +382,7 @@ class TestEventPublisher:
 
         # Publisher should still be active
         from acb.services import ServiceStatus
+
         assert publisher.status == ServiceStatus.ACTIVE
 
         await publisher.stop()
@@ -419,10 +409,18 @@ class TestEventPublisher:
         await publisher.subscribe(subscription)
 
         # Create events with different priorities
-        low_event = create_event("low.event", "test_service", priority=EventPriority.LOW)
-        normal_event = create_event("normal.event", "test_service", priority=EventPriority.NORMAL)
-        high_event = create_event("high.event", "test_service", priority=EventPriority.HIGH)
-        critical_event = create_event("critical.event", "test_service", priority=EventPriority.CRITICAL)
+        low_event = create_event(
+            "low.event", "test_service", priority=EventPriority.LOW
+        )
+        normal_event = create_event(
+            "normal.event", "test_service", priority=EventPriority.NORMAL
+        )
+        high_event = create_event(
+            "high.event", "test_service", priority=EventPriority.HIGH
+        )
+        critical_event = create_event(
+            "critical.event", "test_service", priority=EventPriority.CRITICAL
+        )
 
         # Publish in mixed order
         await publisher.publish(normal_event)
@@ -482,7 +480,9 @@ class TestEventPublisherFactory:
         # After context exit, service should be stopped
         assert publisher.status == ServiceStatus.STOPPED
 
-    async def test_event_publisher_context_with_settings(self, mock_queue_adapter_import):
+    async def test_event_publisher_context_with_settings(
+        self, mock_queue_adapter_import
+    ):
         """Test event_publisher_context with custom settings."""
         from acb.services._base import ServiceStatus
 
@@ -505,8 +505,12 @@ class TestEventPublisherIntegration:
             order_handler = MockEventHandler()
 
             # Subscribe handlers to specific event types
-            user_subscription = EventSubscription(handler=user_handler, event_type="user.created")
-            order_subscription = EventSubscription(handler=order_handler, event_type="order.created")
+            user_subscription = EventSubscription(
+                handler=user_handler, event_type="user.created"
+            )
+            order_subscription = EventSubscription(
+                handler=order_handler, event_type="order.created"
+            )
             await publisher.subscribe(user_subscription)
             await publisher.subscribe(order_subscription)
 
@@ -515,7 +519,9 @@ class TestEventPublisherIntegration:
 
             # Publish different event types
             user_event = create_event("user.created", "user_service", {"user_id": 123})
-            order_event = create_event("order.created", "order_service", {"order_id": 456})
+            order_event = create_event(
+                "order.created", "order_service", {"order_id": 456}
+            )
             other_event = create_event("other.event", "other_service")
 
             await publisher.publish(user_event)
@@ -530,7 +536,9 @@ class TestEventPublisherIntegration:
             assert user_handler.handled_events[0].metadata.event_type == "user.created"
 
             assert len(order_handler.handled_events) == 1
-            assert order_handler.handled_events[0].metadata.event_type == "order.created"
+            assert (
+                order_handler.handled_events[0].metadata.event_type == "order.created"
+            )
 
     async def test_delivery_modes(self, mock_queue_adapter_import):
         """Test different delivery modes."""
@@ -546,7 +554,7 @@ class TestEventPublisherIntegration:
             fire_forget_event = create_event(
                 "test.event",
                 "test_service",
-                delivery_mode=EventDeliveryMode.FIRE_AND_FORGET
+                delivery_mode=EventDeliveryMode.FIRE_AND_FORGET,
             )
             await publisher.publish(fire_forget_event)
 
@@ -554,7 +562,7 @@ class TestEventPublisherIntegration:
             at_least_once_event = create_event(
                 "test.event",
                 "test_service",
-                delivery_mode=EventDeliveryMode.AT_LEAST_ONCE
+                delivery_mode=EventDeliveryMode.AT_LEAST_ONCE,
             )
             await publisher.publish(at_least_once_event)
 
@@ -578,14 +586,10 @@ class TestEventPublisherIntegration:
 
             # Publish related events with same correlation ID
             event1 = create_event(
-                "step1.completed",
-                "workflow_service",
-                correlation_id=correlation_id
+                "step1.completed", "workflow_service", correlation_id=correlation_id
             )
             event2 = create_event(
-                "step2.completed",
-                "workflow_service",
-                correlation_id=correlation_id
+                "step2.completed", "workflow_service", correlation_id=correlation_id
             )
 
             await publisher.publish(event1)
@@ -605,8 +609,8 @@ class TestEventPublisherIntegration:
     async def test_event_routing_keys(self, mock_queue_adapter_import):
         """Test event routing with routing keys."""
         async with event_publisher_context() as publisher:
-            user_handler = MockEventHandler()
-            admin_handler = MockEventHandler()
+            MockEventHandler()
+            MockEventHandler()
 
             # Subscribe with predicate functions for routing
             def is_user_event(event: Event) -> bool:
@@ -618,16 +622,18 @@ class TestEventPublisherIntegration:
             from acb.events import FunctionalEventHandler
 
             user_functional_handler = FunctionalEventHandler(
-                lambda e: EventHandlerResult(success=True),
-                predicate=is_user_event
+                lambda e: EventHandlerResult(success=True), predicate=is_user_event
             )
             admin_functional_handler = FunctionalEventHandler(
-                lambda e: EventHandlerResult(success=True),
-                predicate=is_admin_event
+                lambda e: EventHandlerResult(success=True), predicate=is_admin_event
             )
 
-            user_subscription = EventSubscription(handler=user_functional_handler, predicate=is_user_event)
-            admin_subscription = EventSubscription(handler=admin_functional_handler, predicate=is_admin_event)
+            user_subscription = EventSubscription(
+                handler=user_functional_handler, predicate=is_user_event
+            )
+            admin_subscription = EventSubscription(
+                handler=admin_functional_handler, predicate=is_admin_event
+            )
             await publisher.subscribe(user_subscription)
             await publisher.subscribe(admin_subscription)
 
@@ -636,14 +642,10 @@ class TestEventPublisherIntegration:
 
             # Publish events with different routing keys
             user_event = create_event(
-                "action.performed",
-                "app_service",
-                routing_key="users"
+                "action.performed", "app_service", routing_key="users"
             )
             admin_event = create_event(
-                "action.performed",
-                "app_service",
-                routing_key="admin"
+                "action.performed", "app_service", routing_key="admin"
             )
 
             await publisher.publish(user_event)

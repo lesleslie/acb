@@ -14,9 +14,10 @@ Features:
 """
 
 import re
+from unittest.mock import AsyncMock
+
 import typing as t
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock
 
 from acb.testing.discovery import (
     TestProviderCapability,

@@ -2,9 +2,10 @@
 
 import logging
 import sys
+from uuid import UUID
+
 import typing as t
 from contextlib import suppress
-from uuid import UUID
 
 try:
     import structlog
@@ -335,6 +336,7 @@ class Logger(LoggerBase):
     def _add_stderr_sink(self) -> None:
         """Add stderr sink for structured JSON logging (AI/machine consumption)."""
         import json
+
         from datetime import datetime
 
         # Create a handler for stderr with JSON formatting

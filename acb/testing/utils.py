@@ -11,11 +11,12 @@ Features:
 - Test suite orchestration
 """
 
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
+
 import asyncio
 import typing as t
 from contextlib import suppress
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
 
 from acb.config import Config
 from acb.depends import depends

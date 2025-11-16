@@ -1,10 +1,11 @@
 """Tests for the SQL Base adapter."""
 
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncConnection
+
 from acb.adapters.sql._base import SqlBase
 
 

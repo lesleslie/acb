@@ -1,6 +1,6 @@
 import typing as t
-
 from pydantic import BaseModel
+
 from acb.config import AdapterBase, Settings
 
 

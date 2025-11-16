@@ -1,6 +1,6 @@
+import pytest
 from typing import TYPE_CHECKING, Any
 
-import pytest
 from acb.actions.compress import compress, decompress
 from acb.actions.encode import decode, encode
 from acb.actions.hash import hash

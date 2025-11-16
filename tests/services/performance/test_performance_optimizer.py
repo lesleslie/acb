@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from acb.services.performance.optimizer import PerformanceOptimizer, PerformanceOptimizerSettings
+from acb.services.performance.optimizer import (
+    PerformanceOptimizer,
+    PerformanceOptimizerSettings,
+)
 
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_optimize_cache_operation_hit_miss_and_decorator(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_optimize_cache_operation_hit_miss_and_decorator(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     po = PerformanceOptimizer(settings=PerformanceOptimizerSettings())
     po.logger = MagicMock()
     fake_cache = AsyncMock()
@@ -60,5 +64,7 @@ async def test_optimize_query_batch_error_and_success() -> None:
     fake_sql = AsyncMock()
     fake_sql.execute = AsyncMock(return_value={"ok": True})
     po._sql_adapter = fake_sql
-    res_ok = await po.optimize_query_batch(["select 1", "select 2"], parameters=[{"a": 1}, {"b": 2}])
+    res_ok = await po.optimize_query_batch(
+        ["select 1", "select 2"], parameters=[{"a": 1}, {"b": 2}]
+    )
     assert res_ok.success and res_ok.metadata["queries_count"] == 2

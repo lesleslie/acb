@@ -4,14 +4,15 @@ This module provides a Redis-backed task queue implementation suitable for
 production deployments with persistence, clustering, and high availability.
 """
 
-import asyncio
 import json
 import logging
 import time
+from uuid import UUID
+
+import asyncio
 import typing as t
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
 
 try:
     import redis.asyncio as redis

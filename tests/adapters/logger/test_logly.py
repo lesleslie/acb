@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
 from acb.adapters import AdapterCapability, AdapterStatus
 
 
@@ -235,8 +236,8 @@ class TestLoglyLogger:
     def test_init_testing_mode(self, mock_logly, mock_config):
         """Test initialization in testing mode."""
         from acb.adapters.logger.logly import Logger
-        from acb.depends import depends
         from acb.config import Config
+        from acb.depends import depends
 
         # Register mock config in DI so property can access it
         depends.set(Config, mock_config)
@@ -253,8 +254,8 @@ class TestLoglyLogger:
     def test_init_normal_mode(self, mock_logly, mock_config):
         """Test initialization in normal mode."""
         from acb.adapters.logger.logly import Logger
-        from acb.depends import depends
         from acb.config import Config
+        from acb.depends import depends
 
         # Register mock config in DI so property can access it
         depends.set(Config, mock_config)
@@ -530,8 +531,11 @@ class TestInterceptHandler:
         record.levelname = "INFO"
         record.getMessage.return_value = "test message"
 
-        with patch("acb.adapters.logger.logly.currentframe"), patch(
-            "acb.adapters.logger.logly.depends.get_sync", return_value=mock_logger
+        with (
+            patch("acb.adapters.logger.logly.currentframe"),
+            patch(
+                "acb.adapters.logger.logly.depends.get_sync", return_value=mock_logger
+            ),
         ):
             handler.emit(record)
 
@@ -595,8 +599,8 @@ class TestLoglyIntegration:
     def test_logly_specific_features(self, mock_logly, mock_config):
         """Test Logly-specific features."""
         from acb.adapters.logger.logly import Logger
-        from acb.depends import depends
         from acb.config import Config
+        from acb.depends import depends
 
         # Register mock config in DI so property can access it
         depends.set(Config, mock_config)
@@ -618,8 +622,8 @@ class TestLoglyIntegration:
     def test_with_real_dependencies(self, mock_logly):
         """Test logger with ACB dependencies."""
         from acb.adapters.logger.logly import Logger
-        from acb.depends import depends
         from acb.config import Config
+        from acb.depends import depends
 
         # Ensure real config is available in DI system
         try:

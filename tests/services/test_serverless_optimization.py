@@ -1,9 +1,10 @@
 """Tests for serverless optimization services."""
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import asyncio
 import pytest
+
 from acb.depends import depends
 from acb.services.performance.serverless import (
     AdapterPreInitializer,
@@ -52,6 +53,7 @@ class TestLazyInitializer:
     @pytest.mark.asyncio
     async def test_lazy_initialization_timeout(self):
         """Test lazy initialization with timeout."""
+
         async def slow_factory():
             await asyncio.sleep(1.0)
             return "resource"
@@ -102,8 +104,10 @@ class TestAdapterPreInitializer:
         mock_adapter = AsyncMock()
         mock_adapter.initialize = AsyncMock()
 
-        with patch("acb.adapters.import_adapter") as mock_import, \
-             patch("acb.services.performance.serverless.depends.get") as mock_get:
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch("acb.services.performance.serverless.depends.get") as mock_get,
+        ):
             mock_import.return_value = "MockAdapterClass"
             mock_get.return_value = mock_adapter
 
@@ -120,8 +124,10 @@ class TestAdapterPreInitializer:
         mock_adapter = AsyncMock()
         mock_adapter.initialize = AsyncMock()
 
-        with patch("acb.adapters.import_adapter") as mock_import, \
-             patch("acb.services.performance.serverless.depends.get") as mock_get:
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch("acb.services.performance.serverless.depends.get") as mock_get,
+        ):
             mock_import.return_value = "MockAdapterClass"
             mock_get.return_value = mock_adapter
 
@@ -241,7 +247,9 @@ class TestServerlessOptimizer:
     @pytest.mark.asyncio
     async def test_initialization(self):
         """Test optimizer initialization."""
-        with patch.object(self.optimizer, '_perform_cold_start_optimizations') as mock_optimize:
+        with patch.object(
+            self.optimizer, "_perform_cold_start_optimizations"
+        ) as mock_optimize:
             await self.optimizer.initialize()
 
             mock_optimize.assert_called_once()
@@ -288,8 +296,10 @@ class TestServerlessOptimizer:
         mock_adapter = AsyncMock()
         mock_adapter.initialize = AsyncMock()
 
-        with patch("acb.adapters.import_adapter") as mock_import, \
-             patch("acb.services.performance.serverless.depends.get") as mock_get:
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch("acb.services.performance.serverless.depends.get") as mock_get,
+        ):
             mock_import.return_value = "MockAdapterClass"
             mock_get.return_value = mock_adapter
 
@@ -350,6 +360,7 @@ class TestOptimizationDecorators:
     @pytest.mark.asyncio
     async def test_lazy_resource_timeout(self):
         """Test lazy resource with timeout."""
+
         async def slow_factory():
             await asyncio.sleep(1.0)
             return MagicMock()
@@ -381,7 +392,7 @@ class TestColdStartMetrics:
             cold_starts_count=10,
             warm_starts_count=50,
             average_cold_start_time_ms=125.5,
-            optimizations_applied=optimizations
+            optimizations_applied=optimizations,
         )
 
         assert metrics.cold_starts_count == 10

@@ -13,10 +13,11 @@ Features:
 - Configuration testing across environments
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import asyncio
 import typing as t
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock, MagicMock
 
 from acb.testing.discovery import (
     TestProviderCapability,

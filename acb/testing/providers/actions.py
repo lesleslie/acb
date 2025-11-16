@@ -13,9 +13,10 @@ Features:
 - Data transformation simulation
 """
 
+from unittest.mock import MagicMock
+
 import typing as t
 from contextlib import contextmanager
-from unittest.mock import MagicMock
 
 from acb.testing.discovery import (
     TestProviderCapability,

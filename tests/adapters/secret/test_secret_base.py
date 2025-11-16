@@ -1,7 +1,6 @@
 """Tests for the Secret Base adapter."""
 
 import builtins
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,6 +12,8 @@ from google.cloud.secretmanager_v1.types import (
     DeleteSecretRequest,
     ListSecretsRequest,
 )
+from typing import Any
+
 from acb.adapters.secret._base import SecretBase, SecretBaseSettings
 from acb.config import Config
 

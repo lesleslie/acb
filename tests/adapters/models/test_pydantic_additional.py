@@ -1,13 +1,16 @@
 """Tests for the ACB Pydantic model adapter."""
-from typing import Optional, List, Dict, Any, Union
-from unittest.mock import Mock, MagicMock, patch
+
+from unittest.mock import Mock, patch
 
 import pytest
 from pydantic import BaseModel, Field
+from typing import Any
 
 from acb.adapters.models._pydantic import (
-    PydanticModelAdapter,
     PYDANTIC_AVAILABLE,
+    PydanticModelAdapter,
+)
+from acb.adapters.models._pydantic import (
     BaseModel as LocalBaseModel,
 )
 
@@ -17,20 +20,20 @@ class SampleUser(BaseModel):
     id: int
     name: str
     email: str
-    age: Optional[int] = None
+    age: int | None = None
     is_active: bool = True
 
 
 class SampleProfile(BaseModel):
     bio: str
-    website: Optional[str] = None
+    website: str | None = None
 
 
 class SampleUserWithProfile(BaseModel):
     id: int
     name: str
     profile: SampleProfile
-    profiles: List[SampleProfile]
+    profiles: list[SampleProfile]
 
 
 class SampleUserWithConfig(BaseModel):
@@ -46,10 +49,7 @@ class SampleUserWithModelConfig(BaseModel):
     id: int
     name: str
 
-    model_config = {
-        "collection_name": "modern_users",
-        "primary_key": "user_id"
-    }
+    model_config = {"collection_name": "modern_users", "primary_key": "user_id"}
 
 
 class SampleUserWithMethods(BaseModel):
@@ -75,7 +75,7 @@ class SampleUserWithAlias(BaseModel):
 class SampleCompany(BaseModel):
     id: int
     name: str
-    employees: List[SampleUser]
+    employees: list[SampleUser]
 
 
 class TestPydanticModelAdapter:
@@ -96,7 +96,9 @@ class TestPydanticModelAdapter:
             pytest.skip("Pydantic not available")
 
         adapter = PydanticModelAdapter()
-        instance = adapter.create_instance(SampleUser, id=1, name="John", email="john@example.com")
+        instance = adapter.create_instance(
+            SampleUser, id=1, name="John", email="john@example.com"
+        )
 
         assert isinstance(instance, SampleUser)
         assert instance.id == 1
@@ -132,7 +134,7 @@ class TestPydanticModelAdapter:
             "name": "John",
             "email": "john@example.com",
             "age": 30,
-            "is_active": True
+            "is_active": True,
         }
 
     def test_serialize_legacy_pydantic(self) -> None:
@@ -150,7 +152,7 @@ class TestPydanticModelAdapter:
             "name": "John",
             "email": "john@example.com",
             "age": 30,
-            "is_active": True
+            "is_active": True,
         }
 
     def test_manual_serialize_with_model_fields(self) -> None:
@@ -168,7 +170,7 @@ class TestPydanticModelAdapter:
             "name": "John",
             "email": "john@example.com",
             "age": 30,
-            "is_active": True
+            "is_active": True,
         }
 
     def test_manual_serialize_with_nested_models(self) -> None:
@@ -179,10 +181,7 @@ class TestPydanticModelAdapter:
         adapter = PydanticModelAdapter()
         profile = SampleProfile(bio="Software developer", website="https://example.com")
         user = TestUserWithProfile(
-            id=1,
-            name="John",
-            profile=profile,
-            profiles=[profile]
+            id=1, name="John", profile=profile, profiles=[profile]
         )
 
         # Test serialization - should handle nested models
@@ -201,13 +200,11 @@ class TestPydanticModelAdapter:
 
         class TestDataModel(BaseModel):
             id: int
-            tags: List[str]
-            metadata: Dict[str, Any]
+            tags: list[str]
+            metadata: dict[str, Any]
 
         data = TestDataModel(
-            id=1,
-            tags=["tag1", "tag2"],
-            metadata={"key": "value", "count": 42}
+            id=1, tags=["tag1", "tag2"], metadata={"key": "value", "count": 42}
         )
 
         # Test serialization
@@ -223,7 +220,10 @@ class TestPydanticModelAdapter:
 
         adapter = PydanticModelAdapter()
 
-        with pytest.raises(NotImplementedError, match="Deserialize requires specific model class context"):
+        with pytest.raises(
+            NotImplementedError,
+            match="Deserialize requires specific model class context",
+        ):
             adapter.deserialize({"id": 1, "name": "John"})
 
     def test_deserialize_to_class_success(self) -> None:
@@ -252,7 +252,7 @@ class TestPydanticModelAdapter:
             "name": "John",
             "email": "john@example.com",
             "extra_field": "should_be_filtered",
-            "another_extra": "also_filtered"
+            "another_extra": "also_filtered",
         }
 
         user = adapter.deserialize_to_class(SampleUser, data)
@@ -272,7 +272,7 @@ class TestPydanticModelAdapter:
             "id": 1,
             "name": "John",
             "email": "john@example.com",
-            "extra_field": "filtered"
+            "extra_field": "filtered",
         }
 
         # Pydantic v2 models have model_fields, test filtering works properly
@@ -289,7 +289,7 @@ class TestPydanticModelAdapter:
             "id": 1,
             "name": "John",
             "email": "john@example.com",
-            "extra_field": "filtered"
+            "extra_field": "filtered",
         }
 
         # Mock model_fields attribute
@@ -300,13 +300,21 @@ class TestPydanticModelAdapter:
         mock_field_info3 = Mock()
         mock_field_info3.name = "email"
 
-        with patch.object(SampleUser, "model_fields", {
-            "id": mock_field_info1,
-            "name": mock_field_info2,
-            "email": mock_field_info3
-        }):
+        with patch.object(
+            SampleUser,
+            "model_fields",
+            {
+                "id": mock_field_info1,
+                "name": mock_field_info2,
+                "email": mock_field_info3,
+            },
+        ):
             filtered_data = adapter._filter_data_for_model(SampleUser, data)
-            assert filtered_data == {"id": 1, "name": "John", "email": "john@example.com"}
+            assert filtered_data == {
+                "id": 1,
+                "name": "John",
+                "email": "john@example.com",
+            }
 
     def test_get_entity_name_with_tablename(self) -> None:
         """Test getting entity name with tablename in Config."""
@@ -448,7 +456,7 @@ class TestPydanticModelAdapter:
             "id": 1,
             "name": "John",
             "email": "john@example.com",
-            "extra_field": "filtered"
+            "extra_field": "filtered",
         }
 
         validated_data = adapter.validate_data(SampleUser, data)
@@ -540,7 +548,7 @@ class TestPydanticModelAdapter:
         adapter = PydanticModelAdapter()
 
         class TestModelWithUnion(BaseModel):
-            value: Union[int, str]
+            value: int | str
 
         value_type = adapter.get_field_type(TestModelWithUnion, "value")
         # Union types might be unwrapped differently depending on implementation

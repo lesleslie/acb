@@ -1,27 +1,26 @@
 """Tests for EventSubscriber functionality."""
 
+from uuid import UUID
+
 import asyncio
 import pytest
 from datetime import datetime
-from uuid import UUID
-from unittest.mock import AsyncMock, Mock, patch
 
 from acb.events import (
     Event,
-    EventSubscriber,
     EventBuffer,
     EventFilter,
+    EventHandler,
+    EventHandlerResult,
+    EventPriority,
     EventRouter,
+    EventSubscriber,
     ManagedSubscription,
     SubscriberSettings,
     SubscriptionMode,
+    create_event,
     create_event_subscriber,
     event_subscriber_context,
-    EventHandler,
-    EventHandlerResult,
-    create_event,
-    EventStatus,
-    EventPriority,
 )
 
 
@@ -43,10 +42,7 @@ class MockEventHandler(EventHandler):
         self.handle_call_count += 1
 
         if not self._success:
-            return EventHandlerResult(
-                success=False,
-                error_message="Mock handler error"
-            )
+            return EventHandlerResult(success=False, error_message="Mock handler error")
 
         return EventHandlerResult(success=True)
 
@@ -161,7 +157,9 @@ class TestEventBuffer:
         normal_event = create_event("normal", "service", priority=EventPriority.NORMAL)
         high_event = create_event("high", "service", priority=EventPriority.HIGH)
         low_event = create_event("low", "service", priority=EventPriority.LOW)
-        critical_event = create_event("critical", "service", priority=EventPriority.CRITICAL)
+        critical_event = create_event(
+            "critical", "service", priority=EventPriority.CRITICAL
+        )
 
         # Add in mixed order
         await buffer.add(normal_event)
@@ -172,7 +170,12 @@ class TestEventBuffer:
         # Should retrieve in priority order
         events = await buffer.get_batch(10)
         priorities = [event.metadata.priority for event in events]
-        expected_order = [EventPriority.CRITICAL, EventPriority.HIGH, EventPriority.NORMAL, EventPriority.LOW]
+        expected_order = [
+            EventPriority.CRITICAL,
+            EventPriority.HIGH,
+            EventPriority.NORMAL,
+            EventPriority.LOW,
+        ]
         assert priorities == expected_order
 
     async def test_buffer_clear(self):
@@ -213,7 +216,9 @@ class TestEventFilter:
         assert routing_filter.pattern == "users"
 
         # Custom predicate filter
-        custom_filter = EventFilter.by_predicate(lambda e: e.payload.get("important", False))
+        custom_filter = EventFilter.by_predicate(
+            lambda e: e.payload.get("important", False)
+        )
         assert custom_filter.filter_type == "predicate"
         assert callable(custom_filter.predicate)
 
@@ -233,7 +238,9 @@ class TestEventFilter:
         assert not source_filter.matches(order_event)
 
         # Custom predicate
-        important_filter = EventFilter.by_predicate(lambda e: e.payload.get("user_id") == 123)
+        important_filter = EventFilter.by_predicate(
+            lambda e: e.payload.get("user_id") == 123
+        )
         assert important_filter.matches(user_event)
         assert not important_filter.matches(order_event)
 
@@ -257,10 +264,9 @@ class TestEventFilter:
         event3 = create_event("order.created", "user_service", {"priority": "high"})
 
         # Combine type and source filters
-        combined_filter = EventFilter.combine([
-            EventFilter.by_type("user.created"),
-            EventFilter.by_source("user_service")
-        ])
+        combined_filter = EventFilter.combine(
+            [EventFilter.by_type("user.created"), EventFilter.by_source("user_service")]
+        )
 
         assert combined_filter.matches(event1)  # Matches both
         assert not combined_filter.matches(event2)  # Wrong source
@@ -304,7 +310,9 @@ class TestEventRouter:
         # Add routes
         await router.add_route(user_handler, EventFilter.by_type("user.created"))
         await router.add_route(order_handler, EventFilter.by_type("order.created"))
-        await router.add_route(all_handler, EventFilter.by_predicate(lambda e: True))  # Catches all
+        await router.add_route(
+            all_handler, EventFilter.by_predicate(lambda e: True)
+        )  # Catches all
 
         # Create events
         user_event = create_event("user.created", "user_service")
@@ -337,9 +345,15 @@ class TestEventRouter:
         high_handler = MockEventHandler()
 
         # Add routes with priorities
-        await router.add_route(low_handler, EventFilter.by_type("test.event"), priority=1)
-        await router.add_route(high_handler, EventFilter.by_type("test.event"), priority=10)
-        await router.add_route(normal_handler, EventFilter.by_type("test.event"), priority=5)
+        await router.add_route(
+            low_handler, EventFilter.by_type("test.event"), priority=1
+        )
+        await router.add_route(
+            high_handler, EventFilter.by_type("test.event"), priority=10
+        )
+        await router.add_route(
+            normal_handler, EventFilter.by_type("test.event"), priority=5
+        )
 
         event = create_event("test.event", "test_service")
         matches = await router.route_event(event)
@@ -369,7 +383,9 @@ class TestManagedSubscription:
             buffer_size=100,
         )
 
-        assert subscription.subscription_id == UUID("12345678-1234-5678-9012-123456789012")
+        assert subscription.subscription_id == UUID(
+            "12345678-1234-5678-9012-123456789012"
+        )
         assert subscription.handler == handler
         assert subscription.event_filter == filter_obj
         assert subscription.mode == SubscriptionMode.PUSH
@@ -526,13 +542,19 @@ class TestEventSubscriber:
         assert len(subscriber._subscriptions) == 1
 
         # Subscribe with event type filter
-        type_subscription_id = await subscriber.subscribe(handler, event_type="user.created")
+        type_subscription_id = await subscriber.subscribe(
+            handler, event_type="user.created"
+        )
         assert type_subscription_id is not None
         assert len(subscriber._subscriptions) == 2
 
         # Subscribe with custom filter
-        custom_filter = EventFilter.by_predicate(lambda e: e.payload.get("important", False))
-        filter_subscription_id = await subscriber.subscribe(handler, event_filter=custom_filter)
+        custom_filter = EventFilter.by_predicate(
+            lambda e: e.payload.get("important", False)
+        )
+        filter_subscription_id = await subscriber.subscribe(
+            handler, event_filter=custom_filter
+        )
         assert filter_subscription_id is not None
         assert len(subscriber._subscriptions) == 3
 
@@ -639,12 +661,14 @@ class TestEventSubscriber:
             handler = MockEventHandler()
 
             # Subscribe up to the limit
-            sub1 = await subscriber.subscribe(handler)
-            sub2 = await subscriber.subscribe(handler)
+            await subscriber.subscribe(handler)
+            await subscriber.subscribe(handler)
             assert len(subscriber._subscriptions) == 2
 
             # Try to exceed the limit
-            with pytest.raises(RuntimeError, match="Maximum subscriptions limit reached"):
+            with pytest.raises(
+                RuntimeError, match="Maximum subscriptions limit reached"
+            ):
                 await subscriber.subscribe(handler)
 
         finally:
@@ -794,24 +818,22 @@ class TestEventSubscriberIntegration:
 
             # Subscribe with different filters
             await subscriber.subscribe(
-                user_handler,
-                event_filter=EventFilter.by_type("user.*")
+                user_handler, event_filter=EventFilter.by_type("user.*")
             )
             await subscriber.subscribe(
-                order_handler,
-                event_filter=EventFilter.by_type("order.*")
+                order_handler, event_filter=EventFilter.by_type("order.*")
             )
             await subscriber.subscribe(
                 audit_handler,
                 event_filter=EventFilter.by_predicate(
                     lambda e: e.metadata.tags and "audit" in e.metadata.tags
-                )
+                ),
             )
             await subscriber.subscribe(
                 error_handler,
                 event_filter=EventFilter.by_predicate(
                     lambda e: e.metadata.priority == EventPriority.CRITICAL
-                )
+                ),
             )
 
             # Deliver various events
@@ -830,8 +852,12 @@ class TestEventSubscriberIntegration:
             # Check that events were routed correctly
             assert len(user_handler.handled_events) == 2  # user.created, user.deleted
             assert len(order_handler.handled_events) == 1  # order.created
-            assert len(audit_handler.handled_events) == 2  # user.created, user.deleted (both have audit tag)
-            assert len(error_handler.handled_events) == 1  # system.error (critical priority)
+            assert (
+                len(audit_handler.handled_events) == 2
+            )  # user.created, user.deleted (both have audit tag)
+            assert (
+                len(error_handler.handled_events) == 1
+            )  # system.error (critical priority)
 
     async def test_hybrid_subscription_mode(self):
         """Test hybrid subscription mode behavior."""
@@ -843,9 +869,7 @@ class TestEventSubscriberIntegration:
 
             # Deliver high priority event (should be pushed immediately)
             high_priority_event = create_event(
-                "urgent.event",
-                "service",
-                priority=EventPriority.HIGH
+                "urgent.event", "service", priority=EventPriority.HIGH
             )
             await subscriber.deliver_event(high_priority_event)
 

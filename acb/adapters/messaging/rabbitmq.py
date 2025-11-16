@@ -63,14 +63,15 @@ Author: Claude Code
 Created: 2025-10-01
 """
 
-import asyncio
 import time
-import typing as t
 from collections.abc import AsyncGenerator, AsyncIterator
-from contextlib import asynccontextmanager, suppress
 from uuid import UUID, uuid4
 
+import asyncio
+import typing as t
+from contextlib import asynccontextmanager, suppress
 from pydantic import Field
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.cleanup import CleanupMixin
 from acb.depends import depends

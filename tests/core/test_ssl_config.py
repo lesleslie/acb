@@ -17,7 +17,12 @@ from acb.ssl_config import (
 
 @pytest.mark.unit
 def test_ssl_to_redis_kwargs_basic() -> None:
-    cfg = SSLConfig(enabled=True, cert_path="/tmp/cert.pem", key_path="/tmp/key.pem", ca_path="/tmp/ca.pem")
+    cfg = SSLConfig(
+        enabled=True,
+        cert_path="/tmp/cert.pem",
+        key_path="/tmp/key.pem",
+        ca_path="/tmp/ca.pem",
+    )
     kwargs = cfg.to_redis_kwargs()
     assert kwargs["ssl"] is True
     assert kwargs["ssl_certfile"] == "/tmp/cert.pem"
@@ -70,7 +75,12 @@ def test_ssl_to_mysql_kwargs_modes() -> None:
 
 @pytest.mark.unit
 def test_ssl_to_http_clients_kwargs() -> None:
-    cfg = SSLConfig(enabled=True, cert_path="/tmp/cert.pem", key_path="/tmp/key.pem", ca_path="/tmp/ca.pem")
+    cfg = SSLConfig(
+        enabled=True,
+        cert_path="/tmp/cert.pem",
+        key_path="/tmp/key.pem",
+        ca_path="/tmp/ca.pem",
+    )
     r_kwargs = cfg.to_niquests_kwargs()
     x_kwargs = cfg.to_httpx_kwargs()
     assert r_kwargs["cert"] == ("/tmp/cert.pem", "/tmp/key.pem")
@@ -84,12 +94,18 @@ def test_create_ssl_context_versions() -> None:
     cfg = SSLConfig(tls_version=TLSVersion.TLS_1_2)
     ctx = cfg.create_ssl_context()
     assert isinstance(ctx, ssl.SSLContext)
-    assert ctx.minimum_version in (ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.MINIMUM_SUPPORTED)
+    assert ctx.minimum_version in (
+        ssl.TLSVersion.TLSv1_2,
+        ssl.TLSVersion.MINIMUM_SUPPORTED,
+    )
 
     cfg = SSLConfig(tls_version=TLSVersion.TLS_1_3)
     ctx = cfg.create_ssl_context()
     assert isinstance(ctx, ssl.SSLContext)
-    assert ctx.minimum_version in (ssl.TLSVersion.TLSv1_3, ssl.TLSVersion.MINIMUM_SUPPORTED)
+    assert ctx.minimum_version in (
+        ssl.TLSVersion.TLSv1_3,
+        ssl.TLSVersion.MINIMUM_SUPPORTED,
+    )
 
 
 class _WithSSL(SSLConfigMixin):
@@ -104,7 +120,9 @@ def test_ssl_config_mixin_flow() -> None:
     assert isinstance(ctx1, ssl.SSLContext)
 
     # Update configuration and ensure context resets
-    obj.configure_ssl(enabled=True, verify_mode=SSLVerifyMode.NONE, tls_version=TLSVersion.TLS_1_2)
+    obj.configure_ssl(
+        enabled=True, verify_mode=SSLVerifyMode.NONE, tls_version=TLSVersion.TLS_1_2
+    )
     errs = obj.validate_ssl_config()  # no files provided → no errors
     assert errs == []
     ctx2 = obj._get_ssl_context()

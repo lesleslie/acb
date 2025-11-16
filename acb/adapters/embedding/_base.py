@@ -1,13 +1,14 @@
 """Base embedding adapter interface for AI/ML embedding operations."""
 
-import contextlib
-import typing as t
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from enum import Enum
 
+import contextlib
 import numpy as np
+import typing as t
+from dataclasses import dataclass
 from pydantic import BaseModel, Field, SecretStr
+
 from acb.cleanup import CleanupMixin
 from acb.config import AdapterBase, Settings
 from acb.ssl_config import SSLConfigMixin

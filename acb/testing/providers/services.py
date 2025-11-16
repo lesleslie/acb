@@ -13,9 +13,10 @@ Features:
 - Health check simulation
 """
 
+from unittest.mock import AsyncMock
+
 import typing as t
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock
 
 from acb.testing.discovery import (
     TestProviderCapability,
@@ -104,8 +105,9 @@ class MockServiceProvider:
         async def mock_benchmark(
             operation: str, iterations: int = 10
         ) -> dict[str, Any]:
-            import asyncio
             import random
+
+            import asyncio
 
             results = []
             for _ in range(iterations):

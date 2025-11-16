@@ -1,9 +1,7 @@
 """Additional tests for the ACB FTPD modules to fix failing tests."""
-import os
-import tempfile
+
 from pathlib import Path
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Any, Dict, List, Optional
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import SecretStr
@@ -13,14 +11,18 @@ from acb.adapters.ftpd._base import (
     FtpdBaseSettings,
 )
 from acb.adapters.ftpd.ftp import (
-    FtpdSettings as FtpFtpdSettings,
     Ftpd as FtpFtpd,
+)
+from acb.adapters.ftpd.ftp import (
+    FtpdSettings as FtpFtpdSettings,
+)
+from acb.adapters.ftpd.sftp import (
+    Ftpd as SftpFtpd,
 )
 from acb.adapters.ftpd.sftp import (
     FtpdSettings as SftpFtpdSettings,
-    Ftpd as SftpFtpd,
 )
-from acb.config import Config, AppSettings, DebugSettings
+from acb.config import Config
 
 
 class TestFtpdBaseSettings:
@@ -53,7 +55,7 @@ class TestFtpdBaseSettings:
             root_dir="/custom/ftp",
             use_tls=True,
             cert_file="/path/to/cert.pem",
-            key_file="/path/to/key.pem"
+            key_file="/path/to/key.pem",
         )
 
         assert settings.host == "192.168.1.100"
@@ -96,7 +98,7 @@ class TestFileInfo:
             permissions="rw-r--r--",
             mtime=1640995200.0,
             owner="testuser",
-            group="testgroup"
+            group="testgroup",
         )
 
         assert info.name == "test.txt"
@@ -112,11 +114,7 @@ class TestFileInfo:
     def test_file_info_directory(self) -> None:
         """Test FileInfo for directory."""
         info = FileInfo(
-            name="testdir",
-            size=0,
-            is_dir=True,
-            is_file=False,
-            is_symlink=False
+            name="testdir", size=0, is_dir=True, is_file=False, is_symlink=False
         )
 
         assert info.name == "testdir"
@@ -149,7 +147,7 @@ class TestFtpFtpdSettings:
             passive_ports_max=52000,
             timeout=60,
             host="192.168.1.100",
-            username="ftpuser2"
+            username="ftpuser2",
         )
 
         assert settings.port == 2121
@@ -185,7 +183,7 @@ class TestSftpFtpdSettings:
             known_hosts="/path/to/known_hosts",
             client_keys=["/path/to/client_key"],
             host="192.168.1.100",
-            username="sftpuser"
+            username="sftpuser",
         )
 
         assert settings.port == 2222
@@ -240,7 +238,7 @@ class TestFtpFtpd:
         mock_permission_class: Mock,
         mock_user_class: Mock,
         mock_path_class: Mock,
-        ftp_ftpd: FtpFtpd
+        ftp_ftpd: FtpFtpd,
     ) -> None:
         """Test FTP Ftpd server property."""
         mock_server_instance = Mock()
@@ -276,7 +274,7 @@ class TestFtpFtpd:
         mock_permission_class: Mock,
         mock_user_class: Mock,
         mock_path_class: Mock,
-        ftp_ftpd: FtpFtpd
+        ftp_ftpd: FtpFtpd,
     ) -> None:
         """Test FTP Ftpd start method success."""
         mock_server_instance = AsyncMock()
@@ -300,7 +298,7 @@ class TestFtpFtpd:
         mock_permission_class: Mock,
         mock_user_class: Mock,
         mock_path_class: Mock,
-        ftp_ftpd: FtpFtpd
+        ftp_ftpd: FtpFtpd,
     ) -> None:
         """Test FTP Ftpd start method failure."""
         mock_server_instance = AsyncMock()
@@ -328,7 +326,7 @@ class TestFtpFtpd:
         mock_permission_class: Mock,
         mock_user_class: Mock,
         mock_path_class: Mock,
-        ftp_ftpd: FtpFtpd
+        ftp_ftpd: FtpFtpd,
     ) -> None:
         """Test FTP Ftpd stop method success."""
         mock_server_instance = AsyncMock()
@@ -352,7 +350,7 @@ class TestFtpFtpd:
         mock_permission_class: Mock,
         mock_user_class: Mock,
         mock_path_class: Mock,
-        ftp_ftpd: FtpFtpd
+        ftp_ftpd: FtpFtpd,
     ) -> None:
         """Test FTP Ftpd stop method failure."""
         mock_server_instance = AsyncMock()
@@ -378,12 +376,11 @@ class TestFtpFtpd:
 
             mock_client_class.assert_called_once()
             mock_client_instance.connect.assert_called_once_with(
-                ftp_ftpd.config.ftpd.host,
-                ftp_ftpd.config.ftpd.port
+                ftp_ftpd.config.ftpd.host, ftp_ftpd.config.ftpd.port
             )
             mock_client_instance.login.assert_called_once_with(
                 ftp_ftpd.config.ftpd.username,
-                ftp_ftpd.config.ftpd.password.get_secret_value()
+                ftp_ftpd.config.ftpd.password.get_secret_value(),
             )
             assert client == mock_client_instance
 
@@ -520,10 +517,7 @@ class TestSftpFtpd:
     @patch("acb.adapters.ftpd.sftp.Path")
     @patch("acb.adapters.ftpd.sftp.asyncssh")
     async def test_sftp_ftpd_start_success(
-        self,
-        mock_asyncssh: Mock,
-        mock_path_class: Mock,
-        sftp_ftpd: SftpFtpd
+        self, mock_asyncssh: Mock, mock_path_class: Mock, sftp_ftpd: SftpFtpd
     ) -> None:
         """Test SFTP Ftpd start method success."""
         mock_server_acceptor = AsyncMock()
@@ -540,10 +534,7 @@ class TestSftpFtpd:
     @patch("acb.adapters.ftpd.sftp.Path")
     @patch("acb.adapters.ftpd.sftp.asyncssh")
     async def test_sftp_ftpd_start_failure(
-        self,
-        mock_asyncssh: Mock,
-        mock_path_class: Mock,
-        sftp_ftpd: SftpFtpd
+        self, mock_asyncssh: Mock, mock_path_class: Mock, sftp_ftpd: SftpFtpd
     ) -> None:
         """Test SFTP Ftpd start method failure."""
         mock_asyncssh.create_server = AsyncMock(side_effect=Exception("Start failed"))
@@ -558,9 +549,7 @@ class TestSftpFtpd:
     @pytest.mark.asyncio
     @patch("acb.adapters.ftpd.sftp.asyncssh")
     async def test_sftp_ftpd_stop_success(
-        self,
-        mock_asyncssh: Mock,
-        sftp_ftpd: SftpFtpd
+        self, mock_asyncssh: Mock, sftp_ftpd: SftpFtpd
     ) -> None:
         """Test SFTP Ftpd stop method success."""
         sftp_ftpd._server = Mock()
@@ -580,9 +569,7 @@ class TestSftpFtpd:
     @pytest.mark.asyncio
     @patch("acb.adapters.ftpd.sftp.asyncssh")
     async def test_sftp_ftpd_stop_no_server(
-        self,
-        mock_asyncssh: Mock,
-        sftp_ftpd: SftpFtpd
+        self, mock_asyncssh: Mock, sftp_ftpd: SftpFtpd
     ) -> None:
         """Test SFTP Ftpd stop method when no server exists."""
         sftp_ftpd._server = None
@@ -597,9 +584,7 @@ class TestSftpFtpd:
     @pytest.mark.asyncio
     @patch("acb.adapters.ftpd.sftp.asyncssh")
     async def test_sftp_ftpd_ensure_client(
-        self,
-        mock_asyncssh: Mock,
-        sftp_ftpd: SftpFtpd
+        self, mock_asyncssh: Mock, sftp_ftpd: SftpFtpd
     ) -> None:
         """Test SFTP Ftpd _ensure_client method."""
         mock_ssh_client = AsyncMock()
@@ -627,9 +612,7 @@ class TestSftpFtpd:
     @pytest.mark.asyncio
     @patch("acb.adapters.ftpd.sftp.asyncssh")
     async def test_sftp_ftpd_ensure_client_cached(
-        self,
-        mock_asyncssh: Mock,
-        sftp_ftpd: SftpFtpd
+        self, mock_asyncssh: Mock, sftp_ftpd: SftpFtpd
     ) -> None:
         """Test SFTP Ftpd _ensure_client method with cached client."""
         mock_ssh_client = AsyncMock()

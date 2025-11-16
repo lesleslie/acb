@@ -24,17 +24,18 @@ Implementation follows ACB adapter patterns:
 - CleanupMixin integration
 """
 
-import asyncio
 import heapq
 import time
-import typing as t
 from collections import defaultdict, deque
 from collections.abc import AsyncGenerator, AsyncIterator
-from contextlib import asynccontextmanager
-from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+import asyncio
+import typing as t
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 from pydantic import Field
+
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.adapters.messaging._base import (
     MessagingCapability,

@@ -8,6 +8,7 @@ specific to the Secret adapter implementation.
 from unittest.mock import patch
 
 import pytest
+
 from tests.test_interfaces import MockSecret, SecretAdapterProtocol, SecretTestInterface
 
 

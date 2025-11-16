@@ -5,6 +5,7 @@ from uuid import UUID
 
 import pytest
 from pydantic import SecretStr
+
 from acb.adapters import AdapterStatus
 from acb.adapters.monitoring.logfire import (
     MODULE_ID,

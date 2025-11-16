@@ -1,14 +1,15 @@
 """Tests for the ACB SQLite adapter."""
+
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from pydantic import SecretStr
 from sqlalchemy.engine import URL
 
-from acb.adapters.sql.sqlite import SqlSettings, Sql
 from acb.adapters.sql._base import SqlBaseSettings
+from acb.adapters.sql.sqlite import Sql, SqlSettings
 from acb.config import Config
 
 
@@ -38,7 +39,7 @@ class TestSqlSettings:
             port=1234,
             host=SecretStr("localhost"),
             user=SecretStr("testuser"),
-            password=SecretStr("testpass")
+            password=SecretStr("testpass"),
         )
 
         assert settings.database_url == "sqlite:///test.db"
@@ -119,8 +120,7 @@ class TestSqlSettings:
     def test_setup_turso_urls_with_auth_token(self) -> None:
         """Test Turso URL setup with auth token."""
         settings = SqlSettings(
-            database_url="libsql://test.turso.io",
-            auth_token=SecretStr("test-token")
+            database_url="libsql://test.turso.io", auth_token=SecretStr("test-token")
         )
 
         # Just ensure it doesn't raise an exception
@@ -140,10 +140,7 @@ class TestSqlSettings:
         """Test local URL setup with WAL mode enabled."""
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "test.db"
-            settings = SqlSettings(
-                database_url=f"sqlite:///{db_path}",
-                wal_mode=True
-            )
+            settings = SqlSettings(database_url=f"sqlite:///{db_path}", wal_mode=True)
 
             assert settings._url is not None
             assert settings._async_url is not None
@@ -152,10 +149,7 @@ class TestSqlSettings:
         """Test local URL setup with WAL mode disabled."""
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "test.db"
-            settings = SqlSettings(
-                database_url=f"sqlite:///{db_path}",
-                wal_mode=False
-            )
+            settings = SqlSettings(database_url=f"sqlite:///{db_path}", wal_mode=False)
 
             assert settings._url is not None
             assert settings._async_url is not None
@@ -164,13 +158,13 @@ class TestSqlSettings:
         """Test that ssl_enabled property is inherited correctly."""
         settings = SqlSettings()
         # Should inherit from base class
-        assert hasattr(settings, 'ssl_enabled')
+        assert hasattr(settings, "ssl_enabled")
 
     def test_tls_version_property_inherited(self) -> None:
         """Test that tls_version property is inherited correctly."""
         settings = SqlSettings()
         # Should inherit from base class
-        assert hasattr(settings, 'tls_version')
+        assert hasattr(settings, "tls_version")
 
 
 class TestSqlAdapter:
@@ -208,7 +202,7 @@ class TestSqlAdapter:
         with (
             patch("acb.adapters.sql.sqlite.create_async_engine") as mock_create_engine,
             patch("acb.adapters.sql.sqlite.Path") as mock_path,
-            patch("acb.adapters.sql.sqlite.text") as mock_text,
+            patch("acb.adapters.sql.sqlite.text"),
         ):
             mock_engine = AsyncMock()
             mock_create_engine.return_value = mock_engine
@@ -248,7 +242,9 @@ class TestSqlAdapter:
         mock_config = sqlite_adapter.config
         mock_config.sql.is_turso = False
         mock_config.sql.database_url = "sqlite:///test/subdir/test.db"
-        mock_config.sql._async_url = URL.create("sqlite+aiosqlite", database="test/subdir/test.db")
+        mock_config.sql._async_url = URL.create(
+            "sqlite+aiosqlite", database="test/subdir/test.db"
+        )
 
         with (
             patch("acb.adapters.sql.sqlite.create_async_engine") as mock_create_engine,
@@ -280,7 +276,7 @@ class TestSqlAdapter:
             patch.object(sqlite_adapter, "get_conn") as mock_get_conn,
             patch("acb.adapters.sql.sqlite.import_adapter") as mock_import_adapter,
             patch("acb.adapters.sql.sqlite.SQLModel") as mock_sqlmodel,
-            patch("acb.adapters.sql.sqlite.log") as mock_log,
+            patch("acb.adapters.sql.sqlite.log"),
         ):
             # Mock connection context manager
             mock_conn = AsyncMock()
@@ -307,9 +303,9 @@ class TestSqlAdapter:
 
         with (
             patch.object(sqlite_adapter, "get_conn") as mock_get_conn,
-            patch("acb.adapters.sql.sqlite.import_adapter") as mock_import_adapter,
+            patch("acb.adapters.sql.sqlite.import_adapter"),
             patch("acb.adapters.sql.sqlite.SQLModel") as mock_sqlmodel,
-            patch("acb.adapters.sql.sqlite.log") as mock_log,
+            patch("acb.adapters.sql.sqlite.log"),
         ):
             # Mock connection context manager
             mock_conn = AsyncMock()
@@ -334,10 +330,10 @@ class TestSqlAdapter:
 
         with (
             patch.object(sqlite_adapter, "get_conn") as mock_get_conn,
-            patch("acb.adapters.sql.sqlite.import_adapter") as mock_import_adapter,
+            patch("acb.adapters.sql.sqlite.import_adapter"),
             patch("acb.adapters.sql.sqlite.SQLModel") as mock_sqlmodel,
-            patch("acb.adapters.sql.sqlite.log") as mock_log,
-            patch("acb.adapters.sql.sqlite.text") as mock_text,
+            patch("acb.adapters.sql.sqlite.log"),
+            patch("acb.adapters.sql.sqlite.text"),
         ):
             # Mock connection context manager
             mock_conn = AsyncMock()
@@ -366,9 +362,9 @@ class TestSqlAdapter:
 
         with (
             patch.object(sqlite_adapter, "get_conn") as mock_get_conn,
-            patch("acb.adapters.sql.sqlite.import_adapter") as mock_import_adapter,
+            patch("acb.adapters.sql.sqlite.import_adapter"),
             patch("acb.adapters.sql.sqlite.SQLModel") as mock_sqlmodel,
-            patch("acb.adapters.sql.sqlite.log") as mock_log,
+            patch("acb.adapters.sql.sqlite.log"),
         ):
             # Mock connection context manager
             mock_conn = AsyncMock()
@@ -395,8 +391,7 @@ class TestSqlSettingsEdgeCases:
     def test_setup_turso_urls_with_secure_param(self) -> None:
         """Test Turso URL setup with secure parameter."""
         settings = SqlSettings(
-            database_url="libsql://test.turso.io?secure=true",
-            ssl_enabled=True
+            database_url="libsql://test.turso.io?secure=true", ssl_enabled=True
         )
 
         # Just ensure it doesn't raise an exception
@@ -440,5 +435,5 @@ class TestSqlSettingsEdgeCases:
         settings = SqlSettings(database_url="sqlite://test-with-turso-in-name.db")
         # Should not be detected as Turso just because "turso" is in the name
         # This might actually be detected as Turso, but let's test the current behavior
-        detected_as_turso = settings._is_turso_url()
+        settings._is_turso_url()
         # The behavior might vary, but it shouldn't crash

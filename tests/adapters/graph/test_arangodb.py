@@ -1,15 +1,15 @@
 """Tests for ArangoDB graph adapter."""
 
-import pytest
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
-from acb.adapters.graph.arangodb import Graph, ArangoDBSettings, MODULE_METADATA
+import pytest
+
 from acb.adapters.graph._base import (
-    GraphQueryLanguage,
-    GraphNodeModel,
     GraphEdgeModel,
+    GraphNodeModel,
+    GraphQueryLanguage,
 )
+from acb.adapters.graph.arangodb import MODULE_METADATA, ArangoDBSettings, Graph
 
 
 class MockArangoClient:
@@ -59,7 +59,9 @@ class MockArangoDatabase:
 
     def collection(self, collection_name):
         """Mock collection retrieval."""
-        return self._collections.get(collection_name, MockArangoCollection(collection_name))
+        return self._collections.get(
+            collection_name, MockArangoCollection(collection_name)
+        )
 
     def collections(self):
         """Mock collections listing."""
@@ -276,7 +278,7 @@ class TestArangoDBAdapter:
         assert "acid_transactions" in features
         assert "full_text_search" in features
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_create_client(self, mock_arango_client, arangodb_adapter):
         """Test ArangoDB client creation."""
         mock_client = MockArangoClient()
@@ -287,7 +289,7 @@ class TestArangoDBAdapter:
         assert isinstance(client, MockArangoDatabase)
         mock_arango_client.assert_called_once()
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_ensure_graph(self, mock_arango_client, arangodb_adapter):
         """Test graph creation and retrieval."""
         mock_client = MockArangoClient()
@@ -299,7 +301,7 @@ class TestArangoDBAdapter:
         # Verify graph was created
         assert arangodb_adapter._graph is not None
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_execute_query(self, mock_arango_client, arangodb_adapter):
         """Test AQL query execution."""
         mock_client = MockArangoClient()
@@ -311,7 +313,7 @@ class TestArangoDBAdapter:
         assert result.execution_time is not None
         assert len(result.records) >= 0
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_create_node(self, mock_arango_client, arangodb_adapter):
         """Test node creation."""
         mock_client = MockArangoClient()
@@ -324,7 +326,7 @@ class TestArangoDBAdapter:
         assert node.properties["name"] == "John"
         assert node.created_at is not None
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_get_node(self, mock_arango_client, arangodb_adapter):
         """Test node retrieval."""
         mock_client = MockArangoClient()
@@ -349,7 +351,7 @@ class TestArangoDBAdapter:
         assert isinstance(node, GraphNodeModel)
         assert node.id == "vertices/test1"
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_get_node_not_found(self, mock_arango_client, arangodb_adapter):
         """Test node retrieval when not found."""
         mock_client = MockArangoClient()
@@ -359,7 +361,7 @@ class TestArangoDBAdapter:
 
         assert node is None
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_update_node(self, mock_arango_client, arangodb_adapter):
         """Test node update."""
         mock_client = MockArangoClient()
@@ -383,7 +385,7 @@ class TestArangoDBAdapter:
         assert isinstance(node, GraphNodeModel)
         assert node.properties["name"] == "Jane"
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_delete_node(self, mock_arango_client, arangodb_adapter):
         """Test node deletion."""
         mock_client = MockArangoClient()
@@ -393,13 +395,15 @@ class TestArangoDBAdapter:
 
         assert result is True
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_create_edge(self, mock_arango_client, arangodb_adapter):
         """Test edge creation."""
         mock_client = MockArangoClient()
         mock_arango_client.return_value = mock_client
 
-        edge = await arangodb_adapter._create_edge("KNOWS", "vertices/node1", "vertices/node2", {"since": "2020"})
+        edge = await arangodb_adapter._create_edge(
+            "KNOWS", "vertices/node1", "vertices/node2", {"since": "2020"}
+        )
 
         assert isinstance(edge, GraphEdgeModel)
         assert edge.type == "KNOWS"
@@ -407,7 +411,7 @@ class TestArangoDBAdapter:
         assert edge.to_node == "vertices/node2"
         assert edge.properties["since"] == "2020"
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_get_edge(self, mock_arango_client, arangodb_adapter):
         """Test edge retrieval."""
         mock_client = MockArangoClient()
@@ -434,14 +438,14 @@ class TestArangoDBAdapter:
         assert isinstance(edge, GraphEdgeModel)
         assert edge.id == "edges/test_edge"
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_find_path(self, mock_arango_client, arangodb_adapter):
         """Test path finding."""
         mock_client = MockArangoClient()
         mock_arango_client.return_value = mock_client
 
         # Mock path query result
-        with patch.object(arangodb_adapter, '_execute_query') as mock_execute:
+        with patch.object(arangodb_adapter, "_execute_query") as mock_execute:
             mock_execute.return_value = MagicMock()
             mock_execute.return_value.records = [
                 {
@@ -450,17 +454,24 @@ class TestArangoDBAdapter:
                         {"_id": "vertices/node2", "name": "Node2"},
                     ],
                     "edges": [
-                        {"_id": "edges/edge1", "_from": "vertices/node1", "_to": "vertices/node2", "type": "CONNECTS"}
+                        {
+                            "_id": "edges/edge1",
+                            "_from": "vertices/node1",
+                            "_to": "vertices/node2",
+                            "type": "CONNECTS",
+                        }
                     ],
                 }
             ]
 
-            paths = await arangodb_adapter._find_path("vertices/node1", "vertices/node2", max_depth=5, direction="both")
+            paths = await arangodb_adapter._find_path(
+                "vertices/node1", "vertices/node2", max_depth=5, direction="both"
+            )
 
         assert isinstance(paths, list)
         assert len(paths) == 1
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_get_schema(self, mock_arango_client, arangodb_adapter):
         """Test schema retrieval."""
         mock_client = MockArangoClient()
@@ -470,7 +481,9 @@ class TestArangoDBAdapter:
         database = await arangodb_adapter._create_client()
 
         # Mock collections
-        database._collections["vertices"] = MockArangoCollection("vertices", is_edge=False)
+        database._collections["vertices"] = MockArangoCollection(
+            "vertices", is_edge=False
+        )
         database._collections["edges"] = MockArangoCollection("edges", is_edge=True)
 
         schema = await arangodb_adapter._get_schema()
@@ -479,7 +492,7 @@ class TestArangoDBAdapter:
         assert "edges" in schema.edge_types
         assert isinstance(schema.indexes, list)
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_transaction_operations(self, mock_arango_client, arangodb_adapter):
         """Test transaction operations."""
         mock_client = MockArangoClient()
@@ -500,7 +513,7 @@ class TestArangoDBAdapter:
         await arangodb_adapter.rollback_transaction()
         assert arangodb_adapter._transaction is None
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_bulk_operations(self, mock_arango_client, arangodb_adapter):
         """Test bulk operations."""
         mock_client = MockArangoClient()
@@ -518,22 +531,32 @@ class TestArangoDBAdapter:
 
         # Test bulk edge creation
         edges_data = [
-            {"type": "KNOWS", "from_node": "vertices/node1", "to_node": "vertices/node2", "properties": {}},
-            {"type": "KNOWS", "from_node": "vertices/node2", "to_node": "vertices/node3", "properties": {}},
+            {
+                "type": "KNOWS",
+                "from_node": "vertices/node1",
+                "to_node": "vertices/node2",
+                "properties": {},
+            },
+            {
+                "type": "KNOWS",
+                "from_node": "vertices/node2",
+                "to_node": "vertices/node3",
+                "properties": {},
+            },
         ]
         edges = await arangodb_adapter._bulk_create_edges(edges_data)
 
         assert len(edges) == 2
         assert all(isinstance(e, GraphEdgeModel) for e in edges)
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_count_operations(self, mock_arango_client, arangodb_adapter):
         """Test count operations."""
         mock_client = MockArangoClient()
         mock_arango_client.return_value = mock_client
 
         # Mock count query results
-        with patch.object(arangodb_adapter, '_execute_query') as mock_execute:
+        with patch.object(arangodb_adapter, "_execute_query") as mock_execute:
             mock_execute.return_value = MagicMock()
             mock_execute.return_value.records = [10]
 
@@ -543,7 +566,7 @@ class TestArangoDBAdapter:
         assert node_count == 10
         assert edge_count == 10
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_clear_graph(self, mock_arango_client, arangodb_adapter):
         """Test graph clearing."""
         mock_client = MockArangoClient()
@@ -553,7 +576,7 @@ class TestArangoDBAdapter:
 
         assert result is True
 
-    @patch('acb.adapters.graph.arangodb.ArangoClient')
+    @patch("acb.adapters.graph.arangodb.ArangoClient")
     async def test_create_and_drop_index(self, mock_arango_client, arangodb_adapter):
         """Test index operations."""
         mock_client = MockArangoClient()

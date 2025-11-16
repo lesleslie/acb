@@ -1,11 +1,12 @@
 """Comprehensive tests for MongoDB NoSQL adapter."""
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 import pytest
+import typing as t
 from pydantic import SecretStr
+
 from acb.adapters.nosql.mongodb import Nosql, NosqlSettings
 from acb.config import Config
 

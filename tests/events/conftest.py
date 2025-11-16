@@ -1,11 +1,11 @@
 """Shared fixtures for Events System tests."""
 
+from unittest.mock import MagicMock
+from uuid import uuid4
+
 import asyncio
 import pytest
-from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 from acb.adapters.messaging import MessagePriority, QueueMessage
 
@@ -41,7 +41,7 @@ class MockQueueSubscription:
             try:
                 message = await asyncio.wait_for(self._message_queue.get(), timeout=0.1)
                 yield message
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Check if we should stop (connection closed)
                 if not self._queue._connected:
                     break
@@ -70,23 +70,22 @@ class MockQueue:
         """
         if pattern == topic:
             return True
-        if '*' not in pattern:
+        if "*" not in pattern:
             return False
 
         # Split into parts
-        pattern_parts = pattern.split('.')
-        topic_parts = topic.split('.')
+        pattern_parts = pattern.split(".")
+        topic_parts = topic.split(".")
 
         # If last part of pattern is *, it can match one or more topic parts
-        if pattern_parts[-1] == '*':
+        if pattern_parts[-1] == "*":
             # 'events.*' should match 'events.test.event' (zero or more levels)
             prefix_parts = pattern_parts[:-1]
             if len(topic_parts) < len(prefix_parts):
                 return False
             # Check that prefix matches
             return all(
-                p == t
-                for p, t in zip(prefix_parts, topic_parts[:len(prefix_parts)])
+                p == t for p, t in zip(prefix_parts, topic_parts[: len(prefix_parts)])
             )
 
         # Otherwise, must have same number of parts
@@ -94,10 +93,7 @@ class MockQueue:
             return False
 
         # Check each part matches (allowing * wildcard)
-        return all(
-            p == '*' or p == t
-            for p, t in zip(pattern_parts, topic_parts)
-        )
+        return all(p == "*" or p == t for p, t in zip(pattern_parts, topic_parts))
 
     async def connect(self) -> None:
         """Connect to mock queue."""
@@ -164,9 +160,7 @@ class MockQueue:
             **kwargs,
         )
 
-    def subscribe(
-        self, topic: str, prefetch: int | None = None
-    ):
+    def subscribe(self, topic: str, prefetch: int | None = None):
         """Subscribe to topic pattern."""
         return MockQueueSubscription(self, topic)
 
@@ -207,9 +201,8 @@ def mock_queue_adapter_import(mock_queue, monkeypatch):
     ACB automatically returns MagicMock() for all adapters when pytest is running.
     This fixture overrides that behavior specifically for the queue adapter.
     """
-    from acb.depends import depends
     import acb.adapters
-    from unittest.mock import MagicMock
+    from acb.depends import depends
 
     # Create mock logger with all necessary attributes
     mock_logger = MagicMock()
@@ -222,6 +215,7 @@ def mock_queue_adapter_import(mock_queue, monkeypatch):
     # Create a stable class for the mock queue that we can register with bevy
     class MockQueueAdapter:
         """Marker class for mock queue adapter."""
+
         pass
 
     # Store the original _handle_testing_mode function
@@ -229,8 +223,6 @@ def mock_queue_adapter_import(mock_queue, monkeypatch):
 
     def custom_testing_mode(adapter_categories):
         """Custom testing mode that returns MockQueueAdapter for queue, MagicMock for others."""
-        from unittest.mock import MagicMock
-
         # Handle both string and list forms
         if adapter_categories == "queue" or adapter_categories == ["queue"]:
             return MockQueueAdapter
@@ -247,10 +239,12 @@ def mock_queue_adapter_import(mock_queue, monkeypatch):
 
     # Register mock logger with bevy's dependency injection
     from acb.logger import Logger
+
     depends.set(Logger, mock_logger)
 
     # Also patch ServiceBase.logger to directly return the mock
     from acb.services._base import ServiceBase
+
     original_logger = ServiceBase.logger
 
     def mock_logger_property(self):

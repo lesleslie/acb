@@ -12,9 +12,10 @@ This adapter integrates APScheduler 3.x with ACB's queue system, providing:
 import importlib
 import importlib.util as _il_util
 import logging
+from uuid import UUID, uuid4
+
 import typing as t
 from datetime import UTC, datetime
-from uuid import UUID, uuid4
 
 AsyncIOScheduler = t.Any
 CronTrigger = t.Any
@@ -155,7 +156,7 @@ class Queue(QueueBase):
 
         # Initialize scheduler
         aio_sched_mod = importlib.import_module("apscheduler.schedulers.asyncio")
-        AsyncIOSchedulerClass = getattr(aio_sched_mod, "AsyncIOScheduler")
+        AsyncIOSchedulerClass = aio_sched_mod.AsyncIOScheduler
         scheduler = AsyncIOSchedulerClass(
             jobstores=self._job_stores,
             executors=self._executors,
@@ -185,7 +186,7 @@ class Queue(QueueBase):
 
         if self.settings.job_store_type == "memory":
             memory_mod = importlib.import_module("apscheduler.jobstores.memory")
-            MemoryJobStore = getattr(memory_mod, "MemoryJobStore")
+            MemoryJobStore = memory_mod.MemoryJobStore
 
             stores["default"] = MemoryJobStore()
 
@@ -193,7 +194,7 @@ class Queue(QueueBase):
             sqlalchemy_mod = importlib.import_module(
                 "apscheduler.jobstores.sqlalchemy",
             )
-            SQLAlchemyJobStore = getattr(sqlalchemy_mod, "SQLAlchemyJobStore")
+            SQLAlchemyJobStore = sqlalchemy_mod.SQLAlchemyJobStore
 
             if not self.settings.job_store_url:
                 msg = "job_store_url required for SQLAlchemy job store"
@@ -209,7 +210,7 @@ class Queue(QueueBase):
         elif self.settings.job_store_type == "mongodb":
             pymongo = importlib.import_module("pymongo")
             mongodb_mod = importlib.import_module("apscheduler.jobstores.mongodb")
-            MongoDBJobStore = getattr(mongodb_mod, "MongoDBJobStore")
+            MongoDBJobStore = mongodb_mod.MongoDBJobStore
 
             client_options = self.settings.mongodb_client_options.copy()
             # Extract connection URL if provided in job_store_url
@@ -230,7 +231,7 @@ class Queue(QueueBase):
         elif self.settings.job_store_type == "redis":
             redis = importlib.import_module("redis")
             redis_mod = importlib.import_module("apscheduler.jobstores.redis")
-            RedisJobStore = getattr(redis_mod, "RedisJobStore")
+            RedisJobStore = redis_mod.RedisJobStore
 
             # Extract connection parameters if URL provided
             if self.settings.job_store_url:
@@ -261,13 +262,13 @@ class Queue(QueueBase):
 
         if self.settings.executor_type == "asyncio":
             aio_mod = importlib.import_module("apscheduler.executors.asyncio")
-            AsyncIOExecutor = getattr(aio_mod, "AsyncIOExecutor")
+            AsyncIOExecutor = aio_mod.AsyncIOExecutor
 
             executors["default"] = AsyncIOExecutor()
 
         elif self.settings.executor_type == "thread":
             pool_mod = importlib.import_module("apscheduler.executors.pool")
-            ThreadPoolExecutor = getattr(pool_mod, "ThreadPoolExecutor")
+            ThreadPoolExecutor = pool_mod.ThreadPoolExecutor
 
             executors["default"] = ThreadPoolExecutor(
                 max_workers=self.settings.thread_pool_max_workers,
@@ -275,7 +276,7 @@ class Queue(QueueBase):
 
         elif self.settings.executor_type == "process":
             pool_mod = importlib.import_module("apscheduler.executors.pool")
-            ProcessPoolExecutor = getattr(pool_mod, "ProcessPoolExecutor")
+            ProcessPoolExecutor = pool_mod.ProcessPoolExecutor
 
             executors["default"] = ProcessPoolExecutor(
                 max_workers=self.settings.process_pool_max_workers,
@@ -292,9 +293,9 @@ class Queue(QueueBase):
     def _setup_event_listeners(self, scheduler: AsyncIOScheduler) -> None:
         """Set up event listeners for job tracking."""
         events_mod = importlib.import_module("apscheduler.events")
-        EVENT_JOB_ERROR = getattr(events_mod, "EVENT_JOB_ERROR")
-        EVENT_JOB_EXECUTED = getattr(events_mod, "EVENT_JOB_EXECUTED")
-        EVENT_JOB_MISSED = getattr(events_mod, "EVENT_JOB_MISSED")
+        EVENT_JOB_ERROR = events_mod.EVENT_JOB_ERROR
+        EVENT_JOB_EXECUTED = events_mod.EVENT_JOB_EXECUTED
+        EVENT_JOB_MISSED = events_mod.EVENT_JOB_MISSED
 
         def job_executed_listener(event: t.Any) -> None:
             """Track successful job execution."""
@@ -352,19 +353,19 @@ class Queue(QueueBase):
         # Create trigger based on task scheduling
         if task.scheduled_at:
             trig_date_mod = importlib.import_module("apscheduler.triggers.date")
-            DateTrigger = getattr(trig_date_mod, "DateTrigger")
+            DateTrigger = trig_date_mod.DateTrigger
             trigger = DateTrigger(run_date=task.scheduled_at)  # type: ignore[call-arg]
         elif task.delay > 0:
             from datetime import timedelta
 
             run_date = datetime.now(tz=UTC) + timedelta(seconds=task.delay)
             trig_date_mod = importlib.import_module("apscheduler.triggers.date")
-            DateTrigger = getattr(trig_date_mod, "DateTrigger")
+            DateTrigger = trig_date_mod.DateTrigger
             trigger = DateTrigger(run_date=run_date)  # type: ignore[call-arg]
         else:
             # Immediate execution
             trig_date_mod = importlib.import_module("apscheduler.triggers.date")
-            DateTrigger = getattr(trig_date_mod, "DateTrigger")
+            DateTrigger = trig_date_mod.DateTrigger
             trigger = DateTrigger(run_date=datetime.now(tz=UTC))  # type: ignore[call-arg]
 
         # Add job to scheduler
@@ -630,7 +631,7 @@ class Queue(QueueBase):
             raise ValueError(msg)
 
         cron_mod = importlib.import_module("apscheduler.triggers.cron")
-        CronTrigger = getattr(cron_mod, "CronTrigger")
+        CronTrigger = cron_mod.CronTrigger
         trigger = CronTrigger(
             minute=parts[0],
             hour=parts[1],
@@ -692,7 +693,7 @@ class Queue(QueueBase):
         )
 
         interval_mod = importlib.import_module("apscheduler.triggers.interval")
-        IntervalTrigger = getattr(interval_mod, "IntervalTrigger")
+        IntervalTrigger = interval_mod.IntervalTrigger
         trigger = IntervalTrigger(  # type: ignore[call-arg]
             seconds=interval_seconds,
             timezone=self.settings.timezone,

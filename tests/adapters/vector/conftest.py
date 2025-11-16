@@ -1,10 +1,10 @@
 """Shared fixtures and mocks for vector adapter tests."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
-from pathlib import Path
 
-from acb.adapters.vector._base import VectorSearchResult, VectorDocument
+import pytest
+
+from acb.adapters.vector._base import VectorDocument, VectorSearchResult
 
 
 @pytest.fixture
@@ -20,9 +20,7 @@ def mock_vector_client():
     ]
     # Create a mock result object
     mock_result = MagicMock()
-    mock_result.fetchall.return_value = [
-        ("doc1", {"title": "Test Document"}, 0.95)
-    ]
+    mock_result.fetchall.return_value = [("doc1", {"title": "Test Document"}, 0.95)]
     mock_result.fetchone.return_value = (1,)
 
     # Make execute return the mock result
@@ -131,7 +129,7 @@ def mock_pinecone_client():
                 "id": "doc1",
                 "score": 0.95,
                 "metadata": {"title": "Test Document"},
-                "values": [0.1, 0.2, 0.3]
+                "values": [0.1, 0.2, 0.3],
             }
         ]
     }
@@ -142,19 +140,14 @@ def mock_pinecone_client():
     # Mock fetch response
     index.fetch.return_value = {
         "vectors": {
-            "doc1": {
-                "values": [0.1, 0.2, 0.3],
-                "metadata": {"title": "Test Document"}
-            }
+            "doc1": {"values": [0.1, 0.2, 0.3], "metadata": {"title": "Test Document"}}
         }
     }
 
     # Mock describe_index_stats response
     index.describe_index_stats.return_value = {
         "total_vector_count": 10,
-        "namespaces": {
-            "test": {"vector_count": 5}
-        }
+        "namespaces": {"test": {"vector_count": 5}},
     }
 
     client.Index.return_value = index

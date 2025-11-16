@@ -1,11 +1,9 @@
 """Tests for ACB health check system."""
 
 import asyncio
-import time
-from unittest.mock import AsyncMock, Mock, patch
-
 import pytest
 
+from acb.services._base import ServiceBase, ServiceConfig
 from acb.services.health import (
     HealthCheckMixin,
     HealthCheckResult,
@@ -16,7 +14,6 @@ from acb.services.health import (
     HealthServiceSettings,
     HealthStatus,
 )
-from acb.services._base import ServiceBase, ServiceConfig
 
 
 class MockHealthComponent(HealthCheckMixin):
@@ -36,7 +33,9 @@ class MockHealthComponent(HealthCheckMixin):
     def component_name(self) -> str:
         return f"Test Component {self._component_id}"
 
-    async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+    async def _perform_health_check(
+        self, check_type: HealthCheckType
+    ) -> HealthCheckResult:
         """Mock health check implementation."""
         self._check_count += 1
 
@@ -47,7 +46,7 @@ class MockHealthComponent(HealthCheckMixin):
                 status=HealthStatus.UNHEALTHY,
                 check_type=check_type,
                 message="Component is unhealthy",
-                details={"check_count": self._check_count}
+                details={"check_count": self._check_count},
             )
 
         return HealthCheckResult(
@@ -56,7 +55,7 @@ class MockHealthComponent(HealthCheckMixin):
             status=HealthStatus.HEALTHY,
             check_type=check_type,
             message="Component is healthy",
-            details={"check_count": self._check_count}
+            details={"check_count": self._check_count},
         )
 
 
@@ -64,10 +63,7 @@ class MockHealthService(ServiceBase, HealthCheckMixin):
     """Mock service for testing service health integration."""
 
     def __init__(self, service_id: str = "test_service", should_fail: bool = False):
-        config = ServiceConfig(
-            service_id=service_id,
-            name=f"Test Service {service_id}"
-        )
+        config = ServiceConfig(service_id=service_id, name=f"Test Service {service_id}")
         super().__init__(config)
         HealthCheckMixin.__init__(self)
         self._should_fail = should_fail
@@ -81,7 +77,9 @@ class MockHealthService(ServiceBase, HealthCheckMixin):
         """Mock shutdown."""
         pass
 
-    async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+    async def _perform_health_check(
+        self, check_type: HealthCheckType
+    ) -> HealthCheckResult:
         """Mock health check for service."""
         status = HealthStatus.UNHEALTHY if self._should_fail else HealthStatus.HEALTHY
         message = "Service is unhealthy" if self._should_fail else "Service is healthy"
@@ -92,7 +90,7 @@ class MockHealthService(ServiceBase, HealthCheckMixin):
             status=status,
             check_type=check_type,
             message=message,
-            details={"service_status": self.status.value}
+            details={"service_status": self.status.value},
         )
 
 
@@ -123,7 +121,7 @@ class TestHealthCheckResult:
             component_name="Test Component",
             status=HealthStatus.HEALTHY,
             check_type=HealthCheckType.LIVENESS,
-            message="All good"
+            message="All good",
         )
 
         assert result.component_id == "test"
@@ -141,7 +139,7 @@ class TestHealthCheckResult:
             status=HealthStatus.DEGRADED,
             check_type=HealthCheckType.READINESS,
             message="Partially healthy",
-            details={"cpu_usage": 85.5}
+            details={"cpu_usage": 85.5},
         )
 
         result_dict = result.to_dict()
@@ -181,8 +179,11 @@ class TestHealthCheckMixin:
 
     async def test_health_check_timeout(self):
         """Test health check timeout handling."""
+
         class SlowComponent(MockHealthComponent):
-            async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+            async def _perform_health_check(
+                self, check_type: HealthCheckType
+            ) -> HealthCheckResult:
                 await asyncio.sleep(2.0)  # Longer than timeout
                 return await super()._perform_health_check(check_type)
 
@@ -195,8 +196,11 @@ class TestHealthCheckMixin:
 
     async def test_health_check_exception_handling(self):
         """Test health check exception handling."""
+
         class BrokenComponent(MockHealthComponent):
-            async def _perform_health_check(self, check_type: HealthCheckType) -> HealthCheckResult:
+            async def _perform_health_check(
+                self, check_type: HealthCheckType
+            ) -> HealthCheckResult:
                 raise ValueError("Something broke")
 
         component = BrokenComponent("broken")
@@ -224,7 +228,7 @@ class TestHealthReporter:
         self.settings = HealthReporterSettings(
             check_interval=0.1,  # Fast for testing
             critical_threshold=2,
-            degraded_threshold=1
+            degraded_threshold=1,
         )
 
     async def test_health_reporter_component_registration(self):
@@ -334,7 +338,7 @@ class TestHealthService:
         """Set up test fixtures."""
         self.settings = HealthServiceSettings(
             auto_register_services=False,  # Disable for testing
-            health_check_enabled=False     # Prevent recursion in tests
+            health_check_enabled=False,  # Prevent recursion in tests
         )
 
     async def test_health_service_initialization(self):

@@ -1,19 +1,16 @@
 """Tests for ACB services registry functionality."""
 
-import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 from acb.services._base import ServiceBase, ServiceConfig, ServiceStatus
 from acb.services.registry import (
-    ServiceRegistry,
     ServiceNotFoundError,
-    ServiceDependencyError,
+    ServiceRegistry,
     get_registry,
-    register_service,
     get_service,
     initialize_services,
-    shutdown_services
+    register_service,
+    shutdown_services,
 )
 
 
@@ -24,6 +21,7 @@ class TestServiceRegistry:
         """Setup for each test method."""
         # Reset global registry state
         import acb.services.registry
+
         acb.services.registry._registry = None
 
     @pytest.mark.asyncio
@@ -77,7 +75,7 @@ class TestServiceRegistry:
             registry.get_service("test")
 
         # Should have called shutdown
-        assert hasattr(service, 'shutdown_called')
+        assert hasattr(service, "shutdown_called")
 
     @pytest.mark.asyncio
     async def test_registry_service_not_found(self):
@@ -100,11 +98,9 @@ class TestServiceRegistry:
 
         class Service1(ServiceBase):
             def __init__(self):
-                super().__init__(ServiceConfig(
-                    service_id="service1",
-                    name="Service 1",
-                    priority=10
-                ))
+                super().__init__(
+                    ServiceConfig(service_id="service1", name="Service 1", priority=10)
+                )
 
             async def _initialize(self):
                 self.initialized = True
@@ -114,11 +110,9 @@ class TestServiceRegistry:
 
         class Service2(ServiceBase):
             def __init__(self):
-                super().__init__(ServiceConfig(
-                    service_id="service2",
-                    name="Service 2",
-                    priority=20
-                ))
+                super().__init__(
+                    ServiceConfig(service_id="service2", name="Service 2", priority=20)
+                )
 
             async def _initialize(self):
                 self.initialized = True
@@ -136,8 +130,8 @@ class TestServiceRegistry:
 
         assert service1.status == ServiceStatus.ACTIVE
         assert service2.status == ServiceStatus.ACTIVE
-        assert hasattr(service1, 'initialized')
-        assert hasattr(service2, 'initialized')
+        assert hasattr(service1, "initialized")
+        assert hasattr(service2, "initialized")
 
     @pytest.mark.asyncio
     async def test_registry_shutdown_all_services(self):
@@ -158,7 +152,7 @@ class TestServiceRegistry:
         await registry.shutdown_all()
 
         assert service.status == ServiceStatus.STOPPED
-        assert hasattr(service, 'shutdown_called')
+        assert hasattr(service, "shutdown_called")
 
     @pytest.mark.asyncio
     async def test_registry_services_by_status(self):
@@ -182,12 +176,12 @@ class TestServiceRegistry:
         active_service = ActiveService()
         inactive_service = InactiveService()
 
-        await registry.register_service(active_service, ServiceConfig(
-            service_id="active", name="Active"
-        ))
-        await registry.register_service(inactive_service, ServiceConfig(
-            service_id="inactive", name="Inactive"
-        ))
+        await registry.register_service(
+            active_service, ServiceConfig(service_id="active", name="Active")
+        )
+        await registry.register_service(
+            inactive_service, ServiceConfig(service_id="inactive", name="Inactive")
+        )
 
         await active_service.initialize()
 
@@ -227,12 +221,12 @@ class TestServiceRegistry:
         healthy_service = HealthyService()
         unhealthy_service = UnhealthyService()
 
-        await registry.register_service(healthy_service, ServiceConfig(
-            service_id="healthy", name="Healthy"
-        ))
-        await registry.register_service(unhealthy_service, ServiceConfig(
-            service_id="unhealthy", name="Unhealthy"
-        ))
+        await registry.register_service(
+            healthy_service, ServiceConfig(service_id="healthy", name="Healthy")
+        )
+        await registry.register_service(
+            unhealthy_service, ServiceConfig(service_id="unhealthy", name="Unhealthy")
+        )
 
         await registry.initialize_all()
 
@@ -258,11 +252,11 @@ class TestServiceRegistry:
 
         class DatabaseService(ServiceBase):
             def __init__(self):
-                super().__init__(ServiceConfig(
-                    service_id="database",
-                    name="Database Service",
-                    priority=10
-                ))
+                super().__init__(
+                    ServiceConfig(
+                        service_id="database", name="Database Service", priority=10
+                    )
+                )
 
             async def _initialize(self):
                 initialization_order.append("database")
@@ -272,12 +266,14 @@ class TestServiceRegistry:
 
         class CacheService(ServiceBase):
             def __init__(self):
-                super().__init__(ServiceConfig(
-                    service_id="cache",
-                    name="Cache Service",
-                    dependencies=["database"],
-                    priority=20
-                ))
+                super().__init__(
+                    ServiceConfig(
+                        service_id="cache",
+                        name="Cache Service",
+                        dependencies=["database"],
+                        priority=20,
+                    )
+                )
 
             async def _initialize(self):
                 initialization_order.append("cache")
@@ -287,12 +283,14 @@ class TestServiceRegistry:
 
         class WebService(ServiceBase):
             def __init__(self):
-                super().__init__(ServiceConfig(
-                    service_id="web",
-                    name="Web Service",
-                    dependencies=["database", "cache"],
-                    priority=30
-                ))
+                super().__init__(
+                    ServiceConfig(
+                        service_id="web",
+                        name="Web Service",
+                        dependencies=["database", "cache"],
+                        priority=30,
+                    )
+                )
 
             async def _initialize(self):
                 initialization_order.append("web")
@@ -327,17 +325,18 @@ class TestServiceRegistry:
 
         async with registry:
             assert service.status == ServiceStatus.ACTIVE
-            assert hasattr(service, 'init_called')
+            assert hasattr(service, "init_called")
 
         # After context exit
         assert service.status == ServiceStatus.STOPPED
-        assert hasattr(service, 'shutdown_called')
+        assert hasattr(service, "shutdown_called")
 
     @pytest.mark.asyncio
     async def test_global_registry_functions(self):
         """Test global registry convenience functions."""
         # Reset global state
         import acb.services.registry
+
         acb.services.registry._registry = None
 
         class GlobalService(ServiceBase):

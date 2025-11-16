@@ -12,15 +12,16 @@ Features:
 - Metrics collection and health monitoring
 """
 
-import asyncio
 import logging
-import typing as t
 from collections import defaultdict
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager, suppress
 from uuid import UUID
 
+import asyncio
+import typing as t
+from contextlib import asynccontextmanager, suppress
 from pydantic import BaseModel, Field
+
 from acb.adapters import import_adapter
 from acb.depends import depends
 from acb.services import ServiceSettings
@@ -340,6 +341,7 @@ class EventPublisher(EventPublisherBase):
 
         # Serialize event and publish via queue adapter
         from msgspec import msgpack
+
         from acb.adapters.messaging import MessagePriority
 
         # Map event priority to queue priority
@@ -699,6 +701,7 @@ class EventPublisher(EventPublisherBase):
     async def _handle_failed_event(self, event: Event) -> None:
         """Handle a failed event (retry or dead letter)."""
         from msgspec import msgpack
+
         from acb.adapters.messaging import MessagePriority
 
         self._metrics.record_event_failed()

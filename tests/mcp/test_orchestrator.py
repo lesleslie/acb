@@ -1,7 +1,9 @@
 """Tests for the ACB MCP orchestrator module."""
+
+from unittest.mock import AsyncMock, Mock, patch
+
 import asyncio
 import pytest
-from unittest.mock import Mock, AsyncMock, MagicMock, patch
 
 from acb.mcp.orchestrator import WorkflowOrchestrator
 from acb.mcp.registry import ComponentRegistry
@@ -16,7 +18,7 @@ class TestWorkflowOrchestrator:
         orchestrator = WorkflowOrchestrator(mock_registry)
 
         assert orchestrator.component_registry == mock_registry
-        assert hasattr(orchestrator, 'logger')
+        assert hasattr(orchestrator, "logger")
         assert orchestrator._active_workflows == {}
         assert orchestrator._initialized is False
 
@@ -26,7 +28,7 @@ class TestWorkflowOrchestrator:
         mock_registry = Mock(spec=ComponentRegistry)
         orchestrator = WorkflowOrchestrator(mock_registry)
 
-        with patch.object(orchestrator, 'logger') as mock_logger:
+        with patch.object(orchestrator, "logger") as mock_logger:
             await orchestrator.initialize()
 
             assert orchestrator._initialized is True
@@ -39,7 +41,7 @@ class TestWorkflowOrchestrator:
         orchestrator = WorkflowOrchestrator(mock_registry)
         orchestrator._initialized = True
 
-        with patch.object(orchestrator, 'logger') as mock_logger:
+        with patch.object(orchestrator, "logger") as mock_logger:
             await orchestrator.initialize()
             # The logger should not have been called since it was already initialized
             mock_logger.info.assert_not_called()
@@ -65,18 +67,18 @@ class TestWorkflowOrchestrator:
                 "type": "action",
                 "component": "test_action",
                 "action": "some_action",
-                "parameters": {"param": "value"}
+                "parameters": {"param": "value"},
             },
             {
                 "name": "step2",
                 "type": "adapter",
                 "component": "test_adapter",
                 "action": "some_method",
-                "parameters": {"param": "value"}
-            }
+                "parameters": {"param": "value"},
+            },
         ]
 
-        with patch.object(orchestrator, 'logger'):
+        with patch.object(orchestrator, "logger"):
             result = await orchestrator.execute_workflow("test_workflow", steps)
 
             assert result["workflow"] == "test_workflow"
@@ -97,14 +99,14 @@ class TestWorkflowOrchestrator:
                 "type": "action",
                 "component": "test_action",
                 "action": "some_action",
-                "parameters": {"param": "value"}
+                "parameters": {"param": "value"},
             }
         ]
 
         # Mock the registry to raise an exception
         mock_registry.get_actions.side_effect = ValueError("Test error")
 
-        with patch.object(orchestrator, 'logger'):
+        with patch.object(orchestrator, "logger"):
             result = await orchestrator.execute_workflow("failing_workflow", steps)
 
             assert result["workflow"] == "failing_workflow"
@@ -123,11 +125,11 @@ class TestWorkflowOrchestrator:
                 "type": "unsupported_type",
                 "component": "test_component",
                 "action": "some_action",
-                "parameters": {"param": "value"}
+                "parameters": {"param": "value"},
             }
         ]
 
-        with patch.object(orchestrator, 'logger'):
+        with patch.object(orchestrator, "logger"):
             result = await orchestrator.execute_workflow("invalid_workflow", steps)
 
             assert result["workflow"] == "invalid_workflow"
@@ -179,7 +181,10 @@ class TestWorkflowOrchestrator:
 
         mock_registry.get_actions.return_value = {"test_category": mock_action_category}
 
-        with pytest.raises(ValueError, match="Action 'nonexistent_action' not found in category 'test_category'"):
+        with pytest.raises(
+            ValueError,
+            match="Action 'nonexistent_action' not found in category 'test_category'",
+        ):
             await orchestrator._execute_action_step(
                 "test_category", "nonexistent_action", {"param": "value"}
             )
@@ -228,7 +233,10 @@ class TestWorkflowOrchestrator:
 
         mock_registry.get_adapter.return_value = mock_adapter
 
-        with pytest.raises(ValueError, match="Method 'nonexistent_method' not found in adapter 'test_adapter'"):
+        with pytest.raises(
+            ValueError,
+            match="Method 'nonexistent_method' not found in adapter 'test_adapter'",
+        ):
             await orchestrator._execute_adapter_step(
                 "test_adapter", "nonexistent_method", {"param": "value"}
             )
@@ -240,7 +248,9 @@ class TestWorkflowOrchestrator:
         orchestrator = WorkflowOrchestrator(mock_registry)
 
         # Mock the execute_workflow method to avoid full execution
-        with patch.object(orchestrator, 'execute_workflow', new_callable=AsyncMock) as mock_execute:
+        with patch.object(
+            orchestrator, "execute_workflow", new_callable=AsyncMock
+        ) as mock_execute:
             mock_execute.return_value = {"status": "completed"}
 
             await orchestrator.start_background_workflow("bg_workflow", [])
@@ -314,7 +324,7 @@ class TestWorkflowOrchestrator:
         orchestrator._active_workflows["test_task"] = task
         orchestrator._initialized = True
 
-        with patch.object(orchestrator, 'logger') as mock_logger:
+        with patch.object(orchestrator, "logger") as mock_logger:
             await orchestrator.cleanup()
 
             # Check that the task was cancelled

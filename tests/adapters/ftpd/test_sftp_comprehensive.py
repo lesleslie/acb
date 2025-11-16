@@ -1,11 +1,12 @@
 """Comprehensive tests for SFTP adapter."""
 
-import typing as t
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import typing as t
 from pydantic import SecretStr
+
 from acb.adapters.ftpd._base import FileInfo
 from acb.adapters.ftpd.sftp import Ftpd, FtpdSettings
 from acb.config import Config

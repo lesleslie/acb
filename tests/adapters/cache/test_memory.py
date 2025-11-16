@@ -6,6 +6,7 @@ import pytest
 from aiocache.backends.memory import SimpleMemoryCache
 from aiocache.serializers import PickleSerializer
 from pytest_benchmark.fixture import BenchmarkFixture
+
 from acb.adapters.cache._base import CacheBaseSettings
 from acb.adapters.cache.memory import Cache, CacheSettings
 
@@ -388,7 +389,9 @@ class TestMemoryCache:
 
         # Create a mock multi-tier cache that raises an exception
         mock_multi_tier_cache = MagicMock()
-        mock_multi_tier_cache.cleanup = AsyncMock(side_effect=Exception("Multi-tier cleanup failed"))
+        mock_multi_tier_cache.cleanup = AsyncMock(
+            side_effect=Exception("Multi-tier cleanup failed")
+        )
         adapter._multi_tier_cache = mock_multi_tier_cache
 
         # Create a mock client

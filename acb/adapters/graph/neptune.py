@@ -2,9 +2,10 @@ from typing import Any
 
 """Amazon Neptune graph database adapter."""
 
+from uuid import uuid4
+
 import typing as t
 from datetime import datetime
-from uuid import uuid4
 
 from acb.adapters import (
     AdapterCapability,

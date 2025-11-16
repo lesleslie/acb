@@ -1,10 +1,16 @@
 """Tests for Loguru logger adapter."""
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch
 
-from acb.adapters.logger.loguru import Logger, LoggerSettings, MODULE_METADATA, InterceptHandler
+import pytest
+
 from acb.adapters import AdapterCapability, AdapterStatus
+from acb.adapters.logger.loguru import (
+    MODULE_METADATA,
+    InterceptHandler,
+    Logger,
+    LoggerSettings,
+)
 from acb.config import Config
 
 
@@ -105,9 +111,10 @@ class TestLoguruLogger:
         """Test initialization in testing mode."""
         logger = Logger()
 
-        with patch.object(logger, "remove") as mock_remove, \
-             patch.object(logger, "configure") as mock_configure:
-
+        with (
+            patch.object(logger, "remove") as mock_remove,
+            patch.object(logger, "configure") as mock_configure,
+        ):
             logger._init()
 
             mock_remove.assert_called_once()
@@ -117,12 +124,13 @@ class TestLoguruLogger:
         """Test initialization in normal mode."""
         logger = Logger()
 
-        with patch.object(logger, "_is_testing_mode", return_value=False), \
-             patch.object(logger, "_configure_logger") as mock_configure, \
-             patch.object(logger, "_setup_level_colors") as mock_colors, \
-             patch.object(logger, "_log_debug_levels") as mock_debug, \
-             patch.object(logger, "_log_app_info") as mock_info:
-
+        with (
+            patch.object(logger, "_is_testing_mode", return_value=False),
+            patch.object(logger, "_configure_logger") as mock_configure,
+            patch.object(logger, "_setup_level_colors") as mock_colors,
+            patch.object(logger, "_log_debug_levels") as mock_debug,
+            patch.object(logger, "_log_app_info") as mock_info,
+        ):
             logger._init()
 
             mock_configure.assert_called_once()
@@ -152,10 +160,7 @@ class TestLoguruLogger:
         mock_level = Mock()
         mock_level.name = "INFO"
 
-        record = {
-            "name": "test.module.function",
-            "level": mock_level
-        }
+        record = {"name": "test.module.function", "level": mock_level}
 
         result = logger._filter_by_module(record)
 
@@ -182,9 +187,12 @@ class TestLoguruLogger:
         """Test fallback to sync sink on event loop error."""
         logger = Logger()
 
-        with patch.object(logger, "add", side_effect=ValueError("event loop is required")), \
-             patch.object(logger, "_add_sync_sink") as mock_sync:
-
+        with (
+            patch.object(
+                logger, "add", side_effect=ValueError("event loop is required")
+            ),
+            patch.object(logger, "_add_sync_sink") as mock_sync,
+        ):
             logger._add_primary_sink()
 
             mock_sync.assert_called_once()
@@ -231,12 +239,13 @@ class TestLoguruLogger:
 
         logger = Logger()
 
-        with patch.object(logger, "debug") as mock_debug, \
-             patch.object(logger, "info") as mock_info, \
-             patch.object(logger, "warning") as mock_warning, \
-             patch.object(logger, "error") as mock_error, \
-             patch.object(logger, "critical") as mock_critical:
-
+        with (
+            patch.object(logger, "debug") as mock_debug,
+            patch.object(logger, "info") as mock_info,
+            patch.object(logger, "warning") as mock_warning,
+            patch.object(logger, "error") as mock_error,
+            patch.object(logger, "critical") as mock_critical,
+        ):
             logger._log_debug_levels()
 
             mock_debug.assert_called_once_with("debug")
@@ -308,9 +317,12 @@ class TestInterceptHandler:
         record.exc_info = None
         record.getMessage.return_value = "test message"
 
-        with patch("acb.adapters.logger.loguru.currentframe"), \
-             patch("acb.adapters.logger.loguru.depends.get_sync", return_value=mock_logger):
-
+        with (
+            patch("acb.adapters.logger.loguru.currentframe"),
+            patch(
+                "acb.adapters.logger.loguru.depends.get_sync", return_value=mock_logger
+            ),
+        ):
             handler.emit(record)
 
             mock_logger.level.assert_called_once_with("INFO")
@@ -331,9 +343,12 @@ class TestInterceptHandler:
         record.exc_info = None
         record.getMessage.return_value = "test message"
 
-        with patch("acb.adapters.logger.loguru.currentframe"), \
-             patch("acb.adapters.logger.loguru.depends.get_sync", return_value=mock_logger):
-
+        with (
+            patch("acb.adapters.logger.loguru.currentframe"),
+            patch(
+                "acb.adapters.logger.loguru.depends.get_sync", return_value=mock_logger
+            ),
+        ):
             # Should raise AttributeError when trying to call opt()
             with pytest.raises(AttributeError):
                 handler.emit(record)
@@ -353,9 +368,12 @@ class TestInterceptHandler:
         record.exc_info = None
         record.getMessage.return_value = "test message"
 
-        with patch("acb.adapters.logger.loguru.currentframe"), \
-             patch("acb.adapters.logger.loguru.depends.get_sync", return_value=mock_logger):
-
+        with (
+            patch("acb.adapters.logger.loguru.currentframe"),
+            patch(
+                "acb.adapters.logger.loguru.depends.get_sync", return_value=mock_logger
+            ),
+        ):
             handler.emit(record)
 
             mock_opt.log.assert_called_once_with(20, "test message")
@@ -399,8 +417,8 @@ class TestLoguruIntegration:
     @pytest.mark.skip(reason="Requires full app initialization (not pytest mode)")
     def test_with_real_dependencies(self):
         """Test logger with real ACB dependencies."""
-        from acb.depends import depends
         from acb.config import Config
+        from acb.depends import depends
 
         # Ensure real config is available in DI system
         try:

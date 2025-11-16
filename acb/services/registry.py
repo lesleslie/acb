@@ -4,11 +4,12 @@ Provides centralized management for service discovery, lifecycle,
 and dependency resolution following ACB's simplified architecture.
 """
 
-import asyncio
 import logging
+from operator import itemgetter
+
+import asyncio
 import typing as t
 from contextlib import suppress
-from operator import itemgetter
 
 from acb.depends import depends
 

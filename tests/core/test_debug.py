@@ -1,19 +1,17 @@
 """Tests for the debug module."""
 
-import asyncio
 import sys
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-from devtools import pformat
 
 from acb.debug import (
     colorized_stderr_print,
     get_calling_module,
     init_debug,
     patch_record,
-    print_debug_info,
     pprint,
+    print_debug_info,
 )
 
 
@@ -77,7 +75,9 @@ class TestDebugModule:
                     mock_colorize.assert_called_once_with(test_string)
                     mock_aprint.assert_called_once()
 
-    @pytest.mark.skip(reason="Colorized stderr error formatting changed after refactoring")
+    @pytest.mark.skip(
+        reason="Colorized stderr error formatting changed after refactoring"
+    )
     def test_colorized_stderr_print_import_error(self) -> None:
         """Test colorized_stderr_print when colorize import fails."""
         test_string = "Test debug message"
@@ -88,7 +88,9 @@ class TestDebugModule:
 
                 mock_print.assert_called_once_with(test_string, file=sys.stderr)
 
-    @pytest.mark.skip(reason="Colorized stderr error formatting changed after refactoring")
+    @pytest.mark.skip(
+        reason="Colorized stderr error formatting changed after refactoring"
+    )
     def test_colorized_stderr_print_asyncio_error(self) -> None:
         """Test colorized_stderr_print when asyncio.run fails."""
         test_string = "Test debug message"
@@ -102,8 +104,7 @@ class TestDebugModule:
                         colorized_stderr_print(test_string)
 
                         mock_print.assert_called_once_with(
-                            "\033[31mTest debug message\033[0m",
-                            file=sys.stderr
+                            "\033[31mTest debug message\033[0m", file=sys.stderr
                         )
 
     def test_print_debug_info_with_module(self) -> None:
@@ -226,13 +227,12 @@ class TestDebugModule:
     def test_init_debug_warnings_filter(self) -> None:
         """Test that init_debug sets up warnings filter."""
         import warnings
+
         with patch.object(warnings, "filterwarnings") as mock_filterwarnings:
             with patch("acb.debug.depends.get", side_effect=RuntimeError()):
                 init_debug()
 
                 # Check that filterwarnings was called
                 mock_filterwarnings.assert_called_with(
-                    "ignore",
-                    category=RuntimeWarning,
-                    module="icecream"
+                    "ignore", category=RuntimeWarning, module="icecream"
                 )

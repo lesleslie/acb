@@ -1,6 +1,7 @@
 """Simplified tests for the SQL adapters."""
 
 import pytest
+
 from tests.test_interfaces import MockSQL, SQLTestInterface
 
 

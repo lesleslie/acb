@@ -1,17 +1,18 @@
 import base64
 import os
 import sys
-import typing as t
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from re import search
 from uuid import UUID
 
+import typing as t
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from httpx import Response as HttpxResponse
 from pydantic import SecretStr
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -247,14 +248,14 @@ class Smtp(SmtpBase):
             self.logger.exception(f"Error deleting Gmail forwarding address: {error}")
 
             class DeleteRouteErrorResponse(HttpxResponse):
-                def __init__(self) -> None:
+                def __init__(self, error_msg: str) -> None:
                     super().__init__(500)
-                    self._json = {"message": str(error)}
+                    self._json = {"message": error_msg}
 
                 def json(self, **kwargs: t.Any) -> dict[str, str]:
                     return self._json
 
-            return DeleteRouteErrorResponse()
+            return DeleteRouteErrorResponse(str(error))
 
     @staticmethod
     def get_name(address: str) -> str:

@@ -1,25 +1,24 @@
 """Tests for Repository Base Classes."""
 
 import pytest
-from typing import Any, Dict, List
 from dataclasses import dataclass
-from unittest.mock import Mock, AsyncMock
+from typing import Any
 
 from acb.services.repository._base import (
+    DuplicateEntityError,
+    EntityNotFoundError,
+    PaginationInfo,
     RepositoryBase,
     RepositorySettings,
-    RepositoryError,
-    EntityNotFoundError,
-    DuplicateEntityError,
-    PaginationInfo,
     SortCriteria,
-    SortDirection
+    SortDirection,
 )
 
 
 @dataclass
 class SampleEntity:
     """Test entity for repository tests."""
+
     id: int | None = None
     name: str = ""
     active: bool = True
@@ -30,7 +29,7 @@ class SampleRepository(RepositoryBase[SampleEntity, int]):
 
     def __init__(self):
         super().__init__(SampleEntity, RepositorySettings())
-        self._entities: Dict[int, SampleEntity] = {}
+        self._entities: dict[int, SampleEntity] = {}
         self._next_id = 1
 
     async def create(self, entity: SampleEntity) -> SampleEntity:
@@ -70,10 +69,10 @@ class SampleRepository(RepositoryBase[SampleEntity, int]):
 
     async def list(
         self,
-        filters: Dict[str, Any] | None = None,
-        sort: List[SortCriteria] | None = None,
-        pagination: PaginationInfo | None = None
-    ) -> List[SampleEntity]:
+        filters: dict[str, Any] | None = None,
+        sort: list[SortCriteria] | None = None,
+        pagination: PaginationInfo | None = None,
+    ) -> list[SampleEntity]:
         """List test entities."""
         entities = list(self._entities.values())
 
@@ -95,7 +94,7 @@ class SampleRepository(RepositoryBase[SampleEntity, int]):
             for sort_criteria in reversed(sort):
                 entities.sort(
                     key=lambda e: getattr(e, sort_criteria.field, None),
-                    reverse=(sort_criteria.direction == SortDirection.DESC)
+                    reverse=(sort_criteria.direction == SortDirection.DESC),
                 )
 
         # Apply pagination
@@ -107,7 +106,7 @@ class SampleRepository(RepositoryBase[SampleEntity, int]):
         await self._increment_metric("list", True)
         return entities
 
-    async def count(self, filters: Dict[str, Any] | None = None) -> int:
+    async def count(self, filters: dict[str, Any] | None = None) -> int:
         """Count test entities."""
         if not filters:
             count = len(self._entities)
@@ -350,7 +349,7 @@ class SampleRepositoryBase:
         entities = [
             SampleEntity(name="Entity 1"),
             SampleEntity(name="Entity 2"),
-            SampleEntity(name="Entity 3")
+            SampleEntity(name="Entity 3"),
         ]
 
         created_entities = await repository.batch_create(entities)
@@ -363,10 +362,7 @@ class SampleRepositoryBase:
     async def test_batch_update(self, repository):
         """Test batch entity update."""
         # Create entities first
-        entities = [
-            SampleEntity(name="Entity 1"),
-            SampleEntity(name="Entity 2")
-        ]
+        entities = [SampleEntity(name="Entity 1"), SampleEntity(name="Entity 2")]
         created_entities = await repository.batch_create(entities)
 
         # Update them
@@ -383,7 +379,7 @@ class SampleRepositoryBase:
         entities = [
             SampleEntity(name="Entity 1"),
             SampleEntity(name="Entity 2"),
-            SampleEntity(name="Entity 3")
+            SampleEntity(name="Entity 3"),
         ]
         created_entities = await repository.batch_create(entities)
 

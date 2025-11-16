@@ -1,8 +1,9 @@
 """Tests for graph adapter base classes."""
 
+from unittest.mock import MagicMock
+
 import pytest
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
 
 from acb.adapters.graph._base import (
     GraphBase,
@@ -308,7 +309,9 @@ class TestGraphBase:
     async def test_edge_operations(self, graph_adapter):
         """Test edge CRUD operations."""
         # Create edge
-        edge = await graph_adapter.create_edge("TestEdge", "node1", "node2", {"weight": 1.0})
+        edge = await graph_adapter.create_edge(
+            "TestEdge", "node1", "node2", {"weight": 1.0}
+        )
         assert isinstance(edge, GraphEdgeModel)
         assert edge.id == "test_edge"
         assert edge.type == "TestEdge"
@@ -398,8 +401,18 @@ class TestGraphBase:
 
         # Bulk create edges
         edge_data = [
-            {"type": "BulkEdge", "from_node": "node1", "to_node": "node2", "properties": {}},
-            {"type": "BulkEdge", "from_node": "node2", "to_node": "node3", "properties": {}},
+            {
+                "type": "BulkEdge",
+                "from_node": "node1",
+                "to_node": "node2",
+                "properties": {},
+            },
+            {
+                "type": "BulkEdge",
+                "from_node": "node2",
+                "to_node": "node3",
+                "properties": {},
+            },
         ]
         edges = await graph_adapter.bulk_create_edges(edge_data)
         assert len(edges) == 2

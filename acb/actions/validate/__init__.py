@@ -5,8 +5,9 @@ including emails, URLs, SQL injection detection, XSS detection, and path travers
 """
 
 import re
-import typing as t
 from urllib.parse import urlparse
+
+import typing as t
 
 __all__: list[str] = ["validate"]
 

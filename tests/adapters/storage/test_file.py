@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+
 from tests.test_interfaces import StorageTestInterface
 
 

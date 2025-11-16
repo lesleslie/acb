@@ -1,9 +1,10 @@
 """Simple tests for the File Storage adapter."""
 
 import tempfile
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
+
 from acb.adapters.storage.file import Storage, StorageSettings
 
 
@@ -38,7 +39,9 @@ class TestStorage:
         assert adapter._initialized is True
 
     @pytest.mark.asyncio
-    async def test_put_get_file(self, mock_config: MagicMock, mock_logger: MagicMock) -> None:
+    async def test_put_get_file(
+        self, mock_config: MagicMock, mock_logger: MagicMock
+    ) -> None:
         adapter = Storage()
         adapter.config = mock_config
         adapter.logger = mock_logger

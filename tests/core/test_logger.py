@@ -7,18 +7,17 @@ on the logger adapter system in acb/adapters/logger/ instead.
 """
 
 import logging
-import sys
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from acb.adapters.logger import LoggerProtocol
+from acb.adapters.logger._base import LoggerBase
 from acb.logger import (
     InterceptHandler,
     Logger,
     LoggerSettings,
 )
-from acb.adapters.logger import LoggerProtocol
-from acb.adapters.logger._base import LoggerBase
 
 
 class TestLoggerSettings:
@@ -93,7 +92,9 @@ class TestLoggerBase:
         assert hasattr(LoggerBase, "config")
 
 
-@pytest.mark.skip(reason="Obsolete after logger refactoring to adapter system - tests old internal implementation")
+@pytest.mark.skip(
+    reason="Obsolete after logger refactoring to adapter system - tests old internal implementation"
+)
 class TestLogger:
     """Test Logger class.
 
@@ -269,7 +270,9 @@ class TestInterceptHandler:
         assert isinstance(handler, InterceptHandler)
         assert isinstance(handler, logging.Handler)
 
-    @pytest.mark.skip(reason="Obsolete test - depends module not exposed via acb.logger anymore")
+    @pytest.mark.skip(
+        reason="Obsolete test - depends module not exposed via acb.logger anymore"
+    )
     def test_emit_method(self) -> None:
         """Test InterceptHandler emit method."""
         handler = InterceptHandler()

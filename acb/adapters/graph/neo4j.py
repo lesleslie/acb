@@ -1,11 +1,12 @@
 """Neo4j graph database adapter."""
 
-import typing as t
-from datetime import datetime
-from typing import Any
 from uuid import uuid4
 
+import typing as t
+from datetime import datetime
 from pydantic import SecretStr
+from typing import Any
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,

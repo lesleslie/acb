@@ -6,12 +6,12 @@ for use with the ACB query interface.
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
-
 from sqlalchemy import asc, desc, select
 from sqlalchemy import delete as sql_delete
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
+from typing import Any, TypeVar
+
 from acb.adapters.models._query import DatabaseAdapter
 
 T = TypeVar("T", bound=SQLModel)

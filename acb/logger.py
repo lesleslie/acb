@@ -10,6 +10,7 @@ This module serves as a convenience import shim.
 
 import os
 import sys
+
 import typing as t
 from contextlib import suppress
 

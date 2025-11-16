@@ -1,18 +1,17 @@
 """Tests for OpenAI Functions reasoning adapter."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from acb.adapters.reasoning.openai_functions import Reasoning
+
+import pytest
+
 from acb.adapters.reasoning._base import (
-    ReasoningRequest,
-    ReasoningResponse,
-    ReasoningContext,
-    ReasoningStrategy,
-    ReasoningStep,
     MemoryType,
+    ReasoningContext,
+    ReasoningRequest,
+    ReasoningStrategy,
     ToolDefinition,
 )
-import typing as t
+from acb.adapters.reasoning.openai_functions import Reasoning
 
 
 class MockOpenAISettings:
@@ -159,6 +158,7 @@ class TestToolManagement:
 
     async def test_register_tool_with_function(self, reasoning_adapter):
         """Test tool registration with actual function."""
+
         def add_numbers(a: float, b: float) -> float:
             return a + b
 
@@ -166,8 +166,12 @@ class TestToolManagement:
             name="add_numbers",
             description="Add two numbers",
             parameters={
-                "a": ToolParameter(type="number", description="First number", required=True),
-                "b": ToolParameter(type="number", description="Second number", required=True),
+                "a": ToolParameter(
+                    type="number", description="First number", required=True
+                ),
+                "b": ToolParameter(
+                    type="number", description="Second number", required=True
+                ),
             },
         )
 
@@ -183,7 +187,9 @@ class TestToolManagement:
         """Test converting tool definition to OpenAI schema."""
         reasoning_adapter.register_tool(sample_tool_definition)
 
-        schema = reasoning_adapter._convert_tool_to_openai_schema(sample_tool_definition)
+        schema = reasoning_adapter._convert_tool_to_openai_schema(
+            sample_tool_definition
+        )
 
         assert schema["type"] == "function"
         assert schema["function"]["name"] == "calculate_sum"
@@ -196,6 +202,7 @@ class TestToolManagement:
 
     async def test_execute_function_call(self, reasoning_adapter):
         """Test executing a function call."""
+
         def multiply(a: float, b: float) -> float:
             return a * b
 
@@ -218,7 +225,11 @@ class TestReasoningOperations:
 
     @patch("acb.adapters.reasoning.openai_functions.AsyncOpenAI")
     async def test_function_calling_reasoning(
-        self, mock_openai_class, reasoning_adapter, mock_openai_client, sample_tool_definition
+        self,
+        mock_openai_class,
+        reasoning_adapter,
+        mock_openai_client,
+        sample_tool_definition,
     ):
         """Test function calling reasoning strategy."""
         mock_openai_class.return_value = mock_openai_client
@@ -229,10 +240,7 @@ class TestReasoningOperations:
         mock_choice.message.tool_calls = [
             MagicMock(
                 id="call_123",
-                function=MagicMock(
-                    name="calculate_sum",
-                    arguments='{"a": 5, "b": 3}'
-                )
+                function=MagicMock(name="calculate_sum", arguments='{"a": 5, "b": 3}'),
             )
         ]
         mock_choice.finish_reason = "tool_calls"
@@ -248,9 +256,7 @@ class TestReasoningOperations:
         request = ReasoningRequest(
             query="What is 5 plus 3?",
             strategy=ReasoningStrategy.FUNCTION_CALLING,
-            context=ReasoningContext(
-                tools=["calculate_sum"]
-            ),
+            context=ReasoningContext(tools=["calculate_sum"]),
         )
 
         response = await reasoning_adapter.reason(request)
@@ -374,12 +380,14 @@ class TestFunctionCalls:
 
     async def test_clear_function_call_history(self, reasoning_adapter):
         """Test clearing function call history."""
-        reasoning_adapter._track_function_call({
-            "id": "call_123",
-            "name": "test_function",
-            "arguments": {},
-            "result": "result",
-        })
+        reasoning_adapter._track_function_call(
+            {
+                "id": "call_123",
+                "name": "test_function",
+                "arguments": {},
+                "result": "result",
+            }
+        )
 
         reasoning_adapter.clear_function_call_history()
 
@@ -425,9 +433,7 @@ class TestMemoryOperations:
 
     async def test_clear_memory(self, reasoning_adapter):
         """Test clearing memory."""
-        reasoning_adapter._memory["session_1"] = {
-            MemoryType.CONVERSATION: ["Memory 1"]
-        }
+        reasoning_adapter._memory["session_1"] = {MemoryType.CONVERSATION: ["Memory 1"]}
 
         await reasoning_adapter.clear_memory("session_1")
 
@@ -465,6 +471,7 @@ class TestErrorHandling:
 
     async def test_function_execution_error(self, reasoning_adapter):
         """Test function execution error handling."""
+
         def failing_function():
             raise ValueError("Function failed")
 
@@ -478,9 +485,7 @@ class TestErrorHandling:
         reasoning_adapter.register_function("test_func", lambda x: x)
 
         with pytest.raises(Exception):  # JSON decode error
-            await reasoning_adapter._execute_function_call(
-                "test_func", "invalid json"
-            )
+            await reasoning_adapter._execute_function_call("test_func", "invalid json")
 
     @patch("acb.adapters.reasoning.openai_functions.AsyncOpenAI")
     async def test_client_initialization_error(
@@ -512,10 +517,7 @@ class TestComplexScenarios:
         choice1.message.tool_calls = [
             MagicMock(
                 id="call_1",
-                function=MagicMock(
-                    name="calculate",
-                    arguments='{"value": 10}'
-                )
+                function=MagicMock(name="calculate", arguments='{"value": 10}'),
             )
         ]
         choice1.finish_reason = "tool_calls"
@@ -566,14 +568,10 @@ class TestComplexScenarios:
         """Test reasoning with memory context."""
         # Store some relevant memories
         await reasoning_adapter.store_memory(
-            "user_123",
-            "User prefers detailed explanations",
-            MemoryType.CONVERSATION
+            "user_123", "User prefers detailed explanations", MemoryType.CONVERSATION
         )
         await reasoning_adapter.store_memory(
-            "user_123",
-            "User is interested in mathematics",
-            MemoryType.SEMANTIC
+            "user_123", "User is interested in mathematics", MemoryType.SEMANTIC
         )
 
         # Retrieve memories for context
@@ -604,14 +602,16 @@ class TestIntegration:
 
         # Setup mock response
         mock_choice = MagicMock()
-        mock_choice.message.content = "Let me analyze this step by step and use the calculator."
+        mock_choice.message.content = (
+            "Let me analyze this step by step and use the calculator."
+        )
         mock_choice.message.tool_calls = [
             MagicMock(
                 id="call_1",
                 function=MagicMock(
                     name="calculator",
-                    arguments='{"operation": "add", "a": 15, "b": 25}'
-                )
+                    arguments='{"operation": "add", "a": 15, "b": 25}',
+                ),
             )
         ]
         mock_choice.finish_reason = "tool_calls"
@@ -658,7 +658,7 @@ class TestIntegration:
         await reasoning_adapter.store_memory(
             "calc_session",
             "User requested calculation assistance",
-            MemoryType.CONVERSATION
+            MemoryType.CONVERSATION,
         )
 
         # Execute reasoning
@@ -680,9 +680,7 @@ class TestIntegration:
 
         # Store the result in memory
         await reasoning_adapter.store_memory(
-            "calc_session",
-            f"Calculated 15 + 25 = 40",
-            MemoryType.EPISODIC
+            "calc_session", "Calculated 15 + 25 = 40", MemoryType.EPISODIC
         )
 
         memories = await reasoning_adapter.retrieve_memory("calc_session")
@@ -698,12 +696,14 @@ class TestCleanup:
         reasoning_adapter.register_tool(sample_tool_definition)
         reasoning_adapter.register_function("test_func", lambda x: x)
         reasoning_adapter._memory["session1"] = {MemoryType.CONVERSATION: ["test"]}
-        reasoning_adapter._track_function_call({
-            "id": "call_1",
-            "name": "test",
-            "arguments": {},
-            "result": "test",
-        })
+        reasoning_adapter._track_function_call(
+            {
+                "id": "call_1",
+                "name": "test",
+                "arguments": {},
+                "result": "test",
+            }
+        )
 
         # Perform cleanup
         await reasoning_adapter.cleanup()

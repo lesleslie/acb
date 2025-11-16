@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import builtins
 import os
-import typing as t
 from uuid import UUID
+
+import asyncio
+import typing as t
 
 try:
     from infisical_sdk import InfisicalError, InfisicalSDKClient

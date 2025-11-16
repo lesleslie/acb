@@ -1,18 +1,18 @@
 """Tests for ACB performance optimizer service."""
 
-import asyncio
-import pytest
-import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import asyncio
+import pytest
+
+from acb.depends import depends
+from acb.services._base import ServiceStatus
 from acb.services.performance.optimizer import (
+    OptimizationConfig,
+    OptimizationResult,
     PerformanceOptimizer,
     PerformanceOptimizerSettings,
-    OptimizationConfig,
-    OptimizationResult
 )
-from acb.services._base import ServiceStatus
-from acb.depends import depends
 
 
 class TestPerformanceOptimizer:
@@ -21,9 +21,10 @@ class TestPerformanceOptimizer:
     @pytest.mark.asyncio
     async def test_optimizer_initialization(self):
         """Test performance optimizer initialization."""
-        with patch('acb.adapters.import_adapter') as mock_import, \
-             patch.object(depends, 'get_async') as mock_get_async:
-
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch.object(depends, "get_async") as mock_get_async,
+        ):
             # Mock cache adapter
             mock_cache = MagicMock()
             mock_import.return_value = MagicMock()
@@ -38,7 +39,9 @@ class TestPerformanceOptimizer:
     @pytest.mark.asyncio
     async def test_optimizer_initialization_without_adapters(self):
         """Test optimizer initialization when adapters are not available."""
-        with patch('acb.adapters.import_adapter', side_effect=Exception("Adapter not found")):
+        with patch(
+            "acb.adapters.import_adapter", side_effect=Exception("Adapter not found")
+        ):
             optimizer = PerformanceOptimizer()
             await optimizer.initialize()
 
@@ -49,9 +52,10 @@ class TestPerformanceOptimizer:
     @pytest.mark.asyncio
     async def test_cache_optimization_with_hit(self):
         """Test cache optimization with cache hit."""
-        with patch('acb.adapters.import_adapter') as mock_import, \
-             patch.object(depends, 'get_async') as mock_get_async:
-
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch.object(depends, "get_async") as mock_get_async,
+        ):
             # Mock cache adapter
             mock_cache = AsyncMock()
             mock_cache.get.return_value = "cached_result"
@@ -79,9 +83,10 @@ class TestPerformanceOptimizer:
     @pytest.mark.asyncio
     async def test_cache_optimization_with_miss(self):
         """Test cache optimization with cache miss."""
-        with patch('acb.adapters.import_adapter') as mock_import, \
-             patch.object(depends, 'get_async') as mock_get_async:
-
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch.object(depends, "get_async") as mock_get_async,
+        ):
             # Mock cache adapter
             mock_cache = AsyncMock()
             mock_cache.get.return_value = None
@@ -105,7 +110,9 @@ class TestPerformanceOptimizer:
             assert result.metadata["cached_with_ttl"] == 300
 
             mock_cache.get.assert_called_once_with("test_key")
-            mock_cache.set.assert_called_once_with("test_key", "operation_result", ttl=300)
+            mock_cache.set.assert_called_once_with(
+                "test_key", "operation_result", ttl=300
+            )
 
     @pytest.mark.asyncio
     async def test_cache_optimization_without_cache(self):
@@ -116,9 +123,7 @@ class TestPerformanceOptimizer:
         async def test_operation():
             return "direct_result"
 
-        result = await optimizer.optimize_cache_operation(
-            "test_key", test_operation
-        )
+        result = await optimizer.optimize_cache_operation("test_key", test_operation)
 
         assert result.success is True
         assert result.operation == "cache_operation_direct"
@@ -128,9 +133,10 @@ class TestPerformanceOptimizer:
     @pytest.mark.asyncio
     async def test_query_batch_optimization(self):
         """Test query batch optimization."""
-        with patch('acb.adapters.import_adapter') as mock_import, \
-             patch.object(depends, 'get_async') as mock_get_async:
-
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch.object(depends, "get_async") as mock_get_async,
+        ):
             # Mock SQL adapter
             mock_sql = AsyncMock()
             mock_sql.execute.return_value = "query_result"
@@ -170,9 +176,10 @@ class TestPerformanceOptimizer:
     @pytest.mark.asyncio
     async def test_optimize_function_decorator(self):
         """Test function optimization decorator."""
-        with patch('acb.adapters.import_adapter') as mock_import, \
-             patch.object(depends, 'get_async') as mock_get_async:
-
+        with (
+            patch("acb.adapters.import_adapter") as mock_import,
+            patch.object(depends, "get_async") as mock_get_async,
+        ):
             # Mock cache adapter
             mock_cache = AsyncMock()
             mock_cache.get.return_value = None  # Cache miss first time
@@ -246,7 +253,7 @@ class TestPerformanceOptimizer:
             success=True,
             improvement_percent=25.0,
             error=None,
-            metadata={"key": "value"}
+            metadata={"key": "value"},
         )
 
         assert result.operation == "test_op"

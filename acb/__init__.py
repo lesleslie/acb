@@ -1,16 +1,17 @@
-import typing as t
-from contextlib import suppress
 from inspect import currentframe
 
+import typing as t
 from anyio import Path as AsyncPath
+from contextlib import suppress
 from rich import box
 from rich.padding import Padding
 from rich.table import Table
+
 from acb.console import Console
 from acb.depends import Inject, depends
 
 # Re-exports for backward compatibility
-from .actions import action_registry
+from .actions import _ensure_action_registry_initialized, action_registry
 from .adapters import get_adapters
 from .context import get_context
 
@@ -166,7 +167,7 @@ def _display_actions_table(console: Console) -> None:
     )
     for prop in ("Name", "Pkg", "Methods"):
         actns.add_column(prop)
-    for i, action in enumerate(action_registry.get()):
+    for i, action in enumerate(_ensure_action_registry_initialized()):
         actns.add_row(
             action.name,
             action.pkg,
@@ -208,7 +209,7 @@ def _display_services_table(console: Console) -> None:
         service_ids = registry.list_services()
 
         srvcs = Table(
-            title="[b][u bright_white]S[/u bright_white][bright_green]ervices",  # codespell:ignore
+            title="[b][u bright_white][bright_green]Services[/bright_green][/u bright_white]",
             **table_args,
         )
         for prop in ("Service ID", "Name", "Status"):

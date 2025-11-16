@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import AsyncGenerator
 
+import asyncio
 import pytest
 
 from acb.adapters.templates.jinja2 import Jinja2Templates

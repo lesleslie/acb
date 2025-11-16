@@ -14,15 +14,16 @@ Features:
 - Graceful degradation support
 """
 
-import asyncio
 import time
-import typing as t
 from collections.abc import Awaitable, Callable
-from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
 from statistics import mean
+
+import asyncio
+import typing as t
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 
 from acb.services.discovery import (
     ServiceCapability,

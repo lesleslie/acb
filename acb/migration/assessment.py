@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import importlib.metadata
 import sys
-from contextlib import suppress
 from pathlib import Path
 
+from contextlib import suppress
 from pydantic import BaseModel, ConfigDict, Field
+
 from acb.migration._base import (
     CompatibilityStatus,
     MigrationIssue,

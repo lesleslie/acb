@@ -1,24 +1,24 @@
 """Tests for queue base classes and common functionality."""
 
+from uuid import uuid4
+
 import asyncio
 import pytest
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
 
 from acb.tasks._base import (
-    TaskData,
-    TaskResult,
-    TaskStatus,
-    TaskPriority,
-    TaskHandler,
     FunctionalTaskHandler,
     QueueBase,
-    QueueSettings,
     QueueMetrics,
+    QueueSettings,
+    TaskData,
+    TaskHandler,
+    TaskPriority,
+    TaskResult,
+    TaskStatus,
     WorkerMetrics,
-    task_handler,
     create_task_data,
+    task_handler,
 )
 
 
@@ -288,6 +288,7 @@ class TestFunctionalTaskHandler:
     @pytest.mark.asyncio
     async def test_functional_handler_creation(self, sample_task):
         """Test creating functional task handler."""
+
         async def test_function(task):
             return {"processed": task.payload["message"]}
 
@@ -300,6 +301,7 @@ class TestFunctionalTaskHandler:
     @pytest.mark.asyncio
     async def test_functional_handler_with_callbacks(self, sample_task):
         """Test functional handler with callbacks."""
+
         async def test_function(task):
             return "success"
 
@@ -309,11 +311,7 @@ class TestFunctionalTaskHandler:
         async def on_success_func(task, result):
             result.custom_field = "added"
 
-        handler = FunctionalTaskHandler(
-            test_function,
-            on_failure_func,
-            on_success_func
-        )
+        handler = FunctionalTaskHandler(test_function, on_failure_func, on_success_func)
 
         # Test success
         result = await handler.handle(sample_task)
@@ -329,12 +327,13 @@ class TestFunctionalTaskHandler:
     @pytest.mark.asyncio
     async def test_task_handler_decorator(self, sample_task):
         """Test task_handler decorator."""
+
         @task_handler("decorated_task")
         async def decorated_function(task):
             return f"Processed: {task.payload.get('message', 'default')}"
 
         assert isinstance(decorated_function, FunctionalTaskHandler)
-        assert hasattr(decorated_function, 'task_type')
+        assert hasattr(decorated_function, "task_type")
         assert decorated_function.task_type == "decorated_task"
 
         result = await decorated_function.handle(sample_task)
@@ -392,7 +391,7 @@ class TestQueueBase:
     @pytest.mark.asyncio
     async def test_create_task_convenience_method(self, mock_queue):
         """Test create_task convenience method."""
-        task_id = await mock_queue.create_task(
+        await mock_queue.create_task(
             "convenience_task",
             payload={"test": "data"},
             priority=TaskPriority.HIGH,

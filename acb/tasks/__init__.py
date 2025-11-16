@@ -58,6 +58,7 @@ Usage:
     QueueClass = import_queue_provider("redis")
 """
 
+import typing as t
 from contextlib import suppress
 
 # Core queue classes
@@ -116,6 +117,18 @@ except ImportError:
 
 # Task scheduling
 # Queue discovery system
+
+# Service integration with ACB Services Layer
+from uuid import UUID
+
+from acb.services import (
+    ServiceBase,
+    ServiceCapability,
+    ServiceMetadata,
+    ServiceSettings,
+)
+from acb.services.discovery import ServiceStatus, enable_service, generate_service_id
+
 from .discovery import (
     QueueContext,
     QueueProviderDescriptor,
@@ -228,16 +241,6 @@ ACB_MIN_VERSION = "0.19.1"
 
 
 # Service integration with ACB Services Layer
-import typing as t
-from uuid import UUID
-
-from acb.services import (
-    ServiceBase,
-    ServiceCapability,
-    ServiceMetadata,
-    ServiceSettings,
-)
-from acb.services.discovery import ServiceStatus, generate_service_id
 
 
 class QueueServiceSettings(ServiceSettings):
@@ -506,9 +509,6 @@ async def create_task_queue(
     return await create_queue_instance_async(provider_name, settings, **kwargs)
 
 
-# Integration with Services Layer discovery
-from acb.services.discovery import enable_service
-
 # Register queue service in service discovery
 with suppress(Exception):
     enable_service("queues", "queue_service")
@@ -516,4 +516,3 @@ with suppress(Exception):
 
 
 # Auto-initialize discovery
-import typing as t

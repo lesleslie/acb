@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from anyio import Path as AsyncPath
+
 from acb.adapters.secret.cloudflare import Secret, SecretSettings
 
 

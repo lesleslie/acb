@@ -1,10 +1,9 @@
 """Tests for the hybrid AI adapter."""
 
-import asyncio
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from acb.adapters.ai._base import (
     AIRequest,
     AIResponse,
@@ -13,9 +12,9 @@ from acb.adapters.ai._base import (
     ModelProvider,
 )
 from acb.adapters.ai.hybrid import (
+    MODULE_METADATA,
     HybridAI,
     HybridAISettings,
-    MODULE_METADATA,
     RoutingCriteria,
     RoutingDecision,
     RoutingResult,
@@ -199,7 +198,10 @@ class TestHybridAI:
     async def test_route_by_quality_advanced_capabilities(self) -> None:
         adapter = HybridAI()
         criteria = RoutingCriteria(
-            model_capabilities=[ModelCapability.FUNCTION_CALLING, ModelCapability.VISION]
+            model_capabilities=[
+                ModelCapability.FUNCTION_CALLING,
+                ModelCapability.VISION,
+            ]
         )
         request = AIRequest(prompt="Test")
 
@@ -276,7 +278,9 @@ class TestHybridAI:
         ):
             criteria = RoutingCriteria()
 
-            with pytest.raises(RuntimeError, match="Neither cloud nor edge deployment available"):
+            with pytest.raises(
+                RuntimeError, match="Neither cloud nor edge deployment available"
+            ):
                 await adapter._route_by_availability(criteria)
 
     @pytest.mark.asyncio
@@ -414,7 +418,9 @@ class TestHybridAI:
             await adapter._handle_fallback(request, routing, error)
 
     @pytest.mark.asyncio
-    async def test_check_cloud_availability(self, mock_cloud_adapter: MagicMock) -> None:
+    async def test_check_cloud_availability(
+        self, mock_cloud_adapter: MagicMock
+    ) -> None:
         adapter = HybridAI()
         adapter._cloud_adapter = mock_cloud_adapter
 
@@ -502,8 +508,10 @@ class TestHybridAI:
             adapter = HybridAI(routing_strategy=RoutingStrategy.LATENCY)
             await adapter._ensure_client()
 
-            request = AIRequest(prompt="Test", max_latency_ms=400)  # Should route to edge
-            response = await adapter._generate_text(request)
+            request = AIRequest(
+                prompt="Test", max_latency_ms=400
+            )  # Should route to edge
+            await adapter._generate_text(request)
 
             # Should route to edge for low latency
             mock_edge_adapter._generate_text.assert_called_once()

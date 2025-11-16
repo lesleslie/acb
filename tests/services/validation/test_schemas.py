@@ -1,16 +1,13 @@
 """Tests for validation schemas."""
 
-import pytest
-from unittest.mock import Mock
-
 from acb.services.validation._base import ValidationConfig
 from acb.services.validation.schemas import (
     BasicValidationSchema,
-    StringValidationSchema,
+    DictValidationSchema,
     EmailValidationSchema,
     ListValidationSchema,
-    DictValidationSchema,
     SchemaBuilder,
+    StringValidationSchema,
 )
 
 
@@ -19,11 +16,7 @@ class TestBasicValidationSchema:
 
     async def test_basic_validation_success(self) -> None:
         """Test basic validation with correct type."""
-        schema = BasicValidationSchema(
-            name="test",
-            data_type=str,
-            required=True
-        )
+        schema = BasicValidationSchema(name="test", data_type=str, required=True)
 
         result = await schema.validate("hello")
         assert result.is_valid is True
@@ -35,7 +28,7 @@ class TestBasicValidationSchema:
             name="test",
             data_type=str,
             required=True,
-            config=ValidationConfig(enable_coercion=False)
+            config=ValidationConfig(enable_coercion=False),
         )
 
         result = await schema.validate(123)
@@ -48,7 +41,7 @@ class TestBasicValidationSchema:
             name="test",
             data_type=str,
             required=True,
-            config=ValidationConfig(enable_coercion=True)
+            config=ValidationConfig(enable_coercion=True),
         )
 
         result = await schema.validate(123)
@@ -59,10 +52,7 @@ class TestBasicValidationSchema:
     async def test_basic_validation_none_not_allowed(self) -> None:
         """Test basic validation with None when not allowed."""
         schema = BasicValidationSchema(
-            name="test",
-            data_type=str,
-            required=True,
-            allow_none=False
+            name="test", data_type=str, required=True, allow_none=False
         )
 
         result = await schema.validate(None)
@@ -72,10 +62,7 @@ class TestBasicValidationSchema:
     async def test_basic_validation_none_allowed(self) -> None:
         """Test basic validation with None when allowed."""
         schema = BasicValidationSchema(
-            name="test",
-            data_type=str,
-            required=True,
-            allow_none=True
+            name="test", data_type=str, required=True, allow_none=True
         )
 
         result = await schema.validate(None)
@@ -83,11 +70,7 @@ class TestBasicValidationSchema:
 
     async def test_basic_validation_required_missing(self) -> None:
         """Test required field validation."""
-        schema = BasicValidationSchema(
-            name="test",
-            data_type=str,
-            required=True
-        )
+        schema = BasicValidationSchema(name="test", data_type=str, required=True)
 
         result = await schema.validate("")
         assert result.is_valid is False
@@ -99,11 +82,7 @@ class TestStringValidationSchema:
 
     async def test_string_validation_success(self) -> None:
         """Test successful string validation."""
-        schema = StringValidationSchema(
-            name="test",
-            min_length=2,
-            max_length=10
-        )
+        schema = StringValidationSchema(name="test", min_length=2, max_length=10)
 
         result = await schema.validate("hello")
         assert result.is_valid is True
@@ -111,10 +90,7 @@ class TestStringValidationSchema:
 
     async def test_string_validation_too_short(self) -> None:
         """Test string too short validation."""
-        schema = StringValidationSchema(
-            name="test",
-            min_length=5
-        )
+        schema = StringValidationSchema(name="test", min_length=5)
 
         result = await schema.validate("hi")
         assert result.is_valid is False
@@ -122,10 +98,7 @@ class TestStringValidationSchema:
 
     async def test_string_validation_too_long(self) -> None:
         """Test string too long validation."""
-        schema = StringValidationSchema(
-            name="test",
-            max_length=3
-        )
+        schema = StringValidationSchema(name="test", max_length=3)
 
         result = await schema.validate("hello world")
         assert result.is_valid is False
@@ -135,7 +108,7 @@ class TestStringValidationSchema:
         """Test string pattern matching."""
         schema = StringValidationSchema(
             name="test",
-            pattern=r"^[a-zA-Z]+$"  # Only letters
+            pattern=r"^[a-zA-Z]+$",  # Only letters
         )
 
         await schema.compile()  # Ensure pattern is compiled
@@ -147,7 +120,7 @@ class TestStringValidationSchema:
         """Test string pattern not matching."""
         schema = StringValidationSchema(
             name="test",
-            pattern=r"^[a-zA-Z]+$"  # Only letters
+            pattern=r"^[a-zA-Z]+$",  # Only letters
         )
 
         await schema.compile()
@@ -158,10 +131,7 @@ class TestStringValidationSchema:
 
     async def test_string_validation_whitespace_stripping(self) -> None:
         """Test whitespace stripping."""
-        schema = StringValidationSchema(
-            name="test",
-            strip_whitespace=True
-        )
+        schema = StringValidationSchema(name="test", strip_whitespace=True)
 
         result = await schema.validate("  hello  ")
         assert result.is_valid is True
@@ -171,8 +141,7 @@ class TestStringValidationSchema:
     async def test_string_validation_type_coercion(self) -> None:
         """Test type coercion to string."""
         schema = StringValidationSchema(
-            name="test",
-            config=ValidationConfig(enable_coercion=True)
+            name="test", config=ValidationConfig(enable_coercion=True)
         )
 
         result = await schema.validate(123)
@@ -232,11 +201,7 @@ class TestListValidationSchema:
 
     async def test_list_validation_success(self) -> None:
         """Test successful list validation."""
-        schema = ListValidationSchema(
-            name="test",
-            min_items=1,
-            max_items=5
-        )
+        schema = ListValidationSchema(name="test", min_items=1, max_items=5)
 
         result = await schema.validate([1, 2, 3])
         assert result.is_valid is True
@@ -244,10 +209,7 @@ class TestListValidationSchema:
 
     async def test_list_validation_too_short(self) -> None:
         """Test list too short validation."""
-        schema = ListValidationSchema(
-            name="test",
-            min_items=3
-        )
+        schema = ListValidationSchema(name="test", min_items=3)
 
         result = await schema.validate([1, 2])
         assert result.is_valid is False
@@ -255,10 +217,7 @@ class TestListValidationSchema:
 
     async def test_list_validation_too_long(self) -> None:
         """Test list too long validation."""
-        schema = ListValidationSchema(
-            name="test",
-            max_items=2
-        )
+        schema = ListValidationSchema(name="test", max_items=2)
 
         result = await schema.validate([1, 2, 3, 4])
         assert result.is_valid is False
@@ -266,10 +225,7 @@ class TestListValidationSchema:
 
     async def test_list_validation_unique_items(self) -> None:
         """Test unique items validation."""
-        schema = ListValidationSchema(
-            name="test",
-            unique_items=True
-        )
+        schema = ListValidationSchema(name="test", unique_items=True)
 
         # Test with unique items
         result1 = await schema.validate([1, 2, 3])
@@ -282,15 +238,9 @@ class TestListValidationSchema:
 
     async def test_list_validation_with_item_schema(self) -> None:
         """Test list validation with item schema."""
-        item_schema = StringValidationSchema(
-            name="item",
-            min_length=2
-        )
+        item_schema = StringValidationSchema(name="item", min_length=2)
 
-        schema = ListValidationSchema(
-            name="test",
-            item_schema=item_schema
-        )
+        schema = ListValidationSchema(name="test", item_schema=item_schema)
 
         # Test with valid items
         result1 = await schema.validate(["hello", "world"])
@@ -304,8 +254,7 @@ class TestListValidationSchema:
     async def test_list_validation_type_coercion(self) -> None:
         """Test list type coercion."""
         schema = ListValidationSchema(
-            name="test",
-            config=ValidationConfig(enable_coercion=True)
+            name="test", config=ValidationConfig(enable_coercion=True)
         )
 
         result = await schema.validate("hello")
@@ -321,13 +270,11 @@ class TestDictValidationSchema:
         """Test successful dict validation."""
         field_schemas = {
             "name": StringValidationSchema("name", min_length=1),
-            "age": BasicValidationSchema("age", data_type=int)
+            "age": BasicValidationSchema("age", data_type=int),
         }
 
         schema = DictValidationSchema(
-            name="test",
-            field_schemas=field_schemas,
-            required_fields=["name"]
+            name="test", field_schemas=field_schemas, required_fields=["name"]
         )
 
         data = {"name": "John", "age": 30}
@@ -338,26 +285,20 @@ class TestDictValidationSchema:
 
     async def test_dict_validation_missing_required(self) -> None:
         """Test dict validation with missing required field."""
-        schema = DictValidationSchema(
-            name="test",
-            required_fields=["name", "email"]
-        )
+        schema = DictValidationSchema(name="test", required_fields=["name", "email"])
 
         data = {"name": "John"}
         result = await schema.validate(data)
         assert result.is_valid is False
-        assert any("Required field 'email' is missing" in error for error in result.errors)
+        assert any(
+            "Required field 'email' is missing" in error for error in result.errors
+        )
 
     async def test_dict_validation_field_validation_error(self) -> None:
         """Test dict validation with field validation error."""
-        field_schemas = {
-            "name": StringValidationSchema("name", min_length=5)
-        }
+        field_schemas = {"name": StringValidationSchema("name", min_length=5)}
 
-        schema = DictValidationSchema(
-            name="test",
-            field_schemas=field_schemas
-        )
+        schema = DictValidationSchema(name="test", field_schemas=field_schemas)
 
         data = {"name": "Jo"}  # Too short
         result = await schema.validate(data)
@@ -366,10 +307,7 @@ class TestDictValidationSchema:
 
     async def test_dict_validation_extra_fields_allowed(self) -> None:
         """Test dict validation with extra fields allowed."""
-        schema = DictValidationSchema(
-            name="test",
-            allow_extra_fields=True
-        )
+        schema = DictValidationSchema(name="test", allow_extra_fields=True)
 
         data = {"name": "John", "extra": "value"}
         result = await schema.validate(data)
@@ -379,9 +317,7 @@ class TestDictValidationSchema:
     async def test_dict_validation_extra_fields_not_allowed(self) -> None:
         """Test dict validation with extra fields not allowed."""
         schema = DictValidationSchema(
-            name="test",
-            required_fields=["name"],
-            allow_extra_fields=False
+            name="test", required_fields=["name"], allow_extra_fields=False
         )
 
         data = {"name": "John", "extra": "value"}
@@ -439,9 +375,7 @@ class TestSchemaBuilder:
         """Test dict schema building."""
         builder = SchemaBuilder()
 
-        field_schemas = {
-            "name": StringValidationSchema("name", min_length=1)
-        }
+        field_schemas = {"name": StringValidationSchema("name", min_length=1)}
 
         builder.add_dict("user", field_schemas=field_schemas, required_fields=["name"])
 

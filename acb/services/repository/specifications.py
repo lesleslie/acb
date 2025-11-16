@@ -9,9 +9,10 @@ Provides composable query specifications for complex database queries:
 """
 
 from abc import ABC, abstractmethod
+from enum import Enum
+
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import Enum
 from typing import Any
 
 

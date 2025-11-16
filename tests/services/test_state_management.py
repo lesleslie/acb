@@ -1,9 +1,10 @@
 """Tests for State Management Service."""
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
+import asyncio
 import pytest
+
 from acb.services.state import (
     InMemoryStateManager,
     PersistentStateManager,
@@ -25,7 +26,9 @@ class TestInMemoryStateManager:
 
     def setup_method(self):
         """Setup test fixtures."""
-        self.settings = StateManagerSettings(default_ttl_seconds=60, max_memory_entries=100)
+        self.settings = StateManagerSettings(
+            default_ttl_seconds=60, max_memory_entries=100
+        )
         self.manager = InMemoryStateManager(self.settings)
 
     @pytest.mark.asyncio
@@ -387,9 +390,10 @@ class TestConvenienceFunctions:
     @pytest.mark.asyncio
     async def test_get_state_service_fallback(self):
         """Test get_state_service fallback behavior."""
-        with patch("acb.depends.depends.get_sync", side_effect=Exception("No service")), \
-             patch("acb.depends.depends.set") as mock_depends_set:
-
+        with (
+            patch("acb.depends.depends.get_sync", side_effect=Exception("No service")),
+            patch("acb.depends.depends.set") as mock_depends_set,
+        ):
             # Should create new service instance
             service = await get_state_service()
             assert service is not None
@@ -411,8 +415,7 @@ class TestConvenienceFunctions:
             cleanup_keys = ["cleanup_key1", "cleanup_key2"]
 
             async with managed_state(
-                initial_state=initial_state,
-                cleanup_keys=cleanup_keys
+                initial_state=initial_state, cleanup_keys=cleanup_keys
             ) as service:
                 assert service is mock_service
 

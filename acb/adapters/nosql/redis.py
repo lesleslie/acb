@@ -1,8 +1,9 @@
-import typing as t
 import warnings
-from contextlib import asynccontextmanager, suppress
 from functools import cached_property
 from uuid import UUID
+
+import typing as t
+from contextlib import asynccontextmanager, suppress
 
 try:
     import redis.asyncio as redis

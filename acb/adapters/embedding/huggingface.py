@@ -1,12 +1,13 @@
 """HuggingFace transformers embeddings adapter implementation."""
 
-import asyncio
 import time
+
+import asyncio
 import typing as t
 from contextlib import suppress
 from datetime import datetime
-
 from pydantic import Field
+
 from acb.adapters import (
     AdapterCapability,
     AdapterMetadata,
@@ -336,7 +337,7 @@ class HuggingFaceEmbedding(EmbeddingAdapter):
         embeddings_list = embeddings.cpu().tolist()
         return [
             self._create_embedding_result(text, embedding, model, tokenizer)
-            for text, embedding in zip(batch_texts, embeddings_list)
+            for text, embedding in zip(batch_texts, embeddings_list, strict=False)
         ]
 
     async def _process_all_batches(

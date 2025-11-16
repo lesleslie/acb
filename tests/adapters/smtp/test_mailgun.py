@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
+
 from acb.adapters.smtp.mailgun import Smtp, SmtpSettings
 
 

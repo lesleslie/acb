@@ -1,13 +1,15 @@
 """Shared fixtures for reasoning adapter tests."""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
+
 from acb.adapters.reasoning._base import (
+    DecisionRule,
+    DecisionTree,
     ReasoningContext,
     ReasoningStep,
     ToolDefinition,
-    DecisionTree,
-    DecisionRule,
 )
 
 
@@ -152,15 +154,15 @@ def sample_decision_tree():
     )
 
 
-
 @pytest.fixture
 def patch_file_operations():
     """Patch file operations to prevent actual file creation."""
-    with patch("pathlib.Path.exists") as mock_exists, \
-         patch("pathlib.Path.mkdir") as mock_mkdir, \
-         patch("pathlib.Path.write_text") as mock_write, \
-         patch("pathlib.Path.read_text") as mock_read:
-
+    with (
+        patch("pathlib.Path.exists") as mock_exists,
+        patch("pathlib.Path.mkdir") as mock_mkdir,
+        patch("pathlib.Path.write_text") as mock_write,
+        patch("pathlib.Path.read_text") as mock_read,
+    ):
         mock_exists.return_value = True
         mock_read.return_value = "{}"
         yield {

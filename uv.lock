@@ -17,7 +17,6 @@ dependencies = [
     { name = "bevy" },
     { name = "blake3" },
     { name = "brotli" },
-    { name = "crackerjack" },
     { name = "devtools" },
     { name = "dill" },
     { name = "fastmcp" },
@@ -414,441 +413,440 @@ webapp-plus = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioconsole", specifier = ">=0.8.1" },
-    { name = "anyio", specifier = ">=4.9" },
-    { name = "attrs", specifier = ">=25.3" },
-    { name = "bevy", specifier = ">=3.1.0b9" },
-    { name = "blake3", specifier = ">=1.0.5" },
-    { name = "brotli", specifier = ">=1.1" },
-    { name = "crackerjack", editable = "../crackerjack" },
+    { name = "aioconsole", specifier = ">=0.8.2" },
+    { name = "anyio", specifier = ">=4.11.0" },
+    { name = "attrs", specifier = ">=25.4.0" },
+    { name = "bevy", specifier = ">=3.1.0b12" },
+    { name = "blake3", specifier = ">=1.0.8" },
+    { name = "brotli", specifier = ">=1.2.0" },
     { name = "devtools", specifier = ">=0.12.2" },
-    { name = "dill", specifier = ">=0.3,<0.4.dev0" },
-    { name = "fastmcp", specifier = ">=2.0.0" },
-    { name = "google-api-python-client", specifier = ">=2.176" },
+    { name = "dill", specifier = ">=0.3.9,<0.4.dev0" },
+    { name = "fastmcp", specifier = ">=2.13.1" },
+    { name = "google-api-python-client", specifier = ">=2.187.0" },
     { name = "google-crc32c", specifier = ">=1.7.1" },
-    { name = "icecream", specifier = ">=2.1.5" },
+    { name = "icecream", specifier = ">=2.1.8" },
     { name = "inflection", specifier = ">=0.5.1" },
     { name = "loguru", specifier = ">=0.7.3" },
-    { name = "mcp-common", specifier = ">=0.2.0" },
+    { name = "mcp-common", specifier = ">=0.3.2" },
     { name = "msgspec", extras = ["toml", "yaml"] },
-    { name = "nest-asyncio", specifier = ">=1.6" },
-    { name = "pydantic", extras = ["email"], specifier = ">=2.11.7" },
-    { name = "pydantic-settings", specifier = ">=2.10.1" },
-    { name = "pyfiglet", specifier = ">=1.0.3" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlalchemy-utils", specifier = ">=0.41.2" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
+    { name = "nest-asyncio", specifier = ">=1.6.0" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.12.4" },
+    { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "pyfiglet", specifier = ">=1.0.4" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.0" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
     { name = "toml", specifier = ">=0.10.2" },
-    { name = "tomli-w", specifier = ">=1.2" },
+    { name = "tomli-w", specifier = ">=1.2.0" },
     { name = "urllib3", specifier = ">=2.5.0" },
-    { name = "uuid-utils", specifier = ">=0.11" },
-    { name = "uvicorn", specifier = ">=0.30" },
+    { name = "uuid-utils", specifier = ">=0.11.1" },
+    { name = "uvicorn", specifier = ">=0.38.0" },
 ]
 
 [package.metadata.requires-dev]
 ai = [
-    { name = "aiohttp", specifier = ">=3.9" },
-    { name = "anthropic", specifier = ">=0.5" },
-    { name = "boto3", specifier = ">=1.35" },
-    { name = "google-cloud-aiplatform", specifier = ">=1.40" },
+    { name = "aiohttp", specifier = ">=3.13.2" },
+    { name = "anthropic", specifier = ">=0.73.0" },
+    { name = "boto3", specifier = ">=1.40.70" },
+    { name = "google-cloud-aiplatform", specifier = ">=1.127.0" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "ollama", specifier = ">=0.1" },
+    { name = "ollama", specifier = ">=0.6.1" },
     { name = "onnx", marker = "python_full_version < '3.13'", specifier = ">=1.14" },
-    { name = "onnxruntime", marker = "python_full_version < '3.13'", specifier = ">=1.16" },
-    { name = "openai", specifier = ">=1" },
-    { name = "psutil", specifier = ">=6.1" },
+    { name = "onnxruntime", marker = "python_full_version < '3.13'", specifier = ">=1.23.2" },
+    { name = "openai", specifier = ">=2.8.0" },
+    { name = "psutil", specifier = ">=7.1.3" },
     { name = "torch", marker = "python_full_version < '3.13'", specifier = ">=2" },
-    { name = "transformers", specifier = ">=4.30" },
+    { name = "transformers", specifier = ">=4.57.1" },
 ]
 all = [
-    { name = "adlfs", specifier = ">=2024.12" },
+    { name = "adlfs", specifier = ">=2025.8.0" },
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "aioftp", specifier = ">=0.26.2" },
-    { name = "aiohttp", specifier = ">=3.9" },
-    { name = "aiomysql", specifier = ">=0.2" },
-    { name = "aiosqlite", specifier = ">=0.21" },
-    { name = "anthropic", specifier = ">=0.5" },
-    { name = "asyncssh", specifier = ">=2.21" },
-    { name = "attrs", specifier = ">=25.3" },
-    { name = "azure-identity", specifier = ">=1.15" },
-    { name = "azure-keyvault-secrets", specifier = ">=4.8" },
-    { name = "babel", specifier = ">=2.17" },
-    { name = "beanie", specifier = ">=1.30" },
-    { name = "boto3", specifier = ">=1.35" },
-    { name = "cloudflare", specifier = ">=3" },
-    { name = "coredis", specifier = ">=4.24" },
-    { name = "duckdb", specifier = ">=0.10.2" },
-    { name = "fastmcp", specifier = ">=2.0.0" },
-    { name = "fsspec", specifier = ">=2025.1" },
-    { name = "gcsfs", specifier = ">=2025.5.1" },
-    { name = "google-cloud-aiplatform", specifier = ">=1.40" },
-    { name = "google-cloud-dns", specifier = ">=0.35.1" },
-    { name = "google-cloud-firestore", specifier = ">=2.21" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.24" },
-    { name = "greenlet", specifier = ">=3.2.3" },
+    { name = "aioftp", specifier = ">=0.27.2" },
+    { name = "aiohttp", specifier = ">=3.13.2" },
+    { name = "aiomysql", specifier = ">=0.3.2" },
+    { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "anthropic", specifier = ">=0.73.0" },
+    { name = "asyncssh", specifier = ">=2.21.1" },
+    { name = "attrs", specifier = ">=25.4.0" },
+    { name = "azure-identity", specifier = ">=1.25.1" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.10.0" },
+    { name = "babel", specifier = ">=2.17.0" },
+    { name = "beanie", specifier = ">=2.0.0" },
+    { name = "boto3", specifier = ">=1.40.70" },
+    { name = "cloudflare", specifier = ">=4.3.1" },
+    { name = "coredis", specifier = ">=5.3.0" },
+    { name = "duckdb", specifier = ">=1.4.2" },
+    { name = "fastmcp", specifier = ">=2.13.1" },
+    { name = "fsspec", specifier = ">=2025.10.0" },
+    { name = "gcsfs", specifier = ">=2025.10.0" },
+    { name = "google-cloud-aiplatform", specifier = ">=1.127.0" },
+    { name = "google-cloud-dns", specifier = ">=0.36.0" },
+    { name = "google-cloud-firestore", specifier = ">=2.21.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.25.0" },
+    { name = "greenlet", specifier = ">=3.2.4" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "infisicalsdk", specifier = ">=1.0.9" },
-    { name = "langchain", marker = "python_full_version < '3.13'", specifier = ">=0.1" },
+    { name = "infisicalsdk", specifier = ">=1.0.12" },
+    { name = "langchain", marker = "python_full_version < '3.13'", specifier = ">=1.0.7" },
     { name = "langchain-community", marker = "python_full_version < '3.13'", specifier = ">=0.0.20" },
-    { name = "langchain-openai", marker = "python_full_version < '3.13'", specifier = ">=0.1" },
+    { name = "langchain-openai", marker = "python_full_version < '3.13'", specifier = ">=1.0.3" },
     { name = "llama-index", marker = "python_full_version < '3.13'", specifier = ">=0.9" },
     { name = "llama-index-llms-openai", marker = "python_full_version < '3.13'", specifier = ">=0.1" },
-    { name = "logfire", extras = ["httpx"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
-    { name = "mailgun", specifier = ">=1.1" },
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
+    { name = "mailgun", specifier = ">=1.3.0" },
     { name = "motor", specifier = ">=3.7.1" },
-    { name = "msgspec", specifier = ">=0.19" },
-    { name = "niquests", specifier = ">=3.14.1" },
-    { name = "numpy", specifier = ">=2.1" },
-    { name = "ollama", specifier = ">=0.1" },
+    { name = "msgspec", specifier = ">=0.19.0" },
+    { name = "niquests", specifier = ">=3.15.2" },
+    { name = "numpy", specifier = ">=2.3.4" },
+    { name = "ollama", specifier = ">=0.6.1" },
     { name = "onnx", marker = "python_full_version < '3.13'", specifier = ">=1.14" },
-    { name = "onnxruntime", marker = "python_full_version < '3.13'", specifier = ">=1.16" },
-    { name = "openai", specifier = ">=1" },
-    { name = "pinecone-client", specifier = ">=3" },
-    { name = "psutil", specifier = ">=6.1" },
-    { name = "pydantic", specifier = ">=2" },
-    { name = "pymysql", specifier = ">=1.1.1" },
+    { name = "onnxruntime", marker = "python_full_version < '3.13'", specifier = ">=1.23.2" },
+    { name = "openai", specifier = ">=2.8.0" },
+    { name = "pinecone-client", specifier = ">=6.0.0" },
+    { name = "psutil", specifier = ">=7.1.3" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "pymysql", specifier = ">=1.1.2" },
     { name = "python-cloudflare", specifier = ">=1.0.1" },
-    { name = "qdrant-client", specifier = ">=1.7" },
+    { name = "qdrant-client", specifier = ">=1.15.1" },
     { name = "redis-om", specifier = ">=0.3.5" },
-    { name = "s3fs", specifier = ">=2025.5.1" },
+    { name = "s3fs", specifier = ">=2025.10.0" },
     { name = "sentence-transformers", marker = "python_full_version < '3.13'", specifier = ">=2" },
-    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.32" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlalchemy-libsql", specifier = ">=0.2" },
-    { name = "sqlalchemy-utils", specifier = ">=0.41.2" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
-    { name = "tiktoken", specifier = ">=0.5" },
+    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.44.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlalchemy-libsql", specifier = ">=0.2.0" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.0" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
+    { name = "tiktoken", specifier = ">=0.12.0" },
     { name = "torch", marker = "python_full_version < '3.13'", specifier = ">=2" },
-    { name = "transformers", specifier = ">=4.30" },
-    { name = "validators", specifier = ">=0.35" },
-    { name = "weaviate-client", specifier = ">=4" },
+    { name = "transformers", specifier = ">=4.57.1" },
+    { name = "validators", specifier = ">=0.35.0" },
+    { name = "weaviate-client", specifier = ">=4.18.0" },
 ]
 api = [
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "azure-identity", specifier = ">=1.15" },
-    { name = "azure-keyvault-secrets", specifier = ">=4.8" },
-    { name = "beanie", specifier = ">=1.30" },
-    { name = "cloudflare", specifier = ">=3" },
-    { name = "coredis", specifier = ">=4.24" },
-    { name = "google-cloud-firestore", specifier = ">=2.21" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.24" },
+    { name = "azure-identity", specifier = ">=1.25.1" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.10.0" },
+    { name = "beanie", specifier = ">=2.0.0" },
+    { name = "cloudflare", specifier = ">=4.3.1" },
+    { name = "coredis", specifier = ">=5.3.0" },
+    { name = "google-cloud-firestore", specifier = ">=2.21.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.25.0" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "infisicalsdk", specifier = ">=1.0.9" },
-    { name = "logfire", extras = ["httpx"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
+    { name = "infisicalsdk", specifier = ">=1.0.12" },
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
     { name = "motor", specifier = ">=3.7.1" },
-    { name = "niquests", specifier = ">=3.14.1" },
+    { name = "niquests", specifier = ">=3.15.2" },
     { name = "redis-om", specifier = ">=0.3.5" },
-    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
+    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
 ]
 cache = [
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "coredis", specifier = ">=4.24" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
+    { name = "coredis", specifier = ">=5.3.0" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
 ]
 cloud-native = [
-    { name = "adlfs", specifier = ">=2024.12" },
+    { name = "adlfs", specifier = ">=2025.8.0" },
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "aiomysql", specifier = ">=0.2" },
-    { name = "aiosqlite", specifier = ">=0.21" },
-    { name = "azure-identity", specifier = ">=1.15" },
-    { name = "azure-keyvault-secrets", specifier = ">=4.8" },
-    { name = "babel", specifier = ">=2.17" },
-    { name = "boto3", specifier = ">=1.35" },
-    { name = "cloudflare", specifier = ">=3" },
-    { name = "coredis", specifier = ">=4.24" },
-    { name = "fsspec", specifier = ">=2025.1" },
-    { name = "gcsfs", specifier = ">=2025.5.1" },
-    { name = "google-cloud-dns", specifier = ">=0.35.1" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.24" },
-    { name = "greenlet", specifier = ">=3.2.3" },
-    { name = "infisicalsdk", specifier = ">=1.0.9" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
-    { name = "pymysql", specifier = ">=1.1.1" },
+    { name = "aiomysql", specifier = ">=0.3.2" },
+    { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "azure-identity", specifier = ">=1.25.1" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.10.0" },
+    { name = "babel", specifier = ">=2.17.0" },
+    { name = "boto3", specifier = ">=1.40.70" },
+    { name = "cloudflare", specifier = ">=4.3.1" },
+    { name = "coredis", specifier = ">=5.3.0" },
+    { name = "fsspec", specifier = ">=2025.10.0" },
+    { name = "gcsfs", specifier = ">=2025.10.0" },
+    { name = "google-cloud-dns", specifier = ">=0.36.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.25.0" },
+    { name = "greenlet", specifier = ">=3.2.4" },
+    { name = "infisicalsdk", specifier = ">=1.0.12" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
+    { name = "pymysql", specifier = ">=1.1.2" },
     { name = "python-cloudflare", specifier = ">=1.0.1" },
-    { name = "s3fs", specifier = ">=2025.5.1" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.32" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlalchemy-libsql", specifier = ">=0.2" },
-    { name = "sqlalchemy-utils", specifier = ">=0.41.2" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
-    { name = "validators", specifier = ">=0.35" },
+    { name = "s3fs", specifier = ">=2025.10.0" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.44.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlalchemy-libsql", specifier = ">=0.2.0" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.0" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
+    { name = "validators", specifier = ">=0.35.0" },
 ]
 dataplatform = [
-    { name = "adlfs", specifier = ">=2024.12" },
-    { name = "aiomysql", specifier = ">=0.2" },
-    { name = "aiosqlite", specifier = ">=0.21" },
-    { name = "babel", specifier = ">=2.17" },
-    { name = "beanie", specifier = ">=1.30" },
-    { name = "fsspec", specifier = ">=2025.1" },
-    { name = "gcsfs", specifier = ">=2025.5.1" },
-    { name = "google-cloud-firestore", specifier = ">=2.21" },
-    { name = "greenlet", specifier = ">=3.2.3" },
-    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
+    { name = "adlfs", specifier = ">=2025.8.0" },
+    { name = "aiomysql", specifier = ">=0.3.2" },
+    { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "babel", specifier = ">=2.17.0" },
+    { name = "beanie", specifier = ">=2.0.0" },
+    { name = "fsspec", specifier = ">=2025.10.0" },
+    { name = "gcsfs", specifier = ">=2025.10.0" },
+    { name = "google-cloud-firestore", specifier = ">=2.21.0" },
+    { name = "greenlet", specifier = ">=3.2.4" },
+    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
     { name = "motor", specifier = ">=3.7.1" },
-    { name = "pymysql", specifier = ">=1.1.1" },
+    { name = "pymysql", specifier = ">=1.1.2" },
     { name = "redis-om", specifier = ">=0.3.5" },
-    { name = "s3fs", specifier = ">=2025.5.1" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.32" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlalchemy-libsql", specifier = ">=0.2" },
-    { name = "sqlalchemy-utils", specifier = ">=0.41.2" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
+    { name = "s3fs", specifier = ">=2025.10.0" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.44.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlalchemy-libsql", specifier = ">=0.2.0" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.0" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
 ]
-demo = [{ name = "faker", specifier = ">=37.4" }]
+demo = [{ name = "faker", specifier = ">=38.0.0" }]
 dev = [
-    { name = "complexipy", specifier = ">=3.2" },
-    { name = "crackerjack", editable = "../crackerjack" },
+    { name = "complexipy", specifier = ">=4.2.0" },
+    { name = "crackerjack", specifier = ">=0.44.20" },
     { name = "excalidraw-mcp", specifier = ">=0.34.0" },
-    { name = "pre-commit", specifier = ">=4.2" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=1" },
-    { name = "pytest-benchmark", specifier = ">=5.1" },
-    { name = "pytest-cov", specifier = ">=6.2.1" },
-    { name = "pytest-mock", specifier = ">=3.14.1" },
-    { name = "pytest-timeout", specifier = ">=2.4" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "refurb", specifier = ">=2.1" },
-    { name = "ruff", specifier = ">=0.12.3" },
-    { name = "session-mgmt-mcp", specifier = ">=0.3" },
+    { name = "pre-commit", specifier = ">=4.4.0" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+    { name = "pytest-benchmark", specifier = ">=5.2.3" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "refurb", specifier = ">=2.2.0" },
+    { name = "ruff", specifier = ">=0.14.5" },
+    { name = "session-mgmt-mcp", specifier = ">=0.9.2" },
     { name = "types-croniter", specifier = ">=6.0.0.20250809" },
 ]
 dns = [
-    { name = "boto3", specifier = ">=1.35" },
-    { name = "google-cloud-dns", specifier = ">=0.35.1" },
+    { name = "boto3", specifier = ">=1.40.70" },
+    { name = "google-cloud-dns", specifier = ">=0.36.0" },
     { name = "python-cloudflare", specifier = ">=1.0.1" },
-    { name = "validators", specifier = ">=0.35" },
+    { name = "validators", specifier = ">=0.35.0" },
 ]
 embedding = [
-    { name = "numpy", specifier = ">=2.1" },
+    { name = "numpy", specifier = ">=2.3.4" },
     { name = "onnx", marker = "python_full_version < '3.13'", specifier = ">=1.14" },
-    { name = "onnxruntime", marker = "python_full_version < '3.13'", specifier = ">=1.16" },
-    { name = "openai", specifier = ">=1" },
+    { name = "onnxruntime", marker = "python_full_version < '3.13'", specifier = ">=1.23.2" },
+    { name = "openai", specifier = ">=2.8.0" },
     { name = "sentence-transformers", marker = "python_full_version < '3.13'", specifier = ">=2" },
     { name = "torch", marker = "python_full_version < '3.13'", specifier = ">=2" },
-    { name = "transformers", specifier = ">=4" },
+    { name = "transformers", specifier = ">=4.57.1" },
 ]
 ftpd = [
-    { name = "aioftp", specifier = ">=0.26.2" },
-    { name = "asyncssh", specifier = ">=2.21" },
+    { name = "aioftp", specifier = ">=0.27.2" },
+    { name = "asyncssh", specifier = ">=2.21.1" },
 ]
 gcp = [
-    { name = "adlfs", specifier = ">=2024.12" },
-    { name = "azure-identity", specifier = ">=1.15" },
-    { name = "azure-keyvault-secrets", specifier = ">=4.8" },
-    { name = "beanie", specifier = ">=1.30" },
-    { name = "boto3", specifier = ">=1.35" },
-    { name = "cloudflare", specifier = ">=3" },
-    { name = "fsspec", specifier = ">=2025.1" },
-    { name = "gcsfs", specifier = ">=2025.5.1" },
-    { name = "google-cloud-dns", specifier = ">=0.35.1" },
-    { name = "google-cloud-firestore", specifier = ">=2.21" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.24" },
-    { name = "infisicalsdk", specifier = ">=1.0.9" },
+    { name = "adlfs", specifier = ">=2025.8.0" },
+    { name = "azure-identity", specifier = ">=1.25.1" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.10.0" },
+    { name = "beanie", specifier = ">=2.0.0" },
+    { name = "boto3", specifier = ">=1.40.70" },
+    { name = "cloudflare", specifier = ">=4.3.1" },
+    { name = "fsspec", specifier = ">=2025.10.0" },
+    { name = "gcsfs", specifier = ">=2025.10.0" },
+    { name = "google-cloud-dns", specifier = ">=0.36.0" },
+    { name = "google-cloud-firestore", specifier = ">=2.21.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.25.0" },
+    { name = "infisicalsdk", specifier = ">=1.0.12" },
     { name = "motor", specifier = ">=3.7.1" },
     { name = "python-cloudflare", specifier = ">=1.0.1" },
     { name = "redis-om", specifier = ">=0.3.5" },
-    { name = "s3fs", specifier = ">=2025.5.1" },
-    { name = "validators", specifier = ">=0.35" },
+    { name = "s3fs", specifier = ">=2025.10.0" },
+    { name = "validators", specifier = ">=0.35.0" },
 ]
 graph = [
-    { name = "boto3", specifier = ">=1.26" },
-    { name = "duckdb", specifier = ">=0.10.2" },
-    { name = "duckdb-engine", specifier = ">=0.11.2" },
-    { name = "neo4j", specifier = ">=5" },
-    { name = "py2neo", specifier = ">=2021" },
-    { name = "python-arango", specifier = ">=7" },
+    { name = "boto3", specifier = ">=1.40.70" },
+    { name = "duckdb", specifier = ">=1.4.2" },
+    { name = "duckdb-engine", specifier = ">=0.17.0" },
+    { name = "neo4j", specifier = ">=6.0.3" },
+    { name = "py2neo", specifier = ">=2021.2.4" },
+    { name = "python-arango", specifier = ">=8.2.3" },
 ]
 graph-neptune = [{ name = "gremlinpython", specifier = ">=3.7.4" }]
 logger = [
-    { name = "logly", specifier = ">=0.1.4" },
-    { name = "structlog", specifier = ">=24" },
-    { name = "zstandard", specifier = ">=0.21.0" },
+    { name = "logly", specifier = ">=0.1.6" },
+    { name = "structlog", specifier = ">=25.5.0" },
+    { name = "zstandard", specifier = ">=0.25.0" },
 ]
-mcp = [{ name = "fastmcp", specifier = ">=2.0.0" }]
+mcp = [{ name = "fastmcp", specifier = ">=2.13.1" }]
 microservice = [
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "azure-identity", specifier = ">=1.15" },
-    { name = "azure-keyvault-secrets", specifier = ">=4.8" },
-    { name = "cloudflare", specifier = ">=3" },
-    { name = "coredis", specifier = ">=4.24" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.24" },
+    { name = "azure-identity", specifier = ">=1.25.1" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.10.0" },
+    { name = "cloudflare", specifier = ">=4.3.1" },
+    { name = "coredis", specifier = ">=5.3.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.25.0" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "infisicalsdk", specifier = ">=1.0.9" },
-    { name = "logfire", extras = ["httpx"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
-    { name = "niquests", specifier = ">=3.14.1" },
-    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
+    { name = "infisicalsdk", specifier = ">=1.0.12" },
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
+    { name = "niquests", specifier = ">=3.15.2" },
+    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
 ]
 minimal = [
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "coredis", specifier = ">=4.24" },
+    { name = "coredis", specifier = ">=5.3.0" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "logfire", extras = ["httpx"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
-    { name = "niquests", specifier = ">=3.14.1" },
-    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.32" },
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
+    { name = "niquests", specifier = ">=3.15.2" },
+    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.44.0" },
 ]
 models = [
-    { name = "attrs", specifier = ">=25.3" },
-    { name = "msgspec", specifier = ">=0.19" },
+    { name = "attrs", specifier = ">=25.4.0" },
+    { name = "msgspec", specifier = ">=0.19.0" },
     { name = "redis-om", specifier = ">=0.3.5" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
 ]
 monitoring = [
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
 ]
 nosql = [
-    { name = "beanie", specifier = ">=1.30" },
-    { name = "google-cloud-firestore", specifier = ">=2.21" },
+    { name = "beanie", specifier = ">=2.0.0" },
+    { name = "google-cloud-firestore", specifier = ">=2.21.0" },
     { name = "motor", specifier = ">=3.7.1" },
     { name = "redis-om", specifier = ">=0.3.5" },
 ]
-queue-apscheduler = [{ name = "apscheduler", specifier = ">=4.0.0a1" }]
+queue-apscheduler = [{ name = "apscheduler", specifier = ">=4.0.0a6" }]
 queue-apscheduler-mongodb = [
-    { name = "apscheduler", specifier = ">=4.0.0a1" },
-    { name = "pymongo", specifier = ">=4.0" },
+    { name = "apscheduler", specifier = ">=4.0.0a6" },
+    { name = "pymongo", specifier = ">=4.15.4" },
 ]
 queue-apscheduler-redis = [
-    { name = "apscheduler", specifier = ">=4.0.0a1" },
-    { name = "redis", specifier = ">=4.0" },
+    { name = "apscheduler", specifier = ">=4.0.0a6" },
+    { name = "redis", specifier = ">=5.3.1" },
 ]
 queue-apscheduler-sql = [
-    { name = "apscheduler", specifier = ">=4.0.0a1" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
+    { name = "apscheduler", specifier = ">=4.0.0a6" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
 ]
 reasoning = [
-    { name = "langchain", marker = "python_full_version < '3.13'", specifier = ">=0.1" },
+    { name = "langchain", marker = "python_full_version < '3.13'", specifier = ">=1.0.7" },
     { name = "langchain-community", marker = "python_full_version < '3.13'", specifier = ">=0.0.20" },
-    { name = "langchain-openai", marker = "python_full_version < '3.13'", specifier = ">=0.1" },
+    { name = "langchain-openai", marker = "python_full_version < '3.13'", specifier = ">=1.0.3" },
     { name = "llama-index", marker = "python_full_version < '3.13'", specifier = ">=0.9" },
     { name = "llama-index-llms-openai", marker = "python_full_version < '3.13'", specifier = ">=0.1" },
-    { name = "openai", specifier = ">=1" },
-    { name = "pydantic", specifier = ">=2" },
-    { name = "tiktoken", specifier = ">=0.5" },
+    { name = "openai", specifier = ">=2.8.0" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "tiktoken", specifier = ">=0.12.0" },
 ]
 reasoning-apscheduler = [{ name = "apscheduler", specifier = ">=4.0.0a6" }]
 reasoning-langchain = [
-    { name = "langchain", specifier = ">=1.0.3" },
-    { name = "langchain-openai", specifier = ">=1.0.2" },
+    { name = "langchain", specifier = ">=1.0.7" },
+    { name = "langchain-openai", specifier = ">=1.0.3" },
 ]
 requests = [
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "logfire", extras = ["httpx"], specifier = ">=3.24" },
-    { name = "niquests", specifier = ">=3.14.1" },
-    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.32" },
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.14.2" },
+    { name = "niquests", specifier = ">=3.15.2" },
+    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.44.0" },
 ]
 secret = [
-    { name = "azure-identity", specifier = ">=1.15" },
-    { name = "azure-keyvault-secrets", specifier = ">=4.8" },
-    { name = "cloudflare", specifier = ">=3" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.24" },
-    { name = "infisicalsdk", specifier = ">=1.0.9" },
+    { name = "azure-identity", specifier = ">=1.25.1" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.10.0" },
+    { name = "cloudflare", specifier = ">=4.3.1" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.25.0" },
+    { name = "infisicalsdk", specifier = ">=1.0.12" },
 ]
-smtp = [{ name = "mailgun", specifier = ">=1.1" }]
+smtp = [{ name = "mailgun", specifier = ">=1.3.0" }]
 sql = [
-    { name = "aiomysql", specifier = ">=0.2" },
-    { name = "aiosqlite", specifier = ">=0.21" },
-    { name = "babel", specifier = ">=2.17" },
-    { name = "duckdb", specifier = ">=0.10.2" },
-    { name = "duckdb-engine", specifier = ">=0.11.2" },
-    { name = "greenlet", specifier = ">=3.2.3" },
-    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=3.24" },
-    { name = "pymysql", specifier = ">=1.1.1" },
-    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.32" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlalchemy-libsql", specifier = ">=0.2" },
-    { name = "sqlalchemy-utils", specifier = ">=0.41.2" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
+    { name = "aiomysql", specifier = ">=0.3.2" },
+    { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "babel", specifier = ">=2.17.0" },
+    { name = "duckdb", specifier = ">=1.4.2" },
+    { name = "duckdb-engine", specifier = ">=0.17.0" },
+    { name = "greenlet", specifier = ">=3.2.4" },
+    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=4.14.2" },
+    { name = "pymysql", specifier = ">=1.1.2" },
+    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.44.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlalchemy-libsql", specifier = ">=0.2.0" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.0" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
 ]
 storage = [
-    { name = "adlfs", specifier = ">=2024.12" },
-    { name = "fsspec", specifier = ">=2025.1" },
-    { name = "gcsfs", specifier = ">=2025.5.1" },
-    { name = "s3fs", specifier = ">=2025.5.1" },
+    { name = "adlfs", specifier = ">=2025.8.0" },
+    { name = "fsspec", specifier = ">=2025.10.0" },
+    { name = "gcsfs", specifier = ">=2025.10.0" },
+    { name = "s3fs", specifier = ">=2025.10.0" },
 ]
 templates = [
     { name = "jinja2", specifier = ">=3.1.6" },
-    { name = "jinja2-async-environment", specifier = ">=0.14.3" },
+    { name = "jinja2-async-environment", specifier = ">=0.18.5" },
 ]
 vector = [
-    { name = "duckdb", specifier = ">=0.10.2" },
-    { name = "pinecone-client", specifier = ">=3" },
-    { name = "qdrant-client", specifier = ">=1.7" },
-    { name = "weaviate-client", specifier = ">=4" },
+    { name = "duckdb", specifier = ">=1.4.2" },
+    { name = "pinecone-client", specifier = ">=6.0.0" },
+    { name = "qdrant-client", specifier = ">=1.15.1" },
+    { name = "weaviate-client", specifier = ">=4.18.0" },
 ]
 webapp = [
-    { name = "adlfs", specifier = ">=2024.12" },
+    { name = "adlfs", specifier = ">=2025.8.0" },
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "aiomysql", specifier = ">=0.2" },
-    { name = "aiosqlite", specifier = ">=0.21" },
-    { name = "babel", specifier = ">=2.17" },
-    { name = "coredis", specifier = ">=4.24" },
-    { name = "fsspec", specifier = ">=2025.1" },
-    { name = "gcsfs", specifier = ">=2025.5.1" },
-    { name = "greenlet", specifier = ">=3.2.3" },
+    { name = "aiomysql", specifier = ">=0.3.2" },
+    { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "babel", specifier = ">=2.17.0" },
+    { name = "coredis", specifier = ">=5.3.0" },
+    { name = "fsspec", specifier = ">=2025.10.0" },
+    { name = "gcsfs", specifier = ">=2025.10.0" },
+    { name = "greenlet", specifier = ">=3.2.4" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "logfire", extras = ["httpx"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
-    { name = "niquests", specifier = ">=3.14.1" },
-    { name = "pymysql", specifier = ">=1.1.1" },
-    { name = "s3fs", specifier = ">=2025.5.1" },
-    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.32" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlalchemy-libsql", specifier = ">=0.2" },
-    { name = "sqlalchemy-utils", specifier = ">=0.41.2" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
+    { name = "niquests", specifier = ">=3.15.2" },
+    { name = "pymysql", specifier = ">=1.1.2" },
+    { name = "s3fs", specifier = ">=2025.10.0" },
+    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.44.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlalchemy-libsql", specifier = ">=0.2.0" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.0" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
 ]
 webapp-plus = [
-    { name = "adlfs", specifier = ">=2024.12" },
+    { name = "adlfs", specifier = ">=2025.8.0" },
     { name = "aiocache", extras = ["redis"], specifier = ">=0.12.3" },
-    { name = "aiomysql", specifier = ">=0.2" },
-    { name = "aiosqlite", specifier = ">=0.21" },
-    { name = "babel", specifier = ">=2.17" },
-    { name = "coredis", specifier = ">=4.24" },
-    { name = "duckdb", specifier = ">=0.10.2" },
-    { name = "fsspec", specifier = ">=2025.1" },
-    { name = "gcsfs", specifier = ">=2025.5.1" },
-    { name = "greenlet", specifier = ">=3.2.3" },
+    { name = "aiomysql", specifier = ">=0.3.2" },
+    { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "babel", specifier = ">=2.17.0" },
+    { name = "coredis", specifier = ">=5.3.0" },
+    { name = "duckdb", specifier = ">=1.4.2" },
+    { name = "fsspec", specifier = ">=2025.10.0" },
+    { name = "gcsfs", specifier = ">=2025.10.0" },
+    { name = "greenlet", specifier = ">=3.2.4" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
-    { name = "logfire", extras = ["httpx"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["redis"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=3.24" },
-    { name = "logfire", extras = ["system-metrics"], specifier = ">=3.24" },
-    { name = "niquests", specifier = ">=3.14.1" },
-    { name = "pinecone-client", specifier = ">=3" },
-    { name = "pymysql", specifier = ">=1.1.1" },
-    { name = "qdrant-client", specifier = ">=1.7" },
-    { name = "s3fs", specifier = ">=2025.5.1" },
-    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.32" },
-    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.32" },
-    { name = "sqlalchemy", specifier = ">=2.0.41" },
-    { name = "sqlalchemy-libsql", specifier = ">=0.2" },
-    { name = "sqlalchemy-utils", specifier = ">=0.41.2" },
-    { name = "sqlmodel", specifier = ">=0.0.24" },
-    { name = "weaviate-client", specifier = ">=4" },
+    { name = "logfire", extras = ["httpx"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["redis"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["sqlalchemy"], specifier = ">=4.14.2" },
+    { name = "logfire", extras = ["system-metrics"], specifier = ">=4.14.2" },
+    { name = "niquests", specifier = ">=3.15.2" },
+    { name = "pinecone-client", specifier = ">=6.0.0" },
+    { name = "pymysql", specifier = ">=1.1.2" },
+    { name = "qdrant-client", specifier = ">=1.15.1" },
+    { name = "s3fs", specifier = ">=2025.10.0" },
+    { name = "sentry-sdk", extras = ["httpx"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["loguru"], specifier = ">=2.44.0" },
+    { name = "sentry-sdk", extras = ["sqlalchemy"], specifier = ">=2.44.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.44" },
+    { name = "sqlalchemy-libsql", specifier = ">=0.2.0" },
+    { name = "sqlalchemy-utils", specifier = ">=0.42.0" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
+    { name = "weaviate-client", specifier = ">=4.18.0" },
 ]
 
 [[package]]
@@ -1583,14 +1581,14 @@ wheels = [
 
 [[package]]
 name = "click"
-version = "8.3.0"
+version = "8.3.1"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/46/61/de6cd827efad202d7057d93e0fed9294b96952e188f7384832791c7b2254/click-8.3.0.tar.gz", hash = "sha256:e7b8232224eba16f4ebe410c25ced9f7875cb5f3263ffc93cc3e8da705e229c4", size = 276943, upload-time = "2025-09-18T17:32:23.696Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/fa/656b739db8587d7b5dfa22e22ed02566950fbfbcdc20311993483657a5c0/click-8.3.1.tar.gz", hash = "sha256:12ff4785d337a1bb490bb7e9c2b1ee5da3112e94a8622f26a6c77f5d2fc6842a", size = 295065, upload-time = "2025-11-15T20:45:42.706Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/db/d3/9dcc0f5797f070ec8edf30fbadfb200e71d9db6b84d211e3b2085a7589a0/click-8.3.0-py3-none-any.whl", hash = "sha256:9b9f285302c6e3064f4330c05f05b81945b2a39544279343e6e7c5f27a9baddc", size = 107295, upload-time = "2025-09-18T17:32:22.42Z" },
+    { url = "https://files.pythonhosted.org/packages/98/78/01c019cdb5d6498122777c1a43056ebb3ebfeef2076d9d026bfe15583b2b/click-8.3.1-py3-none-any.whl", hash = "sha256:981153a64e25f12d547d3426c367a4857371575ee7ad18df2a6183ab0545b2a6", size = 108274, upload-time = "2025-11-15T20:45:41.139Z" },
 ]
 
 [[package]]
@@ -1752,8 +1750,8 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.44.17"
-source = { editable = "../crackerjack" }
+version = "0.44.20"
+source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
     { name = "aiofiles" },
@@ -1804,79 +1802,17 @@ dependencies = [
     { name = "types-psutil" },
     { name = "types-pyyaml" },
     { name = "uv" },
+    { name = "uv-bump" },
     { name = "uvicorn" },
     { name = "vulture" },
     { name = "watchdog" },
     { name = "websockets" },
     { name = "zuban" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "acb", specifier = ">=0.28.1" },
-    { name = "aiofiles", specifier = ">=24.1" },
-    { name = "aiohttp", specifier = ">=3.12.14" },
-    { name = "bevy", specifier = ">=3.1.0b12" },
-    { name = "codespell", specifier = ">=2.4.1" },
-    { name = "complexipy", specifier = ">=3.3" },
-    { name = "creosote", specifier = ">=4.0.3" },
-    { name = "fastapi", specifier = ">=0.116.1" },
-    { name = "fastmcp", specifier = ">=2.10.6" },
-    { name = "hatchling", specifier = ">=1.25" },
-    { name = "hypothesis", specifier = ">=6.100" },
-    { name = "jinja2", specifier = ">=3.1" },
-    { name = "keyring", specifier = ">=25.6" },
-    { name = "mcp", specifier = ">=1.12.2" },
-    { name = "mcp-common", specifier = ">=0.2.0" },
-    { name = "mdformat", specifier = ">=0.7.22" },
-    { name = "mdformat-ruff", specifier = ">=0.1.3" },
-    { name = "nltk", specifier = ">=3.9.1" },
-    { name = "numpy", specifier = ">=2.2.1" },
-    { name = "onnxruntime", specifier = ">=1.19.0" },
-    { name = "psutil", specifier = ">=6.1.0" },
-    { name = "pydantic", specifier = ">=2.11.7" },
-    { name = "pyleak", specifier = ">=0.1.14" },
-    { name = "pyright", specifier = ">=1.1.403" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=1" },
-    { name = "pytest-benchmark", specifier = ">=5.1" },
-    { name = "pytest-cov", specifier = ">=6.2.1" },
-    { name = "pytest-mock", specifier = ">=3.14.1" },
-    { name = "pytest-timeout", specifier = ">=2.4" },
-    { name = "pytest-xdist", specifier = ">=3.8" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "refurb", specifier = ">=2.1" },
-    { name = "rich", specifier = ">=14.1" },
-    { name = "ruff", specifier = ">=0.12.9" },
-    { name = "scikit-learn", specifier = ">=1.6.1" },
-    { name = "scipy", specifier = ">=1.14.0" },
-    { name = "scipy-stubs", specifier = "==1.16.2.3" },
-    { name = "session-mgmt-mcp", specifier = ">=0.4.0" },
-    { name = "skylos", specifier = ">=2.1.2" },
-    { name = "structlog", specifier = ">=24.4" },
-    { name = "textual", specifier = ">=0.89" },
-    { name = "tomli-w", specifier = ">=1.2" },
-    { name = "transformers", specifier = ">=4.21.0" },
-    { name = "typer", specifier = ">=0.16" },
-    { name = "types-aiofiles", specifier = ">=24.1.0.20240626" },
-    { name = "types-psutil", specifier = ">=6.0.0.12" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.12" },
-    { name = "uv", specifier = ">=0.7.20" },
-    { name = "uvicorn", specifier = ">=0.32.1" },
-    { name = "vulture", specifier = ">=2.14" },
-    { name = "watchdog", specifier = ">=6" },
-    { name = "websockets", specifier = ">=15.0.1" },
-    { name = "zuban", specifier = ">=0.0.22" },
+sdist = { url = "https://files.pythonhosted.org/packages/e1/8d/c83059e95116c683f7636a36202d26ffa0b6c42b860411d1980cb5fc0fd2/crackerjack-0.44.20.tar.gz", hash = "sha256:5da15110b20e7fc87b4fe9311adc4061c9a514af0195bbe1d296e7e51fc46f90", size = 1819802, upload-time = "2025-11-16T05:48:34.994Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/3a/ed7c139c8c1acb626df42a8ad91ede9996dbd2b820a5df5b0828cf1cc509/crackerjack-0.44.20-py3-none-any.whl", hash = "sha256:75770c58bc423d0d48aa9ff0d4bc13419af49e87466d82be6de74dd833907248", size = 1242509, upload-time = "2025-11-16T05:48:30.67Z" },
 ]
-
-[package.metadata.requires-dev]
-dependency = [{ name = "pip-audit", specifier = ">=2.7.0" }]
-dev = [
-    { name = "excalidraw-mcp", specifier = ">=0.34.0" },
-    { name = "session-mgmt-mcp", specifier = ">=0.4.0" },
-    { name = "ty", specifier = ">=0.0.0a6" },
-]
-sast = [{ name = "bandit", specifier = ">=1.8.6" }]
 
 [[package]]
 name = "creosote"
@@ -2237,7 +2173,7 @@ wheels = [
 
 [[package]]
 name = "fastmcp"
-version = "2.13.0.2"
+version = "2.13.1"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "authlib" },
@@ -2253,11 +2189,12 @@ dependencies = [
     { name = "pyperclip" },
     { name = "python-dotenv" },
     { name = "rich" },
+    { name = "uvicorn" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/74/584a152bcd174c99ddf3cfdd7e86ec4a6c696fb190a907c2a2ec9056bda2/fastmcp-2.13.0.2.tar.gz", hash = "sha256:d35386561b6f3cde195ba2b5892dc89b8919a721e6b39b98e7a16f9a7c0b8e8b", size = 7762083, upload-time = "2025-10-28T13:56:21.702Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/a3/c9eb28b5f0b979b0dd8aa9ba56e69298cdb2d72c15592165d042ccb20194/fastmcp-2.13.1.tar.gz", hash = "sha256:b9c664c51f1ff47c698225e7304267ae29a51913f681bd49e442b8682f9a5f90", size = 8170226, upload-time = "2025-11-15T19:02:17.693Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/c6/95eacd687cfab64fec13bfb64e6c6e7da13d01ecd4cb7d7e991858a08119/fastmcp-2.13.0.2-py3-none-any.whl", hash = "sha256:eb381eb073a101aabbc0ac44b05e23fef0cd1619344b7703115c825c8755fa1c", size = 367511, upload-time = "2025-10-28T13:56:18.83Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/4b/7e36db0a90044be181319ff025be7cc57089ddb6ba8f3712dea543b9cf97/fastmcp-2.13.1-py3-none-any.whl", hash = "sha256:7a78b19785c4ec04a758d920c312769a497e3f6ab4c80feed504df1ed7de9f3c", size = 376750, upload-time = "2025-11-15T19:02:15.748Z" },
 ]
 
 [[package]]
@@ -3800,7 +3737,7 @@ wheels = [
 
 [[package]]
 name = "mcp"
-version = "1.21.1"
+version = "1.21.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "anyio" },
@@ -3814,13 +3751,11 @@ dependencies = [
     { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "sse-starlette" },
     { name = "starlette" },
-    { name = "typing-extensions" },
-    { name = "typing-inspection" },
     { name = "uvicorn", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f7/25/4df633e7574254ada574822db2245bbee424725d1b01bccae10bf128794e/mcp-1.21.1.tar.gz", hash = "sha256:540e6ac4b12b085c43f14879fde04cbdb10148a09ea9492ff82d8c7ba651a302", size = 469071, upload-time = "2025-11-13T20:33:46.139Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/54/dd2330ef4611c27ae59124820863c34e1d3edb1133c58e6375e2d938c9c5/mcp-1.21.0.tar.gz", hash = "sha256:bab0a38e8f8c48080d787233343f8d301b0e1e95846ae7dead251b2421d99855", size = 452697, upload-time = "2025-11-06T23:19:58.432Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/af/01fb42df59ad15925ffc1e2e609adafddd3ac4572f606faae0dc8b55ba0c/mcp-1.21.1-py3-none-any.whl", hash = "sha256:dd35abe36d68530a8a1291daa25d50276d8731e545c0434d6e250a3700dd2a6d", size = 174852, upload-time = "2025-11-13T20:33:44.502Z" },
+    { url = "https://files.pythonhosted.org/packages/39/47/850b6edc96c03bd44b00de9a0ca3c1cc71e0ba1cd5822955bc9e4eb3fad3/mcp-1.21.0-py3-none-any.whl", hash = "sha256:598619e53eb0b7a6513db38c426b28a4bdf57496fed04332100d2c56acade98b", size = 173672, upload-time = "2025-11-06T23:19:56.508Z" },
 ]
 
 [[package]]
@@ -6052,14 +5987,14 @@ wheels = [
 
 [[package]]
 name = "scipy-stubs"
-version = "1.16.2.3"
+version = "1.16.3.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "optype", extra = ["numpy"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/47/b165711b36a1afb8d5f408393487586e07f8bdb86f829b5b904c1ddd091f/scipy_stubs-1.16.2.3.tar.gz", hash = "sha256:b1afd21442699b8bdd399508187bddcedc6c29a34b188fd603396cb6754c2a91", size = 355436, upload-time = "2025-10-08T01:38:37.403Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/68/c53c3bce6bd069a164015be1be2671c968b526be4af1e85db64c88f04546/scipy_stubs-1.16.3.0.tar.gz", hash = "sha256:d6943c085e47a1ed431309f9ca582b6a206a9db808a036132a0bf01ebc34b506", size = 356462, upload-time = "2025-10-28T22:05:31.198Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/9f/3d8f613d0c3be9348cb0c351328249b7a2428f13329447ec6f395628d7b0/scipy_stubs-1.16.2.3-py3-none-any.whl", hash = "sha256:05e93238bdaedb7fa1afedf9c3a2337f94fec3d8c33fb2d403c933e1bcc7412e", size = 556848, upload-time = "2025-10-08T01:38:35.697Z" },
+    { url = "https://files.pythonhosted.org/packages/86/1c/0ba7305fa01cfe7a6f1b8c86ccdd1b7a0d43fa9bd769c059995311e291a2/scipy_stubs-1.16.3.0-py3-none-any.whl", hash = "sha256:90e5d82ced2183ef3c5c0a28a77df8cc227458624364fa0ff975ad24fa89d6ad", size = 557713, upload-time = "2025-10-28T22:05:29.454Z" },
 ]
 
 [[package]]
@@ -6637,11 +6572,11 @@ wheels = [
 
 [[package]]
 name = "types-psutil"
-version = "7.0.0.20251115"
+version = "7.0.0.20251116"
 source = { registry = "https://pypi.org/simple/" }
-sdist = { url = "https://files.pythonhosted.org/packages/c0/e0/c29fd96ced361ffb3cd891a56a97eae2f236ce1f47b5fbeba48a267984e0/types_psutil-7.0.0.20251115.tar.gz", hash = "sha256:67db0fbe0f2ed540f9a7d419273086c7d65cbaed8ccc32c8197d12963eedde72", size = 21485, upload-time = "2025-11-15T03:00:09.583Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/47/ec/c1e9308b91582cad1d7e7d3007fd003ef45a62c2500f8219313df5fc3bba/types_psutil-7.0.0.20251116.tar.gz", hash = "sha256:92b5c78962e55ce1ed7b0189901a4409ece36ab9fd50c3029cca7e681c606c8a", size = 22192, upload-time = "2025-11-16T03:10:32.859Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/fe/4f8e8eec1965bfc5c6c772e77308591e8247c96bbd522effb6bd5d92a159/types_psutil-7.0.0.20251115-py3-none-any.whl", hash = "sha256:7ddc79d1f0cb672b0b5c43473a18ebc5d76b806c7080934fd6005b8550a6006c", size = 24173, upload-time = "2025-11-15T03:00:08.298Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/0e/11ba08a5375c21039ed5f8e6bba41e9452fb69f0e2f7ee05ed5cca2a2cdf/types_psutil-7.0.0.20251116-py3-none-any.whl", hash = "sha256:74c052de077c2024b85cd435e2cba971165fe92a5eace79cbeb821e776dbc047", size = 25376, upload-time = "2025-11-16T03:10:31.813Z" },
 ]
 
 [[package]]
@@ -6815,6 +6750,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/85/5c/5b20529430140cc39255c0884da734610ccaaf2fd15f2cfabd29f6193d01/uv-0.9.9-py3-none-win32.whl", hash = "sha256:1d25f1aca2f8a3b24f3fdf9b029a9a923c429a828be7c9eee9fa073addedbc36", size = 19272132, upload-time = "2025-11-12T18:45:14.352Z" },
     { url = "https://files.pythonhosted.org/packages/f2/38/562295348cf2eb567fd5ea44512a645ea5bec2661a7e07b7f14fda54cb07/uv-0.9.9-py3-none-win_amd64.whl", hash = "sha256:1201765ae39643ef66bc6decfc44c5f8540fcaeae8b0914553b32e670f1941da", size = 21316052, upload-time = "2025-11-12T18:45:18.897Z" },
     { url = "https://files.pythonhosted.org/packages/9d/62/47e8d16da92ffb095388e45cc3f6e6c2ba1404d80590fb9528305517c7f3/uv-0.9.9-py3-none-win_arm64.whl", hash = "sha256:2695624ee43a8932c3fb414a98e4aed3b4f60306a24acd68e2b288dd5a58c370", size = 19821476, upload-time = "2025-11-12T18:45:22.462Z" },
+]
+
+[[package]]
+name = "uv-bump"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple/" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/4b/e06a8613f78eb1f27c2a035d6aa856e4244b152a483025bd63f5f47fb391/uv_bump-0.3.1.tar.gz", hash = "sha256:a4fb9f366169b657973a57cde10f75890c7776edf6e4451349f0dfaea89ceb17", size = 4807, upload-time = "2025-09-28T15:57:03.577Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cf/2b/c341295394b63a6fe5407fd9ed3a148b255d9f5d3dc5b3db9a55a2c99082/uv_bump-0.3.1-py3-none-any.whl", hash = "sha256:4e3b2c7f95e444b44784a715975266ab30ae79776c2d5d71eab38d22c8767a1e", size = 6128, upload-time = "2025-09-28T15:57:02.205Z" },
 ]
 
 [[package]]

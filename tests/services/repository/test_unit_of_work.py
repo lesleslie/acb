@@ -1,24 +1,26 @@
 """Tests for Unit of Work Pattern."""
 
-import pytest
+from unittest.mock import AsyncMock, patch
+
 import asyncio
-from unittest.mock import AsyncMock, Mock, patch
+import pytest
 from dataclasses import dataclass
 from datetime import datetime
 
+from acb.services.repository._base import RepositoryBase
 from acb.services.repository.unit_of_work import (
     UnitOfWork,
-    UnitOfWorkManager,
-    UnitOfWorkState,
     UnitOfWorkError,
-    UnitOfWorkMetrics
+    UnitOfWorkManager,
+    UnitOfWorkMetrics,
+    UnitOfWorkState,
 )
-from acb.services.repository._base import RepositoryBase
 
 
 @dataclass
 class SampleEntity:
     """Test entity for UoW tests."""
+
     id: int | None = None
     name: str = ""
 
@@ -83,7 +85,7 @@ class TestUnitOfWork:
     @pytest.mark.asyncio
     async def test_uow_begin(self, uow):
         """Test UoW begin operation."""
-        with patch.object(uow, '_initialize_sessions', new_callable=AsyncMock):
+        with patch.object(uow, "_initialize_sessions", new_callable=AsyncMock):
             await uow.begin()
             assert uow.state == UnitOfWorkState.ACTIVE
             assert uow.is_active
@@ -117,9 +119,10 @@ class TestUnitOfWork:
     @pytest.mark.asyncio
     async def test_uow_commit(self, uow):
         """Test UoW commit operation."""
-        with patch.object(uow, '_initialize_sessions', new_callable=AsyncMock), \
-             patch.object(uow, '_commit_sessions', new_callable=AsyncMock):
-
+        with (
+            patch.object(uow, "_initialize_sessions", new_callable=AsyncMock),
+            patch.object(uow, "_commit_sessions", new_callable=AsyncMock),
+        ):
             await uow.begin()
             await uow.commit()
 
@@ -137,9 +140,10 @@ class TestUnitOfWork:
     @pytest.mark.asyncio
     async def test_uow_rollback(self, uow):
         """Test UoW rollback operation."""
-        with patch.object(uow, '_initialize_sessions', new_callable=AsyncMock), \
-             patch.object(uow, '_rollback_sessions', new_callable=AsyncMock):
-
+        with (
+            patch.object(uow, "_initialize_sessions", new_callable=AsyncMock),
+            patch.object(uow, "_rollback_sessions", new_callable=AsyncMock),
+        ):
             await uow.begin()
             await uow.rollback()
 
@@ -149,9 +153,10 @@ class TestUnitOfWork:
     @pytest.mark.asyncio
     async def test_uow_rollback_idempotent(self, uow):
         """Test UoW rollback is idempotent."""
-        with patch.object(uow, '_initialize_sessions', new_callable=AsyncMock), \
-             patch.object(uow, '_rollback_sessions', new_callable=AsyncMock):
-
+        with (
+            patch.object(uow, "_initialize_sessions", new_callable=AsyncMock),
+            patch.object(uow, "_rollback_sessions", new_callable=AsyncMock),
+        ):
             await uow.begin()
             await uow.rollback()
 
@@ -184,9 +189,10 @@ class TestUnitOfWork:
         assert len(uow._rollback_operations) == 1
 
         # Execute rollback
-        with patch.object(uow, '_initialize_sessions', new_callable=AsyncMock), \
-             patch.object(uow, '_rollback_sessions', new_callable=AsyncMock):
-
+        with (
+            patch.object(uow, "_initialize_sessions", new_callable=AsyncMock),
+            patch.object(uow, "_rollback_sessions", new_callable=AsyncMock),
+        ):
             await uow.begin()
             await uow.rollback()
 
@@ -197,7 +203,7 @@ class TestUnitOfWork:
         """Test UoW timeout handling."""
         uow.timeout = 0.1  # 100ms timeout
 
-        with patch.object(uow, '_initialize_sessions', new_callable=AsyncMock):
+        with patch.object(uow, "_initialize_sessions", new_callable=AsyncMock):
             await uow.begin()
 
             # Wait for timeout
@@ -223,7 +229,7 @@ class TestUnitOfWork:
     @pytest.mark.asyncio
     async def test_uow_cleanup(self, uow, mock_repository):
         """Test UoW cleanup."""
-        with patch.object(uow, '_initialize_sessions', new_callable=AsyncMock):
+        with patch.object(uow, "_initialize_sessions", new_callable=AsyncMock):
             uow.add_repository("test_repo", mock_repository)
             await uow.begin()
 
@@ -249,9 +255,16 @@ class TestUnitOfWorkManager:
         """Test transaction context manager."""
         operations_executed = []
 
-        with patch('acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions', new_callable=AsyncMock), \
-             patch('acb.services.repository.unit_of_work.UnitOfWork._commit_sessions', new_callable=AsyncMock):
-
+        with (
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._commit_sessions",
+                new_callable=AsyncMock,
+            ),
+        ):
             async with uow_manager.transaction() as uow:
                 operations_executed.append("operation")
                 assert uow.is_active
@@ -263,9 +276,16 @@ class TestUnitOfWorkManager:
     @pytest.mark.asyncio
     async def test_uow_manager_transaction_context_with_error(self, uow_manager):
         """Test transaction context manager with error."""
-        with patch('acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions', new_callable=AsyncMock), \
-             patch('acb.services.repository.unit_of_work.UnitOfWork._rollback_sessions', new_callable=AsyncMock):
-
+        with (
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._rollback_sessions",
+                new_callable=AsyncMock,
+            ),
+        ):
             with pytest.raises(ValueError):
                 async with uow_manager.transaction() as uow:
                     assert uow.is_active
@@ -277,8 +297,8 @@ class TestUnitOfWorkManager:
     @pytest.mark.asyncio
     async def test_uow_manager_get_active_transactions(self, uow_manager):
         """Test getting active transactions."""
-        uow1 = await uow_manager.create_unit_of_work()
-        uow2 = await uow_manager.create_unit_of_work()
+        await uow_manager.create_unit_of_work()
+        await uow_manager.create_unit_of_work()
 
         active_transactions = await uow_manager.get_active_transactions()
 
@@ -287,9 +307,16 @@ class TestUnitOfWorkManager:
     @pytest.mark.asyncio
     async def test_uow_manager_get_transaction_history(self, uow_manager):
         """Test getting transaction history."""
-        with patch('acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions', new_callable=AsyncMock), \
-             patch('acb.services.repository.unit_of_work.UnitOfWork._commit_sessions', new_callable=AsyncMock):
-
+        with (
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._commit_sessions",
+                new_callable=AsyncMock,
+            ),
+        ):
             # Complete a transaction
             async with uow_manager.transaction():
                 pass
@@ -300,9 +327,16 @@ class TestUnitOfWorkManager:
     @pytest.mark.asyncio
     async def test_uow_manager_get_stats(self, uow_manager):
         """Test getting transaction statistics."""
-        with patch('acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions', new_callable=AsyncMock), \
-             patch('acb.services.repository.unit_of_work.UnitOfWork._commit_sessions', new_callable=AsyncMock):
-
+        with (
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._initialize_sessions",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "acb.services.repository.unit_of_work.UnitOfWork._commit_sessions",
+                new_callable=AsyncMock,
+            ),
+        ):
             # Create and complete some transactions
             async with uow_manager.transaction():
                 pass
@@ -321,11 +355,12 @@ class TestUnitOfWorkManager:
         uow1 = await uow_manager.create_unit_of_work()
         uow2 = await uow_manager.create_unit_of_work()
 
-        with patch.object(uow1, 'rollback', new_callable=AsyncMock) as rollback1, \
-             patch.object(uow2, 'rollback', new_callable=AsyncMock) as rollback2, \
-             patch.object(uow1, 'cleanup', new_callable=AsyncMock), \
-             patch.object(uow2, 'cleanup', new_callable=AsyncMock):
-
+        with (
+            patch.object(uow1, "rollback", new_callable=AsyncMock) as rollback1,
+            patch.object(uow2, "rollback", new_callable=AsyncMock) as rollback2,
+            patch.object(uow1, "cleanup", new_callable=AsyncMock),
+            patch.object(uow2, "cleanup", new_callable=AsyncMock),
+        ):
             await uow_manager.cleanup()
 
             # All active transactions should be rolled back

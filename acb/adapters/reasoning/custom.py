@@ -2,10 +2,11 @@
 
 import re
 import time
+from enum import Enum
+
 import typing as t
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Any
 
 from acb.adapters import (
