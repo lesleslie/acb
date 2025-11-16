@@ -69,7 +69,7 @@ Repository = "https://github.com/lesleslie/acb"
 [dependency-groups]
 dev = [
     "complexipy>=4.2.0",
-    "crackerjack>=0.44.22",
+    "crackerjack>=0.44.23",
     "excalidraw-mcp>=0.34.0",
     "pre-commit>=4.4.0",
     "pytest>=9.0.1",

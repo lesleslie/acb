@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "acb"
-version = "0.31.2"
+version = "0.31.3"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -609,7 +609,7 @@ dataplatform = [
 demo = [{ name = "faker", specifier = ">=38.0.0" }]
 dev = [
     { name = "complexipy", specifier = ">=4.2.0" },
-    { name = "crackerjack", specifier = ">=0.44.22" },
+    { name = "crackerjack", specifier = ">=0.44.23" },
     { name = "excalidraw-mcp", specifier = ">=0.34.0" },
     { name = "pre-commit", specifier = ">=4.4.0" },
     { name = "pytest", specifier = ">=9.0.1" },
@@ -1750,7 +1750,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.44.22"
+version = "0.44.23"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -1809,9 +1809,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c4/c3/d80ede3925f2730397aa17f98d1c954f94c0a9a1ff04ccd8a6415adb3dcd/crackerjack-0.44.22.tar.gz", hash = "sha256:98847fac0acf2754e229be471781f770eb29f66a863792dc3bb6569856bda166", size = 1859317, upload-time = "2025-11-16T08:44:46.341Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/c4/41bd9c954a64c32a6f0426613560920fc9e9b7b4c9dbc7a755743aaf26f7/crackerjack-0.44.23.tar.gz", hash = "sha256:7ac0bfe1a0a22ca3facfd77c41eb2510b342a4220bfa262a1b7d8211990e8386", size = 1859924, upload-time = "2025-11-16T09:26:52.771Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/85/3744dccc184d9c5328f06a152d5d10a0c4e79d682c9b802c8afd65f78df0/crackerjack-0.44.22-py3-none-any.whl", hash = "sha256:b6a083b194013c28b754261687d6ffd21f27fbe4c46b11e3f8d4f6c12ae09068", size = 1243212, upload-time = "2025-11-16T08:44:38.385Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/46/dbf625d70d16849db8666aa8d88034e9007f31d6c7498354f07bb3ba049c/crackerjack-0.44.23-py3-none-any.whl", hash = "sha256:bde76d628deeacd711b94908230baa2c1a2f894439d152e28e4e9fdf0b25f5c9", size = 1243740, upload-time = "2025-11-16T09:26:47.704Z" },
 ]
 
 [[package]]
