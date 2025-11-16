@@ -1,5 +1,48 @@
 ______________________________________________________________________
 
+## [0.31.2] - 2025-11-15
+
+### Changed
+
+- Add newline at end of bandit-report.json
+- Apply ruff formatting fixes and remove unused import
+- Consolidate duplicate SSL TypedDicts and conversion methods
+- doc updates
+- Fix import sorting in test_validation_module.py
+- Improve config.py readability and maintainability
+- refactor
+- Remove dead code and deprecated functions
+- Remove trailing whitespace from test files
+- Simplify codebase and reduce LOC while preserving functionality
+- Update config, core, deps, docs, tests
+- Update config, core, deps, tests
+
+### Fixed
+
+- Add type ignore comments and assertion for zuban type errors
+- Apply ruff formatting to resolve hook failures
+- Mark obsolete logger tests as skipped after refactoring
+- Remove extra blank line (ruff format)
+- Resolve failing SSL certificate test with proper mocking
+- Resolve LFM2 benchmark test errors and failures
+- Skip failing tests after refactoring instead of deleting files
+- Use correct type ignore error code for redis.from_url()
+
+### Documentation
+
+- Add comprehensive documentation audit report
+- Fix all 37 documentation issues identified in audit
+
+### Testing
+
+- Improve test coverage for core modules
+- Improve test quality and coverage
+- Significantly improve test coverage for refactored modules
+
+### Internal
+
+- Apply automated formatting and linting
+
 ## [0.31.1] - 2025-11-08
 
 ### Changed
