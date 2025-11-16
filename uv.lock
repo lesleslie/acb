@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "acb"
-version = "0.31.1"
+version = "0.31.2"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -609,7 +609,7 @@ dataplatform = [
 demo = [{ name = "faker", specifier = ">=38.0.0" }]
 dev = [
     { name = "complexipy", specifier = ">=4.2.0" },
-    { name = "crackerjack", specifier = ">=0.44.20" },
+    { name = "crackerjack", specifier = ">=0.44.22" },
     { name = "excalidraw-mcp", specifier = ">=0.34.0" },
     { name = "pre-commit", specifier = ">=4.4.0" },
     { name = "pytest", specifier = ">=9.0.1" },
@@ -1750,7 +1750,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.44.20"
+version = "0.44.22"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -1809,9 +1809,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e1/8d/c83059e95116c683f7636a36202d26ffa0b6c42b860411d1980cb5fc0fd2/crackerjack-0.44.20.tar.gz", hash = "sha256:5da15110b20e7fc87b4fe9311adc4061c9a514af0195bbe1d296e7e51fc46f90", size = 1819802, upload-time = "2025-11-16T05:48:34.994Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/c3/d80ede3925f2730397aa17f98d1c954f94c0a9a1ff04ccd8a6415adb3dcd/crackerjack-0.44.22.tar.gz", hash = "sha256:98847fac0acf2754e229be471781f770eb29f66a863792dc3bb6569856bda166", size = 1859317, upload-time = "2025-11-16T08:44:46.341Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/3a/ed7c139c8c1acb626df42a8ad91ede9996dbd2b820a5df5b0828cf1cc509/crackerjack-0.44.20-py3-none-any.whl", hash = "sha256:75770c58bc423d0d48aa9ff0d4bc13419af49e87466d82be6de74dd833907248", size = 1242509, upload-time = "2025-11-16T05:48:30.67Z" },
+    { url = "https://files.pythonhosted.org/packages/01/85/3744dccc184d9c5328f06a152d5d10a0c4e79d682c9b802c8afd65f78df0/crackerjack-0.44.22-py3-none-any.whl", hash = "sha256:b6a083b194013c28b754261687d6ffd21f27fbe4c46b11e3f8d4f6c12ae09068", size = 1243212, upload-time = "2025-11-16T08:44:38.385Z" },
 ]
 
 [[package]]
@@ -2941,14 +2941,14 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.148.0"
+version = "6.148.1"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6e/a5/8565e19f407fb7a2f57cccecf6894e05c047414f2b50a51a37af49a9f5ae/hypothesis-6.148.0.tar.gz", hash = "sha256:d61cca7f7cb56f2941b14d288fd134ba846af0ba8ed12374b581ab865d4e14a0", size = 468651, upload-time = "2025-11-15T06:58:17.605Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/5f/b08ad8dc0a79c3828dd137b4f55243f5d0342b02e963f5298dcb3bec7021/hypothesis-6.148.1.tar.gz", hash = "sha256:98851429bd89b0c8835e8ebca6705c28dec56517576e5606fc3b841ddb0dc1c7", size = 468664, upload-time = "2025-11-16T07:58:37.959Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/f2/17075fb571eb11ca82c2a7b1e3a3f2c158567b44cdee90f639bf277014ca/hypothesis-6.148.0-py3-none-any.whl", hash = "sha256:bacb28721d1d3c1fd0b7bed82723f716635875a755726ab3f6e5f60cea6c1b4d", size = 535691, upload-time = "2025-11-15T06:58:16.246Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/39/a4f6a711970e6c23be35b967907f766064e27945f5b44855a00fa14af3bb/hypothesis-6.148.1-py3-none-any.whl", hash = "sha256:2cca1a20e8fcd230da86bb6d9f3e940a052caef0d4327c12b5694d164ea0f89e", size = 535684, upload-time = "2025-11-16T07:58:36.175Z" },
 ]
 
 [[package]]

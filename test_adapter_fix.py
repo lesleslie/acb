@@ -5,7 +5,7 @@ Test script to check if the adapter registry fix works correctly.
 
 from contextvars import ContextVar
 
-# Simulate the fixed code structure 
+# Simulate the fixed code structure
 class MockAdapter:
     def __init__(self, name, category):
         self.name = name
