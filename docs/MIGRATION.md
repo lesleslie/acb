@@ -4,10 +4,10 @@ This guide helps you upgrade between ACB versions, detailing breaking changes an
 
 ## Table of Contents
 
-- [Version 0.19.1+ (Simplified Architecture)](#version-0191-simplified-architecture)
-- [Version 0.16.17+ (Performance Optimizations)](#version-01617-performance-optimizations)
-- [General Migration Best Practices](#general-migration-best-practices)
-- [Troubleshooting](#troubleshooting)
+- [Version 0.19.1+ (Simplified Architecture)](<#version-0191-simplified-architecture>)
+- [Version 0.16.17+ (Performance Optimizations)](<#version-01617-performance-optimizations>)
+- [General Migration Best Practices](<#general-migration-best-practices>)
+- [Troubleshooting](<#troubleshooting>)
 
 ## Version 0.19.1+ (Simplified Architecture)
 
@@ -452,7 +452,7 @@ uv add "acb==0.19.1"   # Finally to 0.19.1
 
 If you encounter issues during migration:
 
-1. Check the [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) guide
+1. Check the [TROUBLESHOOTING.md](<./TROUBLESHOOTING.md>) guide
 1. Review [adapter-specific documentation](../acb/adapters/)
 1. Search [GitHub Issues](https://github.com/lesleslie/acb/issues)
 1. Create a minimal reproduction case
@@ -480,6 +480,6 @@ ACB's evolution focuses on **simplicity, performance, and comprehensive service 
 
 For detailed changes, always refer to:
 
-- [CHANGELOG.md](../CHANGELOG.md) - Complete version history
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Current architecture
+- [CHANGELOG.md](<../CHANGELOG.md>) - Complete version history
+- [ARCHITECTURE.md](<./ARCHITECTURE.md>) - Current architecture
 - [Adapter READMEs](../acb/adapters/) - Adapter-specific changes

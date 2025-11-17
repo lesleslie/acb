@@ -1,5 +1,3 @@
-from typing import Any
-
 """OpenAI function calling reasoning adapter for structured reasoning with tools."""
 
 import json
@@ -7,6 +5,7 @@ import time
 
 import typing as t
 from datetime import datetime
+from typing import Any
 
 from acb.adapters import (
     AdapterCapability,

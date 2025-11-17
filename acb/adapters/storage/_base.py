@@ -3,7 +3,6 @@ from functools import cached_property
 import typing as t
 from anyio import Path as AsyncPath
 from fsspec.asyn import AsyncFileSystem
-from google.cloud.exceptions import NotFound
 
 from acb.adapters import get_adapter, tmp_path
 from acb.cleanup import CleanupMixin
@@ -169,10 +168,17 @@ class StorageBucket:
         return await self.client._mkdir(self.get_path(path), **create_args)
 
     async def open(self, path: AsyncPath) -> t.BinaryIO:
+        # Lazy import to avoid requiring GCS dependencies for file/memory storage
+        try:
+            from google.cloud.exceptions import NotFound as GCSNotFound
+        except ImportError:
+            # If google-cloud-storage is not installed, we won't catch GCS-specific errors
+            GCSNotFound = type("NotFound", (Exception,), {})  # Dummy exception type
+
         try:
             async with self.client.open(self.get_path(path), "rb") as f:
                 return f.read()  # type: ignore  # type: ignore[no-any-return]
-        except (NotFound, FileNotFoundError, RuntimeError):
+        except (GCSNotFound, FileNotFoundError, RuntimeError):
             raise FileNotFoundError
         except (OSError, PermissionError) as e:
             debug(e)

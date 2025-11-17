@@ -1,5 +1,6 @@
-"""Unit tests for serverless extras: AdaptiveConnectionPool, DeferredInitializer,
-and MemoryEfficientProcessor.
+"""Unit tests for serverless extras.
+
+Tests for AdaptiveConnectionPool, DeferredInitializer, and MemoryEfficientProcessor.
 """
 
 from __future__ import annotations

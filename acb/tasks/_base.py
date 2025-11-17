@@ -1,5 +1,3 @@
-from typing import Any
-
 """Base queue system for ACB framework.
 
 This module provides the foundation for ACB's task queue system with
@@ -18,6 +16,7 @@ import typing as t
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pydantic import BaseModel, Field, field_validator
+from typing import Any
 
 from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings

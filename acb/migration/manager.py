@@ -11,11 +11,6 @@ from typing import TYPE_CHECKING
 
 from acb.depends import depends
 from acb.logger import Logger as LoggerAdapter
-
-if TYPE_CHECKING:
-    pass
-
-logger = depends.get_sync(LoggerAdapter)
 from acb.migration._base import (
     MigrationConfig,
     MigrationMetrics,
@@ -27,6 +22,11 @@ from acb.migration.assessment import assess_migration
 from acb.migration.rollback import RollbackManager, RollbackPoint
 from acb.migration.scripts import get_migration_script
 from acb.migration.validator import MigrationValidator
+
+if TYPE_CHECKING:
+    pass
+
+logger = depends.get_sync(LoggerAdapter)
 
 
 class MigrationResult(BaseModel):

@@ -6,19 +6,18 @@ from uuid import UUID
 
 import typing as t
 from contextlib import suppress
-
-logly_logger: t.Any = None
-with suppress(ImportError):
-    from logly import logger as _real_logly_logger  # type: ignore[import-not-found]
-
-    logly_logger = _real_logly_logger
-
 from datetime import UTC
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
 from ._base import LoggerBase, LoggerBaseSettings
+
+logly_logger: t.Any = None
+with suppress(ImportError):
+    from logly import logger as _real_logly_logger  # type: ignore[import-not-found]
+
+    logly_logger = _real_logly_logger
 
 
 class LoggerSettings(LoggerBaseSettings):

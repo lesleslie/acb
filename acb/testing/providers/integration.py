@@ -1,5 +1,3 @@
-from typing import Any
-
 """Integration Test Provider for ACB Testing.
 
 Provides integration testing utilities for end-to-end testing
@@ -18,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock
 import asyncio
 import typing as t
 from contextlib import asynccontextmanager
+from typing import Any
 
 from acb.testing.discovery import (
     TestProviderCapability,

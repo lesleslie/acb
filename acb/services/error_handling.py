@@ -1,5 +1,3 @@
-from typing import Any
-
 """Error Handling Service with Circuit Breaker Patterns.
 
 Provides comprehensive error handling, circuit breaker patterns, and resilience
@@ -24,6 +22,7 @@ import asyncio
 import typing as t
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from typing import Any
 
 from acb.services.discovery import (
     ServiceCapability,

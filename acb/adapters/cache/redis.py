@@ -42,17 +42,16 @@ from uuid import UUID
 import typing as t
 from pydantic import SecretStr
 
-# Lazy imports for heavy dependencies
-_redis_imports: dict[str, t.Any] = {}
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
-
-# Removed complex mixins - simplified Redis cache implementation
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import Inject, depends
 from acb.ssl_config import SSLConfigMixin
 
 from ._base import CacheBase, CacheBaseSettings
+
+# Lazy imports for heavy dependencies
+_redis_imports: dict[str, t.Any] = {}
 
 MODULE_ID = UUID("0197fe78-4fc8-73f6-be8a-78fd61b63a07")
 MODULE_STATUS = AdapterStatus.STABLE

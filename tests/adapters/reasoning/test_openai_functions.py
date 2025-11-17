@@ -14,6 +14,11 @@ from acb.adapters.reasoning._base import (
 from acb.adapters.reasoning.openai_functions import Reasoning
 
 
+def ToolParameter(type: str, description: str, required: bool = False) -> dict:
+    """Helper function to create tool parameter definitions."""
+    return {"type": type, "description": description, "required": required}
+
+
 class MockOpenAISettings:
     """Mock settings for OpenAI Functions adapter."""
 

@@ -112,5 +112,5 @@ def test_inspect_function_parameters() -> None:
     assert info["is_async"] is True
     params = info["parameters"]
     ann = params["a"]["annotation"]
-    assert ann == int or ann == "int"
+    assert ann is int or ann == "int"
     assert params["b"]["has_default"] is True

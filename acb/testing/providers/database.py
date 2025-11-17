@@ -1,5 +1,3 @@
-from typing import Any
-
 """Database Test Provider for ACB Testing.
 
 Provides database testing utilities, fixtures, and helpers
@@ -17,6 +15,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import typing as t
 from contextlib import asynccontextmanager
+from typing import Any
 
 from acb.testing.discovery import (
     TestProviderCapability,

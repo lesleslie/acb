@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, TypeVar
 
 from acb.depends import depends
 from acb.logger import Logger as LoggerAdapter
+from acb.migration._base import VersionInfo
 
 if TYPE_CHECKING:
     pass
 
 logger = depends.get_sync(LoggerAdapter)
-from acb.migration._base import VersionInfo
 
 T = TypeVar("T")
 

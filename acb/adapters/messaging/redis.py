@@ -72,8 +72,6 @@ from acb.cleanup import CleanupMixin
 from acb.config import Config
 from acb.depends import Inject, depends
 
-LoggerType = t.Any
-
 from ._base import (
     MessagePriority,
     MessagingCapability,
@@ -87,6 +85,8 @@ from ._base import (
 from ._base import (
     MessagingSettings as BaseMessagingSettings,
 )
+
+LoggerType = t.Any
 
 # Lazy imports for coredis
 _coredis_imports: dict[str, t.Any] = {}

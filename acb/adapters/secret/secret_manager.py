@@ -22,13 +22,13 @@ from google.cloud.secretmanager_v1 import (
 )
 
 from acb.adapters import AdapterStatus
-
-MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b86776ce0cc9")
-MODULE_STATUS = AdapterStatus.STABLE
 from acb.config import project
 from acb.depends import depends
 
 from ._base import SecretBase, SecretBaseSettings
+
+MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b86776ce0cc9")
+MODULE_STATUS = AdapterStatus.STABLE
 
 
 class SecretSettings(SecretBaseSettings): ...

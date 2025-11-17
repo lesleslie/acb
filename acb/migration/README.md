@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Migration](./README.md) | [Adapters](../adapters/README.md) | [Events](../events/README.md)
+> **ACB Documentation**: [Main](<../../README.md>) | [Core Systems](<../README.md>) | [Migration](<./README.md>) | [Adapters](<../adapters/README.md>) | [Events](<../events/README.md>)
 
 # ACB: Migration
 
@@ -9,15 +9,15 @@ with confidence.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Migration Capabilities](#migration-capabilities)
-- [Assessment & Planning](#assessment--planning)
-- [Running Migrations](#running-migrations)
-- [Compatibility & Rollback](#compatibility--rollback)
-- [Validation & Reporting](#validation--reporting)
-- [Usage Example](#usage-example)
-- [Best Practices](#best-practices)
-- [Related Resources](#related-resources)
+- [Overview](<#overview>)
+- [Migration Capabilities](<#migration-capabilities>)
+- [Assessment & Planning](<#assessment--planning>)
+- [Running Migrations](<#running-migrations>)
+- [Compatibility & Rollback](<#compatibility--rollback>)
+- [Validation & Reporting](<#validation--reporting>)
+- [Usage Example](<#usage-example>)
+- [Best Practices](<#best-practices>)
+- [Related Resources](<#related-resources>)
 
 ## Overview
 
@@ -115,7 +115,7 @@ if assessment.requires_migration:
 
 ## Related Resources
 
-- [Adapters](../adapters/README.md)
-- [Events](../events/README.md)
-- [Services](../services/README.md)
-- [Main Documentation](../../README.md)
+- [Adapters](<../adapters/README.md>)
+- [Events](<../events/README.md>)
+- [Services](<../services/README.md>)
+- [Main Documentation](<../../README.md>)

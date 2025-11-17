@@ -7,11 +7,6 @@ from typing import TYPE_CHECKING
 
 from acb.depends import depends
 from acb.logger import Logger as LoggerAdapter
-
-if TYPE_CHECKING:
-    pass
-
-logger = depends.get_sync(LoggerAdapter)
 from acb.migration._base import (
     MigrationConfig,
     MigrationSeverity,
@@ -19,6 +14,8 @@ from acb.migration._base import (
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+logger = depends.get_sync(LoggerAdapter)
 
 
 class ValidationIssue(BaseModel):

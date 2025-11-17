@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../../README.md) | [Services](../README.md) | [Performance Services](./README.md)
+> **ACB Documentation**: [Main](<../../../README.md>) | [Services](<../README.md>) | [Performance Services](<./README.md>)
 
 # ACB Services: Performance
 
@@ -7,12 +7,12 @@ that keep ACB applications responsive under load.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Components](#core-components)
-- [Serverless Toolkit](#serverless-toolkit)
-- [Usage Patterns](#usage-patterns)
-- [Metrics & Observability](#metrics--observability)
-- [Related Resources](#related-resources)
+- [Overview](<#overview>)
+- [Core Components](<#core-components>)
+- [Serverless Toolkit](<#serverless-toolkit>)
+- [Usage Patterns](<#usage-patterns>)
+- [Metrics & Observability](<#metrics--observability>)
+- [Related Resources](<#related-resources>)
 
 ## Overview
 
@@ -81,7 +81,7 @@ async def main() -> None:
 
 ## Related Resources
 
-- [Services Layer](../README.md)
-- [Repository Services](../repository/README.md)
-- [Validation Services](../validation/README.md)
-- [Main Documentation](../../../README.md)
+- [Services Layer](<../README.md>)
+- [Repository Services](<../repository/README.md>)
+- [Validation Services](<../validation/README.md>)
+- [Main Documentation](<../../../README.md>)

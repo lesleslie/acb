@@ -176,9 +176,9 @@ class TestFTP:
             assert len(kwargs["users"]) == 1
             # Check maximum_connections parameter
             assert kwargs["maximum_connections"] == 10
-            assert "users" in call_kwargs
-            assert len(call_kwargs["users"]) == 1  # No anonymous user
-            assert call_kwargs["maximum_connections"] == 10
+            assert "users" in kwargs
+            assert len(kwargs["users"]) == 1  # No anonymous user
+            assert kwargs["maximum_connections"] == 10
 
     def test_server_property_with_anonymous(self, ftp_adapter):
         """Test server property with anonymous access."""

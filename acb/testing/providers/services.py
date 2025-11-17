@@ -1,5 +1,3 @@
-from typing import Any
-
 """Mock Service Provider for ACB Testing.
 
 Provides mock implementations of ACB services with realistic behavior
@@ -17,6 +15,7 @@ from unittest.mock import AsyncMock
 
 import typing as t
 from contextlib import asynccontextmanager
+from typing import Any
 
 from acb.testing.discovery import (
     TestProviderCapability,

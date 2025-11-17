@@ -3,6 +3,8 @@
 import pytest
 from typing import TYPE_CHECKING, Any
 
+from acb.adapters.models._pydantic import PydanticModelAdapter
+
 _pydantic_available = False
 try:
     from pydantic import BaseModel as PydanticBaseModel
@@ -33,9 +35,6 @@ if TYPE_CHECKING:
 
     BaseModel = PydanticBaseModel
     Field = PydanticField
-
-
-from acb.adapters.models._pydantic import PydanticModelAdapter
 
 
 @pytest.mark.skipif(not PYDANTIC_AVAILABLE, reason="Pydantic not available")

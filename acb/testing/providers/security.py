@@ -1,5 +1,3 @@
-from typing import Any
-
 """Security Test Provider for ACB Testing.
 
 Provides security testing utilities, vulnerability scanning,
@@ -18,6 +16,7 @@ from unittest.mock import AsyncMock
 
 import typing as t
 from contextlib import asynccontextmanager
+from typing import Any
 
 from acb.testing.discovery import (
     TestProviderCapability,

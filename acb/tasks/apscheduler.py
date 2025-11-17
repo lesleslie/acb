@@ -8,7 +8,6 @@ This adapter integrates APScheduler 3.x with ACB's queue system, providing:
 - Runtime job modification capabilities
 """
 
-# Avoid static imports for optional APScheduler dependency
 import importlib
 import importlib.util as _il_util
 import logging
@@ -16,13 +15,6 @@ from uuid import UUID, uuid4
 
 import typing as t
 from datetime import UTC, datetime
-
-AsyncIOScheduler = t.Any
-CronTrigger = t.Any
-DateTrigger = t.Any
-IntervalTrigger = t.Any
-APSCHEDULER_AVAILABLE = _il_util.find_spec("apscheduler") is not None
-
 
 from ._base import (
     QueueBase,
@@ -34,6 +26,13 @@ from ._base import (
     TaskResult,
     TaskStatus,
 )
+
+# APScheduler types (lazy loaded)
+AsyncIOScheduler = t.Any
+CronTrigger = t.Any
+DateTrigger = t.Any
+IntervalTrigger = t.Any
+APSCHEDULER_AVAILABLE = _il_util.find_spec("apscheduler") is not None
 
 logger = logging.getLogger(__name__)
 

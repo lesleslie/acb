@@ -13,7 +13,13 @@ from typing import Any
 
 from acb.adapters import import_adapter
 from acb.depends import depends
-from acb.events import EventHandlerResult, EventPublisher, create_event, event_handler
+from acb.events import (
+    Event,
+    EventHandlerResult,
+    EventPublisher,
+    create_event,
+    event_handler,
+)
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 from acb.tasks import TaskData, task_handler
 
@@ -132,9 +138,6 @@ class UserManagementService(ServiceBase):
             await self._publisher.publish(user_event)
 
         return user
-
-
-from acb.events import Event
 
 
 @event_handler("user.created")

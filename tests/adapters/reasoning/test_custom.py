@@ -12,7 +12,9 @@ from acb.adapters.reasoning._base import (
     ReasoningStep,
     ReasoningStrategy,
 )
-from acb.adapters.reasoning.custom import Reasoning, RuleEngine
+from acb.adapters.reasoning.custom import EnhancedRule, Reasoning, RuleEngine
+
+DecisionNode = DecisionTree  # Alias for backward compatibility
 
 
 class MockCustomSettings:

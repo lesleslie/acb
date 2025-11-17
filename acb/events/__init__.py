@@ -35,7 +35,16 @@ Usage:
     EventSubscriber = import_event_handler("subscriber")
 """
 
+import typing as t
 from contextlib import suppress
+
+from acb.services import (
+    ServiceBase,
+    ServiceCapability,
+    ServiceMetadata,
+    ServiceSettings,
+)
+from acb.services.discovery import ServiceStatus, enable_service, generate_service_id
 
 # Core event classes
 from ._base import (
@@ -173,18 +182,6 @@ __all__ = [
 # Events System metadata following ACB patterns
 EVENTS_SYSTEM_VERSION = "1.0.0"
 ACB_MIN_VERSION = "0.19.1"
-
-
-# Service integration with ACB Services Layer
-import typing as t
-
-from acb.services import (
-    ServiceBase,
-    ServiceCapability,
-    ServiceMetadata,
-    ServiceSettings,
-)
-from acb.services.discovery import ServiceStatus, generate_service_id
 
 
 class EventsServiceSettings(ServiceSettings):
@@ -360,9 +357,6 @@ async def setup_events_service(
 
     return _events_service
 
-
-# Integration with Services Layer discovery
-from acb.services.discovery import enable_service
 
 # Register events service in service discovery
 with suppress(Exception):

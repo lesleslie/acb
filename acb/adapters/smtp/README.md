@@ -1,4 +1,4 @@
-**ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [SMTP](./README.md)
+**ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [SMTP](<./README.md>)
 
 # SMTP Adapter
 
@@ -310,4 +310,4 @@ class EmailBase:
 - [Gmail OAuth2 Setup Guide](https://developers.google.com/gmail/api/auth/about-auth)
 - [Mailgun API Documentation](https://documentation.mailgun.com/)
 - [Email Templates Best Practices](https://www.litmus.com/blog/email-coding-best-practices/)
-- [ACB Templates Documentation](../../README.md#templates)
+- [ACB Templates Documentation](<../../README.md#templates>)

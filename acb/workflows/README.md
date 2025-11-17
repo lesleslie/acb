@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Workflows](./README.md) | [Services](../services/README.md) | [Testing](../testing/README.md)
+> **ACB Documentation**: [Main](<../../README.md>) | [Core Systems](<../README.md>) | [Workflows](<./README.md>) | [Services](<../services/README.md>) | [Testing](<../testing/README.md>)
 
 # ACB: Workflows
 
@@ -7,12 +7,12 @@ automatic retries, and full integration with the services layer.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Concepts](#core-concepts)
-- [Usage Patterns](#usage-patterns)
-- [Integration Points](#integration-points)
-- [Extensibility](#extensibility)
-- [Related Resources](#related-resources)
+- [Overview](<#overview>)
+- [Core Concepts](<#core-concepts>)
+- [Usage Patterns](<#usage-patterns>)
+- [Integration Points](<#integration-points>)
+- [Extensibility](<#extensibility>)
+- [Related Resources](<#related-resources>)
 
 ## Overview
 
@@ -141,7 +141,7 @@ async with WorkflowService(engine, WorkflowSettings(max_concurrent_workflows=5))
 
 ## Related Resources
 
-- [Services Layer](../services/README.md)
-- [Testing Layer](../testing/README.md)
-- [Actions Documentation](../actions/README.md)
-- [Main Documentation](../../README.md)
+- [Services Layer](<../services/README.md>)
+- [Testing Layer](<../testing/README.md>)
+- [Actions Documentation](<../actions/README.md>)
+- [Main Documentation](<../../README.md>)

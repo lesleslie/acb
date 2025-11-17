@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](../../README.md) | [Core Systems](../README.md) | [Actions](../actions/README.md) | [Adapters](./README.md)
+> **ACB Documentation**: [Main](<../../README.md>) | [Core Systems](<../README.md>) | [Actions](<../actions/README.md>) | [Adapters](<./README.md>)
 
 # ACB: Adapters
 
@@ -6,16 +6,16 @@ Adapters provide standardized interfaces to external systems and services in the
 
 ## Table of Contents
 
-- [Adapter System Overview](#adapter-system-overview)
-- [Security and Monitoring Infrastructure](#acb-0190-security-and-monitoring-infrastructure)
-- [Available Adapters](#available-adapters)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Implementing Custom Adapters](#implementing-custom-adapters)
-- [Adapter Lifecycle](#adapter-lifecycle)
-- [Best Practices](#best-practices)
-- [Additional Resources](#additional-resources)
+- [Adapter System Overview](<#adapter-system-overview>)
+- [Security and Monitoring Infrastructure](<#acb-0190-security-and-monitoring-infrastructure>)
+- [Available Adapters](<#available-adapters>)
+- [Installation](<#installation>)
+- [Configuration](<#configuration>)
+- [Usage](<#usage>)
+- [Implementing Custom Adapters](<#implementing-custom-adapters>)
+- [Adapter Lifecycle](<#adapter-lifecycle>)
+- [Best Practices](<#best-practices>)
+- [Additional Resources](<#additional-resources>)
 
 ## Adapter System Overview
 
@@ -151,75 +151,75 @@ ACB includes the following adapter categories:
 
 ### Caching Adapters
 
-- [**Cache**](./cache/README.md): Fast data caching
+- [**Cache**](<./cache/README.md>): Fast data caching
   - **Memory**: In-memory cache for development and small applications
   - **Redis**: Distributed cache using Redis
 
 ### DNS Adapters
 
-- [**DNS**](./dns/README.md): Domain name management
+- [**DNS**](<./dns/README.md>): Domain name management
   - **Cloud DNS**: Google Cloud DNS implementation
   - **Cloudflare**: Cloudflare DNS implementation
 
 ### File Transfer Adapters
 
-- [**FTPD**](./ftpd/README.md): File transfer protocol server implementations
+- [**FTPD**](<./ftpd/README.md>): File transfer protocol server implementations
   - **FTP**: Standard File Transfer Protocol server using aioftp
   - **SFTP**: Secure File Transfer Protocol server using asyncssh
 
 ### Logging
 
 - **Loguru**: ACB uses Loguru as its core logging module for structured logging and error tracking. Refer to the Logging section for configuration details.
-- [**Logger**](./logger/README.md): Application logging
+- [**Logger**](<./logger/README.md>): Application logging
   - **Loguru**: Structured logging with Loguru (default)
   - **Structlog**: Alternative structured logging with structlog
 
 ### Database Model Adapters
 
-- [**Models**](./models/README.md): Database models and ORM integration
+- [**Models**](<./models/README.md>): Database models and ORM integration
   - **SQLModel**: SQL database ORM with SQLModel
 
 ### Monitoring Adapters
 
-- [**Monitoring**](./monitoring/README.md): Application monitoring and error tracking
+- [**Monitoring**](<./monitoring/README.md>): Application monitoring and error tracking
   - **Logfire**: Logging-based monitoring
   - **Sentry**: Error and performance monitoring with Sentry
 
 ### NoSQL Database Adapters
 
-- [**NoSQL**](./nosql/README.md): Non-relational databases
+- [**NoSQL**](<./nosql/README.md>): Non-relational databases
   - **Firestore**: Google Cloud Firestore database using Google Cloud Firestore API
   - **MongoDB**: MongoDB document database using Beanie ODM
   - **Redis**: Redis database for structured data using Redis-OM
 
 ### HTTP Client Adapters
 
-- [**Requests**](./requests/README.md): HTTP clients for API consumption
+- [**Requests**](<./requests/README.md>): HTTP clients for API consumption
   - **HTTPX**: Modern async HTTP client
   - **Niquests**: Extended HTTP client
 
 ### Secret Management Adapters
 
-- [**Secret**](./secret/README.md): Securely storing and retrieving secrets
+- [**Secret**](<./secret/README.md>): Securely storing and retrieving secrets
   - **Infisical**: Infisical secrets manager
   - **Secret Manager**: Cloud-based secret management
 
 ### Email Adapters
 
-- [**SMTP**](./smtp/README.md): Email sending
+- [**SMTP**](<./smtp/README.md>): Email sending
   - **Gmail**: Send emails through Gmail API with OAuth2
   - **Mailgun**: Send emails through Mailgun API
 
 ### SQL Database Adapters
 
-- [**SQL**](./sql/README.md): Relational databases
+- [**SQL**](<./sql/README.md>): Relational databases
   - **MySQL**: MySQL/MariaDB database adapter
   - **PostgreSQL**: PostgreSQL database adapter
   - **SQLite**: SQLite database adapter (local files and Turso cloud databases)
 
 ### Vector Database Adapters
 
-- [**Vector**](./vector/README.md): Vector databases for similarity search and AI applications
+- [**Vector**](<./vector/README.md>): Vector databases for similarity search and AI applications
   - **DuckDB**: Local vector database with VSS extension (Stable)
   - **Weaviate**: Weaviate vector database with hybrid search capabilities (Planned)
   - **OpenSearch**: OpenSearch vector database with k-NN capabilities (Planned)
@@ -227,7 +227,7 @@ ACB includes the following adapter categories:
 
 ### Storage Adapters
 
-- [**Storage**](./storage/README.md): File and object storage
+- [**Storage**](<./storage/README.md>): File and object storage
   - **Azure**: Azure Blob storage
   - **Cloud Storage**: Google Cloud Storage
   - **File**: Local file system storage
@@ -581,6 +581,6 @@ If you were using the old dynamic discovery system, you'll need to:
 
 ## Additional Resources
 
-- [Main ACB Documentation](../README.md)
-- [Core Systems Documentation](../README.md)
-- [Actions Documentation](../actions/README.md)
+- [Main ACB Documentation](<../README.md>)
+- [Core Systems Documentation](<../README.md>)
+- [Actions Documentation](<../actions/README.md>)
