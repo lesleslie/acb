@@ -1,5 +1,15 @@
 ______________________________________________________________________
 
+## [0.31.5] - 2025-11-16
+
+### Changed
+
+- Update config, core, deps, docs, tests
+
+### Documentation
+
+- Cleanup documentation and update version to 0.31.3
+
 ## [0.31.4] - 2025-11-16
 
 ### Changed
