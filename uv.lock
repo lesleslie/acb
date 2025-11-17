@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "acb"
-version = "0.31.4"
+version = "0.31.5"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -1752,7 +1752,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.44.27"
+version = "0.44.28"
 source = { editable = "../crackerjack" }
 dependencies = [
     { name = "acb" },
