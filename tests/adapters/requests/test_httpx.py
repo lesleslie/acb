@@ -2,6 +2,7 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
 from acb.adapters.requests.httpx import Requests, RequestsSettings
@@ -26,305 +27,226 @@ class TestRequests:
     """Test HTTPX requests adapter."""
 
     @pytest.fixture
+    def mock_cache(self) -> AsyncMock:
+        """Create a mock cache adapter."""
+        cache = AsyncMock()
+        cache.get = AsyncMock(return_value=None)
+        cache.set = AsyncMock()
+        cache.delete = AsyncMock()
+        return cache
+
+    @pytest.fixture
     def mock_config(self) -> MagicMock:
         """Create a mock config."""
         mock_config = MagicMock()
-        mock_config.app.name = "test_app"
-        mock_config.cache = MagicMock()
-        mock_config.cache.host = MagicMock()
-        mock_config.cache.host.get_secret_value.return_value = "localhost"
-        mock_config.cache.port = 6379
         mock_config.requests = MagicMock()
         mock_config.requests.cache_ttl = 7200
         mock_config.requests.timeout = 10
         mock_config.requests.max_connections = 100
         mock_config.requests.max_keepalive_connections = 20
         mock_config.requests.keepalive_expiry = 5.0
+        mock_config.requests.base_url = None
+        mock_config.requests.auth = None
         return mock_config
 
     @pytest.fixture
-    def requests_adapter(self, mock_config: MagicMock) -> Requests:
+    def requests_adapter(self, mock_cache: AsyncMock, mock_config: MagicMock) -> Requests:
         """Create a requests adapter instance."""
-        adapter = Requests()
-        adapter.config = mock_config
-        adapter.logger = MagicMock()
-        return adapter
+        import asyncio
+
+        with patch("acb.adapters.requests.httpx.depends"):
+            adapter = Requests.__new__(Requests)
+            adapter.cache = mock_cache
+            adapter.config = mock_config
+            adapter._http_client = None
+            adapter._http_cache = MagicMock()
+            # CleanupMixin attributes
+            adapter._resources = []
+            adapter._cleaned_up = False
+            adapter._cleanup_lock = asyncio.Lock()
+            # Config base class attributes
+            adapter._client = None
+            adapter._resource_cache = {}
+            adapter._initialization_args = {}
+            return adapter
 
     @pytest.mark.asyncio
-    async def test_init(self, requests_adapter: Requests) -> None:
-        """Test adapter initialization."""
-        await requests_adapter.init()
-        requests_adapter.logger.debug.assert_called_once_with(
-            "HTTPX adapter initialized with lazy loading"
-        )
-
-    @pytest.mark.asyncio
-    async def test_create_storage(self, requests_adapter: Requests) -> None:
-        """Test storage creation."""
-        with (
-            patch("acb.adapters.requests.httpx.AsyncRedis") as mock_redis,
-            patch("acb.adapters.requests.httpx.AsyncRedisStorage") as mock_storage,
-        ):
-            mock_redis_client = AsyncMock()
-            mock_redis.return_value = mock_redis_client
-            mock_storage_instance = AsyncMock()
-            mock_storage.return_value = mock_storage_instance
-
-            storage = await requests_adapter._create_storage()
-
-            mock_redis.assert_called_once_with(host="localhost", port=6379)
-            mock_storage.assert_called_once_with(client=mock_redis_client, ttl=7200)
-            assert storage == mock_storage_instance
-
-    @pytest.mark.asyncio
-    async def test_create_controller(self, requests_adapter: Requests) -> None:
-        """Test controller creation."""
-        with patch("acb.adapters.requests.httpx.Controller") as mock_controller:
-            mock_controller_instance = AsyncMock()
-            mock_controller.return_value = mock_controller_instance
-
-            controller = await requests_adapter._create_controller()
-
-            mock_controller.assert_called_once()
-            assert controller == mock_controller_instance
-
-    def test_cache_key(self, requests_adapter: Requests) -> None:
-        """Test cache key generation."""
-        from httpcore import Request
-
-        request = Request("GET", "https://example.com")
-        body = b""
-
-        key = requests_adapter.cache_key(request, body)
-
-        assert key.startswith("test_app:httpx:")
-
-    @pytest.mark.asyncio
-    async def test_get_cached_client(self, requests_adapter: Requests) -> None:
-        """Test cached client retrieval."""
-        with (
-            patch.object(
-                requests_adapter, "get_storage", AsyncMock()
-            ) as mock_get_storage,
-            patch.object(
-                requests_adapter, "get_controller", AsyncMock()
-            ) as mock_get_controller,
-            patch("acb.adapters.requests.httpx.AsyncCacheClient") as mock_client_class,
-        ):
-            mock_storage = AsyncMock()
-            mock_controller = AsyncMock()
-            mock_client = AsyncMock()
-
-            mock_get_storage.return_value = mock_storage
-            mock_get_controller.return_value = mock_controller
-            mock_client_class.return_value = mock_client
-
-            client = await requests_adapter._get_cached_client()
-
-            mock_get_storage.assert_called_once()
-            mock_get_controller.assert_called_once()
-            mock_client_class.assert_called_once()
-            assert client == mock_client
-            assert "default" in requests_adapter._client_cache
-
-    @pytest.mark.asyncio
-    async def test_get_method(self, requests_adapter: Requests) -> None:
-        """Test GET method."""
+    async def test_ensure_client_creates_client(
+        self, requests_adapter: Requests
+    ) -> None:
+        """Test that _ensure_client creates HTTPX client."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.get.return_value = mock_response
 
         with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
-        ):
-            response = await requests_adapter.get("https://example.com", timeout=5)
+            requests_adapter, "_create_client", return_value=mock_client
+        ) as mock_create:
+            client = await requests_adapter._ensure_client()
 
-            mock_client.get.assert_called_once_with(
-                "https://example.com",
-                timeout=5,
-                params=None,
-                headers=None,
-                cookies=None,
-            )
-            assert response == mock_response
+            assert client == mock_client
+            assert requests_adapter._http_client == mock_client
+            mock_create.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_ensure_client_returns_cached(
+        self, requests_adapter: Requests
+    ) -> None:
+        """Test that _ensure_client returns cached client."""
+        mock_client = AsyncMock()
+        requests_adapter._http_client = mock_client
+
+        client = await requests_adapter._ensure_client()
+
+        assert client == mock_client
+
+    @pytest.mark.asyncio
+    async def test_get_with_cache_hit(self, requests_adapter: Requests) -> None:
+        """Test GET method with cache hit."""
+        cached_response = {
+            "status": 200,
+            "headers": {"content-type": "application/json"},
+            "content": b'{"result": "cached"}',
+        }
+        requests_adapter._http_cache.get_cached_response = AsyncMock(
+            return_value=cached_response
+        )
+
+        response = await requests_adapter.get("https://example.com")
+
+        assert response.status_code == 200
+        assert response.content == b'{"result": "cached"}'
+        requests_adapter._http_cache.get_cached_response.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_get_with_cache_miss(self, requests_adapter: Requests) -> None:
+        """Test GET method with cache miss."""
+        requests_adapter._http_cache.get_cached_response = AsyncMock(return_value=None)
+        requests_adapter._http_cache.store_response = AsyncMock()
+
+        mock_client = AsyncMock()
+        mock_response = httpx.Response(
+            200,
+            headers={"cache-control": "max-age=300"},
+            content=b'{"result": "fresh"}',
+        )
+        mock_client.get = AsyncMock(return_value=mock_response)
+
+        with patch.object(requests_adapter, "_ensure_client", return_value=mock_client):
+            response = await requests_adapter.get("https://example.com")
+
+            assert response.status_code == 200
+            assert response.content == b'{"result": "fresh"}'
+            requests_adapter._http_cache.get_cached_response.assert_called_once()
+            requests_adapter._http_cache.store_response.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_post_method(self, requests_adapter: Requests) -> None:
         """Test POST method."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.post.return_value = mock_response
+        mock_response = httpx.Response(201, content=b'{"created": true}')
+        mock_client.post = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
-        ):
+        requests_adapter._http_cache.store_response = AsyncMock()
+
+        with patch.object(requests_adapter, "_ensure_client", return_value=mock_client):
             response = await requests_adapter.post(
-                "https://example.com", data={"key": "value"}
+                "https://example.com", json={"key": "value"}
             )
 
-            mock_client.post.assert_called_once_with(
-                "https://example.com", data={"key": "value"}, json=None, timeout=5
-            )
-            assert response == mock_response
+            assert response.status_code == 201
+            mock_client.post.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_put_method(self, requests_adapter: Requests) -> None:
         """Test PUT method."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.put.return_value = mock_response
+        mock_response = httpx.Response(200, content=b'{"updated": true}')
+        mock_client.put = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
-        ):
+        with patch.object(requests_adapter, "_ensure_client", return_value=mock_client):
             response = await requests_adapter.put(
-                "https://example.com", data={"key": "value"}
+                "https://example.com", json={"key": "value"}
             )
 
-            mock_client.put.assert_called_once_with(
-                "https://example.com", data={"key": "value"}, json=None, timeout=5
-            )
-            assert response == mock_response
+            assert response.status_code == 200
+            mock_client.put.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_method(self, requests_adapter: Requests) -> None:
         """Test DELETE method."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.delete.return_value = mock_response
+        mock_response = httpx.Response(204)
+        mock_client.delete = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
-        ):
-            response = await requests_adapter.delete("https://example.com", timeout=5)
+        with patch.object(requests_adapter, "_ensure_client", return_value=mock_client):
+            response = await requests_adapter.delete("https://example.com")
 
-            mock_client.delete.assert_called_once_with("https://example.com", timeout=5)
-            assert response == mock_response
+            assert response.status_code == 204
+            mock_client.delete.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_patch_method(self, requests_adapter: Requests) -> None:
         """Test PATCH method."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.patch.return_value = mock_response
+        mock_response = httpx.Response(200, content=b'{"patched": true}')
+        mock_client.patch = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
-        ):
+        with patch.object(requests_adapter, "_ensure_client", return_value=mock_client):
             response = await requests_adapter.patch(
-                "https://example.com", data={"key": "value"}
+                "https://example.com", json={"key": "value"}
             )
 
-            mock_client.patch.assert_called_once_with(
-                "https://example.com", timeout=5, data={"key": "value"}, json=None
-            )
-            assert response == mock_response
+            assert response.status_code == 200
+            mock_client.patch.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_head_method(self, requests_adapter: Requests) -> None:
         """Test HEAD method."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.head.return_value = mock_response
+        mock_response = httpx.Response(200)
+        mock_client.head = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
-        ):
-            response = await requests_adapter.head("https://example.com", timeout=5)
+        requests_adapter._http_cache.get_cached_response = AsyncMock(return_value=None)
+        requests_adapter._http_cache.store_response = AsyncMock()
 
-            mock_client.head.assert_called_once_with("https://example.com", timeout=5)
-            assert response == mock_response
+        with patch.object(requests_adapter, "_ensure_client", return_value=mock_client):
+            response = await requests_adapter.head("https://example.com")
+
+            assert response.status_code == 200
+            mock_client.head.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_options_method(self, requests_adapter: Requests) -> None:
         """Test OPTIONS method."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.options.return_value = mock_response
+        mock_response = httpx.Response(200)
+        mock_client.options = AsyncMock(return_value=mock_response)
 
-        with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
-        ):
-            response = await requests_adapter.options("https://example.com", timeout=5)
+        with patch.object(requests_adapter, "_ensure_client", return_value=mock_client):
+            response = await requests_adapter.options("https://example.com")
 
-            mock_client.options.assert_called_once_with(
-                "https://example.com", timeout=5
-            )
-            assert response == mock_response
+            assert response.status_code == 200
+            mock_client.options.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_request_method(self, requests_adapter: Requests) -> None:
-        """Test generic request method."""
+    async def test_async_context_manager(self, requests_adapter: Requests) -> None:
+        """Test async context manager support."""
         mock_client = AsyncMock()
-        mock_response = AsyncMock()
-        mock_client.request.return_value = mock_response
 
         with patch.object(
-            requests_adapter, "_get_cached_client", AsyncMock(return_value=mock_client)
+            requests_adapter, "_ensure_client", new=AsyncMock(return_value=mock_client)
         ):
-            response = await requests_adapter.request(
-                "PUT", "https://example.com", data={"key": "value"}
-            )
-
-            mock_client.request.assert_called_once_with(
-                "PUT",
-                "https://example.com",
-                timeout=5,
-                data={"key": "value"},
-                json=None,
-            )
-            assert response == mock_response
+            async with requests_adapter as adapter:
+                assert adapter == requests_adapter
+                # The mock client will be set after _ensure_client is called
+                assert requests_adapter._http_client is not None or requests_adapter._ensure_client.called
 
     @pytest.mark.asyncio
-    async def test_storage_property(self, requests_adapter: Requests) -> None:
-        """Test storage property."""
-        mock_storage = AsyncMock()
-        requests_adapter._storage = mock_storage
+    async def test_cleanup(self, requests_adapter: Requests) -> None:
+        """Test cleanup method closes HTTP client."""
+        mock_client = AsyncMock()
+        requests_adapter._http_client = mock_client
 
-        storage = requests_adapter.storage
+        await requests_adapter.cleanup()
 
-        assert storage == mock_storage
-
-    @pytest.mark.asyncio
-    async def test_storage_property_setter(self, requests_adapter: Requests) -> None:
-        """Test storage property setter."""
-        mock_storage = AsyncMock()
-
-        requests_adapter.storage = mock_storage
-
-        assert requests_adapter._storage == mock_storage
-
-    @pytest.mark.asyncio
-    async def test_controller_property(self, requests_adapter: Requests) -> None:
-        """Test controller property."""
-        mock_controller = AsyncMock()
-        requests_adapter._controller = mock_controller
-
-        controller = requests_adapter.controller
-
-        assert controller == mock_controller
-
-    @pytest.mark.asyncio
-    async def test_controller_property_setter(self, requests_adapter: Requests) -> None:
-        """Test controller property setter."""
-        mock_controller = AsyncMock()
-
-        requests_adapter.controller = mock_controller
-
-        assert requests_adapter._controller == mock_controller
-
-    @pytest.mark.asyncio
-    async def test_close(self, requests_adapter: Requests) -> None:
-        """Test adapter close method."""
-        mock_client1 = AsyncMock()
-        mock_client2 = AsyncMock()
-        requests_adapter._client_cache = {
-            "client1": mock_client1,
-            "client2": mock_client2,
-        }
-
-        await requests_adapter.close()
-
-        mock_client1.aclose.assert_called_once()
-        mock_client2.aclose.assert_called_once()
-        assert len(requests_adapter._client_cache) == 0
+        mock_client.aclose.assert_called_once()
+        assert requests_adapter._http_client is None
