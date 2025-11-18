@@ -50,7 +50,9 @@ class TestRequests:
         return mock_config
 
     @pytest.fixture
-    def requests_adapter(self, mock_cache: AsyncMock, mock_config: MagicMock) -> Requests:
+    def requests_adapter(
+        self, mock_cache: AsyncMock, mock_config: MagicMock
+    ) -> Requests:
         """Create a requests adapter instance."""
         import asyncio
 
@@ -238,7 +240,10 @@ class TestRequests:
             async with requests_adapter as adapter:
                 assert adapter == requests_adapter
                 # The mock client will be set after _ensure_client is called
-                assert requests_adapter._http_client is not None or requests_adapter._ensure_client.called
+                assert (
+                    requests_adapter._http_client is not None
+                    or requests_adapter._ensure_client.called
+                )
 
     @pytest.mark.asyncio
     async def test_cleanup(self, requests_adapter: Requests) -> None:
