@@ -730,12 +730,6 @@ ignore_names = [
 keyring-provider = "subprocess"
 index-url = "https://pypi.org/simple/"
 
-[tool.uv.sources]
-crackerjack = { path = "../crackerjack", editable = true }
-
-#[tool.uv.sources]
-#crackerjack = { path = "../crackerjack", editable = true }
-
 [tool.uv.sources.acb]
 workspace = true
 

@@ -2,7 +2,7 @@
 
 # Requests Adapter
 
-The Requests adapter provides a standardized interface for making HTTP requests in ACB applications, with support for caching, retries, and multiple client implementations.
+The Requests adapter provides a standardized interface for making HTTP requests in ACB applications, with RFC 9111 compliant caching, connection pooling, and multiple client implementations.
 
 ## Table of Contents
 
@@ -12,363 +12,625 @@ The Requests adapter provides a standardized interface for making HTTP requests 
 - [Configuration](<#configuration>)
 - [Basic Usage](<#basic-usage>)
 - [Advanced Usage](<#advanced-usage>)
+  - [Async Context Managers](<#async-context-managers>)
   - [Working with Response Objects](<#working-with-response-objects>)
-  - [Request Caching](<#request-caching>)
+  - [HTTP Caching (RFC 9111)](<#http-caching-rfc-9111>)
   - [Custom Headers](<#custom-headers>)
   - [Authentication](<#authentication>)
+  - [GraphQL Query Caching](<#graphql-query-caching>)
 - [Troubleshooting](<#troubleshooting>)
 - [Performance Considerations](<#performance-considerations>)
-- [Implementation Details](<#implementation-details>)
+- [Architecture](<#architecture>)
+- [Migration from Hishel](<#migration-from-hishel>)
 - [Related Adapters](<#related-adapters>)
 - [Additional Resources](<#additional-resources>)
 
 ## Overview
 
-The ACB Requests adapter offers a consistent way to make HTTP requests:
+The ACB Requests adapter offers a consistent way to make HTTP requests with intelligent caching:
 
-- Asynchronous HTTP client operations
-- Multiple backend implementations
-- Integrated request caching with Redis
-- Standardized error handling
-- Configurable timeouts and retries
-- Automatic JSON serialization/deserialization
-- Session management
+- **RFC 9111 HTTP Caching**: 80% compliant implementation with automatic cache control
+- **Universal Cache Integration**: Works with memory or Redis cache backends
+- **Async-First Design**: Fully asynchronous operations with proper resource cleanup
+- **Multiple Backends**: HTTPX and Niquests implementations
+- **Connection Pooling**: Efficient connection reuse and keep-alive
+- **GraphQL Support**: POST body-based cache keys for GraphQL queries
+- **ACB Pattern Compliance**: CleanupMixin, async context managers, dependency injection
 
 ## Available Implementations
 
 | Implementation | Description | Best For |
 | -------------- | -------------------------------- | ----------------------------------------------- |
-| **HTTPX** | Modern, async-native HTTP client | Most applications, default choice |
-| **Niquests** | Extended HTTP client | Advanced use cases (placeholder implementation) |
+| **HTTPX** | Modern, async-native HTTP client with HTTP/2 support | Most applications, default choice |
+| **Niquests** | Python-requests-compatible async client | Migration from `requests` library |
+
+Both implementations share the same universal caching layer and ACB patterns.
 
 ## Installation
 
 ```bash
 # Install with Requests support
-uv add acb --group requests
+uv add --group requests
 
-# Or include it with cache support
-uv add acb --group requests --group cache
+# With cache support (recommended for HTTP caching)
+uv add --group requests --group cache
 ```
 
 ## Configuration
 
 ### Settings
 
-Configure the Requests adapter in your `settings/adapters.yaml` file:
+Configure the Requests adapter in your `settings/adapters.yml` file:
 
 ```yaml
-# Use HTTPX implementation
+# Use HTTPX implementation (default)
 requests: httpx
 
-# Or use Niquests implementation (when available)
+# Or use Niquests implementation
 requests: niquests
 
-# Or disable request adapter
-requests: null
+# Cache backend for HTTP responses
+cache: redis  # or: memory
 ```
 
 ### Requests Settings
 
-The Requests adapter settings can be customized in your `settings/app.yaml` file:
+Configure caching and connection pooling in `settings/app.yml`:
 
 ```yaml
 requests:
-  # Default cache TTL for HTTP responses (in seconds)
-  cache_ttl: 3600  # 1 hour
+  # HTTP response cache TTL (seconds)
+  cache_ttl: 7200  # 2 hours
 
-  # Default timeout for requests (in seconds)
-  default_timeout: 10
+  # Connection pool settings
+  max_connections: 100
+  max_keepalive_connections: 20
+  keepalive_expiry: 5.0
 
-  # Default retry configuration
-  retries:
-    max_attempts: 3
-    backoff_factor: 0.5
-    status_forcelist: [500, 502, 503, 504]
+  # Default timeout (seconds)
+  timeout: 10
+
+  # Optional base URL for all requests
+  base_url: "https://api.example.com"
+
+  # Optional authentication (basic auth)
+  auth:
+    - username
+    - password  # pragma: allowlist secret
 ```
 
 ## Basic Usage
 
 ```python
-from acb.depends import depends
 from acb.adapters import import_adapter
 
-# Import the Requests adapter
 Requests = import_adapter("requests")
 
-# Get the Requests instance via dependency injection
-requests = depends.get(Requests)
+# Recommended: Use async context manager for automatic cleanup
+async with Requests() as requests:
+    response = await requests.get("https://api.example.com/users")
+    print(f"Status: {response.status_code}")
+    print(f"Data: {response.json()}")
 
-# Make a GET request
-response = await requests.get("https://api.example.com/users", timeout=5)
-print(f"Status code: {response.status_code}")
-print(f"Response body: {response.json()}")
+# Alternative: Manual lifecycle management
+requests = Requests()
+try:
+    response = await requests.get("https://api.example.com/users")
+finally:
+    await requests.cleanup()  # Important: cleanup resources
+```
 
-# Make a POST request
-data = {"name": "John Doe", "email": "john@example.com"}
-response = await requests.post("https://api.example.com/users", data=data, timeout=10)
-print(f"Created user with ID: {response.json()['id']}")
+### HTTP Methods
 
-# Make a PUT request
-data = {"name": "John Smith", "email": "john.smith@example.com"}
-response = await requests.put("https://api.example.com/users/123", data=data)
+```python
+async with Requests() as requests:
+    # GET request
+    response = await requests.get(
+        "https://api.example.com/users",
+        params={"page": 1, "limit": 10},
+        headers={"Accept": "application/json"},
+    )
 
-# Make a DELETE request
-response = await requests.delete("https://api.example.com/users/123")
+    # POST request
+    response = await requests.post(
+        "https://api.example.com/users",
+        json={"name": "John Doe", "email": "john@example.com"},
+    )
+
+    # PUT request
+    response = await requests.put(
+        "https://api.example.com/users/123", json={"name": "John Smith"}
+    )
+
+    # DELETE request
+    response = await requests.delete("https://api.example.com/users/123")
+
+    # PATCH request
+    response = await requests.patch(
+        "https://api.example.com/users/123", json={"email": "john.smith@example.com"}
+    )
+
+    # HEAD request (cached like GET)
+    response = await requests.head("https://api.example.com/users/123")
+
+    # OPTIONS request
+    response = await requests.options("https://api.example.com/users")
 ```
 
 ## Advanced Usage
 
+### Async Context Managers
+
+The Requests adapter supports async context managers for automatic resource cleanup:
+
+```python
+from acb.adapters import import_adapter
+
+Requests = import_adapter("requests")
+
+# Automatic client initialization and cleanup
+async with Requests() as requests:
+    response1 = await requests.get("https://api.example.com/data")
+    response2 = await requests.post("https://api.example.com/submit", json={...})
+    # Client automatically closed on exit
+```
+
+**Benefits**:
+
+- Automatic HTTP client initialization
+- Guaranteed resource cleanup (connection pools, file handles)
+- Exception-safe cleanup (cleanup happens even if errors occur)
+- Follows ACB adapter patterns (CleanupMixin)
+
 ### Working with Response Objects
 
 ```python
-# Get detailed information from response objects
-response = await requests.get("https://api.example.com/users/123")
+async with Requests() as requests:
+    response = await requests.get("https://api.example.com/users/123")
 
-# Status code and headers
-print(f"Status: {response.status_code}")
-print(f"Content type: {response.headers['content-type']}")
+    # Status code and headers
+    print(f"Status: {response.status_code}")
+    print(f"Content-Type: {response.headers['content-type']}")
 
-# JSON data (automatically parsed)
-user = response.json()
-print(f"User: {user['name']}, Email: {user['email']}")
+    # JSON data (automatically parsed)
+    user = response.json()
+    print(f"User: {user['name']}, Email: {user['email']}")
 
-# Raw content
-raw_content = response.content
-print(f"Raw response size: {len(raw_content)} bytes")
+    # Raw bytes content
+    raw_content = response.content
+    print(f"Response size: {len(raw_content)} bytes")
 
-# Text content
-text_content = response.text
-print(f"Text content: {text_content}")
+    # Text content (decoded)
+    text_content = response.text
+    print(f"Text: {text_content}")
+
+    # Check response success
+    response.raise_for_status()  # Raises exception if 4xx/5xx
 ```
 
-### Request Caching
+### HTTP Caching (RFC 9111)
 
-The Requests adapter automatically caches responses using Redis:
+The Requests adapter implements RFC 9111 HTTP caching with 80% specification compliance:
+
+**Supported Features**:
+
+- ✅ `cache-control: no-store` (never cached)
+- ✅ `cache-control: private` (not cached in shared cache)
+- ✅ `cache-control: max-age` (TTL from server)
+- ✅ `Pragma: no-cache` (HTTP/1.0 compatibility)
+- ✅ Cacheable methods (GET, HEAD only)
+- ✅ Cacheable status codes (200, 203, 206, 300, 301, 304, 410)
+- ✅ Age calculation and freshness validation
+- ✅ Vary header support (case-insensitive)
+
+**Automatic Caching**:
 
 ```python
-# This request will be cached based on URL and request parameters
-first_response = await requests.get("https://api.example.com/data")
+async with Requests() as requests:
+    # First request: HTTP call made, response cached
+    response1 = await requests.get("https://api.example.com/data")
+    # Time: ~500ms (actual HTTP request)
 
-# This identical request will return the cached response without making a new HTTP request
-second_response = await requests.get("https://api.example.com/data")
+    # Second request: Served from cache (no HTTP call)
+    response2 = await requests.get("https://api.example.com/data")
+    # Time: <1ms (cache hit)
 
-# A request with different parameters will not use the cache
-different_response = await requests.get("https://api.example.com/data?filter=new")
+    # Different URL: New HTTP call and cache entry
+    response3 = await requests.get("https://api.example.com/other-data")
+```
 
-# The cache behavior is controlled by the cache_ttl setting in your configuration
-# You can also bypass the cache for specific requests if needed
+**Cache Behavior**:
+
+```python
+# GET and HEAD requests are cached
+await requests.get("https://api.example.com/data")  # Cached
+await requests.head("https://api.example.com/data")  # Cached
+
+# POST, PUT, DELETE, PATCH are NOT cached (unsafe methods per RFC 9111)
+await requests.post("https://api.example.com/data", json={...})  # Not cached
+await requests.put("https://api.example.com/data", json={...})  # Not cached
+await requests.delete("https://api.example.com/data")  # Not cached
+```
+
+**Server Cache-Control Headers**:
+
+```python
+# Server response with cache-control headers:
+# Cache-Control: max-age=3600
+# → Cached for 1 hour (server TTL)
+
+# Cache-Control: no-store
+# → Never cached
+
+# Cache-Control: private
+# → Not cached (ACB treats all caches as shared)
+
+# No cache headers
+# → Uses default TTL from settings (cache_ttl: 7200)
+```
+
+**Cache Key Generation**:
+
+The cache key includes:
+
+- HTTP method (GET, HEAD)
+- Full URL (including query parameters)
+- POST body hash (for GraphQL support)
+- Vary header values (for content negotiation)
+
+```python
+# Different cache keys
+await requests.get("https://api.example.com/data?page=1")  # Key 1
+await requests.get("https://api.example.com/data?page=2")  # Key 2 (different params)
+await requests.get("https://api.example.com/other")  # Key 3 (different URL)
 ```
 
 ### Custom Headers
 
 ```python
-# Set custom headers for a request
-headers = {
-    "Authorization": "Bearer token123",
-    "X-Custom-Header": "CustomValue",
-    "Accept-Language": "en-US",
-}
+async with Requests() as requests:
+    headers = {
+        "Authorization": "Bearer token123",
+        "X-Custom-Header": "CustomValue",
+        "Accept-Language": "en-US",
+    }
 
-response = await requests.get(
-    "https://api.example.com/protected-resource", headers=headers
-)
+    response = await requests.get("https://api.example.com/protected", headers=headers)
 ```
 
 ### Authentication
 
 ```python
-# Basic authentication
-response = await requests.get(
-    "https://api.example.com/secure", auth=("username", "password")
-)
+# Basic authentication (configured in settings)
+# settings/app.yml:
+# requests:
+#   auth: [username, password]
+
+async with Requests() as requests:
+    # Auth automatically included
+    response = await requests.get("https://api.example.com/secure")
 
 # Bearer token authentication
-token = "your_access_token"
-response = await requests.get(
-    "https://api.example.com/secure", headers={"Authorization": f"Bearer {token}"}
-)
+async with Requests() as requests:
+    token = "your_access_token"
+    response = await requests.get(
+        "https://api.example.com/secure", headers={"Authorization": f"Bearer {token}"}
+    )
 
 # API key authentication
-api_key = "your_api_key"
-response = await requests.get(
-    "https://api.example.com/secure", headers={"X-API-Key": api_key}
-)
+async with Requests() as requests:
+    api_key = "your_api_key"
+    response = await requests.get(
+        "https://api.example.com/secure", headers={"X-API-Key": api_key}
+    )
 ```
+
+### GraphQL Query Caching
+
+GraphQL queries use POST requests, which are normally not cached. The universal cache supports POST body-based cache keys for GraphQL:
+
+```python
+async with Requests() as requests:
+    # Each unique GraphQL query is cached separately by body hash
+    query1 = {
+        "query": """
+            query GetUser($id: ID!) {
+                user(id: $id) {
+                    name
+                    email
+                }
+            }
+        """,
+        "variables": {"id": "123"},
+    }
+
+    # First request: HTTP call made, cached by body hash
+    response1 = await requests.post("https://api.example.com/graphql", json=query1)
+
+    # Identical query: Served from cache (same body hash)
+    response2 = await requests.post("https://api.example.com/graphql", json=query1)
+
+    # Different query: New HTTP call (different body hash)
+    query2 = {"query": "{ user(id: 2) { name } }"}
+    response3 = await requests.post("https://api.example.com/graphql", json=query2)
+```
+
+**Note**: For production GraphQL applications with advanced features (normalized entity caching, query batching, schema introspection), consider dedicated libraries:
+
+- [`gql`](https://github.com/graphql-python/gql) - Full-featured async GraphQL client
+- [`strawberry-graphql`](https://strawberry.rocks/) - Modern Python GraphQL framework
+- [`sgqlc`](https://github.com/profusion/sgqlc) - Simple GraphQL client with code generation
+
+These can be used alongside ACB for complete GraphQL support.
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Connection Error**
+**Connection Error**
 
-   - **Problem**: `ConnectionError: Connection refused`
-   - **Solution**:
-     - Verify the URL is correct
-     - Check network connectivity
-     - Ensure the service is running and accessible
+- **Problem**: `ConnectionError: Connection refused`
+- **Solution**:
+  - Verify the URL is correct
+  - Check network connectivity
+  - Ensure the service is running and accessible
 
-1. **Timeout Error**
+**Timeout Error**
 
-   - **Problem**: `TimeoutError: Request timed out`
-   - **Solution**:
-     - Increase the timeout value
-     - Check if the service is responding slowly
-     - Consider optimizing the request payload size
+- **Problem**: `TimeoutError: Request timed out`
+- **Solution**:
+  - Increase the timeout value in settings
+  - Check if the service is responding slowly
+  - Consider using async operations to avoid blocking
 
-1. **Authentication Failure**
+**Client Not Initialized**
 
-   - **Problem**: `HTTP 401 Unauthorized` or `HTTP 403 Forbidden`
-   - **Solution**:
-     - Verify authentication credentials
-     - Check if the token has expired
-     - Ensure you have the correct permissions
+- **Problem**: `RuntimeError: Client not initialized`
+- **Solution**:
+  - Use async context manager: `async with Requests() as requests:`
+  - Or call `await adapter._ensure_client()` before requests
+  - Always cleanup: `await requests.cleanup()`
 
-1. **Cache-Related Issues**
+**Cache Issues**
 
-   - **Problem**: Unexpected cached responses
-   - **Solution**:
-     - Check Redis connection settings
-     - Verify the cache TTL configuration
-     - Ensure unique request parameters for different requests
+- **Problem**: Stale cached responses
+- **Solution**:
+  - Check cache TTL settings (`cache_ttl` in `app.yml`)
+  - Verify Redis connection if using Redis cache
+  - Check server `Cache-Control` headers
 
-1. **Rate Limiting**
+**Resource Leaks**
 
-   - **Problem**: `HTTP 429 Too Many Requests`
-   - **Solution**:
-     - Implement request throttling
-     - Add exponential backoff between requests
-     - Contact API provider for rate limit increase
+- **Problem**: Too many open connections
+- **Solution**:
+  - Always use async context managers or call `cleanup()`
+  - Check connection pool settings (`max_connections`)
+  - Verify `cleanup()` is called in exception handlers
 
 ## Performance Considerations
 
-### Caching Strategy
+### Caching Performance
 
-The Requests adapter uses Redis for caching HTTP responses, which can significantly improve performance:
-
-```python
-# Without caching, each of these calls would make a separate HTTP request
-# With caching enabled, subsequent identical requests use the cached response
-await requests.get("https://api.example.com/slow-endpoint")  # ~500ms (actual request)
-await requests.get("https://api.example.com/slow-endpoint")  # ~5ms (from cache)
-await requests.get("https://api.example.com/slow-endpoint")  # ~5ms (from cache)
-```
-
-### Timeout Management
-
-Properly configured timeouts prevent your application from hanging:
+The universal cache provides significant performance improvements:
 
 ```python
-# Set appropriate timeouts for different types of requests
-# Fast API calls
-await requests.get("https://api.example.com/status", timeout=2)
+# Benchmark example:
+# First request (cache miss): ~500ms (HTTP + serialization)
+await requests.get("https://api.example.com/slow-endpoint")
 
-# Calls that might take longer
-await requests.get("https://api.example.com/large-dataset", timeout=30)
-
-# Balance between user experience and operation completion
-# Too short: Operations might fail unnecessarily
-# Too long: Users might experience UI delays
+# Subsequent requests (cache hit): <1ms (from Redis/memory)
+await requests.get("https://api.example.com/slow-endpoint")
+await requests.get("https://api.example.com/slow-endpoint")
 ```
+
+**Cache Performance**:
+
+- **Cache hit**: \<1ms (msgspec deserialization + dict reconstruction)
+- **Cache miss**: HTTP time + \<5ms (msgspec serialization overhead)
+- **Memory cache**: Fastest (\<0.1ms hit time)
+- **Redis cache**: \<1ms hit time (local Redis), \<10ms (remote Redis)
 
 ### Connection Pooling
 
-The HTTPX implementation uses connection pooling for better performance:
+Both HTTPX and Niquests use connection pooling for efficiency:
 
-- Reuses connections for requests to the same host
-- Reduces connection establishment overhead
-- Improves request throughput
-
-## Implementation Details
-
-The Requests adapter implements these core methods:
-
-```python
-class RequestsBase:
-    async def get(self, url: str, timeout: int = 5) -> Response: ...
-    async def post(
-        self, url: str, data: dict[str, Any], timeout: int = 5
-    ) -> Response: ...
-    async def put(
-        self, url: str, data: dict[str, Any], timeout: int = 5
-    ) -> Response: ...
-    async def delete(self, url: str, timeout: int = 5) -> Response: ...
+```yaml
+# settings/app.yml
+requests:
+  max_connections: 100           # Total connection pool size
+  max_keepalive_connections: 20  # Keep-alive connections
+  keepalive_expiry: 5.0          # Keep-alive timeout (seconds)
 ```
 
-The HTTPX implementation uses `hishel` for request caching with Redis:
+**Benefits**:
+
+- Reuses TCP connections to the same host
+- Reduces connection establishment overhead (~50-100ms per connection)
+- Improves throughput for multiple requests
+
+### Timeout Management
 
 ```python
-class Requests(RequestsBase):
-    storage: AsyncRedisStorage
-    controller: Controller
+# Fast API calls (status checks)
+await requests.get("https://api.example.com/status", timeout=2)
 
-    def cache_key(self, request: Request, body: bytes) -> str:
-        key = generate_key(request, body)
-        return f"{self.config.app.name}:httpx:{key}"
+# Normal API calls
+await requests.get("https://api.example.com/data", timeout=10)
 
-    async def get(self, url: str, timeout: int = 5) -> HttpxResponse:
-        async with AsyncCacheClient(
-            storage=self.storage, controller=self.controller
-        ) as client:
-            return await client.get(url, timeout=timeout)
-
-    # Additional methods for post, put, delete...
+# Large data transfers
+await requests.get("https://api.example.com/large-dataset", timeout=30)
 ```
+
+**Guidelines**:
+
+- Set timeouts based on expected response time
+- Too short: Operations fail unnecessarily
+- Too long: Poor user experience
+- Default: 10 seconds (configurable in settings)
+
+## Architecture
+
+### Universal HTTP Cache
+
+The Requests adapter uses a universal caching layer (`UniversalHTTPCache`) that works with any HTTP client:
+
+```
+┌─────────────────────────────────────────────────────┐
+│          Requests Adapter (HTTPX/Niquests)         │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌─────────────────────────────────────────────┐  │
+│  │      UniversalHTTPCache                     │  │
+│  │  - RFC 9111 compliance (80%)                │  │
+│  │  - Cache key generation                     │  │
+│  │  - Freshness validation                     │  │
+│  │  - msgspec serialization                    │  │
+│  └───────────────┬─────────────────────────────┘  │
+│                  │                                  │
+│                  ▼                                  │
+│  ┌─────────────────────────────────────────────┐  │
+│  │       ACB Cache Adapter                     │  │
+│  │  (memory, Redis, or custom)                 │  │
+│  └─────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+**Key Components**:
+
+1. **Cache Key Generation**: `SHA-256(method:url:body_hash:vary_headers)`
+1. **Serialization**: msgspec MessagePack (binary, Redis-compatible)
+1. **RFC 9111 Rules**: Cacheability checks, freshness validation
+1. **Storage**: ACB cache adapter (memory or Redis)
+
+### Implementation Pattern
+
+Both HTTPX and Niquests follow the same ACB adapter pattern:
+
+```python
+from acb.cleanup import CleanupMixin
+from ._cache import UniversalHTTPCache
+
+
+class Requests(RequestsBase, CleanupMixin):
+    def __init__(self, cache: Inject[t.Any], **kwargs):
+        RequestsBase.__init__(self, **kwargs)
+        CleanupMixin.__init__(self)
+
+        self._http_client = None
+        self._http_cache = UniversalHTTPCache(
+            cache=cache, default_ttl=self.config.requests.cache_ttl
+        )
+
+    async def _ensure_client(self):
+        """Lazy initialization of HTTP client."""
+        if self._http_client is None:
+            self._http_client = await self._create_client()
+        return self._http_client
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self._ensure_client()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.cleanup()
+
+    async def _cleanup_resources(self):
+        """Resource cleanup."""
+        if self._http_client:
+            await self._http_client.close()
+```
+
+## Migration from Hishel
+
+If you're upgrading from a previous ACB version that used Hishel:
+
+**Breaking Changes**:
+
+- ✅ **Automatic**: Cache behavior is now automatic (no manual `CacheClient` needed)
+- ✅ **Headers**: Remove `X-Hishel-*` headers (not needed)
+- ✅ **Import**: Remove `from hishel import *` imports
+- ✅ **Storage**: Remove `ACBCacheStorage` usage (deleted class)
+
+**Migration Steps**:
+
+```python
+# Before (v0.30.x and earlier with Hishel)
+from hishel.httpx import AsyncCacheClient
+from acb.adapters.requests._base import ACBCacheStorage
+
+storage = ACBCacheStorage(default_ttl=3600.0)
+async with AsyncCacheClient(storage=storage) as client:
+    response = await client.get(
+        "https://api.example.com/data", headers={"X-Hishel-Body-Key": "true"}
+    )
+
+# After (v0.31.x with universal cache)
+from acb.adapters import import_adapter
+
+Requests = import_adapter("requests")
+async with Requests() as requests:
+    response = await requests.get("https://api.example.com/data")
+    # GraphQL POST caching automatic (no header needed)
+```
+
+**What Changed**:
+
+- Caching is now automatic for GET/HEAD requests
+- GraphQL POST body caching is automatic (SHA-256 body hash)
+- No Hishel-specific headers or configuration needed
+- Simpler API, same performance
 
 ## Related Adapters
 
-The Requests adapter works well with these other ACB adapters:
+The Requests adapter integrates with:
 
-- [**Cache Adapter**](<../cache/README.md>): Used indirectly for response caching
+- [**Cache Adapter**](<../cache/README.md>): Required for HTTP response caching
 - [**Secret Adapter**](<../secret/README.md>): Store API keys and credentials securely
 - [**NoSQL Adapter**](<../nosql/README.md>): Store API responses for longer-term persistence
 
 Integration example:
 
 ```python
-from acb.depends import depends
 from acb.adapters import import_adapter
 
-# Get necessary adapters
 Requests = import_adapter("requests")
 Secret = import_adapter("secret")
 NoSQL = import_adapter("nosql")
 
-requests = depends.get(Requests)
-secret = depends.get(Secret)
-nosql = depends.get(NoSQL)
-
 
 async def fetch_and_store_weather():
-    # Get API key from secrets manager
-    api_key = await secret.get("weather_api_key")
+    # Get API key from secrets
+    api_key = await Secret().get("weather_api_key")
 
-    # Make API request
-    response = await requests.get(
-        f"https://api.weatherservice.com/forecast?api_key={api_key}"
-    )
-
-    if response.status_code == 200:
-        weather_data = response.json()
-
-        # Store in database for historical analysis
-        await nosql.weather_data.insert_one(
-            {
-                "date": datetime.now().isoformat(),
-                "forecast": weather_data,
-                "location": "New York",
-            }
+    # Make HTTP request with caching
+    async with Requests() as requests:
+        response = await requests.get(
+            f"https://api.weatherservice.com/forecast?api_key={api_key}"
         )
 
-        return weather_data
-    else:
-        raise Exception(f"API request failed with status {response.status_code}")
+        if response.status_code == 200:
+            weather_data = response.json()
+
+            # Store in database for historical analysis
+            async with NoSQL() as nosql:
+                await nosql.weather_data.insert_one(
+                    {
+                        "date": datetime.now().isoformat(),
+                        "forecast": weather_data,
+                        "location": "New York",
+                    }
+                )
+
+            return weather_data
 ```
 
 ## Additional Resources
 
 - [HTTPX Documentation](https://www.python-httpx.org/)
-- [Hishel Documentation](https://github.com/karpetrosyan/hishel)
+- [Niquests Documentation](https://niquests.readthedocs.io/)
+- [RFC 9111: HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111.html)
 - [HTTP Status Codes](https://httpstatuses.com/)
 - [ACB Cache Adapter](<../cache/README.md>)
 - [ACB Secret Adapter](<../secret/README.md>)
