@@ -9,6 +9,10 @@ from uuid import UUID
 
 import pytest
 from anyio import Path as AsyncPath
+
+# Skip entire module if gcsfs is not installed
+pytest.importorskip("gcsfs")
+
 from gcsfs.core import GCSFileSystem
 
 from acb.adapters import AdapterStatus

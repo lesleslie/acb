@@ -5,6 +5,9 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import SecretStr
 
+# Skip entire module if validators is not installed
+pytest.importorskip("validators")
+
 from acb.adapters.dns._base import DnsRecord
 from acb.adapters.dns.cloudflare import Dns, DnsSettings
 from acb.config import Config

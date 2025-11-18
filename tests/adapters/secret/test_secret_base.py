@@ -5,6 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from anyio import Path as AsyncPath
+from typing import Any
+
+# Skip entire module if google-cloud-secret-manager is not installed
+pytest.importorskip("google.cloud.secretmanager_v1")
+
 from google.cloud.secretmanager_v1.types import (
     AccessSecretVersionRequest,
     AddSecretVersionRequest,
@@ -12,7 +17,6 @@ from google.cloud.secretmanager_v1.types import (
     DeleteSecretRequest,
     ListSecretsRequest,
 )
-from typing import Any
 
 from acb.adapters.secret._base import SecretBase, SecretBaseSettings
 from acb.config import Config

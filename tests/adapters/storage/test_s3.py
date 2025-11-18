@@ -6,6 +6,9 @@ import pytest
 from anyio import Path as AsyncPath
 from pydantic import SecretStr
 
+# Skip entire module if s3fs is not installed
+pytest.importorskip("s3fs")
+
 from acb.adapters.storage.s3 import Storage, StorageSettings
 
 

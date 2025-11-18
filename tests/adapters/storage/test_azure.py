@@ -7,9 +7,13 @@ from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 import pytest
-from adlfs import AzureBlobFileSystem
 from anyio import Path as AsyncPath
 from pydantic import SecretStr, ValidationError
+
+# Skip entire module if adlfs is not installed
+pytest.importorskip("adlfs")
+
+from adlfs import AzureBlobFileSystem
 
 from acb.adapters import AdapterStatus
 from acb.adapters.storage._base import StorageBase, StorageBaseSettings
