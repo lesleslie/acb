@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quick Reference
 
-**Version**: 0.31.3 | **Python**: 3.13+ | **Featured**: [FastBlocks](https://github.com/lesleslie/fastblocks)
+**Version**: 0.31.6 | **Python**: 3.13+ | **Featured**: [FastBlocks](https://github.com/lesleslie/fastblocks)
 
 ### Essential Commands
 
@@ -278,7 +278,7 @@ async def infrastructure_code(cache: Inject[Cache]):
 
 ## Version Information
 
-### Current: 0.29.2
+### Current: 0.31.6
 
 **Key improvements**:
 
