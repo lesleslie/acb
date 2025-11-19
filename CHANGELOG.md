@@ -1,5 +1,30 @@
 ______________________________________________________________________
 
+## [0.31.7] - 2025-11-19
+
+### Added
+
+- Implement universal HTTP cache for requests adapters
+
+### Changed
+
+- Acb (quality: 63/100) - 2025-11-18 10:25:44
+- Acb (quality: 63/100) - 2025-11-18 11:01:16
+- Update configuration
+- Update configuration
+
+### Documentation
+
+- Update version references and fix outdated information
+
+### Testing
+
+- Update requests adapter tests for universal cache
+
+### Internal
+
+- Remove temporary analysis files and wheel packages
+
 ## [0.32.0] - 2025-01-20
 
 ### Added
