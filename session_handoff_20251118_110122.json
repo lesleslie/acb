@@ -1,66 +1,66 @@
 {
-  "session_summary": {
-    "project": "acb",
-    "final_quality_score": 63,
-    "session_end_time": "2025-11-18T11:01:22.818021",
-    "working_directory": "/Users/les/Projects/acb",
-    "recommendations": [
-      "\u26a0\ufe0f Moderate quality - focus on improvements below",
-      "\ud83e\uddea Critical: Increase test coverage (38.1% \u2192 target 80%+)",
-      "\ud83d\udcda Enhance project maturity (add docs, tests, CI/CD)",
-      "\ud83c\udf3f Consider feature branch workflow and issue tracking",
-      "\ud83d\udd12 Address security issues (run bandit, check secrets)"
-    ]
-  },
+  "generated_at": "2025-11-18T11:01:22.818073",
+  "handoff_type": "session_handoff",
   "quality_data": {
-    "total_score": 63,
-    "version": "2.0",
-    "project_health": {
-      "total": 20,
-      "tooling_score": 15,
-      "maturity_score": 5,
-      "details": {
-        "package_mgmt": "modern (pyproject.toml + lockfile)",
-        "version_control": "active git repository",
-        "dependency_mgmt": "recently updated",
-        "documentation": "comprehensive (17 docs)",
-        "ci_cd": "none"
-      }
+    "breakdown": {
+      "code_quality": 15,
+      "dev_velocity": 9,
+      "permissions": 1,
+      "project_health": 20,
+      "security": 6.0,
+      "session_management": 20,
+      "tools": 0
     },
     "permissions_health": {
       "permissions_count": 0,
       "session_available": true,
       "tool_count": 0
     },
+    "project_health": {
+      "details": {
+        "ci_cd": "none",
+        "dependency_mgmt": "recently updated",
+        "documentation": "comprehensive (17 docs)",
+        "package_mgmt": "modern (pyproject.toml + lockfile)",
+        "version_control": "active git repository"
+      },
+      "maturity_score": 5,
+      "tooling_score": 15,
+      "total": 20
+    },
+    "recommendations": [
+      "⚠️ Moderate quality - focus on improvements below",
+      "🧪 Critical: Increase test coverage (38.1% → target 80%+)",
+      "📚 Enhance project maturity (add docs, tests, CI/CD)",
+      "🌿 Consider feature branch workflow and issue tracking",
+      "🔒 Address security issues (run bandit, check secrets)"
+    ],
     "session_health": {
       "status": "active"
     },
+    "timestamp": "2025-11-18T11:01:22.817900",
     "tool_health": {
       "count": 0
     },
-    "recommendations": [
-      "\u26a0\ufe0f Moderate quality - focus on improvements below",
-      "\ud83e\uddea Critical: Increase test coverage (38.1% \u2192 target 80%+)",
-      "\ud83d\udcda Enhance project maturity (add docs, tests, CI/CD)",
-      "\ud83c\udf3f Consider feature branch workflow and issue tracking",
-      "\ud83d\udd12 Address security issues (run bandit, check secrets)"
-    ],
-    "timestamp": "2025-11-18T11:01:22.817900",
+    "total_score": 63,
     "trust_score": {
       "permissions_count": 0,
       "session_available": true,
       "tool_count": 0
     },
-    "breakdown": {
-      "project_health": 20,
-      "permissions": 1,
-      "session_management": 20,
-      "tools": 0,
-      "code_quality": 15,
-      "dev_velocity": 9,
-      "security": 6.0
-    }
+    "version": "2.0"
   },
-  "generated_at": "2025-11-18T11:01:22.818073",
-  "handoff_type": "session_handoff"
+  "session_summary": {
+    "final_quality_score": 63,
+    "project": "acb",
+    "recommendations": [
+      "⚠️ Moderate quality - focus on improvements below",
+      "🧪 Critical: Increase test coverage (38.1% → target 80%+)",
+      "📚 Enhance project maturity (add docs, tests, CI/CD)",
+      "🌿 Consider feature branch workflow and issue tracking",
+      "🔒 Address security issues (run bandit, check secrets)"
+    ],
+    "session_end_time": "2025-11-18T11:01:22.818021",
+    "working_directory": "/Users/les/Projects/acb"
+  }
 }
