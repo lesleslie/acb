@@ -26,11 +26,11 @@ The MCP Server is organized into several modules:
 ## Installation
 
 The MCP server is included with ACB and requires no extra install beyond the
-standard project dependencies. If you’re setting up the repo locally, install
+standard project dependencies. If you're setting up the repo locally, install
 the toolchain and deps with:
 
 ```bash
-uv sync --extra dev
+uv sync --group dev
 ```
 
 ## Usage
