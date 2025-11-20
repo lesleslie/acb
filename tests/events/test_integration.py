@@ -18,6 +18,7 @@ from acb.events import (
     create_event,
     create_event_publisher,
     create_event_subscriber,
+    create_subscription,
     event_handler,
     event_publisher_context,
     event_subscriber_context,
@@ -81,8 +82,9 @@ class TestEndToEndEventFlow:
                 # Create handler
                 handler = SampleEventHandler("basic_flow")
 
-                # Subscribe handler to publisher
-                await publisher.subscribe(handler)
+                # Create subscription for publisher
+                subscription = create_subscription(handler)
+                await publisher.subscribe(subscription)
 
                 # Subscribe handler to subscriber
                 await subscriber.subscribe(handler)
@@ -121,9 +123,20 @@ class TestEndToEndEventFlow:
             all_handler = SampleEventHandler("catch_all")
 
             # Subscribe handlers with filters
-            await publisher.subscribe(user_handler, event_type="user.created")
-            await publisher.subscribe(order_handler, event_type="order.created")
-            await publisher.subscribe(all_handler)  # No filter - catches all
+            user_subscription = create_subscription(
+                user_handler, event_type="user.created"
+            )
+            await publisher.subscribe(user_subscription)
+
+            order_subscription = create_subscription(
+                order_handler, event_type="order.created"
+            )
+            await publisher.subscribe(order_subscription)
+
+            all_subscription = create_subscription(
+                all_handler
+            )  # No filter - catches all
+            await publisher.subscribe(all_subscription)
 
             # Create different event types
             user_event = create_event("user.created", "user_service", {"user_id": 123})
@@ -158,7 +171,8 @@ class TestEndToEndEventFlow:
         """Test priority-based event processing."""
         async with event_publisher_context() as publisher:
             handler = SampleEventHandler("priority_test")
-            await publisher.subscribe(handler)
+            subscription = create_subscription(handler)
+            await publisher.subscribe(subscription)
 
             # Create events with different priorities
             events = [
@@ -231,7 +245,8 @@ class TestEndToEndEventFlow:
 
         async with event_publisher_context() as publisher:
             failing_handler = FailingHandler(fail_count=2)
-            await publisher.subscribe(failing_handler)
+            subscription = create_subscription(failing_handler)
+            await publisher.subscribe(subscription)
 
             # Create event with retry configuration
             event = create_event(
@@ -258,7 +273,8 @@ class TestEndToEndEventFlow:
         """Test concurrent event processing capabilities."""
         async with event_publisher_context() as publisher:
             handler = SampleEventHandler("concurrent_test")
-            await publisher.subscribe(handler)
+            subscription = create_subscription(handler)
+            await publisher.subscribe(subscription)
 
             # Create multiple events
             events = [
@@ -292,7 +308,8 @@ class TestEndToEndEventFlow:
         """Test event correlation in workflow scenarios."""
         async with event_publisher_context() as publisher:
             workflow_handler = SampleEventHandler("workflow")
-            await publisher.subscribe(workflow_handler)
+            subscription = create_subscription(workflow_handler)
+            await publisher.subscribe(subscription)
 
             correlation_id = "workflow-123"
 
@@ -348,7 +365,8 @@ class TestEndToEndEventFlow:
         """Test different event delivery modes."""
         async with event_publisher_context() as publisher:
             handler = SampleEventHandler("delivery_modes")
-            await publisher.subscribe(handler)
+            subscription = create_subscription(handler)
+            await publisher.subscribe(subscription)
 
             # Test different delivery modes
             fire_forget_event = create_event(
@@ -747,7 +765,8 @@ class TestPerformanceAndScalability:
         """Test processing high volume of events."""
         async with event_publisher_context() as publisher:
             handler = SampleEventHandler("high_volume")
-            await publisher.subscribe(handler)
+            subscription = create_subscription(handler)
+            await publisher.subscribe(subscription)
 
             # Create many events
             num_events = 100
@@ -789,7 +808,8 @@ class TestPerformanceAndScalability:
 
         async with event_publisher_context() as publisher:
             handler = SampleEventHandler("memory_test")
-            await publisher.subscribe(handler)
+            subscription = create_subscription(handler)
+            await publisher.subscribe(subscription)
 
             # Process events in batches to test memory stability
             batch_size = 50

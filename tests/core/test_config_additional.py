@@ -171,6 +171,7 @@ class TestConfigInitialization:
         config = Config()
 
         with patch.object(config, "ensure_initialized") as mock_ensure:
+            _ = config.debug  # Access the property to trigger ensure_initialized
             mock_ensure.assert_called_once()
 
     def test_config_app_property_not_initialized(self) -> None:
@@ -178,6 +179,7 @@ class TestConfigInitialization:
         config = Config()
 
         with patch.object(config, "ensure_initialized") as mock_ensure:
+            _ = config.app  # Access the property to trigger ensure_initialized
             mock_ensure.assert_called_once()
 
     def test_config_app_setter(self) -> None:

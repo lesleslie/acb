@@ -767,6 +767,13 @@ class EventSubscriber(ServiceBase):
             if (sub_stats := await self.get_subscription_stats(sub_id)) is not None
         ]
 
+    @property
+    def is_running(self) -> bool:
+        """Check if the subscriber is currently running."""
+        from acb.services import ServiceStatus
+
+        return self.status == ServiceStatus.ACTIVE
+
     # Context manager support (delegating to ServiceBase)
     async def __aenter__(self) -> "EventSubscriber":
         await self.initialize()

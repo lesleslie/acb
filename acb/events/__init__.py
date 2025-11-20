@@ -285,6 +285,21 @@ class EventsService(ServiceBase):
             self._subscriber = None
 
     @property
+    def is_running(self) -> bool:
+        """Check if the service is currently running."""
+        from acb.services import ServiceStatus
+
+        return self.status == ServiceStatus.ACTIVE
+
+    async def start(self) -> None:
+        """Start the events service."""
+        await self.initialize()
+
+    async def stop(self) -> None:
+        """Stop the events service."""
+        await self.shutdown()
+
+    @property
     def publisher(self) -> EventPublisher | None:
         """Get the event publisher."""
         return self._publisher

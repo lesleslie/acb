@@ -574,6 +574,18 @@ def patch_config(
     yield
 
 
+@pytest.fixture(autouse=True)
+def reset_dependency_injection_container() -> Generator[None, Any, Any]:
+    """Reset the dependency injection container between tests to prevent state contamination."""
+    from acb.depends import depends
+
+    # Clear the dependency container before each test
+    depends.clear()
+    yield
+    # Clear again after each test to ensure clean state
+    depends.clear()
+
+
 @pytest.fixture
 def mock_tempfile() -> MagicMock:
     mock: MagicMock = MagicMock()

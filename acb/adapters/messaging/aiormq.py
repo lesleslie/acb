@@ -291,6 +291,7 @@ class AioRmqMessaging(CleanupMixin):
         Raises:
             MessagingConnectionError: If connection fails
         """
+        # Check if connection exists without locking first
         if self._connection is None or self._connection.is_closed:
             async with self._connection_lock:
                 # Double-check after acquiring lock
@@ -314,10 +315,7 @@ class AioRmqMessaging(CleanupMixin):
                         # Register for cleanup
                         self.register_resource(self._connection)
 
-                        self.logger.debug("aiormq connection established")
-
                     except Exception as e:
-                        self.logger.exception(f"Failed to connect to RabbitMQ: {e}")
                         raise MessagingConnectionError(
                             "Failed to establish aiormq connection",
                             original_error=e,
@@ -331,8 +329,33 @@ class AioRmqMessaging(CleanupMixin):
             if self._connected:
                 return
 
-            # Initialize connection
-            await self._ensure_client()
+            # Initialize connection directly to avoid double-locking
+            # (since _ensure_client also tries to acquire _connection_lock)
+            if self._connection is None or self._connection.is_closed:
+                imports = _get_aiormq_imports()
+
+                try:
+                    # Create robust connection
+                    self._connection = await imports["connect"](
+                        self._settings.connection_url,
+                        heartbeat=self._settings.heartbeat,
+                        timeout=self._settings.connection_timeout,
+                    )
+
+                    # Create main channel
+                    self._channel = await self._connection.channel()
+                    await self._channel.set_qos(
+                        prefetch_count=self._settings.prefetch_count
+                    )
+
+                    # Register for cleanup
+                    self.register_resource(self._connection)
+
+                except Exception as e:
+                    raise MessagingConnectionError(
+                        "Failed to establish aiormq connection",
+                        original_error=e,
+                    ) from e
 
             # Setup exchanges
             await self._setup_exchanges()
@@ -343,7 +366,6 @@ class AioRmqMessaging(CleanupMixin):
             )
 
             self._connected = True
-            self.logger.info("aiormq queue backend connected")
 
     async def disconnect(self) -> None:
         """Disconnect from RabbitMQ backend."""
@@ -355,6 +377,8 @@ class AioRmqMessaging(CleanupMixin):
             self._delayed_processor_task.cancel()
             with suppress(asyncio.CancelledError):
                 await self._delayed_processor_task
+        # Reset the task variable to None to avoid any potential issues
+        self._delayed_processor_task = None
 
         # Close consumers
         for consumer in self._consumers.values():
@@ -377,17 +401,11 @@ class AioRmqMessaging(CleanupMixin):
 
             self._channel = None
 
-        # Close connection
-        if self._connection:
-            with suppress(Exception):
-                await self._connection.close()
-
-            self._connection = None
-
-        # Cleanup resources
+        # Cleanup resources first to avoid double-closing
         await self.cleanup()
 
-        self.logger.info("aiormq queue backend disconnected")
+        # Then clear connection reference
+        self._connection = None
 
     async def health_check(self) -> dict[str, t.Any]:
         """Perform aiormq health check.
@@ -425,7 +443,6 @@ class AioRmqMessaging(CleanupMixin):
             }
 
         except Exception as e:
-            self.logger.exception(f"aiormq health check failed: {e}")
             return {
                 "healthy": False,
                 "connected": False,
@@ -471,16 +488,10 @@ class AioRmqMessaging(CleanupMixin):
                         durable=True,
                         arguments={"x-delayed-type": "direct"},
                     )
-                except Exception as e:
-                    self.logger.warning(
-                        f"Failed to create delayed exchange (plugin may not be installed): {e}"
-                    )
+                except Exception:
                     self._settings.enable_delayed_plugin = False
 
-            self.logger.debug("aiormq exchanges configured")
-
         except Exception as e:
-            self.logger.exception(f"Failed to setup exchanges: {e}")
             raise MessagingConnectionError(
                 "Failed to setup aiormq exchanges", original_error=e
             ) from e
@@ -603,9 +614,6 @@ class AioRmqMessaging(CleanupMixin):
                     timeout=timeout,
                 )
 
-            self.logger.debug(
-                f"Sent message {message.message_id} to queue {message.queue}"
-            )
             return str(message.message_id)
 
         except TimeoutError as e:
@@ -614,7 +622,6 @@ class AioRmqMessaging(CleanupMixin):
                 original_error=e,
             ) from e
         except Exception as e:
-            self.logger.exception(f"Failed to send message: {e}")
             raise MessagingOperationError(
                 "Failed to send message",
                 original_error=e,
@@ -1067,21 +1074,41 @@ class AioRmqMessaging(CleanupMixin):
         """
         self.logger.debug("Started delayed message monitor")
 
-        while self._connected and not self._shutdown_event.is_set():
-            try:
-                # Just sleep and monitor connection health
-                await asyncio.sleep(10.0)
+        try:
+            while True:
+                # Check the exit conditions first
+                if not self._connected or self._shutdown_event.is_set():
+                    break
 
-                # Check connection health
-                if self._connection and self._connection.is_closed:
-                    self.logger.warning("Connection lost, attempting reconnect")
-                    await self._ensure_client()
+                try:
+                    # Check connection health
+                    if self._connection and self._connection.is_closed:
+                        self.logger.warning("Connection lost, attempting reconnect")
+                        await self._ensure_client()
 
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                self.logger.exception(f"Error in delayed message monitor: {e}")
-                await asyncio.sleep(5.0)
+                    # Wait for 0.1 seconds or until shutdown event is set
+                    try:
+                        await asyncio.wait_for(self._shutdown_event.wait(), timeout=0.1)
+                        # If we get here, the event was set, so break the outer loop
+                        break
+                    except TimeoutError:
+                        # This is expected - continue the loop
+                        continue
+
+                except Exception as e:
+                    self.logger.exception(f"Error in delayed message monitor: {e}")
+                    # Brief delay before continuing to avoid tight loop
+                    try:
+                        await asyncio.wait_for(self._shutdown_event.wait(), timeout=0.1)
+                        # If we get here, the event was set, so break the outer loop
+                        break
+                    except TimeoutError:
+                        # Continue the outer loop
+                        continue
+
+        except asyncio.CancelledError:
+            # Task was cancelled externally
+            pass
 
         self.logger.debug("Stopped delayed message monitor")
 

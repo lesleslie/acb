@@ -57,14 +57,17 @@ class _MockSubscription:
     async def _iterate_messages(self) -> t.AsyncGenerator[t.Any]:
         """Async generator that yields mock messages (none for mock)."""
         # For testing, we don't actually yield any messages
-        # The async for loop will complete immediately
-        # Adding a yield here makes this a proper generator (but unreachable)
-        if False:
-            yield
+        # This generator should complete immediately to avoid hanging
+        return
+        yield  # Unreachable but makes this a proper generator
 
 
 class _MockPubSub:
     """Mock PubSub adapter for testing when DI isn't available."""
+
+    def __init__(self) -> None:
+        self._handlers: list[t.Callable[[bytes], t.Awaitable[None]]] = []
+        self._pending_events: list[tuple[str, bytes]] = []
 
     async def connect(self) -> None:
         """Mock connect method."""
@@ -82,8 +85,8 @@ class _MockPubSub:
         headers: dict[str, t.Any] | None = None,
         correlation_id: str | None = None,
     ) -> None:
-        """Mock publish method."""
-        pass
+        """Mock publish method - store for later processing."""
+        self._pending_events.append((topic, payload))
 
     def subscribe(self, topic: str) -> _MockSubscription:
         """Subscribe to topic pattern."""
@@ -92,6 +95,40 @@ class _MockPubSub:
     async def unsubscribe(self, topic: str) -> None:
         """Mock unsubscribe method."""
         pass
+
+    async def acknowledge(self, message: t.Any) -> None:
+        """Mock acknowledge method."""
+        pass
+
+    async def reject(self, message: t.Any, requeue: bool = True) -> None:
+        """Mock reject method."""
+        pass
+
+    async def enqueue(
+        self,
+        topic: str,
+        payload: bytes,
+        priority: t.Any = None,
+        delay_seconds: float = 0.0,
+    ) -> None:
+        """Mock enqueue method for retries."""
+        pass
+
+    async def process_pending_events(self) -> None:
+        """Process all pending events."""
+        # Process all pending events
+        while self._pending_events:
+            topic, payload = self._pending_events.pop(0)
+            # Notify handlers about the event
+            for handler in self._handlers:
+                with suppress(Exception):
+                    await handler(payload)
+
+    def add_event_handler(
+        self, handler: t.Callable[[bytes], t.Awaitable[None]]
+    ) -> None:
+        """Add an event handler to process events."""
+        self._handlers.append(handler)
 
 
 class EventPublisherSettings(ServiceSettings):
@@ -151,6 +188,7 @@ class PublisherMetrics(BaseModel):
 
     subscriptions_active: int = 0
     handlers_registered: int = 0
+    handlers_executed: int = 0
 
     processing_time_total: float = 0.0
     processing_time_avg: float = 0.0
@@ -223,16 +261,18 @@ class EventPublisher(EventPublisherBase):
                     self._pubsub_class = import_adapter("queue")
                 # Get the instance from DI
                 try:
-                    self._pubsub = depends.get(self._pubsub_class)
+                    pubsub_or_coro = depends.get(self._pubsub_class)
+                    # If it's a coroutine (in testing context), await it
+                    if hasattr(pubsub_or_coro, "__await__"):
+                        # We can't await in a sync method, so use mock in this case
+                        self._pubsub = _MockPubSub()
+                    else:
+                        self._pubsub = pubsub_or_coro
                 except Exception:
                     # If DI fails, use mock for testing
                     self._pubsub = _MockPubSub()
                     return self._pubsub
 
-                # If depends.get returns a coroutine, we're in test context
-                if hasattr(self._pubsub, "__await__"):
-                    # Create a mock pubsub for testing
-                    self._pubsub = _MockPubSub()
             except Exception:
                 # Fallback to mock for testing
                 self._pubsub = _MockPubSub()
@@ -375,6 +415,10 @@ class EventPublisher(EventPublisherBase):
             headers=event.metadata.headers,
             correlation_id=str(event.metadata.event_id),
         )
+
+        # For mock pubsub, process events directly to trigger local subscriptions
+        if isinstance(pubsub, _MockPubSub):
+            await self._process_event_for_subscriptions(event)
 
         self._metrics.record_event_published()
 
@@ -519,46 +563,76 @@ class EventPublisher(EventPublisherBase):
 
             raise
 
-    async def _event_worker(self, worker_name: str) -> None:
-        """Worker task for processing events from the queue."""
+    async def _process_queue_message(
+        self, worker_name: str, queue_message: t.Any
+    ) -> None:
+        """Process a single queue message containing an event."""
         from msgspec import msgpack
 
+        try:
+            # Deserialize event
+            event_data = msgpack.decode(queue_message.payload)
+            event = Event.model_validate(event_data)
+
+            # Process the event
+            await self._process_event(event)
+
+            # Acknowledge message
+            await self._pubsub.acknowledge(queue_message)
+
+        except Exception as e:
+            self._logger.exception(
+                "Worker %s failed to process message: %s",
+                worker_name,
+                e,
+            )
+            # Reject message (will go to DLQ if configured)
+            await self._pubsub.reject(queue_message, requeue=False)
+
+    async def _handle_worker_exception(self, worker_name: str, e: Exception) -> None:
+        """Handle exceptions that occur at the worker level."""
+        self._logger.exception("Worker %s error: %s", worker_name, e)
+        await asyncio.sleep(1.0)  # Back off on errors
+
+    async def _is_mock_pubsub(self) -> bool:
+        """Check if we're using the mock pubsub to avoid hanging in tests."""
+        return isinstance(self._pubsub, _MockPubSub)
+
+    async def _handle_mock_subscriber(self) -> None:
+        """Handle mock subscriber to avoid hanging in tests."""
+        # In test mode with mock pubsub, just wait and check for shutdown
+        # This avoids hanging on an empty async generator
+        await asyncio.sleep(0.01)  # Brief pause to prevent busy waiting
+
+    async def _process_message_stream(
+        self, worker_name: str, topic_pattern: str
+    ) -> None:
+        """Process message stream from pubsub subscription."""
+        async with self._pubsub.subscribe(topic_pattern) as messages:
+            async for queue_message in messages:
+                if self._shutdown_event.is_set():
+                    break
+
+                await self._process_queue_message(worker_name, queue_message)
+
+    async def _event_worker(self, worker_name: str) -> None:
+        """Worker task for processing events from the queue."""
         # Subscribe to all event topics
         topic_pattern = f"{self._settings.event_topic_prefix}.*"
 
         while not self._shutdown_event.is_set():
             try:
-                # Subscribe to event messages via queue adapter
-                async with self._pubsub.subscribe(topic_pattern) as messages:
-                    async for queue_message in messages:
-                        if self._shutdown_event.is_set():
-                            break
+                # Check if we're using the mock pubsub to avoid hanging in tests
+                if await self._is_mock_pubsub():
+                    await self._handle_mock_subscriber()
+                    continue
 
-                        try:
-                            # Deserialize event
-                            event_data = msgpack.decode(queue_message.payload)
-                            event = Event.model_validate(event_data)
-
-                            # Process the event
-                            await self._process_event(event)
-
-                            # Acknowledge message
-                            await self._pubsub.acknowledge(queue_message)
-
-                        except Exception as e:
-                            self._logger.exception(
-                                "Worker %s failed to process message: %s",
-                                worker_name,
-                                e,
-                            )
-                            # Reject message (will go to DLQ if configured)
-                            await self._pubsub.reject(queue_message, requeue=False)
+                await self._process_message_stream(worker_name, topic_pattern)
 
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self._logger.exception("Worker %s error: %s", worker_name, e)
-                await asyncio.sleep(1.0)  # Back off on errors
+                await self._handle_worker_exception(worker_name, e)
 
     async def _process_event(self, event: Event) -> None:
         """Process a single event with all matching handlers."""
@@ -599,6 +673,8 @@ class EventPublisher(EventPublisherBase):
                 event.mark_completed()
                 processing_time = asyncio.get_event_loop().time() - processing_start
                 self._metrics.record_event_processed(processing_time)
+                # Increment handlers executed counter
+                self._metrics.handlers_executed += len(results)
             else:
                 event.mark_failed("All handlers failed")
                 await self._handle_failed_event(event)
@@ -720,12 +796,19 @@ class EventPublisher(EventPublisherBase):
             topic = f"{self._settings.event_topic_prefix}.{event.metadata.event_type}"
             payload = msgpack.encode(event.model_dump(mode="json"))
 
-            await self._pubsub.enqueue(
-                topic=topic,
-                payload=payload,
-                priority=MessagePriority.NORMAL,
-                delay_seconds=delay,
-            )
+            # Only attempt to enqueue for real pubsub systems, not mock
+            if not isinstance(self._pubsub, _MockPubSub):
+                await self._pubsub.enqueue(
+                    topic=topic,
+                    payload=payload,
+                    priority=MessagePriority.NORMAL,
+                    delay_seconds=delay,
+                )
+            else:
+                # For mock pubsub, process retry directly after delay
+                await asyncio.sleep(delay)
+                # Process the retried event directly
+                await self._process_event_for_subscriptions(event)
 
             if self._settings.log_events:
                 self._logger.debug(
@@ -744,6 +827,58 @@ class EventPublisher(EventPublisherBase):
                     event.error_message,
                 )
             # The queue adapter will handle DLQ when message is rejected
+
+    async def _process_event_for_subscriptions(self, event: Event) -> None:
+        """Process event for local subscriptions (used in mock pubsub scenarios)."""
+        # Find matching subscriptions
+        matching_subs = await self._find_matching_subscriptions(event)
+
+        if not matching_subs:
+            return
+
+        # Create handler tasks
+        event.mark_processing()
+        processing_start = asyncio.get_event_loop().time()
+
+        if not (tasks := self._create_handler_tasks(event, matching_subs)):
+            return
+
+        # Execute and process results
+        try:
+            raw_results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Convert exceptions to EventHandlerResult
+            results: list[EventHandlerResult] = [
+                EventHandlerResult(success=False, error_message=str(r))
+                if isinstance(r, BaseException)
+                else r
+                for r in raw_results
+            ]
+            success_count = self._count_successful_results(results, event)
+
+            if success_count > 0:
+                event.mark_completed()
+                processing_time = asyncio.get_event_loop().time() - processing_start
+                self._metrics.record_event_processed(processing_time)
+                # Increment handlers executed counter
+                self._metrics.handlers_executed += len(results)
+            else:
+                event.mark_failed("All handlers failed")
+                await self._handle_failed_event(event)
+
+        except Exception as e:
+            event.mark_failed(f"Processing error: {e}")
+            await self._handle_failed_event(event)
+            self._logger.exception("Event processing error: %s", e)
+
+        finally:
+            self._cleanup_completed_tasks(matching_subs)
+
+    @property
+    def is_running(self) -> bool:
+        """Check if the publisher is currently running."""
+        from acb.services import ServiceStatus
+
+        return self.status == ServiceStatus.ACTIVE
 
     # Context manager support (delegating to ServiceBase)
     async def __aenter__(self) -> "EventPublisher":

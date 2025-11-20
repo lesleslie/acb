@@ -95,11 +95,14 @@ async def test_aiormq_health_check(settings, mock_aiormq):
     # Connect first
     await adapter.connect()
 
-    health = await adapter.health_check()
-    assert "healthy" in health
-    assert "connected" in health
-    assert "latency_ms" in health
-    assert health["connected"] is True
+    try:
+        health = await adapter.health_check()
+        assert "healthy" in health
+        assert "connected" in health
+        assert "latency_ms" in health
+        assert health["connected"] is True
+    finally:
+        await adapter.disconnect()  # Ensure cleanup
 
 
 @pytest.mark.asyncio
@@ -108,18 +111,23 @@ async def test_aiormq_enqueue(settings, mock_aiormq):
     adapter = AioRmqMessaging(settings)
     await adapter.connect()
 
-    # Set up mock queue and exchange behavior
-    mock_aiormq["channel"].declare_queue = AsyncMock(return_value=mock_aiormq["queue"])
-    mock_aiormq["queue"].bind = AsyncMock()
+    try:
+        # Set up mock queue and exchange behavior
+        mock_aiormq["channel"].declare_queue = AsyncMock(
+            return_value=mock_aiormq["queue"]
+        )
+        mock_aiormq["queue"].bind = AsyncMock()
 
-    # Enqueue a test message
-    message_id = await adapter.enqueue(
-        "test_queue", b"test message", priority=MessagePriority.HIGH
-    )
+        # Enqueue a test message
+        message_id = await adapter.enqueue(
+            "test_queue", b"test message", priority=MessagePriority.HIGH
+        )
 
-    # Verify message was sent
-    assert len(message_id) > 0
-    mock_aiormq["exchange"].publish.assert_called_once()
+        # Verify message was sent
+        assert len(message_id) > 0
+        mock_aiormq["exchange"].publish.assert_called_once()
+    finally:
+        await adapter.disconnect()  # Ensure cleanup
 
 
 @pytest.mark.asyncio
@@ -128,17 +136,22 @@ async def test_aiormq_publish_subscribe(settings, mock_aiormq):
     adapter = AioRmqMessaging(settings)
     await adapter.connect()
 
-    # Set up mock queue and exchange behavior
-    mock_aiormq["channel"].declare_queue = AsyncMock(return_value=mock_aiormq["queue"])
-    mock_aiormq["queue"].bind = AsyncMock()
+    try:
+        # Set up mock queue and exchange behavior
+        mock_aiormq["channel"].declare_queue = AsyncMock(
+            return_value=mock_aiormq["queue"]
+        )
+        mock_aiormq["queue"].bind = AsyncMock()
 
-    # Publish a message
-    await adapter.publish("test.topic", b"test message")
-    mock_aiormq["exchange"].publish.assert_called_once()
+        # Publish a message
+        await adapter.publish("test.topic", b"test message")
+        mock_aiormq["exchange"].publish.assert_called_once()
 
-    # Subscribe to the topic
-    subscription = await adapter.subscribe("test.topic")
-    assert subscription.topic == "test.topic"
+        # Subscribe to the topic
+        subscription = await adapter.subscribe("test.topic")
+        assert subscription.topic == "test.topic"
+    finally:
+        await adapter.disconnect()  # Ensure cleanup
 
 
 @pytest.mark.asyncio
@@ -159,11 +172,14 @@ async def test_aiormq_timeout_error(settings, mock_aiormq):
     adapter = AioRmqMessaging(settings)
     await adapter.connect()
 
-    # Mock a timeout during message sending
-    mock_aiormq["exchange"].publish = AsyncMock(side_effect=TimeoutError())
+    try:
+        # Mock a timeout during message sending
+        mock_aiormq["exchange"].publish = AsyncMock(side_effect=TimeoutError())
 
-    with pytest.raises(MessagingTimeoutError):
-        await adapter.enqueue("test_queue", b"test message")
+        with pytest.raises(MessagingTimeoutError):
+            await adapter.enqueue("test_queue", b"test message")
+    finally:
+        await adapter.disconnect()  # Ensure cleanup
 
 
 @pytest.mark.asyncio
