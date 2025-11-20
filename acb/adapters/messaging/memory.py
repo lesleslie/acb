@@ -38,6 +38,7 @@ from pydantic import Field
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.adapters.messaging._base import (
+    MessagePriority,
     MessagingCapability,
     MessagingConnectionError,
     MessagingOperationError,
@@ -745,6 +746,313 @@ class MemoryMessaging(CleanupMixin):
             True if supported
         """
         return capability in self.get_capabilities()
+
+    # QueueBackend interface methods
+    async def enqueue(
+        self,
+        queue: str,
+        message: bytes,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        delay_seconds: float = 0.0,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """Add a message to a queue.
+
+        Args:
+            queue: Queue name
+            message: Message payload as bytes
+            priority: Message priority
+            delay_seconds: Delay before message becomes available
+            headers: Optional message headers
+
+        Returns:
+            Message ID for tracking
+        """
+        if not self._connected:
+            raise MessagingConnectionError("Queue not connected")
+
+        # Check memory limits
+        fake_message = QueueMessage(
+            queue=queue,
+            payload=message,
+            priority=priority,
+            delay_seconds=delay_seconds,
+            headers=headers or {},
+        )
+        message_size = self._estimate_message_size(fake_message)
+        if self._memory_usage + message_size > self._settings.max_memory_usage:
+            raise QueueFullError(
+                f"Memory limit exceeded: {self._memory_usage} + {message_size} "
+                f"> {self._settings.max_memory_usage}",
+            )
+
+        # Check queue size limits
+        if len(self._queues[queue]) >= self._settings.max_messages_per_topic:
+            raise QueueFullError(
+                f"Queue {queue} is full "
+                f"({self._settings.max_messages_per_topic} messages)",
+            )
+
+        # Check rate limiting
+        if self._settings.enable_rate_limiting:
+            if not await self._check_rate_limit(queue):
+                raise MessagingOperationError(
+                    f"Rate limit exceeded for queue {queue}",
+                )
+
+        # Calculate scheduled time
+        current_time = time.time()
+        if delay_seconds > 0:
+            scheduled_time = current_time + delay_seconds
+        else:
+            # Immediate messages use priority ordering
+            scheduled_time = 0.0
+
+        # Create priority item
+        queue_message = QueueMessage(
+            queue=queue,
+            payload=message,
+            priority=priority,
+            delay_seconds=delay_seconds,
+            headers=headers or {},
+        )
+        item = PriorityMessageItem(queue_message, scheduled_time)
+
+        # Add to appropriate queue
+        if scheduled_time > current_time:
+            # Delayed message
+            heapq.heappush(self._delayed_messages, item)
+        else:
+            # Immediate message
+            heapq.heappush(self._queues[queue], item)
+
+        # Update metrics
+        self._memory_usage += message_size
+        self._total_messages += 1
+        self._messages_sent += 1
+
+        self.logger.debug(
+            f"Sent message {queue_message.message_id} to queue {queue}",
+        )
+
+        return str(queue_message.message_id)
+
+    async def dequeue(
+        self,
+        queue: str,
+        timeout: float | None = None,
+        visibility_timeout: float = 30.0,
+    ) -> QueueMessage | None:
+        """Remove and return a message from a queue.
+
+        Args:
+            queue: Queue name
+            timeout: Wait timeout in seconds (None for no wait)
+            visibility_timeout: Time before message returns to queue if not acked
+
+        Returns:
+            Message if available, None otherwise
+        """
+        if not self._connected:
+            raise MessagingConnectionError("Queue not connected")
+
+        # Check if queue has messages
+        queue_list = self._queues[queue]
+        if not queue_list:
+            return None
+
+        # Get highest priority message
+        item = heapq.heappop(queue_list)
+        message = item.message
+
+        # Move to processing
+        self._processing_messages[message.message_id] = message
+
+        # Update metrics
+        self._messages_received += 1
+
+        self.logger.debug(
+            f"Received message {message.message_id} from queue {queue}",
+        )
+
+        return message
+
+    async def acknowledge(
+        self,
+        queue: str,
+        message_id: str,
+    ) -> None:
+        """Acknowledge successful processing of a message.
+
+        Args:
+            queue: Queue name
+            message_id: ID of message to acknowledge
+        """
+        if message_id not in self._processing_messages:
+            raise MessagingOperationError(
+                f"Message {message_id} not in processing state",
+            )
+
+        # Remove from processing
+        message = self._processing_messages[message_id]
+        del self._processing_messages[message_id]
+
+        # Update memory usage
+        message_size = self._estimate_message_size(message)
+        self._memory_usage = max(0, self._memory_usage - message_size)
+        self._total_messages = max(0, self._total_messages - 1)
+
+        # Update metrics
+        self._messages_acknowledged += 1
+
+        self.logger.debug(f"Acknowledged message {message_id}")
+
+    async def reject(
+        self,
+        queue: str,
+        message_id: str,
+        requeue: bool = True,
+    ) -> None:
+        """Reject a message, optionally requeuing it.
+
+        Args:
+            queue: Queue name
+            message_id: ID of message to reject
+            requeue: Whether to return message to queue
+        """
+        if message_id not in self._processing_messages:
+            raise MessagingOperationError(
+                f"Message {message_id} not in processing state",
+            )
+
+        message = self._processing_messages[message_id]
+        # Remove from processing
+        del self._processing_messages[message_id]
+
+        # Update metrics
+        self._messages_rejected += 1
+
+        if requeue and message.retry_count < message.max_retries:
+            # Requeue with incremented retry count
+            updated_message = QueueMessage(
+                message_id=message.message_id,
+                timestamp=message.timestamp,
+                queue=message.queue,
+                payload=message.payload,
+                priority=message.priority,
+                delay_seconds=message.delay_seconds,
+                max_retries=message.max_retries,
+                retry_count=message.retry_count + 1,
+                correlation_id=message.correlation_id,
+                headers=message.headers,
+            )
+            item = PriorityMessageItem(updated_message, time.time())
+            heapq.heappush(self._queues[message.queue], item)
+
+            self.logger.debug(
+                f"Requeued message {message_id} "
+                f"(retry {updated_message.retry_count}/{message.max_retries})",
+            )
+        else:
+            # Move to dead letter queue
+            if self._settings.enable_dead_letter:
+                reason = (
+                    "Max retries exceeded"
+                    if message.retry_count >= message.max_retries
+                    else "Message rejected without requeue"
+                )
+                self._dead_letter_messages[message.message_id] = (message, reason)
+
+                self.logger.warning(
+                    f"Message {message_id} moved to dead letter queue: {reason}",
+                )
+            else:
+                # Just discard
+                message_size = self._estimate_message_size(message)
+                self._memory_usage = max(0, self._memory_usage - message_size)
+                self._total_messages = max(0, self._total_messages - 1)
+
+    async def purge_queue(self, queue: str) -> int:
+        """Remove all messages from a queue.
+
+        Returns:
+            Number of messages purged
+        """
+        if queue not in self._queues:
+            return 0
+
+        queue_list = self._queues[queue]
+        count = len(queue_list)
+
+        if count > 0:
+            # Update memory usage
+            for item in queue_list:
+                message_size = self._estimate_message_size(item.message)
+                self._memory_usage = max(0, self._memory_usage - message_size)
+                self._total_messages = max(0, self._total_messages - 1)
+
+            queue_list.clear()
+            self.logger.info(f"Purged {count} messages from queue: {queue}")
+
+        return count
+
+    async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
+        """Get statistics for a queue.
+
+        Returns:
+            Dict with stats like message_count, consumer_count, etc.
+        """
+        queue_list = self._queues.get(queue, [])
+
+        # Count messages by priority
+        priority_counts = {}
+        for item in queue_list:
+            priority_name = item.message.priority.name
+            priority_counts[priority_name] = priority_counts.get(priority_name, 0) + 1
+
+        return {
+            "name": queue,
+            "message_count": len(queue_list),
+            "priority_distribution": priority_counts,
+            "oldest_message_time": min(
+                (item.created_at for item in queue_list), default=None
+            ),
+            "newest_message_time": max(
+                (item.created_at for item in queue_list), default=None
+            ),
+        }
+
+    async def send_to_dlq(
+        self,
+        queue: str,
+        message: QueueMessage,
+        reason: str,
+    ) -> None:
+        """Send a failed message to the dead letter queue.
+
+        Default implementation enqueues to {queue}_dlq.
+        Backends can override for custom DLQ handling.
+        """
+        if self._settings.enable_dead_letter:
+            self._dead_letter_messages[message.message_id] = (message, reason)
+
+            # Update metrics
+            self._total_messages = max(0, self._total_messages - 1)
+            message_size = self._estimate_message_size(message)
+            self._memory_usage = max(0, self._memory_usage - message_size)
+
+            self.logger.info(f"Message {message.message_id} sent to DLQ: {reason}")
+        else:
+            # If DLQ is disabled, just remove from processing without storing
+            self.logger.info(f"Message {message.message_id} failed (no DLQ): {reason}")
+
+    async def get_queue_info(self, queue_name: str) -> dict[str, t.Any]:
+        """Get information about a queue."""
+        return await self.get_queue_stats(queue_name)
+
+    async def list_queues(self) -> list[str]:
+        """List all available queues."""
+        return list(self._queues.keys())
 
     # ========================================================================
     # Background Tasks

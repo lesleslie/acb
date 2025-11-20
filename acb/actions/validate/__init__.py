@@ -26,33 +26,21 @@ class ValidationError(Exception):
 class Validate:
     """Pure utility functions for input validation."""
 
-    # Common dangerous patterns for security validation
-    SQL_INJECTION_PATTERNS = [
-        r"(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)",
-        r"(--|\/\*|\*\/)",
-        r"(\bor\b.*=.*\bor\b)",
-        r"(\band\b.*=.*\band\b)",
-        r"(;.*--)",
-        r"(\bxp_|\bsp_)",
-    ]
-
-    SCRIPT_INJECTION_PATTERNS = [
-        r"<script[^>]*>.*?</script>",
-        r"javascript:",
-        r"vbscript:",
-        r"on\w+\s*=",
-        r"<iframe[^>]*>.*?</iframe>",
-        r"<object[^>]*>.*?</object>",
-        r"<embed[^>]*>.*?</embed>",
-    ]
-
-    PATH_TRAVERSAL_PATTERNS = [
-        r"\.\./",
-        r"\.\.\\",
-        r"%2e%2e%2f",
-        r"%2e%2e%5c",
-        r"~",
-    ]
+    # Import common dangerous patterns from shared module
+    from acb.actions.secure.security_patterns import (
+        PATH_TRAVERSAL_PATTERNS,
+        SCRIPT_INJECTION_PATTERNS,
+        SQL_INJECTION_PATTERNS,
+    )
+    from acb.actions.secure.security_patterns import (
+        detect_path_traversal as check_path_traversal,
+    )
+    from acb.actions.secure.security_patterns import (
+        detect_sql_injection as check_sql_injection,
+    )
+    from acb.actions.secure.security_patterns import (
+        detect_xss as check_xss,
+    )
 
     @staticmethod
     def email(email: str) -> bool:
@@ -111,17 +99,7 @@ class Validate:
         Returns:
             True if string appears safe, False if potential injection detected
         """
-        value_lower = value.lower()
-
-        for pattern in Validate.SQL_INJECTION_PATTERNS:
-            if re.search(
-                pattern,
-                value_lower,
-                re.IGNORECASE,
-            ):  # REGEX OK: SQL injection detection
-                return False
-
-        return True
+        return Validate.check_sql_injection(value)
 
     @staticmethod
     def xss(value: str) -> bool:
@@ -133,17 +111,7 @@ class Validate:
         Returns:
             True if string appears safe, False if potential XSS detected
         """
-        value_lower = value.lower()
-
-        for pattern in Validate.SCRIPT_INJECTION_PATTERNS:
-            if re.search(
-                pattern,
-                value_lower,
-                re.IGNORECASE,
-            ):  # REGEX OK: XSS detection
-                return False
-
-        return True
+        return Validate.check_xss(value)
 
     @staticmethod
     def path_traversal(value: str) -> bool:
@@ -155,17 +123,7 @@ class Validate:
         Returns:
             True if string appears safe, False if potential traversal detected
         """
-        value_lower = value.lower()
-
-        for pattern in Validate.PATH_TRAVERSAL_PATTERNS:
-            if re.search(
-                pattern,
-                value_lower,
-                re.IGNORECASE,
-            ):  # REGEX OK: path traversal detection
-                return False
-
-        return True
+        return Validate.check_path_traversal(value)
 
     @staticmethod
     def length(
@@ -204,7 +162,7 @@ class Validate:
         except re.error:
             return False
 
-    # Note: Sanitization functions have moved to acb.security.sanitization
+    # Note: Sanitization functions have moved to acb.actions.sanitize
 
 
 # Export an instance

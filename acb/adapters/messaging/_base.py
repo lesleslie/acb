@@ -19,6 +19,7 @@ from collections.abc import AsyncGenerator, AsyncIterator
 from enum import Enum
 from uuid import UUID, uuid4
 
+import asyncio
 import typing as t
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -30,6 +31,10 @@ __all__ = [
     "PubSubBackend",
     "QueueBackend",
     "UnifiedMessagingBackend",
+    # Mixins
+    "ConnectionMixin",
+    "PubSubMixin",
+    "QueueMixin",
     # Settings
     "MessagingSettings",
     # Messages
@@ -613,3 +618,119 @@ class UnifiedMessagingBackend(t.Protocol):
     ) -> list[str]:
         """Enqueue multiple messages in a batch."""
         ...
+
+
+# ============================================================================
+# Mixin Classes with Common Implementations
+# ============================================================================
+
+
+class ConnectionMixin:
+    """Provides common connection management functionality for messaging backends.
+
+    This mixin implements shared connection logic that can be reused across
+    different messaging implementations while preserving the Protocol interface.
+    """
+
+    _settings: MessagingSettings
+    _logger: t.Any
+    _connected: bool
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._connection_lock = asyncio.Lock()
+
+    @property
+    def logger(self) -> t.Any:
+        """Lazy-initialize logger.
+
+        Returns:
+            Logger instance
+        """
+        if not hasattr(self, "_logger") or self._logger is None:
+            try:
+                from acb.adapters import import_adapter
+                from acb.depends import depends
+
+                logger_cls = import_adapter("logger")
+                self._logger = depends.get_sync(logger_cls)
+            except Exception:
+                # Fallback if logger adapter unavailable
+                import logging
+
+                self._logger = logging.getLogger(self.__class__.__name__)
+        return self._logger
+
+    async def _ensure_connection(self) -> None:
+        """Ensure backend is connected, connecting if necessary."""
+        if not self._connected:
+            await self.connect()
+
+    async def health_check(self) -> dict[str, t.Any]:
+        """Default health check implementation."""
+        return {
+            "connected": self._connected,
+            "capabilities": list(self.get_capabilities()),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+    def get_capabilities(self) -> set[MessagingCapability]:
+        """Default capabilities implementation - override in subclasses."""
+        return set()
+
+
+class PubSubMixin:
+    """Provides common pub/sub functionality for messaging backends."""
+
+    _settings: MessagingSettings
+
+    async def subscribe(
+        self,
+        topic: str,
+        pattern: bool = False,
+    ) -> Subscription:
+        """Default subscription implementation."""
+        await self._ensure_connection()
+        return Subscription(topic=topic)
+
+    async def publish_batch(
+        self,
+        messages: list[tuple[str, bytes, dict[str, str] | None]],
+    ) -> None:
+        """Default batch publish implementation - calls publish() for each message."""
+        for topic, message, headers in messages:
+            await self.publish(topic, message, headers)
+
+
+class QueueMixin:
+    """Provides common queue functionality for messaging backends."""
+
+    _settings: MessagingSettings
+
+    async def send_to_dlq(
+        self,
+        queue: str,
+        message: QueueMessage,
+        reason: str,
+    ) -> None:
+        """Default dead letter queue implementation - enqueues to {queue}_dlq."""
+        dlq_name = f"{queue}_dlq"
+        payload = message.model_dump_json().encode()
+        await self.enqueue(
+            dlq_name,
+            payload,
+            priority=MessagePriority.NORMAL,
+            headers={"original_queue": queue, "failure_reason": reason},
+        )
+
+    async def enqueue_batch(
+        self,
+        queue: str,
+        messages: list[tuple[bytes, MessagePriority, dict[str, str] | None]],
+    ) -> list[str]:
+        """Default batch enqueue implementation - calls enqueue() for each message."""
+        results = []
+        for message, priority, headers in messages:
+            msg_id = await self.enqueue(queue, message, priority, 0.0, headers)
+            results.append(msg_id)
+        return results

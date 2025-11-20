@@ -1,10 +1,10 @@
 # Validate Action
 
-The `validate` action provides pure utility functions for input validation, security checks, and data sanitization.
+The `validate` action provides pure utility functions for input validation and security checks.
 
 ## Overview
 
-This action includes validation functions for common data types and security checks to prevent injection attacks. All functions are stateless and can be used independently of ACB adapters.
+This action includes validation functions for common data types and security checks to prevent injection attacks. All functions are stateless and can be used independently of ACB adapters. For sanitization functions, see the [sanitize](../sanitize/README.md) action.
 
 ## Usage
 
@@ -39,13 +39,6 @@ is_valid = validate.length("pwd", min_length=8)  # False
 
 # Pattern matching
 is_valid = validate.pattern("ABC123", r"^[A-Z]{3}\d{3}$")  # True
-
-# Sanitization
-safe_html = validate.sanitize_html("<script>alert('xss')</script>")
-# Returns: "&lt;script&gt;alert('xss')&lt;/script&gt;"
-
-safe_sql = validate.sanitize_sql("O'Reilly")
-# Returns: "O''Reilly"
 ```
 
 ## Available Methods
@@ -63,11 +56,6 @@ safe_sql = validate.sanitize_sql("O'Reilly")
 - `validate.sql_injection(value)` - Check for SQL injection patterns
 - `validate.xss(value)` - Check for XSS/script injection patterns
 - `validate.path_traversal(value)` - Check for path traversal patterns
-
-### Sanitization
-
-- `validate.sanitize_html(value)` - Escape HTML characters
-- `validate.sanitize_sql(value)` - Basic SQL quote escaping
 
 ## Design Principles
 
@@ -135,26 +123,8 @@ result = validate_user_input(
 )
 ```
 
-### Data Sanitization
-
-```python
-from acb.actions.validate import validate
-
-
-def sanitize_form_data(data: dict) -> dict:
-    """Sanitize form data for safe storage."""
-    sanitized = {}
-    for key, value in data.items():
-        if isinstance(value, str):
-            # Apply both HTML and SQL sanitization
-            sanitized[key] = validate.sanitize_sql(validate.sanitize_html(value))
-        else:
-            sanitized[key] = value
-    return sanitized
-```
-
 ## Related Actions
 
-- [secure](../secure/README.md) - Cryptographic utilities and token generation
-- [encode](../encode/README.md) - Data serialization and encoding
-- [hash](../hash/README.md) - Hashing and checksum functions
+- [secure](<../secure/README.md>) - Cryptographic utilities and token generation
+- [encode](<../encode/README.md>) - Data serialization and encoding
+- [hash](<../hash/README.md>) - Hashing and checksum functions

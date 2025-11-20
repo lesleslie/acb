@@ -10,6 +10,8 @@ import inspect
 
 from typing import Any, Protocol, TypeVar, get_args, get_origin
 
+from ._base import ModelAdapterMixin
+
 T = TypeVar("T")
 
 
@@ -55,7 +57,7 @@ attrs_lib = _attrs_lib
 ATTRS_AVAILABLE = _attrs_available
 
 
-class AttrsModelAdapter(ModelAdapter[T]):
+class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
     def __init__(self) -> None:
         if not ATTRS_AVAILABLE:
             msg = "attrs is required for AttrsModelAdapter"
@@ -74,22 +76,15 @@ class AttrsModelAdapter(ModelAdapter[T]):
                     value = getattr(instance, field.name)
                     result[field.name] = self._serialize_value(value)
         else:
-            for attr_name in dir(instance):
-                if not attr_name.startswith("_") and not callable(
-                    getattr(instance, attr_name),
-                ):
-                    value = getattr(instance, attr_name)
-                    result[attr_name] = self._serialize_value(value)
+            # Use the mixin's manual serialize if no attrs
+            result = super()._manual_serialize(instance)
         return result
 
     def _serialize_value(self, value: Any) -> Any:
         if ATTRS_AVAILABLE and attrs_lib.has(value.__class__):
             return self.serialize(value)
-        if isinstance(value, list):
-            return [self._serialize_value(item) for item in value]
-        if isinstance(value, dict):
-            return {k: self._serialize_value(v) for k, v in value.items()}
-        return value
+        # Use the mixin's implementation for basic types
+        return super()._serialize_value(value)
 
     def deserialize(self, data: dict[str, Any]) -> T:
         msg = "Deserialize requires specific model class context"
@@ -99,6 +94,7 @@ class AttrsModelAdapter(ModelAdapter[T]):
         try:
             return model_class(**data)
         except Exception:
+            # Use the mixin's filter method
             filtered_data = self._filter_data_for_model(model_class, data)
             return model_class(**filtered_data)
 
@@ -110,10 +106,8 @@ class AttrsModelAdapter(ModelAdapter[T]):
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
             model_fields = {field.name for field in attrs_lib.fields(model_class)}
             return {k: v for k, v in data.items() if k in model_fields}
-        if hasattr(model_class, "__annotations__"):
-            model_fields = set(model_class.__annotations__.keys())
-            return {k: v for k, v in data.items() if k in model_fields}
-        return data
+        # Use the mixin's implementation
+        return super()._filter_data_for_model(model_class, data)
 
     def get_entity_name(self, model_class: type[T]) -> str:
         if hasattr(model_class, "__tablename__"):

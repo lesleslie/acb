@@ -52,6 +52,8 @@ __all__ = [
     "ModelAdapter",
     "QueryRegistry",
     "registry",
+    # Base classes and mixins
+    "ModelAdapterMixin",
 ]
 
 

@@ -12,6 +12,8 @@ class HealthStatus(str, Enum):
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
+    CRITICAL = "critical"
+    UNKNOWN = "unknown"
 
     def __str__(self) -> str:  # pragma: no cover - trivial
         return str(self.value)
@@ -23,6 +25,8 @@ class HealthStatus(str, Enum):
             HealthStatus.HEALTHY: 0,
             HealthStatus.DEGRADED: 1,
             HealthStatus.UNHEALTHY: 2,
+            HealthStatus.CRITICAL: 3,
+            HealthStatus.UNKNOWN: 4,
         }
         return order[self] < order[other]
 
@@ -33,6 +37,8 @@ class HealthStatus(str, Enum):
             HealthStatus.HEALTHY: 0,
             HealthStatus.DEGRADED: 1,
             HealthStatus.UNHEALTHY: 2,
+            HealthStatus.CRITICAL: 3,
+            HealthStatus.UNKNOWN: 4,
         }
         return order[self] > order[other]
 
@@ -44,6 +50,13 @@ class ComponentHealth:
     message: str | None = None
     latency_ms: float | None = None
     metadata: dict[str, t.Any] = field(default_factory=dict)
+    check_type: str | None = None
+    component_id: str | None = None
+    component_name: str | None = None
+    details: dict[str, t.Any] = field(default_factory=dict)
+    timestamp: float | None = None
+    duration_ms: float | None = None
+    error: str | None = None
 
     def to_dict(self) -> dict[str, t.Any]:
         result: dict[str, t.Any] = {"name": self.name, "status": self.status.value}
@@ -53,6 +66,20 @@ class ComponentHealth:
             result["latency_ms"] = round(self.latency_ms, 2)
         if self.metadata:
             result["metadata"] = self.metadata
+        if self.check_type is not None:
+            result["check_type"] = self.check_type
+        if self.component_id is not None:
+            result["component_id"] = self.component_id
+        if self.component_name is not None:
+            result["component_name"] = self.component_name
+        if self.details:
+            result["details"] = self.details
+        if self.timestamp is not None:
+            result["timestamp"] = self.timestamp
+        if self.duration_ms is not None:
+            result["duration_ms"] = round(self.duration_ms, 2)
+        if self.error is not None:
+            result["error"] = self.error
         return result
 
 

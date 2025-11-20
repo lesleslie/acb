@@ -75,6 +75,12 @@ class Context:
         # Configuration state
         self._config_initialized: bool = False
 
+        # Adapter state
+        self.adapters: ContextVar[dict[str, t.Any]] = ContextVar(
+            "adapters",
+            default={},
+        )
+
         # Locks for thread safety
         self._registration_lock = asyncio.Lock()
 

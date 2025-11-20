@@ -238,6 +238,12 @@ class HTMLSanitizer:
         """Remove dangerous script patterns."""
         original = data
 
+        # Use the shared XSS detection to identify if any dangerous patterns exist
+
+        # If the data is flagged as unsafe, apply the removal patterns
+        # but we still need to apply them even if the detection is different
+        # so keeping the original implementation but ensuring consistency with patterns
+
         # Remove script tags and content
         data = re.sub(  # REGEX OK: XSS prevention
             r"<script[^>]*>.*?</script>",
@@ -446,28 +452,12 @@ class SQLSanitizer:
 
     async def _handle_sql_patterns(self, data: str, result: ValidationResult) -> str:
         """Handle dangerous SQL injection patterns."""
-        # Check for dangerous patterns
-        dangerous_found = False
-        for pattern in self.sql_injection_patterns:
-            if re.search(
-                pattern,
-                data,
-                re.IGNORECASE,
-            ):  # REGEX OK: SQL injection prevention
-                dangerous_found = True
-                break
+        # Check for dangerous patterns using shared detection logic
+        from acb.actions.secure.security_patterns import detect_sql_injection
 
-        # Check for dangerous keywords
-        words = data.lower().split()
-        for word in words:
-            if word in self.sql_keywords:
-                dangerous_found = True
-                break
-
-        if dangerous_found:
+        # If the data is not safe, it contains potential injection patterns
+        if not detect_sql_injection(data):
             result.add_warning("Potential SQL injection patterns detected")
-            # For safety, we could reject the input entirely or sanitize more aggressively
-            # Here we'll just flag it but continue processing
 
         return data
 
@@ -496,7 +486,14 @@ class PathSanitizer:
         try:
             sanitized = data
 
-            # Remove dangerous path patterns
+            # Use shared detection for path traversal
+            from acb.actions.secure.security_patterns import detect_path_traversal
+
+            # Check if the data is safe from path traversal
+            if not detect_path_traversal(data):
+                result.add_warning("Path traversal patterns detected")
+
+            # Remove dangerous path patterns anyway as the main implementation
             for pattern in self.dangerous_path_patterns:
                 if re.search(
                     pattern,

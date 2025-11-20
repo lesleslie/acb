@@ -359,6 +359,461 @@ class RedisMessaging(CleanupMixin):
 
         self.logger.info("Redis queue backend disconnected")
 
+    # QueueBackend interface methods
+    async def enqueue(
+        self,
+        queue: str,
+        message: bytes,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        delay_seconds: float = 0.0,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """Add a message to a queue.
+
+        Args:
+            queue: Queue name
+            message: Message payload as bytes
+            priority: Message priority
+            delay_seconds: Delay before message becomes available
+            headers: Optional message headers
+
+        Returns:
+            Message ID for tracking
+        """
+        if not self._connected:
+            raise MessagingConnectionError("Not connected to Redis")
+
+        client = await self._ensure_client()
+
+        # Create QueueMessage object
+
+        queue_message = QueueMessage(
+            queue=queue,
+            payload=message,
+            priority=priority,
+            delay_seconds=delay_seconds,
+            headers=headers or {},
+        )
+
+        try:
+            # Calculate score for sorted set
+            # Score = scheduled_time * 1M - priority (higher priority = lower score)
+            scheduled_time = time.time()
+            if delay_seconds > 0:
+                scheduled_time += delay_seconds
+
+            score = scheduled_time * 1_000_000 - priority.value
+
+            # Generate keys
+            message_key = self._message_key.format(message_id=queue_message.message_id)
+
+            # Determine target queue
+            if delay_seconds > 0:
+                target_key = self._delayed_key
+            else:
+                target_key = self._queue_key.format(topic=queue)
+
+            # Use Lua script for atomic operation if available
+            if self._settings.use_lua_scripts and "enqueue" in self._lua_scripts:
+                await asyncio.wait_for(
+                    client.evalsha(
+                        self._lua_scripts["enqueue"],
+                        3,
+                        target_key.encode(),
+                        message_key.encode(),
+                        queue_message.model_dump_json().encode(),
+                        str(score).encode(),
+                        str(self._settings.message_ttl).encode(),
+                    ),
+                    timeout=self._settings.send_timeout,
+                )
+            else:
+                # Use pipeline for atomic operation
+                async with client.pipeline() as pipe:
+                    await pipe.set(
+                        message_key.encode(),
+                        queue_message.model_dump_json().encode(),
+                        ex=self._settings.message_ttl,
+                    )
+                    await pipe.zadd(target_key.encode(), {message_key.encode(): score})
+                    await asyncio.wait_for(
+                        pipe.execute(), timeout=self._settings.send_timeout
+                    )
+
+            self.logger.debug(
+                f"Sent message {queue_message.message_id} to queue {queue}"
+            )
+            return str(queue_message.message_id)
+
+        except TimeoutError as e:
+            raise MessagingTimeoutError(
+                f"Send operation timed out after {self._settings.send_timeout}s",
+                original_error=e,
+            ) from e
+        except Exception as e:
+            self.logger.exception(f"Failed to send message: {e}")
+            raise MessagingOperationError(
+                "Failed to send message",
+                original_error=e,
+            ) from e
+
+    async def dequeue(
+        self,
+        queue: str,
+        timeout: float | None = None,
+        visibility_timeout: float = 30.0,
+    ) -> QueueMessage | None:
+        """Remove and return a message from a queue.
+
+        Args:
+            queue: Queue name
+            timeout: Wait timeout in seconds (None for no wait)
+            visibility_timeout: Time before message returns to queue if not acked
+
+        Returns:
+            Message if available, None otherwise
+        """
+        if not self._connected:
+            raise MessagingConnectionError("Not connected to Redis")
+
+        client = await self._ensure_client()
+        timeout = timeout or self._settings.connection_timeout
+        queue_key = self._queue_key.format(topic=queue)
+
+        try:
+            current_time = time.time() * 1_000_000
+
+            # Use Lua script for atomic operation if available
+            if self._settings.use_lua_scripts and "dequeue" in self._lua_scripts:
+                return await self._dequeue_with_lua(
+                    client, queue_key, current_time, timeout
+                )
+
+            # Manual atomic operation using pipeline
+            return await self._dequeue_manually(client, queue_key, timeout)
+
+        except TimeoutError:
+            return None  # Timeout is expected for blocking receives
+        except Exception as e:
+            self.logger.exception(f"Failed to receive message: {e}")
+            raise MessagingOperationError(
+                "Failed to receive message",
+                original_error=e,
+            ) from e
+
+    async def _dequeue_with_lua(
+        self, client, queue_key: str, current_time: float, timeout: float
+    ) -> QueueMessage | None:
+        """Helper method to dequeue using Lua script."""
+        result = await asyncio.wait_for(
+            client.evalsha(
+                self._lua_scripts["dequeue"],
+                2,
+                queue_key.encode(),
+                self._processing_key.encode(),
+                str(current_time).encode(),
+            ),
+            timeout=timeout,
+        )
+
+        if result is None:
+            return None
+
+        message_key, message_data = result
+        return QueueMessage.model_validate_json(message_data)
+
+    async def _dequeue_manually(
+        self, client, queue_key: str, timeout: float
+    ) -> QueueMessage | None:
+        """Helper method to dequeue using manual pipeline operations."""
+        # Get available messages
+        current_time = time.time() * 1_000_000
+        messages = await client.zrangebyscore(
+            queue_key.encode(),
+            b"-inf",
+            str(current_time).encode(),
+            start=0,
+            num=1,
+        )
+
+        if not messages:
+            return None
+
+        message_key = messages[0]
+
+        # Move to processing queue atomically
+        pipe = client.pipeline()
+        pipe.zrem(queue_key.encode(), message_key)
+        pipe.zadd(
+            self._processing_key.encode(),
+            {message_key: time.time()},
+        )
+        pipe.get(message_key)
+        results = await asyncio.wait_for(pipe.execute(), timeout=timeout)
+
+        message_data = results[-1]
+        if message_data:
+            message = QueueMessage.model_validate_json(message_data)
+
+            # Store for later acknowledgment
+            self._processing_messages[str(message.message_id)] = (
+                message,
+                message_data,
+            )
+
+            return message
+
+        return None
+
+    async def acknowledge(
+        self,
+        queue: str,
+        message_id: str,
+    ) -> None:
+        """Acknowledge successful processing of a message.
+
+        Args:
+            queue: Queue name
+            message_id: ID of message to acknowledge
+        """
+        message_key = self._message_key.format(message_id=message_id)
+
+        if not self._connected:
+            raise MessagingConnectionError("Not connected to Redis")
+
+        client = await self._ensure_client()
+
+        try:
+            # Use Lua script for atomic operation if available
+            if self._settings.use_lua_scripts and "ack" in self._lua_scripts:
+                await asyncio.wait_for(
+                    client.evalsha(
+                        self._lua_scripts["ack"],
+                        1,
+                        self._processing_key.encode(),
+                        message_key.encode(),
+                    ),
+                    timeout=self._settings.ack_timeout,
+                )
+            else:
+                # Manual operation
+                async with client.pipeline() as pipe:
+                    await pipe.zrem(self._processing_key.encode(), message_key.encode())
+                    await pipe.delete(message_key.encode())
+                    await asyncio.wait_for(
+                        pipe.execute(), timeout=self._settings.ack_timeout
+                    )
+
+            # Remove from local tracking
+            self._processing_messages.pop(message_id, None)
+
+            self.logger.debug(f"Acknowledged message {message_id}")
+
+        except Exception as e:
+            self.logger.exception(f"Failed to acknowledge message: {e}")
+            raise MessagingOperationError(
+                "Failed to acknowledge message",
+                original_error=e,
+            ) from e
+
+    async def reject(
+        self,
+        queue: str,
+        message_id: str,
+        requeue: bool = True,
+    ) -> None:
+        """Reject a message, optionally requeuing it.
+
+        Args:
+            queue: Queue name
+            message_id: ID of message to reject
+            requeue: Whether to return message to queue
+        """
+        if not self._connected:
+            raise MessagingConnectionError("Not connected to Redis")
+
+        client = await self._ensure_client()
+        message_key = self._message_key.format(message_id=message_id)
+
+        try:
+            if requeue:
+                # Move back to queue
+                queue_key = self._queue_key.format(topic=queue)
+
+                # Fetch the message to get its priority
+                message_data = await client.get(message_key)
+                if message_data:
+                    queue_message = QueueMessage.model_validate_json(message_data)
+
+                    # Calculate score based on original priority
+                    score = time.time() * 1_000_000 - queue_message.priority.value
+
+                    async with client.pipeline() as pipe:
+                        await pipe.zrem(
+                            self._processing_key.encode(), message_key.encode()
+                        )
+                        await pipe.zadd(
+                            queue_key.encode(), {message_key.encode(): score}
+                        )
+                        await asyncio.wait_for(
+                            pipe.execute(), timeout=self._settings.ack_timeout
+                        )
+            else:
+                # Move to dead letter queue
+                async with client.pipeline() as pipe:
+                    await pipe.zrem(self._processing_key.encode(), message_key.encode())
+                    await pipe.zadd(
+                        self._dead_letter_key.encode(),
+                        {message_key.encode(): time.time()},
+                    )
+                    await asyncio.wait_for(
+                        pipe.execute(), timeout=self._settings.ack_timeout
+                    )
+
+            # Remove from local tracking
+            self._processing_messages.pop(message_id, None)
+
+            self.logger.debug(f"Rejected message {message_id}, requeue={requeue}")
+
+        except Exception as e:
+            self.logger.exception(f"Failed to reject message: {e}")
+            raise MessagingOperationError(
+                "Failed to reject message",
+                original_error=e,
+            ) from e
+
+    async def purge_queue(self, queue: str) -> int:
+        """Remove all messages from a queue.
+
+        Returns:
+            Number of messages purged
+        """
+        if not self._connected:
+            raise MessagingConnectionError("Not connected to Redis")
+
+        client = await self._ensure_client()
+        queue_key = self._queue_key.format(topic=queue)
+
+        try:
+            # Get all messages in queue
+            messages = await client.zrange(queue_key.encode(), 0, -1)
+            message_count = len(messages)
+
+            if message_count > 0:
+                pipe = client.pipeline()
+
+                # Remove queue
+                pipe.delete(queue_key.encode())
+
+                # Remove message data
+                for message_key in messages:
+                    pipe.delete(message_key)
+
+                await pipe.execute()
+
+                self.logger.info(f"Purged {message_count} messages from queue {queue}")
+
+            return message_count
+
+        except Exception as e:
+            self.logger.exception(f"Failed to purge queue {queue}: {e}")
+            raise MessagingOperationError(
+                f"Failed to purge queue {queue}",
+                original_error=e,
+            ) from e
+
+    async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
+        """Get statistics for a queue.
+
+        Returns:
+            Dict with stats like message_count, consumer_count, etc.
+        """
+        if not self._connected:
+            raise MessagingConnectionError("Not connected to Redis")
+
+        client = await self._ensure_client()
+        queue_key = self._queue_key.format(topic=queue)
+
+        try:
+            # Get queue size and other stats
+            queue_size = await client.zcard(queue_key.encode())
+
+            # Get oldest and newest tasks
+            oldest = await client.zrange(queue_key.encode(), 0, 0, withscores=True)
+            newest = await client.zrange(queue_key.encode(), -1, -1, withscores=True)
+
+            return {
+                "name": queue,
+                "message_count": queue_size,
+                "oldest_task_score": oldest[0][1] if oldest else None,
+                "newest_task_score": newest[0][1] if newest else None,
+            }
+        except Exception as e:
+            self.logger.exception(f"Failed to get queue stats for {queue}: {e}")
+            raise MessagingOperationError(
+                f"Failed to get queue stats for {queue}",
+                original_error=e,
+            ) from e
+
+    async def send_to_dlq(
+        self,
+        queue: str,
+        message: QueueMessage,
+        reason: str,
+    ) -> None:
+        """Send a failed message to the dead letter queue.
+
+        Default implementation enqueues to {queue}_dlq.
+        Backends can override for custom DLQ handling.
+        """
+        client = await self._ensure_client()
+        message_key = self._message_key.format(message_id=message.message_id)
+
+        try:
+            # Move message to dead letter queue
+            async with client.pipeline() as pipe:
+                await pipe.zrem(self._processing_key.encode(), message_key.encode())
+                await pipe.zadd(
+                    self._dead_letter_key.encode(), {message_key.encode(): time.time()}
+                )
+                await pipe.expire(
+                    self._dead_letter_key.encode(), self._settings.dead_letter_ttl
+                )
+                await pipe.execute()
+
+            self.logger.info(f"Message {message.message_id} sent to DLQ: {reason}")
+        except Exception as e:
+            self.logger.exception(f"Failed to send message to DLQ: {e}")
+            raise MessagingOperationError(
+                "Failed to send message to DLQ",
+                original_error=e,
+            ) from e
+
+    async def get_queue_info(self, queue_name: str) -> dict[str, t.Any]:
+        """Get information about a queue."""
+        return await self.get_queue_stats(queue_name)
+
+    async def list_queues(self) -> list[str]:
+        """List all available queues."""
+        client = await self._ensure_client()
+
+        try:
+            pattern = self._queue_key.format(topic="*")
+            queue_keys = await client.keys(pattern.encode())
+
+            # Extract queue names from keys
+            prefix = self._queue_key.format(topic="").encode()
+            queue_names = []
+            for key in queue_keys:
+                if key.startswith(prefix):
+                    queue_name = key[len(prefix) :].decode()
+                    queue_names.append(queue_name)
+
+            return sorted(queue_names)
+        except Exception as e:
+            self.logger.exception(f"Failed to list queues: {e}")
+            return []
+
     async def _health_check(self) -> dict[str, t.Any]:
         """Perform Redis health check.
 
@@ -1204,83 +1659,6 @@ class RedisMessaging(CleanupMixin):
                     yield pubsub_msg
 
             yield convert_messages()
-
-    # Queue Interface (for tasks system)
-
-    async def enqueue(
-        self,
-        queue: str,
-        message: bytes,
-        priority: MessagePriority = MessagePriority.NORMAL,
-        delay_seconds: float = 0.0,
-        headers: dict[str, str] | None = None,
-    ) -> str:
-        """Add a message to a queue."""
-        from uuid import uuid4
-
-        queue_msg = QueueMessage(
-            message_id=uuid4(),
-            queue=queue,
-            payload=message,
-            priority=priority,
-            delay_seconds=delay_seconds,
-            headers=headers or {},
-        )
-        return await self._send(queue_msg)
-
-    async def dequeue(
-        self,
-        queue: str,
-        timeout: float | None = None,
-        visibility_timeout: float = 30.0,
-    ) -> QueueMessage | None:
-        """Remove and return a message from a queue."""
-        return await self._receive(queue, timeout)
-
-    async def acknowledge(
-        self,
-        queue: str,
-        message_id: str,
-    ) -> None:
-        """Acknowledge successful processing of a message."""
-        # Find the message in processing (simplified - would need tracking in real impl)
-        # For now, just acknowledge by message_id
-        from uuid import UUID
-
-        dummy_msg = QueueMessage(
-            message_id=UUID(message_id),
-            queue=queue,
-            payload=b"",
-        )
-        await self._acknowledge(dummy_msg)
-
-    async def reject(
-        self,
-        queue: str,
-        message_id: str,
-        requeue: bool = True,
-    ) -> None:
-        """Reject a message, optionally requeuing it."""
-        from uuid import UUID
-
-        dummy_msg = QueueMessage(
-            message_id=UUID(message_id),
-            queue=queue,
-            payload=b"",
-        )
-        await self._reject(dummy_msg, requeue)
-
-    async def purge_queue(self, queue: str) -> int:
-        """Remove all messages from a queue."""
-        return await self._purge_queue(queue)
-
-    async def get_queue_stats(self, queue: str) -> dict[str, t.Any]:
-        """Get statistics for a queue."""
-        size = await self._get_queue_size(queue)
-        return {
-            "message_count": size,
-            "consumer_count": 0,  # Redis doesn't track consumers directly
-        }
 
 
 # Factory function

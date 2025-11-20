@@ -19,7 +19,32 @@ from acb.cleanup import CleanupMixin
 from acb.config import Config, Settings
 from acb.depends import depends
 
+# Import health types from monitoring layer to eliminate duplication
+from acb.monitoring.health import (
+    HealthStatus as MonitoringHealthStatus,
+)
+
 from ._base import ServiceBase, ServiceConfig, ServiceSettings
+
+
+# Helper function to implement services layer's original bool behavior for HealthStatus
+def _health_status_bool(self: "MonitoringHealthStatus") -> bool:
+    """Original services layer bool behavior: healthy or degraded returns True."""
+    return self.value in ("healthy", "degraded")
+
+
+# Add the __bool__ method to the imported HealthStatus enum
+MonitoringHealthStatus.__bool__ = _health_status_bool  # type: ignore[assignment]
+
+# Create an alias to maintain the original name for the services layer
+HealthStatus = MonitoringHealthStatus
+
+
+# Helper function to implement services layer's original bool behavior for HealthStatus
+def is_healthy_status(status: HealthStatus) -> bool:
+    """Check if the status indicates healthy status (healthy or degraded)."""
+    return status.value in ("healthy", "degraded")
+
 
 # Service metadata for discovery system
 try:
@@ -63,20 +88,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class HealthStatus(Enum):
-    """Health status levels for components and systems."""
-
-    HEALTHY = "healthy"
-    DEGRADED = "degraded"
-    UNHEALTHY = "unhealthy"
-    CRITICAL = "critical"
-    UNKNOWN = "unknown"
-
-    def __bool__(self) -> bool:
-        """Return True if status indicates healthy or degraded state."""
-        return self.value in ("healthy", "degraded")
-
-
 class HealthCheckType(Enum):
     """Types of health checks that can be performed."""
 
@@ -104,7 +115,7 @@ class HealthCheckResult:
     @property
     def is_healthy(self) -> bool:
         """Check if the result indicates healthy status."""
-        return bool(self.status)
+        return is_healthy_status(self.status)
 
     def to_dict(self) -> dict[str, t.Any]:
         """Convert result to dictionary for serialization."""

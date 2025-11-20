@@ -58,8 +58,18 @@ Usage:
     QueueClass = import_queue_provider("redis")
 """
 
+from uuid import UUID
+
 import typing as t
 from contextlib import suppress
+
+from acb.services import (
+    ServiceBase,
+    ServiceCapability,
+    ServiceMetadata,
+    ServiceSettings,
+)
+from acb.services.discovery import ServiceStatus, enable_service, generate_service_id
 
 # Core queue classes
 from ._base import (
@@ -79,56 +89,6 @@ from ._base import (
     generate_queue_id,
     task_handler,
 )
-
-# Queue implementations
-from .memory import (
-    MemoryQueue,
-    MemoryQueueSettings,
-    create_memory_queue,
-)
-
-try:
-    from .redis import (
-        RedisQueue,
-        RedisQueueSettings,
-        create_redis_queue,
-    )
-
-    REDIS_AVAILABLE = True
-except ImportError:
-    RedisQueue = None  # type: ignore[assignment,no-redef]
-    RedisQueueSettings = None  # type: ignore[assignment,no-redef]
-    create_redis_queue: t.Callable[..., t.Any] | None = None  # type: ignore[no-redef]
-    REDIS_AVAILABLE = False
-
-try:
-    from .rabbitmq import (
-        RabbitMQQueue,
-        RabbitMQQueueSettings,
-        create_rabbitmq_queue,
-    )
-
-    RABBITMQ_AVAILABLE = True
-except ImportError:
-    RabbitMQQueue = None  # type: ignore[assignment,no-redef]
-    RabbitMQQueueSettings = None  # type: ignore[assignment,no-redef]
-    create_rabbitmq_queue: t.Callable[..., t.Any] | None = None  # type: ignore[no-redef]
-    RABBITMQ_AVAILABLE = False
-
-# Task scheduling
-# Queue discovery system
-
-# Service integration with ACB Services Layer
-from uuid import UUID
-
-from acb.services import (
-    ServiceBase,
-    ServiceCapability,
-    ServiceMetadata,
-    ServiceSettings,
-)
-from acb.services.discovery import ServiceStatus, enable_service, generate_service_id
-
 from .discovery import (
     QueueContext,
     QueueProviderDescriptor,
@@ -164,13 +124,23 @@ from .scheduler import (
     scheduled_task,
 )
 
+# Queue implementations are now provided by messaging adapters
+# See acb.adapters.messaging.* for queue implementations
+
+# For backward compatibility, define availability constants
+REDIS_AVAILABLE = True  # Will be available via messaging adapters
+RABBITMQ_AVAILABLE = True  # Will be available via messaging adapters
+
+# Task scheduling
+# Queue discovery system
+
+# Service integration with ACB Services Layer
+# (imports moved to top of file)
+
 __all__ = [
     "RABBITMQ_AVAILABLE",
     "REDIS_AVAILABLE",
     "FunctionalTaskHandler",
-    # Memory queue implementation
-    "MemoryQueue",
-    "MemoryQueueSettings",
     # Core queue classes
     "QueueBase",
     "QueueCapability",
@@ -186,12 +156,6 @@ __all__ = [
     "QueueService",
     "QueueServiceSettings",
     "QueueSettings",
-    # RabbitMQ queue implementation (if available)
-    "RabbitMQQueue",
-    "RabbitMQQueueSettings",
-    # Redis queue implementation (if available)
-    "RedisQueue",
-    "RedisQueueSettings",
     # Task scheduling
     "ScheduleRule",
     "TaskData",
@@ -201,15 +165,17 @@ __all__ = [
     "TaskScheduler",
     "TaskStatus",
     "WorkerMetrics",
+    "create_scheduler",
+    "create_task_data",
+    "parse_cron_expression",
+    "scheduled_task",
+    "task_handler",
+    # Queue provider management (implementations now in messaging adapters)
     "apply_queue_provider_overrides",
-    "create_memory_queue",
     "create_queue_instance",
     "create_queue_instance_async",
     "create_queue_metadata_template",
-    "create_rabbitmq_queue",
-    "create_redis_queue",
     "create_scheduler",
-    "create_task_data",
     "disable_queue_provider",
     "enable_queue_provider",
     "generate_provider_id",
@@ -225,12 +191,9 @@ __all__ = [
     "list_enabled_queue_providers",
     "list_queue_providers",
     "list_queue_providers_by_capability",
-    "parse_cron_expression",
     "queue_context",
     "register_queue_providers",
-    "scheduled_task",
     "setup_queue_service",
-    "task_handler",
     "try_import_queue_provider",
 ]
 

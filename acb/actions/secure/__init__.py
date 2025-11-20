@@ -14,7 +14,15 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-__all__: list[str] = ["secure"]
+# Import security pattern detection functions
+from .security_patterns import detect_path_traversal, detect_sql_injection, detect_xss
+
+__all__: list[str] = [
+    "secure",
+    "detect_sql_injection",
+    "detect_xss",
+    "detect_path_traversal",
+]
 
 
 class SecurityError(Exception):

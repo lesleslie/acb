@@ -85,7 +85,7 @@ uv add acb --group config
 uv add acb --group secret --group config
 ```
 
-For more detailed configuration information, refer to [Configuration Documentation](<./CONFIGURATION.md>).
+For more detailed configuration information, refer to [Configuration Documentation](./CONFIGURATION.md).
 
 ______________________________________________________________________
 
@@ -133,7 +133,7 @@ async def process_file(
     return cached_data
 ```
 
-For more information on dependency injection, please see the [Dependency Injection Documentation](<./DEPENDENCY-INJECTION.md>).
+For more information on dependency injection, please see the [Dependency Injection Documentation](./DEPENDENCY-INJECTION.md).
 
 ______________________________________________________________________
 
@@ -281,7 +281,7 @@ init_debug()  # Configures debug output based on environment
 
 1. **Performance Considerations**: In production environments, be selective about what you debug to avoid performance impacts.
 
-For detailed examples and further instructions, refer to the [Debug Documentation](<./DEBUG.md>).
+For detailed examples and further instructions, refer to the [Debug Documentation](./DEBUG.md).
 
 ______________________________________________________________________
 
@@ -317,7 +317,7 @@ uv add acb --group logger
 uv add acb --group logger
 ```
 
-For more details on logging configuration and customization, see the [Logging Documentation](<./LOGGING.md>).
+For more details on logging configuration and customization, see the [Logging Documentation](./LOGGING.md).
 
 ______________________________________________________________________
 

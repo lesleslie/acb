@@ -27,11 +27,23 @@ def _get_logger_adapter() -> type[t.Any]:
     This function lazily imports the logger adapter to avoid
     circular dependencies during module initialization.
     """
-    from .adapters import import_adapter
-
-    # Import the logger adapter (defaults to loguru)
+    # Import the logger adapter class directly, not an instance
     try:
-        return import_adapter("logger")  # type: ignore[no-any-return]
+        # Try to get the configured logger adapter class
+        from .adapters import get_adapter
+        from .adapters.logger.loguru import Logger as LoguruLogger
+
+        adapter = get_adapter("logger")
+        if adapter and adapter.installed:
+            # Import the module and get the class
+            import importlib
+
+            module = importlib.import_module(adapter.module)
+            adapter_class = getattr(module, adapter.class_name)
+            return adapter_class
+        else:
+            # Fallback to loguru if no adapter is configured
+            return LoguruLogger
     except Exception:
         # Fallback to loguru adapter directly if import fails
         from .adapters.logger.loguru import Logger as LoguruLogger
