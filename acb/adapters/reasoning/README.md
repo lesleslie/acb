@@ -1,5 +1,8 @@
 # Reasoning Adapters
 
+> **Configuration**
+> Choose the `reasoning` implementation in `settings/adapters.yaml` and tune it via `settings/reasoning.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The `acb.adapters.reasoning` module provides a unified interface for integrating various AI/ML reasoning frameworks and custom logic engines into your ACB application. These adapters enable your application to perform complex decision-making, problem-solving, and knowledge retrieval tasks using different strategies and providers.
 
 ## Core Concepts

@@ -2,6 +2,9 @@
 
 # AI Adapter
 
+> **Configuration**
+> Choose the `ai` implementation in `settings/adapters.yaml` and tune it via `settings/ai.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The AI adapter unifies access to hosted, edge, and hybrid AI models inside ACB.
 It wraps prompt orchestration, streaming responses, usage accounting, and
 provider selection behind a consistent interface so that business logic stays

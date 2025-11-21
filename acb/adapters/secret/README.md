@@ -2,6 +2,9 @@ Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/sec
 
 # Secret Adapter
 
+> **Configuration**
+> Choose the `secret` implementation in `settings/adapters.yaml` and tune it via `settings/secret.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Secret adapter provides a standardized interface for secure secret management in ACB applications, supporting local and cloud-based secret storage.
 
 ## Table of Contents

@@ -1,5 +1,8 @@
 # Vector Database Adapters
 
+> **Configuration**
+> Choose the `vector` implementation in `settings/adapters.yaml` and tune it via `settings/vector.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 Vector database adapters provide interfaces for working with vector databases for similarity search and AI applications.
 
 ## Available Implementations

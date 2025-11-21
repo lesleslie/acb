@@ -2,6 +2,9 @@
 
 # SQL Adapter
 
+> **Configuration**
+> Choose the `sql` implementation in `settings/adapters.yaml` and tune it via `settings/sql.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The SQL adapter provides a standardized interface for relational database operations in ACB applications, with support for MySQL/MariaDB, PostgreSQL, SQLite (including Turso), and DuckDB. It integrates seamlessly with ACB's universal query interface, providing both traditional database operations and modern query patterns.
 
 ## Table of Contents

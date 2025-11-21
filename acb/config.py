@@ -35,7 +35,7 @@ from .adapters import (
 
 # Global state is now managed by ACBContext - these are kept for backward compatibility
 from .context import get_context
-from .depends import Inject, depends
+from .depends import Inject, depends, get_container
 
 
 # Replaced internal pydantic API with public implementation
@@ -430,29 +430,13 @@ class Settings(BaseModel):
             # For application contexts, we need to defer to async initialization
             # This creates a minimal instance that will be properly initialized later
             try:
-                import threading
-
                 import asyncio
 
                 # Check if we're in a running event loop
                 asyncio.get_running_loop()
-
-                # If we're in a different thread than the event loop's thread (like from asyncio.to_thread),
-                # allow sync initialization to prevent issues with cross-thread contexts
-                # We can check if we're in the main thread which typically runs the event loop
-                if threading.current_thread() != threading.main_thread():
-                    # We're in a different thread context (e.g., from asyncio.to_thread)
-                    # Allow sync initialization to prevent blocking crackerjack workflows
-                    super().__init__(**values)
-                else:
-                    # We're in the same thread as the event loop - require async initialization
-                    msg = (
-                        "Settings require async initialization. "
-                        "Use 'await Settings.create_async()' instead."
-                    )
-                    raise RuntimeError(
-                        msg,
-                    )
+                # If an event loop is already running, fall back to a synchronous
+                # initialization to avoid crashes in ASGI startup paths.
+                super().__init__(**values)
             except RuntimeError as e:
                 if "no running event loop" in str(e):
                     # No event loop - create minimal instance for now
@@ -679,6 +663,7 @@ class Config:
 
 
 depends.set(Config, get_singleton_instance(Config))
+get_container().add("config", get_singleton_instance(Config))
 
 
 def _initialize_config_eagerly_sync() -> None:

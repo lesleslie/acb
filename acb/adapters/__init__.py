@@ -92,6 +92,41 @@ class AdapterCapability(str, Enum):
     MULTIMODAL_PROCESSING = "multimodal_processing"
     PROMPT_TEMPLATING = "prompt_templating"
     MODEL_CACHING = "model_caching"
+    TEXT_GENERATION = "text_generation"
+    VISION_PROCESSING = "vision_processing"
+    AUDIO_PROCESSING = "audio_processing"
+    FALLBACK_MECHANISMS = "fallback_mechanisms"
+    ADAPTIVE_ROUTING = "adaptive_routing"
+
+    # Model optimization and deployment
+    MODEL_QUANTIZATION = "model_quantization"
+    COLD_START_OPTIMIZATION = "cold_start_optimization"
+    EDGE_OPTIMIZED = "edge_optimized"
+
+    # Embeddings and vector operations
+    BATCH_EMBEDDING = "batch_embedding"
+    SEMANTIC_SEARCH = "semantic_search"
+    SIMILARITY_COMPUTATION = "similarity_computation"
+    POOLING_STRATEGIES = "pooling_strategies"
+    MEMORY_EFFICIENT_PROCESSING = "memory_efficient_processing"
+    TEXT_PREPROCESSING = "text_preprocessing"
+    VECTOR_NORMALIZATION = "vector_normalization"
+
+
+def generate_adapter_id() -> UUID:
+    """Generate a stable module UUID.
+
+    Uses `uuid7` when available (via optional `uuid_utils`) for monotonicity,
+    falling back to `uuid4` otherwise.
+    """
+    if hasattr(uuid_lib, "uuid7"):
+        value = uuid_lib.uuid7()
+    else:
+        value = uuid_lib.uuid4()
+    # Normalize to stdlib UUID object in case a third-party uuid7 returns a custom type
+    import uuid as _uuid
+
+    return _uuid.UUID(str(value))
 
 
 class AdapterMetadata(BaseModel):
@@ -119,6 +154,94 @@ class AdapterMetadata(BaseModel):
     stability: str | None = "stable"
     tags: list[str] = Field(default_factory=list)
     dependencies: list[str] = Field(default_factory=list)
+
+
+# ---- Metadata Utilities ----------------------------------------------------
+def extract_metadata_from_class(obj: t.Any) -> AdapterMetadata | None:
+    """Extract AdapterMetadata attached to a class via '__module_metadata__'."""
+    meta = getattr(obj, "__module_metadata__", None)
+    if meta is None:
+        return None
+    if isinstance(meta, AdapterMetadata):
+        return meta
+    if isinstance(meta, dict):
+        # Best-effort parsing if a plain dict is attached
+        return AdapterMetadata.model_validate(meta)
+    return None
+
+
+def list_adapter_capabilities(obj: t.Any) -> list[str]:
+    """List capability values for the adapter class metadata."""
+    meta = extract_metadata_from_class(obj)
+    if not meta:
+        return []
+    return [c.value for c in meta.capabilities]
+
+
+def get_adapter_info(obj: t.Any) -> dict[str, t.Any]:
+    """Return a dictionary of adapter info for debugging/reporting."""
+    meta = extract_metadata_from_class(obj)
+    info: dict[str, t.Any] = {"has_metadata": meta is not None}
+    if meta:
+        info.update(
+            {
+                "name": meta.name,
+                "category": meta.category,
+                "provider": meta.provider,
+                "version": meta.version,
+                "capabilities": list_adapter_capabilities(obj),
+            }
+        )
+    return info
+
+
+def generate_adapter_report(obj: t.Any) -> str:
+    """Generate a simple human-readable report for an adapter class."""
+    meta = extract_metadata_from_class(obj)
+    if not meta:
+        return "Adapter Report: <unknown>\nNo metadata available."
+
+    caps = list_adapter_capabilities(obj)
+    required = meta.required_packages or []
+    lines = [
+        f"Adapter Report: {meta.name}",
+        f"Provider: {meta.provider}",
+        f"Category: {meta.category}",
+        f"Version: {meta.version}",
+        f"Capabilities ({len(caps)}): {', '.join(caps)}",
+        f"Dependencies ({len(required)}): {', '.join(required)}",
+    ]
+    return "\n".join(lines)
+
+
+def _parse_version(v: str) -> tuple[int, ...]:
+    parts = []
+    for p in v.split("."):
+        try:
+            parts.append(int(p))
+        except ValueError:
+            # Strip any non-numeric suffixes like 'rc1' for simple compare
+            num = "".join(ch for ch in p if ch.isdigit())
+            parts.append(int(num) if num else 0)
+    return tuple(parts)
+
+
+def validate_version_compatibility(meta: AdapterMetadata, current_version: str) -> bool:
+    """Validate current ACB version against adapter's declared range.
+
+    Rules:
+    - current >= acb_min_version
+    - if acb_max_version present on the metadata, current <= acb_max_version
+    """
+    try:
+        min_ok = _parse_version(current_version) >= _parse_version(meta.acb_min_version)
+        max_ok = True
+        acb_max = getattr(meta, "acb_max_version", None)
+        if acb_max:
+            max_ok = _parse_version(current_version) <= _parse_version(acb_max)
+        return bool(min_ok and max_ok)
+    except Exception:
+        return False
 
 
 # Context variables for registry and caches
@@ -290,6 +413,12 @@ def get_adapter(adapter_category: str) -> t.Optional["Adapter"]:
     if adapter_category in installed_adapters:
         return installed_adapters[adapter_category]
 
+    # Fallback to any discovered adapter matching the category
+    registry = _ensure_adapter_registry_initialized()
+    for adapter in registry:
+        if adapter.category == adapter_category:
+            return adapter
+
     return None
 
 
@@ -432,7 +561,8 @@ async def _initialize_adapter(
     from acb.logger import Logger
 
     logger = await depends.get(Logger)
-    logger.debug(f"Initialized {adapter_category} adapter: {adapter.name}")
+    if hasattr(logger, "debug"):
+        logger.debug(f"Initialized {adapter_category} adapter: {adapter.name}")
     return instance
 
 
@@ -705,4 +835,16 @@ def import_adapter(
 
 
 # Initialize adapters on module load
-adapters = asyncio.run(register_adapters(AsyncPath(__file__).parent.parent))
+def _initialize_adapter_registry() -> list["Adapter"]:
+    adapters_path = AsyncPath(__file__).parent.parent
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(register_adapters(adapters_path))
+
+    # If we're already in an event loop (e.g., within an ASGI server), run registration in background
+    loop.create_task(register_adapters(adapters_path))
+    return []
+
+
+adapters = _initialize_adapter_registry()

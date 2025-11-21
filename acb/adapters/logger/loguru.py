@@ -306,6 +306,9 @@ class InterceptHandler(logging.Handler):
             # Fallback to basic logging if logger not available
             return
 
+        if not hasattr(logger_instance, "opt"):  # Logger not initialized yet
+            return
+
         try:
             level = logger_instance.level(record.levelname).name  # type: ignore[no-untyped-call]
         except (ValueError, AttributeError):

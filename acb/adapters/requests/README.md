@@ -2,6 +2,9 @@
 
 # Requests Adapter
 
+> **Configuration**
+> Choose the `requests` implementation in `settings/adapters.yaml` and tune it via `settings/requests.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Requests adapter provides a standardized interface for making HTTP requests in ACB applications, with RFC 9111 compliant caching, connection pooling, and multiple client implementations.
 
 ## Table of Contents

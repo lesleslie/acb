@@ -254,62 +254,23 @@ Key characteristics of actions:
 | **Encode/Decode** | Data serialization | JSON, YAML, TOML, MsgPack |
 | **Hash** | Secure hashing functions | blake3, crc32c, md5 |
 
-**Example: Using the compress action**
+**Quick sample**
 
 ```python
 from acb.actions.compress import compress, decompress
-
-# Compress some text data using brotli
-# The level parameter controls the compression level (higher = more compression but slower)
-compressed = compress.brotli("Hello, ACB!", level=3)
-print(f"Compressed size: {len(compressed)} bytes")
-
-# Decompress back to the original text
-original = decompress.brotli(compressed)
-print(f"Original text: {original}")
-```
-
-**Example: Using the encode/decode actions**
-
-```python
 from acb.actions.encode import encode, decode
-
-# Create a Python dictionary
-data = {
-    "name": "ACB Framework",
-    "version": "1.0.0",
-    "features": ["actions", "adapters", "dependency injection"],
-}
-
-# Encode as JSON (async method)
-json_data = await encode.json(data)
-print(f"JSON: {json_data}")
-
-# Encode as YAML (async method)
-yaml_data = await encode.yaml(data)
-print(f"YAML:\n{yaml_data}")
-
-# Decode back from JSON (async method)
-original = await decode.json(json_data)
-print(f"Decoded: {original}")
-```
-
-**Example: Using the hash action**
-
-```python
 from acb.actions.hash import hash
 
-# Generate a secure hash using blake3 (very fast and secure) - async method
-file_content = b"This is the content of my file"
-file_hash = await hash.blake3(file_content)
-print(f"File hash: {file_hash}")
 
-# Generate a CRC32C checksum (good for data integrity checks) - async method
-checksum = await hash.crc32c(file_content)
-print(f"Checksum: {checksum}")
+async def pipeline(payload: dict[str, str]) -> tuple[str, dict[str, str]]:
+    encoded = await encode.json(payload)
+    compressed = compress.brotli(encoded, level=3)
+    digest = await hash.blake3(compressed)
+    restored = await decode.json(decompress.brotli(compressed))
+    return digest, restored
 ```
 
-For more detailed documentation on actions, see the [Actions README](<./acb/actions/README.md>).
+For the full catalog, see the [Actions README](<./acb/actions/README.md>).
 
 ### Adapters
 
@@ -336,51 +297,30 @@ This means you can switch from memory cache to Redis by changing a single line i
 | **DNS** | Domain name management | Cloud DNS |
 | **FTP/SFTP** | File transfer protocols | FTP, SFTP |
 | **Logger** | Structured logging | Loguru, structlog |
-| **Database** | Data persistence | SQL (MySQL, PostgreSQL), NoSQL (MongoDB, Firestore, Redis) |
+| **SQL** | Relational databases | MySQL, PostgreSQL, SQLite |
+| **NoSQL** | Document & key-value stores | MongoDB, Firestore, Redis |
 | **Storage** | File storage | File, Memory, S3, Cloud Storage, Azure |
 | **Secret** | Secret management | Infisical, Secret Manager |
 
-**Example: Using the cache adapter**
+**Example: Import once, reuse everywhere**
 
 ```python
-from acb.depends import depends
 from acb.adapters import import_adapter
+from acb.depends import depends, Inject
 
-# Method 1: Explicit adapter import
-Cache = import_adapter("cache")
-
-# Method 2: Automatic detection (convenience feature)
-# ACB can automatically detect the adapter name from the variable name
-Cache = import_adapter()  # Automatically detects "cache" from variable name
-
-# Method 3: Multiple adapters - use separate calls
 Cache = import_adapter("cache")
 Storage = import_adapter("storage")
-SQL = import_adapter("sql")
-
-# Method 4: Multiple adapters with automatic detection
-Cache, Storage, SQL = import_adapter()  # Detects all three from variable names
-
-# Get an instance of the adapter via dependency injection
-cache = depends.get(Cache)
 
 
-# Use the adapter with a consistent API
-# These methods work the same way regardless of whether you're using
-# the memory cache or Redis implementation
-async def cache_example():
-    # Store a value in the cache with a 60-second TTL
-    await cache.set("user:123", {"name": "John", "role": "admin"}, ttl=60)
-
-    # Retrieve the value from cache
-    user = await cache.get("user:123")
+@depends.inject
+async def cache_example(
+    cache: Inject[Cache],
+    storage: Inject[Storage],
+) -> None:
+    await cache.set("user:123", {"name": "Jill"}, ttl=60)
+    user = await cache.get("user:123") or await storage.get("user:123")
     if user:
-        print(f"Found user: {user['name']}")
-    else:
-        print("User not found in cache")
-
-    # Delete a value from cache
-    await cache.delete("user:123")
+        await cache.delete("user:123")
 ```
 
 **Switching Implementations**
@@ -926,6 +866,51 @@ ACB's configuration system is built on Pydantic and supports multiple configurat
 - **Secret Files**: Secure storage of sensitive information
 - **Secret Managers**: Integration with external secret management services
 
+#### Where settings live
+
+| File | Purpose |
+| --- | --- |
+| `settings/app.yaml` | Application-wide metadata (name, domain, platform, feature toggles) |
+| `settings/debug.yaml` | Controls debug/trace switches per adapter category |
+| `settings/adapters.yaml` | Chooses which implementation backs each adapter category (cache, queue, sql, …) |
+| `settings/<adapter>.yaml` | Per-adapter configuration keyed by adapter category (e.g., `settings/cache.yaml`, `settings/storage.yaml`) |
+| `settings/secrets/` | File-based secrets that override any of the above |
+
+ACB always reads `app.yaml`/`debug.yaml` for global settings. Adapter-specific
+settings come from two places:
+
+1. **`settings/adapters.yaml`** – select the implementation for each adapter
+   category.
+1. **`settings/<category>.yaml`** – supply configuration for the selected
+   implementation.
+
+Example:
+
+```yaml
+# settings/adapters.yaml
+cache: redis
+storage: s3
+queue: apscheduler
+```
+
+```yaml
+# settings/cache.yaml
+cache:
+  host: "redis.internal"
+  port: 6379
+  default_ttl: 900
+
+# settings/queue.yaml
+queue:
+  job_store_type: postgres
+  job_store_url: postgresql+asyncpg://scheduler:pass@db/scheduler
+```
+
+If you skip `settings/<category>.yaml`, the adapter falls back to its defaults.
+Secrets that power those configs (Redis passwords, API keys, etc.) belong in
+`settings/secrets/<name>.yaml` or the configured secret manager so they never
+appear in Git.
+
 #### Example: Defining custom settings
 
 ```python
@@ -1260,28 +1245,6 @@ And a simple `settings/adapters.yml` file:
 cache: memory          # Use in-memory cache
 logger: loguru         # Use Loguru for logging
 storage: file          # Use file system storage
-```
-
-### Configuration Files
-
-Create your initial configuration files:
-
-#### settings/app.yml
-
-```yaml
-app:
-  name: "MyApp"
-  title: "My ACB Application"
-  domain: "myapp.example.com"
-  version: "0.1.0"
-```
-
-#### settings/adapters.yml
-
-```yaml
-# Choose your adapter implementations
-cache: memory
-storage: file
 ```
 
 ## Common Patterns

@@ -2,6 +2,9 @@
 
 # Graph Adapter
 
+> **Configuration**
+> Choose the `graph` implementation in `settings/adapters.yaml` and tune it via `settings/graph.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Graph adapter provides a unified interface for property graph databases such
 as Neo4j, Amazon Neptune, and ArangoDB. It normalizes query execution,
 traversals, schema inspection, and TLS-aware connection management so services

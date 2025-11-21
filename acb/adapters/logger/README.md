@@ -2,6 +2,9 @@
 
 # Logger Adapter
 
+> **Configuration**
+> Choose the `logger` implementation in `settings/adapters.yaml` and tune it via `settings/logger.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Logger adapter abstracts structured logging for ACB services. It unifies
 formatter defaults, context propagation, correlation IDs, and remote sinks while
 allowing teams to swap between Loguru, Structlog, or custom logging targets

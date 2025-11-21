@@ -2,6 +2,9 @@
 
 # Monitoring Adapter
 
+> **Configuration**
+> Choose the `monitoring` implementation in `settings/adapters.yaml` and tune it via `settings/monitoring.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Monitoring adapter provides a standardized interface for application monitoring, error tracking, and performance analysis in ACB applications.
 
 ## Overview

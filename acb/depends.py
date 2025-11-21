@@ -101,8 +101,10 @@ class Depends:
 
             # Import adapter asynchronously - handle import errors
             try:
-                class_ = await _get_adapter_class_async(category)
-                return get_container().get(class_, qualifier=module)
+                adapter_instance = await _get_adapter_class_async(category)
+                with suppress(Exception):
+                    get_container().add(category, adapter_instance, qualifier=module)
+                return adapter_instance
             except Exception:
                 # If adapter import fails, raise the expected RuntimeError
                 msg = (
@@ -179,7 +181,7 @@ async def _get_adapter_class_async(category: str) -> t.Any:
 depends = Depends()
 
 # Export Inject for type annotations
-__all__ = ["depends", "fast_depends", "Inject", "Depends"]
+__all__ = ["depends", "fast_depends", "Inject", "Depends", "get_container"]
 
 
 async def fast_depends(category: t.Any, module: str | None = None) -> t.Any:

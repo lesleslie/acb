@@ -36,6 +36,39 @@ settings/
     └── database.yaml
 ```
 
+### Adapter Selection vs. Adapter Settings
+
+- `settings/adapters.yaml` maps each adapter category (cache, queue, sql, storage,
+  etc.) to the concrete implementation you want to load.
+- `settings/<category>.yaml` stores the configuration for that category once the
+  implementation has been chosen.
+
+Example:
+
+```yaml
+# settings/adapters.yaml
+cache: redis
+queue: apscheduler
+secret: infisical
+```
+
+```yaml
+# settings/cache.yaml
+cache:
+  host: redis.internal
+  port: 6379
+  default_ttl: 900
+
+# settings/queue.yaml
+queue:
+  job_store_type: postgres
+  job_store_url: postgresql+asyncpg://scheduler:pass@db/scheduler
+```
+
+If you omit a `settings/<category>.yaml`, ACB uses the adapter's defaults. Secrets
+for any adapter can be supplied via `settings/secrets/*.yaml` or an external
+secret manager.
+
 ## Core Settings Models
 
 ### AppSettings

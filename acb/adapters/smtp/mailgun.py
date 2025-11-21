@@ -52,7 +52,7 @@ MODULE_METADATA = AdapterMetadata(
     },
 )
 
-Dns, Requests = import_adapter()
+Dns, Requests = import_adapter(["dns", "requests"])
 
 
 class SmtpSettings(SmtpBaseSettings):

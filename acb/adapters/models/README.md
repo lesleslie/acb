@@ -2,6 +2,9 @@
 
 # Models Adapter
 
+> **Configuration**
+> Choose the `models` implementation in `settings/adapters.yaml` and tune it via `settings/models.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Models adapter provides a universal interface for database models in ACB applications, automatically detecting and handling multiple model frameworks within the same application.
 
 ## Overview

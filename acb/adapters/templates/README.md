@@ -1,5 +1,8 @@
 # ACB Templates Adapter
 
+> **Configuration**
+> Choose the `templates` implementation in `settings/adapters.yaml` and tune it via `settings/templates.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 **Async-first Jinja2 template rendering with ACB dependency injection integration**
 
 ## Overview

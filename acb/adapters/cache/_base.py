@@ -40,6 +40,7 @@ class CacheBaseSettings(Settings, SSLConfigMixin):
 
     @depends.inject
     def __init__(self, config: Inject[Config], **values: t.Any) -> None:
+        response_ttl_provided = "response_ttl" in values
         # Extract SSL configuration parameters
         ssl_enabled = values.pop("ssl_enabled", False)
         ssl_cert_path = values.pop("ssl_cert_path", None)
@@ -72,7 +73,14 @@ class CacheBaseSettings(Settings, SSLConfigMixin):
                 check_hostname=verify_mode == SSLVerifyMode.REQUIRED,
             )
 
-        self.response_ttl = self.default_ttl if config.deployed else 1
+        cfg = config
+        if not hasattr(cfg, "deployed"):
+            cfg = depends.get_sync(Config)
+
+        if not response_ttl_provided:
+            self.response_ttl = (
+                self.default_ttl if bool(getattr(cfg, "deployed", False)) else 1
+            )
 
 
 class MsgPackSerializer(BaseSerializer):  # type: ignore[misc]

@@ -2,6 +2,9 @@
 
 # Storage Adapter
 
+> **Configuration**
+> Choose the `storage` implementation in `settings/adapters.yaml` and tune it via `settings/storage.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Storage adapter provides a standardized interface for file and object storage operations in ACB applications, with support for local, in-memory, and cloud storage services.
 
 ## Table of Contents

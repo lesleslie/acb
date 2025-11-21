@@ -13,8 +13,12 @@ SQL_INJECTION_PATTERNS: list[re.Pattern[str]] = [
         re.IGNORECASE,
     ),
     re.compile(r"(--|\/\*|\*\/)", re.IGNORECASE),
-    re.compile(r"(\bor\b.*=.*\bor\b)", re.IGNORECASE),
-    re.compile(r"(\band\b.*=.*\band\b)", re.IGNORECASE),
+    # Classic tautology patterns like: ' OR '1'='1' or 1=1
+    re.compile(r"\b(?:or|and)\b\s*1\s*=\s*1", re.IGNORECASE),
+    re.compile(r"\b(?:or|and)\b\s*'1'\s*=\s*'1'", re.IGNORECASE),
+    re.compile(r'\b(?:or|and)\b\s*"1"\s*=\s*"1"', re.IGNORECASE),
+    # More generic 'OR x = x' style
+    re.compile(r"\b(or|and)\b\s+[^=]+\s*=\s*[^=]+", re.IGNORECASE),
     re.compile(r"(;.*--)", re.IGNORECASE),
     re.compile(r"(\bxp_|\bsp_)", re.IGNORECASE),
 ]

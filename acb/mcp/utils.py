@@ -1,78 +1,105 @@
-"""Utility functions for ACB MCP server."""
+"""Utility helpers for MCP components and tools.
 
-from typing import Any
+These helpers are intentionally lightweight to keep tests hermetic and avoid
+unnecessary third‑party dependencies.
+"""
+
+from __future__ import annotations
+
+import inspect
+
+import asyncio
+import typing as t
 
 
-def serialize_component_info(component: Any) -> dict[str, Any]:
-    """Serialize component information for MCP transmission."""
+def serialize_component_info(component: t.Any) -> dict[str, t.Any]:
+    """Return a simple, safe summary of a component.
+
+    Includes type, module, public attributes and public methods. On failure,
+    returns a minimal structure with an error description.
+    """
     try:
-        # Get basic component information
-        info: dict[str, Any] = {
-            "type": type(component).__name__,
-            "module": type(component).__module__,
-            "methods": [],
-            "attributes": [],
+        cls = component.__class__
+        type_name = getattr(cls, "__name__", "Unknown")
+        module_name = getattr(cls, "__module__", "Unknown")
+
+        attributes: list[str] = []
+        methods: list[str] = []
+
+        for name in dir(component):
+            if name.startswith("_"):
+                continue
+            try:
+                value = getattr(component, name)
+            except Exception:
+                continue
+            if inspect.ismethod(value) or inspect.isfunction(value) or callable(value):
+                methods.append(name)
+            else:
+                attributes.append(name)
+
+        return {
+            "type": type_name,
+            "module": module_name,
+            "attributes": attributes,
+            "methods": methods,
         }
-
-        # Get public methods
-        for attr_name in dir(component):
-            if not attr_name.startswith("_"):
-                attr = getattr(component, attr_name)
-                if callable(attr):
-                    info["methods"].append(attr_name)
-                else:
-                    info["attributes"].append(attr_name)
-
-        return info
-    except Exception as e:
-        return {"type": "Unknown", "error": str(e)}
+    except Exception as e:  # pragma: no cover - defensive path
+        return {"type": "Unknown", "module": "Unknown", "error": str(e)}
 
 
-def format_tool_response(response: Any) -> dict[str, Any]:
-    """Format a tool response for MCP transmission."""
+def format_tool_response(response: t.Any) -> dict[str, t.Any]:
+    """Normalize tool responses into a consistent dict shape.
+
+    - dict -> dict
+    - list/tuple -> {"items": [...]}
+    - primitives/other -> {"value": value or str(value)}
+    """
     if isinstance(response, dict):
         return response
-    if isinstance(response, list | tuple):
+    if isinstance(response, (list, tuple)):
         return {"items": list(response)}
-    if isinstance(response, str | int | float | bool):
+    if isinstance(response, (str, int, float, bool)) or response is None:
         return {"value": response}
     return {"value": str(response)}
 
 
-def validate_parameters(parameters: dict[str, Any], required_params: list[str]) -> bool:
-    """Validate that required parameters are present."""
-    return all(param in parameters for param in required_params)
+def validate_parameters(parameters: dict[str, t.Any], required: list[str]) -> bool:
+    """Return True if all required parameter keys are present (and not None)."""
+    for key in required:
+        if key not in parameters or parameters[key] is None:
+            return False
+    return True
 
 
-def get_parameter(parameters: dict[str, Any], name: str, default: Any = None) -> Any:
-    """Get a parameter value with a default."""
-    return parameters.get(name, default)
+def get_parameter(
+    parameters: dict[str, t.Any], key: str, default: t.Any | None = None
+) -> t.Any:
+    """Fetch a parameter from a dictionary with an optional default."""
+    return parameters.get(key, default)
 
 
 async def async_retry(
-    func: Any,
-    max_attempts: int = 3,
-    delay: float = 1.0,
-    *args: Any,
-    **kwargs: Any,
-) -> Any:
-    """Execute a function with retry logic."""
-    last_exception: Exception | None = None
+    func: t.Callable[..., t.Awaitable[t.Any]],
+    max_attempts: int,
+    delay: float,
+    *args: t.Any,
+    **kwargs: t.Any,
+) -> t.Any:
+    """Retry an async function up to max_attempts with a fixed delay.
 
-    for attempt in range(max_attempts):
+    Raises the last exception if all attempts fail.
+    """
+    attempt = 0
+    last_exc: BaseException | None = None
+    while attempt < max_attempts:
         try:
             return await func(*args, **kwargs)
-        except Exception as e:
-            last_exception = e
-            if attempt < max_attempts - 1:
-                import asyncio
-
-                await asyncio.sleep(delay * (2**attempt))  # Exponential backoff
-            else:
-                raise last_exception
-
-    # This should never be reached due to the loop logic, but just in case
-    if last_exception:
-        raise last_exception
-    msg = "Unexpected error in async_retry"
-    raise RuntimeError(msg)
+        except BaseException as e:  # noqa: BLE001 - re-raised after retries
+            last_exc = e
+            attempt += 1
+            if attempt >= max_attempts:
+                break
+            await asyncio.sleep(delay)
+    assert last_exc is not None
+    raise last_exc

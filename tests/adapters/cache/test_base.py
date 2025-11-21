@@ -99,26 +99,36 @@ class TestCacheBaseSettings:
         config.deployed = False
         return config
 
+    def _build_settings(
+        self,
+        config: t.Any,
+        **values: t.Any,
+    ) -> CacheBaseSettings:
+        instance = CacheBaseSettings.__new__(CacheBaseSettings)
+        CacheBaseSettings.__init__.__wrapped__(instance, config=config, **values)
+        return instance
+
     @pytest.mark.unit
     def test_init_default_values(self, mock_config: MagicMock) -> None:
-        with patch("acb.adapters.cache._base.depends.get", return_value=mock_config):
-            settings = CacheBaseSettings()
-            assert settings.default_ttl == 86400
-            assert settings.query_ttl == 600
-            assert settings.host.get_secret_value() == "127.0.0.1"
-            assert settings.response_ttl == 1  # Not deployed, so 1
+        settings = self._build_settings(mock_config)
+        assert settings.default_ttl == 86400
+        assert settings.query_ttl == 600
+        assert settings.host.get_secret_value() == "127.0.0.1"
+        assert settings.response_ttl == 1  # Not deployed, so 1
 
     @pytest.mark.unit
     def test_init_custom_values(self, mock_config: MagicMock) -> None:
-        with patch("acb.adapters.cache._base.depends.get", return_value=mock_config):
-            settings = CacheBaseSettings(
-                default_ttl=3600,
-                host="custom.host",
-                port=1234,
-            )
-            assert settings.default_ttl == 3600
-            assert settings.host.get_secret_value() == "custom.host"
-            assert settings.port == 1234
+        settings = self._build_settings(
+            mock_config,
+            default_ttl=3600,
+            host="custom.host",
+            port=1234,
+            response_ttl=720,
+        )
+        assert settings.default_ttl == 3600
+        assert settings.host.get_secret_value() == "custom.host"
+        assert settings.port == 1234
+        assert settings.response_ttl == 720
 
     @pytest.mark.unit
     def test_init_deployed(self) -> None:
@@ -126,13 +136,24 @@ class TestCacheBaseSettings:
         mock_config = MagicMock(spec=Config)
         mock_config.deployed = True
 
-        # Create settings directly with the config
-        settings = CacheBaseSettings()
-        # Manually set the response_ttl to simulate deployed behavior
-        settings.response_ttl = settings.default_ttl
+        settings = self._build_settings(mock_config)
 
         # When deployed, response_ttl should be the default_ttl
         assert settings.response_ttl == 86400
+
+    @pytest.mark.unit
+    def test_missing_deployed_attr_falls_back_to_depends(self) -> None:
+        fallback_config = MagicMock(spec=Config)
+        fallback_config.deployed = True
+
+        with patch(
+            "acb.adapters.cache._base.depends.get_sync",
+            return_value=fallback_config,
+        ) as mock_get_sync:
+            settings = self._build_settings(config=object())
+
+            mock_get_sync.assert_called_once_with(Config)
+            assert settings.response_ttl == settings.default_ttl
 
 
 class TestCacheBase:

@@ -79,9 +79,14 @@ class Console(RichConsole):
         """Load console settings with fallback for library mode."""
         try:
             return ConsoleSettings()
+        except RuntimeError as exc:
+            if "Settings require async initialization" in str(exc):
+                # When running inside an active event loop, fall back to defaults
+                return ConsoleSettings.model_construct(width=None)  # type: ignore[call-arg]
+            raise
         except Exception:
             # Fallback to defaults if settings loading fails (e.g., in library mode)
-            return ConsoleSettings(width=None)
+            return ConsoleSettings.model_construct(width=None)  # type: ignore[call-arg]
 
     def _get_console_width(self) -> int | None:
         """Get console width from configuration with precedence.

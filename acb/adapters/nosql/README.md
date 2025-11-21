@@ -2,6 +2,9 @@
 
 # NoSQL Adapter
 
+> **Configuration**
+> Choose the `nosql` implementation in `settings/adapters.yaml` and tune it via `settings/nosql.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The NoSQL adapter provides a standardized interface for document and key-value database operations in ACB applications, supporting MongoDB, Firestore, and Redis implementations. It integrates seamlessly with ACB's universal query interface, providing both traditional NoSQL operations and modern query patterns.
 
 ## Table of Contents

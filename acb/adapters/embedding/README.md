@@ -2,6 +2,9 @@
 
 # Embedding Adapter
 
+> **Configuration**
+> Choose the `embedding` implementation in `settings/adapters.yaml` and tune it via `settings/embedding.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Embedding adapter standardizes vector generation across hosted APIs,
 fine-tuned local models, and ONNX-optimized runtimes. It powers semantic search,
 retrieval-augmented generation, clustering, and similarity services without

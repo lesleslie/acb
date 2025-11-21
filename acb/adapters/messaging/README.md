@@ -2,6 +2,9 @@
 
 # Messaging Adapter
 
+> **Configuration**
+> Choose the `messaging` implementation in `settings/adapters.yaml` and tune it via `settings/messaging.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Messaging adapter delivers a unified abstraction for pub/sub and task queue
 backends. It powers the events layer, task schedulers, and workflow engines by
 normalizing message formats, delivery guarantees, and connection management

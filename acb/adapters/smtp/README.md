@@ -2,6 +2,9 @@
 
 # SMTP Adapter
 
+> **Configuration**
+> Choose the `smtp` implementation in `settings/adapters.yaml` and tune it via `settings/smtp.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The SMTP adapter provides a standardized interface for email delivery in ACB applications, supporting both direct SMTP connections and email service APIs.
 
 ## Overview

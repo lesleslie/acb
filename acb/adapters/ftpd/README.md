@@ -2,6 +2,9 @@
 
 # FTPD Adapter
 
+> **Configuration**
+> Choose the `ftpd` implementation in `settings/adapters.yaml` and tune it via `settings/ftpd.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The FTPD adapter provides a standardized interface for file transfer protocol operations in ACB applications, supporting both FTP (using aioftp) and SFTP (using asyncssh) implementations.
 
 ## Overview

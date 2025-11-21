@@ -2,6 +2,9 @@ Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/dns
 
 # DNS Adapter
 
+> **Configuration**
+> Choose the `dns` implementation in `settings/adapters.yaml` and tune it via `settings/dns.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The DNS adapter provides a standardized interface for managing DNS records in ACB applications, with support for cloud DNS providers.
 
 ## Overview

@@ -2,6 +2,9 @@
 
 # Cache Adapter
 
+> **Configuration**
+> Choose the `cache` implementation in `settings/adapters.yaml` and tune it via `settings/cache.yaml`. Store secrets in `settings/secrets/` or via a secret manager so they never reach git.
+
 The Cache adapter provides a standardized interface for data caching in ACB applications, with support for both in-memory and Redis-based implementations.
 
 ## Table of Contents
