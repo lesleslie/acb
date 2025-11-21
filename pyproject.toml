@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "acb"
-version = "0.31.9"
+version = "0.31.10"
 description = "ACB: Asynchronous Component Base"
 readme = "README.md"
 authors = [
