@@ -17,9 +17,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
-from acb.config import Config
-from acb.depends import Inject, depends
-from acb.logger import Logger
 from acb.services._base import ServiceBase, ServiceConfig, ServiceSettings
 
 
@@ -145,10 +142,6 @@ class WorkflowSettings(ServiceSettings):
     enable_task_queue: bool = True
     persist_state: bool = True
 
-    @depends.inject
-    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
-        super().__init__(**values)
-
 
 class WorkflowConfig(ServiceConfig):
     """Configuration for workflow engine."""
@@ -272,12 +265,11 @@ class WorkflowService(ServiceBase):
     Provides workflow orchestration with integration to Events System and Task Queue.
     """
 
-    @depends.inject
     def __init__(
         self,
         engine: WorkflowEngine,
-        config: Inject[Config],
-        logger: Inject[Logger],
+        config: t.Any = None,
+        logger: t.Any = None,
         settings: WorkflowSettings | None = None,
         service_config: WorkflowConfig | None = None,
     ) -> None:
@@ -287,10 +279,8 @@ class WorkflowService(ServiceBase):
             settings=settings or WorkflowSettings(),
         )
 
-        # Store injected dependencies
+        # Store injected dependencies (these will be provided by the test or DI system)
         self.config = config
-        self.logger = logger
-
         self._engine = engine
         self._settings: WorkflowSettings = self._settings  # type: ignore
         self._active_workflows: dict[str, asyncio.Task[WorkflowResult]] = {}

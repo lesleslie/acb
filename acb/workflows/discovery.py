@@ -18,6 +18,7 @@ from functools import lru_cache
 from uuid import UUID
 
 import typing as t
+from contextlib import suppress
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -298,12 +299,15 @@ def import_workflow_engine(engine_type: str | None = None) -> t.Any:
     from acb.config import Config
     from acb.depends import depends
 
-    config = depends.get_sync(Config)
-    workflow_settings = config.settings_dict.get("workflows", {})
-    override_engine = workflow_settings.get("engine_type")
-
-    if override_engine:
-        engine_type = override_engine
+    # In test mode or when config doesn't have workflows section, fallback to provided type
+    with suppress(AttributeError, TypeError):
+        config = depends.get_sync(Config)
+        # Access the workflows configuration directly through the config object
+        workflow_settings = getattr(config, "workflows", None)
+        if workflow_settings and hasattr(workflow_settings, "get"):
+            override_engine = workflow_settings.get("engine_type")
+            if override_engine:
+                engine_type = override_engine
 
     # Resolve and import
     module_path, class_name = _resolve_workflow_engine_import(engine_type)

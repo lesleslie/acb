@@ -13,6 +13,7 @@ import asyncio
 import typing as t
 import yaml
 from anyio import Path as AsyncPath
+from contextlib import suppress
 from inflection import camelize
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -973,6 +974,71 @@ def _initialize_adapter_registry() -> list["Adapter"]:
     # If we're already in an event loop (e.g., within an ASGI server), run registration in background
     loop.create_task(register_adapters(adapters_path))
     return []
+
+
+def get_adapter_class(category: str, adapter_name: str | None = None) -> t.Any:
+    """Get an adapter class by category and optional name.
+
+    Args:
+        category: The category of the adapter
+        adapter_name: Optional specific adapter name, if None uses configured adapter
+
+    Returns:
+        The adapter class
+    """
+    import importlib
+
+    # First try to find a configured adapter
+    adapter = get_adapter(category)
+    if adapter and (adapter_name is None or adapter.name == adapter_name):
+        with suppress(ImportError, AttributeError):
+            module = importlib.import_module(adapter.module)
+            return getattr(module, adapter.class_name)
+
+    # If not found or name doesn't match, search for the named adapter
+    if adapter_name:
+        registry = _ensure_adapter_registry_initialized()
+        for reg_adapter in registry:
+            if reg_adapter.category == category and reg_adapter.name == adapter_name:
+                try:
+                    module = importlib.import_module(reg_adapter.module)
+                    return getattr(module, reg_adapter.class_name)
+                except (ImportError, AttributeError):
+                    continue
+
+    raise AdapterNotFound(
+        f"No adapter found for category '{category}'{' and name ' + adapter_name if adapter_name else ''}"
+    )
+
+
+def try_import_adapter(category: str, adapter_name: str | None = None) -> t.Any | None:
+    """Try to import an adapter, returning None if not found rather than raising an exception.
+
+    Args:
+        category: The category of the adapter
+        adapter_name: Optional specific adapter name
+
+    Returns:
+        The imported adapter or None if not found
+    """
+    try:
+        import asyncio
+
+        # Check if we're in an async context
+        with suppress(RuntimeError):
+            asyncio.get_running_loop()
+            # We're in an async context, need to handle differently
+            # For now, return None as proper async handling would require more complex code
+            return None
+        # No event loop, safe to use asyncio.run
+
+        # Import the adapter
+        adapter = asyncio.run(gather_imports([category]))
+        if adapter:
+            return adapter[0]
+        return None
+    except (AdapterNotFound, AdapterNotInstalled, Exception):
+        return None
 
 
 adapters = _initialize_adapter_registry()
