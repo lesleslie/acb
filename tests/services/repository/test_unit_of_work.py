@@ -29,7 +29,11 @@ class MockRepository(RepositoryBase):
     """Mock repository for testing."""
 
     def __init__(self):
-        super().__init__(SampleEntity)
+        # Provide a basic RepositorySettings instance to avoid DI issues in tests
+        from acb.services.repository._base import RepositorySettings
+
+        settings = RepositorySettings()
+        super().__init__(SampleEntity, settings=settings)
         self.operations = []
 
     async def create(self, entity):

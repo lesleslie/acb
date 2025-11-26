@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "acb"
-version = "0.31.11"
+version = "0.31.12"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -420,7 +420,7 @@ requires-dist = [
     { name = "bevy", specifier = ">=3.1.0b12" },
     { name = "blake3", specifier = ">=1.0.8" },
     { name = "brotli", specifier = ">=1.2.0" },
-    { name = "crackerjack", specifier = ">=0.44.31" },
+    { name = "crackerjack", specifier = ">=0.44.34" },
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dill", specifier = ">=0.3.9,<0.4.dev0" },
     { name = "fastmcp", specifier = ">=2.13.1" },
@@ -611,7 +611,7 @@ dataplatform = [
 demo = [{ name = "faker", specifier = ">=38.2.0" }]
 dev = [
     { name = "complexipy", specifier = ">=4.2.0" },
-    { name = "crackerjack", specifier = ">=0.44.31" },
+    { name = "crackerjack", specifier = ">=0.44.34" },
     { name = "excalidraw-mcp", specifier = ">=0.34.0" },
     { name = "pre-commit", specifier = ">=4.5.0" },
     { name = "pytest", specifier = ">=9.0.1" },
@@ -1752,7 +1752,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.44.33"
+version = "0.44.35"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -1811,9 +1811,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/00/fc/97c5d64af4c377434653fde725b5b2cfb0ade13c68b65d30e7e0231de2fd/crackerjack-0.44.33.tar.gz", hash = "sha256:90538fd6f6faeab5cb49ea394053e8e22d2ff79a2edc98ca29402a56e31e18f4", size = 2033932, upload-time = "2025-11-26T08:14:29.851Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/0e/1b554c17d123d9db81ee25b08bd5c3fd0325f3f9c79bd48a739cdd6994e3/crackerjack-0.44.35.tar.gz", hash = "sha256:d1e344c123eec9479f61e1afa459acd2bef21c3b1674726342b13e1bb6534ca0", size = 2049643, upload-time = "2025-11-26T15:15:44.76Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e7/52/5cd24c0511f082a7117fe92804a6c8d13b4755e27c8f8e67956f2e873040/crackerjack-0.44.33-py3-none-any.whl", hash = "sha256:0bf3d0a8dc99c9b53ae7613a333767e6236865ef911c2a9a5e1f4d82dd5ddc52", size = 1328638, upload-time = "2025-11-26T08:14:25.719Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/e5/20598b094f455c84add3c30ef75556fbeae28739cfe9c9c1004cf7bdd735/crackerjack-0.44.35-py3-none-any.whl", hash = "sha256:7d155b9725bd55e62db1195dce37c490787d76084ad5e91f0b179d5c9f69076b", size = 1329916, upload-time = "2025-11-26T15:15:40.664Z" },
 ]
 
 [[package]]
@@ -4972,7 +4972,7 @@ wheels = [
 
 [[package]]
 name = "pydantic"
-version = "2.12.4"
+version = "2.12.5"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "annotated-types" },
@@ -4980,9 +4980,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/96/ad/a17bc283d7d81837c061c49e3eaa27a45991759a1b7eae1031921c6bd924/pydantic-2.12.4.tar.gz", hash = "sha256:0f8cb9555000a4b5b617f66bfd2566264c4984b27589d3b845685983e8ea85ac", size = 821038, upload-time = "2025-11-05T10:50:08.59Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/69/44/36f1a6e523abc58ae5f928898e4aca2e0ea509b5aa6f6f392a5d882be928/pydantic-2.12.5.tar.gz", hash = "sha256:4d351024c75c0f085a9febbb665ce8c0c6ec5d30e903bdb6394b7ede26aebb49", size = 821591, upload-time = "2025-11-26T15:11:46.471Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/2f/e68750da9b04856e2a7ec56fc6f034a5a79775e9b9a81882252789873798/pydantic-2.12.4-py3-none-any.whl", hash = "sha256:92d3d202a745d46f9be6df459ac5a064fdaa3c1c4cd8adcfa332ccf3c05f871e", size = 463400, upload-time = "2025-11-05T10:50:06.732Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/87/b70ad306ebb6f9b585f114d0ac2137d792b48be34d732d60e597c2f8465a/pydantic-2.12.5-py3-none-any.whl", hash = "sha256:e561593fccf61e8a20fc46dfc2dfe075b8be7d0188df33f221ad1f0139180f9d", size = 463580, upload-time = "2025-11-26T15:11:44.605Z" },
 ]
 
 [package.optional-dependencies]

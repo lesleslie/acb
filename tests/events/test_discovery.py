@@ -39,21 +39,35 @@ class TestEventCapability:
     def test_event_capabilities(self):
         """Test all event capabilities are available."""
         capabilities = [
-            EventCapability.PUB_SUB_MESSAGING,
-            EventCapability.EVENT_FILTERING,
-            EventCapability.EVENT_ROUTING,
+            # Core capabilities
             EventCapability.ASYNC_PROCESSING,
             EventCapability.BATCH_PROCESSING,
+            EventCapability.SYNC_PROCESSING,
+            EventCapability.STREAMING_PROCESSING,
+            # Routing capabilities
+            EventCapability.TYPE_FILTERING,
+            EventCapability.CONTENT_FILTERING,
             EventCapability.PRIORITY_HANDLING,
-            EventCapability.RETRY_MECHANISMS,
+            EventCapability.ROUTING_KEY_SUPPORT,
+            # Delivery capabilities
+            EventCapability.AT_LEAST_ONCE,
+            EventCapability.EXACTLY_ONCE,
+            EventCapability.FIRE_AND_FORGET,
+            EventCapability.ORDERED_DELIVERY,
+            # Error handling
+            EventCapability.RETRY_LOGIC,
             EventCapability.DEAD_LETTER_QUEUE,
-            EventCapability.EVENT_PERSISTENCE,
-            EventCapability.MESSAGE_ORDERING,
-            EventCapability.TRANSACTION_SUPPORT,
+            EventCapability.CIRCUIT_BREAKER,
+            # Integration
+            EventCapability.MESSAGE_QUEUE_INTEGRATION,
+            EventCapability.DATABASE_PERSISTENCE,
+            # Monitoring
             EventCapability.HEALTH_MONITORING,
             EventCapability.METRICS_COLLECTION,
-            EventCapability.ERROR_HANDLING,
+            EventCapability.TRACING,
+            # Security
             EventCapability.RATE_LIMITING,
+            EventCapability.ACCESS_CONTROL,
         ]
 
         for capability in capabilities:
@@ -85,7 +99,7 @@ class TestEventMetadata:
     def test_event_metadata_creation(self):
         """Test creating event metadata."""
         metadata = EventMetadata(
-            event_handler_id=generate_event_handler_id(),
+            handler_id=generate_event_handler_id(),
             name="Test Publisher",
             category="publisher",
             handler_type="messaging",
@@ -99,27 +113,27 @@ class TestEventMetadata:
             settings_class="TestSettings",
         )
 
-        assert isinstance(metadata.event_handler_id, UUID)
+        assert isinstance(metadata.handler_id, UUID)
         assert metadata.name == "Test Publisher"
         assert metadata.category == "publisher"
         assert metadata.handler_type == "messaging"
         assert metadata.version == "1.0.0"
         assert metadata.acb_min_version == "0.19.1"
         assert metadata.author == "Test Author"
-        assert metadata.status == EventHandlerStatus.STABLE
+        assert metadata.status == EventHandlerStatus.STABLE.value
         assert metadata.description == "Test event handler"
         assert metadata.settings_class == "TestSettings"
 
     def test_event_metadata_with_capabilities(self):
         """Test event metadata with capabilities."""
         capabilities = [
-            EventCapability.PUB_SUB_MESSAGING,
-            EventCapability.EVENT_FILTERING,
+            EventCapability.MESSAGE_QUEUE_INTEGRATION,
+            EventCapability.TYPE_FILTERING,
             EventCapability.ASYNC_PROCESSING,
         ]
 
         metadata = EventMetadata(
-            event_handler_id=generate_event_handler_id(),
+            handler_id=generate_event_handler_id(),
             name="Advanced Publisher",
             category="publisher",
             handler_type="messaging",
@@ -134,10 +148,11 @@ class TestEventMetadata:
             settings_class="AdvancedSettings",
         )
 
-        assert metadata.capabilities == capabilities
-        assert EventCapability.PUB_SUB_MESSAGING in metadata.capabilities
-        assert EventCapability.EVENT_FILTERING in metadata.capabilities
-        assert EventCapability.ASYNC_PROCESSING in metadata.capabilities
+        # Capabilities are stored as values due to use_enum_values=True
+        assert metadata.capabilities == [c.value for c in capabilities]
+        assert EventCapability.MESSAGE_QUEUE_INTEGRATION.value in metadata.capabilities
+        assert EventCapability.TYPE_FILTERING.value in metadata.capabilities
+        assert EventCapability.ASYNC_PROCESSING.value in metadata.capabilities
 
     def test_event_metadata_with_packages(self):
         """Test event metadata with package requirements."""
@@ -148,7 +163,7 @@ class TestEventMetadata:
         }
 
         metadata = EventMetadata(
-            event_handler_id=generate_event_handler_id(),
+            handler_id=generate_event_handler_id(),
             name="Redis Publisher",
             category="publisher",
             handler_type="messaging",
@@ -279,8 +294,10 @@ class TestEventMetadataTemplate:
         assert template.description == "Test event publisher"
         assert template.version == "1.0.0"  # Default
         assert template.acb_min_version == "0.19.1"  # Default
-        assert template.status == EventHandlerStatus.STABLE  # Default
-        assert template.settings_class == "TestPublisherSettings"  # Default
+        assert template.status == EventHandlerStatus.STABLE.value  # Default
+        assert (
+            template.settings_class == "Test PublisherSettings"
+        )  # Auto-generated from name
 
     def test_create_template_with_kwargs(self):
         """Test creating a template with additional kwargs."""
@@ -292,13 +309,15 @@ class TestEventMetadataTemplate:
             "Advanced event publisher",
             version="2.0.0",
             status=EventHandlerStatus.BETA,
-            capabilities=[EventCapability.PUB_SUB_MESSAGING],
+            capabilities=[EventCapability.MESSAGE_QUEUE_INTEGRATION],
             required_packages=["redis>=4.0.0"],
         )
 
         assert template.version == "2.0.0"
-        assert template.status == EventHandlerStatus.BETA
-        assert template.capabilities == [EventCapability.PUB_SUB_MESSAGING]
+        assert template.status == EventHandlerStatus.BETA.value
+        assert template.capabilities == [
+            EventCapability.MESSAGE_QUEUE_INTEGRATION.value
+        ]
         assert template.required_packages == ["redis>=4.0.0"]
 
 

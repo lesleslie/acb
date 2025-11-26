@@ -34,8 +34,8 @@ class TestEventMetadata:
         assert metadata.source == "test_service"
         assert isinstance(metadata.event_id, UUID)
         assert isinstance(metadata.timestamp, datetime)
-        assert metadata.priority == EventPriority.NORMAL
-        assert metadata.delivery_mode == EventDeliveryMode.FIRE_AND_FORGET
+        assert metadata.priority == EventPriority.NORMAL.value
+        assert metadata.delivery_mode == EventDeliveryMode.FIRE_AND_FORGET.value
 
     def test_event_metadata_with_custom_fields(self):
         """Test event metadata with custom fields."""
@@ -55,8 +55,8 @@ class TestEventMetadata:
 
         assert metadata.event_type == "user.created"
         assert metadata.source == "user_service"
-        assert metadata.priority == EventPriority.HIGH
-        assert metadata.delivery_mode == EventDeliveryMode.AT_LEAST_ONCE
+        assert metadata.priority == EventPriority.HIGH.value
+        assert metadata.delivery_mode == EventDeliveryMode.AT_LEAST_ONCE.value
         assert metadata.routing_key == "users"
         assert metadata.correlation_id == "corr-123"
         assert metadata.max_retries == 5

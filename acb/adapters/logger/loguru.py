@@ -4,6 +4,7 @@ import logging
 from inspect import currentframe
 from uuid import UUID
 
+import asyncio
 import typing as t
 from aioconsole import aprint
 from contextlib import suppress
@@ -153,7 +154,14 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
     @staticmethod
     async def async_sink(message: str) -> None:
         """Async sink for Loguru messages."""
-        await aprint(message, end="")
+        try:
+            # Check if event loop is running before attempting async operation
+            loop = asyncio.get_running_loop()
+            if loop and not loop.is_closed():
+                await aprint(message, end="")
+        except RuntimeError:
+            # Event loop is not available or closed, fall back to sync print
+            print(message, end="")
 
     def _configure_for_testing(self) -> None:
         """Configure logger for testing environment."""
@@ -208,8 +216,20 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
     def _add_primary_sink(self) -> None:
         """Add the primary stdout sink (human-readable)."""
         try:
+            # Check if we can use asyncio before adding the async sink
+            is_async_available = True
+            try:
+                loop = asyncio.get_running_loop()
+                is_async_available = loop and not loop.is_closed()
+            except RuntimeError:
+                # No event loop running
+                is_async_available = False
+
+            # Use async sink if available, otherwise use sync
+            sink_func = self.async_sink if is_async_available else self._sync_print_sink
+
             sink_id = self.add(  # type: ignore[no-untyped-call]
-                self.async_sink,
+                sink_func,
                 filter=t.cast("t.Any", self._filter_by_module),
                 **self.settings.settings,
             )
@@ -219,6 +239,18 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
                 self._add_sync_sink()
             else:
                 raise
+
+    def _sync_print_sink(self, message: str) -> None:
+        """Synchronous sink for Loguru messages."""
+        print(message, end="")
+
+    def _cleanup(self) -> None:
+        """Clean up logger resources before shutdown."""
+        # Remove all handlers to prevent issues during shutdown
+        try:
+            self.remove()  # type: ignore[no-untyped-call]
+        except Exception:
+            pass  # Already removed or other error, ignore
 
     def _add_sync_sink(self) -> None:
         """Add synchronous sink as fallback."""

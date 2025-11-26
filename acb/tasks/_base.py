@@ -384,7 +384,7 @@ class QueueSettings(Settings):
         super().__init__(**values)
 
 
-class QueueBase(ABC, CleanupMixin):
+class QueueBase(CleanupMixin):
     """Abstract base class for queue implementations."""
 
     def __init__(self, settings: QueueSettings | None = None) -> None:
@@ -453,7 +453,6 @@ class QueueBase(ABC, CleanupMixin):
         return self._running
 
     # Task management methods
-    @abstractmethod
     async def enqueue(self, task: TaskData) -> str:
         """Enqueue a task for processing.
 
@@ -463,9 +462,8 @@ class QueueBase(ABC, CleanupMixin):
         Returns:
             Task ID
         """
-        ...
+        raise NotImplementedError("enqueue method must be implemented by subclass")
 
-    @abstractmethod
     async def dequeue(self, queue_name: str | None = None) -> TaskData | None:
         """Dequeue a task for processing.
 
@@ -475,9 +473,8 @@ class QueueBase(ABC, CleanupMixin):
         Returns:
             Task data or None if no tasks available
         """
-        ...
+        raise NotImplementedError("dequeue method must be implemented by subclass")
 
-    @abstractmethod
     async def get_task_status(self, task_id: UUID) -> TaskResult | None:
         """Get task status and result.
 
@@ -487,9 +484,10 @@ class QueueBase(ABC, CleanupMixin):
         Returns:
             Task result or None if not found
         """
-        ...
+        raise NotImplementedError(
+            "get_task_status method must be implemented by subclass"
+        )
 
-    @abstractmethod
     async def cancel_task(self, task_id: UUID) -> bool:
         """Cancel a pending task.
 
@@ -499,10 +497,9 @@ class QueueBase(ABC, CleanupMixin):
         Returns:
             True if task was cancelled
         """
-        ...
+        raise NotImplementedError("cancel_task method must be implemented by subclass")
 
     # Queue management methods
-    @abstractmethod
     async def get_queue_info(self, queue_name: str) -> dict[str, t.Any]:
         """Get information about a queue.
 
@@ -512,9 +509,10 @@ class QueueBase(ABC, CleanupMixin):
         Returns:
             Queue information
         """
-        ...
+        raise NotImplementedError(
+            "get_queue_info method must be implemented by subclass"
+        )
 
-    @abstractmethod
     async def purge_queue(self, queue_name: str) -> int:
         """Remove all tasks from a queue.
 
@@ -524,16 +522,15 @@ class QueueBase(ABC, CleanupMixin):
         Returns:
             Number of tasks removed
         """
-        ...
+        raise NotImplementedError("purge_queue method must be implemented by subclass")
 
-    @abstractmethod
     async def list_queues(self) -> list[str]:
         """List all available queues.
 
         Returns:
             List of queue names
         """
-        ...
+        raise NotImplementedError("list_queues method must be implemented by subclass")
 
     # Worker management methods
     async def start_workers(self, count: int | None = None) -> None:
@@ -729,7 +726,6 @@ class QueueBase(ABC, CleanupMixin):
             await self._store_dead_letter_task(task, result)
             self.logger.warning(f"Moved task {task.task_id} to dead letter queue")
 
-    @abstractmethod
     async def _store_dead_letter_task(self, task: TaskData, result: TaskResult) -> None:
         """Store task in dead letter queue.
 
@@ -737,7 +733,12 @@ class QueueBase(ABC, CleanupMixin):
             task: Failed task
             result: Failure result
         """
-        ...
+        # Default implementation - derived classes should override with actual storage logic
+        self.logger.warning(
+            f"Storing task {task.task_id} in dead letter queue (default implementation)"
+        )
+        # In a real implementation, this would store the task to a persistent storage
+        # for later inspection/reprocessing
 
     async def _on_task_completed(self, task: TaskData, result: TaskResult) -> None:
         """Handle task completion.

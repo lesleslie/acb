@@ -605,6 +605,51 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         except Exception as e:
             self.logger.warning(f"Metrics collection failed: {e}")
 
+    async def _perform_health_check(
+        self, check_type: "HealthCheckType"
+    ) -> "HealthCheckResult":
+        """Implement the required health check method from HealthCheckMixin."""
+        from acb.services.health import HealthCheckResult, HealthStatus
+
+        try:
+            # Perform repository-specific health checks
+            registrations = self.registry.list_registrations()
+            active_transactions = await self.uow_manager.get_active_transactions()
+
+            # Check if there are issues
+            if len(registrations) == 0:
+                status = HealthStatus.DEGRADED
+                message = "No repositories registered"
+            elif len(active_transactions) > 100:  # Arbitrary high number threshold
+                status = HealthStatus.UNHEALTHY
+                message = f"Too many active transactions: {len(active_transactions)}"
+            else:
+                status = HealthStatus.HEALTHY
+                message = f"Repository service operational with {len(registrations)} registered repositories"
+
+            return HealthCheckResult(
+                component_id=self.component_id,
+                component_name=self.component_name,
+                status=status,
+                check_type=check_type,
+                message=message,
+                details={
+                    "registered_repositories": len(registrations),
+                    "active_transactions": len(active_transactions),
+                    "active_repositories": self._repo_metrics.active_repositories,
+                    "coordinator_active": self.coordinator is not None,
+                },
+            )
+        except Exception as e:
+            return HealthCheckResult(
+                component_id=self.component_id,
+                component_name=self.component_name,
+                status=HealthStatus.CRITICAL,
+                check_type=check_type,
+                message=f"Repository service health check error: {str(e)}",
+                error=str(e),
+            )
+
     async def _cleanup_resources(self) -> None:
         """Clean up service resources."""
         await self._stop_background_tasks()
