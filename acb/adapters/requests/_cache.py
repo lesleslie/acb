@@ -147,7 +147,7 @@ class UniversalHTTPCache:
         cache_data = msgspec.msgpack.encode(
             {
                 "status": status,
-                "headers": dict(headers),  # Ensure regular dict
+                "headers": headers.copy(),  # Ensure regular dict
                 "content": content,
                 "cached_at": time.time(),
                 "max_age": ttl,
@@ -260,10 +260,10 @@ class UniversalHTTPCache:
         for directive in cache_control.split(","):
             directive = directive.strip()
             if directive.startswith("max-age="):
-                try:
+                from contextlib import suppress
+
+                with suppress(ValueError, IndexError):
                     return int(directive.split("=")[1])
-                except (ValueError, IndexError):
-                    pass
 
         return None
 

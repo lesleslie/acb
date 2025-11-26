@@ -31,6 +31,7 @@ if t.TYPE_CHECKING:
 
 try:
     import onnxruntime as ort
+
     from transformers import AutoTokenizer
 
     _onnx_available = True

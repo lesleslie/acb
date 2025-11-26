@@ -130,6 +130,8 @@ class LoggerBase(CleanupMixin):
         self._initialized = False
         self._context: dict[str, t.Any] = {}
         self._active_sinks: list[t.Any] = []  # Track active sinks for cleanup
+        # For testing purposes, allow direct config assignment
+        self._config: t.Any = None
 
     @property
     def settings(self) -> LoggerBaseSettings:
@@ -141,9 +143,17 @@ class LoggerBase(CleanupMixin):
     @property
     def config(self) -> Config:
         """Get config from dependency injection system."""
+        if self._config is not None:
+            return self._config  # Return the manually set config (for testing)
+
         from acb.depends import depends
 
         return depends.get_sync(Config)
+
+    @config.setter
+    def config(self, value: Config) -> None:
+        """Set config (for testing purposes)."""
+        self._config = value
 
     # Public methods that delegate to private implementations
     def debug(self, msg: str, *args: t.Any, **kwargs: t.Any) -> None:

@@ -6,21 +6,31 @@ import pytest
 
 from acb.adapters import import_adapter
 from acb.adapters.embedding import EmbeddingResult
-from acb.config import Config
 from acb.depends import depends
 
 
 @pytest.fixture
 def mock_config():
     """Mock configuration for integration tests."""
-    config = MagicMock(spec=Config)
-    config.get.return_value = {
-        "embedding": {
-            "provider": "openai",
-            "api_key": "test-key",
-            "model": "text-embedding-3-small",
-        }
+    # Create a mock that mimics the Config class with necessary attributes
+    config = MagicMock()
+    config.debug = MagicMock()
+    config.app = MagicMock()
+    # For embedding configuration, we'll need to provide a way to access settings
+    # by creating a nested structure similar to what is expected
+    embedding_config = {
+        "provider": "openai",
+        "api_key": "test-key",
+        "model": "text-embedding-3-small",
     }
+
+    # Configure the mock to return the expected values when accessed
+    config.embedding = embedding_config
+    # Also make it work as an attribute or key access
+    config.__getitem__ = (
+        lambda self, key: embedding_config if key == "embedding" else getattr(self, key)
+    )
+
     return config
 
 

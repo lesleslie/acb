@@ -200,25 +200,19 @@ class TestLoggerBase:
 
     def test_get_effective_level(self, mock_config):
         """Test effective level calculation."""
-        from acb.depends import depends
-
-        # Register mock config in DI so property can access it
-        depends.set(Config, mock_config)
-
         logger = MockLogger()
+        logger._config = mock_config
 
         level = logger._get_effective_level()
         assert level == "INFO"
 
     def test_get_effective_level_deployed(self, mock_config):
         """Test effective level in deployed environment."""
-        from acb.depends import depends
-
-        # Register mock config in DI so property can access it
+        # Update mock config to deployed
         mock_config.deployed = True
-        depends.set(Config, mock_config)
 
         logger = MockLogger()
+        logger._config = mock_config
 
         level = logger._get_effective_level()
         assert level == "WARNING"
@@ -279,7 +273,6 @@ class TestLoggerBaseIntegration:
 
     def test_with_real_config(self):
         """Test logger with real config instance."""
-        from acb.config import Config
         from acb.depends import depends
 
         # Create a real config instance

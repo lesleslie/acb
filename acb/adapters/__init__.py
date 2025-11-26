@@ -11,6 +11,7 @@ import asyncio
 
 # Removed nest_asyncio import - not needed in library code
 import typing as t
+import yaml
 from anyio import Path as AsyncPath
 from inflection import camelize
 from pydantic import BaseModel, ConfigDict, Field
@@ -333,12 +334,55 @@ class AdapterNotInstalled(Exception):
 _testing: bool = "pytest" in sys.modules
 _deployed: bool = os.getenv("DEPLOYED", "").lower() in ("1", "true", "yes")
 
+
+def _get_project_root() -> AsyncPath:
+    """Get the project root path based on current working directory when used as a library."""
+    from ..context import get_context
+
+    search_roots = [Path.cwd(), Path(__file__).resolve()]
+
+    for base in search_roots:
+        for candidate in [base] + list(base.parents):
+            pyproject = candidate / "pyproject.toml"
+            if pyproject.exists():
+                return AsyncPath(str(candidate))
+
+    # Fallback to package directory if pyproject not found
+    return AsyncPath(__file__).parent.parent
+
+
 # Path caches
-root_path: AsyncPath = AsyncPath(__file__).parent.parent
+root_path: AsyncPath = _get_project_root()
 config_path: AsyncPath = root_path / "settings"
 settings_path: AsyncPath = root_path / "settings"  # Alias for backward compatibility
 secrets_path: AsyncPath = root_path / ".secrets"
 tmp_path: AsyncPath = AsyncPath(tempfile.gettempdir()) / "acb"
+_adapters_root_hint: AsyncPath | None = None
+
+
+async def _resolve_adapters_root() -> AsyncPath:
+    """Locate the directory that actually contains the adapters package."""
+    global _adapters_root_hint
+
+    if _adapters_root_hint is not None:
+        return _adapters_root_hint
+
+    candidates = [
+        root_path,
+        root_path / "acb",
+        AsyncPath(__file__).parent.parent,
+    ]
+
+    for candidate in candidates:
+        try:
+            if await (candidate / "adapters").exists():
+                _adapters_root_hint = candidate
+                return candidate
+        except FileNotFoundError:
+            continue
+
+    _adapters_root_hint = root_path
+    return root_path
 
 
 # Registry-related functions (moved to registry module)
@@ -346,7 +390,7 @@ def _ensure_adapter_registry_initialized() -> list["Adapter"]:
     """Ensure the adapter registry is initialized with an empty list if needed."""
     registry = adapter_registry.get()
     if registry is None:
-        registry = []
+        registry = core_adapters.copy()
         adapter_registry.set(registry)
     return registry
 
@@ -553,16 +597,31 @@ async def _initialize_adapter(
 
         config = await depends.get(Config)
         setattr(config, adapter_category, adapter_settings)
-    instance = await depends.get(adapter_class)
+
+    # Retrieve or create adapter instance without leaving placeholder values
+    instance: t.Any
+    try:
+        instance = depends.get_sync(adapter_class)
+    except Exception:
+        instance = adapter_class()
+        depends.set(adapter_class, instance)
+    else:
+        if isinstance(instance, (str, tuple)):
+            instance = adapter_class()
+            depends.set(adapter_class, instance)
+
     if hasattr(instance, "init"):
         init_result = instance.init()
         if hasattr(init_result, "__await__"):
             await init_result
-    from acb.logger import Logger
+    # Only try to log if the logger is available to avoid circular dependencies
+    with suppress(Exception):
+        from acb.logger import Logger
 
-    logger = await depends.get(Logger)
-    if hasattr(logger, "debug"):
-        logger.debug(f"Initialized {adapter_category} adapter: {adapter.name}")
+        logger = await depends.get(Logger)
+        # Check if it's actually a logger instance (not an empty tuple)
+        if logger and hasattr(logger, "debug") and hasattr(logger, "__call__"):
+            logger.debug(f"Initialized {adapter_category} adapter: {adapter.name}")
     return instance
 
 
@@ -687,8 +746,77 @@ async def _ensure_adapter_configuration() -> None:
         return
 
     # Load configuration and register adapters
-    adapters_path = root_path / "adapters"
-    await register_adapters(adapters_path)
+    adapters_root = await _resolve_adapters_root()
+    # register_adapters expects the project/package root and handles appending
+    # the adapters directory itself.
+    await register_adapters(adapters_root)
+    await _apply_adapter_configuration()
+
+
+async def _load_adapter_selection_map() -> dict[str, str]:
+    """Load adapter selections from settings/adapters.(y)aml."""
+    for filename in ("adapters.yaml", "adapters.yml"):
+        config_file = settings_path / filename
+        normalized = await _read_adapter_config(config_file)
+        if normalized:
+            return normalized
+    return {}
+
+
+async def _read_adapter_config(config_file: AsyncPath) -> dict[str, str]:
+    """Read and normalize adapter configuration from a single file."""
+    try:
+        if not (await config_file.exists()):
+            return {}
+        raw = await config_file.read_text()
+    except FileNotFoundError:
+        return {}
+    except Exception:
+        return {}
+    return _parse_adapter_config(raw)
+
+
+def _parse_adapter_config(raw: str) -> dict[str, str]:
+    """Parse adapters YAML into normalized mapping."""
+    try:
+        loaded: t.Any = yaml.safe_load(raw) or {}
+    except Exception:
+        return {}
+    if not isinstance(loaded, dict):
+        return {}
+    normalized: dict[str, str] = {}
+    for category, adapter_name in loaded.items():
+        if isinstance(category, str) and isinstance(adapter_name, str):
+            normalized[category.strip().lower()] = adapter_name.strip().lower()
+    return normalized
+
+
+async def _apply_adapter_configuration() -> None:
+    """Enable adapters based on adapters.yaml selections."""
+    selection_map = await _load_adapter_selection_map()
+    registry = _ensure_adapter_registry_initialized()
+    if not registry:
+        return
+
+    normalized_selection = selection_map
+    categories: dict[str, list[Adapter]] = {}
+    for adapter in registry:
+        adapter.enabled = False
+        adapter.installed = False
+        categories.setdefault(adapter.category.lower(), []).append(adapter)
+
+    for category, adapters in categories.items():
+        desired_name = normalized_selection.get(category)
+        if desired_name:
+            for adapter in adapters:
+                adapter.enabled = adapter.name.lower() == desired_name
+                if adapter.enabled:
+                    adapter.installed = True
+        elif len(adapters) == 1:
+            adapters[0].enabled = True
+            adapters[0].installed = True
+
+    _update_adapter_caches()
 
 
 # Registry and discovery functions to be moved to separate modules

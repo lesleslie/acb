@@ -148,14 +148,14 @@ class ModelAdapterMixin:
         data: dict[str, Any],
     ) -> dict[str, Any]:
         """Validate data by attempting to create and serialize an instance."""
-        try:
+        from contextlib import suppress
+
+        with suppress(Exception):
             # Try to create a temporary instance using the adapter's method
             if hasattr(self, "deserialize_to_class"):
                 temp_instance = self.deserialize_to_class(model_class, data)  # type: ignore[attr-defined]
                 if hasattr(self, "serialize"):
                     return self.serialize(temp_instance)  # type: ignore[attr-defined]
-        except Exception:
-            pass
 
         # Fallback: filter data and return
         return self._filter_data_for_model(model_class, data)

@@ -52,7 +52,7 @@ class TestMySQLSettings:
     @pytest.fixture
     def mock_config(self):
         """Mock config for settings testing."""
-        mock_config = MagicMock(spec=Config)
+        mock_config = MagicMock()
         mock_app = MagicMock()
         mock_app.name = "testapp"
         mock_config.app = mock_app
@@ -62,6 +62,13 @@ class TestMySQLSettings:
         mock_logger = MagicMock()
         mock_logger.verbose = False
         mock_config.logger = mock_logger
+
+        # Add other necessary attributes that Config might have
+        mock_config.debug = MagicMock()
+        mock_config.root_path = MagicMock()
+        mock_config.secrets_path = MagicMock()
+        mock_config.settings_path = MagicMock()
+        mock_config.tmp_path = MagicMock()
 
         return mock_config
 

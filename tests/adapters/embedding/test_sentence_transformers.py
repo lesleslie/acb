@@ -10,7 +10,6 @@ from acb.adapters.embedding.sentence_transformers import (
     SentenceTransformersEmbedding,
     SentenceTransformersSettings,
 )
-from acb.config import Config
 from acb.depends import depends
 
 
@@ -39,11 +38,14 @@ def mock_sentence_transformer():
 @pytest.fixture
 def mock_config():
     """Mock configuration."""
-    config = MagicMock(spec=Config)
-    config.get.return_value = {
-        "model": "all-MiniLM-L6-v2",
-        "device": "cpu",
-    }
+    config = MagicMock()
+    # Add necessary attributes that the sentence transformers adapter expects
+    config.debug = MagicMock()
+    config.app = MagicMock()
+    config.app.name = "test_app"
+    config.embedding = MagicMock()
+    config.embedding.model = "all-MiniLM-L6-v2"
+    config.embedding.device = "cpu"
     return config
 
 

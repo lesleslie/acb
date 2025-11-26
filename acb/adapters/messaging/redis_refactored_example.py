@@ -14,7 +14,7 @@ from uuid import UUID
 import asyncio
 import typing as t
 from contextlib import asynccontextmanager, suppress
-from datetime import datetime
+from datetime import UTC, datetime
 from pydantic import Field
 
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
@@ -638,7 +638,7 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
             return {
                 "queue": queue,
                 "message_count": length,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(tz=UTC).isoformat(),
             }
 
         except Exception as e:

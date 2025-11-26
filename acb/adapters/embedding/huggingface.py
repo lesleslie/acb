@@ -31,6 +31,7 @@ if t.TYPE_CHECKING:
 try:
     import torch  # type: ignore[import-not-found,no-redef]
     import torch.nn.functional as F  # type: ignore[import-not-found]
+
     from transformers import (  # type: ignore[import-not-found]
         AutoModel,
         AutoTokenizer,

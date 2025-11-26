@@ -41,7 +41,20 @@ class BasicWorkflowEngine(WorkflowEngine):
         # Initialize logger if not already set by dependency injection
         if not hasattr(self, "logger") or self.logger is None:
             try:
-                self.logger = depends.get_sync(Logger)
+                logger_instance = depends.get_sync(Logger)
+                # Check if it's actually a logger instance with required methods
+                if (
+                    hasattr(logger_instance, "debug")
+                    and hasattr(logger_instance, "warning")
+                    and hasattr(logger_instance, "error")
+                    and hasattr(logger_instance, "exception")
+                ):
+                    self.logger = logger_instance
+                else:
+                    # Fallback to basic logger if DI not configured properly
+                    import logging
+
+                    self.logger = logging.getLogger(__name__)  # type: ignore[assignment]
             except Exception:
                 # Fallback to basic logger if DI not configured (e.g. in tests)
                 import logging

@@ -97,15 +97,22 @@ class TestLoggerProtocol:
 class TestLogger:
     @pytest.fixture
     def mock_config(self) -> t.Generator[MagicMock]:
+        from acb.config import Config
         from acb.depends import depends
 
-        mock_config: MagicMock = MagicMock(spec=Config)
+        # Create a mock that mimics the Config class structure properly
+        mock_config = MagicMock()
         mock_config.logger = LoggerSettings()
         mock_config.deployed = False
         mock_config.debug = MagicMock()
         mock_config.debug.production = False
         mock_config.debug.logger = False
         mock_config.root_path = "/test/path"
+
+        # Ensure the mock Config object has app property as well
+        mock_config.app = MagicMock()
+        mock_config.app.name = "test_app"
+        mock_config.app.title = "Test App"
 
         # Store original config if it exists
         original_config = None

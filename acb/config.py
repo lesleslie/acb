@@ -665,6 +665,20 @@ class Config:
 depends.set(Config, get_singleton_instance(Config))
 get_container().add("config", get_singleton_instance(Config))
 
+# Ensure basic logging is available even if adapter system fails
+try:
+    from .adapters.logger.loguru import Logger
+
+    # Only try to register if the logger adapter is available
+    if Logger:
+        pass  # Will be registered when imported properly
+except ImportError:
+    # If logger can't be imported, register a fallback
+    import logging
+
+    fallback_logger = logging.getLogger("acb_fallback")
+    get_container().add(logging.getLogger().__class__, fallback_logger)
+
 
 def _initialize_config_eagerly_sync() -> None:
     config = depends.get_sync(Config)
@@ -675,8 +689,6 @@ if _should_initialize_eagerly():
     _initialize_config_eagerly_sync()
 
 _ADAPTER_LOCKS: WeakKeyDictionary[t.Any, t.Any] = WeakKeyDictionary()
-
-Logger = None
 
 
 @rich.repr.auto
@@ -691,15 +703,22 @@ class AdapterBase:
                 # In test mode, import_adapter returns MagicMock, so we need to check
                 from unittest.mock import MagicMock
 
-                if isinstance(Logger, MagicMock):
+                # Check if import_adapter returned an empty tuple (dependency not properly registered)
+                if isinstance(Logger, tuple) and len(Logger) == 0:
+                    import logging
+
+                    self._logger = logging.getLogger(self.__class__.__name__)
+                elif isinstance(Logger, MagicMock):
                     import logging
 
                     self._logger = logging.getLogger(self.__class__.__name__)
                 else:
                     logger_instance = depends.get_sync(Logger)
                     # Check if the logger_instance has the required methods
-                    if hasattr(logger_instance, "debug") and hasattr(
-                        logger_instance, "exception"
+                    if (
+                        hasattr(logger_instance, "debug")
+                        and hasattr(logger_instance, "exception")
+                        and not isinstance(logger_instance, tuple)
                     ):
                         self._logger = logger_instance
                     else:

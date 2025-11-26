@@ -163,10 +163,14 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
     def _configure_logger(self) -> None:
         """Configure the main logger."""
         self.remove()  # type: ignore[no-untyped-call]
+
+        def _patch(record: dict[str, t.Any]) -> None:
+            """Ensure required extra fields exist for configured formats."""
+            record["extra"].setdefault("timestamp", record["time"].isoformat())
+            record["extra"]["mod_name"] = self._patch_name(record)
+
         self.configure(  # type: ignore[no-untyped-call]
-            patcher=lambda record: record["extra"].update(
-                mod_name=self._patch_name(record),
-            ),
+            patcher=_patch,
         )
 
         # Set log level based on environment
@@ -231,6 +235,7 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         import sys
 
         from datetime import datetime
+        from loguru._handler import Message  # type: ignore[attr-defined]
 
         def json_formatter(record: dict[str, t.Any]) -> str:
             """Format log record as JSON for AI consumption."""
@@ -260,9 +265,12 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
 
             return json.dumps(event) + "\n"
 
+        def stderr_sink(message: Message) -> None:
+            """Write structured JSON directly to stderr."""
+            sys.stderr.write(json_formatter(message.record))
+
         sink_id = self.add(  # type: ignore[no-untyped-call]
-            sys.stderr,
-            format=json_formatter,
+            stderr_sink,
             level=self.settings.stderr_level,
             colorize=False,
             serialize=False,
@@ -291,7 +299,7 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         self.info(f"App deployed: {self.config.deployed}")  # type: ignore[no-untyped-call]
 
 
-depends.set(Logger, "loguru")
+depends.set(Logger, "loguru")  # Register identifier for proper initialization
 
 
 class InterceptHandler(logging.Handler):

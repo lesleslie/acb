@@ -9,7 +9,6 @@ from pytest_benchmark.fixture import BenchmarkFixture
 from sqlmodel import SQLModel
 
 from acb.adapters.sql.sqlite import Sql, SqlSettings
-from acb.config import Config
 
 
 class MockSqlEngine(MagicMock):
@@ -155,7 +154,17 @@ class TestSqliteSettings:
 class TestSqlite:
     @pytest.fixture
     def mock_config(self) -> MagicMock:
-        mock_config = MagicMock(spec=Config)
+        mock_config = MagicMock()
+
+        # Add standard config attributes
+        mock_config.deployed = False
+        mock_config.debug = MagicMock()
+        mock_config.app = MagicMock()
+        mock_config.app.name = "testapp"
+        mock_config.root_path = MagicMock()
+        mock_config.secrets_path = MagicMock()
+        mock_config.settings_path = MagicMock()
+        mock_config.tmp_path = MagicMock()
 
         mock_sql = MagicMock(spec=SqlSettings)
         mock_sql.database_url = "sqlite:///test.db"
@@ -172,7 +181,17 @@ class TestSqlite:
 
     @pytest.fixture
     def mock_turso_config(self) -> MagicMock:
-        mock_config = MagicMock(spec=Config)
+        mock_config = MagicMock()
+
+        # Add standard config attributes
+        mock_config.deployed = False
+        mock_config.debug = MagicMock()
+        mock_config.app = MagicMock()
+        mock_config.app.name = "testapp"
+        mock_config.root_path = MagicMock()
+        mock_config.secrets_path = MagicMock()
+        mock_config.settings_path = MagicMock()
+        mock_config.tmp_path = MagicMock()
 
         mock_sql = MagicMock(spec=SqlSettings)
         mock_sql.database_url = "libsql://mydb.turso.io?authToken=abc123&secure=true"

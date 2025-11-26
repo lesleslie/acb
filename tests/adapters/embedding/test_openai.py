@@ -7,7 +7,6 @@ import pytest
 
 from acb.adapters.embedding._base import EmbeddingBatch
 from acb.adapters.embedding.openai import OpenAIEmbedding, OpenAIEmbeddingSettings
-from acb.config import Config
 from acb.depends import depends
 
 
@@ -27,11 +26,14 @@ def mock_openai_response():
 @pytest.fixture
 def mock_config():
     """Mock configuration."""
-    config = MagicMock(spec=Config)
-    config.get.return_value = {
-        "api_key": "test-key",
-        "model": "text-embedding-3-small",
-    }
+    config = MagicMock()
+    # Add necessary attributes that the OpenAI adapter expects
+    config.debug = MagicMock()
+    config.app = MagicMock()
+    config.app.name = "test_app"
+    config.embedding = MagicMock()
+    config.embedding.api_key = "test-key"
+    config.embedding.model = "text-embedding-3-small"
     return config
 
 

@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 import asyncio
 import typing as t
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from pydantic import BaseModel, Field
 
 # Re-export common types for convenience
@@ -147,7 +147,7 @@ class PubSubMessage(BaseModel):
 
     # Core identification
     message_id: UUID = Field(default_factory=uuid4)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
     # Pub/sub specific
     topic: str = Field(description="Topic/channel for pub/sub")
@@ -163,7 +163,7 @@ class QueueMessage(BaseModel):
 
     # Core identification
     message_id: UUID = Field(default_factory=uuid4)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
     # Queue specific
     queue: str = Field(description="Target queue name")
@@ -209,7 +209,7 @@ class Subscription(BaseModel):
 
     subscription_id: UUID = Field(default_factory=uuid4)
     topic: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     active: bool = True
 
 
@@ -671,7 +671,7 @@ class ConnectionMixin:
         return {
             "connected": self._connected,
             "capabilities": list(self.get_capabilities()),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(tz=UTC).isoformat(),
         }
 
     def get_capabilities(self) -> set[MessagingCapability]:
