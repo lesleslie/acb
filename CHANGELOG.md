@@ -1,5 +1,16 @@
 ______________________________________________________________________
 
+## [0.31.13] - 2025-11-26
+
+### Changed
+
+- Acb (quality: 70/100) - 2025-11-26 12:37:36
+
+### Fixed
+
+- Resolve zuban type annotation and refurb idiom issues
+- tests: Resolve three test failures for session continuation
+
 ## [0.31.12] - 2025-11-26
 
 ### Changed
