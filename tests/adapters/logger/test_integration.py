@@ -21,8 +21,10 @@ class TestLoggerAdapterIntegration:
 
     def test_logger_adapter_protocol_compliance(self):
         """Test that imported logger adapters implement the protocol."""
-        logger_class = import_adapter("logger")
-        logger_instance = logger_class()
+        # Direct import to bypass test mode mocking in import_adapter
+        from acb.adapters.logger.loguru import Logger
+
+        logger_instance = Logger()
 
         assert isinstance(logger_instance, LoggerProtocol)
 

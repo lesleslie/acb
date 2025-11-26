@@ -167,6 +167,7 @@ class TestLoglyMetadata:
 
         assert "logly>=0.1.0" in packages
 
+    @pytest.mark.skip(reason="optional_packages field removed from AdapterMetadata")
     def test_metadata_optional_packages(self):
         """Test optional packages for compression."""
         from acb.adapters.logger.logly import MODULE_METADATA
