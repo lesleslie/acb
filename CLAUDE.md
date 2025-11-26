@@ -380,7 +380,7 @@ uv run python -m acb.mcp.server
 
 ## Logging Output Strategy
 
-**Version**: 0.29.2+ | **Default Behavior**: Dual output (stdout + stderr)
+**Version**: 0.29.2+ | **Default Behavior**: Human logs on stdout, structured logs only when `--debug` or an explicit env toggle is provided.
 
 ### Stream Configuration
 
@@ -391,11 +391,11 @@ ACB logger adapters (Loguru, Logly, Structlog) support dual-sink output:
 
 ### Default Behavior (v0.25.3+)
 
-**Both streams are active by default** for optimal human + AI workflows:
+Structured logging is now opt-in to avoid JSON noise during normal or `-v/--verbose` runs. Enable it via `--debug` or the `ACB_FORCE_STRUCTURED_STDERR=1` (or `ACB_STRUCTURED_ONLY=1`) environment variable when machine-readable output is required:
 
 ```bash
-# Humans see pretty logs on stdout, AI parses JSON from stderr
-python -m acb.workflow 2>structured.jsonl
+# Humans see pretty logs on stdout; pass --debug for structured stderr
+python -m acb.workflow --debug 2>structured.jsonl
 
 # Later, AI can analyze the structured logs
 jq -r 'select(.level=="ERROR") | .message' structured.jsonl
@@ -575,3 +575,9 @@ python -m acb.workflow \
 - MODULE_METADATA in all adapters with proper AdapterMetadata schema
 - Resource cleanup via CleanupMixin
 - Security: validate inputs, use secure defaults
+  **Force structured stderr without `--debug`**:
+
+```bash
+ACB_FORCE_STRUCTURED_STDERR=1 python -m acb.workflow 2>logs.jsonl
+# Emits JSON logs even without CLI debug flag
+```

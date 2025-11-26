@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "acb"
-version = "0.31.10"
+version = "0.31.11"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },

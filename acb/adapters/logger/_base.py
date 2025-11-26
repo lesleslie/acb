@@ -74,11 +74,33 @@ class LoggerBaseSettings(Settings):
         # Check environment variables for opt-out
         import os
 
-        if os.getenv("ACB_DISABLE_STRUCTURED_STDERR") in ("1", "true", "True"):
-            self.enable_stderr_sink = False
+        structured_only_env = os.getenv("ACB_STRUCTURED_ONLY") in (
+            "1",
+            "true",
+            "True",
+        )
+        disable_structured_env = os.getenv("ACB_DISABLE_STRUCTURED_STDERR") in (
+            "1",
+            "true",
+            "True",
+        )
+        force_structured_env = os.getenv("ACB_FORCE_STRUCTURED_STDERR") in (
+            "1",
+            "true",
+            "True",
+        )
 
-        if os.getenv("ACB_STRUCTURED_ONLY") in ("1", "true", "True"):
-            self.disable_stdout_sink = True
+        if disable_structured_env:
+            self.enable_stderr_sink = False
+        elif structured_only_env:
+            if "disable_stdout_sink" not in values:
+                self.disable_stdout_sink = True
+            self.enable_stderr_sink = True
+        elif force_structured_env:
+            self.enable_stderr_sink = True
+        elif "enable_stderr_sink" not in values and not self._is_cli_debug_enabled():
+            # Default to human-friendly output unless --debug is explicitly provided.
+            self.enable_stderr_sink = False
 
         if os.getenv("ACB_ENABLE_OTEL") in ("1", "true", "True"):
             self.enable_otel = True
@@ -96,6 +118,25 @@ class LoggerBaseSettings(Settings):
             "diagnose": False,
             "colorize": not self.json_output,
         }
+
+    def _is_cli_debug_enabled(self) -> bool:
+        """Detect if CLI debug flag or logger override is set."""
+        import os
+        import sys
+
+        env_override = os.getenv("ACB_LOGGER_DEBUG_MODE")
+        if env_override is not None:
+            return env_override.lower() in ("1", "true", "yes", "on")
+
+        try:
+            argv = sys.argv[1:]
+        except Exception:
+            return False
+
+        for arg in argv:
+            if arg == "--debug" or arg.startswith("--debug="):
+                return True
+        return False
 
 
 @t.runtime_checkable
