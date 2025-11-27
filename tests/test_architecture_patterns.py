@@ -38,13 +38,13 @@ class TestServiceBasePattern:
                 )
                 super().__init__(service_config=service_config)
                 self._initialized = False
-                self._shutdown = False
+                self._has_shutdown = False
 
             async def _initialize(self) -> None:
                 self._initialized = True
 
             async def _shutdown(self) -> None:
-                self._shutdown = True
+                self._has_shutdown = True
 
             async def _health_check(self) -> dict:
                 return {"status": "ok", "test": True}
@@ -62,7 +62,7 @@ class TestServiceBasePattern:
 
         # Test shutdown
         await service.shutdown()
-        assert service._shutdown
+        assert service._has_shutdown
         assert service.status.value == "stopped"
 
 
