@@ -305,12 +305,15 @@ class Logger(LoggerBase):
         if not structlog:
             return
 
-        # Configure stdlib logging to use structlog
-        logging.basicConfig(
-            format="%(message)s",
-            stream=sys.stdout,
-            level=getattr(logging, self._get_effective_level()),
-        )
+        # Only configure if not already configured to avoid duplicate handlers
+        root_logger = logging.getLogger()
+        if not root_logger.handlers:
+            # Configure stdlib logging to use structlog
+            logging.basicConfig(
+                format="%(message)s",
+                stream=sys.stdout,
+                level=getattr(logging, self._get_effective_level()),
+            )
 
         # Wrap existing loggers
         structlog.stdlib.recreate_defaults(

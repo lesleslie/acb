@@ -1,6 +1,6 @@
 """Shared helpers for simple CLI-like tool adapters used in tests.
 
-This is a minimal surface to support the Zuban adapter tests.
+This is a minimal surface for tool adapter implementations.
 """
 
 from __future__ import annotations

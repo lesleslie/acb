@@ -10,7 +10,7 @@ Production code lives under `acb/`, grouped by concern: `acb/actions/` (orchestr
 - `uv run ruff format` / `uv run ruff check` – format and lint the codebase.
 - `uv run pyright` – run strict static typing across `acb/` and `tests/`.
 - `uv run pytest --cov=acb --cov-fail-under=42` – execute the full suite with coverage gate; narrow scope with `-m` or `-k` while iterating.
-- `python -m crackerjack` – run the curated quality workflow (zuban, complexipy, refurb, etc.) before submitting.
+- `python -m crackerjack` – run the curated quality workflow (complexipy, refurb, etc.) before submitting.
 
 ## Coding Style & Naming Conventions
 

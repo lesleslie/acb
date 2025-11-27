@@ -8,7 +8,7 @@ ______________________________________________________________________
 
 ### Fixed
 
-- Resolve zuban type annotation and refurb idiom issues
+- Resolve type annotation and refurb idiom issues
 - tests: Resolve three test failures for session continuation
 
 ## [0.31.12] - 2025-11-26
@@ -252,7 +252,7 @@ ______________________________________________________________________
 
 ### Fixed
 
-- Add type ignore comments and assertion for zuban type errors
+- Add type ignore comments and assertion for type errors
 - Apply ruff formatting to resolve hook failures
 - Mark obsolete logger tests as skipped after refactoring
 - Remove extra blank line (ruff format)

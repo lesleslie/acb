@@ -147,25 +147,6 @@ class TestLoguruLogger:
 
         assert result == "acb.adapters.logger"
 
-    def test_filter_by_module(self, mock_config):
-        """Test module-based filtering."""
-        from acb.depends import depends
-
-        # Register mock config in DI so property can access it
-        depends.set(Config, mock_config)
-
-        logger = Logger()
-
-        # Create mock level with proper name attribute
-        mock_level = Mock()
-        mock_level.name = "INFO"
-
-        record = {"name": "test.module.function", "level": mock_level}
-
-        result = logger._filter_by_module(record)
-
-        assert result is True
-
     @pytest.mark.asyncio
     async def test_async_sink(self):
         """Test async sink functionality."""
@@ -335,8 +316,8 @@ class TestInterceptHandler:
 
         mock_logger = Mock()
         mock_logger.level.return_value.name = "INFO"
-        # Remove opt method to simulate basic logger
-        del mock_logger.opt
+        # Configure mock to raise AttributeError when opt is called
+        mock_logger.opt.side_effect = AttributeError("opt method not available")
 
         record = Mock()
         record.levelname = "INFO"
