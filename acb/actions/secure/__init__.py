@@ -18,10 +18,10 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from .security_patterns import detect_path_traversal, detect_sql_injection, detect_xss
 
 __all__: list[str] = [
-    "secure",
+    "detect_path_traversal",
     "detect_sql_injection",
     "detect_xss",
-    "detect_path_traversal",
+    "secure",
 ]
 
 

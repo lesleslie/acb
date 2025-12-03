@@ -5,7 +5,6 @@ exposing ACB's capabilities through the Model Context Protocol.
 """
 
 import importlib.util
-from collections.abc import Awaitable, Callable
 
 import typing as t
 from contextlib import suppress
@@ -18,6 +17,9 @@ from acb.depends import depends
 from acb.logger import Logger
 
 from .registry import ComponentRegistry
+
+if t.TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 # Check FastMCP rate limiting middleware availability (Phase 3.3 M2: improved pattern)
 RATE_LIMITING_AVAILABLE = (
@@ -149,7 +151,7 @@ async def execute_action(
         return result
     except Exception as e:
         logger.exception(
-            f"Failed to execute action {action_category}.{action_name}: {e}"
+            f"Failed to execute action {action_category}.{action_name}: {e}",
         )
         raise
 
@@ -246,9 +248,10 @@ async def execute_workflow(
             # Execute based on component type
             if component_type == "action" and component_name and action_name:
                 exec_action: Callable[
-                    [str, str, dict[str, Any] | None], Awaitable[Any]
+                    [str, str, dict[str, Any] | None],
+                    Awaitable[Any],
                 ] = t.cast(
-                    Callable[[str, str, dict[str, Any] | None], Awaitable[Any]],
+                    "Callable[[str, str, dict[str, Any] | None], Awaitable[Any]]",
                     execute_action,
                 )  # type: ignore[no-redef]
                 result = await exec_action(component_name, action_name, parameters)

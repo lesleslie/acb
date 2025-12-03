@@ -43,16 +43,16 @@ def yaml_encode(
                 enc_hook=path_enc_hook,
             ),
         ],
-        Dumper=t.cast(t.Any, dumper_class),
+        Dumper=t.cast("t.Any", dumper_class),
         allow_unicode=True,
         sort_keys=sort_keys,
     )
     if isinstance(result, str):
         return result.encode()
-    return t.cast(bytes, result)  # type: ignore[return-value]
+    return t.cast("bytes", result)  # type: ignore[return-value]
 
 
-msgspec.yaml.encode = t.cast(t.Any, yaml_encode)
+msgspec.yaml.encode = t.cast("t.Any", yaml_encode)
 
 
 @dataclass

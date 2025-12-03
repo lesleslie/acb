@@ -100,14 +100,16 @@ def _import_single_category(
     """
     descriptor = config.get_descriptor(category)
     if not descriptor:
+        msg = f"Not found or not enabled: {category}"
         raise config.not_found_exception(
-            f"Not found or not enabled: {category}",
+            msg,
         )
 
     result = config.try_import(category, descriptor.name)
     if result is None:
+        msg = f"Not found or not enabled: {category}"
         raise config.not_found_exception(
-            f"Not found or not enabled: {category}",
+            msg,
         )
     return result
 
@@ -134,8 +136,9 @@ def _import_multiple_categories(
     for category in categories:
         result = config.try_import(category)
         if not result:
+            msg = f"Not found or not enabled: {category}"
             raise config.not_found_exception(
-                f"Not found or not enabled: {category}",
+                msg,
             )
         results.append(result)
 
@@ -230,8 +233,9 @@ def _auto_detect_from_context(config: RegistryConfig) -> type[t.Any]:
 
     result = config.try_import(category)
     if not result:
+        msg = f"Not found or not enabled: {category}"
         raise config.not_found_exception(
-            f"Not found or not enabled: {category}",
+            msg,
         )
     return result
 

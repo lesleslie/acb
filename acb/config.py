@@ -494,11 +494,13 @@ class Settings(BaseModel):
         when the field doesn't exist or is not a Path instance.
         """
         if not hasattr(self, field_name):
-            raise ValueError(f"Settings class has no field '{field_name}'")
+            msg = f"Settings class has no field '{field_name}'"
+            raise ValueError(msg)
         value = getattr(self, field_name)
         if not isinstance(value, Path):
+            msg = f"Field '{field_name}' must be a Path, got {type(value).__name__}"
             raise ValueError(
-                f"Field '{field_name}' must be a Path, got {type(value).__name__}"
+                msg,
             )
         expanded = value.expanduser()
         expanded.mkdir(parents=True, exist_ok=True)
@@ -704,11 +706,10 @@ class AdapterBase:
                 from unittest.mock import MagicMock
 
                 # Check if import_adapter returned an empty tuple (dependency not properly registered)
-                if isinstance(Logger, tuple) and len(Logger) == 0:
-                    import logging
-
-                    self._logger = logging.getLogger(self.__class__.__name__)
-                elif isinstance(Logger, MagicMock):
+                if (isinstance(Logger, tuple) and len(Logger) == 0) or isinstance(
+                    Logger,
+                    MagicMock,
+                ):
                     import logging
 
                     self._logger = logging.getLogger(self.__class__.__name__)

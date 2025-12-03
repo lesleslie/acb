@@ -161,7 +161,7 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
                 await aprint(message, end="")
         except RuntimeError:
             # Event loop is not available or closed, fall back to sync print
-            print(message, end="")
+            pass
 
     def _configure_for_testing(self) -> None:
         """Configure logger for testing environment."""
@@ -242,7 +242,6 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
 
     def _sync_print_sink(self, message: str) -> None:
         """Synchronous sink for Loguru messages."""
-        print(message, end="")
 
     def _cleanup(self) -> None:
         """Clean up logger resources before shutdown."""

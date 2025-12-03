@@ -84,8 +84,9 @@ class OpenAIEmbeddingSettings(EmbeddingBaseSettings):
     model: str = Field(default=EmbeddingModel.TEXT_EMBEDDING_3_SMALL.value)
     batch_size: int = Field(default=100)  # OpenAI supports up to 2048 inputs
 
-    class Config:
-        env_prefix = "OPENAI_"
+    model_config = {
+        "env_prefix": "OPENAI_",
+    }
 
 
 class OpenAIEmbedding(EmbeddingAdapter):
@@ -114,7 +115,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
                 msg = "OpenAI library not available"
                 raise ImportError(msg)
             # Cast settings to access OpenAI-specific fields
-            settings = t.cast(OpenAIEmbeddingSettings, self._settings)
+            settings = t.cast("OpenAIEmbeddingSettings", self._settings)
             self._client = AsyncOpenAI(  # type: ignore[assignment]
                 api_key=self._settings.api_key.get_secret_value()
                 if self._settings.api_key
@@ -232,7 +233,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
         Returns:
             Request parameters dictionary
         """
-        settings = t.cast(OpenAIEmbeddingSettings, self._settings)
+        settings = t.cast("OpenAIEmbeddingSettings", self._settings)
         request_params: dict[str, t.Any] = {
             "input": batch_texts,
             "model": model,
@@ -399,7 +400,7 @@ class OpenAIEmbedding(EmbeddingAdapter):
 
     async def _apply_rate_limit(self) -> None:
         """Apply rate limiting to API requests."""
-        settings = t.cast(OpenAIEmbeddingSettings, self._settings)
+        settings = t.cast("OpenAIEmbeddingSettings", self._settings)
         current_time = time.time()
         time_since_last = current_time - self._last_request_time
 

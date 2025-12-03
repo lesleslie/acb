@@ -17,10 +17,14 @@ try:
     # Suppress Pydantic deprecation warnings from redis_om
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            "ignore", category=DeprecationWarning, module="redis_om"
+            "ignore",
+            category=DeprecationWarning,
+            module="redis_om",
         )
         warnings.filterwarnings(
-            "ignore", category=DeprecationWarning, module="pydantic"
+            "ignore",
+            category=DeprecationWarning,
+            module="pydantic",
         )
         from redis_om import HashModel
 

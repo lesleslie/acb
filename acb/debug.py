@@ -17,12 +17,12 @@ _pformat = devtools_pformat
 pformat = devtools_pformat
 
 __all__ = [
+    "_pformat",
     "colorized_stderr_print",
     "debug",
     "get_calling_module",
     "patch_record",
     "print_debug_info",
-    "_pformat",
 ]
 _deployed: bool = os.getenv("DEPLOYED", "False").lower() == "true"
 

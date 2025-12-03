@@ -344,28 +344,25 @@ from contextlib import AbstractAsyncContextManager as AsyncContextManager
 from datetime import datetime
 from typing import Protocol
 
-if t.TYPE_CHECKING:
-    pass
-
 # Re-export for convenience
 __all__ = [
+    "EntityProtocol",
+    "Event",
+    "EventHandler",
+    # Events
+    "EventServiceProtocol",
+    "PerformanceBudget",
+    "PerformanceMetrics",
+    # Performance
+    "PerformanceServiceProtocol",
     # Repository
     "RepositoryServiceProtocol",
     "UnitOfWork",
-    "EntityProtocol",
-    # Validation
-    "ValidationServiceProtocol",
     "ValidationResult",
     "ValidationRule",
+    # Validation
+    "ValidationServiceProtocol",
     "ValidationSeverity",
-    # Performance
-    "PerformanceServiceProtocol",
-    "PerformanceMetrics",
-    "PerformanceBudget",
-    # Events
-    "EventServiceProtocol",
-    "Event",
-    "EventHandler",
     # Workflow
     "WorkflowServiceProtocol",
     "WorkflowState",

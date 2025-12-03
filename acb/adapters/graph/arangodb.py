@@ -258,7 +258,9 @@ class Graph(GraphBase):
         self,
         cursor: t.Any,
     ) -> tuple[
-        list[dict[str, t.Any]], dict[str, GraphNodeModel], dict[str, GraphEdgeModel]
+        list[dict[str, t.Any]],
+        dict[str, GraphNodeModel],
+        dict[str, GraphEdgeModel],
     ]:
         """Parse cursor records into categorized results using set-based deduplication."""
         records = []
@@ -788,7 +790,8 @@ class Graph(GraphBase):
         return collections
 
     def _prepare_node_properties(
-        self, properties: dict[str, t.Any]
+        self,
+        properties: dict[str, t.Any],
     ) -> dict[str, t.Any]:
         prepared = properties.copy()
         timestamp = datetime.now().isoformat()

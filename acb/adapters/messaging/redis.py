@@ -143,12 +143,15 @@ def _get_coredis_imports() -> dict[str, t.Any]:
                     "ConnectionError": ConnectionError,
                     "RedisError": RedisError,
                     "TimeoutError": TimeoutError,
-                }
+                },
             )
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "coredis is required for RedisQueue. "
                 "Install with: pip install coredis>=4.0.0"
+            )
+            raise ImportError(
+                msg,
             ) from e
 
     return _coredis_imports
@@ -244,7 +247,7 @@ class RedisMessaging(CleanupMixin):
             from acb.adapters import import_adapter
 
             logger_cls = import_adapter("logger")
-            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
+            self._logger = t.cast("LoggerType", depends.get_sync(logger_cls))
         return self._logger
 
     # ========================================================================
@@ -279,11 +282,11 @@ class RedisMessaging(CleanupMixin):
                         # Create Redis client
                         if self._settings.enable_clustering:
                             self._client = imports["RedisCluster"](
-                                connection_pool=self._connection_pool
+                                connection_pool=self._connection_pool,
                             )
                         else:
                             self._client = imports["Redis"](
-                                connection_pool=self._connection_pool
+                                connection_pool=self._connection_pool,
                             )
 
                         # Register for cleanup
@@ -296,8 +299,9 @@ class RedisMessaging(CleanupMixin):
 
                     except Exception as e:
                         self.logger.exception(f"Failed to connect to Redis: {e}")
+                        msg = "Failed to establish Redis connection"
                         raise MessagingConnectionError(
-                            "Failed to establish Redis connection",
+                            msg,
                             original_error=e,
                         ) from e
 
@@ -318,7 +322,7 @@ class RedisMessaging(CleanupMixin):
 
             # Start background tasks
             self._delayed_processor_task = asyncio.create_task(
-                self._process_delayed_messages()
+                self._process_delayed_messages(),
             )
 
             self._connected = True
@@ -381,7 +385,8 @@ class RedisMessaging(CleanupMixin):
             Message ID for tracking
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
 
@@ -437,23 +442,26 @@ class RedisMessaging(CleanupMixin):
                     )
                     await pipe.zadd(target_key.encode(), {message_key.encode(): score})
                     await asyncio.wait_for(
-                        pipe.execute(), timeout=self._settings.send_timeout
+                        pipe.execute(),
+                        timeout=self._settings.send_timeout,
                     )
 
             self.logger.debug(
-                f"Sent message {queue_message.message_id} to queue {queue}"
+                f"Sent message {queue_message.message_id} to queue {queue}",
             )
             return str(queue_message.message_id)
 
         except TimeoutError as e:
+            msg = f"Send operation timed out after {self._settings.send_timeout}s"
             raise MessagingTimeoutError(
-                f"Send operation timed out after {self._settings.send_timeout}s",
+                msg,
                 original_error=e,
             ) from e
         except Exception as e:
             self.logger.exception(f"Failed to send message: {e}")
+            msg = "Failed to send message"
             raise MessagingOperationError(
-                "Failed to send message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -474,7 +482,8 @@ class RedisMessaging(CleanupMixin):
             Message if available, None otherwise
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         timeout = timeout or self._settings.connection_timeout
@@ -486,7 +495,10 @@ class RedisMessaging(CleanupMixin):
             # Use Lua script for atomic operation if available
             if self._settings.use_lua_scripts and "dequeue" in self._lua_scripts:
                 return await self._dequeue_with_lua(
-                    client, queue_key, current_time, timeout
+                    client,
+                    queue_key,
+                    current_time,
+                    timeout,
                 )
 
             # Manual atomic operation using pipeline
@@ -496,13 +508,18 @@ class RedisMessaging(CleanupMixin):
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
+            msg = "Failed to receive message"
             raise MessagingOperationError(
-                "Failed to receive message",
+                msg,
                 original_error=e,
             ) from e
 
     async def _dequeue_with_lua(
-        self, client, queue_key: str, current_time: float, timeout: float
+        self,
+        client,
+        queue_key: str,
+        current_time: float,
+        timeout: float,
     ) -> QueueMessage | None:
         """Helper method to dequeue using Lua script."""
         result = await asyncio.wait_for(
@@ -519,11 +536,14 @@ class RedisMessaging(CleanupMixin):
         if result is None:
             return None
 
-        message_key, message_data = result
+        _message_key, message_data = result
         return QueueMessage.model_validate_json(message_data)
 
     async def _dequeue_manually(
-        self, client, queue_key: str, timeout: float
+        self,
+        client,
+        queue_key: str,
+        timeout: float,
     ) -> QueueMessage | None:
         """Helper method to dequeue using manual pipeline operations."""
         # Get available messages
@@ -579,7 +599,8 @@ class RedisMessaging(CleanupMixin):
         message_key = self._message_key.format(message_id=message_id)
 
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
 
@@ -601,7 +622,8 @@ class RedisMessaging(CleanupMixin):
                     await pipe.zrem(self._processing_key.encode(), message_key.encode())
                     await pipe.delete(message_key.encode())
                     await asyncio.wait_for(
-                        pipe.execute(), timeout=self._settings.ack_timeout
+                        pipe.execute(),
+                        timeout=self._settings.ack_timeout,
                     )
 
             # Remove from local tracking
@@ -611,8 +633,9 @@ class RedisMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message: {e}")
+            msg = "Failed to acknowledge message"
             raise MessagingOperationError(
-                "Failed to acknowledge message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -630,7 +653,8 @@ class RedisMessaging(CleanupMixin):
             requeue: Whether to return message to queue
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         message_key = self._message_key.format(message_id=message_id)
@@ -650,13 +674,16 @@ class RedisMessaging(CleanupMixin):
 
                     async with client.pipeline() as pipe:
                         await pipe.zrem(
-                            self._processing_key.encode(), message_key.encode()
+                            self._processing_key.encode(),
+                            message_key.encode(),
                         )
                         await pipe.zadd(
-                            queue_key.encode(), {message_key.encode(): score}
+                            queue_key.encode(),
+                            {message_key.encode(): score},
                         )
                         await asyncio.wait_for(
-                            pipe.execute(), timeout=self._settings.ack_timeout
+                            pipe.execute(),
+                            timeout=self._settings.ack_timeout,
                         )
             else:
                 # Move to dead letter queue
@@ -667,7 +694,8 @@ class RedisMessaging(CleanupMixin):
                         {message_key.encode(): time.time()},
                     )
                     await asyncio.wait_for(
-                        pipe.execute(), timeout=self._settings.ack_timeout
+                        pipe.execute(),
+                        timeout=self._settings.ack_timeout,
                     )
 
             # Remove from local tracking
@@ -677,8 +705,9 @@ class RedisMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message: {e}")
+            msg = "Failed to reject message"
             raise MessagingOperationError(
-                "Failed to reject message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -689,7 +718,8 @@ class RedisMessaging(CleanupMixin):
             Number of messages purged
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=queue)
@@ -717,8 +747,9 @@ class RedisMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {queue}: {e}")
+            msg = f"Failed to purge queue {queue}"
             raise MessagingOperationError(
-                f"Failed to purge queue {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -729,7 +760,8 @@ class RedisMessaging(CleanupMixin):
             Dict with stats like message_count, consumer_count, etc.
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=queue)
@@ -750,8 +782,9 @@ class RedisMessaging(CleanupMixin):
             }
         except Exception as e:
             self.logger.exception(f"Failed to get queue stats for {queue}: {e}")
+            msg = f"Failed to get queue stats for {queue}"
             raise MessagingOperationError(
-                f"Failed to get queue stats for {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -774,18 +807,21 @@ class RedisMessaging(CleanupMixin):
             async with client.pipeline() as pipe:
                 await pipe.zrem(self._processing_key.encode(), message_key.encode())
                 await pipe.zadd(
-                    self._dead_letter_key.encode(), {message_key.encode(): time.time()}
+                    self._dead_letter_key.encode(),
+                    {message_key.encode(): time.time()},
                 )
                 await pipe.expire(
-                    self._dead_letter_key.encode(), self._settings.dead_letter_ttl
+                    self._dead_letter_key.encode(),
+                    self._settings.dead_letter_ttl,
                 )
                 await pipe.execute()
 
             self.logger.info(f"Message {message.message_id} sent to DLQ: {reason}")
         except Exception as e:
             self.logger.exception(f"Failed to send message to DLQ: {e}")
+            msg = "Failed to send message to DLQ"
             raise MessagingOperationError(
-                "Failed to send message to DLQ",
+                msg,
                 original_error=e,
             ) from e
 
@@ -952,7 +988,8 @@ class RedisMessaging(CleanupMixin):
             QueueTimeoutError: If operation times out
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         timeout = timeout or self._settings.send_timeout
@@ -1002,19 +1039,21 @@ class RedisMessaging(CleanupMixin):
                     await asyncio.wait_for(pipe.execute(), timeout=timeout)
 
             self.logger.debug(
-                f"Sent message {message.message_id} to queue {message.queue}"
+                f"Sent message {message.message_id} to queue {message.queue}",
             )
             return str(message.message_id)
 
         except TimeoutError as e:
+            msg = f"Send operation timed out after {timeout}s"
             raise MessagingTimeoutError(
-                f"Send operation timed out after {timeout}s",
+                msg,
                 original_error=e,
             ) from e
         except Exception as e:
             self.logger.exception(f"Failed to send message: {e}")
+            msg = "Failed to send message"
             raise MessagingOperationError(
-                "Failed to send message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1040,7 +1079,7 @@ class RedisMessaging(CleanupMixin):
         if result is None:
             return None
 
-        message_key, message_data = result
+        _message_key, message_data = result
         return QueueMessage.model_validate_json(message_data)
 
     async def _receive_with_manual_atomic(
@@ -1100,7 +1139,8 @@ class RedisMessaging(CleanupMixin):
             MessagingOperationError: If receive fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         timeout = timeout or self._settings.connection_timeout
@@ -1112,20 +1152,27 @@ class RedisMessaging(CleanupMixin):
             # Use Lua script for atomic operation if available
             if self._settings.use_lua_scripts and "dequeue" in self._lua_scripts:
                 return await self._receive_with_lua_script(
-                    client, queue_key, current_time, timeout
+                    client,
+                    queue_key,
+                    current_time,
+                    timeout,
                 )
 
             # Manual atomic operation using pipeline
             return await self._receive_with_manual_atomic(
-                client, queue_key, current_time, timeout
+                client,
+                queue_key,
+                current_time,
+                timeout,
             )
 
         except TimeoutError:
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
+            msg = "Failed to receive message"
             raise MessagingOperationError(
-                "Failed to receive message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1144,7 +1191,8 @@ class RedisMessaging(CleanupMixin):
             MessagingOperationError: If ack fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         timeout = timeout or self._settings.connection_timeout
@@ -1173,8 +1221,9 @@ class RedisMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message: {e}")
+            msg = "Failed to acknowledge message"
             raise MessagingOperationError(
-                "Failed to acknowledge message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1195,7 +1244,8 @@ class RedisMessaging(CleanupMixin):
             MessagingOperationError: If reject fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         timeout = timeout or self._settings.ack_timeout
@@ -1225,19 +1275,21 @@ class RedisMessaging(CleanupMixin):
                         {message_key.encode(): time.time()},
                     )
                     await pipe.expire(
-                        message_key.encode(), self._settings.dead_letter_ttl
+                        message_key.encode(),
+                        self._settings.dead_letter_ttl,
                     )
 
                 await asyncio.wait_for(pipe.execute(), timeout=timeout)
 
             self.logger.debug(
-                f"Rejected message {message.message_id} (requeue={requeue})"
+                f"Rejected message {message.message_id} (requeue={requeue})",
             )
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message: {e}")
+            msg = "Failed to reject message"
             raise MessagingOperationError(
-                "Failed to reject message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1257,7 +1309,8 @@ class RedisMessaging(CleanupMixin):
             Async generator of messages
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         pubsub_channel = self._pubsub_key.format(topic=topic)
@@ -1283,7 +1336,7 @@ class RedisMessaging(CleanupMixin):
                                 yield message
                             except Exception as e:
                                 self.logger.warning(
-                                    f"Failed to parse pub/sub message: {e}"
+                                    f"Failed to parse pub/sub message: {e}",
                                 )
 
             yield message_generator()
@@ -1332,7 +1385,8 @@ class RedisMessaging(CleanupMixin):
             MessagingOperationError: If deletion fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=name)
@@ -1341,7 +1395,8 @@ class RedisMessaging(CleanupMixin):
             if if_empty:
                 size = await client.zcard(queue_key.encode())
                 if size > 0:
-                    raise MessagingOperationError(f"Queue {name} is not empty")
+                    msg = f"Queue {name} is not empty"
+                    raise MessagingOperationError(msg)
 
             # Get all message keys and delete
             message_keys = await client.zrange(queue_key.encode(), 0, -1)
@@ -1356,8 +1411,9 @@ class RedisMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to delete queue {name}: {e}")
+            msg = f"Failed to delete queue {name}"
             raise MessagingOperationError(
-                f"Failed to delete queue {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1377,7 +1433,8 @@ class RedisMessaging(CleanupMixin):
             MessagingOperationError: If purge fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=name)
@@ -1399,8 +1456,9 @@ class RedisMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {name}: {e}")
+            msg = f"Failed to purge queue {name}"
             raise MessagingOperationError(
-                f"Failed to purge queue {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1420,19 +1478,20 @@ class RedisMessaging(CleanupMixin):
             MessagingOperationError: If operation fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
         queue_key = self._queue_key.format(topic=name)
 
         try:
-            size = await client.zcard(queue_key.encode())
-            return size
+            return await client.zcard(queue_key.encode())
 
         except Exception as e:
             self.logger.exception(f"Failed to get queue size for {name}: {e}")
+            msg = f"Failed to get queue size for {name}"
             raise MessagingOperationError(
-                f"Failed to get queue size for {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1452,7 +1511,8 @@ class RedisMessaging(CleanupMixin):
             MessagingOperationError: If operation fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to Redis")
+            msg = "Not connected to Redis"
+            raise MessagingConnectionError(msg)
 
         client = await self._ensure_client()
 
@@ -1476,8 +1536,9 @@ class RedisMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to list queues: {e}")
+            msg = "Failed to list queues"
             raise MessagingOperationError(
-                "Failed to list queues",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1486,7 +1547,9 @@ class RedisMessaging(CleanupMixin):
     # ========================================================================
 
     async def _get_ready_delayed_messages(
-        self, client: t.Any, current_time: float
+        self,
+        client: t.Any,
+        current_time: float,
     ) -> list[bytes]:
         """Get delayed messages that are ready to be processed."""
         return await client.zrangebyscore(
@@ -1498,7 +1561,9 @@ class RedisMessaging(CleanupMixin):
         )
 
     async def _move_delayed_message_to_queue(
-        self, client: t.Any, message_key: bytes
+        self,
+        client: t.Any,
+        message_key: bytes,
     ) -> None:
         """Move a single delayed message to its target queue."""
         try:
@@ -1629,13 +1694,11 @@ class RedisMessaging(CleanupMixin):
         pattern: bool = False,
     ) -> Subscription:
         """Subscribe to a topic or pattern."""
-        subscription = Subscription(topic=topic)
-        return subscription
+        return Subscription(topic=topic)
 
     async def unsubscribe(self, subscription: Subscription) -> None:
         """Unsubscribe from a topic."""
         # Cleanup handled by context manager in receive_messages
-        pass
 
     @asynccontextmanager  # type: ignore[arg-type]
     async def receive_messages(

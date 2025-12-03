@@ -24,17 +24,6 @@ async def main() -> None:
     # server.run(transport="stdio")  # For Claude Desktop
     # server.run(transport="sse", host="127.0.0.1", port=8000)  # For HTTP/SSE
 
-    print("ACB MCP Server initialized successfully!")
-    print("\nAvailable tools:")
-    print("- list_components: List all ACB components")
-    print("- execute_action: Execute an ACB action")
-    print("- get_adapter_info: Get adapter information")
-    print("- execute_workflow: Run multi-step workflows")
-    print("\nAvailable resources:")
-    print("- registry://components: Component registry")
-    print("- metrics://system: System metrics")
-    print("- config://app: Application configuration")
-
     # Cleanup
     await server.cleanup()
 

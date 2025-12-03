@@ -8,10 +8,10 @@ from typing import Any, TypeVar, get_args, get_origin
 from acb.config import AdapterBase, Settings
 
 __all__ = [
+    "ModelAdapterMixin",
+    "ModelsBase",
     "ModelsBaseSettings",
     "ModelsProtocol",
-    "ModelsBase",
-    "ModelAdapterMixin",
     "T",
 ]
 
@@ -83,13 +83,12 @@ class ModelAdapterMixin:
                     # Attempt to get a dict representation by checking common patterns
                     if hasattr(value, "model_dump"):
                         return value.model_dump()
-                    elif hasattr(value, "dict"):
+                    if hasattr(value, "dict"):
                         return value.dict()
-                    elif hasattr(value, "__dict__"):
+                    if hasattr(value, "__dict__"):
                         return value.__dict__
-                    else:
-                        # Fallback to basic representation
-                        return str(value)
+                    # Fallback to basic representation
+                    return str(value)
                 except Exception:
                     return str(value)
             else:
@@ -102,7 +101,7 @@ class ModelAdapterMixin:
         # Look for common attributes across model types
         for attr_name in dir(instance):
             if not attr_name.startswith("_") and not callable(
-                getattr(instance, attr_name, None)
+                getattr(instance, attr_name, None),
             ):
                 try:
                     value = getattr(instance, attr_name)

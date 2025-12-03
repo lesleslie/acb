@@ -190,9 +190,9 @@ class SecurityTestProvider:
         async def mock_validate_token(token: str) -> dict[str, Any]:
             import asyncio
 
-            auth_delay = t.cast(float, default_behavior["auth_delay"])
-            valid_tokens = t.cast(list[str], default_behavior["valid_tokens"])
-            expired_tokens = t.cast(list[str], default_behavior["expired_tokens"])
+            auth_delay = t.cast("float", default_behavior["auth_delay"])
+            valid_tokens = t.cast("list[str]", default_behavior["valid_tokens"])
+            expired_tokens = t.cast("list[str]", default_behavior["expired_tokens"])
 
             await asyncio.sleep(auth_delay)
 
@@ -329,7 +329,8 @@ class SecurityTestProvider:
 
     @asynccontextmanager
     async def security_test_context(
-        self, test_name: str
+        self,
+        test_name: str,
     ) -> t.AsyncGenerator[t.Callable[[dict[str, Any]], None]]:
         """Context manager for security testing."""
         scan_results: list[dict[str, Any]] = []

@@ -106,8 +106,9 @@ class HuggingFaceEmbeddingSettings(EmbeddingBaseSettings):
     enable_optimization: bool = Field(default=True)
     gradient_checkpointing: bool = Field(default=False)
 
-    class Config:
-        env_prefix = "HUGGINGFACE_"
+    model_config = {
+        "env_prefix": "HUGGINGFACE_",
+    }
 
 
 class HuggingFaceEmbedding(EmbeddingAdapter):

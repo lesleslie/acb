@@ -259,7 +259,8 @@ class ValidationMetrics:
         )
 
         self.max_validation_time_ms = max(
-            self.max_validation_time_ms, validation_time_ms
+            self.max_validation_time_ms,
+            validation_time_ms,
         )
 
         if cache_hit:

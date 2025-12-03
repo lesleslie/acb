@@ -39,7 +39,6 @@ class _MockSubscription:
 
     def __init__(self) -> None:
         """Initialize mock subscription."""
-        pass
 
     async def __aenter__(self) -> t.AsyncGenerator[t.Any]:
         """Start subscription and return async generator."""
@@ -52,7 +51,6 @@ class _MockSubscription:
         exc_tb: t.Any,
     ) -> None:
         """Cleanup subscription."""
-        pass
 
     async def _iterate_messages(self) -> t.AsyncGenerator[t.Any]:
         """Async generator that yields mock messages (none for mock)."""
@@ -71,11 +69,9 @@ class _MockPubSub:
 
     async def connect(self) -> None:
         """Mock connect method."""
-        pass
 
     async def disconnect(self) -> None:
         """Mock disconnect method."""
-        pass
 
     async def publish(
         self,
@@ -94,15 +90,12 @@ class _MockPubSub:
 
     async def unsubscribe(self, topic: str) -> None:
         """Mock unsubscribe method."""
-        pass
 
     async def acknowledge(self, message: t.Any) -> None:
         """Mock acknowledge method."""
-        pass
 
     async def reject(self, message: t.Any, requeue: bool = True) -> None:
         """Mock reject method."""
-        pass
 
     async def enqueue(
         self,
@@ -112,20 +105,20 @@ class _MockPubSub:
         delay_seconds: float = 0.0,
     ) -> None:
         """Mock enqueue method for retries."""
-        pass
 
     async def process_pending_events(self) -> None:
         """Process all pending events."""
         # Process all pending events
         while self._pending_events:
-            topic, payload = self._pending_events.pop(0)
+            _topic, payload = self._pending_events.pop(0)
             # Notify handlers about the event
             for handler in self._handlers:
                 with suppress(Exception):
                     await handler(payload)
 
     def add_event_handler(
-        self, handler: t.Callable[[bytes], t.Awaitable[None]]
+        self,
+        handler: t.Callable[[bytes], t.Awaitable[None]],
     ) -> None:
         """Add an event handler to process events."""
         self._handlers.append(handler)
@@ -564,7 +557,9 @@ class EventPublisher(EventPublisherBase):
             raise
 
     async def _process_queue_message(
-        self, worker_name: str, queue_message: t.Any
+        self,
+        worker_name: str,
+        queue_message: t.Any,
     ) -> None:
         """Process a single queue message containing an event."""
         from msgspec import msgpack
@@ -605,7 +600,9 @@ class EventPublisher(EventPublisherBase):
         await asyncio.sleep(0.01)  # Brief pause to prevent busy waiting
 
     async def _process_message_stream(
-        self, worker_name: str, topic_pattern: str
+        self,
+        worker_name: str,
+        topic_pattern: str,
     ) -> None:
         """Process message stream from pubsub subscription."""
         async with self._pubsub.subscribe(topic_pattern) as messages:
@@ -646,7 +643,8 @@ class EventPublisher(EventPublisherBase):
         if not (matching_subs := await self._find_matching_subscriptions(event)):
             if self._settings.log_events:
                 self._logger.debug(
-                    "No handlers for event: %s", event.metadata.event_type
+                    "No handlers for event: %s",
+                    event.metadata.event_type,
                 )
             return
 
@@ -818,14 +816,13 @@ class EventPublisher(EventPublisherBase):
                     event.metadata.max_retries,
                     delay,
                 )
-        else:
-            # Failed events that can't retry will go to dead letter queue via queue adapter
-            if self._settings.log_events:
-                self._logger.warning(
-                    "Event %s exhausted retries (will go to DLQ): %s",
-                    event.metadata.event_id,
-                    event.error_message,
-                )
+        # Failed events that can't retry will go to dead letter queue via queue adapter
+        elif self._settings.log_events:
+            self._logger.warning(
+                "Event %s exhausted retries (will go to DLQ): %s",
+                event.metadata.event_id,
+                event.error_message,
+            )
             # The queue adapter will handle DLQ when message is rejected
 
     async def _process_event_for_subscriptions(self, event: Event) -> None:

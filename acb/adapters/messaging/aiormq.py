@@ -145,12 +145,15 @@ def _get_aiormq_imports() -> dict[str, t.Any]:
                     "connect": aiormq.connect,
                     "Message": aiormq.Message,
                     "ExchangeType": aiormq.ExchangeType,
-                }
+                },
             )
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "aiormq is required for AioRmqMessaging. "
                 "Install with: pip install aiormq>=6.7.1"
+            )
+            raise ImportError(
+                msg,
             ) from e
 
     return _aiormq_imports
@@ -275,7 +278,7 @@ class AioRmqMessaging(CleanupMixin):
             from acb.adapters import import_adapter
 
             logger_cls = import_adapter("logger")
-            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
+            self._logger = t.cast("LoggerType", depends.get_sync(logger_cls))
         return self._logger
 
     # ========================================================================
@@ -309,15 +312,16 @@ class AioRmqMessaging(CleanupMixin):
                         # Create main channel
                         self._channel = await self._connection.channel()
                         await self._channel.set_qos(
-                            prefetch_count=self._settings.prefetch_count
+                            prefetch_count=self._settings.prefetch_count,
                         )
 
                         # Register for cleanup
                         self.register_resource(self._connection)
 
                     except Exception as e:
+                        msg = "Failed to establish aiormq connection"
                         raise MessagingConnectionError(
-                            "Failed to establish aiormq connection",
+                            msg,
                             original_error=e,
                         ) from e
 
@@ -345,15 +349,16 @@ class AioRmqMessaging(CleanupMixin):
                     # Create main channel
                     self._channel = await self._connection.channel()
                     await self._channel.set_qos(
-                        prefetch_count=self._settings.prefetch_count
+                        prefetch_count=self._settings.prefetch_count,
                     )
 
                     # Register for cleanup
                     self.register_resource(self._connection)
 
                 except Exception as e:
+                    msg = "Failed to establish aiormq connection"
                     raise MessagingConnectionError(
-                        "Failed to establish aiormq connection",
+                        msg,
                         original_error=e,
                     ) from e
 
@@ -362,7 +367,7 @@ class AioRmqMessaging(CleanupMixin):
 
             # Start background tasks
             self._delayed_processor_task = asyncio.create_task(
-                self._process_delayed_messages()
+                self._process_delayed_messages(),
             )
 
             self._connected = True
@@ -434,7 +439,7 @@ class AioRmqMessaging(CleanupMixin):
                             self._dlx_exchange is not None
                             if self._settings.enable_dlx
                             else True,
-                        ]
+                        ],
                     ),
                     "active_queues": len(self._queues),
                     "active_consumers": len(self._consumers),
@@ -456,7 +461,8 @@ class AioRmqMessaging(CleanupMixin):
     async def _setup_exchanges(self) -> None:
         """Setup aiormq exchanges."""
         if not self._channel:
-            raise MessagingConnectionError("Channel not available")
+            msg = "Channel not available"
+            raise MessagingConnectionError(msg)
 
         imports = _get_aiormq_imports()
         ExchangeType = imports["ExchangeType"]
@@ -492,8 +498,10 @@ class AioRmqMessaging(CleanupMixin):
                     self._settings.enable_delayed_plugin = False
 
         except Exception as e:
+            msg = "Failed to setup aiormq exchanges"
             raise MessagingConnectionError(
-                "Failed to setup aiormq exchanges", original_error=e
+                msg,
+                original_error=e,
             ) from e
 
     async def _ensure_queue(self, name: str) -> t.Any:
@@ -510,7 +518,8 @@ class AioRmqMessaging(CleanupMixin):
         """
         if name not in self._queues:
             if not self._channel:
-                raise MessagingConnectionError("Channel not available")
+                msg = "Channel not available"
+                raise MessagingConnectionError(msg)
 
             try:
                 # Queue arguments
@@ -546,8 +555,10 @@ class AioRmqMessaging(CleanupMixin):
 
             except Exception as e:
                 self.logger.exception(f"Failed to create queue {name}: {e}")
+                msg = f"Failed to create queue {name}"
                 raise MessagingOperationError(
-                    f"Failed to create queue {name}", original_error=e
+                    msg,
+                    original_error=e,
                 ) from e
 
         return self._queues[name]
@@ -576,7 +587,8 @@ class AioRmqMessaging(CleanupMixin):
             MessagingTimeoutError: If operation times out
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
         timeout = timeout or self._settings.send_timeout
@@ -617,18 +629,22 @@ class AioRmqMessaging(CleanupMixin):
             return str(message.message_id)
 
         except TimeoutError as e:
+            msg = f"Send operation timed out after {timeout}s"
             raise MessagingTimeoutError(
-                f"Send operation timed out after {timeout}s",
+                msg,
                 original_error=e,
             ) from e
         except Exception as e:
+            msg = "Failed to send message"
             raise MessagingOperationError(
-                "Failed to send message",
+                msg,
                 original_error=e,
             ) from e
 
     async def _send_delayed_message(
-        self, message: QueueMessage, rmq_message: t.Any
+        self,
+        message: QueueMessage,
+        rmq_message: t.Any,
     ) -> None:
         """Send a delayed message using TTL+DLQ pattern.
 
@@ -688,7 +704,8 @@ class AioRmqMessaging(CleanupMixin):
             MessagingOperationError: If receive fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
         queue = await self._ensure_queue(topic)
@@ -696,7 +713,8 @@ class AioRmqMessaging(CleanupMixin):
         try:
             # Get message with no-ack (will ack manually)
             rmq_message = await queue.get(
-                timeout=timeout or self._settings.receive_timeout, fail=False
+                timeout=timeout or self._settings.receive_timeout,
+                fail=False,
             )
 
             if rmq_message is None:
@@ -720,7 +738,7 @@ class AioRmqMessaging(CleanupMixin):
             self._processing_messages[str(message.message_id)] = (message, rmq_message)
 
             self.logger.debug(
-                f"Received message {message.message_id} from topic {topic}"
+                f"Received message {message.message_id} from topic {topic}",
             )
             return message
 
@@ -728,8 +746,9 @@ class AioRmqMessaging(CleanupMixin):
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
+            msg = "Failed to receive message"
             raise MessagingOperationError(
-                "Failed to receive message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -750,8 +769,9 @@ class AioRmqMessaging(CleanupMixin):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state"
+                msg,
             )
 
         try:
@@ -770,8 +790,9 @@ class AioRmqMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message: {e}")
+            msg = "Failed to acknowledge message"
             raise MessagingOperationError(
-                "Failed to acknowledge message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -794,8 +815,9 @@ class AioRmqMessaging(CleanupMixin):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state"
+                msg,
             )
 
         try:
@@ -814,8 +836,9 @@ class AioRmqMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message: {e}")
+            msg = "Failed to reject message"
             raise MessagingOperationError(
-                "Failed to reject message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -835,7 +858,8 @@ class AioRmqMessaging(CleanupMixin):
             Async generator of messages
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
         queue = await self._ensure_queue(topic)
@@ -889,7 +913,8 @@ class AioRmqMessaging(CleanupMixin):
                         try:
                             # Get message with timeout
                             message = await asyncio.wait_for(
-                                message_queue.get(), timeout=1.0
+                                message_queue.get(),
+                                timeout=1.0,
                             )
                             yield message
                         except TimeoutError:
@@ -927,7 +952,8 @@ class AioRmqMessaging(CleanupMixin):
             **options: Backend-specific options (e.g., durable, auto_delete)
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         # Queue will be created by _ensure_queue
         await self._ensure_queue(name)
@@ -948,7 +974,8 @@ class AioRmqMessaging(CleanupMixin):
             MessagingOperationError: If deletion fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
 
@@ -966,8 +993,9 @@ class AioRmqMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to delete queue {name}: {e}")
+            msg = f"Failed to delete queue {name}"
             raise MessagingOperationError(
-                f"Failed to delete queue {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -987,7 +1015,8 @@ class AioRmqMessaging(CleanupMixin):
             MessagingOperationError: If purge fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
 
@@ -1002,8 +1031,9 @@ class AioRmqMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {name}: {e}")
+            msg = f"Failed to purge queue {name}"
             raise MessagingOperationError(
-                f"Failed to purge queue {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1023,7 +1053,8 @@ class AioRmqMessaging(CleanupMixin):
             MessagingOperationError: If operation fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
 
@@ -1037,8 +1068,9 @@ class AioRmqMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to get queue size for {name}: {e}")
+            msg = f"Failed to get queue size for {name}"
             raise MessagingOperationError(
-                f"Failed to get queue size for {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1138,10 +1170,9 @@ class AioRmqMessaging(CleanupMixin):
     ) -> Subscription:
         """Subscribe to a topic or pattern."""
         # Create subscription object
-        subscription = Subscription(
+        return Subscription(
             topic=topic,
         )
-        return subscription
 
     async def unsubscribe(self, subscription: Subscription) -> None:
         """Unsubscribe from a topic."""
@@ -1254,7 +1285,7 @@ class AioRmqMessaging(CleanupMixin):
         Returns:
             Set of supported capabilities
         """
-        capabilities = {
+        return {
             MessagingCapability.BASIC_QUEUE,
             MessagingCapability.PUB_SUB,
             MessagingCapability.PRIORITY_QUEUE,
@@ -1268,8 +1299,6 @@ class AioRmqMessaging(CleanupMixin):
             MessagingCapability.BROADCAST,
             MessagingCapability.BATCH_OPERATIONS,
         }
-
-        return capabilities
 
 
 # Factory function

@@ -471,7 +471,7 @@ class Queue(QueueBase):
             self.logger.info(f"Cancelled task {task_id}")
             return True
         except Exception as e:
-            self.logger.error(f"Failed to cancel task {task_id}: {e}")
+            self.logger.exception(f"Failed to cancel task {task_id}: {e}")
             return False
 
     async def get_queue_info(self, queue_name: str) -> dict[str, t.Any]:
@@ -656,7 +656,7 @@ class Queue(QueueBase):
         )
 
         self.logger.info(
-            f"Added cron job {task.task_id} with expression: {cron_expression}"
+            f"Added cron job {task.task_id} with expression: {cron_expression}",
         )
 
         return task.task_id
@@ -730,7 +730,7 @@ class Queue(QueueBase):
             self.logger.info(f"Paused job {task_id}")
             return True
         except Exception as e:
-            self.logger.error(f"Failed to pause job {task_id}: {e}")
+            self.logger.exception(f"Failed to pause job {task_id}: {e}")
             return False
 
     async def resume_job(self, task_id: UUID) -> bool:
@@ -748,7 +748,7 @@ class Queue(QueueBase):
             self.logger.info(f"Resumed job {task_id}")
             return True
         except Exception as e:
-            self.logger.error(f"Failed to resume job {task_id}: {e}")
+            self.logger.exception(f"Failed to resume job {task_id}: {e}")
             return False
 
     async def modify_job(
@@ -771,7 +771,7 @@ class Queue(QueueBase):
             self.logger.info(f"Modified job {task_id}")
             return True
         except Exception as e:
-            self.logger.error(f"Failed to modify job {task_id}: {e}")
+            self.logger.exception(f"Failed to modify job {task_id}: {e}")
             return False
 
     async def get_job_info(self, task_id: UUID) -> dict[str, t.Any] | None:

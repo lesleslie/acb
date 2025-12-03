@@ -40,9 +40,10 @@ class SampleUserWithConfig(BaseModel):
     id: int
     name: str
 
-    class Config:
-        collection_name = "users"
-        primary_key = "id"
+    model_config = {
+        "collection_name": "users",
+        "primary_key": "id",
+    }
 
 
 class SampleUserWithModelConfig(BaseModel):
@@ -326,8 +327,9 @@ class TestPydanticModelAdapter:
         class TestModel(BaseModel):
             id: int
 
-            class Config:
-                tablename = "test_table"
+            model_config = {
+                "tablename": "test_table",
+            }
 
         # Test that adapter reads tablename from Config
         name = adapter.get_entity_name(TestModel)
@@ -383,7 +385,7 @@ class TestPydanticModelAdapter:
 
         adapter = PydanticModelAdapter()
         name = adapter.get_entity_name(SampleUser)
-        assert name == "testuser"
+        assert name == "sampleuser"
 
     def test_get_field_mapping_with_model_fields(self) -> None:
         """Test getting field mapping with model_fields."""

@@ -104,7 +104,7 @@ class VersionInfo(BaseModel):
                 "patch": patch,
                 "pre_release": pre_release,
                 "build": build,
-            }
+            },
         )
 
     def __str__(self) -> str:

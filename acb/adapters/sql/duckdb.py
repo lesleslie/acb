@@ -8,7 +8,6 @@ from uuid import UUID
 import typing as t
 from pydantic import Field, SecretStr, field_validator
 from sqlalchemy import text
-from sqlalchemy.engine import URL
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.pool import NullPool
 
@@ -16,6 +15,9 @@ from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
 from acb.depends import depends
 
 from ._base import SqlBase, SqlBaseSettings
+
+if t.TYPE_CHECKING:
+    from sqlalchemy.engine import URL
 
 MODULE_ID = UUID("019a1b1a-7a1a-76d7-8d8b-9b1f8f7d6c0e")
 MODULE_STATUS = AdapterStatus.BETA
@@ -192,7 +194,7 @@ class Sql(SqlBase):
         await conn.execute(
             text("SET temp_directory=:temp_directory").bindparams(
                 temp_directory=self.config.sql.temp_directory,
-            )
+            ),
         )
 
     async def _create_client(self) -> t.Any:
@@ -219,7 +221,7 @@ class Sql(SqlBase):
 
         if self.config.sql.read_only:
             self.logger.info(
-                "DuckDB adapter running in read-only mode; skipping schema sync"
+                "DuckDB adapter running in read-only mode; skipping schema sync",
             )
             return
 

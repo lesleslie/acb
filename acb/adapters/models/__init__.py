@@ -41,19 +41,19 @@ from acb.adapters.models._sqlalchemy import SQLAlchemyModelAdapter
 from acb.adapters.models._sqlmodel import SQLModelAdapter
 
 __all__ = [
-    "ModelsAdapter",
-    "ModelsSettings",
-    "PydanticModelAdapter",
-    "SQLAlchemyModelAdapter",
-    "SQLModelAdapter",
     # Query interface exports
     "ACBQuery",
     "DatabaseAdapter",
     "ModelAdapter",
-    "QueryRegistry",
-    "registry",
     # Base classes and mixins
     "ModelAdapterMixin",
+    "ModelsAdapter",
+    "ModelsSettings",
+    "PydanticModelAdapter",
+    "QueryRegistry",
+    "SQLAlchemyModelAdapter",
+    "SQLModelAdapter",
+    "registry",
 ]
 
 
@@ -133,10 +133,14 @@ class ModelsAdapter(ModelsBase):
             # Suppress Pydantic deprecation warnings from redis_om
             with warnings.catch_warnings():
                 warnings.filterwarnings(
-                    "ignore", category=DeprecationWarning, module="redis_om"
+                    "ignore",
+                    category=DeprecationWarning,
+                    module="redis_om",
                 )
                 warnings.filterwarnings(
-                    "ignore", category=DeprecationWarning, module="pydantic"
+                    "ignore",
+                    category=DeprecationWarning,
+                    module="pydantic",
                 )
                 from redis_om import HashModel
 

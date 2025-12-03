@@ -9,10 +9,12 @@ from __future__ import annotations
 from sqlalchemy import asc, desc, select
 from sqlalchemy import delete as sql_delete
 from sqlmodel import SQLModel
-from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from acb.adapters.models._query import DatabaseAdapter
+
+if TYPE_CHECKING:
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
 T = TypeVar("T", bound=SQLModel)
 
@@ -147,7 +149,7 @@ class SQLDatabaseAdapter(DatabaseAdapter[T]):
         if order_by:
             order_column = getattr(model, order_by)
             stmt = stmt.order_by(
-                desc(order_column) if descending else asc(order_column)
+                desc(order_column) if descending else asc(order_column),
             )
 
         # Add limit

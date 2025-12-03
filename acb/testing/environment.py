@@ -85,7 +85,11 @@ async def run_acb_test_suite(
     execution_time = asyncio.get_event_loop().time() - start_time
 
     return _build_test_summary(
-        test_functions, results, execution_time, parallel, environment_config
+        test_functions,
+        results,
+        execution_time,
+        parallel,
+        environment_config,
     )
 
 
@@ -136,7 +140,8 @@ async def _execute_test_function(test_func: t.Callable[..., t.Any]) -> t.Any:
 
 
 def _create_test_result(
-    test_func: t.Callable[..., t.Any], result: t.Any
+    test_func: t.Callable[..., t.Any],
+    result: t.Any,
 ) -> dict[str, t.Any]:
     """Create test result from function and execution result."""
     if isinstance(result, BaseException):
@@ -145,7 +150,8 @@ def _create_test_result(
 
 
 def _create_success_result(
-    test_func: t.Callable[..., t.Any], result: t.Any
+    test_func: t.Callable[..., t.Any],
+    result: t.Any,
 ) -> dict[str, t.Any]:
     """Create success result."""
     return {
@@ -156,7 +162,8 @@ def _create_success_result(
 
 
 def _create_failure_result(
-    test_func: t.Callable[..., t.Any], error: BaseException
+    test_func: t.Callable[..., t.Any],
+    error: BaseException,
 ) -> dict[str, t.Any]:
     """Create failure result."""
     return {

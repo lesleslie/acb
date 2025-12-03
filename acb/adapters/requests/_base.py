@@ -35,5 +35,3 @@ class RequestsProtocol(t.Protocol):
 
 class RequestsBase(AdapterBase):
     """Base class for all requests adapters."""
-
-    ...

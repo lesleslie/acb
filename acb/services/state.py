@@ -439,7 +439,8 @@ class PersistentStateManager(StateManager):
         repository = await self._ensure_repository()
         try:
             result = await t.cast("t.Any", repository.delete_by_key)(
-                "state_entries", key
+                "state_entries",
+                key,
             )
             return result is not None
         except Exception:

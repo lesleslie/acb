@@ -102,7 +102,10 @@ class BenchmarkRunner:
         self.results: list[dict[str, t.Any]] = []
 
     async def _execute_function(
-        self, func: t.Callable[..., t.Any], *args: t.Any, **kwargs: t.Any
+        self,
+        func: t.Callable[..., t.Any],
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> None:
         """Execute function (async or sync)."""
         if asyncio.iscoroutinefunction(func):
@@ -111,7 +114,10 @@ class BenchmarkRunner:
             func(*args, **kwargs)
 
     async def _run_warmup_rounds(
-        self, func: t.Callable[..., t.Any], *args: t.Any, **kwargs: t.Any
+        self,
+        func: t.Callable[..., t.Any],
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> None:
         """Run warmup rounds before benchmark."""
         for _ in range(self.warmup_rounds):
@@ -143,7 +149,9 @@ class BenchmarkRunner:
             memory_peaks.append(memory_peak - baseline_memory)
 
     def _calculate_execution_stats(
-        self, test_name: str, execution_times: list[float]
+        self,
+        test_name: str,
+        execution_times: list[float],
     ) -> dict[str, t.Any]:
         """Calculate execution statistics."""
         return {
@@ -344,7 +352,10 @@ class MetricsCollector:
         self.start_time = time.perf_counter()
 
     def record_metric(
-        self, name: str, value: float, tags: dict[str, t.Any] | None = None
+        self,
+        name: str,
+        value: float,
+        tags: dict[str, t.Any] | None = None,
     ) -> None:
         """Record a performance metric."""
         if name not in self.metrics:
@@ -458,7 +469,8 @@ def profile_memory_usage(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]
 
 @asynccontextmanager
 async def performance_monitor(
-    name: str, thresholds: dict[str, t.Any] | None = None
+    name: str,
+    thresholds: dict[str, t.Any] | None = None,
 ) -> t.AsyncIterator[MetricsCollector]:
     """Context manager for comprehensive performance monitoring."""
     process = psutil.Process(os.getpid())

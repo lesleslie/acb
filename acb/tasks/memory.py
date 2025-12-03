@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import heapq
 import time
-from uuid import UUID
 
 import typing as t
 from dataclasses import dataclass, field
@@ -21,6 +20,9 @@ from ._base import (
     TaskResult,
     TaskStatus,
 )
+
+if t.TYPE_CHECKING:
+    from uuid import UUID
 
 
 @dataclass
@@ -46,7 +48,11 @@ class PriorityTaskItem:
         )
 
     def __init__(
-        self, task: TaskData, scheduled_time: float, priority: int = 0, _count: int = 0
+        self,
+        task: TaskData,
+        scheduled_time: float,
+        priority: int = 0,
+        _count: int = 0,
     ) -> None:
         self.task = task
         self.scheduled_time = scheduled_time
@@ -142,17 +148,20 @@ class MemoryQueue(QueueBase):
 
         if queue_name is not None:
             return self._pop_ready_from_queue(
-                self._queues.setdefault(queue_name, []), now
+                self._queues.setdefault(queue_name, []),
+                now,
             )
 
         # No specific queue: consider heads of all queues
-        best_queue, best_item = self._find_best_queue_item(now)
+        best_queue, _best_item = self._find_best_queue_item(now)
         if best_queue is not None:
             return self._pop_ready_from_queue(best_queue, now)
         return None
 
     def _pop_ready_from_queue(
-        self, q: list[PriorityTaskItem], now: float
+        self,
+        q: list[PriorityTaskItem],
+        now: float,
     ) -> TaskData | None:
         if not q:
             return None
@@ -172,7 +181,8 @@ class MemoryQueue(QueueBase):
         return item.task
 
     def _find_best_queue_item(
-        self, now: float
+        self,
+        now: float,
     ) -> tuple[list[PriorityTaskItem] | None, PriorityTaskItem | None]:
         best_q: list[PriorityTaskItem] | None = None
         best_item: PriorityTaskItem | None = None
@@ -188,7 +198,9 @@ class MemoryQueue(QueueBase):
         return best_q, best_item
 
     def _is_better_item(
-        self, head: PriorityTaskItem, best_item: PriorityTaskItem
+        self,
+        head: PriorityTaskItem,
+        best_item: PriorityTaskItem,
     ) -> bool:
         return (
             head.scheduled_time,
@@ -209,12 +221,14 @@ class MemoryQueue(QueueBase):
             for i, item in enumerate(q):
                 if item.task.task_id == task_id:
                     self._memory_usage = max(
-                        0, self._memory_usage - self._estimate_size(item.task)
+                        0,
+                        self._memory_usage - self._estimate_size(item.task),
                     )
                     del q[i]
                     heapq.heapify(q)
                     self._metrics.pending_tasks = max(
-                        0, self._metrics.pending_tasks - 1
+                        0,
+                        self._metrics.pending_tasks - 1,
                     )
                     self._task_status[task_id] = TaskResult(
                         task_id=task_id,
@@ -233,7 +247,8 @@ class MemoryQueue(QueueBase):
         # Update memory usage
         for item in q:
             self._memory_usage = max(
-                0, self._memory_usage - self._estimate_size(item.task)
+                0,
+                self._memory_usage - self._estimate_size(item.task),
             )
         self._queues[queue_name] = []
         self._metrics.pending_tasks = max(0, self._metrics.pending_tasks - count)

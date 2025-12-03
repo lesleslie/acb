@@ -22,10 +22,8 @@ from acb.tasks import TaskData, create_queue, task_handler
 @event_handler("user.created")
 async def handle_user_created(event: Event) -> EventHandlerResult:
     """Handle user creation events."""
-    user_id = event.payload.get("user_id")
-    user_email = event.payload.get("email")
-
-    print(f"Processing user creation: {user_id} ({user_email})")
+    event.payload.get("user_id")
+    event.payload.get("email")
 
     # Example: Send welcome email
     # await send_welcome_email(user_email)
@@ -36,10 +34,8 @@ async def handle_user_created(event: Event) -> EventHandlerResult:
 @event_handler("order.completed")
 async def handle_order_completed(event: Event) -> EventHandlerResult:
     """Handle order completion events."""
-    order_id = event.payload.get("order_id")
-    user_id = event.payload.get("user_id")
-
-    print(f"Processing order completion: {order_id} for user {user_id}")
+    event.payload.get("order_id")
+    event.payload.get("user_id")
 
     # Example: Update user stats, trigger shipping, etc.
     # await update_user_stats(user_id)
@@ -57,8 +53,6 @@ async def send_email_task(task_data: TaskData) -> dict[str, Any]:
     subject = email_data.get("subject", "Default Subject")
     email_data.get("body", "")
 
-    print(f"Sending email to {recipient}: {subject}")
-
     # Simulate email sending
     await asyncio.sleep(0.1)  # Simulate network delay
 
@@ -71,8 +65,6 @@ async def process_file_task(task_data: TaskData) -> dict[str, Any]:
     file_data = task_data.payload
     file_path = file_data.get("file_path")
     operation = file_data.get("operation", "analyze")
-
-    print(f"Processing file: {file_path} ({operation})")
 
     # Simulate file processing
     await asyncio.sleep(0.5)  # Simulate processing time
@@ -87,8 +79,6 @@ async def process_file_task(task_data: TaskData) -> dict[str, Any]:
 
 async def demonstrate_events() -> None:
     """Demonstrate event-driven communication."""
-    print("=== Demonstrating Events System ===")
-
     # Create event publisher and subscriber
     publisher = EventPublisher()
     subscriber = EventSubscriber()
@@ -99,16 +89,18 @@ async def demonstrate_events() -> None:
 
     # Create and publish events
     user_event = create_event(
-        "user.created", "demo", {"user_id": 123, "email": "user@example.com"}
+        "user.created",
+        "demo",
+        {"user_id": 123, "email": "user@example.com"},
     )
     await publisher.publish(user_event)
 
     order_event = create_event(
-        "order.completed", "demo", {"order_id": 456, "user_id": 123}
+        "order.completed",
+        "demo",
+        {"order_id": 456, "user_id": 123},
     )
     await publisher.publish(order_event)
-
-    print("Events published and handlers executed")
 
     # Clean up
     await publisher.shutdown()
@@ -117,8 +109,6 @@ async def demonstrate_events() -> None:
 
 async def demonstrate_tasks() -> None:
     """Demonstrate task queue system."""
-    print("\n=== Demonstrating Tasks System ===")
-
     # Create a task queue
     async with create_queue("memory") as queue:
         # Register task handlers
@@ -146,10 +136,8 @@ async def demonstrate_tasks() -> None:
         await queue.start_workers(count=5)
 
         # Enqueue tasks
-        email_task_id = await queue.enqueue(email_task)
-        file_task_id = await queue.enqueue(file_task)
-
-        print(f"Enqueued tasks: {email_task_id}, {file_task_id}")
+        await queue.enqueue(email_task)
+        await queue.enqueue(file_task)
 
         # Wait for tasks to be processed
         await asyncio.sleep(2)  # Give workers time to process tasks
@@ -157,13 +145,9 @@ async def demonstrate_tasks() -> None:
         # Stop workers
         await queue.stop_workers()
 
-        print("Tasks processed")
-
 
 async def demonstrate_workflows() -> None:
     """Demonstrate workflow orchestration."""
-    print("\n=== Demonstrating Workflows System ===")
-
     # Workflows example (using the service pattern)
     from acb.workflows import WorkflowDefinition, WorkflowStep, import_workflow_engine
 
@@ -207,12 +191,10 @@ async def demonstrate_workflows() -> None:
     )
 
     # Execute workflow
-    result = await engine.execute(
+    await engine.execute(
         workflow_definition,
         context={"user_id": 789, "email": "newuser@example.com"},
     )
-
-    print(f"Workflow result: {result}")
 
 
 async def main() -> None:
@@ -220,8 +202,6 @@ async def main() -> None:
     await demonstrate_events()
     await demonstrate_tasks()
     await demonstrate_workflows()
-
-    print("\nAll orchestration examples completed!")
 
 
 if __name__ == "__main__":

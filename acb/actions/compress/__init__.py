@@ -13,13 +13,15 @@ def _normalize_input(content: ContentType) -> bytes:
     """Normalize input (Path, str, or bytes) to bytes for processing."""
     if isinstance(content, Path):
         if not content.exists():
-            raise FileNotFoundError(f"File not found: {content}")
+            msg = f"File not found: {content}"
+            raise FileNotFoundError(msg)
         return content.read_bytes()
 
     if isinstance(content, str) and (os.path.sep in content or content.startswith(".")):
         path = Path(content)
         if not path.exists():
-            raise FileNotFoundError(f"File not found: {content}")
+            msg = f"File not found: {content}"
+            raise FileNotFoundError(msg)
         return path.read_bytes()
 
     return content.encode() if isinstance(content, str) else content
@@ -35,7 +37,9 @@ class Compress:
         data = _normalize_input(content)
         gzip_buffer = BytesIO()
         with GzipFile(
-            mode="wb", compresslevel=compresslevel, fileobj=gzip_buffer
+            mode="wb",
+            compresslevel=compresslevel,
+            fileobj=gzip_buffer,
         ) as gz:
             gz.write(data)
         result = gzip_buffer.getvalue()
@@ -61,7 +65,8 @@ class Decompress:
             with GzipFile(fileobj=BytesIO(data), mode="rb") as gz:
                 return gz.read().decode()
         except BadGzipFile as e:
-            raise BadGzipFile(f"Not a gzipped file: {e}") from e
+            msg = f"Not a gzipped file: {e}"
+            raise BadGzipFile(msg) from e
 
     @staticmethod
     def brotli(content: ContentType) -> str:

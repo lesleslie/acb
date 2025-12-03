@@ -39,7 +39,8 @@ def create_test_config(overrides: dict[str, t.Any] | None = None) -> Config:
     if overrides:
         # Deep merge overrides
         def deep_merge(
-            base: dict[str, t.Any], override: dict[str, t.Any]
+            base: dict[str, t.Any],
+            override: dict[str, t.Any],
         ) -> dict[str, t.Any]:
             result = base.copy()
             for key, value in override.items():
@@ -62,7 +63,8 @@ def create_test_config(overrides: dict[str, t.Any] | None = None) -> Config:
 
 
 async def create_test_adapter(
-    adapter_type: str, config: dict[str, t.Any] | None = None
+    adapter_type: str,
+    config: dict[str, t.Any] | None = None,
 ) -> t.Any:
     """Create a test adapter instance with mock configuration."""
     try:
@@ -112,7 +114,8 @@ async def create_test_adapter(
 
 
 async def create_test_service(
-    service_type: str, config: dict[str, t.Any] | None = None
+    service_type: str,
+    config: dict[str, t.Any] | None = None,
 ) -> t.Any:
     """Create a test service instance with mock configuration."""
     try:
@@ -173,7 +176,8 @@ def create_mock_dependency(
 
 
 def create_temporary_config_file(
-    config_data: dict[str, t.Any], file_path: Path
+    config_data: dict[str, t.Any],
+    file_path: Path,
 ) -> Path:
     """Create a temporary configuration file for testing."""
     # Ensure parent directory exists

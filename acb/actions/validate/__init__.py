@@ -16,7 +16,10 @@ class ValidationError(Exception):
     """Raised when input validation fails."""
 
     def __init__(
-        self, message: str, field: str | None = None, value: t.Any = None
+        self,
+        message: str,
+        field: str | None = None,
+        value: t.Any = None,
     ) -> None:
         super().__init__(message)
         self.field = field

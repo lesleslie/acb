@@ -17,7 +17,7 @@ from typing import Any, TypeVar
 from acb.depends import depends
 from acb.services._base import ServiceBase
 from acb.services._base import ServiceStatus as BaseServiceStatus
-from acb.services.health import HealthCheckMixin
+from acb.services.health import HealthCheckMixin, HealthCheckResult, HealthCheckType
 
 from ._base import RepositoryBase, RepositoryError, RepositorySettings
 from .cache import RepositoryCacheSettings
@@ -217,7 +217,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
         """
         self.registry.register_instance(entity_type, repository_instance)
         self.logger.debug(
-            f"Registered repository instance for {getattr(entity_type, '__name__', entity_type)}"
+            f"Registered repository instance for {getattr(entity_type, '__name__', entity_type)}",
         )
 
     def get_repository(
@@ -606,10 +606,11 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             self.logger.warning(f"Metrics collection failed: {e}")
 
     async def _perform_health_check(
-        self, check_type: "HealthCheckType"
+        self,
+        check_type: "HealthCheckType",
     ) -> "HealthCheckResult":
         """Implement the required health check method from HealthCheckMixin."""
-        from acb.services.health import HealthCheckResult, HealthStatus
+        from acb.services.health import HealthStatus
 
         try:
             # Perform repository-specific health checks
@@ -646,7 +647,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
                 component_name=self.component_name,
                 status=HealthStatus.CRITICAL,
                 check_type=check_type,
-                message=f"Repository service health check error: {str(e)}",
+                message=f"Repository service health check error: {e!s}",
                 error=str(e),
             )
 

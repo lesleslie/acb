@@ -28,7 +28,8 @@ SCRIPT_INJECTION_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"javascript:", re.IGNORECASE),
     re.compile(r"vbscript:", re.IGNORECASE),
     re.compile(
-        r"on\w+\s*=\s*['\"][^'\"]*['\"]", re.IGNORECASE
+        r"on\w+\s*=\s*['\"][^'\"]*['\"]",
+        re.IGNORECASE,
     ),  # REGEX OK: XSS detection
     re.compile(r"<iframe[^>]*>.*?</iframe>", re.IGNORECASE | re.DOTALL),
     re.compile(r"<object[^>]*>.*?</object>", re.IGNORECASE | re.DOTALL),
@@ -55,11 +56,7 @@ def detect_sql_injection(value: str) -> bool:
     """
     value_lower = value.lower()
 
-    for pattern in SQL_INJECTION_PATTERNS:
-        if pattern.search(value_lower):
-            return False
-
-    return True
+    return all(not pattern.search(value_lower) for pattern in SQL_INJECTION_PATTERNS)
 
 
 def detect_xss(value: str) -> bool:
@@ -73,11 +70,7 @@ def detect_xss(value: str) -> bool:
     """
     value_lower = value.lower()
 
-    for pattern in SCRIPT_INJECTION_PATTERNS:
-        if pattern.search(value_lower):
-            return False
-
-    return True
+    return all(not pattern.search(value_lower) for pattern in SCRIPT_INJECTION_PATTERNS)
 
 
 def detect_path_traversal(value: str) -> bool:
@@ -91,8 +84,4 @@ def detect_path_traversal(value: str) -> bool:
     """
     value_lower = value.lower()
 
-    for pattern in PATH_TRAVERSAL_PATTERNS:
-        if pattern.search(value_lower):
-            return False
-
-    return True
+    return all(not pattern.search(value_lower) for pattern in PATH_TRAVERSAL_PATTERNS)

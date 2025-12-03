@@ -52,7 +52,7 @@ class NoSQLDatabaseAdapter(DatabaseAdapter[T]):
         """
         if hasattr(instance, "model_dump"):
             return instance.model_dump()  # type: ignore[no-any-return]
-        elif hasattr(instance, "dict"):
+        if hasattr(instance, "dict"):
             return instance.dict()  # type: ignore[no-any-return]
         return dict(instance)  # type: ignore[call-overload]
 

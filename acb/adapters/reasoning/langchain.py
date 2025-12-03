@@ -184,7 +184,7 @@ class LangChainCallback(AsyncCallbackHandler):  # type: ignore[misc]
         tool_name = serialized.get("name", "Unknown Tool")
         if self.logger is not None:
             self.logger.debug(
-                f"Tool started: {tool_name} with input: {input_str[:100]}..."
+                f"Tool started: {tool_name} with input: {input_str[:100]}...",
             )
 
     async def on_tool_end(self, output: str, **kwargs: t.Any) -> None:

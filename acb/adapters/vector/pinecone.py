@@ -200,7 +200,9 @@ class Vector(VectorBase):
         return await self.upsert(collection, documents, **kwargs)
 
     def _prepare_pinecone_vector(
-        self, doc: VectorDocument, index: int
+        self,
+        doc: VectorDocument,
+        index: int,
     ) -> tuple[str, dict[str, t.Any]]:
         """Prepare a single document as Pinecone vector. Returns (doc_id, vector_data)."""
         doc_id = doc.id or f"vec_{index}"
@@ -216,7 +218,8 @@ class Vector(VectorBase):
         return doc_id, vector_data
 
     def _prepare_all_vectors(
-        self, documents: list[VectorDocument]
+        self,
+        documents: list[VectorDocument],
     ) -> tuple[list[str], list[dict[str, t.Any]]]:
         """Prepare all documents as Pinecone vectors. Returns (doc_ids, vectors)."""
         document_ids: list[str] = []

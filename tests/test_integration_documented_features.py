@@ -12,9 +12,13 @@ from acb.adapters import import_adapter
 from acb.depends import depends
 
 
+@pytest.mark.integration
+@pytest.mark.quick
 class TestActionsDocumentedExamples:
     """Test examples from ACB actions documentation work as documented."""
 
+    @pytest.mark.actions
+    @pytest.mark.compress
     def test_compress_action_example(self) -> None:
         """Test the compress action example from README."""
         # Example from ACB README lines 147-158
@@ -27,6 +31,8 @@ class TestActionsDocumentedExamples:
         assert original == "Hello, ACB!"
 
     @pytest.mark.asyncio
+    @pytest.mark.actions
+    @pytest.mark.encode
     async def test_encode_decode_action_example(self) -> None:
         """Test the encode/decode action example from README."""
         # Example from ACB README lines 162-183
@@ -58,6 +64,8 @@ class TestActionsDocumentedExamples:
         return await encode.yaml(data)
 
     @pytest.mark.asyncio
+    @pytest.mark.actions
+    @pytest.mark.hash
     async def test_hash_action_example(self) -> None:
         """Test the hash action example from README."""
         # Example from ACB README lines 187-198
@@ -74,10 +82,14 @@ class TestActionsDocumentedExamples:
         assert len(checksum) == 8  # CRC32C produces 8-char hex string
 
 
+@pytest.mark.integration
+@pytest.mark.quick
 class TestActionsDetailedDocumentedExamples:
     """Test examples from detailed ACB actions documentation."""
 
     @pytest.mark.asyncio
+    @pytest.mark.actions
+    @pytest.mark.encode
     async def test_encode_decode_detailed_example(self) -> None:
         """Test the detailed encode/decode example from actions README."""
         # Example from acb/actions/README.md lines 92-122
@@ -141,6 +153,8 @@ class TestActionsDetailedDocumentedExamples:
         return await encode.pickle(data)
 
     @pytest.mark.asyncio
+    @pytest.mark.actions
+    @pytest.mark.hash
     async def test_hash_detailed_example(self) -> None:
         """Test the detailed hash example from actions README."""
         # Example from acb/actions/README.md lines 142-165
@@ -174,9 +188,13 @@ class TestActionsDetailedDocumentedExamples:
         assert len(md5sum) == 32
 
 
+@pytest.mark.integration
+@pytest.mark.quick
 class TestAdapterDocumentedExamples:
     """Test adapter examples from documentation."""
 
+    @pytest.mark.adapters
+    @pytest.mark.import_adapter
     def test_import_adapter_basic_pattern(self) -> None:
         """Test basic import_adapter pattern from documentation."""
         # Example from ACB README lines 237-238
@@ -188,6 +206,8 @@ class TestAdapterDocumentedExamples:
         # In test environment, adapter might not be fully initialized
         assert cache is not None or Cache is not None
 
+    @pytest.mark.adapters
+    @pytest.mark.import_adapter
     def test_import_adapter_multiple_pattern(self) -> None:
         """Test multiple adapter import pattern."""
         # Example from ACB README lines 244-247
@@ -198,6 +218,8 @@ class TestAdapterDocumentedExamples:
         assert all(adapter is not None for adapter in (Cache, Storage, SQL))
 
     @pytest.mark.asyncio
+    @pytest.mark.adapters
+    @pytest.mark.cache
     async def test_cache_adapter_documented_usage(self) -> None:
         """Test cache adapter usage example from documentation."""
         # Example from ACB README lines 258-271
@@ -359,10 +381,14 @@ class TestAdapterAgnosticDocumentedExamples:
         assert "cached" in result
 
 
+@pytest.mark.integration
+@pytest.mark.quick
 class TestErrorHandlingDocumentedBehavior:
     """Test error handling behaviors described in documentation."""
 
     @pytest.mark.asyncio
+    @pytest.mark.actions
+    @pytest.mark.hash
     async def test_hash_error_handling(self) -> None:
         """Test hash action error handling for invalid inputs."""
         # Test documented error cases
@@ -373,6 +399,8 @@ class TestErrorHandlingDocumentedBehavior:
             await hash.blake3("/nonexistent/file.txt")
 
     @pytest.mark.asyncio
+    @pytest.mark.actions
+    @pytest.mark.encode
     async def test_encode_decode_error_handling(self) -> None:
         """Test encode/decode error handling."""
         # Test invalid decode input

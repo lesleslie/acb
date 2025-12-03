@@ -230,32 +230,44 @@ class FieldSpecification(Specification):
 
     # SQL operator handlers
     def _sql_equals(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} = :{param_key}", {param_key: self.value}
 
     def _sql_not_equals(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} != :{param_key}", {param_key: self.value}
 
     def _sql_greater_than(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} > :{param_key}", {param_key: self.value}
 
     def _sql_greater_than_or_equal(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} >= :{param_key}", {param_key: self.value}
 
     def _sql_less_than(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} < :{param_key}", {param_key: self.value}
 
     def _sql_less_than_or_equal(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} <= :{param_key}", {param_key: self.value}
 
@@ -267,7 +279,9 @@ class FieldSpecification(Specification):
         return f"{field_name} IN (:{param_key})", {param_key: self.value}
 
     def _sql_not_in(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         if isinstance(self.value, list | tuple):
             placeholders = ",".join(f":{param_key}_{i}" for i in range(len(self.value)))
@@ -282,17 +296,23 @@ class FieldSpecification(Specification):
         return f"UPPER({field_name}) LIKE UPPER(:{param_key})", {param_key: self.value}
 
     def _sql_contains(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} LIKE :{param_key}", {param_key: f"%{self.value}%"}
 
     def _sql_starts_with(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} LIKE :{param_key}", {param_key: f"{self.value}%"}
 
     def _sql_ends_with(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         return f"{field_name} LIKE :{param_key}", {param_key: f"%{self.value}"}
 
@@ -303,7 +323,9 @@ class FieldSpecification(Specification):
         return f"{field_name} IS NOT NULL", {}
 
     def _sql_between(
-        self, field_name: str, param_key: str
+        self,
+        field_name: str,
+        param_key: str,
     ) -> tuple[str, dict[str, Any]]:
         if not isinstance(self.value, list | tuple) or len(self.value) != 2:
             msg = "BETWEEN operator requires a list/tuple of 2 values"

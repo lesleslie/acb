@@ -151,7 +151,10 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
         return self
 
     async def __aexit__(
-        self: t.Any, exc_type: t.Any, exc_val: t.Any, exc_tb: t.Any
+        self: t.Any,
+        exc_type: t.Any,
+        exc_val: t.Any,
+        exc_tb: t.Any,
     ) -> None:
         """Async context manager exit."""
         await self.cleanup()
@@ -335,12 +338,11 @@ class EmbeddingAdapter(AdapterBase, CleanupMixin, ABC):
             if isinstance(self._client, MagicMock):
                 # Skip cleanup for mock objects
                 pass
-            else:
-                if hasattr(self._client, "close"):
-                    await self._client.close()
-                elif hasattr(self._client, "__aexit__"):
-                    with contextlib.suppress(Exception):
-                        await self._client.__aexit__(None, None, None)
+            elif hasattr(self._client, "close"):
+                await self._client.close()
+            elif hasattr(self._client, "__aexit__"):
+                with contextlib.suppress(Exception):
+                    await self._client.__aexit__(None, None, None)
 
         self._client = None
         self._model_cache.clear()

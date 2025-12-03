@@ -147,12 +147,15 @@ def _get_aio_pika_imports() -> dict[str, t.Any]:
                     "Message": aio_pika.Message,
                     "DeliveryMode": DeliveryMode,
                     "ExchangeType": ExchangeType,
-                }
+                },
             )
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "aio-pika is required for RabbitMQQueue. "
                 "Install with: pip install aio-pika>=9.0.0"
+            )
+            raise ImportError(
+                msg,
             ) from e
 
     return _aio_pika_imports
@@ -280,7 +283,7 @@ class RabbitMQMessaging(CleanupMixin):
             from acb.adapters import import_adapter
 
             logger_cls = import_adapter("logger")
-            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
+            self._logger = t.cast("LoggerType", depends.get_sync(logger_cls))
         return self._logger
 
     # ========================================================================
@@ -313,7 +316,7 @@ class RabbitMQMessaging(CleanupMixin):
                         # Create main channel
                         self._channel = await self._connection.channel()
                         await self._channel.set_qos(
-                            prefetch_count=self._settings.prefetch_count
+                            prefetch_count=self._settings.prefetch_count,
                         )
 
                         # Register for cleanup
@@ -323,8 +326,9 @@ class RabbitMQMessaging(CleanupMixin):
 
                     except Exception as e:
                         self.logger.exception(f"Failed to connect to RabbitMQ: {e}")
+                        msg = "Failed to establish RabbitMQ connection"
                         raise MessagingConnectionError(
-                            "Failed to establish RabbitMQ connection",
+                            msg,
                             original_error=e,
                         ) from e
 
@@ -345,7 +349,7 @@ class RabbitMQMessaging(CleanupMixin):
             # Start background tasks
             if self._settings.enable_delayed_plugin:
                 self._delayed_processor_task = asyncio.create_task(
-                    self._process_delayed_messages()
+                    self._process_delayed_messages(),
                 )
 
             self._connected = True
@@ -417,7 +421,8 @@ class RabbitMQMessaging(CleanupMixin):
             Message ID for tracking
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
 
@@ -460,14 +465,15 @@ class RabbitMQMessaging(CleanupMixin):
                 )
 
             self.logger.debug(
-                f"Sent message {queue_message.message_id} to queue {queue}"
+                f"Sent message {queue_message.message_id} to queue {queue}",
             )
             return str(queue_message.message_id)
 
         except Exception as e:
             self.logger.exception(f"Failed to send message: {e}")
+            msg = "Failed to send message"
             raise MessagingOperationError(
-                "Failed to send message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -488,7 +494,8 @@ class RabbitMQMessaging(CleanupMixin):
             Message if available, None otherwise
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
         rmq_queue = await self._ensure_queue(queue)
@@ -496,7 +503,8 @@ class RabbitMQMessaging(CleanupMixin):
         try:
             # Get message with timeout
             rmq_message = await rmq_queue.get(
-                timeout=timeout or self._settings.receive_timeout, fail=False
+                timeout=timeout or self._settings.receive_timeout,
+                fail=False,
             )
 
             if rmq_message is None:
@@ -521,7 +529,7 @@ class RabbitMQMessaging(CleanupMixin):
             )
 
             self.logger.debug(
-                f"Received message {queue_message.message_id} from queue {queue}"
+                f"Received message {queue_message.message_id} from queue {queue}",
             )
             return queue_message
 
@@ -529,8 +537,9 @@ class RabbitMQMessaging(CleanupMixin):
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
+            msg = "Failed to receive message"
             raise MessagingOperationError(
-                "Failed to receive message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -546,8 +555,9 @@ class RabbitMQMessaging(CleanupMixin):
             message_id: ID of message to acknowledge
         """
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state"
+                msg,
             )
 
         try:
@@ -563,8 +573,9 @@ class RabbitMQMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message: {e}")
+            msg = "Failed to acknowledge message"
             raise MessagingOperationError(
-                "Failed to acknowledge message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -582,8 +593,9 @@ class RabbitMQMessaging(CleanupMixin):
             requeue: Whether to return message to queue
         """
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state"
+                msg,
             )
 
         try:
@@ -599,8 +611,9 @@ class RabbitMQMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message: {e}")
+            msg = "Failed to reject message"
             raise MessagingOperationError(
-                "Failed to reject message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -611,7 +624,8 @@ class RabbitMQMessaging(CleanupMixin):
             Number of messages purged
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         rmq_queue = await self._ensure_queue(queue)
 
@@ -623,8 +637,9 @@ class RabbitMQMessaging(CleanupMixin):
             return purged_count
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {queue}: {e}")
+            msg = f"Failed to purge queue {queue}"
             raise MessagingOperationError(
-                f"Failed to purge queue {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -635,7 +650,8 @@ class RabbitMQMessaging(CleanupMixin):
             Dict with stats like message_count, consumer_count, etc.
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         rmq_queue = await self._ensure_queue(queue)
 
@@ -652,8 +668,9 @@ class RabbitMQMessaging(CleanupMixin):
             }
         except Exception as e:
             self.logger.exception(f"Failed to get queue stats for {queue}: {e}")
+            msg = f"Failed to get queue stats for {queue}"
             raise MessagingOperationError(
-                f"Failed to get queue stats for {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -730,7 +747,7 @@ class RabbitMQMessaging(CleanupMixin):
                             self._dlx_exchange is not None
                             if self._settings.enable_dlx
                             else True,
-                        ]
+                        ],
                     ),
                     "active_queues": len(self._queues),
                     "active_consumers": len(self._consumers),
@@ -753,7 +770,8 @@ class RabbitMQMessaging(CleanupMixin):
     async def _setup_exchanges(self) -> None:
         """Setup RabbitMQ exchanges."""
         if not self._channel:
-            raise MessagingConnectionError("Channel not available")
+            msg = "Channel not available"
+            raise MessagingConnectionError(msg)
 
         imports = _get_aio_pika_imports()
         ExchangeType = imports["ExchangeType"]
@@ -787,7 +805,7 @@ class RabbitMQMessaging(CleanupMixin):
                     )
                 except Exception as e:
                     self.logger.warning(
-                        f"Failed to create delayed exchange (plugin may not be installed): {e}"
+                        f"Failed to create delayed exchange (plugin may not be installed): {e}",
                     )
                     self._settings.enable_delayed_plugin = False
 
@@ -795,8 +813,10 @@ class RabbitMQMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to setup exchanges: {e}")
+            msg = "Failed to setup RabbitMQ exchanges"
             raise MessagingConnectionError(
-                "Failed to setup RabbitMQ exchanges", original_error=e
+                msg,
+                original_error=e,
             ) from e
 
     async def _ensure_queue(self, name: str) -> t.Any:
@@ -813,7 +833,8 @@ class RabbitMQMessaging(CleanupMixin):
         """
         if name not in self._queues:
             if not self._channel:
-                raise MessagingConnectionError("Channel not available")
+                msg = "Channel not available"
+                raise MessagingConnectionError(msg)
 
             try:
                 # Queue arguments
@@ -849,8 +870,10 @@ class RabbitMQMessaging(CleanupMixin):
 
             except Exception as e:
                 self.logger.exception(f"Failed to create queue {name}: {e}")
+                msg = f"Failed to create queue {name}"
                 raise MessagingOperationError(
-                    f"Failed to create queue {name}", original_error=e
+                    msg,
+                    original_error=e,
                 ) from e
 
         return self._queues[name]
@@ -879,7 +902,8 @@ class RabbitMQMessaging(CleanupMixin):
             QueueTimeoutError: If operation times out
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
         timeout = timeout or self._settings.send_timeout
@@ -919,24 +943,28 @@ class RabbitMQMessaging(CleanupMixin):
                 )
 
             self.logger.debug(
-                f"Sent message {message.message_id} to queue {message.queue}"
+                f"Sent message {message.message_id} to queue {message.queue}",
             )
             return str(message.message_id)
 
         except TimeoutError as e:
+            msg = f"Send operation timed out after {timeout}s"
             raise MessagingTimeoutError(
-                f"Send operation timed out after {timeout}s",
+                msg,
                 original_error=e,
             ) from e
         except Exception as e:
             self.logger.exception(f"Failed to send message: {e}")
+            msg = "Failed to send message"
             raise MessagingOperationError(
-                "Failed to send message",
+                msg,
                 original_error=e,
             ) from e
 
     async def _send_delayed_message(
-        self, message: QueueMessage, rmq_message: t.Any
+        self,
+        message: QueueMessage,
+        rmq_message: t.Any,
     ) -> None:
         """Send a delayed message using plugin or TTL+DLQ pattern.
 
@@ -994,7 +1022,8 @@ class RabbitMQMessaging(CleanupMixin):
             QueueOperationError: If receive fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
         queue = await self._ensure_queue(topic)
@@ -1002,7 +1031,8 @@ class RabbitMQMessaging(CleanupMixin):
         try:
             # Get message with no-ack (will ack manually)
             rmq_message = await queue.get(
-                timeout=timeout or self._settings.receive_timeout, fail=False
+                timeout=timeout or self._settings.receive_timeout,
+                fail=False,
             )
 
             if rmq_message is None:
@@ -1026,7 +1056,7 @@ class RabbitMQMessaging(CleanupMixin):
             self._processing_messages[str(message.message_id)] = (message, rmq_message)
 
             self.logger.debug(
-                f"Received message {message.message_id} from topic {topic}"
+                f"Received message {message.message_id} from topic {topic}",
             )
             return message
 
@@ -1034,8 +1064,9 @@ class RabbitMQMessaging(CleanupMixin):
             return None  # Timeout is expected for blocking receives
         except Exception as e:
             self.logger.exception(f"Failed to receive message: {e}")
+            msg = "Failed to receive message"
             raise MessagingOperationError(
-                "Failed to receive message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1056,8 +1087,9 @@ class RabbitMQMessaging(CleanupMixin):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state"
+                msg,
             )
 
         try:
@@ -1076,8 +1108,9 @@ class RabbitMQMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message: {e}")
+            msg = "Failed to acknowledge message"
             raise MessagingOperationError(
-                "Failed to acknowledge message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1100,8 +1133,9 @@ class RabbitMQMessaging(CleanupMixin):
         message_id = str(message.message_id)
 
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state"
+                msg,
             )
 
         try:
@@ -1120,8 +1154,9 @@ class RabbitMQMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message: {e}")
+            msg = "Failed to reject message"
             raise MessagingOperationError(
-                "Failed to reject message",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1141,7 +1176,8 @@ class RabbitMQMessaging(CleanupMixin):
             Async generator of messages
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
         queue = await self._ensure_queue(topic)
@@ -1218,7 +1254,8 @@ class RabbitMQMessaging(CleanupMixin):
             **options: Backend-specific options (e.g., durable, auto_delete)
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         # Queue will be created by _ensure_queue
         await self._ensure_queue(name)
@@ -1239,7 +1276,8 @@ class RabbitMQMessaging(CleanupMixin):
             QueueOperationError: If deletion fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
 
@@ -1257,8 +1295,9 @@ class RabbitMQMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to delete queue {name}: {e}")
+            msg = f"Failed to delete queue {name}"
             raise MessagingOperationError(
-                f"Failed to delete queue {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1278,7 +1317,8 @@ class RabbitMQMessaging(CleanupMixin):
             QueueOperationError: If purge fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
 
@@ -1289,14 +1329,15 @@ class RabbitMQMessaging(CleanupMixin):
             result = await queue.purge()
 
             self.logger.info(
-                f"Purged {result.message_count} messages from queue {name}"
+                f"Purged {result.message_count} messages from queue {name}",
             )
             return result.message_count
 
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {name}: {e}")
+            msg = f"Failed to purge queue {name}"
             raise MessagingOperationError(
-                f"Failed to purge queue {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1316,7 +1357,8 @@ class RabbitMQMessaging(CleanupMixin):
             QueueOperationError: If operation fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Not connected to RabbitMQ")
+            msg = "Not connected to RabbitMQ"
+            raise MessagingConnectionError(msg)
 
         await self._ensure_client()
 
@@ -1330,8 +1372,9 @@ class RabbitMQMessaging(CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to get queue size for {name}: {e}")
+            msg = f"Failed to get queue size for {name}"
             raise MessagingOperationError(
-                f"Failed to get queue size for {name}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -1427,10 +1470,9 @@ class RabbitMQMessaging(CleanupMixin):
     ) -> Subscription:
         """Subscribe to a topic or pattern."""
         # Create subscription object
-        subscription = Subscription(
+        return Subscription(
             topic=topic,
         )
-        return subscription
 
     async def unsubscribe(self, subscription: Subscription) -> None:
         """Unsubscribe from a topic."""

@@ -334,12 +334,10 @@ class ServiceBase(ABC, CleanupMixin):
     async def _initialize(self) -> None:
         """Service-specific initialization logic."""
         # Default implementation does nothing - override in subclasses
-        pass
 
     async def _shutdown(self) -> None:
         """Service-specific shutdown logic."""
         # Default implementation does nothing - override in subclasses
-        pass
 
     async def _health_check(self) -> dict[str, t.Any]:
         """Service-specific health check logic.

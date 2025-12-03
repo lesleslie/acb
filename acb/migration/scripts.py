@@ -11,9 +11,6 @@ from typing import TYPE_CHECKING
 from acb.depends import depends
 from acb.logger import Logger as LoggerAdapter
 
-if TYPE_CHECKING:
-    pass
-
 logger = depends.get_sync(LoggerAdapter)
 
 if TYPE_CHECKING:
@@ -101,7 +98,7 @@ class ConfigurationMigrationScript(MigrationScript):
                 shutil.move(str(old_path), str(new_path))
                 self.files_modified += 1
                 logger.info(
-                    f"Migrated: {old_file} -> {new_path.relative_to(project_root)}"
+                    f"Migrated: {old_file} -> {new_path.relative_to(project_root)}",
                 )
 
 

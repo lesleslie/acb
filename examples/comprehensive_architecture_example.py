@@ -70,7 +70,9 @@ class UserManagementService(ServiceBase):
             "status": "healthy",
             "users_created": self._users_created,
             "email_notifications_enabled": getattr(
-                settings, "enable_email_notifications", True
+                settings,
+                "enable_email_notifications",
+                True,
             ),
         }
 
@@ -92,33 +94,28 @@ class UserManagementService(ServiceBase):
             "name": user_data.get("name"),
             "email": user_data.get("email"),
             "role": user_data.get(
-                "role", getattr(settings, "default_user_role", "user")
+                "role",
+                getattr(settings, "default_user_role", "user"),
             ),
             "created_at": datetime.now().isoformat(),
         }
 
         # Save to database and cache - access them through dependency injection
         # For this simplified example, we'll assume they have the expected interface
-        try:
+        from contextlib import suppress
+
+        with suppress(Exception):
             sql: Any = depends.get(SQL)
             if hasattr(sql, "get_session") and callable(sql.get_session):
                 # For demonstration purposes only - in real usage, handle properly
-                print(f"Saving user to database: {user}")
-        except Exception:
-            print("Could not access SQL adapter, skipping database save")
+                pass
 
-        try:
+        with suppress(Exception):
             cache: Any = depends.get(Cache)
             if hasattr(cache, "set") and callable(cache.set):
                 await cache.set(f"user:{user['id']}", user, ttl=3600)
             else:
-                print(
-                    f"Cache doesn't have set method, skipping cache update for user {user['id']}"
-                )
-        except Exception:
-            print(
-                f"Could not access cache adapter, skipping cache update for user {user['id']}"
-            )
+                pass
 
         # Update service metrics
         self._users_created += 1
@@ -146,8 +143,6 @@ async def handle_user_created(event: Event) -> EventHandlerResult:
     user_id = event.payload.get("user_id")
     email = event.payload.get("email")
 
-    print(f"Event handler: Processing new user {user_id} ({email})")
-
     # In a real app, you might send a welcome email, update statistics, etc.
     # For demo, we'll simulate with a task
     if True:  # Assuming email notifications are enabled
@@ -172,8 +167,6 @@ async def send_welcome_email_task(task_data: TaskData) -> dict[str, Any]:
     user_email = payload.get("user_email")
     user_id = payload.get("user_id")
 
-    print(f"Task: Sending welcome email to {user_email} (user {user_id})")
-
     # Simulate email sending delay
     await asyncio.sleep(1.0)
 
@@ -182,44 +175,25 @@ async def send_welcome_email_task(task_data: TaskData) -> dict[str, Any]:
 
 async def main() -> None:
     """Demonstrate the complete architecture."""
-    print("=== ACB Architecture Example ===")
-    print("Demonstrating Services + Events + Tasks + Adapters working together\n")
-
     # 1. Create and initialize service
     user_service = UserManagementService()
     await user_service.initialize()
 
     # 2. Create a user (this triggers events and tasks)
-    print("1. Creating a new user...")
-    new_user = await user_service.create_user(
-        {"name": "John Doe", "email": "john@example.com", "role": "user"}
+    await user_service.create_user(
+        {"name": "John Doe", "email": "john@example.com", "role": "user"},
     )
-    print(f"   Created user: {new_user}\n")
 
     # 3. Wait a bit for event processing and task execution
-    print("2. Waiting for event handlers and tasks to execute...")
     await asyncio.sleep(2)  # Allow time for event/task processing
-    print("   Event handlers and tasks completed\n")
 
     # 4. Check service health
-    print("3. Checking service health...")
-    health = await user_service.health_check()
-    print(f"   Health status: {health}\n")
+    await user_service.health_check()
 
     # 5. Show final metrics
-    print("4. Service metrics:")
-    print(f"   Total users created: {user_service.users_created}")
 
     # 6. Shutdown service
     await user_service.shutdown()
-    print("\nService shutdown completed")
-
-    print("\n=== Architecture Layers Demonstrated ===")
-    print("✓ Services: UserManagementService with lifecycle management")
-    print("✓ Events: Event publishing and handling for user creation")
-    print("✓ Tasks: Background email sending")
-    print("✓ Adapters: Cache and SQL integration")
-    print("✓ Core: Dependency injection and configuration")
 
 
 if __name__ == "__main__":

@@ -563,12 +563,26 @@ markers = [
     "unit: marks test as a unit test",
     "benchmark: mark test as a benchmark (disables parallel execution)",
     "integration: marks test as an integration test",
+    "external: marks test as requiring external service",
+    "architecture: marks test as checking architecture patterns",
+    "quick: marks test as fast-running",
+    "coverage: marks test as providing unique coverage",
+    "actions: marks test as testing ACB actions",
+    "adapters: marks test as testing ACB adapters",
+    "hash: marks test as testing hash actions",
+    "compress: marks test as testing compress actions",
+    "encode: marks test as testing encode actions",
+    "cache: marks test as testing cache adapters",
+    "storage: marks test as testing storage adapters",
+    "sql: marks test as testing SQL adapters",
+    "import_adapter: marks test as testing import_adapter functionality",
 ]
 timeout = "300"
 timeout_method = "thread"
 addopts = [
     "--cov=acb",
     "--cov-report=term",
+    "-ra",  # Show extra test summary
 ]
 filterwarnings = [
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",

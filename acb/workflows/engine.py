@@ -85,13 +85,17 @@ class BasicWorkflowEngine(WorkflowEngine):
 
         # Initialize workflow execution
         result, completed_steps, failed_steps = self._initialize_workflow_execution(
-            workflow
+            workflow,
         )
 
         try:
             # Execute workflow steps in dependency order
             await self._execute_workflow_steps(
-                workflow, context, result, completed_steps, failed_steps
+                workflow,
+                context,
+                result,
+                completed_steps,
+                failed_steps,
             )
 
             # Finalize workflow result
@@ -104,7 +108,8 @@ class BasicWorkflowEngine(WorkflowEngine):
             raise
 
     def _initialize_workflow_execution(
-        self, workflow: WorkflowDefinition
+        self,
+        workflow: WorkflowDefinition,
     ) -> tuple[WorkflowResult, dict[str, StepResult], set[str]]:
         """Initialize workflow execution state."""
         result = WorkflowResult(
@@ -133,7 +138,9 @@ class BasicWorkflowEngine(WorkflowEngine):
         while len(completed_steps) < len(workflow.steps):
             # Find steps ready to execute
             ready_steps = self._find_ready_steps(
-                workflow.steps, completed_steps, failed_steps
+                workflow.steps,
+                completed_steps,
+                failed_steps,
             )
 
             # Check for completion or deadlock
@@ -146,7 +153,11 @@ class BasicWorkflowEngine(WorkflowEngine):
 
             # Process step results
             should_stop = self._process_step_results(
-                workflow, step_results, completed_steps, failed_steps, result
+                workflow,
+                step_results,
+                completed_steps,
+                failed_steps,
+                result,
             )
 
             if should_stop:
@@ -168,11 +179,13 @@ class BasicWorkflowEngine(WorkflowEngine):
             ]
             self.logger.warning(
                 f"Workflow {workflow.workflow_id} deadlocked. "
-                f"Remaining steps: {[s.step_id for s in remaining]}"
+                f"Remaining steps: {[s.step_id for s in remaining]}",
             )
 
     async def _execute_parallel_steps(
-        self, ready_steps: list[WorkflowStep], context: dict[str, t.Any]
+        self,
+        ready_steps: list[WorkflowStep],
+        context: dict[str, t.Any],
     ) -> list[tuple[str, StepResult]]:
         """Execute multiple steps in parallel and collect results."""
         step_tasks = [
@@ -206,7 +219,11 @@ class BasicWorkflowEngine(WorkflowEngine):
 
             if step_result.state == StepState.FAILED:
                 should_stop = self._handle_step_failure(
-                    workflow, step_id, step_result, failed_steps, result
+                    workflow,
+                    step_id,
+                    step_result,
+                    failed_steps,
+                    result,
                 )
                 if should_stop:
                     return True
@@ -264,7 +281,7 @@ class BasicWorkflowEngine(WorkflowEngine):
     ) -> None:
         """Handle workflow execution exception."""
         self.logger.exception(
-            f"Workflow {workflow.workflow_id} execution failed: {error}"
+            f"Workflow {workflow.workflow_id} execution failed: {error}",
         )
         result.state = WorkflowState.FAILED
         result.error = str(error)
@@ -360,7 +377,9 @@ class BasicWorkflowEngine(WorkflowEngine):
         return self._create_failed_result(step, last_error, retry_count)
 
     async def _execute_single_attempt(
-        self, step: WorkflowStep, context: dict[str, t.Any]
+        self,
+        step: WorkflowStep,
+        context: dict[str, t.Any],
     ) -> tuple[StepResult | None, str | None]:
         """Execute a single step attempt. Returns (result, error)."""
         try:
@@ -382,7 +401,10 @@ class BasicWorkflowEngine(WorkflowEngine):
         await asyncio.sleep(delay)
 
     def _create_failed_result(
-        self, step: WorkflowStep, error: str | None, retry_count: int
+        self,
+        step: WorkflowStep,
+        error: str | None,
+        retry_count: int,
     ) -> StepResult:
         """Create a failed step result after all retries exhausted."""
         return StepResult(

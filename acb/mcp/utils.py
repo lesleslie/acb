@@ -73,7 +73,9 @@ def validate_parameters(parameters: dict[str, t.Any], required: list[str]) -> bo
 
 
 def get_parameter(
-    parameters: dict[str, t.Any], key: str, default: t.Any | None = None
+    parameters: dict[str, t.Any],
+    key: str,
+    default: t.Any | None = None,
 ) -> t.Any:
     """Fetch a parameter from a dictionary with an optional default."""
     return parameters.get(key, default)

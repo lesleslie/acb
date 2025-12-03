@@ -135,7 +135,7 @@ class HealthCheckResponse:
 
 
 __all__ = [
-    "HealthStatus",
     "ComponentHealth",
     "HealthCheckResponse",
+    "HealthStatus",
 ]

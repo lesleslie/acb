@@ -527,7 +527,7 @@ class ServerlessResourceCleanup(CleanupMixin):
                 import logging
 
                 logging.getLogger(__name__).exception(
-                    f"Error cleaning up resource: {e}"
+                    f"Error cleaning up resource: {e}",
                 )
 
         if cleanup_count > 0:

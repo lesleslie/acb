@@ -8,13 +8,9 @@ from pathlib import Path
 
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
-from typing import TYPE_CHECKING
 
 from acb.depends import depends
 from acb.logger import Logger as LoggerAdapter
-
-if TYPE_CHECKING:
-    pass
 
 logger = depends.get_sync(LoggerAdapter)
 

@@ -7,7 +7,6 @@ from pathlib import Path
 import typing as t
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
-from typing import TYPE_CHECKING
 
 from acb.depends import depends
 from acb.logger import Logger as LoggerAdapter
@@ -22,9 +21,6 @@ from acb.migration.assessment import assess_migration
 from acb.migration.rollback import RollbackManager, RollbackPoint
 from acb.migration.scripts import get_migration_script
 from acb.migration.validator import MigrationValidator
-
-if TYPE_CHECKING:
-    pass
 
 logger = depends.get_sync(LoggerAdapter)
 
@@ -276,7 +272,7 @@ class MigrationManager:
                 await self._execute_step(step, config, metrics)
                 metrics.steps_completed += 1
             except Exception as e:
-                logger.error(f"Step failed: {step.name} - {e}")
+                logger.exception(f"Step failed: {step.name} - {e}")
                 errors.append(f"{step.name}: {e}")
                 metrics.steps_failed += 1
 
@@ -400,7 +396,7 @@ class MigrationManager:
             logger.info(f"Rollback successful: {rollback_id}")
             return True
         except Exception as e:
-            logger.error(f"Rollback failed: {e}")
+            logger.exception(f"Rollback failed: {e}")
             return False
 
     def list_rollback_points(self) -> list[RollbackPoint]:

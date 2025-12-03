@@ -231,9 +231,12 @@ class QueryRegistry:
             KeyError: If adapter not found
         """
         if name not in self._database_adapters:
-            raise KeyError(
+            msg = (
                 f"Database adapter '{name}' not registered. "
                 f"Available: {list(self._database_adapters.keys())}"
+            )
+            raise KeyError(
+                msg,
             )
         return self._database_adapters[name]
 
@@ -250,9 +253,12 @@ class QueryRegistry:
             KeyError: If adapter not found
         """
         if name not in self._model_adapters:
-            raise KeyError(
+            msg = (
                 f"Model adapter '{name}' not registered. "
                 f"Available: {list(self._model_adapters.keys())}"
+            )
+            raise KeyError(
+                msg,
             )
         return self._model_adapters[name]
 

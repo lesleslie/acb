@@ -76,7 +76,8 @@ class ValidationMixin:
         context: str | None = None,
     ) -> None:
         if len(field_names) != len(values):
-            raise ValueError("field_names and values must have same length")
+            msg = "field_names and values must have same length"
+            raise ValueError(msg)
         has_value = any(v is not None and str(v).strip() for v in values)
         if not has_value:
             prefix = f"{context}: " if context else ""
@@ -97,9 +98,11 @@ def create_pattern_validator(pattern: str | re.Pattern[str]) -> t.Callable[[str]
 
     def _validate(value: str) -> str:
         if not isinstance(value, str):
-            raise ValueError("Expected string")
+            msg = "Expected string"
+            raise ValueError(msg)
         if not regex.match(value):  # REGEX OK: Using pre-compiled pattern from above
-            raise ValueError("Value does not match required pattern")
+            msg = "Value does not match required pattern"
+            raise ValueError(msg)
         return value
 
     return _validate
@@ -113,11 +116,14 @@ def create_length_validator(
 
     def _validate(value: str) -> str:
         if not isinstance(value, str):
-            raise ValueError("Expected string")
+            msg = "Expected string"
+            raise ValueError(msg)
         if min_length is not None and len(value) < min_length:
-            raise ValueError(f"Minimum length is {min_length}")
+            msg = f"Minimum length is {min_length}"
+            raise ValueError(msg)
         if max_length is not None and len(value) > max_length:
-            raise ValueError(f"Maximum length is {max_length}")
+            msg = f"Maximum length is {max_length}"
+            raise ValueError(msg)
         return value
 
     return _validate

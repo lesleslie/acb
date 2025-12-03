@@ -46,11 +46,10 @@ def _get_logger_adapter() -> type[t.Any]:
         # If import_adapter returns an instance, we need to get the class
         if hasattr(LoggerAdapter, "__class__") and not isinstance(LoggerAdapter, type):
             return LoggerAdapter.__class__
-        elif isinstance(LoggerAdapter, type):
+        if isinstance(LoggerAdapter, type):
             return LoggerAdapter
-        else:
-            # If import_adapter returned an unexpected type, fallback to LoguruLogger
-            return LoguruLogger
+        # If import_adapter returned an unexpected type, fallback to LoguruLogger
+        return LoguruLogger
     except Exception:
         # Fallback to loguru adapter directly if import fails
         from .adapters.logger.loguru import Logger as LoguruLogger
@@ -92,7 +91,8 @@ def _initialize_logger() -> None:
         # Verify it has the expected methods before registering
         if hasattr(logger_instance, "debug") and hasattr(logger_instance, "info"):
             depends.set(
-                logger_class, logger_instance
+                logger_class,
+                logger_instance,
             )  # refurb issue: Replace with suppress context manager
 
 
@@ -108,9 +108,9 @@ LoggerSettings = LoggerBaseSettings
 
 # Export for backward compatibility
 __all__ = [
+    "InterceptHandler",
     "Logger",
+    "LoggerBaseSettings",
     "LoggerProtocol",
     "LoggerSettings",
-    "LoggerBaseSettings",
-    "InterceptHandler",
 ]

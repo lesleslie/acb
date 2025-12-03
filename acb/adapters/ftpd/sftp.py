@@ -5,7 +5,6 @@ from functools import cached_property
 from pathlib import Path
 from uuid import UUID
 
-import asyncio
 import typing as t
 from contextlib import asynccontextmanager, suppress
 from pydantic import Field
@@ -14,6 +13,9 @@ from acb.adapters import AdapterStatus
 from acb.depends import Inject, depends
 
 from ._base import FileInfo, FtpdBase, FtpdBaseSettings
+
+if t.TYPE_CHECKING:
+    import asyncio
 
 try:
     import asyncssh

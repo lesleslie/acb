@@ -153,7 +153,7 @@ class UniversalHTTPCache:
                 "max_age": ttl,
                 "url": url,
                 "method": method,
-            }
+            },
         )
 
         # Generate cache key and store
@@ -238,10 +238,7 @@ class UniversalHTTPCache:
 
         # Only cache successful and redirect responses
         cacheable_statuses = {200, 203, 206, 300, 301, 304, 410}
-        if status not in cacheable_statuses:
-            return False
-
-        return True
+        return status in cacheable_statuses
 
     def _parse_cache_control(self, headers: dict[str, str]) -> int | None:
         """Parse max-age directive from Cache-Control header.

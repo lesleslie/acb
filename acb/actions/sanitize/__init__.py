@@ -21,19 +21,19 @@ __all__ = ["sanitize"]
 # Common sensitive key/token patterns
 SENSITIVE_PATTERNS: dict[str, re.Pattern[str]] = {
     "openai": re.compile(
-        r"sk-[A-Za-z0-9]{48}"
+        r"sk-[A-Za-z0-9]{48}",
     ),  # REGEX OK: OpenAI API key pattern - fixed length, character classes only
     "anthropic": re.compile(
-        r"sk-ant-[A-Za-z0-9\-_]{95,}"
+        r"sk-ant-[A-Za-z0-9\-_]{95,}",
     ),  # REGEX OK: Anthropic API key pattern - bounded quantifier with character class
     "github": re.compile(
-        r"gh[ps]_[A-Za-z0-9]{36,255}"
+        r"gh[ps]_[A-Za-z0-9]{36,255}",
     ),  # REGEX OK: GitHub token pattern - bounded quantifier with character class
     "jwt": re.compile(
-        r"eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+"
+        r"eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+",
     ),  # REGEX OK: JWT pattern - structure-based, no nested quantifiers
     "generic_hex": re.compile(
-        r"\b[0-9a-f]{32,}\b"
+        r"\b[0-9a-f]{32,}\b",
     ),  # REGEX OK: Generic hex token - word boundaries with character class
 }
 
@@ -83,7 +83,9 @@ class Sanitize:
         cleaned = value
         if strip_html:
             cleaned = re.sub(
-                r"<[^>]+>", "", cleaned
+                r"<[^>]+>",
+                "",
+                cleaned,
             )  # REGEX OK: HTML tag removal - negated character class with bounded match
 
         if max_length is not None and len(cleaned) > max_length:
@@ -91,7 +93,8 @@ class Sanitize:
             raise ValueError(msg)
 
         if allowed_chars is not None and not re.match(
-            rf"^[{allowed_chars}]*$", cleaned
+            rf"^[{allowed_chars}]*$",
+            cleaned,
         ):  # REGEX OK: Character allowlist validation - anchored with character class
             msg = f"Input contains disallowed characters. Allowed: {allowed_chars}"
             raise ValueError(msg)
@@ -176,7 +179,9 @@ class Sanitize:
         if mask_patterns:
             for pattern in mask_patterns:
                 s = re.sub(
-                    pattern, "[REDACTED]", s
+                    pattern,
+                    "[REDACTED]",
+                    s,
                 )  # REGEX OK: User-provided patterns for custom masking - caller responsibility
         return s
 
@@ -200,7 +205,9 @@ class Sanitize:
             ]
         if isinstance(data, str):
             return Sanitize._sanitize_string(
-                data, mask_keys=mask_keys, mask_patterns=mask_patterns
+                data,
+                mask_keys=mask_keys,
+                mask_patterns=mask_patterns,
             )
         return data
 

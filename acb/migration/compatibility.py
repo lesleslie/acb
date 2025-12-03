@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import warnings
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 
 from acb.depends import depends
 from acb.logger import Logger as LoggerAdapter
 from acb.migration._base import VersionInfo
-
-if TYPE_CHECKING:
-    pass
 
 logger = depends.get_sync(LoggerAdapter)
 

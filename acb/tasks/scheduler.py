@@ -121,9 +121,7 @@ class ScheduleRule(BaseModel):
     def _schedule_exhausted(self, base_time: datetime) -> bool:
         if self.max_runs is not None and self.run_count >= self.max_runs:
             return True
-        if self.end_time and base_time >= self.end_time:
-            return True
-        return False
+        return bool(self.end_time and base_time >= self.end_time)
 
     def _compute_next_time(self, base_time: datetime) -> datetime | None:
         if self.cron_expression:
@@ -142,9 +140,7 @@ class ScheduleRule(BaseModel):
     def _is_within_schedule_window(self, next_time: datetime | None) -> bool:
         if next_time is None:
             return False
-        if self.end_time and next_time > self.end_time:
-            return False
-        return True
+        return not (self.end_time and next_time > self.end_time)
 
     def _set_next_run(self, next_time: datetime | None) -> datetime | None:
         self.next_run = next_time

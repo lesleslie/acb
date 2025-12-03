@@ -127,7 +127,7 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
         super().__init__(wrapped_repository.entity_type, wrapped_repository.settings)
         self.wrapped = wrapped_repository
         self.cache_settings = cache_settings or depends.get_sync(
-            RepositoryCacheSettings
+            RepositoryCacheSettings,
         )
         self._cache = None
         self._metrics: CacheMetrics = CacheMetrics()  # type: ignore[assignment]

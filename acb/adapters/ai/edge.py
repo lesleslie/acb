@@ -571,7 +571,9 @@ class EdgeAI(AIBase):
         return prompt
 
     def _build_ollama_payload(
-        self, request: AIRequest, prompt: str
+        self,
+        request: AIRequest,
+        prompt: str,
     ) -> dict[str, t.Any]:
         """Build Ollama API payload."""
         return {

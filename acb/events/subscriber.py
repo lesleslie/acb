@@ -172,24 +172,24 @@ class EventFilter(BaseModel):
         import re
 
         # Check event type patterns
-        if self.event_type_patterns:
-            if not any(
-                re.match(
-                    pattern, event.metadata.event_type
-                )  # REGEX OK: User-provided pattern matching for event filtering
-                for pattern in self.event_type_patterns
-            ):
-                return False
+        if self.event_type_patterns and not any(
+            re.match(
+                pattern,
+                event.metadata.event_type,
+            )  # REGEX OK: User-provided pattern matching for event filtering
+            for pattern in self.event_type_patterns
+        ):
+            return False
 
         # Check source patterns
-        if self.source_patterns:
-            if not any(
-                re.match(
-                    pattern, event.metadata.source
-                )  # REGEX OK: User-provided pattern matching for source filtering
-                for pattern in self.source_patterns
-            ):
-                return False
+        if self.source_patterns and not any(
+            re.match(
+                pattern,
+                event.metadata.source,
+            )  # REGEX OK: User-provided pattern matching for source filtering
+            for pattern in self.source_patterns
+        ):
+            return False
 
         return True
 

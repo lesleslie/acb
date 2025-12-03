@@ -66,7 +66,7 @@ class PydanticModelAdapter(ModelAdapter[T]):
     def _manual_serialize(self, instance: T) -> dict[str, Any]:
         if hasattr(instance, "model_fields"):
             return self._serialize_fields(instance, list(instance.model_fields.keys()))
-        if hasattr(instance, "__fields__"):
+        elif hasattr(instance, "__fields__"):
             return self._serialize_fields(instance, list(instance.__fields__.keys()))
 
         return self._serialize_all_attributes(instance)
@@ -118,10 +118,10 @@ class PydanticModelAdapter(ModelAdapter[T]):
         model_class: type[T],
         data: dict[str, Any],
     ) -> dict[str, Any]:
-        if hasattr(model_class, "__fields__"):
-            model_fields = set(model_class.__fields__.keys())  # type: ignore  # type: ignore[attr-defined]
-        elif hasattr(model_class, "model_fields"):
+        if hasattr(model_class, "model_fields"):
             model_fields = set(model_class.model_fields.keys())  # type: ignore  # type: ignore[attr-defined]
+        elif hasattr(model_class, "__fields__"):
+            model_fields = set(model_class.__fields__.keys())  # type: ignore  # type: ignore[attr-defined]
         else:
             return data
 

@@ -71,7 +71,8 @@ class MockServiceProvider:
             default_behavior.update(behavior)
 
         async def mock_optimize(
-            target: str, parameters: dict[str, Any] | None = None
+            target: str,
+            parameters: dict[str, Any] | None = None,
         ) -> dict[str, Any]:
             import asyncio
 
@@ -102,7 +103,8 @@ class MockServiceProvider:
             return dict(perf_mock._metrics)
 
         async def mock_benchmark(
-            operation: str, iterations: int = 10
+            operation: str,
+            iterations: int = 10,
         ) -> dict[str, Any]:
             import random
 
@@ -215,7 +217,8 @@ class MockServiceProvider:
             default_behavior.update(behavior)
 
         async def mock_validate(
-            data: t.Any, schema: dict[str, Any] | None = None
+            data: t.Any,
+            schema: dict[str, Any] | None = None,
         ) -> dict[str, Any]:
             import asyncio
 
@@ -256,7 +259,8 @@ class MockServiceProvider:
             return sanitized.strip()
 
         async def mock_validate_schema(
-            data: dict[str, Any], schema_name: str
+            data: dict[str, Any],
+            schema_name: str,
         ) -> dict[str, Any]:
             import asyncio
 
@@ -326,7 +330,7 @@ class MockServiceProvider:
 
                 repo_mock._repositories[entity_type] = mock_repo
 
-            return t.cast(AsyncMock, repo_mock._repositories[entity_type])
+            return t.cast("AsyncMock", repo_mock._repositories[entity_type])
 
         async def mock_begin_transaction() -> AsyncMock:
             import asyncio

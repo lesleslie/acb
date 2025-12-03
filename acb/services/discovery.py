@@ -232,7 +232,8 @@ class Service(BaseModel):
 
 # Service registry using ContextVar for thread safety
 service_registry: ContextVar[list[Service] | None] = ContextVar(
-    "service_registry", default=None
+    "service_registry",
+    default=None,
 )
 _enabled_services_cache: ContextVar[dict[str, Service] | None] = ContextVar(
     "_enabled_services_cache",

@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from acb.adapters import import_adapter
-from acb.adapters.logger import LoggerProtocol
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
+
+if TYPE_CHECKING:
+    from acb.adapters.logger import LoggerProtocol
 
 
 class ComponentRegistry:
@@ -95,7 +97,6 @@ class ComponentRegistry:
     async def _register_services(self) -> None:
         """Register services (placeholder for future implementation)."""
         # When services are implemented, register them here
-        pass
 
     def get_actions(self) -> dict[str, Any]:
         """Get all registered actions."""

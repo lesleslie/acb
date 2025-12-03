@@ -76,7 +76,8 @@ class DatabaseTestProvider:
         db_mock._config = default_config
 
         async def mock_execute(
-            query: str, params: tuple[Any, ...] | None = None
+            query: str,
+            params: tuple[Any, ...] | None = None,
         ) -> MagicMock:
             # Simulate query execution
             result_mock = MagicMock()
@@ -103,7 +104,8 @@ class DatabaseTestProvider:
             return result_mock
 
         async def mock_fetch_one(
-            query: str, params: tuple[Any, ...] | None = None
+            query: str,
+            params: tuple[Any, ...] | None = None,
         ) -> dict[str, Any]:
             return {
                 "id": 1,
@@ -112,7 +114,8 @@ class DatabaseTestProvider:
             }
 
         async def mock_fetch_all(
-            query: str, params: tuple[Any, ...] | None = None
+            query: str,
+            params: tuple[Any, ...] | None = None,
         ) -> list[dict[str, Any]]:
             return [
                 {
@@ -155,7 +158,9 @@ class DatabaseTestProvider:
         return db_mock
 
     def create_fixtures(
-        self, table_name: str, data: list[dict[str, Any]]
+        self,
+        table_name: str,
+        data: list[dict[str, Any]],
     ) -> dict[str, t.Any]:
         """Create test data fixtures."""
         fixture = {
@@ -235,7 +240,8 @@ class DatabaseTestProvider:
 
     @asynccontextmanager
     async def database_transaction_test(
-        self, db: AsyncMock
+        self,
+        db: AsyncMock,
     ) -> t.AsyncGenerator[AsyncMock]:
         """Context manager for testing database transactions."""
         transaction = await db.begin_transaction()

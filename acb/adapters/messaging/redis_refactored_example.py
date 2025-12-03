@@ -94,12 +94,15 @@ def _get_coredis_imports() -> dict[str, t.Any]:
                     "ConnectionError": ConnectionError,
                     "RedisError": RedisError,
                     "TimeoutError": TimeoutError,
-                }
+                },
             )
         except ImportError as e:
-            raise ImportError(
+            msg = (
                 "coredis is required for RedisQueue. "
                 "Install with: pip install coredis>=4.0.0"
+            )
+            raise ImportError(
+                msg,
             ) from e
 
     return _coredis_imports
@@ -218,11 +221,11 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
                         # Create Redis client
                         if self._settings.enable_clustering:
                             self._client = imports["RedisCluster"](
-                                connection_pool=self._connection_pool
+                                connection_pool=self._connection_pool,
                             )
                         else:
                             self._client = imports["Redis"](
-                                connection_pool=self._connection_pool
+                                connection_pool=self._connection_pool,
                             )
 
                         # Register for cleanup
@@ -235,8 +238,9 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
 
                     except Exception as e:
                         self.logger.exception(f"Failed to connect to Redis: {e}")
+                        msg = "Failed to establish Redis connection"
                         raise MessagingConnectionError(
-                            "Failed to establish Redis connection",
+                            msg,
                             original_error=e,
                         ) from e
 
@@ -257,7 +261,7 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
 
             # Start background tasks
             self._delayed_processor_task = asyncio.create_task(
-                self._process_delayed_messages()
+                self._process_delayed_messages(),
             )
 
             self._connected = True
@@ -320,8 +324,9 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
             self.logger.debug(f"Published message to topic: {topic}")
         except Exception as e:
             self.logger.exception(f"Failed to publish message to topic {topic}")
+            msg = f"Failed to publish to topic {topic}"
             raise MessagingOperationError(
-                f"Failed to publish to topic {topic}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -354,7 +359,8 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
                     timeout is None or (time.time() - start_time) < timeout
                 ):
                     message = await pubsub.get_message(
-                        ignore_subscribe_messages=True, timeout=1
+                        ignore_subscribe_messages=True,
+                        timeout=1,
                     )  # type: ignore[attr-defined]
                     if message and message.get("type") == "message":
                         pubsub_msg = PubSubMessage(
@@ -419,17 +425,19 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
             # Set TTL for message metadata
             if self._settings.message_ttl:
                 await client.expire(  # type: ignore[attr-defined]
-                    message_key, self._settings.message_ttl
+                    message_key,
+                    self._settings.message_ttl,
                 )
 
             # Add to queue sorted set with appropriate score
             if delay_seconds > 0:
                 # Add to delayed queue
                 await client.zadd(  # type: ignore[attr-defined]
-                    self._delayed_key, {str(queue_message.message_id): score}
+                    self._delayed_key,
+                    {str(queue_message.message_id): score},
                 )
                 self.logger.debug(
-                    f"Enqueued delayed message {queue_message.message_id} to {queue}"
+                    f"Enqueued delayed message {queue_message.message_id} to {queue}",
                 )
             else:
                 # Add directly to target queue
@@ -439,15 +447,16 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
                     {str(queue_message.message_id): queue_message.priority.value},
                 )
                 self.logger.debug(
-                    f"Enqueued message {queue_message.message_id} to {queue}"
+                    f"Enqueued message {queue_message.message_id} to {queue}",
                 )
 
             return str(queue_message.message_id)
 
         except Exception as e:
             self.logger.exception(f"Failed to enqueue message to queue {queue}")
+            msg = f"Failed to enqueue to queue {queue}"
             raise MessagingOperationError(
-                f"Failed to enqueue to queue {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -496,7 +505,7 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
                             queue=queue,
                             payload=msg_data.get(b"payload", b""),
                             priority=MessagePriority(
-                                int(msg_data.get(b"priority", MessagePriority.NORMAL))
+                                int(msg_data.get(b"priority", MessagePriority.NORMAL)),
                             ),
                             headers=headers,
                         )
@@ -504,7 +513,9 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
                         # Add to processing queue with visibility timeout
                         processing_key = f"{self._processing_key}:{msg_id}"
                         await client.setex(
-                            processing_key, int(visibility_timeout), b"1"
+                            processing_key,
+                            int(visibility_timeout),
+                            b"1",
                         )  # type: ignore[attr-defined]
 
                         self.logger.debug(f"Dequeued message {msg_id} from {queue}")
@@ -519,8 +530,9 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
             return None
         except Exception as e:
             self.logger.exception(f"Failed to dequeue message from queue {queue}")
+            msg = f"Failed to dequeue from queue {queue}"
             raise MessagingOperationError(
-                f"Failed to dequeue from queue {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -548,8 +560,9 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to acknowledge message {message_id}")
+            msg = f"Failed to acknowledge message {message_id}"
             raise MessagingOperationError(
-                f"Failed to acknowledge message {message_id}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -575,21 +588,23 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
                 queue_key = self._queue_key.format(topic=queue)
                 # Re-add with normal priority
                 await client.zadd(  # type: ignore[attr-defined]
-                    queue_key, {message_id: MessagePriority.NORMAL.value}
+                    queue_key,
+                    {message_id: MessagePriority.NORMAL.value},
                 )
                 self.logger.debug(
-                    f"Rejected and requeued message {message_id} to {queue}"
+                    f"Rejected and requeued message {message_id} to {queue}",
                 )
             else:
                 # Don't requeue - the message data will eventually expire
                 self.logger.debug(
-                    f"Rejected message {message_id} from {queue} (not requeued)"
+                    f"Rejected message {message_id} from {queue} (not requeued)",
                 )
 
         except Exception as e:
             self.logger.exception(f"Failed to reject message {message_id}")
+            msg = f"Failed to reject message {message_id}"
             raise MessagingOperationError(
-                f"Failed to reject message {message_id}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -618,8 +633,9 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to purge queue {queue}")
+            msg = f"Failed to purge queue {queue}"
             raise MessagingOperationError(
-                f"Failed to purge queue {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -643,8 +659,9 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
 
         except Exception as e:
             self.logger.exception(f"Failed to get stats for queue {queue}")
+            msg = f"Failed to get stats for queue {queue}"
             raise MessagingOperationError(
-                f"Failed to get stats for queue {queue}",
+                msg,
                 original_error=e,
             ) from e
 
@@ -655,7 +672,6 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
     async def _load_lua_scripts(self) -> None:
         """Load Lua scripts for atomic operations."""
         # Implementation would go here
-        pass
 
     async def _process_delayed_messages(self) -> None:
         """Background task to move delayed messages to their target queues."""

@@ -28,7 +28,7 @@ from acb.adapters.embedding._base import (
 from acb.config import Config
 from acb.depends import depends
 
-SentenceTransformer = t.cast(t.Any, None)
+SentenceTransformer = t.cast("t.Any", None)
 _sentence_transformers_available = (
     _il_util.find_spec("sentence_transformers") is not None
 )
@@ -93,8 +93,9 @@ class SentenceTransformersSettings(EmbeddingBaseSettings):
     enable_quantization: bool = Field(default=False)
     memory_efficient: bool = Field(default=True)
 
-    class Config:
-        env_prefix = "SENTENCE_TRANSFORMERS_"
+    model_config = {
+        "env_prefix": "SENTENCE_TRANSFORMERS_",
+    }
 
 
 class SentenceTransformersEmbedding(EmbeddingAdapter):
@@ -217,7 +218,7 @@ class SentenceTransformersEmbedding(EmbeddingAdapter):
             # Create results
             results = []
             for _i, (text, embedding) in enumerate(
-                zip(texts, embeddings_list, strict=False)
+                zip(texts, embeddings_list, strict=False),
             ):
                 result = EmbeddingResult(
                     text=text,

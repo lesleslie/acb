@@ -268,7 +268,8 @@ class PerformanceTestProvider:
             }
 
     def measure_execution_time(
-        self, func: t.Callable[..., Any]
+        self,
+        func: t.Callable[..., Any],
     ) -> t.Callable[..., Any]:
         """Decorator to measure function execution time."""
         if asyncio.iscoroutinefunction(func):
@@ -325,7 +326,8 @@ class PerformanceTestProvider:
 
     @asynccontextmanager
     async def performance_test_context(
-        self, test_name: str
+        self,
+        test_name: str,
     ) -> AsyncGenerator[MetricsCollector]:
         """Context manager for performance testing."""
         metrics = self.MetricsCollector()

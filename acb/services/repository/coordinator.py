@@ -388,7 +388,10 @@ class MultiDatabaseCoordinator(CleanupMixin):
             self._completed_tasks.append(task)
 
     def _prepare_2pc_databases(
-        self, task: CoordinationTask, uow: Any, prepared_databases: set[str]
+        self,
+        task: CoordinationTask,
+        uow: Any,
+        prepared_databases: set[str],
     ) -> None:
         """Phase 1: Prepare databases for two-phase commit."""
         for db_name in task.databases:
@@ -399,7 +402,10 @@ class MultiDatabaseCoordinator(CleanupMixin):
                 prepared_databases.add(db_name)
 
     def _commit_2pc_databases(
-        self, uow: Any, prepared_databases: set[str], results: dict[str, Any]
+        self,
+        uow: Any,
+        prepared_databases: set[str],
+        results: dict[str, Any],
     ) -> None:
         """Phase 2: Commit prepared databases."""
         for db_name in prepared_databases:
@@ -409,7 +415,10 @@ class MultiDatabaseCoordinator(CleanupMixin):
                 results[db_name] = {"status": "committed"}
 
     def _abort_2pc_databases(
-        self, prepared_databases: set[str], results: dict[str, Any], error: Exception
+        self,
+        prepared_databases: set[str],
+        results: dict[str, Any],
+        error: Exception,
     ) -> None:
         """Rollback prepared databases on error."""
         for db_name in prepared_databases:
@@ -467,7 +476,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
 
                     # Add compensation action
                     def compensate(
-                        db: str = db_name, repo: Any = repository
+                        db: str = db_name,
+                        repo: Any = repository,
                     ) -> Callable[[], Awaitable[None]]:
                         async def _compensate() -> None:
                             # Delete created entity
@@ -499,7 +509,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
             if repository:
 
                 async def create_in_db(
-                    db: str = db_name, repo: Any = repository
+                    db: str = db_name,
+                    repo: Any = repository,
                 ) -> dict[str, Any]:
                     try:
                         # In a real implementation, we'd create actual entities
@@ -536,7 +547,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
             if repository:
 
                 async def update_in_db(
-                    db: str = db_name, repo: Any = repository
+                    db: str = db_name,
+                    repo: Any = repository,
                 ) -> dict[str, Any]:
                     try:
                         await asyncio.sleep(0.01)  # Simulate work
@@ -569,7 +581,8 @@ class MultiDatabaseCoordinator(CleanupMixin):
             if repository:
 
                 async def delete_in_db(
-                    db: str = db_name, repo: Any = repository
+                    db: str = db_name,
+                    repo: Any = repository,
                 ) -> dict[str, Any]:
                     try:
                         await asyncio.sleep(0.01)  # Simulate work

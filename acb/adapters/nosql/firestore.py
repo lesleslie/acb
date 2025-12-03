@@ -22,10 +22,12 @@ except Exception:  # pragma: no cover - allow tests without GCP installed
     else:
         raise
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
-from acb.config import Config
 from acb.depends import Inject, depends
 
 from ._base import NosqlBase, NosqlBaseSettings
+
+if t.TYPE_CHECKING:
+    from acb.config import Config
 
 MODULE_ID = UUID("0197ff45-0a82-7e10-bb46-9d3c8f15a7e2")
 MODULE_STATUS = AdapterStatus.STABLE

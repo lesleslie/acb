@@ -26,9 +26,6 @@ from acb.adapters.embedding._base import (
 from acb.config import Config
 from acb.depends import depends
 
-if t.TYPE_CHECKING:
-    pass
-
 try:
     import onnxruntime as ort
 
@@ -108,8 +105,9 @@ class ONNXEmbeddingSettings(EmbeddingBaseSettings):
         description="Graph optimization level",
     )
 
-    class Config:
-        env_prefix = "ONNX_"
+    model_config = {
+        "env_prefix": "ONNX_",
+    }
 
 
 class ONNXEmbedding(EmbeddingAdapter):
@@ -440,7 +438,7 @@ class ONNXEmbedding(EmbeddingAdapter):
                 a_min=1e-9,
                 a_max=None,
             )
-            result = t.cast(np.ndarray, sum_embeddings / sum_mask)
+            result = t.cast("np.ndarray", sum_embeddings / sum_mask)
             return result
 
         if strategy == PoolingStrategy.MAX:
@@ -472,7 +470,7 @@ class ONNXEmbedding(EmbeddingAdapter):
             sum_embeddings = np.sum(weighted_embeddings, axis=1)
             sum_weights = np.sum(weights, axis=1)
             result = t.cast(
-                np.ndarray,
+                "np.ndarray",
                 sum_embeddings / np.clip(sum_weights, a_min=1e-9, a_max=None),
             )
             return result
@@ -659,7 +657,8 @@ class ONNXEmbedding(EmbeddingAdapter):
 
 # Factory function for dependency injection
 async def create_onnx_embedding(
-    config: Config | None = None, model_path: str = ""
+    config: Config | None = None,
+    model_path: str = "",
 ) -> ONNXEmbedding:
     """Create ONNX embedding adapter instance."""
     if config is None:

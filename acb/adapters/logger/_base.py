@@ -133,10 +133,7 @@ class LoggerBaseSettings(Settings):
         except Exception:
             return False
 
-        for arg in argv:
-            if arg == "--debug" or arg.startswith("--debug="):
-                return True
-        return False
+        return any(arg == "--debug" or arg.startswith("--debug=") for arg in argv)
 
 
 @t.runtime_checkable
@@ -321,7 +318,6 @@ class LoggerBase(CleanupMixin):
         Default implementation does nothing. Subclasses should override
         to configure their stdout sink.
         """
-        pass
 
     def _add_stderr_sink(self) -> None:
         """Add stderr sink for structured JSON logging (AI/machine consumption).
@@ -329,7 +325,6 @@ class LoggerBase(CleanupMixin):
         Default implementation does nothing. Subclasses should override
         to configure their stderr sink.
         """
-        pass
 
     def _add_additional_sink(self, config: dict[str, t.Any]) -> None:
         """Add additional sink from configuration (file, remote, etc).
@@ -340,7 +335,6 @@ class LoggerBase(CleanupMixin):
         Default implementation does nothing. Subclasses should override
         to support additional sinks.
         """
-        pass
 
     # Utility methods
     def _is_testing_mode(self) -> bool:

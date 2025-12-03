@@ -24,8 +24,6 @@ class ConfigError(Exception):
 class ConfigValidationError(ConfigError):
     """Raised when configuration validation fails."""
 
-    pass
-
 
 class ConfigFieldError(ConfigError):
     """Raised when there are issues with specific configuration fields."""
@@ -36,7 +34,7 @@ class ConfigFieldError(ConfigError):
         field_type: str | type,
         actual_type: str | type | None = None,
         message: str | None = None,
-    ):
+    ) -> None:
         self.field_name = field_name
         self.field_type = field_type
         self.actual_type = actual_type
@@ -54,7 +52,7 @@ class ConfigFieldError(ConfigError):
 class ConfigPathError(ConfigError):
     """Raised when there are issues with configuration paths."""
 
-    def __init__(self, path: str | object, message: str | None = None):
+    def __init__(self, path: str | object, message: str | None = None) -> None:
         self.path = path
         error_msg = message or f"Invalid configuration path: {path}"
         super().__init__(error_msg)
@@ -63,14 +61,11 @@ class ConfigPathError(ConfigError):
 class ConfigValueError(ConfigError):
     """Raised when configuration values are invalid."""
 
-    def __init__(self, field_name: str, value: Any, message: str | None = None):
+    def __init__(self, field_name: str, value: Any, message: str | None = None) -> None:
         self.field_name = field_name
         self.value = value
 
-        if message:
-            error_msg = message
-        else:
-            error_msg = f"Invalid value for '{field_name}': {value}"
+        error_msg = message or f"Invalid value for '{field_name}': {value}"
 
         super().__init__(error_msg)
 
@@ -78,7 +73,7 @@ class ConfigValueError(ConfigError):
 class ConfigMissingError(ConfigError):
     """Raised when required configuration is missing."""
 
-    def __init__(self, field_name: str, context: str | None = None):
+    def __init__(self, field_name: str, context: str | None = None) -> None:
         self.field_name = field_name
         if context:
             error_msg = f"Required configuration '{field_name}' is missing in {context}"
@@ -89,7 +84,9 @@ class ConfigMissingError(ConfigError):
 
 
 def raise_field_error(
-    field_name: str, expected_type: str | type, actual_value: Any
+    field_name: str,
+    expected_type: str | type,
+    actual_value: Any,
 ) -> None:
     """Raise a standardized field error with consistent messaging."""
     actual_type = type(actual_value).__name__ if actual_value is not None else "None"
@@ -119,7 +116,9 @@ def validate_path_field(obj: object, field_name: str) -> None:
 
 
 def validate_field_exists(
-    obj: object, field_name: str, expected_type: type | None = None
+    obj: object,
+    field_name: str,
+    expected_type: type | None = None,
 ) -> Any:
     """Validate that a field exists and optionally check its type."""
     if not hasattr(obj, field_name):

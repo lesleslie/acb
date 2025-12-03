@@ -239,7 +239,7 @@ class Vector(VectorBase):
                 result = VectorSearchResult(
                     id=str(obj.uuid),
                     score=score,
-                    metadata=obj.properties or t.cast(dict[str, t.Any], {}),
+                    metadata=obj.properties or t.cast("dict[str, t.Any]", {}),
                     vector=obj.vector.get("default")
                     if include_vectors and obj.vector
                     else None,
@@ -310,12 +310,14 @@ class Vector(VectorBase):
 
             # Prepare documents for batch insertion
             document_ids, objects_to_insert = self._prepare_documents_for_insert(
-                documents
+                documents,
             )
 
             # Perform batch insert
             await self._batch_insert_objects(
-                weaviate_collection, objects_to_insert, self.config.vector.batch_size
+                weaviate_collection,
+                objects_to_insert,
+                self.config.vector.batch_size,
             )
 
             return document_ids
@@ -325,7 +327,8 @@ class Vector(VectorBase):
             return []
 
     def _prepare_documents_for_insert(
-        self, documents: list[VectorDocument]
+        self,
+        documents: list[VectorDocument],
     ) -> tuple[list[str], list[dict[str, t.Any]]]:
         """Prepare documents for batch insertion.
 
@@ -464,7 +467,7 @@ class Vector(VectorBase):
                             vector=obj.vector.get("default", [])
                             if include_vectors and obj.vector
                             else [],
-                            metadata=obj.properties or t.cast(dict[str, t.Any], {}),
+                            metadata=obj.properties or t.cast("dict[str, t.Any]", {}),
                         )
                         documents.append(doc)
 
@@ -589,7 +592,7 @@ class Vector(VectorBase):
                 result = VectorSearchResult(
                     id=str(obj.uuid),
                     score=score,
-                    metadata=obj.properties or t.cast(dict[str, t.Any], {}),
+                    metadata=obj.properties or t.cast("dict[str, t.Any]", {}),
                     vector=None,  # Text search doesn't return vectors
                 )
                 results.append(result)

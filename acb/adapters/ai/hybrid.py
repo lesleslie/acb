@@ -281,7 +281,9 @@ class HybridAI(AIBase):
             return await self._handle_streaming_fallback(routing_result, request, e)
 
     async def _execute_streaming_strategy(
-        self, routing_result: RoutingResult, request: AIRequest
+        self,
+        routing_result: RoutingResult,
+        request: AIRequest,
     ) -> StreamingResponse:
         """Execute streaming request with selected strategy."""
         if routing_result.strategy == DeploymentStrategy.CLOUD:
@@ -300,7 +302,10 @@ class HybridAI(AIBase):
         raise ValueError(msg)
 
     async def _handle_streaming_fallback(
-        self, routing_result: RoutingResult, request: AIRequest, error: Exception
+        self,
+        routing_result: RoutingResult,
+        request: AIRequest,
+        error: Exception,
     ) -> StreamingResponse:
         """Handle fallback when streaming fails."""
         self._log_warning(f"Streaming failed, attempting fallback: {error}")

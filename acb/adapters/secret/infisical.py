@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 import os
 from uuid import UUID
 
@@ -24,6 +23,9 @@ from acb.adapters import AdapterStatus
 from acb.depends import Inject, depends
 
 from ._base import SecretBase, SecretBaseSettings
+
+if t.TYPE_CHECKING:
+    import builtins
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b854cbd7bb5c")
 MODULE_STATUS = AdapterStatus.STABLE

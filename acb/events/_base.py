@@ -499,7 +499,7 @@ def event_handler(
         t.Callable[
             [Event],
             EventHandlerResult | t.Awaitable[EventHandlerResult],
-        ]
+        ],
     ],
     FunctionalEventHandler,
 ]:

@@ -66,7 +66,8 @@ class RepositoryRegistry(CleanupMixin):
         self._registrations: dict[type[Any], RepositoryRegistration] = {}
         self._instances: dict[type[Any], RepositoryBase[Any, Any]] = {}
         self._scoped_instances: dict[
-            str, dict[type[Any], RepositoryBase[Any, Any]]
+            str,
+            dict[type[Any], RepositoryBase[Any, Any]],
         ] = {}
         self._current_scope: str | None = None
 
@@ -90,7 +91,9 @@ class RepositoryRegistry(CleanupMixin):
             if existing.repository_type != repository_type:
                 entity_name = getattr(entity_type, "__name__", str(entity_type))
                 existing_name = getattr(
-                    existing.repository_type, "__name__", str(existing.repository_type)
+                    existing.repository_type,
+                    "__name__",
+                    str(existing.repository_type),
                 )
                 repo_name = getattr(repository_type, "__name__", str(repository_type))
                 msg = (
@@ -350,7 +353,8 @@ class RepositoryRegistry(CleanupMixin):
         return instance
 
     def _create_instance(
-        self, registration: RepositoryRegistration
+        self,
+        registration: RepositoryRegistration,
     ) -> RepositoryBase[Any, Any]:
         """Create repository instance."""
         if registration.factory:
@@ -359,7 +363,7 @@ class RepositoryRegistry(CleanupMixin):
         # Use dependency injection to create instance
         try:
             return t.cast(
-                RepositoryBase[Any, Any],
+                "RepositoryBase[Any, Any]",
                 depends.get_sync(registration.repository_type),
             )
         except Exception:

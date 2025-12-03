@@ -52,7 +52,7 @@ def datetime_filter(value: t.Any, format: str = "%Y-%m-%d %H:%M:%S") -> str:
     return str(value)
 
 
-def filesize_filter(value: int | float, binary: bool = True) -> str:
+def filesize_filter(value: float, binary: bool = True) -> str:
     """File size formatting filter.
 
     Args:
@@ -77,8 +77,8 @@ def filesize_filter(value: int | float, binary: bool = True) -> str:
 
 
 __all__ = [
-    "register_default_filters",
-    "json_filter",
     "datetime_filter",
     "filesize_filter",
+    "json_filter",
+    "register_default_filters",
 ]

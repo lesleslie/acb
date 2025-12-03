@@ -21,10 +21,12 @@ except Exception:  # pragma: no cover - allow tests without Mongo deps
     else:
         raise
 from acb.adapters import AdapterCapability, AdapterMetadata, AdapterStatus
-from acb.config import Config
 from acb.depends import Inject, depends
 
 from ._base import NosqlBase, NosqlBaseSettings
+
+if t.TYPE_CHECKING:
+    from acb.config import Config
 
 MODULE_ID = UUID("0197ff44-f2c7-7af0-9138-5e6a2b4d8c91")
 MODULE_STATUS = AdapterStatus.STABLE

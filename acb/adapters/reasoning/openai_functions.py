@@ -402,12 +402,11 @@ class Reasoning(ReasoningBase):
                     messages,
                     call_count,
                 )
-            else:
-                # No more function calls, we have the final answer
-                return {
-                    "final_answer": message.content or "",
-                    "new_call_count": call_count + 1,
-                }
+            # No more function calls, we have the final answer
+            return {
+                "final_answer": message.content or "",
+                "new_call_count": call_count + 1,
+            }
 
         except Exception as e:
             self._handle_error(e, call_count, reasoning_chain)
@@ -451,7 +450,7 @@ class Reasoning(ReasoningBase):
         )
 
         reasoning_chain.append(
-            self._create_tool_call_step(message, tool_results, call_count)
+            self._create_tool_call_step(message, tool_results, call_count),
         )
 
         # Add tool results to messages
@@ -467,7 +466,10 @@ class Reasoning(ReasoningBase):
         return {"final_answer": "", "new_call_count": call_count + 1}
 
     def _create_tool_call_step(
-        self, message, tool_results: list, call_count: int
+        self,
+        message,
+        tool_results: list,
+        call_count: int,
     ) -> ReasoningStep:
         """Create a reasoning step for the tool calls."""
         return ReasoningStep(
@@ -488,7 +490,10 @@ class Reasoning(ReasoningBase):
         )
 
     def _handle_error(
-        self, e: Exception, call_count: int, reasoning_chain: list[ReasoningStep]
+        self,
+        e: Exception,
+        call_count: int,
+        reasoning_chain: list[ReasoningStep],
     ) -> None:
         """Handle exceptions during function calling."""
         if self.logger is not None:
@@ -593,7 +598,10 @@ Show your reasoning process explicitly at each step.
         function_tracker = FunctionCallTracker(self.logger)
         reasoning_chain: list[ReasoningStep] = []
         return await self._react_reasoning_impl(
-            request, client, function_tracker, reasoning_chain
+            request,
+            client,
+            function_tracker,
+            reasoning_chain,
         )
 
     async def _react_reasoning_impl(
@@ -711,7 +719,9 @@ Available tools will be provided as function calls. Use them when you need to ga
 
                     # Add tool results (Observe phase)
                     for tool_call, result in zip(
-                        message.tool_calls, tool_results, strict=False
+                        message.tool_calls,
+                        tool_results,
+                        strict=False,
                     ):
                         messages.append(
                             {
@@ -796,7 +806,7 @@ Available tools will be provided as function calls. Use them when you need to ga
 
             if tool.required_parameters:
                 function_def["function"]["parameters"]["required"] = list(  # type: ignore[index]
-                    tool.required_parameters
+                    tool.required_parameters,
                 )
 
             functions.append(function_def)
@@ -877,7 +887,7 @@ Available tools will be provided as function calls. Use them when you need to ga
             (
                 {"role": "user", "content": query},
                 {"role": "assistant", "content": response},
-            )
+            ),
         )
 
         # Keep only last 20 messages to prevent memory bloat

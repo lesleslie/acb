@@ -27,12 +27,12 @@ from ._filters import (
 from .jinja2 import Jinja2Templates, TemplatesAdapter
 
 __all__ = [
-    "TemplatesAdapter",
     "Jinja2Templates",
+    "TemplatesAdapter",
     "TemplatesBase",
     "TemplatesBaseSettings",
-    "register_default_filters",
-    "json_filter",
     "datetime_filter",
     "filesize_filter",
+    "json_filter",
+    "register_default_filters",
 ]

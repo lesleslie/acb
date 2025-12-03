@@ -369,7 +369,9 @@ class ListValidationSchema(ValidationSchema):
         return False
 
     def _validate_list_length(
-        self, items: list[t.Any], result: ValidationResult
+        self,
+        items: list[t.Any],
+        result: ValidationResult,
     ) -> None:
         """Validate list length constraints."""
         if len(items) < self.min_items:
@@ -379,14 +381,19 @@ class ListValidationSchema(ValidationSchema):
             result.add_error(f"List too long: {len(items)} > {self.max_items}")
 
     def _validate_unique_items(
-        self, items: list[t.Any], result: ValidationResult
+        self,
+        items: list[t.Any],
+        result: ValidationResult,
     ) -> None:
         """Validate unique items constraint."""
         if self.unique_items and len(items) != len({str(item) for item in items}):
             result.add_error("List items must be unique")
 
     async def _validate_list_items(
-        self, items: list[t.Any], field_name: str | None, result: ValidationResult
+        self,
+        items: list[t.Any],
+        field_name: str | None,
+        result: ValidationResult,
     ) -> list[t.Any]:
         """Validate each item in the list."""
         validated_items = []
@@ -496,7 +503,10 @@ class DictValidationSchema(ValidationSchema):
         for field, value in data.items():
             if field in self.field_schemas:
                 await self._validate_field_with_schema(
-                    field, value, result, validated_data
+                    field,
+                    value,
+                    result,
+                    validated_data,
                 )
             else:
                 self._handle_extra_field(field, value, result, validated_data)

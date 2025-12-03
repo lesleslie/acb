@@ -121,10 +121,7 @@ def generate_adapter_id() -> UUID:
     Uses `uuid7` when available (via optional `uuid_utils`) for monotonicity,
     falling back to `uuid4` otherwise.
     """
-    if hasattr(uuid_lib, "uuid7"):
-        value = uuid_lib.uuid7()
-    else:
-        value = uuid_lib.uuid4()
+    value = uuid_lib.uuid7() if hasattr(uuid_lib, "uuid7") else uuid_lib.uuid4()
     # Normalize to stdlib UUID object in case a third-party uuid7 returns a custom type
     import uuid as _uuid
 
@@ -192,7 +189,7 @@ def get_adapter_info(obj: t.Any) -> dict[str, t.Any]:
                 "provider": meta.provider,
                 "version": meta.version,
                 "capabilities": list_adapter_capabilities(obj),
-            }
+            },
         )
     return info
 
@@ -248,7 +245,8 @@ def validate_version_compatibility(meta: AdapterMetadata, current_version: str) 
 
 # Context variables for registry and caches
 adapter_registry: ContextVar[list["Adapter"] | None] = ContextVar(
-    "adapter_registry", default=None
+    "adapter_registry",
+    default=None,
 )
 _enabled_adapters_cache: ContextVar[dict[str, "Adapter"] | None] = ContextVar(
     "_enabled_adapters_cache",
@@ -338,8 +336,6 @@ _deployed: bool = os.getenv("DEPLOYED", "").lower() in ("1", "true", "yes")
 
 def _get_project_root() -> AsyncPath:
     """Get the project root path based on current working directory when used as a library."""
-    from ..context import get_context
-
     search_roots = [Path.cwd(), Path(__file__).resolve()]
 
     for base in search_roots:
@@ -621,7 +617,7 @@ async def _initialize_adapter(
 
         logger = await depends.get(Logger)
         # Check if it's actually a logger instance (not an empty tuple)
-        if logger and hasattr(logger, "debug") and hasattr(logger, "__call__"):
+        if logger and hasattr(logger, "debug") and callable(logger):
             logger.debug(f"Initialized {adapter_category} adapter: {adapter.name}")
     return instance
 
@@ -654,7 +650,7 @@ async def gather_imports(adapter_categories: list[str]) -> list[t.Any]:
 
                 logger = logging.getLogger(__name__)
                 logger.warning(
-                    f"Adapter {adapter_category} not found or installed: {imported_adapter}"
+                    f"Adapter {adapter_category} not found or installed: {imported_adapter}",
                 )
                 continue
             raise imported_adapter
@@ -947,7 +943,7 @@ def import_adapter(
             if "no running event loop" in str(e):
                 # No event loop - we need to start one for adapter imports
                 normalized_categories = _normalize_adapter_categories(
-                    adapter_categories
+                    adapter_categories,
                 )
                 imported_adapters = asyncio.run(gather_imports(normalized_categories))
                 return (
@@ -955,9 +951,8 @@ def import_adapter(
                     if len(imported_adapters) == 1
                     else tuple(imported_adapters)
                 )
-            else:
-                # Re-raise the error if it's not about missing event loop
-                raise
+            # Re-raise the error if it's not about missing event loop
+            raise
     except RuntimeError:
         # Not in an async context, so use the sync wrapper
         return import_adapter_with_context(adapter_categories)
@@ -1006,8 +1001,9 @@ def get_adapter_class(category: str, adapter_name: str | None = None) -> t.Any:
                 except (ImportError, AttributeError):
                     continue
 
+    msg = f"No adapter found for category '{category}'{' and name ' + adapter_name if adapter_name else ''}"
     raise AdapterNotFound(
-        f"No adapter found for category '{category}'{' and name ' + adapter_name if adapter_name else ''}"
+        msg,
     )
 
 

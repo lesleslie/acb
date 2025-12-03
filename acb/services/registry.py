@@ -279,7 +279,8 @@ class ServiceRegistry:
         self._shutdown_order = ordered_services.copy()
 
     def _initialize_dependency_graph(
-        self, service_ids: list[str]
+        self,
+        service_ids: list[str],
     ) -> tuple[dict[str, set[str]], dict[str, int]]:
         """Initialize empty dependency graph and in-degree counters."""
         graph: dict[str, set[str]] = {}

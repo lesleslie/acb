@@ -70,8 +70,8 @@ class IntegrationTestProvider:
         await asyncio.sleep(0.1)  # Setup delay
 
         # Initialize mock services based on config
-        adapters = t.cast(dict[str, t.Any], test_env["adapters"])
-        services = t.cast(dict[str, t.Any], test_env["services"])
+        adapters = t.cast("dict[str, t.Any]", test_env["adapters"])
+        services = t.cast("dict[str, t.Any]", test_env["services"])
 
         if "cache" in config.get("adapters", {}):
             adapters["cache"] = self._create_mock_cache()
@@ -123,7 +123,8 @@ class IntegrationTestProvider:
         db_mock._tables = {}
 
         async def execute(
-            query: str, params: tuple[Any, ...] | None = None
+            query: str,
+            params: tuple[Any, ...] | None = None,
         ) -> MagicMock:
             await asyncio.sleep(0.005)  # Simulate query execution
             result = MagicMock()
@@ -131,13 +132,15 @@ class IntegrationTestProvider:
             return result
 
         async def fetch_one(
-            query: str, params: tuple[Any, ...] | None = None
+            query: str,
+            params: tuple[Any, ...] | None = None,
         ) -> dict[str, Any]:
             await asyncio.sleep(0.005)
             return {"id": 1, "data": "test_data"}
 
         async def fetch_all(
-            query: str, params: tuple[Any, ...] | None = None
+            query: str,
+            params: tuple[Any, ...] | None = None,
         ) -> list[dict[str, Any]]:
             await asyncio.sleep(0.01)
             return [{"id": i, "data": f"test_data_{i}"} for i in range(1, 4)]
@@ -179,7 +182,9 @@ class IntegrationTestProvider:
         api_mock = AsyncMock()
 
         async def make_request(
-            method: str, endpoint: str, data: dict[str, Any] | None = None
+            method: str,
+            endpoint: str,
+            data: dict[str, Any] | None = None,
         ) -> dict[str, Any] | None:
             # Simulate network latency
             await asyncio.sleep(0.1)
@@ -431,7 +436,9 @@ class IntegrationTestProvider:
 
     @asynccontextmanager
     async def integration_test_context(
-        self, environment_name: str, config: dict[str, Any]
+        self,
+        environment_name: str,
+        config: dict[str, Any],
     ) -> t.AsyncGenerator[dict[str, t.Any]]:
         """Context manager for integration testing."""
         # Setup environment

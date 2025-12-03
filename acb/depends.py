@@ -20,7 +20,9 @@ class DependsProtocol(t.Protocol):
     def inject(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]: ...
     @staticmethod
     def set(
-        class_: t.Any, instance: t.Any = None, module: str | None = None
+        class_: t.Any,
+        instance: t.Any = None,
+        module: str | None = None,
     ) -> t.Any: ...
     @staticmethod
     def get(category: t.Any, module: str | None = None) -> t.Any: ...
@@ -204,13 +206,12 @@ def _handle_potential_tuple_result(category: t.Any, result: t.Any) -> t.Any:
     # Handle tuple based on length
     if len(result) == 1:
         return result[0]
-    else:
-        # For multi-element tuples, raise an informative error
-        msg = (
-            f"Adapter '{category}' returned multiple values but single value expected. "
-            f"Use proper async initialization methods."
-        )
-        raise RuntimeError(msg)
+    # For multi-element tuples, raise an informative error
+    msg = (
+        f"Adapter '{category}' returned multiple values but single value expected. "
+        f"Use proper async initialization methods."
+    )
+    raise RuntimeError(msg)
 
 
 def _handle_empty_tuple(category: t.Any) -> t.Any:
@@ -218,7 +219,7 @@ def _handle_empty_tuple(category: t.Any) -> t.Any:
     import logging
 
     logging.warning(
-        f"Dependency {category} returned empty tuple, dependency not properly registered"
+        f"Dependency {category} returned empty tuple, dependency not properly registered",
     )
 
     # Check if this is the Logger class or a logger-like dependency and provide a fallback
@@ -248,16 +249,15 @@ def _handle_class_category(category: t.Any, module: str | None) -> t.Any:
     # Handle tuple result based on length
     if len(result) == 1:
         return result[0]
-    elif len(result) == 0:
+    if len(result) == 0:
         return _handle_empty_tuple(category)
-    else:
-        # Multiple items in tuple - warn and return first
-        import logging
+    # Multiple items in tuple - warn and return first
+    import logging
 
-        logging.warning(
-            f"Dependency {category} returned a tuple with {len(result)} elements, using first element as fallback"
-        )
-        return result[0]
+    logging.warning(
+        f"Dependency {category} returned a tuple with {len(result)} elements, using first element as fallback",
+    )
+    return result[0]
 
 
 def _get_dependency_sync(category: t.Any, module: str | None = None) -> t.Any:
@@ -295,7 +295,7 @@ except ImportError:
     get_container().add("logger", fallback_logger)
 
 # Export Inject for type annotations
-__all__ = ["depends", "fast_depends", "Inject", "Depends", "get_container"]
+__all__ = ["Depends", "Inject", "depends", "fast_depends", "get_container"]
 
 
 async def fast_depends(category: t.Any, module: str | None = None) -> t.Any:

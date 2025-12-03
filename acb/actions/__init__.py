@@ -19,7 +19,8 @@ class Action(BaseModel):
 
 
 action_registry: ContextVar[list[Action] | None] = ContextVar(
-    "action_registry", default=None
+    "action_registry",
+    default=None,
 )
 
 

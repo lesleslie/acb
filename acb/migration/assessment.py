@@ -186,7 +186,7 @@ def _get_migration_steps(
                     reversible=True,
                     estimated_duration=120,
                 ),
-            )
+            ),
         )
 
     # Patch version (usually safe)

@@ -8,13 +8,10 @@ from __future__ import annotations
 
 import inspect
 
-from typing import TYPE_CHECKING, Any, TypeVar, Union, get_args, get_origin
+from typing import Any, TypeVar, Union, get_args, get_origin
 
 # Import the mixin from base
 from ._base import ModelAdapterMixin
-
-if TYPE_CHECKING:
-    pass
 
 # Import pydantic or create fallback
 try:

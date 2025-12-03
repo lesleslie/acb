@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "acb"
-version = "0.31.15"
+version = "0.31.16"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -1763,7 +1763,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.44.40"
+version = "0.44.42"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -1822,9 +1822,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/59/8e/ff7b582d9dbc74ac6959bdf61a01332bab712070359770d5d6fdd1a8d82d/crackerjack-0.44.40.tar.gz", hash = "sha256:550bd20e1d4eb984b0cc4008e3275071ac8cd0c25de698be7119ad8d776111eb", size = 2051880, upload-time = "2025-11-27T12:04:16.591Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4a/01/9be2e88e14fa2f2210cf4c70d865cc65be5dd7fab63fdcabd5285058c249/crackerjack-0.44.42.tar.gz", hash = "sha256:94cd4bdb18aad10318505530880d44c76af0cd2a1bb22bec22e96098ea7aed5d", size = 2052194, upload-time = "2025-11-27T15:12:54.64Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/07/0985f8acf6f68bd7ffbba20233fec1d04594a5e32cbc1b7391579975cb32/crackerjack-0.44.40-py3-none-any.whl", hash = "sha256:c85258bdd29b7dca3961093d124e0d08e7b4bd4db1fd1a1926a0f8a9c5ae66d9", size = 1331011, upload-time = "2025-11-27T12:04:12.513Z" },
+    { url = "https://files.pythonhosted.org/packages/69/f3/788a4dbef951f042e53dab58e4e99163936b289eb820f385727325570263/crackerjack-0.44.42-py3-none-any.whl", hash = "sha256:2d56d050eb38a53b4456f3dfc4aefb6d9c476dae1e5f1c6a876d84a6a025f477", size = 1331133, upload-time = "2025-11-27T15:12:50.873Z" },
 ]
 
 [[package]]
@@ -6069,7 +6069,7 @@ sqlalchemy = [
 
 [[package]]
 name = "session-mgmt-mcp"
-version = "0.9.6"
+version = "0.9.7"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -6095,9 +6095,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/4b/300be2c05ec90e388df9db6533bb94b9343db4c70bc8cfc7ebe089e65d73/session_mgmt_mcp-0.9.6.tar.gz", hash = "sha256:3a052b05e3e80ee37e735bad5311a2abe94c4540686e266aa1c9511d3e3bd0eb", size = 1409603, upload-time = "2025-11-26T21:16:53.316Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/00/e5dd3d19cafb6ba6100ed64d16ba08133548babef6988fdb2ea3f98c6ed5/session_mgmt_mcp-0.9.7.tar.gz", hash = "sha256:3e2f2d8db0f1517976095292182ad61823a423a1e729299b42eea6cc6c50e655", size = 1428174, upload-time = "2025-11-27T12:29:07.951Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/86/fe49eb6567a0c30cbbe8b7c750bb7b8bc34a50b9909a579d6f80f39774ae/session_mgmt_mcp-0.9.6-py3-none-any.whl", hash = "sha256:e744607e515ad3426f5b4ade9365d3159fff402ee47145cfe8fab2a1a8ad9ffd", size = 402865, upload-time = "2025-11-26T21:16:51.339Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/6e/c370bdae2b22740fe01d540ca47dc4bfd3ecfa2f20e226efd67ba493b97e/session_mgmt_mcp-0.9.7-py3-none-any.whl", hash = "sha256:49b6602296a2a89ecce4791fb60bd2d4ee835f31eac55810315a485d23ea7b2b", size = 402865, upload-time = "2025-11-27T12:29:10.139Z" },
 ]
 
 [[package]]

@@ -39,9 +39,11 @@ class Console(RichConsole):
         # Detect non-interactive/plain environments early
         plain = False
         try:
-            if os.environ.get("NO_COLOR") or os.environ.get("CJ_PLAIN_OUTPUT"):
-                plain = True
-            elif os.environ.get("CI") and not os.environ.get("CJ_FORCE_COLOR"):
+            if (
+                os.environ.get("NO_COLOR")
+                or os.environ.get("CJ_PLAIN_OUTPUT")
+                or (os.environ.get("CI") and not os.environ.get("CJ_FORCE_COLOR"))
+            ):
                 plain = True
             else:
                 stream = sys.stdout
@@ -72,7 +74,7 @@ class Console(RichConsole):
         self._plain_mode = plain
         # Pre-compiled ANSI pattern for stripping pre-colored input strings
         self._ansi_re = re.compile(
-            r"\x1b\[[0-9;]*m"
+            r"\x1b\[[0-9;]*m",
         )  # REGEX OK: ANSI escape sequence stripping - simple character class pattern, no backtracking risk
 
     def _load_settings(self) -> ConsoleSettings:

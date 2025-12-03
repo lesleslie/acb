@@ -190,7 +190,6 @@ async def demonstrate_enhanced_query_interface() -> None:
     # Repository pattern
     with contextlib.suppress(Exception):
         # query_interface.repository(User)  # Method doesn't exist
-        pass
 
         # Register custom repository
         # custom_repo = UserRepository(User, query_interface.hybrid.query_builder)  # hybrid doesn't exist
@@ -227,7 +226,6 @@ async def demonstrate_enhanced_query_interface() -> None:
 
     # Get model manager
     # query_interface.model(User)  # Method doesn't exist
-    pass
 
     # Different styles for different use cases
 

@@ -113,7 +113,8 @@ class Requests(RequestsBase, CleanupMixin):
         self.cache = cache
         self._http_client: niquests.AsyncSession | None = None
         self._http_cache = UniversalHTTPCache(
-            cache=cache, default_ttl=self.config.requests.cache_ttl
+            cache=cache,
+            default_ttl=self.config.requests.cache_ttl,
         )
 
     async def _create_client(self) -> niquests.AsyncSession:
@@ -142,9 +143,12 @@ class Requests(RequestsBase, CleanupMixin):
     def client(self) -> niquests.AsyncSession:
         """Synchronous client access (raises if not initialized)."""
         if self._http_client is None:
-            raise RuntimeError(
+            msg = (
                 "Niquests client not initialized. "
                 "Use 'async with Requests()' or call 'await adapter._ensure_client()' first."
+            )
+            raise RuntimeError(
+                msg,
             )
         return self._http_client
 
@@ -168,7 +172,7 @@ class Requests(RequestsBase, CleanupMixin):
             try:
                 await self._http_client.close()
             except Exception as e:
-                self.logger.error(f"Niquests client cleanup failed: {e}")
+                self.logger.exception(f"Niquests client cleanup failed: {e}")
             finally:
                 self._http_client = None
 
@@ -239,13 +243,12 @@ class Requests(RequestsBase, CleanupMixin):
     ) -> NiquestsResponse:
         """POST request (not cached - POST is not a safe method per RFC 9111)."""
         client = await self._ensure_client()
-        response = await client.post(
+        return await client.post(
             url,
             data=data,
             json=json,
             timeout=timeout,
         )
-        return response
 
     async def put(
         self,
@@ -256,19 +259,17 @@ class Requests(RequestsBase, CleanupMixin):
     ) -> NiquestsResponse:
         """PUT request (not cached - PUT is not a safe method)."""
         client = await self._ensure_client()
-        response = await client.put(
+        return await client.put(
             url,
             data=data,
             json=json,
             timeout=timeout,
         )
-        return response
 
     async def delete(self, url: str, timeout: int = 5) -> NiquestsResponse:
         """DELETE request (not cached - DELETE is not a safe method)."""
         client = await self._ensure_client()
-        response = await client.delete(url, timeout=timeout)
-        return response
+        return await client.delete(url, timeout=timeout)
 
     async def patch(
         self,
@@ -279,13 +280,12 @@ class Requests(RequestsBase, CleanupMixin):
     ) -> NiquestsResponse:
         """PATCH request (not cached - PATCH is not a safe method)."""
         client = await self._ensure_client()
-        response = await client.patch(
+        return await client.patch(
             url,
             timeout=timeout,
             data=data,
             json=json,
         )
-        return response
 
     async def head(
         self,
@@ -329,8 +329,7 @@ class Requests(RequestsBase, CleanupMixin):
     async def options(self, url: str, timeout: int = 5) -> NiquestsResponse:
         """OPTIONS request (not cached - not typically a safe method)."""
         client = await self._ensure_client()
-        response = await client.options(url, timeout=timeout)
-        return response
+        return await client.options(url, timeout=timeout)
 
     async def request(
         self,
@@ -342,14 +341,13 @@ class Requests(RequestsBase, CleanupMixin):
     ) -> NiquestsResponse:
         """Generic HTTP request (caching for GET/HEAD only)."""
         client = await self._ensure_client()
-        response = await client.request(
+        return await client.request(
             method,
             url,
             timeout=timeout,
             data=data,
             json=json,
         )
-        return response
 
     async def close(self) -> None:
         """Close HTTP client (deprecated - use cleanup() or async with instead)."""
@@ -359,7 +357,7 @@ class Requests(RequestsBase, CleanupMixin):
         """Initialize adapter."""
         self.logger.debug(
             "Niquests adapter initialized with universal HTTP caching "
-            "(RFC 9111 compliant - 80%)"
+            "(RFC 9111 compliant - 80%)",
         )
 
 

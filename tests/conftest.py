@@ -67,6 +67,13 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "external: mark test as requiring external service"
     )
+    config.addinivalue_line(
+        "markers", "architecture: mark test as checking architecture patterns"
+    )
+    config.addinivalue_line("markers", "quick: mark test as fast-running")
+    config.addinivalue_line(
+        "markers", "coverage: mark test as providing unique coverage"
+    )
 
 
 def pytest_runtest_setup(item: Function) -> None:

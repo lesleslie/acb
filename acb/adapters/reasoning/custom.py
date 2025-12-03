@@ -848,7 +848,7 @@ class Reasoning(ReasoningBase):
             except Exception as e:
                 if self.logger is not None:
                     self.logger.exception(
-                        f"Error executing action {action.action_type}: {e}"
+                        f"Error executing action {action.action_type}: {e}",
                     )
                 executed.append(f"Error in {action.action_type}: {e}")
 

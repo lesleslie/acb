@@ -32,7 +32,7 @@ from uuid import UUID
 
 import asyncio
 import typing as t
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime, timedelta
 from pydantic import Field
 
@@ -228,7 +228,7 @@ class MemoryMessaging(CleanupMixin):
             from acb.adapters import import_adapter
 
             logger_cls = import_adapter("logger")
-            self._logger = t.cast(LoggerType, depends.get_sync(logger_cls))
+            self._logger = t.cast("LoggerType", depends.get_sync(logger_cls))
         return self._logger
 
     # ========================================================================
@@ -309,17 +309,13 @@ class MemoryMessaging(CleanupMixin):
             # Stop background tasks
             if self._delayed_processor_task:
                 self._delayed_processor_task.cancel()
-                try:
+                with suppress(asyncio.CancelledError):
                     await self._delayed_processor_task
-                except asyncio.CancelledError:
-                    pass
 
             if self._cleanup_task:
                 self._cleanup_task.cancel()
-                try:
+                with suppress(asyncio.CancelledError):
                     await self._cleanup_task
-                except asyncio.CancelledError:
-                    pass
 
             # Clear state
             self._queues.clear()
@@ -382,28 +378,36 @@ class MemoryMessaging(CleanupMixin):
             MessagingOperationError: If send fails
         """
         if not self._connected:
-            raise MessagingConnectionError("Queue not connected")
+            msg = "Queue not connected"
+            raise MessagingConnectionError(msg)
 
         # Check memory limits
         message_size = self._estimate_message_size(message)
         if self._memory_usage + message_size > self._settings.max_memory_usage:
-            raise QueueFullError(
+            msg = (
                 f"Memory limit exceeded: {self._memory_usage} + {message_size} "
-                f"> {self._settings.max_memory_usage}",
+                f"> {self._settings.max_memory_usage}"
+            )
+            raise QueueFullError(
+                msg,
             )
 
         # Check queue size limits
         if len(self._queues[message.queue]) >= self._settings.max_messages_per_topic:
-            raise QueueFullError(
+            msg = (
                 f"Queue {message.queue} is full "
-                f"({self._settings.max_messages_per_topic} messages)",
+                f"({self._settings.max_messages_per_topic} messages)"
+            )
+            raise QueueFullError(
+                msg,
             )
 
         # Check rate limiting
         if self._settings.enable_rate_limiting:
             if not await self._check_rate_limit(message.queue):
+                msg = f"Rate limit exceeded for queue {message.queue}"
                 raise MessagingOperationError(
-                    f"Rate limit exceeded for queue {message.queue}",
+                    msg,
                 )
 
         # Calculate scheduled time
@@ -454,7 +458,8 @@ class MemoryMessaging(CleanupMixin):
             MessagingConnectionError: If not connected
         """
         if not self._connected:
-            raise MessagingConnectionError("Queue not connected")
+            msg = "Queue not connected"
+            raise MessagingConnectionError(msg)
 
         # Check if queue has messages
         queue = self._queues[topic]
@@ -492,8 +497,9 @@ class MemoryMessaging(CleanupMixin):
             MessagingOperationError: If message not in processing state
         """
         if message.message_id not in self._processing_messages:
+            msg = f"Message {message.message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message.message_id} not in processing state",
+                msg,
             )
 
         # Remove from processing
@@ -526,8 +532,9 @@ class MemoryMessaging(CleanupMixin):
             MessagingOperationError: If message not in processing state
         """
         if message.message_id not in self._processing_messages:
+            msg = f"Message {message.message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message.message_id} not in processing state",
+                msg,
             )
 
         # Remove from processing
@@ -546,25 +553,23 @@ class MemoryMessaging(CleanupMixin):
                 f"Requeued message {message.message_id} "
                 f"(retry {message.retry_count}/{message.max_retries})",
             )
-        else:
-            # Move to dead letter queue
-            if self._settings.enable_dead_letter:
-                reason = (
-                    "Max retries exceeded"
-                    if message.retry_count >= message.max_retries
-                    else "Message rejected without requeue"
-                )
-                self._dead_letter_messages[message.message_id] = (message, reason)
+        # Move to dead letter queue
+        elif self._settings.enable_dead_letter:
+            reason = (
+                "Max retries exceeded"
+                if message.retry_count >= message.max_retries
+                else "Message rejected without requeue"
+            )
+            self._dead_letter_messages[message.message_id] = (message, reason)
 
-                self.logger.warning(
-                    f"Message {message.message_id} moved to dead letter queue: "
-                    f"{reason}",
-                )
-            else:
-                # Just discard
-                message_size = self._estimate_message_size(message)
-                self._memory_usage = max(0, self._memory_usage - message_size)
-                self._total_messages = max(0, self._total_messages - 1)
+            self.logger.warning(
+                f"Message {message.message_id} moved to dead letter queue: {reason}",
+            )
+        else:
+            # Just discard
+            message_size = self._estimate_message_size(message)
+            self._memory_usage = max(0, self._memory_usage - message_size)
+            self._total_messages = max(0, self._total_messages - 1)
 
     @asynccontextmanager  # type: ignore[arg-type]
     async def _subscribe(
@@ -595,7 +600,7 @@ class MemoryMessaging(CleanupMixin):
                 except asyncio.CancelledError:
                     break
                 except Exception as e:
-                    self.logger.error(f"Error in message generator: {e}")
+                    self.logger.exception(f"Error in message generator: {e}")
                     await asyncio.sleep(1.0)
 
         try:
@@ -639,8 +644,9 @@ class MemoryMessaging(CleanupMixin):
 
         queue = self._queues[name]
         if if_empty and queue:
+            msg = f"Cannot delete non-empty queue: {name}"
             raise MessagingOperationError(
-                f"Cannot delete non-empty queue: {name}",
+                msg,
             )
 
         # Update memory usage
@@ -769,7 +775,8 @@ class MemoryMessaging(CleanupMixin):
             Message ID for tracking
         """
         if not self._connected:
-            raise MessagingConnectionError("Queue not connected")
+            msg = "Queue not connected"
+            raise MessagingConnectionError(msg)
 
         # Check memory limits
         fake_message = QueueMessage(
@@ -781,23 +788,30 @@ class MemoryMessaging(CleanupMixin):
         )
         message_size = self._estimate_message_size(fake_message)
         if self._memory_usage + message_size > self._settings.max_memory_usage:
-            raise QueueFullError(
+            msg = (
                 f"Memory limit exceeded: {self._memory_usage} + {message_size} "
-                f"> {self._settings.max_memory_usage}",
+                f"> {self._settings.max_memory_usage}"
+            )
+            raise QueueFullError(
+                msg,
             )
 
         # Check queue size limits
         if len(self._queues[queue]) >= self._settings.max_messages_per_topic:
-            raise QueueFullError(
+            msg = (
                 f"Queue {queue} is full "
-                f"({self._settings.max_messages_per_topic} messages)",
+                f"({self._settings.max_messages_per_topic} messages)"
+            )
+            raise QueueFullError(
+                msg,
             )
 
         # Check rate limiting
         if self._settings.enable_rate_limiting:
             if not await self._check_rate_limit(queue):
+                msg = f"Rate limit exceeded for queue {queue}"
                 raise MessagingOperationError(
-                    f"Rate limit exceeded for queue {queue}",
+                    msg,
                 )
 
         # Calculate scheduled time
@@ -854,7 +868,8 @@ class MemoryMessaging(CleanupMixin):
             Message if available, None otherwise
         """
         if not self._connected:
-            raise MessagingConnectionError("Queue not connected")
+            msg = "Queue not connected"
+            raise MessagingConnectionError(msg)
 
         # Check if queue has messages
         queue_list = self._queues[queue]
@@ -889,8 +904,9 @@ class MemoryMessaging(CleanupMixin):
             message_id: ID of message to acknowledge
         """
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state",
+                msg,
             )
 
         # Remove from processing
@@ -921,8 +937,9 @@ class MemoryMessaging(CleanupMixin):
             requeue: Whether to return message to queue
         """
         if message_id not in self._processing_messages:
+            msg = f"Message {message_id} not in processing state"
             raise MessagingOperationError(
-                f"Message {message_id} not in processing state",
+                msg,
             )
 
         message = self._processing_messages[message_id]
@@ -953,24 +970,23 @@ class MemoryMessaging(CleanupMixin):
                 f"Requeued message {message_id} "
                 f"(retry {updated_message.retry_count}/{message.max_retries})",
             )
-        else:
-            # Move to dead letter queue
-            if self._settings.enable_dead_letter:
-                reason = (
-                    "Max retries exceeded"
-                    if message.retry_count >= message.max_retries
-                    else "Message rejected without requeue"
-                )
-                self._dead_letter_messages[message.message_id] = (message, reason)
+        # Move to dead letter queue
+        elif self._settings.enable_dead_letter:
+            reason = (
+                "Max retries exceeded"
+                if message.retry_count >= message.max_retries
+                else "Message rejected without requeue"
+            )
+            self._dead_letter_messages[message.message_id] = (message, reason)
 
-                self.logger.warning(
-                    f"Message {message_id} moved to dead letter queue: {reason}",
-                )
-            else:
-                # Just discard
-                message_size = self._estimate_message_size(message)
-                self._memory_usage = max(0, self._memory_usage - message_size)
-                self._total_messages = max(0, self._total_messages - 1)
+            self.logger.warning(
+                f"Message {message_id} moved to dead letter queue: {reason}",
+            )
+        else:
+            # Just discard
+            message_size = self._estimate_message_size(message)
+            self._memory_usage = max(0, self._memory_usage - message_size)
+            self._total_messages = max(0, self._total_messages - 1)
 
     async def purge_queue(self, queue: str) -> int:
         """Remove all messages from a queue.
@@ -1015,10 +1031,12 @@ class MemoryMessaging(CleanupMixin):
             "message_count": len(queue_list),
             "priority_distribution": priority_counts,
             "oldest_message_time": min(
-                (item.created_at for item in queue_list), default=None
+                (item.created_at for item in queue_list),
+                default=None,
             ),
             "newest_message_time": max(
-                (item.created_at for item in queue_list), default=None
+                (item.created_at for item in queue_list),
+                default=None,
             ),
         }
 

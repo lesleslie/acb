@@ -16,23 +16,23 @@ from .adapters import get_adapters
 from .context import get_context
 
 __all__ = [
-    "get_context",
-    "register_pkg",
-    "ensure_registration",
-    "ensure_registration_async",
-    "display_components",
-    "action_registry",
-    "get_adapters",
-    "depends",
-    "Inject",
+    "ACMCPServer",
     "Console",
+    "Inject",
+    "PerformanceOptimizer",
     "ServiceBase",
     "ServiceRegistry",
-    "PerformanceOptimizer",
+    "action_registry",
+    "create_mcp_server",
+    "depends",
+    "display_components",
+    "ensure_registration",
+    "ensure_registration_async",
+    "get_adapters",
+    "get_context",
+    "register_pkg",
     "setup_services",
     "shutdown_services_layer",
-    "ACMCPServer",
-    "create_mcp_server",
 ]
 
 # Services layer imports
@@ -72,9 +72,6 @@ except ImportError:
     HAS_MCP = False
     ACMCPServer = None  # type: ignore
     create_mcp_server = None  # type: ignore
-
-if t.TYPE_CHECKING:
-    pass
 
 
 def register_pkg(name: str | None = None, path: AsyncPath | None = None) -> None:
@@ -223,7 +220,10 @@ def _display_services_table(console: Console) -> None:
 
 
 def _add_service_row(
-    table: Table, registry: t.Any, service_id: str, index: int
+    table: Table,
+    registry: t.Any,
+    service_id: str,
+    index: int,
 ) -> None:
     """Add a service row to the table."""
     try:

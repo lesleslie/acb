@@ -23,9 +23,6 @@ from acb.adapters.embedding._base import (
 from acb.config import Config
 from acb.depends import depends
 
-if t.TYPE_CHECKING:
-    pass
-
 # Liquid AI LFM imports (placeholder - would be actual LFM library)
 try:
     # import liquid_ai_lfm as lfm
@@ -126,8 +123,9 @@ class LiquidLFMEmbeddingSettings(EmbeddingBaseSettings):
     model_preloading: bool = Field(default=False, description="Preload models")
     lazy_loading: bool = Field(default=True, description="Enable lazy model loading")
 
-    class Config:
-        env_prefix = "LFM_"
+    model_config = {
+        "env_prefix": "LFM_",
+    }
 
 
 class LiquidLFMEmbedding(EmbeddingAdapter):
@@ -240,7 +238,7 @@ class LiquidLFMEmbedding(EmbeddingAdapter):
                     )
                     # Normalize
                     embedding = (embedding / np.linalg.norm(embedding)).astype(
-                        np.float32
+                        np.float32,
                     )
                     embeddings.append(embedding)
 

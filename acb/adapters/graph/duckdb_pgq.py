@@ -13,7 +13,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pydantic import Field
 from sqlalchemy import text
-from sqlalchemy.engine import URL
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncConnection,
@@ -35,6 +34,9 @@ from acb.adapters.graph._base import (
     GraphTraversalDirection,
 )
 from acb.depends import depends
+
+if t.TYPE_CHECKING:
+    from sqlalchemy.engine import URL
 
 MODULE_METADATA = AdapterMetadata(
     module_id=UUID("019a1c00-e6f0-7d4a-a749-b305c0b2a4d2"),
@@ -79,7 +81,8 @@ def _safe_ident(name: str) -> str:
     Raises ValueError if the identifier is unsafe.
     """
     if not re.match(
-        r"^[A-Za-z_][A-Za-z0-9_]*$", name
+        r"^[A-Za-z_][A-Za-z0-9_]*$",
+        name,
     ):  # REGEX OK: SQL identifier validation - anchored character classes only  # nosec B108
         msg = f"Unsafe SQL identifier: {name!r}"
         raise ValueError(msg)
@@ -221,21 +224,21 @@ class Graph(GraphBase):
                     created_at TIMESTAMP,
                     updated_at TIMESTAMP
                 )
-                """
+                """,
                 # nosec B608
-            )
+            ),
         )
         await conn.execute(
             text(
-                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_from ON {edges_table}(from_node)"
+                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_from ON {edges_table}(from_node)",
                 # nosec B608
-            )
+            ),
         )
         await conn.execute(
             text(
-                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_to ON {edges_table}(to_node)"
+                f"CREATE INDEX IF NOT EXISTS idx_{edges_table}_to ON {edges_table}(to_node)",
                 # nosec B608
-            )
+            ),
         )
 
     async def _register_graph(self, conn: AsyncConnection) -> None:
@@ -252,7 +255,7 @@ class Graph(GraphBase):
                 from_node => 'from_node',
                 to_node => 'to_node'
             )
-            """
+            """,
         )
         with suppress(Exception):
             await conn.execute(
@@ -297,7 +300,7 @@ class Graph(GraphBase):
         async with self._connection() as conn:
             if timeout:
                 await conn.execute(
-                    text(f"PRAGMA statement_timeout={int(timeout * 1000)}")
+                    text(f"PRAGMA statement_timeout={int(timeout * 1000)}"),
                 )
             stripped = query.lstrip()
             if stripped.upper().startswith("MATCH"):
@@ -540,14 +543,13 @@ class Graph(GraphBase):
         max_depth: int | None,
         direction: GraphTraversalDirection,
     ) -> list[GraphPathModel]:
-        paths = await self._search_paths(
+        return await self._search_paths(
             from_node_id,
             to_node_id,
             max_depth=max_depth,
             direction=direction,
             shortest_only=False,
         )
-        return paths
 
     async def _find_shortest_path(
         self,
@@ -625,7 +627,7 @@ class Graph(GraphBase):
             )  # nosec B608
             node_rows = await conn.execute(text(sql_nodes))
             sql_edges = "SELECT DISTINCT type FROM " + _safe_ident(
-                self._settings.edges_table
+                self._settings.edges_table,
             )  # nosec B608
             edge_rows = await conn.execute(text(sql_edges))
         node_labels: set[str] = set()
@@ -647,13 +649,13 @@ class Graph(GraphBase):
         index_type: str,
     ) -> bool:
         self.logger.warning(
-            "Custom index creation is not supported for DuckDB PGQ adapter"
+            "Custom index creation is not supported for DuckDB PGQ adapter",
         )
         return False
 
     async def _drop_index(self, index_name: str) -> bool:
         self.logger.warning(
-            "Custom index removal is not supported for DuckDB PGQ adapter"
+            "Custom index removal is not supported for DuckDB PGQ adapter",
         )
         return False
 
@@ -686,7 +688,7 @@ class Graph(GraphBase):
     async def _count_nodes(self, labels: list[str] | None) -> int:
         async with self._connection() as conn:
             result = await conn.execute(
-                text(f"SELECT labels FROM {self._settings.nodes_table}")
+                text(f"SELECT labels FROM {self._settings.nodes_table}"),
             )
             rows = result.fetchall()
         if not labels:
@@ -737,7 +739,7 @@ class Graph(GraphBase):
                     edges=[],
                     length=0,
                     weight=0.0,
-                )
+                ),
             ]
 
         edges = await self._fetch_edges()
@@ -746,7 +748,9 @@ class Graph(GraphBase):
         return await self._paths_to_models(found_paths, weight_property)
 
     def _build_adjacency_list(
-        self, edges: list[dict[str, t.Any]], direction: GraphTraversalDirection
+        self,
+        edges: list[dict[str, t.Any]],
+        direction: GraphTraversalDirection,
     ) -> dict[str, list[dict[str, t.Any]]]:
         adjacency: dict[str, list[dict[str, t.Any]]] = {}
         for edge in edges:
@@ -782,7 +786,7 @@ class Graph(GraphBase):
             for edge in adjacency.get(current, []):
                 neighbor = edge["to_node"]
                 if neighbor not in visited or neighbor == goal:
-                    new_path = path + [{"node": neighbor, "edge": edge["id"]}]
+                    new_path = [*path, {"node": neighbor, "edge": edge["id"]}]
                     queue.append(new_path)
                     visited.add(neighbor)
         return found_paths
@@ -813,14 +817,14 @@ class Graph(GraphBase):
                     edges=[e for e in edge_models if e is not None],
                     length=len(edge_models),
                     weight=weight,
-                )
+                ),
             )
         return graph_paths
 
     async def _fetch_edges(self) -> list[dict[str, t.Any]]:
         async with self._connection() as conn:
             sql = "SELECT id, type, from_node, to_node, properties FROM " + _safe_ident(
-                self._settings.edges_table
+                self._settings.edges_table,
             )  # nosec B608
             result = await conn.execute(text(sql))
             rows = result.mappings().all()

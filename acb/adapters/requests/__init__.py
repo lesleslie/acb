@@ -11,10 +11,10 @@ from .niquests import Requests as NiquestsRequests
 from .niquests import RequestsSettings as NiquestsRequestsSettings
 
 __all__ = [
-    "RequestsBase",
-    "RequestsBaseSettings",
     "HttpxRequests",
     "HttpxRequestsSettings",
     "NiquestsRequests",
     "NiquestsRequestsSettings",
+    "RequestsBase",
+    "RequestsBaseSettings",
 ]

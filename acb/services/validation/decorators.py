@@ -8,14 +8,16 @@ from __future__ import annotations
 
 import functools
 import inspect
-from collections.abc import Callable
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from acb.depends import depends
 from acb.services.validation._base import ValidationConfig, ValidationSchema
 from acb.services.validation.results import ValidationError, ValidationReport
 from acb.services.validation.service import ValidationService
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # Helper Functions for Complexity Reduction
 

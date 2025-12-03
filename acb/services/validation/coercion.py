@@ -150,7 +150,7 @@ class TypeCoercer:
 
         return int(data)
 
-    def _coerce_numeric_to_int(self, data: int | float) -> int:
+    def _coerce_numeric_to_int(self, data: float) -> int:
         """Coerce numeric type to int."""
         if isinstance(data, float) and not data.is_integer():
             if self.strategy == CoercionStrategy.PERMISSIVE:

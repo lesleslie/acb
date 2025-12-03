@@ -123,14 +123,13 @@ async def use_example_service(
 
     # Process the items
     processed_count = await example_service.process_items()
-    print(f"Processed {processed_count} items")
 
     # Update metrics in cache - use hasattr to ensure method exists
     if hasattr(typed_cache, "set"):  # type: ignore
         await typed_cache.set("example_service:last_processed", processed_count)  # type: ignore
     else:
         # Fallback if the cache doesn't have a set method
-        print("Cache doesn't have set method, skipping cache update")
+        pass
 
     return processed_count
 
@@ -144,12 +143,10 @@ async def main() -> None:
     await service.initialize()
 
     # Use the service
-    result = await use_example_service()
-    print(f"Service processed: {result} items")
+    await use_example_service()
 
     # Check service health
-    health = await service.health_check()
-    print(f"Service health: {health}")
+    await service.health_check()
 
     # Shutdown the service
     await service.shutdown()
