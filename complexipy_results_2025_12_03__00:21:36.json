@@ -348,7 +348,7 @@
     "path": "comprehensive_architecture_example.py"
   },
   {
-    "complexity": 10,
+    "complexity": 8,
     "file_name": "comprehensive_architecture_example.py",
     "function_name": "UserManagementService::create_user",
     "path": "comprehensive_architecture_example.py"
@@ -366,7 +366,7 @@
     "path": "simple_mcp_example.py"
   },
   {
-    "complexity": 14,
+    "complexity": 10,
     "file_name": "mcp_demo.py",
     "function_name": "demo_server_capabilities",
     "path": "mcp_demo.py"
@@ -12650,18 +12650,6 @@
   {
     "complexity": 2,
     "file_name": "logly.py",
-    "function_name": "Logger::_cleanup_resources",
-    "path": "logly.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "logly.py",
-    "function_name": "Logger::_configure_for_testing",
-    "path": "logly.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "logly.py",
     "function_name": "Logger::_setup_callbacks",
     "path": "logly.py"
   },
@@ -12684,15 +12672,27 @@
     "path": "logly.py"
   },
   {
-    "complexity": 5,
-    "file_name": "logly.py",
-    "function_name": "Logger::_configure_logger",
-    "path": "logly.py"
-  },
-  {
     "complexity": 7,
     "file_name": "logly.py",
     "function_name": "Logger::_add_stderr_sink",
+    "path": "logly.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "logly.py",
+    "function_name": "Logger::_cleanup_resources",
+    "path": "logly.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "logly.py",
+    "function_name": "Logger::_configure_for_testing",
+    "path": "logly.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "logly.py",
+    "function_name": "Logger::_configure_logger",
     "path": "logly.py"
   },
   {
@@ -12824,6 +12824,12 @@
   {
     "complexity": 1,
     "file_name": "structlog.py",
+    "function_name": "Logger::_setup_stdlib_integration",
+    "path": "structlog.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "structlog.py",
     "function_name": "Logger::settings",
     "path": "structlog.py"
   },
@@ -12831,12 +12837,6 @@
     "complexity": 2,
     "file_name": "structlog.py",
     "function_name": "Logger::_configure_structlog",
-    "path": "structlog.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "structlog.py",
-    "function_name": "Logger::_setup_stdlib_integration",
     "path": "structlog.py"
   },
   {

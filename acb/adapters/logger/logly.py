@@ -528,7 +528,8 @@ class Logger(LoggerBase):
         await super().cleanup()
 
 
-depends.set(Logger, "logly")
+# The logger will be instantiated by the adapter system when first accessed
+# Registration happens through the adapter system automatically
 
 
 class InterceptHandler(logging.Handler):

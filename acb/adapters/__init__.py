@@ -318,6 +318,15 @@ core_adapters = [
         installed=True,
         path=AsyncPath(__file__).parent / "logger" / "loguru.py",
     ),
+    Adapter(
+        name="logly",
+        module="acb.adapters.logger.logly",
+        class_name="Logger",
+        category="logger",
+        enabled=True,
+        installed=True,
+        path=AsyncPath(__file__).parent / "logger" / "logly.py",
+    ),
 ]
 
 
