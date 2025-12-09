@@ -124,33 +124,51 @@ class Nosql(NosqlBase):
 
     def _build_ssl_kwargs(self) -> dict[str, t.Any]:
         ssl_kwargs = {}
+
         if self.config.nosql.ssl_enabled:
             ssl_kwargs["ssl"] = True
-            if self.config.nosql.ssl_cert_path:
-                ssl_kwargs["ssl_certfile"] = self.config.nosql.ssl_cert_path
-            if self.config.nosql.ssl_key_path:
-                ssl_kwargs["ssl_keyfile"] = self.config.nosql.ssl_key_path
-            if self.config.nosql.ssl_ca_path:
-                ssl_kwargs["ssl_ca_certs"] = self.config.nosql.ssl_ca_path
-            if self.config.nosql.ssl_verify_mode == "required":
-                ssl_kwargs["ssl_check_hostname"] = True  # type: ignore[assignment]
-                ssl_kwargs["ssl_cert_reqs"] = "required"  # type: ignore[assignment]
-            elif self.config.nosql.ssl_verify_mode == "optional":
-                ssl_kwargs["ssl_check_hostname"] = False  # type: ignore[assignment]
-                ssl_kwargs["ssl_cert_reqs"] = "optional"  # type: ignore[assignment]
-            else:
-                ssl_kwargs["ssl_check_hostname"] = False  # type: ignore[assignment]
-                ssl_kwargs["ssl_cert_reqs"] = "none"  # type: ignore[assignment]
-            if self.config.nosql.ssl_ciphers:
-                ssl_kwargs["ssl_ciphers"] = self.config.nosql.ssl_ciphers
+            self._add_ssl_certificate_config(ssl_kwargs)
+            self._add_ssl_verification_config(ssl_kwargs)
+            self._add_ssl_cipher_config(ssl_kwargs)
+
+        self._add_connection_config(ssl_kwargs)
+
+        return ssl_kwargs
+
+    def _add_ssl_certificate_config(self, ssl_kwargs: dict[str, t.Any]) -> None:
+        """Add SSL certificate configuration to the ssl_kwargs dictionary."""
+        if self.config.nosql.ssl_cert_path:
+            ssl_kwargs["ssl_certfile"] = self.config.nosql.ssl_cert_path
+        if self.config.nosql.ssl_key_path:
+            ssl_kwargs["ssl_keyfile"] = self.config.nosql.ssl_key_path
+        if self.config.nosql.ssl_ca_path:
+            ssl_kwargs["ssl_ca_certs"] = self.config.nosql.ssl_ca_path
+
+    def _add_ssl_verification_config(self, ssl_kwargs: dict[str, t.Any]) -> None:
+        """Add SSL verification configuration to the ssl_kwargs dictionary."""
+        if self.config.nosql.ssl_verify_mode == "required":
+            ssl_kwargs["ssl_check_hostname"] = True  # type: ignore[assignment]
+            ssl_kwargs["ssl_cert_reqs"] = "required"  # type: ignore[assignment]
+        elif self.config.nosql.ssl_verify_mode == "optional":
+            ssl_kwargs["ssl_check_hostname"] = False  # type: ignore[assignment]
+            ssl_kwargs["ssl_cert_reqs"] = "optional"  # type: ignore[assignment]
+        else:
+            ssl_kwargs["ssl_check_hostname"] = False  # type: ignore[assignment]
+            ssl_kwargs["ssl_cert_reqs"] = "none"  # type: ignore[assignment]
+
+    def _add_ssl_cipher_config(self, ssl_kwargs: dict[str, t.Any]) -> None:
+        """Add SSL cipher configuration to the ssl_kwargs dictionary."""
+        if self.config.nosql.ssl_ciphers:
+            ssl_kwargs["ssl_ciphers"] = self.config.nosql.ssl_ciphers
+
+    def _add_connection_config(self, ssl_kwargs: dict[str, t.Any]) -> None:
+        """Add connection configuration to the ssl_kwargs dictionary."""
         if self.config.nosql.connect_timeout:
             ssl_kwargs["socket_connect_timeout"] = self.config.nosql.connect_timeout
         if self.config.nosql.socket_timeout:
             ssl_kwargs["socket_timeout"] = self.config.nosql.socket_timeout
         if self.config.nosql.max_pool_size:
             ssl_kwargs["max_connections"] = self.config.nosql.max_pool_size
-
-        return ssl_kwargs
 
     @cached_property
     def client(self) -> t.Any:

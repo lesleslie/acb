@@ -4651,13 +4651,19 @@
       "path": "performance.py"
     },
     {
+      "complexity": 7,
+      "file_name": "performance.py",
+      "function_name": "LoadTestRunner::_create_result_dict",
+      "path": "performance.py"
+    },
+    {
       "complexity": 8,
       "file_name": "performance.py",
       "function_name": "performance_monitor",
       "path": "performance.py"
     },
     {
-      "complexity": 16,
+      "complexity": 9,
       "file_name": "performance.py",
       "function_name": "LoadTestRunner::run_load_test",
       "path": "performance.py"
@@ -5683,6 +5689,12 @@
       "path": "subscriber.py"
     },
     {
+      "complexity": 3,
+      "file_name": "subscriber.py",
+      "function_name": "EventSubscriber::deliver_event",
+      "path": "subscriber.py"
+    },
+    {
       "complexity": 4,
       "file_name": "subscriber.py",
       "function_name": "EventFilter::_matches_pattern_filters",
@@ -5697,7 +5709,19 @@
     {
       "complexity": 4,
       "file_name": "subscriber.py",
+      "function_name": "EventSubscriber::_process_subscription_by_mode",
+      "path": "subscriber.py"
+    },
+    {
+      "complexity": 4,
+      "file_name": "subscriber.py",
       "function_name": "EventSubscriber::subscribe",
+      "path": "subscriber.py"
+    },
+    {
+      "complexity": 5,
+      "file_name": "subscriber.py",
+      "function_name": "EventSubscriber::_handle_completed_push_deliveries",
       "path": "subscriber.py"
     },
     {
@@ -5740,12 +5764,6 @@
       "complexity": 14,
       "file_name": "subscriber.py",
       "function_name": "EventFilter::_matches_content_filters",
-      "path": "subscriber.py"
-    },
-    {
-      "complexity": 16,
-      "file_name": "subscriber.py",
-      "function_name": "EventSubscriber::deliver_event",
       "path": "subscriber.py"
     },
     {
@@ -5991,12 +6009,6 @@
     {
       "complexity": 0,
       "file_name": "publisher.py",
-      "function_name": "_MockSubscription::_iterate_messages",
-      "path": "publisher.py"
-    },
-    {
-      "complexity": 0,
-      "file_name": "publisher.py",
       "function_name": "create_event_publisher",
       "path": "publisher.py"
     },
@@ -6028,6 +6040,12 @@
       "complexity": 1,
       "file_name": "publisher.py",
       "function_name": "PublisherMetrics::record_event_processed",
+      "path": "publisher.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "publisher.py",
+      "function_name": "_MockSubscription::_iterate_messages",
       "path": "publisher.py"
     },
     {
@@ -6253,9 +6271,39 @@
       "path": "assessment.py"
     },
     {
+      "complexity": 1,
+      "file_name": "assessment.py",
+      "function_name": "assess_migration",
+      "path": "assessment.py"
+    },
+    {
+      "complexity": 2,
+      "file_name": "assessment.py",
+      "function_name": "_get_required_migration_steps",
+      "path": "assessment.py"
+    },
+    {
       "complexity": 3,
       "file_name": "assessment.py",
       "function_name": "_check_deprecated_config",
+      "path": "assessment.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "assessment.py",
+      "function_name": "_collect_migration_issues",
+      "path": "assessment.py"
+    },
+    {
+      "complexity": 4,
+      "file_name": "assessment.py",
+      "function_name": "_identify_version_specific_changes",
+      "path": "assessment.py"
+    },
+    {
+      "complexity": 5,
+      "file_name": "assessment.py",
+      "function_name": "_determine_compatibility_status",
       "path": "assessment.py"
     },
     {
@@ -6268,12 +6316,6 @@
       "complexity": 7,
       "file_name": "assessment.py",
       "function_name": "detect_version",
-      "path": "assessment.py"
-    },
-    {
-      "complexity": 16,
-      "file_name": "assessment.py",
-      "function_name": "assess_migration",
       "path": "assessment.py"
     },
     {
@@ -7239,6 +7281,12 @@
     {
       "complexity": 0,
       "file_name": "health.py",
+      "function_name": "HealthReporter::get_system_health",
+      "path": "health.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "health.py",
       "function_name": "HealthReporter::register_component",
       "path": "health.py"
     },
@@ -7377,7 +7425,19 @@
     {
       "complexity": 4,
       "file_name": "health.py",
+      "function_name": "HealthReporter::_determine_system_status",
+      "path": "health.py"
+    },
+    {
+      "complexity": 4,
+      "file_name": "health.py",
       "function_name": "HealthReporter::_get_component_status",
+      "path": "health.py"
+    },
+    {
+      "complexity": 5,
+      "file_name": "health.py",
+      "function_name": "HealthReporter::_increment_status_count",
       "path": "health.py"
     },
     {
@@ -7393,15 +7453,15 @@
       "path": "health.py"
     },
     {
-      "complexity": 7,
+      "complexity": 6,
       "file_name": "health.py",
-      "function_name": "HealthService::_auto_register_services",
+      "function_name": "HealthReporter::_get_status_counts",
       "path": "health.py"
     },
     {
-      "complexity": 25,
+      "complexity": 7,
       "file_name": "health.py",
-      "function_name": "HealthReporter::get_system_health",
+      "function_name": "HealthService::_auto_register_services",
       "path": "health.py"
     },
     {
@@ -10023,6 +10083,12 @@
     {
       "complexity": 0,
       "file_name": "metrics.py",
+      "function_name": "MetricsCollector::get_current_performance_metrics",
+      "path": "metrics.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "metrics.py",
       "function_name": "MetricsCollector::record_metric",
       "path": "metrics.py"
     },
@@ -10036,6 +10102,18 @@
       "complexity": 1,
       "file_name": "metrics.py",
       "function_name": "MetricsCollector::__init__",
+      "path": "metrics.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "metrics.py",
+      "function_name": "MetricsCollector::_collect_database_query_times",
+      "path": "metrics.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "metrics.py",
+      "function_name": "MetricsCollector::_collect_response_times",
       "path": "metrics.py"
     },
     {
@@ -10083,7 +10161,19 @@
     {
       "complexity": 3,
       "file_name": "metrics.py",
+      "function_name": "MetricsCollector::_collect_cache_hit_rates",
+      "path": "metrics.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "metrics.py",
       "function_name": "MetricsCollector::_collect_system_metrics",
+      "path": "metrics.py"
+    },
+    {
+      "complexity": 4,
+      "file_name": "metrics.py",
+      "function_name": "MetricsCollector::_collect_error_rates",
       "path": "metrics.py"
     },
     {
@@ -10101,13 +10191,13 @@
     {
       "complexity": 6,
       "file_name": "metrics.py",
-      "function_name": "MetricsCollector::_collection_loop",
+      "function_name": "MetricsCollector::_collect_custom_metrics",
       "path": "metrics.py"
     },
     {
-      "complexity": 15,
+      "complexity": 6,
       "file_name": "metrics.py",
-      "function_name": "MetricsCollector::get_current_performance_metrics",
+      "function_name": "MetricsCollector::_collection_loop",
       "path": "metrics.py"
     },
     {
@@ -12015,6 +12105,12 @@
     {
       "complexity": 0,
       "file_name": "__init__.py",
+      "function_name": "Encode::_process_with_serializer",
+      "path": "__init__.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "__init__.py",
       "function_name": "SerializerMethod::__call__",
       "path": "__init__.py"
     },
@@ -12022,6 +12118,12 @@
       "complexity": 0,
       "file_name": "__init__.py",
       "function_name": "Serializers::__post_init__",
+      "path": "__init__.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "__init__.py",
+      "function_name": "Encode::__call__",
       "path": "__init__.py"
     },
     {
@@ -12045,7 +12147,25 @@
     {
       "complexity": 2,
       "file_name": "__init__.py",
+      "function_name": "Encode::_setup_json_serializer",
+      "path": "__init__.py"
+    },
+    {
+      "complexity": 2,
+      "file_name": "__init__.py",
       "function_name": "Encode::process",
+      "path": "__init__.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "__init__.py",
+      "function_name": "Encode::_determine_action_from_caller",
+      "path": "__init__.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "__init__.py",
+      "function_name": "Encode::_set_action_from_caller_obj",
       "path": "__init__.py"
     },
     {
@@ -12097,6 +12217,12 @@
       "path": "__init__.py"
     },
     {
+      "complexity": 7,
+      "file_name": "__init__.py",
+      "function_name": "Encode::_try_parse_calling_context",
+      "path": "__init__.py"
+    },
+    {
       "complexity": 11,
       "file_name": "__init__.py",
       "function_name": "Encode::_preprocess_data",
@@ -12106,12 +12232,6 @@
       "complexity": 12,
       "file_name": "__init__.py",
       "function_name": "Encode::_create_method",
-      "path": "__init__.py"
-    },
-    {
-      "complexity": 16,
-      "file_name": "__init__.py",
-      "function_name": "Encode::__call__",
       "path": "__init__.py"
     },
     {
@@ -13491,6 +13611,18 @@
     {
       "complexity": 1,
       "file_name": "onnx.py",
+      "function_name": "ONNXEmbedding::_load_model",
+      "path": "onnx.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "onnx.py",
+      "function_name": "ONNXEmbedding::_load_tokenizer",
+      "path": "onnx.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "onnx.py",
       "function_name": "ONNXEmbedding::_process_single_batch",
       "path": "onnx.py"
     },
@@ -13509,7 +13641,19 @@
     {
       "complexity": 2,
       "file_name": "onnx.py",
+      "function_name": "ONNXEmbedding::_configure_session_options",
+      "path": "onnx.py"
+    },
+    {
+      "complexity": 2,
+      "file_name": "onnx.py",
       "function_name": "ONNXEmbedding::_ensure_client",
+      "path": "onnx.py"
+    },
+    {
+      "complexity": 2,
+      "file_name": "onnx.py",
+      "function_name": "ONNXEmbedding::_load_onnx_model",
       "path": "onnx.py"
     },
     {
@@ -13557,6 +13701,12 @@
     {
       "complexity": 4,
       "file_name": "onnx.py",
+      "function_name": "ONNXEmbedding::_set_graph_optimization_level",
+      "path": "onnx.py"
+    },
+    {
+      "complexity": 4,
+      "file_name": "onnx.py",
       "function_name": "ONNXEmbedding::get_performance_metrics",
       "path": "onnx.py"
     },
@@ -13564,12 +13714,6 @@
       "complexity": 6,
       "file_name": "onnx.py",
       "function_name": "ONNXEmbedding::_prepare_onnx_inputs",
-      "path": "onnx.py"
-    },
-    {
-      "complexity": 16,
-      "file_name": "onnx.py",
-      "function_name": "ONNXEmbedding::_load_model",
       "path": "onnx.py"
     },
     {
@@ -15261,7 +15405,19 @@
     {
       "complexity": 6,
       "file_name": "_base.py",
+      "function_name": "ModelAdapterMixin::_serialize_value",
+      "path": "_base.py"
+    },
+    {
+      "complexity": 6,
+      "file_name": "_base.py",
       "function_name": "ModelAdapterMixin::get_primary_key_field",
+      "path": "_base.py"
+    },
+    {
+      "complexity": 7,
+      "file_name": "_base.py",
+      "function_name": "ModelAdapterMixin::_serialize_model_object",
       "path": "_base.py"
     },
     {
@@ -15274,12 +15430,6 @@
       "complexity": 8,
       "file_name": "_base.py",
       "function_name": "ModelAdapterMixin::get_nested_model_class",
-      "path": "_base.py"
-    },
-    {
-      "complexity": 23,
-      "file_name": "_base.py",
-      "function_name": "ModelAdapterMixin::_serialize_value",
       "path": "_base.py"
     },
     {
@@ -16701,6 +16851,84 @@
     {
       "complexity": 0,
       "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_contains",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_ends_with",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_equals",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_greater_equal",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_greater_than",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_in",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_less_equal",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_less_than",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_not_contains",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_not_equals",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_not_in",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_regex_match",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_eval_starts_with",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "custom.py",
       "function_name": "RuleEngine::add_rule",
       "path": "custom.py"
     },
@@ -16714,6 +16942,12 @@
       "complexity": 1,
       "file_name": "custom.py",
       "function_name": "Reasoning::_extract_input_data",
+      "path": "custom.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "custom.py",
+      "function_name": "RuleEngine::_evaluate_condition",
       "path": "custom.py"
     },
     {
@@ -16801,15 +17035,15 @@
       "path": "custom.py"
     },
     {
-      "complexity": 15,
+      "complexity": 14,
       "file_name": "custom.py",
-      "function_name": "Reasoning::_execute_actions",
+      "function_name": "RuleEngine::_apply_operator",
       "path": "custom.py"
     },
     {
-      "complexity": 16,
+      "complexity": 15,
       "file_name": "custom.py",
-      "function_name": "RuleEngine::_evaluate_condition",
+      "function_name": "Reasoning::_execute_actions",
       "path": "custom.py"
     },
     {
@@ -20391,6 +20625,18 @@
     {
       "complexity": 1,
       "file_name": "redis.py",
+      "function_name": "Nosql::_add_ssl_cipher_config",
+      "path": "redis.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "redis.py",
+      "function_name": "Nosql::_build_ssl_kwargs",
+      "path": "redis.py"
+    },
+    {
+      "complexity": 1,
+      "file_name": "redis.py",
       "function_name": "Nosql::_get_key",
       "path": "redis.py"
     },
@@ -20451,6 +20697,24 @@
     {
       "complexity": 3,
       "file_name": "redis.py",
+      "function_name": "Nosql::_add_connection_config",
+      "path": "redis.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "redis.py",
+      "function_name": "Nosql::_add_ssl_certificate_config",
+      "path": "redis.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "redis.py",
+      "function_name": "Nosql::_add_ssl_verification_config",
+      "path": "redis.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "redis.py",
       "function_name": "Nosql::update_one",
       "path": "redis.py"
     },
@@ -20488,12 +20752,6 @@
       "complexity": 11,
       "file_name": "redis.py",
       "function_name": "Nosql::find",
-      "path": "redis.py"
-    },
-    {
-      "complexity": 16,
-      "file_name": "redis.py",
-      "function_name": "Nosql::_build_ssl_kwargs",
       "path": "redis.py"
     },
     {
@@ -22629,6 +22887,18 @@
     {
       "complexity": 0,
       "file_name": "integration.py",
+      "function_name": "IntegrationTestProvider::_handle_default_response",
+      "path": "integration.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "integration.py",
+      "function_name": "IntegrationTestProvider::_handle_health_endpoint",
+      "path": "integration.py"
+    },
+    {
+      "complexity": 0,
+      "file_name": "integration.py",
       "function_name": "IntegrationTestProvider::get_all_integration_results",
       "path": "integration.py"
     },
@@ -22669,6 +22939,18 @@
       "path": "integration.py"
     },
     {
+      "complexity": 5,
+      "file_name": "integration.py",
+      "function_name": "IntegrationTestProvider::_create_mock_external_api",
+      "path": "integration.py"
+    },
+    {
+      "complexity": 5,
+      "file_name": "integration.py",
+      "function_name": "IntegrationTestProvider::_handle_users_endpoint",
+      "path": "integration.py"
+    },
+    {
       "complexity": 6,
       "file_name": "integration.py",
       "function_name": "IntegrationTestProvider::setup_test_environment",
@@ -22690,12 +22972,6 @@
       "complexity": 11,
       "file_name": "integration.py",
       "function_name": "IntegrationTestProvider::cleanup_test_environment",
-      "path": "integration.py"
-    },
-    {
-      "complexity": 16,
-      "file_name": "integration.py",
-      "function_name": "IntegrationTestProvider::_create_mock_external_api",
       "path": "integration.py"
     },
     {

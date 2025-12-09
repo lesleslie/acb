@@ -73,27 +73,27 @@ class ModelAdapterMixin:
             return [self._serialize_value(item) for item in value]
         if isinstance(value, dict):
             return {k: self._serialize_value(v) for k, v in value.items()}
-        # Try to serialize nested model objects (each adapter will handle their own type checking)
+
+        # Try to serialize nested model objects
         if hasattr(value, "__dict__") or hasattr(value, "__slots__"):
-            # Delegate to the specific adapter's serialize method if available
-            if hasattr(self, "serialize") and hasattr(value, "__class__"):
-                # This is a recursive call that may not work as intended
-                # Instead, return a default dict representation
-                try:
-                    # Attempt to get a dict representation by checking common patterns
-                    if hasattr(value, "model_dump"):
-                        return value.model_dump()
-                    if hasattr(value, "dict"):
-                        return value.dict()
-                    if hasattr(value, "__dict__"):
-                        return value.__dict__
-                    # Fallback to basic representation
-                    return str(value)
-                except Exception:
-                    return str(value)
-            else:
-                return str(value)
+            return self._serialize_model_object(value)
+
         return value
+
+    def _serialize_model_object(self, value: Any) -> Any:
+        """Serialize a model object by checking for common serialization patterns."""
+        # Try to get a dict representation by checking common patterns
+        try:
+            if hasattr(value, "model_dump"):
+                return value.model_dump()
+            if hasattr(value, "dict"):
+                return value.dict()
+            if hasattr(value, "__dict__"):
+                return value.__dict__
+            # Fallback to basic representation
+            return str(value)
+        except Exception:
+            return str(value)
 
     def _manual_serialize(self, instance: T) -> dict[str, Any]:
         """Default manual serialization for when library-specific serialization isn't available."""

@@ -147,74 +147,10 @@ class ONNXEmbedding(EmbeddingAdapter):
             await logger.info(f"Loading ONNX model from: {self._settings.model_path}")
 
             # Load tokenizer
-            if AutoTokenizer is None:
-                msg = "AutoTokenizer not available"
-                raise ImportError(msg)
-            self._tokenizer = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]  # nosec B615
-                    self._settings.tokenizer_name,
-                    revision=getattr(self._settings, "tokenizer_revision", "main"),
-                ),
-            )
+            await self._load_tokenizer()
 
-            # Configure ONNX session options
-            if ort is None:
-                msg = "ONNX Runtime not available"
-                raise ImportError(msg)
-            session_options = ort.SessionOptions()
-            session_options.enable_cpu_mem_arena = self._settings.enable_cpu_mem_arena
-            session_options.enable_mem_pattern = self._settings.enable_mem_pattern
-            session_options.enable_profiling = self._settings.enable_profiling
-
-            if self._settings.inter_op_num_threads > 0:
-                session_options.inter_op_num_threads = (
-                    self._settings.inter_op_num_threads
-                )
-            if self._settings.intra_op_num_threads > 0:
-                session_options.intra_op_num_threads = (
-                    self._settings.intra_op_num_threads
-                )
-
-            # Set graph optimization level
-            if self._settings.graph_optimization_level == "ORT_DISABLE_ALL":
-                session_options.graph_optimization_level = (
-                    ort.GraphOptimizationLevel.ORT_DISABLE_ALL
-                )
-            elif self._settings.graph_optimization_level == "ORT_ENABLE_BASIC":
-                session_options.graph_optimization_level = (
-                    ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
-                )
-            elif self._settings.graph_optimization_level == "ORT_ENABLE_EXTENDED":
-                session_options.graph_optimization_level = (
-                    ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
-                )
-            else:  # ORT_ENABLE_ALL (default)
-                session_options.graph_optimization_level = (
-                    ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-                )
-
-            # Create ONNX session
-            self._session = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: ort.InferenceSession(
-                    self._settings.model_path,
-                    sess_options=session_options,
-                    providers=self._settings.providers,
-                ),
-            )
-
-            # Get input/output names
-            if self._session is not None:
-                self._input_names = [
-                    input_node.name for input_node in self._session.get_inputs()
-                ]
-                self._output_names = [
-                    output_node.name for output_node in self._session.get_outputs()
-                ]
-
-            # Register for cleanup
-            self.register_resource(self._session)
+            # Load and configure ONNX model
+            await self._load_onnx_model(logger)
 
             await logger.info(
                 f"Successfully loaded ONNX model with providers: {self._settings.providers}",
@@ -226,6 +162,83 @@ class ONNXEmbedding(EmbeddingAdapter):
         except Exception as e:
             await logger.exception(f"Error loading ONNX model: {e}")
             raise
+
+    async def _load_tokenizer(self) -> None:
+        """Load the tokenizer for the ONNX model."""
+        if AutoTokenizer is None:
+            msg = "AutoTokenizer not available"
+            raise ImportError(msg)
+        self._tokenizer = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: AutoTokenizer.from_pretrained(  # type: ignore[no-untyped-call]  # nosec B615
+                self._settings.tokenizer_name,
+                revision=getattr(self._settings, "tokenizer_revision", "main"),
+            ),
+        )
+
+    async def _load_onnx_model(self, logger: t.Any) -> None:
+        """Load and configure the ONNX model."""
+        if ort is None:
+            msg = "ONNX Runtime not available"
+            raise ImportError(msg)
+
+        session_options = await self._configure_session_options()
+
+        # Create ONNX session
+        self._session = await asyncio.get_event_loop().run_in_executor(
+            None,
+            lambda: ort.InferenceSession(
+                self._settings.model_path,
+                sess_options=session_options,
+                providers=self._settings.providers,
+            ),
+        )
+
+        # Get input/output names
+        if self._session is not None:
+            self._input_names = [
+                input_node.name for input_node in self._session.get_inputs()
+            ]
+            self._output_names = [
+                output_node.name for output_node in self._session.get_outputs()
+            ]
+
+        # Register for cleanup
+        self.register_resource(self._session)
+
+    async def _configure_session_options(self) -> t.Any:
+        """Configure ONNX session options."""
+        session_options = ort.SessionOptions()
+        session_options.enable_cpu_mem_arena = self._settings.enable_cpu_mem_arena
+        session_options.enable_mem_pattern = self._settings.enable_mem_pattern
+        session_options.enable_profiling = self._settings.enable_profiling
+
+        if self._settings.inter_op_num_threads > 0:
+            session_options.inter_op_num_threads = self._settings.inter_op_num_threads
+        if self._settings.intra_op_num_threads > 0:
+            session_options.intra_op_num_threads = self._settings.intra_op_num_threads
+
+        self._set_graph_optimization_level(session_options)
+        return session_options
+
+    def _set_graph_optimization_level(self, session_options: t.Any) -> None:
+        """Set the graph optimization level for the ONNX session."""
+        if self._settings.graph_optimization_level == "ORT_DISABLE_ALL":
+            session_options.graph_optimization_level = (
+                ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+            )
+        elif self._settings.graph_optimization_level == "ORT_ENABLE_BASIC":
+            session_options.graph_optimization_level = (
+                ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
+            )
+        elif self._settings.graph_optimization_level == "ORT_ENABLE_EXTENDED":
+            session_options.graph_optimization_level = (
+                ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+            )
+        else:  # ORT_ENABLE_ALL (default)
+            session_options.graph_optimization_level = (
+                ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+            )
 
     async def _tokenize_batch(
         self,

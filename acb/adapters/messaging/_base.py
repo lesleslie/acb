@@ -299,7 +299,6 @@ class PubSubBackend(t.Protocol):
             Async iterator of messages
         """
         raise NotImplementedError  # pragma: no cover
-        yield  # pragma: no cover - type checker needs this
 
     # Batch Operations
 
@@ -546,7 +545,6 @@ class UnifiedMessagingBackend(t.Protocol):
     ) -> AsyncGenerator[AsyncIterator[PubSubMessage]]:
         """Receive messages from a subscription."""
         raise NotImplementedError  # pragma: no cover
-        yield  # pragma: no cover
 
     async def publish_batch(
         self,

@@ -600,45 +600,63 @@ class EventSubscriber(ServiceBase):
         if not matching_subs:
             return {}
 
-        # Deliver to each subscription based on mode
-        results = {}
-        tasks = []
+        # Process subscriptions based on mode
+        results: dict[UUID, EventHandlerResult] = {}
+        tasks: list[tuple[UUID, asyncio.Task[t.Any]]] = []
 
         for managed_sub in matching_subs:
-            if managed_sub.mode == SubscriptionMode.PUSH:
-                task = asyncio.create_task(self._deliver_push(event, managed_sub))
-                tasks.append((managed_sub.subscription.subscription_id, task))
-            elif managed_sub.mode in (SubscriptionMode.PULL, SubscriptionMode.HYBRID):
-                # Add to buffer for pull-based consumption
-                if managed_sub.buffer:
-                    await managed_sub.buffer.put(event)
-                    results[managed_sub.subscription.subscription_id] = (
-                        EventHandlerResult(success=True)
-                    )
+            await self._process_subscription_by_mode(managed_sub, event, results, tasks)
 
         # Wait for push deliveries
         if tasks:
-            completed_tasks = await asyncio.gather(
-                *[task for _, task in tasks],
-                return_exceptions=True,
-            )
-
-            for (sub_id, _), result in zip(tasks, completed_tasks, strict=False):
-                if isinstance(result, Exception):
-                    results[sub_id] = EventHandlerResult(
-                        success=False,
-                        error_message=str(result),
-                    )
-                elif isinstance(result, EventHandlerResult):
-                    results[sub_id] = result
-                else:
-                    # Handle unexpected result type
-                    results[sub_id] = EventHandlerResult(
-                        success=False,
-                        error_message="Unexpected result type",
-                    )
+            await self._handle_completed_push_deliveries(tasks, results)
 
         return results
+
+    async def _process_subscription_by_mode(
+        self,
+        managed_sub: ManagedSubscription,
+        event: Event,
+        results: dict[UUID, EventHandlerResult],
+        tasks: list[tuple[UUID, asyncio.Task[t.Any]]],
+    ) -> None:
+        """Process a subscription based on its mode (PUSH, PULL, or HYBRID)."""
+        if managed_sub.mode == SubscriptionMode.PUSH:
+            task = asyncio.create_task(self._deliver_push(event, managed_sub))
+            tasks.append((managed_sub.subscription.subscription_id, task))
+        elif managed_sub.mode in (SubscriptionMode.PULL, SubscriptionMode.HYBRID):
+            # Add to buffer for pull-based consumption
+            if managed_sub.buffer:
+                await managed_sub.buffer.put(event)
+                results[managed_sub.subscription.subscription_id] = EventHandlerResult(
+                    success=True
+                )
+
+    async def _handle_completed_push_deliveries(
+        self,
+        tasks: list[tuple[UUID, asyncio.Task[t.Any]]],
+        results: dict[UUID, EventHandlerResult],
+    ) -> None:
+        """Handle completed push delivery tasks and update results."""
+        completed_tasks = await asyncio.gather(
+            *[task for _, task in tasks],
+            return_exceptions=True,
+        )
+
+        for (sub_id, _), result in zip(tasks, completed_tasks, strict=False):
+            if isinstance(result, Exception):
+                results[sub_id] = EventHandlerResult(
+                    success=False,
+                    error_message=str(result),
+                )
+            elif isinstance(result, EventHandlerResult):
+                results[sub_id] = result
+            else:
+                # Handle unexpected result type
+                results[sub_id] = EventHandlerResult(
+                    success=False,
+                    error_message="Unexpected result type",
+                )
 
     async def pull_events(
         self,

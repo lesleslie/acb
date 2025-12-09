@@ -326,45 +326,85 @@ class RuleEngine:
         field_value = self._get_field_value(condition.field, data)
 
         try:
-            if condition.operator == RuleOperator.EQUALS:
-                result = field_value == condition.value
-            elif condition.operator == RuleOperator.NOT_EQUALS:
-                result = field_value != condition.value
-            elif condition.operator == RuleOperator.GREATER_THAN:
-                result = float(field_value) > float(condition.value)
-            elif condition.operator == RuleOperator.LESS_THAN:
-                result = float(field_value) < float(condition.value)
-            elif condition.operator == RuleOperator.GREATER_EQUAL:
-                result = float(field_value) >= float(condition.value)
-            elif condition.operator == RuleOperator.LESS_EQUAL:
-                result = float(field_value) <= float(condition.value)
-            elif condition.operator == RuleOperator.CONTAINS:
-                result = str(condition.value).lower() in str(field_value).lower()
-            elif condition.operator == RuleOperator.NOT_CONTAINS:
-                result = str(condition.value).lower() not in str(field_value).lower()
-            elif condition.operator == RuleOperator.STARTS_WITH:
-                result = (
-                    str(field_value).lower().startswith(str(condition.value).lower())
-                )
-            elif condition.operator == RuleOperator.ENDS_WITH:
-                result = str(field_value).lower().endswith(str(condition.value).lower())
-            elif condition.operator == RuleOperator.REGEX_MATCH:
-                result = bool(
-                    re.search(str(condition.value), str(field_value)),
-                )  # REGEX OK: rule condition evaluation
-            elif condition.operator == RuleOperator.IN:
-                result = field_value in condition.value
-            elif condition.operator == RuleOperator.NOT_IN:
-                result = field_value not in condition.value
-            else:
-                result = False
-
+            result = self._apply_operator(condition, field_value)
             explanation = f"{condition.field}({field_value}) {condition.operator.value} {condition.value} = {result}"
             return result, explanation
 
         except Exception as e:
             explanation = f"Error evaluating {condition.field}: {e}"
             return False, explanation
+
+    def _apply_operator(self, condition: RuleCondition, field_value: t.Any) -> bool:
+        """Apply the operator specified in the condition to the field value."""
+        if condition.operator == RuleOperator.EQUALS:
+            return self._eval_equals(field_value, condition.value)
+        elif condition.operator == RuleOperator.NOT_EQUALS:
+            return self._eval_not_equals(field_value, condition.value)
+        elif condition.operator == RuleOperator.GREATER_THAN:
+            return self._eval_greater_than(field_value, condition.value)
+        elif condition.operator == RuleOperator.LESS_THAN:
+            return self._eval_less_than(field_value, condition.value)
+        elif condition.operator == RuleOperator.GREATER_EQUAL:
+            return self._eval_greater_equal(field_value, condition.value)
+        elif condition.operator == RuleOperator.LESS_EQUAL:
+            return self._eval_less_equal(field_value, condition.value)
+        elif condition.operator == RuleOperator.CONTAINS:
+            return self._eval_contains(field_value, condition.value)
+        elif condition.operator == RuleOperator.NOT_CONTAINS:
+            return self._eval_not_contains(field_value, condition.value)
+        elif condition.operator == RuleOperator.STARTS_WITH:
+            return self._eval_starts_with(field_value, condition.value)
+        elif condition.operator == RuleOperator.ENDS_WITH:
+            return self._eval_ends_with(field_value, condition.value)
+        elif condition.operator == RuleOperator.REGEX_MATCH:
+            return self._eval_regex_match(field_value, condition.value)
+        elif condition.operator == RuleOperator.IN:
+            return self._eval_in(field_value, condition.value)
+        elif condition.operator == RuleOperator.NOT_IN:
+            return self._eval_not_in(field_value, condition.value)
+        else:
+            return False
+
+    def _eval_equals(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return field_value == condition_value
+
+    def _eval_not_equals(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return field_value != condition_value
+
+    def _eval_greater_than(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return float(field_value) > float(condition_value)
+
+    def _eval_less_than(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return float(field_value) < float(condition_value)
+
+    def _eval_greater_equal(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return float(field_value) >= float(condition_value)
+
+    def _eval_less_equal(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return float(field_value) <= float(condition_value)
+
+    def _eval_contains(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return str(condition_value).lower() in str(field_value).lower()
+
+    def _eval_not_contains(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return str(condition_value).lower() not in str(field_value).lower()
+
+    def _eval_starts_with(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return str(field_value).lower().startswith(str(condition_value).lower())
+
+    def _eval_ends_with(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return str(field_value).lower().endswith(str(condition_value).lower())
+
+    def _eval_regex_match(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return bool(
+            re.search(str(condition_value), str(field_value)),
+        )  # REGEX OK: rule condition evaluation
+
+    def _eval_in(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return field_value in condition_value
+
+    def _eval_not_in(self, field_value: t.Any, condition_value: t.Any) -> bool:
+        return field_value not in condition_value
 
     def _get_field_value(self, field_path: str, data: dict[str, t.Any]) -> t.Any:
         """Get field value supporting dot notation for nested fields."""

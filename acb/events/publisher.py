@@ -56,8 +56,8 @@ class _MockSubscription:
         """Async generator that yields mock messages (none for mock)."""
         # For testing, we don't actually yield any messages
         # This generator should complete immediately to avoid hanging
-        return
-        yield  # Unreachable but makes this a proper generator
+        if False:  # To make this an async generator without unreachable code
+            yield
 
 
 class _MockPubSub:

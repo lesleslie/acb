@@ -228,25 +228,56 @@ async def assess_migration(
         >>> for issue in assessment.issues:
         ...     print(f"{issue.severity}: {issue.message}")
     """
-    # Detect current version
+    # Get current and target versions
     current = detect_version()
-
-    # Parse target version
     target = VersionInfo.from_string(target_version) if target_version else None
 
     # Determine compatibility status
-    if target is None:
-        compatibility_status = CompatibilityStatus.COMPATIBLE
-    elif target < current:
-        compatibility_status = CompatibilityStatus.INCOMPATIBLE
-    elif target == current:
-        compatibility_status = CompatibilityStatus.COMPATIBLE
-    elif target.major > current.major or target.minor > current.minor:
-        compatibility_status = CompatibilityStatus.MIGRATION_REQUIRED
-    else:
-        compatibility_status = CompatibilityStatus.COMPATIBLE_WITH_WARNINGS
+    compatibility_status = _determine_compatibility_status(current, target)
 
     # Collect issues
+    issues = _collect_migration_issues(config_dir)
+
+    # Generate migration steps
+    required_steps = _get_required_migration_steps(current, target)
+
+    # Calculate estimated duration
+    estimated_duration = sum(step.estimated_duration for step in required_steps)
+
+    # Identify breaking changes and deprecations
+    breaking_changes, deprecated_features = _identify_version_specific_changes(
+        current, target
+    )
+
+    return MigrationAssessment(
+        current_version=current,
+        target_version=target,
+        compatibility_status=compatibility_status,
+        issues=issues,
+        required_steps=required_steps,
+        estimated_duration=estimated_duration,
+        breaking_changes=breaking_changes,
+        deprecated_features=deprecated_features,
+    )
+
+
+def _determine_compatibility_status(
+    current: VersionInfo, target: VersionInfo | None
+) -> CompatibilityStatus:
+    """Determine the compatibility status between current and target versions."""
+    if target is None:
+        return CompatibilityStatus.COMPATIBLE
+    elif target < current:
+        return CompatibilityStatus.INCOMPATIBLE
+    elif target == current:
+        return CompatibilityStatus.COMPATIBLE
+    elif target.major > current.major or target.minor > current.minor:
+        return CompatibilityStatus.MIGRATION_REQUIRED
+    return CompatibilityStatus.COMPATIBLE_WITH_WARNINGS
+
+
+def _collect_migration_issues(config_dir: Path | None) -> list[MigrationIssue]:
+    """Collect migration issues based on current configuration."""
     issues: list[MigrationIssue] = []
 
     # Check Python version
@@ -259,15 +290,23 @@ async def assess_migration(
             issues.extend(_check_deprecated_config(config_dir))
             issues.extend(_check_adapter_config(settings_dir))
 
-    # Generate migration steps
+    return issues
+
+
+def _get_required_migration_steps(
+    current: VersionInfo, target: VersionInfo | None
+) -> list[MigrationStep]:
+    """Get the required migration steps if upgrading."""
     required_steps = []
     if target and target > current:
         required_steps = _get_migration_steps(current, target)
+    return required_steps
 
-    # Calculate estimated duration
-    estimated_duration = sum(step.estimated_duration for step in required_steps)
 
-    # Identify breaking changes and deprecations
+def _identify_version_specific_changes(
+    current: VersionInfo, target: VersionInfo | None
+) -> tuple[list[str], list[str]]:
+    """Identify breaking changes and deprecations based on version differences."""
     breaking_changes = []
     deprecated_features = []
 
@@ -281,13 +320,4 @@ async def assess_migration(
             "Some features may be deprecated in this version",
         )
 
-    return MigrationAssessment(
-        current_version=current,
-        target_version=target,
-        compatibility_status=compatibility_status,
-        issues=issues,
-        required_steps=required_steps,
-        estimated_duration=estimated_duration,
-        breaking_changes=breaking_changes,
-        deprecated_features=deprecated_features,
-    )
+    return breaking_changes, deprecated_features

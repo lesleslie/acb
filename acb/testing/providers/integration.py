@@ -189,31 +189,49 @@ class IntegrationTestProvider:
             # Simulate network latency
             await asyncio.sleep(0.1)
 
-            # Mock different responses based on endpoint
+            # Handle different endpoints with dedicated functions
             if endpoint.startswith("/health"):
-                return {"status": "ok", "timestamp": "2024-01-01T12:00:00Z"}
-            if endpoint.startswith("/api/users"):
-                if method == "GET":
-                    return {"users": [{"id": 1, "name": "Test User"}]}
-                if method == "POST":
-                    return {
-                        "id": 2,
-                        "name": data.get("name", "New User") if data else "New User",
-                        "created": True,
-                    }
+                return self._handle_health_endpoint()
+            elif endpoint.startswith("/api/users"):
+                return await self._handle_users_endpoint(method, data)
             elif endpoint.startswith("/api/error"):
-                msg = "Simulated API error"
-                raise Exception(msg)
+                raise Exception("Simulated API error")
             else:
-                return {
-                    "message": "Mock response",
-                    "endpoint": endpoint,
-                    "method": method,
-                }
-            return None
+                return self._handle_default_response(endpoint, method)
 
         api_mock.request.side_effect = make_request
         return api_mock
+
+    def _handle_health_endpoint(self) -> dict[str, Any]:
+        """Handle health check endpoint."""
+        return {"status": "ok", "timestamp": "2024-01-01T12:00:00Z"}
+
+    async def _handle_users_endpoint(
+        self, method: str, data: dict[str, Any] | None
+    ) -> dict[str, Any]:
+        """Handle users API endpoint."""
+        if method == "GET":
+            return {"users": [{"id": 1, "name": "Test User"}]}
+        elif method == "POST":
+            return {
+                "id": 2,
+                "name": data.get("name", "New User") if data else "New User",
+                "created": True,
+            }
+        else:
+            return {
+                "message": "Mock response",
+                "endpoint": "/api/users",
+                "method": method,
+            }
+
+    def _handle_default_response(self, endpoint: str, method: str) -> dict[str, Any]:
+        """Handle default response for unmatched endpoints."""
+        return {
+            "message": "Mock response",
+            "endpoint": endpoint,
+            "method": method,
+        }
 
     async def run_integration_test(
         self,

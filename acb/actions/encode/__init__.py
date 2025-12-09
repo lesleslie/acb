@@ -1,6 +1,7 @@
 import json
 import linecache
 import sys
+import types
 from pathlib import Path
 from re import search
 
@@ -287,35 +288,70 @@ class Encode:
         self.path = path
         self.sort_keys = sort_keys
         frame = sys._getframe(1)
+
+        # Try to determine the action and serializer from the calling code
+        if await self._try_parse_calling_context(frame, kwargs, obj):
+            return await self._process_with_serializer(obj, **kwargs)
+
+        # Fallback to determining action from caller name
+        self._determine_action_from_caller(frame)
+        self._setup_json_serializer()
+        return await self.process(obj, **kwargs)
+
+    async def _try_parse_calling_context(
+        self, frame: types.FrameType, kwargs: dict[str, t.Any], obj: t.Any
+    ) -> bool:
+        """Try to parse the calling context to determine action and serializer.
+
+        Returns True if successfully parsed, False otherwise.
+        """
         code_context = linecache.getline(frame.f_code.co_filename, frame.f_lineno)
         pattern = "await\\s+(\\w+)\\.(\\w+)\\("
         calling_method = search(pattern, code_context)
+
         if calling_method:
             caller_obj = calling_method.group(1)
             serializer_name = calling_method.group(2)
-            if caller_obj in ("encode", "dump"):
-                self.action = "encode"
-            elif caller_obj in ("decode", "load"):
-                self.action = "decode"
-            else:
-                self.action = "encode"
+            self._set_action_from_caller_obj(caller_obj)
+
             if serializer_name in self.serializers:
                 serializer = self.serializers[serializer_name]
                 if self.action == "encode":
                     self.serializer = serializer.encode
                 else:
                     self.serializer = serializer.decode
-                return await self.process(obj, **kwargs)
+                return True
+        return False
+
+    def _set_action_from_caller_obj(self, caller_obj: str) -> None:
+        """Set the action based on the calling object."""
+        if caller_obj in ("encode", "dump"):
+            self.action = "encode"
+        elif caller_obj in ("decode", "load"):
+            self.action = "decode"
+        else:
+            self.action = "encode"
+
+    def _determine_action_from_caller(self, frame: types.FrameType) -> None:
+        """Determine the action based on the caller's name."""
         caller_name = frame.f_code.co_name
         if "encode" in caller_name or "dump" in caller_name:
             self.action = "encode"
         else:
             self.action = "decode"
+
+    def _setup_json_serializer(self) -> None:
+        """Set up the JSON serializer as fallback."""
         serializer = self.serializers["json"]
         if self.action == "encode":
             self.serializer = serializer.encode
         else:
             self.serializer = serializer.decode
+
+    async def _process_with_serializer(
+        self, obj: t.Any, **kwargs: dict[str, t.Any]
+    ) -> t.Any:
+        """Process the object with the configured serializer."""
         return await self.process(obj, **kwargs)
 
 

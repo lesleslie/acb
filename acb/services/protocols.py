@@ -872,7 +872,6 @@ class EventServiceProtocol(Protocol):
             Historical events
         """
         raise NotImplementedError  # pragma: no cover
-        yield  # pragma: no cover - type checker
 
 
 # ============================================================================

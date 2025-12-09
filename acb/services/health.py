@@ -327,61 +327,10 @@ class HealthReporter(CleanupMixin):
     ) -> dict[str, t.Any]:
         """Get overall system health status and summary."""
         component_count = len(self._components)
-
-        # Count components by detailed status
-        status_counts = {
-            "healthy": 0,
-            "degraded": 0,
-            "unhealthy": 0,
-            "critical": 0,
-            "unknown": 0,
-        }
-
-        if fresh_results:
-            # Use fresh results if provided
-            for component_id, result in fresh_results.items():
-                status = result.status
-                if status == HealthStatus.HEALTHY:
-                    status_counts["healthy"] += 1
-                elif status == HealthStatus.DEGRADED:
-                    status_counts["degraded"] += 1
-                elif status == HealthStatus.UNHEALTHY:
-                    status_counts["unhealthy"] += 1
-                elif status == HealthStatus.CRITICAL:
-                    status_counts["critical"] += 1
-                else:
-                    status_counts["unknown"] += 1
-        else:
-            # Use cached status from history
-            for component_id in self._components:
-                status = self._get_component_status(component_id)
-                if status == HealthStatus.HEALTHY:
-                    status_counts["healthy"] += 1
-                elif status == HealthStatus.DEGRADED:
-                    status_counts["degraded"] += 1
-                elif status == HealthStatus.UNHEALTHY:
-                    status_counts["unhealthy"] += 1
-                elif status == HealthStatus.CRITICAL:
-                    status_counts["critical"] += 1
-                else:
-                    status_counts["unknown"] += 1
-
-        # Calculate unhealthy total (unhealthy + critical)
-        unhealthy_total = status_counts["unhealthy"] + status_counts["critical"]
-
-        # Determine system health status
-        if status_counts["critical"] > 0:
-            system_healthy = False
-            system_status = "critical"
-        elif unhealthy_total > component_count // 2:
-            system_healthy = False
-            system_status = "unhealthy"
-        elif unhealthy_total > 0 or status_counts["degraded"] > 0:
-            system_healthy = not unhealthy_total > 0
-            system_status = "degraded"
-        else:
-            system_healthy = True
-            system_status = "healthy"
+        status_counts = self._get_status_counts(fresh_results)
+        system_status, system_healthy = self._determine_system_status(
+            status_counts, component_count
+        )
 
         return {
             "system_status": system_status,
@@ -403,6 +352,61 @@ class HealthReporter(CleanupMixin):
                 for component_id in self._components
             },
         }
+
+    def _get_status_counts(
+        self, fresh_results: dict[str, HealthCheckResult] | None
+    ) -> dict[str, int]:
+        """Get count of components by status."""
+        status_counts = {
+            "healthy": 0,
+            "degraded": 0,
+            "unhealthy": 0,
+            "critical": 0,
+            "unknown": 0,
+        }
+
+        if fresh_results:
+            # Use fresh results if provided
+            for result in fresh_results.values():
+                self._increment_status_count(status_counts, result.status)
+        else:
+            # Use cached status from history
+            for component_id in self._components:
+                status = self._get_component_status(component_id)
+                self._increment_status_count(status_counts, status)
+
+        return status_counts
+
+    def _increment_status_count(
+        self, status_counts: dict[str, int], status: HealthStatus
+    ) -> None:
+        """Increment the appropriate counter in the status_counts dictionary."""
+        if status == HealthStatus.HEALTHY:
+            status_counts["healthy"] += 1
+        elif status == HealthStatus.DEGRADED:
+            status_counts["degraded"] += 1
+        elif status == HealthStatus.UNHEALTHY:
+            status_counts["unhealthy"] += 1
+        elif status == HealthStatus.CRITICAL:
+            status_counts["critical"] += 1
+        else:
+            status_counts["unknown"] += 1
+
+    def _determine_system_status(
+        self, status_counts: dict[str, int], component_count: int
+    ) -> tuple[str, bool]:
+        """Determine system health status and whether it's healthy."""
+        # Calculate unhealthy total (unhealthy + critical)
+        unhealthy_total = status_counts["unhealthy"] + status_counts["critical"]
+
+        # Determine system health status
+        if status_counts["critical"] > 0:
+            return "critical", False
+        elif unhealthy_total > component_count // 2:
+            return "unhealthy", False
+        elif unhealthy_total > 0 or status_counts["degraded"] > 0:
+            return "degraded", not unhealthy_total > 0
+        return "healthy", True
 
     def get_component_history(
         self,

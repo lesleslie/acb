@@ -309,13 +309,24 @@ class MetricsCollector(ServiceBase):
         Returns:
             Performance metrics with recent data
         """
-        metrics = PerformanceMetrics()
-
-        # Extract recent values for standard metrics
         time_window = 300  # Last 5 minutes
         cutoff_time = time.time() - time_window
 
-        # Response times
+        metrics = PerformanceMetrics()
+
+        # Collect different types of metrics
+        self._collect_response_times(metrics, cutoff_time)
+        self._collect_database_query_times(metrics, cutoff_time)
+        self._collect_cache_hit_rates(metrics, cutoff_time)
+        self._collect_error_rates(metrics, cutoff_time)
+        self._collect_custom_metrics(metrics, cutoff_time)
+
+        return metrics
+
+    def _collect_response_times(
+        self, metrics: PerformanceMetrics, cutoff_time: float
+    ) -> None:
+        """Collect response time metrics."""
         if "response_time" in self._metrics_data:
             metrics.response_times = [
                 m.value
@@ -323,7 +334,10 @@ class MetricsCollector(ServiceBase):
                 if m.timestamp >= cutoff_time
             ]
 
-        # Database query times
+    def _collect_database_query_times(
+        self, metrics: PerformanceMetrics, cutoff_time: float
+    ) -> None:
+        """Collect database query time metrics."""
         if "db_query_time" in self._metrics_data:
             metrics.database_query_times = [
                 m.value
@@ -331,7 +345,10 @@ class MetricsCollector(ServiceBase):
                 if m.timestamp >= cutoff_time
             ]
 
-        # Cache hit rates (calculate from cache operations)
+    def _collect_cache_hit_rates(
+        self, metrics: PerformanceMetrics, cutoff_time: float
+    ) -> None:
+        """Collect cache hit rate metrics."""
         if "cache_operation" in self._metrics_data:
             cache_ops = [
                 m
@@ -342,7 +359,10 @@ class MetricsCollector(ServiceBase):
                 hit_rate = sum(m.value for m in cache_ops) / len(cache_ops) * 100
                 metrics.cache_hit_rates = [hit_rate]
 
-        # Error rates (calculate from error and response metrics)
+    def _collect_error_rates(
+        self, metrics: PerformanceMetrics, cutoff_time: float
+    ) -> None:
+        """Collect error rate metrics."""
         if "error" in self._metrics_data and "response_time" in self._metrics_data:
             error_count = len(
                 [m for m in self._metrics_data["error"] if m.timestamp >= cutoff_time],
@@ -358,7 +378,10 @@ class MetricsCollector(ServiceBase):
                 error_rate = (error_count / response_count) * 100
                 metrics.error_rates = [error_rate]
 
-        # Custom metrics
+    def _collect_custom_metrics(
+        self, metrics: PerformanceMetrics, cutoff_time: float
+    ) -> None:
+        """Collect custom metrics."""
         for metric_name, metric_queue in self._metrics_data.items():
             if metric_name not in {
                 "response_time",
@@ -371,8 +394,6 @@ class MetricsCollector(ServiceBase):
                 ]
                 if recent_values:
                     metrics.custom_metrics[metric_name] = recent_values
-
-        return metrics
 
     def _percentile(self, sorted_values: list[float], percentile: int) -> float:
         """Calculate percentile from sorted values."""

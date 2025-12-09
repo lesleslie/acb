@@ -286,6 +286,7 @@ class LoadTestRunner:
         response_times = []
         errors = []
 
+        # Create and run the worker tasks
         async def worker() -> None:
             nonlocal completed_requests, failed_requests
 
@@ -314,8 +315,31 @@ class LoadTestRunner:
         actual_duration = time.perf_counter() - start_time
         total_requests = completed_requests + failed_requests
 
-        # Calculate statistics
-        result = {
+        result = self._create_result_dict(
+            test_name,
+            actual_duration,
+            total_requests,
+            completed_requests,
+            failed_requests,
+            response_times,
+            errors,
+        )
+
+        self.results.append(result)
+        return result
+
+    def _create_result_dict(
+        self,
+        test_name: str,
+        actual_duration: float,
+        total_requests: int,
+        completed_requests: int,
+        failed_requests: int,
+        response_times: list[float],
+        errors: list[str],
+    ) -> dict[str, t.Any]:
+        """Create the result dictionary for a load test."""
+        return {
             "name": test_name,
             "concurrent_users": self.concurrent_users,
             "planned_duration": self.duration,
@@ -339,9 +363,6 @@ class LoadTestRunner:
             "errors": errors[:10],  # Store first 10 errors
             "timestamp": time.time(),
         }
-
-        self.results.append(result)
-        return result
 
 
 class MetricsCollector:
