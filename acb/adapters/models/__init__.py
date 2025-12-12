@@ -142,7 +142,7 @@ class ModelsAdapter(ModelsBase):
                     category=DeprecationWarning,
                     module="pydantic",
                 )
-                from redis_om import HashModel
+                from redis_om import HashModel  # type: ignore[import-not-found]
 
             if issubclass(model_class, HashModel):
                 return "redis_om"

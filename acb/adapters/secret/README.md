@@ -1,4 +1,4 @@
-Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/secret/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Secret](<./README.md>)
+Error - Could not find the file by path /Users/les/Projects/acb/acb/adapters/secret/README.md for qodo_structured_read_files> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Secret](./README.md)
 
 # Secret Adapter
 
@@ -9,21 +9,21 @@ The Secret adapter provides a standardized interface for secure secret managemen
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Available Implementations](<#available-implementations>)
-- [Installation](<#installation>)
-- [Configuration](<#configuration>)
-- [Basic Usage](<#basic-usage>)
-- [Advanced Usage](<#advanced-usage>)
-  - [Working with Adapter-Specific Secrets](<#working-with-adapter-specific-secrets>)
-  - [Secret Versioning](<#secret-versioning>)
-  - [Batch Operations](<#batch-operations>)
-  - [Integration with ACB Configuration](<#integration-with-acb-configuration>)
-- [Troubleshooting](<#troubleshooting>)
-- [Implementation Details](<#implementation-details>)
-- [Performance Considerations](<#performance-considerations>)
-- [Related Adapters](<#related-adapters>)
-- [Additional Resources](<#additional-resources>)
+- [Overview](#overview)
+- [Available Implementations](#available-implementations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Basic Usage](#basic-usage)
+- [Advanced Usage](#advanced-usage)
+  - [Working with Adapter-Specific Secrets](#working-with-adapter-specific-secrets)
+  - [Secret Versioning](#secret-versioning)
+  - [Batch Operations](#batch-operations)
+  - [Integration with ACB Configuration](#integration-with-acb-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Implementation Details](#implementation-details)
+- [Performance Considerations](#performance-considerations)
+- [Related Adapters](#related-adapters)
+- [Additional Resources](#additional-resources)
 
 ## Overview
 
@@ -487,10 +487,10 @@ class MyService:
 
 The Secret adapter works well with these other ACB adapters:
 
-- [**Config Adapter**](../../config/README.md): Use secrets in configuration via SecretStr
-- [**SQL Adapter**](<../sql/README.md>): Store database credentials securely
-- [**Storage Adapter**](<../storage/README.md>): Store cloud storage credentials
-- [**Requests Adapter**](<../requests/README.md>): Secure API keys for external services
+- [**Config Documentation**](../../../docs/CONFIGURATION.md): Use secrets in configuration via SecretStr
+- [**SQL Adapter**](../sql/README.md): Store database credentials securely
+- [**Storage Adapter**](../storage/README.md): Store cloud storage credentials
+- [**Requests Adapter**](../requests/README.md): Secure API keys for external services
 
 Integration example:
 
@@ -542,7 +542,7 @@ async def call_external_api():
 - [AWS Secrets Manager Documentation](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
 - [Azure Key Vault Documentation](https://docs.microsoft.com/en-us/azure/key-vault/)
 - [OWASP Secrets Management Guide](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
-- [ACB Configuration Documentation](<../../README.md#configuration-system>)
-- [ACB SQL Adapter](<../sql/README.md>)
-- [ACB Storage Adapter](<../storage/README.md>)
-- [ACB Requests Adapter](<../requests/README.md>)
+- [ACB Configuration Documentation](../../README.md#configuration-system)
+- [ACB SQL Adapter](../sql/README.md)
+- [ACB Storage Adapter](../storage/README.md)
+- [ACB Requests Adapter](../requests/README.md)

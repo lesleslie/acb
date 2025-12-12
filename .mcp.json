@@ -55,7 +55,7 @@
       "type": "http",
       "url": "https://mcp.sentry.dev/mcp"
     },
-    "session-mgmt": {
+    "session-buddy": {
       "type": "http",
       "url": "http://localhost:8678/mcp"
     },

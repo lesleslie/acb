@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Cache](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Cache](./README.md)
 
 # Cache Adapter
 
@@ -9,21 +9,21 @@ The Cache adapter provides a standardized interface for data caching in ACB appl
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Available Implementations](<#available-implementations>)
-- [Installation](<#installation>)
-- [Configuration](<#configuration>)
-- [Basic Usage](<#basic-usage>)
-- [Advanced Usage](<#advanced-usage>)
-  - [Caching Complex Data Types](<#caching-complex-data-types>)
-  - [Multi-Key Operations](<#multi-key-operations>)
-  - [Cache Decorators](<#cache-decorators>)
-  - [Working with Namespaces](<#working-with-namespaces>)
-- [Troubleshooting](<#troubleshooting>)
-- [Implementation Details](<#implementation-details>)
-- [Performance Considerations](<#performance-considerations>)
-- [Related Adapters](<#related-adapters>)
-- [Additional Resources](<#additional-resources>)
+- [Overview](#overview)
+- [Available Implementations](#available-implementations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Basic Usage](#basic-usage)
+- [Advanced Usage](#advanced-usage)
+  - [Caching Complex Data Types](#caching-complex-data-types)
+  - [Multi-Key Operations](#multi-key-operations)
+  - [Cache Decorators](#cache-decorators)
+  - [Working with Namespaces](#working-with-namespaces)
+- [Troubleshooting](#troubleshooting)
+- [Implementation Details](#implementation-details)
+- [Performance Considerations](#performance-considerations)
+- [Related Adapters](#related-adapters)
+- [Additional Resources](#additional-resources)
 
 ## Overview
 
@@ -340,10 +340,10 @@ async def get_item(item_id):
 
 The Cache adapter works well with other ACB adapters:
 
-- [**SQL Adapter**](<../sql/README.md>): Cache database query results to reduce database load
-- [**NoSQL Adapter**](<../nosql/README.md>): Cache document results for faster access
-- [**Requests Adapter**](<../requests/README.md>): Cache API responses to reduce external calls
-- [**Storage Adapter**](<../storage/README.md>): Cache file metadata to avoid storage operations
+- [**SQL Adapter**](../sql/README.md): Cache database query results to reduce database load
+- [**NoSQL Adapter**](../nosql/README.md): Cache document results for faster access
+- [**Requests Adapter**](../requests/README.md): Cache API responses to reduce external calls
+- [**Storage Adapter**](../storage/README.md): Cache file metadata to avoid storage operations
 
 Common integration patterns:
 
@@ -381,6 +381,6 @@ async def get_weather(city: str, config: Inject[Config]):
 - [Redis Documentation](https://redis.io/documentation)
 - [Redis Caching Patterns](https://redis.com/solutions/use-cases/caching/)
 - [Caching Best Practices](https://aws.amazon.com/caching/best-practices/)
-- [ACB SQL Adapter](<../sql/README.md>)
-- [ACB NoSQL Adapter](<../nosql/README.md>)
-- [ACB Adapters Overview](<../README.md>)
+- [ACB SQL Adapter](../sql/README.md)
+- [ACB NoSQL Adapter](../nosql/README.md)
+- [ACB Adapters Overview](../README.md)

@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Messaging](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Messaging](./README.md)
 
 # Messaging Adapter
 
@@ -12,17 +12,17 @@ across Redis, RabbitMQ, AIORMQ, and in-memory transports.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Message Models](<#message-models>)
-- [Capabilities](<#capabilities>)
-- [Settings](<#settings>)
-- [Interfaces](<#interfaces>)
-- [Built-in Implementations](<#built-in-implementations>)
-- [Usage Examples](<#usage-examples>)
-- [Queue Acknowledgement Example](<#queue-acknowledgement-example>)
-- [Error Handling](<#error-handling>)
-- [Best Practices](<#best-practices>)
-- [Related Adapters](<#related-adapters>)
+- [Overview](#overview)
+- [Message Models](#message-models)
+- [Capabilities](#capabilities)
+- [Settings](#settings)
+- [Interfaces](#interfaces)
+- [Built-in Implementations](#built-in-implementations)
+- [Usage Examples](#usage-examples)
+- [Queue Acknowledgement Example](#queue-acknowledgement-example)
+- [Error Handling](#error-handling)
+- [Best Practices](#best-practices)
+- [Related Adapters](#related-adapters)
 
 ## Overview
 
@@ -157,13 +157,13 @@ acknowledged immediately, keeping retry counts accurate across deployments.
   during deployment restarts.
 - Monitor queue depth and retry counts via adapter-provided metrics to detect
   bottlenecks early.
-- Combine with the [Events layer](<../../events/README.md>) to power event-driven
-  systems, or with [Tasks](<../../tasks/README.md>) for background job queues.
+- Combine with the [Events layer](../../events/README.md) to power event-driven
+  systems, or with [Tasks](../../tasks/README.md) for background job queues.
 - In tests, wire the memory backend via dependency overrides to avoid external
   infrastructure requirements.
 
 ## Related Adapters
 
-- [Events](<../../events/README.md>)
-- [Tasks](<../../tasks/README.md>)
-- [Adapters Overview](<../README.md>)
+- [Events](../../events/README.md)
+- [Tasks](../../tasks/README.md)
+- [Adapters Overview](../README.md)

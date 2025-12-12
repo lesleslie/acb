@@ -2,7 +2,7 @@
 <img src="./images/acb-logo.png" alt="ACB Logo">
 </p>
 
-> **ACB Documentation**: [Main](<./README.md>) | [Core Systems](<./acb/README.md>) | [Actions](<./acb/actions/README.md>) | [Adapters](<./acb/adapters/README.md>)
+> **ACB Documentation**: [Main](./README.md) | [Core Systems](./acb/README.md) | [Actions](./acb/actions/README.md) | [Adapters](./acb/adapters/README.md)
 
 # <u>A</u>synchronous <u>C</u>omponent <u>B</u>ase (ACB)
 
@@ -72,30 +72,30 @@ If you're new to ACB, here are the key concepts to understand:
 
 ## Table of Contents
 
-- [Key Concepts](<#key-concepts>)
-- [Installation](<#installation>)
-- [Quick Start](<#quick-start>)
-- [Architecture Overview](<#architecture-overview>)
-- [Core Components](<#core-components>)
-  - [Actions](<#actions>)
-  - [Adapters](<#adapters>)
-  - [Universal Query Interface](<#universal-query-interface>)
-  - [Services](<#services>)
-  - [Events & Orchestration](<#events--orchestration>)
-  - [Configuration System](<#configuration-system>)
-  - [Dependency Injection](<#dependency-injection>)
-- [Common Patterns](<#common-patterns>)
-- [Use Cases](<#use-cases>)
-- [Built-in Components](<#built-in-components>)
-- [Security Features](<#security-features>)
-- [Basic Monitoring](<#basic-monitoring>)
-- [Debugging](<#debugging>)
-- [Advanced Usage](<#advanced-usage>)
-- [Documentation](<#documentation>)
-- [Acknowledgements](<#acknowledgements>)
-- [License](<#license>)
-- [Projects Using ACB](<#projects-using-acb>)
-- [Contributing](<#contributing>)
+- [Key Concepts](#key-concepts)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Architecture Overview](#architecture-overview)
+- [Core Components](#core-components)
+  - [Actions](#actions)
+  - [Adapters](#adapters)
+  - [Universal Query Interface](#universal-query-interface)
+  - [Services](#services)
+  - [Events & Orchestration](#events--orchestration)
+  - [Configuration System](#configuration-system)
+  - [Dependency Injection](#dependency-injection)
+- [Common Patterns](#common-patterns)
+- [Use Cases](#use-cases)
+- [Built-in Components](#built-in-components)
+- [Security Features](#security-features)
+- [Basic Monitoring](#basic-monitoring)
+- [Debugging](#debugging)
+- [Advanced Usage](#advanced-usage)
+- [Documentation](#documentation)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
+- [Projects Using ACB](#projects-using-acb)
+- [Contributing](#contributing)
 
 ## Installation
 
@@ -270,7 +270,7 @@ async def pipeline(payload: dict[str, str]) -> tuple[str, dict[str, str]]:
     return digest, restored
 ```
 
-For the full catalog, see the [Actions README](<./acb/actions/README.md>).
+For the full catalog, see the [Actions README](./acb/actions/README.md).
 
 ### Adapters
 
@@ -339,7 +339,7 @@ cache: redis
 
 Your application code remains exactly the same!
 
-For more detailed documentation on adapters, see the [Adapters README](<./acb/adapters/README.md>).
+For more detailed documentation on adapters, see the [Adapters README](./acb/adapters/README.md).
 
 ### Universal Query Interface
 
@@ -537,7 +537,7 @@ nosql_query = ACBQuery(database_adapter_name="nosql", model_adapter_name="pydant
 activity = await nosql_query.for_model(UserActivity).simple.all()
 ```
 
-For comprehensive documentation and examples, see the [Models Adapter Documentation](<./acb/adapters/models/README.md>).
+For comprehensive documentation and examples, see the [Models Adapter Documentation](./acb/adapters/models/README.md).
 
 ### Services
 
@@ -812,7 +812,7 @@ Once configured, AI assistants can:
 1. Orchestrate complex workflows that combine multiple operations
 1. Monitor system health and access real-time metrics
 
-For more details on the MCP server implementation, see the [MCP Server Documentation](<./acb/mcp/README.md>) and [example configurations](<./examples/claude_desktop_config.json>).
+For more details on the MCP server implementation, see the [MCP Server Documentation](./acb/mcp/README.md) and [example configurations](./examples/claude_desktop_config.json).
 
 ### Configuration System
 
@@ -1138,7 +1138,7 @@ depends.set(Cache, cache_instance)
 1. **Type Safety**: Full IDE support with type hints and autocomplete
 1. **Clear Architecture**: DI pattern signals architectural layer (Service vs Adapter)
 
-For detailed architectural guidance, see [docs/ARCHITECTURE-DECISION-PROTOCOL-DI.md](<./docs/ARCHITECTURE-DECISION-PROTOCOL-DI.md>).
+For detailed architectural guidance, see [docs/ARCHITECTURE-DECISION-PROTOCOL-DI.md](./docs/ARCHITECTURE-DECISION-PROTOCOL-DI.md).
 
 ````
 
@@ -1572,7 +1572,7 @@ asyncio.run(benchmark_cache_operations())
 
 ## Debugging
 
-ACB provides a comprehensive debugging system that helps you troubleshoot your applications effectively. While a brief overview is provided in the [Built-in Components](<#built-in-components>) section, this section offers a more detailed look at ACB's debugging capabilities.
+ACB provides a comprehensive debugging system that helps you troubleshoot your applications effectively. While a brief overview is provided in the [Built-in Components](#built-in-components) section, this section offers a more detailed look at ACB's debugging capabilities.
 
 ### Debug Module Features
 
@@ -1862,7 +1862,7 @@ logger = depends.get(Logger)
 patch_record(module, "Debug message with module context")
 ```
 
-For more detailed information about debugging in ACB, see the [Core Systems documentation](<./acb/README.md#3-debugging-tools>).
+For more detailed information about debugging in ACB, see the [Core Systems documentation](./acb/README.md#3-debugging-tools).
 
 ## Advanced Usage
 
@@ -1964,25 +1964,25 @@ class Stripe(PaymentBase):
 
 For more detailed documentation about ACB components:
 
-- [**Architecture Implementation Guide**](<./docs/ARCHITECTURE_IMPLEMENTATION_GUIDE.md>): Complete guide to ACB's architectural layers and implementation patterns
-- [**Core Systems**](<./acb/README.md>): Configuration, dependency injection, debugging, and logging
-- [**Actions**](<./acb/actions/README.md>): Detailed guide to built-in actions and creating custom ones
-- [**Adapters**](<./acb/adapters/README.md>): Comprehensive documentation on adapter system and implementations
-  - [**Cache Adapter**](<./acb/adapters/cache/README.md>): Memory and Redis caching
-  - [**SQL Adapter**](<./acb/adapters/sql/README.md>): SQL database connections
-  - [**Storage Adapter**](<./acb/adapters/storage/README.md>): File and object storage
+- [**Architecture Implementation Guide**](./docs/ARCHITECTURE_IMPLEMENTATION_GUIDE.md): Complete guide to ACB's architectural layers and implementation patterns
+- [**Core Systems**](./acb/README.md): Configuration, dependency injection, debugging, and logging
+- [**Actions**](./acb/actions/README.md): Detailed guide to built-in actions and creating custom ones
+- [**Adapters**](./acb/adapters/README.md): Comprehensive documentation on adapter system and implementations
+  - [**Cache Adapter**](./acb/adapters/cache/README.md): Memory and Redis caching
+  - [**SQL Adapter**](./acb/adapters/sql/README.md): SQL database connections
+  - [**Storage Adapter**](./acb/adapters/storage/README.md): File and object storage
 
 ## Acknowledgements
 
-ACB "blocks" logo used by permission from [Andy Coe Band](https://andycoeband.com).
+ACB "blocks" logo used by permission from [Andy Coe Band](https://www.facebook.com/AndyCoeBand).
 
 Special thanks to the following open-source projects that power ACB:
 
 ### Core Framework & Configuration
 
 - [Pydantic](https://pydantic-docs.helpmanual.io/) - Data validation and settings management
-- [pydantic-settings](https://pydantic-settings.helpmanual.io/) - Settings management with multiple sources
-- [bevy](https://github.com/bevy-org/bevy) - Dependency injection framework
+- [pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) - Settings management with multiple sources
+- [bevy](https://github.com/bevyengine/bevy) - Dependency injection framework
 - [AnyIO](https://anyio.readthedocs.io/) - Async compatibility layer and utilities
 - [Typer](https://typer.tiangolo.com/) - Modern CLI framework
 
@@ -2028,7 +2028,7 @@ Special thanks to the following open-source projects that power ACB:
 ### Development Environment
 
 - [PyCharm](https://www.jetbrains.com/pycharm/) - The premier Python IDE that powered the development of ACB
-- [Claude Code](https://claude.ai/code) - AI-powered development assistant that accelerated development and ensured code quality
+- [Claude Code](https://claude.com/product/overview) - AI-powered development assistant that accelerated development and ensured code quality
 
 We extend our gratitude to all the maintainers and contributors of these outstanding projects that make ACB's powerful component architecture possible.
 
@@ -2079,6 +2079,8 @@ Contributions to ACB are welcome! We follow a workflow inspired by the Crackerja
    ```
 
    This command cleans your code, runs linting, tests, bumps the version (patch, minor, or major), and commits changes.
+
+   > ℹ️ **pip-audit networking**: Some vulnerability APIs advertise HTTP/3 and then fail with `MustDowngradeError`. The repo ships `sitecustomize.py` to disable HTTP/3 system-wide so `pip-audit` (and other urllib3 clients) stick to HTTP/1.1/2. Set `ACB_HTTP3_DISABLE=0` if you explicitly need HTTP/3 while running locally.
 
 1. **Testing**
    All tests are written using pytest and should include coverage reporting:

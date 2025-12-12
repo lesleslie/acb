@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Embedding](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Embedding](./README.md)
 
 # Embedding Adapter
 
@@ -12,16 +12,16 @@ locking applications to a single provider.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Core Types](<#core-types>)
-- [Pooling & Normalization](<#pooling--normalization>)
-- [Settings](<#settings>)
-- [Built-in Implementations](<#built-in-implementations>)
-- [Usage Examples](<#usage-examples>)
-- [Vector Store Integration](<#vector-store-integration>)
-- [Batching & Chunking](<#batching--chunking>)
-- [Best Practices](<#best-practices>)
-- [Related Adapters](<#related-adapters>)
+- [Overview](#overview)
+- [Core Types](#core-types)
+- [Pooling & Normalization](#pooling--normalization)
+- [Settings](#settings)
+- [Built-in Implementations](#built-in-implementations)
+- [Usage Examples](#usage-examples)
+- [Vector Store Integration](#vector-store-integration)
+- [Batching & Chunking](#batching--chunking)
+- [Best Practices](#best-practices)
+- [Related Adapters](#related-adapters)
 
 ## Overview
 
@@ -135,6 +135,6 @@ async def upsert_vectors(documents: dict[str, str]) -> None:
 
 ## Related Adapters
 
-- [AI](<../ai/README.md>)
-- [Vector](<../vector/README.md>)
-- [Storage](<../storage/README.md>)
+- [AI](../ai/README.md)
+- [Vector](../vector/README.md)
+- [Storage](../storage/README.md)

@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Logger](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Logger](./README.md)
 
 # Logger Adapter
 
@@ -12,15 +12,15 @@ without rewriting application code.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Settings](<#settings>)
-- [Protocol & Base Class](<#protocol--base-class>)
-- [Context Management](<#context-management>)
-- [Built-in Implementations](<#built-in-implementations>)
-- [Usage Examples](<#usage-examples>)
-- [Remote Sink Example](<#remote-sink-example>)
-- [Best Practices](<#best-practices>)
-- [Related Adapters](<#related-adapters>)
+- [Overview](#overview)
+- [Settings](#settings)
+- [Protocol & Base Class](#protocol--base-class)
+- [Context Management](#context-management)
+- [Built-in Implementations](#built-in-implementations)
+- [Usage Examples](#usage-examples)
+- [Remote Sink Example](#remote-sink-example)
+- [Best Practices](#best-practices)
+- [Related Adapters](#related-adapters)
 
 ## Overview
 
@@ -133,6 +133,6 @@ shared formatting and context propagation defined in `LoggerBaseSettings`.
 
 ## Related Adapters
 
-- [Monitoring](<../monitoring/README.md>)
-- [Requests](<../requests/README.md>)
-- [Messaging](<../messaging/README.md>)
+- [Monitoring](../monitoring/README.md)
+- [Requests](../requests/README.md)
+- [Messaging](../messaging/README.md)

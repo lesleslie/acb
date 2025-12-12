@@ -4,7 +4,7 @@ The `validate` action provides pure utility functions for input validation and s
 
 ## Overview
 
-This action includes validation functions for common data types and security checks to prevent injection attacks. All functions are stateless and can be used independently of ACB adapters. For sanitization functions, see the [sanitize](../sanitize/README.md) action.
+This action includes validation functions for common data types and security checks to prevent injection attacks. All functions are stateless and can be used independently of ACB adapters. For sanitization functions, see the [sanitize](../sanitize/README.md) action in `acb/actions/sanitize`.
 
 ## Usage
 
@@ -125,6 +125,6 @@ result = validate_user_input(
 
 ## Related Actions
 
-- [secure](<../secure/README.md>) - Cryptographic utilities and token generation
-- [encode](<../encode/README.md>) - Data serialization and encoding
-- [hash](<../hash/README.md>) - Hashing and checksum functions
+- [secure](../secure/README.md) - Cryptographic utilities and token generation
+- [encode](../encode/README.md) - Data serialization and encoding
+- [hash](../hash/README.md) - Hashing and checksum functions

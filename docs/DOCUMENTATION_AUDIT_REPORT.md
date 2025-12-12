@@ -160,12 +160,12 @@ uv add --group ai --group cache
 **Impact**: Navigation broken, users can't find referenced content
 
 #### SQL Adapter README
-- **Line 475**: `[Universal Query Interface Documentation](../../models/README.md)`
-  - **Fix**: `[Universal Query Interface Documentation](../models/README.md)`
-- **Line 476**: `[Specification Pattern Examples](../../models/_specification.py)`
-  - **Fix**: Link to README instead of internal implementation file
-- **Line 477**: `[Repository Pattern Examples](../../models/_repository.py)`
-  - **Fix**: Link to README instead of internal implementation file
+- **Line 475**: Universal Query Interface Documentation link currently points to `../../models/README.md` but should use `../models/README.md`
+  - **Fix**: Update the markdown target to `../models/README.md`
+- **Line 476**: Specification Pattern Examples link currently points to `../../models/_specification.py`
+  - **Fix**: Update the markdown target to `../models/_specification.py` or reference the README section
+- **Line 477**: Repository Pattern Examples link currently points to `../../models/_repository.py`
+  - **Fix**: Update the markdown target to `../models/_repository.py` or reference the README section
 
 ---
 

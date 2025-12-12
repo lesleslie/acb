@@ -220,7 +220,7 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
             is_async_available = True
             try:
                 loop = asyncio.get_running_loop()
-                is_async_available = loop and not loop.is_closed()
+                is_async_available = bool(loop and not loop.is_closed())
             except RuntimeError:
                 # No event loop running
                 is_async_available = False

@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Graph](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Graph](./README.md)
 
 # Graph Adapter
 
@@ -12,15 +12,15 @@ can swap graph backends with minimal code changes.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Core Models](<#core-models>)
-- [Query & Traversal Interfaces](<#query--traversal-interfaces>)
-- [Settings & Security](<#settings--security>)
-- [Built-in Implementations](<#built-in-implementations>)
-- [Usage Examples](<#usage-examples>)
-- [Schema Inspection Example](<#schema-inspection-example>)
-- [Best Practices](<#best-practices>)
-- [Related Adapters](<#related-adapters>)
+- [Overview](#overview)
+- [Core Models](#core-models)
+- [Query & Traversal Interfaces](#query--traversal-interfaces)
+- [Settings & Security](#settings--security)
+- [Built-in Implementations](#built-in-implementations)
+- [Usage Examples](#usage-examples)
+- [Schema Inspection Example](#schema-inspection-example)
+- [Best Practices](#best-practices)
+- [Related Adapters](#related-adapters)
 
 ## Overview
 
@@ -130,6 +130,6 @@ constraints, and relationship types are available before enabling new features.
 
 ## Related Adapters
 
-- [SQL](<../sql/README.md>)
-- [NoSQL](<../nosql/README.md>)
-- [Vector](<../vector/README.md>)
+- [SQL](../sql/README.md)
+- [NoSQL](../nosql/README.md)
+- [Vector](../vector/README.md)

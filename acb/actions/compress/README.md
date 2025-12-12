@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
 
 # Compress Action
 
@@ -6,17 +6,17 @@ The Compress action provides efficient data compression and decompression utilit
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Features](<#features>)
-- [Usage](<#usage>)
-  - [Compression](<#compression>)
-  - [Decompression](<#decompression>)
-- [API Reference](<#api-reference>)
-  - [Compress](<#compress>)
-  - [Decompress](<#decompress>)
-- [Examples](<#examples>)
-- [Performance Considerations](<#performance-considerations>)
-- [Related Actions](<#related-actions>)
+- [Overview](#overview)
+- [Features](#features)
+- [Usage](#usage)
+  - [Compression](#compression)
+  - [Decompression](#decompression)
+- [API Reference](#api-reference)
+  - [Compress](#compress)
+  - [Decompress](#decompress)
+- [Examples](#examples)
+- [Performance Considerations](#performance-considerations)
+- [Related Actions](#related-actions)
 
 ## Overview
 
@@ -231,5 +231,5 @@ for algorithm in ["gzip", "brotli"]:
 
 ## Related Actions
 
-- [Encode/Decode Action](<../encode/README.md>): Data serialization with formats like JSON, YAML, and MsgPack
-- [Hash Action](<../hash/README.md>): Generate secure hashes and checksums for data integrity
+- [Encode/Decode Action](../encode/README.md): Data serialization with formats like JSON, YAML, and MsgPack
+- [Hash Action](../hash/README.md): Generate secure hashes and checksums for data integrity

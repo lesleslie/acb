@@ -2,6 +2,24 @@
   "functions": [
     {
       "complexity": 0,
+      "file_name": "sitecustomize.py",
+      "function_name": "_should_disable_http3",
+      "path": "sitecustomize.py"
+    },
+    {
+      "complexity": 2,
+      "file_name": "sitecustomize.py",
+      "function_name": "_patch_init",
+      "path": "sitecustomize.py"
+    },
+    {
+      "complexity": 2,
+      "file_name": "sitecustomize.py",
+      "function_name": "_with_h3_disabled",
+      "path": "sitecustomize.py"
+    },
+    {
+      "complexity": 0,
       "file_name": "__init__.py",
       "function_name": "AutoModelForCausalLM::from_pretrained",
       "path": "__init__.py"
@@ -23315,6 +23333,7 @@
     "/Users/les/Projects/acb/examples/orchestration_example.py",
     "/Users/les/Projects/acb/examples/service_example.py",
     "/Users/les/Projects/acb/examples/simple_mcp_example.py",
+    "/Users/les/Projects/acb/sitecustomize.py",
     "/Users/les/Projects/acb/transformers/__init__.py"
   ]
 }

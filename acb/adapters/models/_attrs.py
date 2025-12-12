@@ -68,7 +68,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
             return attrs_lib.asdict(instance)  # type: ignore[no-any-return]
         return self._manual_serialize(instance)
 
-    def _manual_serialize(self, instance: T) -> dict[str, Any]:
+    def _manual_serialize(self, instance: T) -> dict[str, Any]:  # type: ignore[override]
         result: dict[str, Any] = {}
         if ATTRS_AVAILABLE and attrs_lib.has(instance.__class__):
             for field in attrs_lib.fields(instance.__class__):
@@ -98,7 +98,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
             filtered_data = self._filter_data_for_model(model_class, data)
             return model_class(**filtered_data)
 
-    def _filter_data_for_model(
+    def _filter_data_for_model(  # type: ignore[override]
         self,
         model_class: type[T],
         data: dict[str, Any],
@@ -109,7 +109,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
         # Use the mixin's implementation
         return super()._filter_data_for_model(model_class, data)
 
-    def get_entity_name(self, model_class: type[T]) -> str:
+    def get_entity_name(self, model_class: type[T]) -> str:  # type: ignore[override]
         if hasattr(model_class, "__tablename__"):
             return str(model_class.__tablename__)  # type: ignore[attr-defined]
         if hasattr(model_class, "__collection_name__"):
@@ -121,7 +121,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
 
         return getattr(model_class, "__name__", "unknown").lower()
 
-    def get_field_mapping(self, model_class: type[T]) -> dict[str, str]:
+    def get_field_mapping(self, model_class: type[T]) -> dict[str, str]:  # type: ignore[override]
         field_mapping = {}
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
             for field in attrs_lib.fields(model_class):
@@ -135,7 +135,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
 
         return field_mapping
 
-    def validate_data(
+    def validate_data(  # type: ignore[override]
         self,
         model_class: type[T],
         data: dict[str, Any],
@@ -148,7 +148,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
             temp_instance = self.deserialize_to_class(model_class, filtered_data)
             return self.serialize(temp_instance)
 
-    def get_primary_key_field(self, model_class: type[T]) -> str:
+    def get_primary_key_field(self, model_class: type[T]) -> str:  # type: ignore[override]
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
             return self._get_attrs_primary_key(model_class)
         if hasattr(model_class, "__annotations__"):
@@ -203,7 +203,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
             return dict(annotations)
         return {}
 
-    def get_field_type(self, model_class: type[T], field_name: str) -> type:
+    def get_field_type(self, model_class: type[T], field_name: str) -> type:  # type: ignore[override]
         if ATTRS_AVAILABLE and attrs_lib.has(model_class):
             for field in attrs_lib.fields(model_class):
                 if field.name == field_name:
@@ -216,7 +216,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
 
         return type(Any)
 
-    def is_relationship_field(self, model_class: type[T], field_name: str) -> bool:
+    def is_relationship_field(self, model_class: type[T], field_name: str) -> bool:  # type: ignore[override]
         field_type = self.get_field_type(model_class, field_name)
         if hasattr(field_type, "__origin__"):
             origin = get_origin(field_type)
@@ -231,7 +231,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
             and attrs_lib.has(field_type),
         )
 
-    def get_nested_model_class(
+    def get_nested_model_class(  # type: ignore[override]
         self,
         model_class: type[T],
         field_name: str,

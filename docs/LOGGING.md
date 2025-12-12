@@ -1,6 +1,6 @@
 # Logging Documentation
 
-> **ACB Documentation**: [Main](<../README.md>) | [Core Systems](<./README.md>) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
+> **ACB Documentation**: [Main](../README.md) | [Core Systems](./README.md) | [Actions](../acb/actions/README.md) | [Adapters](../acb/adapters/README.md)
 
 ## Overview
 

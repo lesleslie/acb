@@ -1,4 +1,4 @@
-> **ACB Documentation**: [Main](<../../../README.md>) | [Core Systems](<../../README.md>) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>) | [Requests](<./README.md>)
+> **ACB Documentation**: [Main](../../../README.md) | [Core Systems](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md) | [Requests](./README.md)
 
 # Requests Adapter
 
@@ -9,24 +9,24 @@ The Requests adapter provides a standardized interface for making HTTP requests 
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Available Implementations](<#available-implementations>)
-- [Installation](<#installation>)
-- [Configuration](<#configuration>)
-- [Basic Usage](<#basic-usage>)
-- [Advanced Usage](<#advanced-usage>)
-  - [Async Context Managers](<#async-context-managers>)
-  - [Working with Response Objects](<#working-with-response-objects>)
-  - [HTTP Caching (RFC 9111)](<#http-caching-rfc-9111>)
-  - [Custom Headers](<#custom-headers>)
-  - [Authentication](<#authentication>)
-  - [GraphQL Query Caching](<#graphql-query-caching>)
-- [Troubleshooting](<#troubleshooting>)
-- [Performance Considerations](<#performance-considerations>)
-- [Architecture](<#architecture>)
-- [Migration from Hishel](<#migration-from-hishel>)
-- [Related Adapters](<#related-adapters>)
-- [Additional Resources](<#additional-resources>)
+- [Overview](#overview)
+- [Available Implementations](#available-implementations)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Basic Usage](#basic-usage)
+- [Advanced Usage](#advanced-usage)
+  - [Async Context Managers](#async-context-managers)
+  - [Working with Response Objects](#working-with-response-objects)
+  - [HTTP Caching (RFC 9111)](#http-caching-rfc-9111)
+  - [Custom Headers](#custom-headers)
+  - [Authentication](#authentication)
+  - [GraphQL Query Caching](#graphql-query-caching)
+- [Troubleshooting](#troubleshooting)
+- [Performance Considerations](#performance-considerations)
+- [Architecture](#architecture)
+- [Migration from Hishel](#migration-from-hishel)
+- [Related Adapters](#related-adapters)
+- [Additional Resources](#additional-resources)
 
 ## Overview
 
@@ -589,9 +589,9 @@ async with Requests() as requests:
 
 The Requests adapter integrates with:
 
-- [**Cache Adapter**](<../cache/README.md>): Required for HTTP response caching
-- [**Secret Adapter**](<../secret/README.md>): Store API keys and credentials securely
-- [**NoSQL Adapter**](<../nosql/README.md>): Store API responses for longer-term persistence
+- [**Cache Adapter**](../cache/README.md): Required for HTTP response caching
+- [**Secret Adapter**](../secret/README.md): Store API keys and credentials securely
+- [**NoSQL Adapter**](../nosql/README.md): Store API responses for longer-term persistence
 
 Integration example:
 
@@ -635,6 +635,6 @@ async def fetch_and_store_weather():
 - [Niquests Documentation](https://niquests.readthedocs.io/)
 - [RFC 9111: HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111.html)
 - [HTTP Status Codes](https://httpstatuses.com/)
-- [ACB Cache Adapter](<../cache/README.md>)
-- [ACB Secret Adapter](<../secret/README.md>)
-- [ACB Adapters Overview](<../README.md>)
+- [ACB Cache Adapter](../cache/README.md)
+- [ACB Secret Adapter](../secret/README.md)
+- [ACB Adapters Overview](../README.md)

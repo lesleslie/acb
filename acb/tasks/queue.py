@@ -244,7 +244,7 @@ class Queue(QueueBase):
 
             # Extract connection parameters if URL provided
             if self.settings.job_store_url:
-                redis_client = redis.from_url(
+                redis_client = redis.from_url(  # type: ignore[no-untyped-call]
                     self.settings.job_store_url,
                     **self.settings.redis_client_options,
                 )
