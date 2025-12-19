@@ -7,7 +7,7 @@ prerelease-mode = "allow"
 
 [[package]]
 name = "acb"
-version = "0.31.20"
+version = "0.31.21"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -1975,21 +1975,22 @@ wheels = [
 
 [[package]]
 name = "excalidraw-mcp"
-version = "0.34.0"
+version = "0.34.1"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "cryptography" },
     { name = "fastmcp" },
     { name = "httpx", extra = ["http2"] },
+    { name = "mcp-common" },
     { name = "psutil" },
     { name = "pydantic" },
     { name = "pyjwt" },
     { name = "rich" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e9/20/7f5daf9d0818a50fd6af503aab1a07fc2d8da48e869a7ca937868de2bc9f/excalidraw_mcp-0.34.0.tar.gz", hash = "sha256:c7d5ee0788e0099d28cd35cf3cf47441597c21a4186a1bafedd97931697bac16", size = 1030845, upload-time = "2025-09-19T02:06:50.748Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/80/f9/89b2fe1fc5e98c95aae4a08856d8c25e2fd4ecb512c24d2954b92a9883ce/excalidraw_mcp-0.34.1.tar.gz", hash = "sha256:4663f525007121d8596900bde0cbfe810587ac063fe7fd89c512818d3ff72200", size = 1133738, upload-time = "2025-12-19T19:30:03.731Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/8a/e4dda474ba2d69b444ba89fbe48f4c31fbea70f73e095f43d7566468850d/excalidraw_mcp-0.34.0-py3-none-any.whl", hash = "sha256:1345bb7f1cba303186345eeaf71c53a59f4e5e20f280010f8a9e7d7f62081fb9", size = 48716, upload-time = "2025-09-19T02:06:48.203Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/c8/b3f1da78dfd856c69fca3ecf68f2de0749aff862672c83dc533b2df514f2/excalidraw_mcp-0.34.1-py3-none-any.whl", hash = "sha256:25cb5c4436d9b4e82bc9ad6a56fca184bc7981df898d2f8fecb5fa2a37d0b247", size = 50357, upload-time = "2025-12-19T19:30:01.642Z" },
 ]
 
 [[package]]
@@ -3195,7 +3196,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.2.3"
+version = "1.2.4"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "jsonpatch" },
@@ -3207,9 +3208,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "uuid-utils" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/70/ea/8380184b287da43d3d2556475b985cf3e27569e9d8bbe33195600a98cabb/langchain_core-1.2.3.tar.gz", hash = "sha256:61f5197aa101cd5605879ef37f2b0ac56c079974d94d347849b8d4fe18949746", size = 803567, upload-time = "2025-12-18T20:13:10.574Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/1d/d6de541e14c508a6bf68ccb78e0c86e7e9eaf698595847d89381795268fe/langchain_core-1.2.4.tar.gz", hash = "sha256:1e01c06f98b9904af0de39d2a290d11b4c4e07888dacbbf4bdc7cef259f5a80e", size = 805708, upload-time = "2025-12-19T19:16:10.709Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/57/cfc1d12e273d33d16bab7ce9a135244e6f5677a92a5a99e69a61b22b7d93/langchain_core-1.2.3-py3-none-any.whl", hash = "sha256:c3501cf0219daf67a0ae23f6d6bdf3b41ab695efd8f0f3070a566e368b8c3dc7", size = 476384, upload-time = "2025-12-18T20:13:08.998Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/ee/80e2ff397fb7b528898e673d037eb06de23ba707bd876fad172308e77b71/langchain_core-1.2.4-py3-none-any.whl", hash = "sha256:29ced7690688c85d66a797eb2866815f55c90cc83a94cf8b0ecad949e913f99f", size = 477377, upload-time = "2025-12-19T19:16:09.613Z" },
 ]
 
 [[package]]
@@ -5635,7 +5636,7 @@ sqlalchemy = [
 
 [[package]]
 name = "session-buddy"
-version = "0.10.1"
+version = "0.10.2"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -5662,9 +5663,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/a7/503c7913173871edaeae7a601620acdbd0752c1f1c0f4e3fa492b0a1b3a9/session_buddy-0.10.1.tar.gz", hash = "sha256:cde54668ed94f0adc05fe120663718ffae076f394bdf8395af2bc57eecf77f17", size = 1436252, upload-time = "2025-12-11T20:26:21.071Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/a6/2e47e67f83dcff28215c1031ff65e6a27362af90be27b61ab351d2a2b98f/session_buddy-0.10.2.tar.gz", hash = "sha256:cfd83544806f3c603f653c9a021187827362633a52355573c018cc4916aed60e", size = 1445171, upload-time = "2025-12-19T19:19:26.138Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/e4/bdf201e341a264c2535af6a0369bea2a9086fbae50bcc1f267e2a0c59428/session_buddy-0.10.1-py3-none-any.whl", hash = "sha256:1ddf49e340617672f67338923389b292f0d97b1c8498b449bdb5ed72b05cc1a6", size = 403506, upload-time = "2025-12-11T20:26:23.009Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/37/e8b54e149c54090009725e4c4b2262ebb32d43003919d6f7302f3b322753/session_buddy-0.10.2-py3-none-any.whl", hash = "sha256:9a97d34fb2abf59e4611fd80d5bf81c318aa384ccd3f10f7f21c436b8d1a3a60", size = 403527, upload-time = "2025-12-19T19:19:23.644Z" },
 ]
 
 [[package]]

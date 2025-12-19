@@ -946,8 +946,13 @@ def import_adapter(
 
         try:
             asyncio.get_running_loop()
-            # We're in an async context
-            return gather_imports(_normalize_adapter_categories(adapter_categories))
+            # We're in an async context - this function shouldn't be called here
+            normalized_categories = _normalize_adapter_categories(adapter_categories)
+            msg = (
+                f"import_adapter() cannot be called from async context. "
+                f"Use 'await gather_imports({normalized_categories})' directly."
+            )
+            raise RuntimeError(msg)
         except RuntimeError as e:
             if "no running event loop" in str(e):
                 # No event loop - we need to start one for adapter imports
