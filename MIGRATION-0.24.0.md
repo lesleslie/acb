@@ -17,7 +17,7 @@ related breaking changes. Follow the checklist below before upgrading.
 1. **Update installation scripts.**
    - Replace any extras based installs with dependency groups.
    - Example: `uv add "acb[cache,sql]"` → `uv add --group cache --group sql`.
-2. **Pin new adapter groups where needed.**
+1. **Pin new adapter groups where needed.**
    - Infrastructure: `cache`, `dns`, `ftpd`, `monitoring`, `requests`, `secret`,
      `smtp`, `storage`.
    - Data: `sql`, `nosql`, `vector`, `graph`.
@@ -25,11 +25,11 @@ related breaking changes. Follow the checklist below before upgrading.
    - Support: `models`, `logger`, `mcp`, `demo`, `queue-apscheduler`.
    - Composite bundles: `minimal`, `api`, `microservice`, `webapp`,
      `webapp-plus`, `cloud-native`, `dataplatform`, `gcp`, `all`.
-3. **Re-run deployment pipelines.**
+1. **Re-run deployment pipelines.**
    - Regenerate lock files with `uv lock --upgrade`.
    - Rebuild containers or serverless layers to ensure the new dependency layout
      is captured.
-4. **Verify scheduler integrations.**
+1. **Verify scheduler integrations.**
    - If you depend on APScheduler adapters, confirm compatibility with v4 APIs.
    - Update any import paths or configuration fields that changed upstream.
 
