@@ -17,7 +17,6 @@ ACB is a comprehensive asynchronous application platform for building production
 - **Services Layer**: Long-running components with lifecycle management, health monitoring, and metrics
 - **Orchestration Layer**: Event-driven messaging (**Events**), background job processing (**Tasks**), and complex workflow management (**Workflows**)
 - **Infrastructure Layer**: Dynamic configuration, dependency injection, and resource management
-- **Integration Layer**: Model Context Protocol (MCP) server for AI assistant integration
 
 In simpler terms, ACB evolved from a component framework into a **full application platform** that handles everything from data compression to complex multi-step business processes, all with a consistent, type-safe, async-first API.
 
@@ -65,8 +64,6 @@ If you're new to ACB, here are the key concepts to understand:
 
 ### Integration & AI (v0.23.0+)
 
-- **MCP Server**: Model Context Protocol integration for AI assistants like Claude
-- **Universal Component Discovery**: Single interface to discover and execute all ACB capabilities
 - **AI/ML Adapters**: Seamless integration with LLMs, embedding models, and ML serving platforms
 - **Real-time Monitoring**: WebSocket-based dashboards and progress tracking
 
@@ -130,7 +127,6 @@ ACB supports various optional dependencies for different adapters and functional
 | Reasoning | Reasoning frameworks (LangChain, LlamaIndex) | `uv add acb --group reasoning` |
 | Models | Model frameworks (SQLModel, Pydantic, Redis-OM, msgspec, attrs) | `uv add acb --group models` |
 | Logger | Advanced logging (Logly, Structlog) | `uv add acb --group logger` |
-| MCP | Model Context Protocol support | `uv add acb --group mcp` |
 | Demo | Demo/example utilities (Faker) | `uv add acb --group demo` |
 | Development | Development tools (pytest, ruff, pre-commit) | `uv add acb --group dev` |
 | **Composite Groups** | | |
@@ -157,10 +153,10 @@ ACB follows a **layered architecture** with automatic discovery and registration
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              INTEGRATION LAYER (v0.23.0+)                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │  MCP Server  │  │  AI/ML       │  │  Monitoring  │    │
-│  │  (Claude AI) │  │  Adapters    │  │  Dashboards  │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘    │
+│  ┌──────────────────┐           ┌──────────────────┐       │
+│  │    AI/ML         │           │   Monitoring     │       │
+│  │   Adapters       │           │   Dashboards     │       │
+│  └──────────────────┘           └──────────────────┘       │
 └─────────────────────────────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
@@ -219,7 +215,6 @@ acb/
 ├── events/              # Orchestration: Event-driven messaging
 ├── tasks/               # Orchestration: Background job processing
 ├── workflows/           # Orchestration: Multi-step process management
-├── mcp/                 # Integration: Model Context Protocol server
 ├── config.py            # Infrastructure: Configuration system
 ├── depends.py           # Infrastructure: Dependency injection
 ├── cleanup.py           # Infrastructure: Resource management
@@ -725,94 +720,6 @@ async def execute_complex_process():
     )
     return result
 ```
-
-#### MCP (Model Context Protocol) System
-
-The MCP system provides a standardized interface for AI applications to interact with the entire ACB ecosystem. It acts as a central orchestration layer that exposes all of ACB's capabilities through the Model Context Protocol, enabling AI assistants like Claude to discover, interact with, and orchestrate ACB components.
-
-**Key Features:**
-
-- **Universal Component Discovery**: List all available actions, adapters, services, and other components in a single interface
-- **Action Execution**: Execute any registered action with parameter validation across all action categories
-- **Component Management**: Enable, disable, or configure components dynamically with real-time status monitoring
-- **AI/ML Integration**: Seamless integration with AI/ML adapters for LLM interactions and model serving
-- **Cross-Component Orchestration**: Define and execute complex workflows spanning multiple component types
-
-**Example: MCP Integration**
-
-```python
-# The MCP server can be integrated with AI assistants like Claude Desktop
-# to provide access to all ACB capabilities through a standardized protocol
-{
-    "mcpServers": {
-        "acb": {
-            "command": "uv",
-            "args": ["run", "python", "-m", "acb.mcp.server"],
-            "env": {"ACB_MCP_HOST": "127.0.0.1", "ACB_MCP_PORT": "8000"},
-        }
-    }
-}
-```
-
-### MCP Server
-
-ACB includes a comprehensive Model Context Protocol (MCP) server that provides a standardized interface for AI applications to interact with the entire ACB ecosystem. The MCP server acts as a central orchestration layer that exposes all of ACB's capabilities through the Model Context Protocol, enabling AI assistants like Claude to discover, interact with, and orchestrate ACB components.
-
-#### Key Features
-
-- **Universal Component Discovery**: List all available actions, adapters, services, and other components in a single interface
-- **Action Execution**: Execute any registered action with parameter validation across all action categories
-- **Adapter Management**: Enable, disable, or configure adapters dynamically with real-time status monitoring
-- **Workflow Orchestration**: Define and execute complex multi-step workflows that span across different component types
-- **Health Monitoring**: Check the health status of all system components with detailed diagnostic information
-- **Resource Access**: Access component registry information, system metrics, and real-time event streams
-- **AI/ML Integration**: Seamlessly integrate with AI/ML adapters for LLM interactions, embedding generation, and model serving
-
-#### Architecture
-
-The MCP server is built on top of ACB's existing architecture and provides a unified interface for:
-
-- **Actions**: Business logic components that perform specific tasks (compression, encoding, hashing, etc.)
-- **Adapters**: Interface components that connect to external systems (databases, caches, storage, etc.)
-- **Services**: Background services that provide ongoing functionality (when implemented)
-- **Events**: Event-driven communication between components
-- **AI/ML Components**: Integration with LLMs, embedding models, and ML serving platforms
-- **Configuration**: Centralized configuration management
-- **Logging**: Structured logging and monitoring
-
-#### Example Usage with AI Assistants
-
-The MCP server can be easily integrated with AI assistants like Claude Desktop:
-
-```json
-{
-  "mcpServers": {
-    "acb": {
-      "command": "uv",
-      "args": [
-        "run",
-        "python",
-        "-m",
-        "acb.mcp.server"
-      ],
-      "env": {
-        "ACB_MCP_HOST": "127.0.0.1",
-        "ACB_MCP_PORT": "8000"
-      }
-    }
-  }
-}
-```
-
-Once configured, AI assistants can:
-
-1. Discover all available ACB components through a single endpoint
-1. Execute actions like compressing data or generating hashes
-1. Interact with adapters to access databases, storage, or caching systems
-1. Orchestrate complex workflows that combine multiple operations
-1. Monitor system health and access real-time metrics
-
-For more details on the MCP server implementation, see the [MCP Server Documentation](./acb/mcp/README.md) and [example configurations](./examples/claude_desktop_config.json).
 
 ### Configuration System
 

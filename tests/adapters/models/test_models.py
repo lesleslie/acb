@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from acb.adapters.models import ModelsAdapter, _cached_auto_detect_model_type
+from acb.adapters.models._redis_om import REDIS_OM_AVAILABLE
 
 
 class ModelClass:
@@ -255,7 +256,9 @@ class TestModelsAdapter:
         assert adapter._attrs_adapter is not None
         assert adapter._get_attrs_adapter() is attrs_adapter  # Same instance
 
-        assert adapter._redis_om_adapter is None
-        redis_om_adapter = adapter._get_redis_om_adapter()
-        assert adapter._redis_om_adapter is not None
-        assert adapter._get_redis_om_adapter() is redis_om_adapter  # Same instance
+        # Only test redis-om if it's available
+        if REDIS_OM_AVAILABLE:
+            assert adapter._redis_om_adapter is None
+            redis_om_adapter = adapter._get_redis_om_adapter()
+            assert adapter._redis_om_adapter is not None
+            assert adapter._get_redis_om_adapter() is redis_om_adapter  # Same instance

@@ -343,41 +343,6 @@ Each adapter has detailed README with examples:
 - Features: Cron expressions, job persistence, clustering, dead letter queue
 - Supports: Multiple job stores (memory, SQL, MongoDB, Redis) and executors
 
-## MCP Integration
-
-ACB includes a Model Context Protocol server for AI application integration:
-
-```bash
-# Start MCP server
-uv run python -m acb.mcp.server
-```
-
-**Features**:
-
-- Component discovery (actions, adapters, services)
-- Action execution through MCP tools
-- Adapter management and configuration
-- Workflow orchestration
-- Health monitoring and diagnostics
-- Real-time event streams and metrics
-
-**Configuration** (Claude Desktop):
-
-```json
-{
-  "mcpServers": {
-    "acb": {
-      "command": "uv",
-      "args": ["run", "python", "-m", "acb.mcp.server"],
-      "env": {
-        "ACB_MCP_HOST": "127.0.0.1",
-        "ACB_MCP_PORT": "8000"
-      }
-    }
-  }
-}
-```
-
 ## Logging Output Strategy
 
 **Version**: 0.29.2+ | **Default Behavior**: Human logs on stdout, structured logs only when `--debug` or an explicit env toggle is provided.

@@ -7,7 +7,7 @@ prerelease-mode = "allow"
 
 [[package]]
 name = "acb"
-version = "0.31.21"
+version = "0.31.22"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -18,13 +18,11 @@ dependencies = [
     { name = "brotli" },
     { name = "devtools" },
     { name = "dill" },
-    { name = "fastmcp" },
     { name = "google-api-python-client" },
     { name = "google-crc32c" },
     { name = "icecream" },
     { name = "inflection" },
     { name = "loguru" },
-    { name = "mcp-common" },
     { name = "msgspec", extra = ["toml", "yaml"] },
     { name = "nest-asyncio" },
     { name = "pydantic", extra = ["email"] },
@@ -414,13 +412,11 @@ requires-dist = [
     { name = "brotli", specifier = ">=1.2.0" },
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dill", specifier = ">=0.3.9,<0.4.dev0" },
-    { name = "fastmcp", specifier = ">=2.13.2" },
     { name = "google-api-python-client", specifier = ">=2.187.0" },
     { name = "google-crc32c", specifier = ">=1.7.1" },
     { name = "icecream", specifier = ">=2.1.8" },
     { name = "inflection", specifier = ">=0.5.1" },
     { name = "loguru", specifier = ">=0.7.3" },
-    { name = "mcp-common", specifier = ">=0.3.3" },
     { name = "msgspec", extras = ["toml", "yaml"] },
     { name = "nest-asyncio", specifier = ">=1.6.0" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.12.5" },

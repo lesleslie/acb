@@ -321,34 +321,6 @@ For more details on logging configuration and customization, see the [Logging Do
 
 ______________________________________________________________________
 
-## 5. MCP Server
-
-ACB includes a Model Context Protocol (MCP) server that provides a standardized interface for AI applications to interact with the ACB ecosystem. The MCP server acts as a central orchestration layer that exposes ACB's capabilities through the Model Context Protocol.
-
-### Key Features
-
-- **Component Discovery**: List all available actions, adapters, and services
-- **Action Execution**: Execute any registered action with parameter validation
-- **Adapter Management**: Enable, disable, or configure adapters dynamically
-- **Workflow Orchestration**: Define and execute complex multi-step workflows
-- **Health Monitoring**: Check the health status of system components
-- **Resource Access**: Access component registry information and system metrics
-
-### Architecture
-
-The MCP server is built on top of ACB's existing architecture and integrates with:
-
-- **Actions**: Business logic components that perform specific tasks
-- **Adapters**: Interface components that connect to external systems
-- **Services**: Background services that provide ongoing functionality
-- **Events**: Event-driven communication between components
-- **Configuration**: Centralized configuration management
-- **Logging**: Structured logging and monitoring
-
-For more details on the MCP server implementation, see the [MCP Server Documentation](./mcp/README.md).
-
-______________________________________________________________________
-
 ## Related Projects
 
 ACB is used in several projects including:

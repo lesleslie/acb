@@ -16,14 +16,12 @@ from .adapters import get_adapters
 from .context import get_context
 
 __all__ = [
-    "ACMCPServer",
     "Console",
     "Inject",
     "PerformanceOptimizer",
     "ServiceBase",
     "ServiceRegistry",
     "action_registry",
-    "create_mcp_server",
     "depends",
     "display_components",
     "ensure_registration",
@@ -61,17 +59,6 @@ except ImportError:
     PerformanceOptimizer = None  # type: ignore
     setup_services = None  # type: ignore
     shutdown_services_layer = None  # type: ignore
-
-# MCP Server imports
-try:
-    from .mcp import ACMCPServer as ACMCPServer
-    from .mcp import create_mcp_server as create_mcp_server
-
-    HAS_MCP = True
-except ImportError:
-    HAS_MCP = False
-    ACMCPServer = None  # type: ignore
-    create_mcp_server = None  # type: ignore
 
 
 def register_pkg(name: str | None = None, path: AsyncPath | None = None) -> None:
