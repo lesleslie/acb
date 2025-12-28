@@ -154,14 +154,13 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
     @staticmethod
     async def async_sink(message: str) -> None:
         """Async sink for Loguru messages."""
-        try:
+        from contextlib import suppress
+
+        with suppress(RuntimeError):
             # Check if event loop is running before attempting async operation
             loop = asyncio.get_running_loop()
             if loop and not loop.is_closed():
                 await aprint(message, end="")
-        except RuntimeError:
-            # Event loop is not available or closed, fall back to sync print
-            pass
 
     def _configure_for_testing(self) -> None:
         """Configure logger for testing environment."""
@@ -248,8 +247,10 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         # Remove all handlers to prevent issues during shutdown
         try:
             self.remove()  # type: ignore[no-untyped-call]
-        except Exception:
-            pass  # Already removed or other error, ignore
+        except Exception as e:
+            self.logger.debug(
+                f"Failed to remove loguru handler: {e}"
+            )  # Already removed or other error, ignore
 
     def _add_sync_sink(self) -> None:
         """Add synchronous sink as fallback."""
@@ -266,7 +267,6 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
         import sys
 
         from datetime import datetime
-        from loguru._handler import Message  # type: ignore[attr-defined]
 
         def json_formatter(record: dict[str, t.Any]) -> str:
             """Format log record as JSON for AI consumption."""
@@ -296,9 +296,9 @@ class Logger(_Logger, LoggerBase):  # type: ignore[misc]
 
             return json.dumps(event) + "\n"
 
-        def stderr_sink(message: Message) -> None:
+        def stderr_sink(message: t.Any) -> None:
             """Write structured JSON directly to stderr."""
-            sys.stderr.write(json_formatter(message.record))
+            sys.stderr.write(json_formatter(message.record))  # type: ignore[attr-defined]
 
         sink_id = self.add(  # type: ignore[no-untyped-call]
             stderr_sink,

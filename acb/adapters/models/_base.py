@@ -55,7 +55,7 @@ class ModelsBase(AdapterBase):
 T = TypeVar("T")
 
 
-class ModelAdapterMixin:
+class ModelAdapterMixin[T]:
     """Provides common functionality for model adapters across different libraries.
 
     This mixin implements shared methods that are common across all model adapters,

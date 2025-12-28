@@ -362,8 +362,7 @@ class RuleEngine:
             return self._eval_in(field_value, condition.value)
         elif condition.operator == RuleOperator.NOT_IN:
             return self._eval_not_in(field_value, condition.value)
-        else:
-            return False
+        return False
 
     def _eval_equals(self, field_value: t.Any, condition_value: t.Any) -> bool:
         return field_value == condition_value

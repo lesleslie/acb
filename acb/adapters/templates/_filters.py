@@ -32,7 +32,7 @@ def json_filter(value: t.Any, indent: int | None = None) -> Markup:
     raw = json.dumps(value, indent=indent, default=str)
     safe = raw.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     # Mark as safe for templates after sanitization
-    return Markup(safe)
+    return Markup(safe)  # nosec B704
 
 
 def datetime_filter(value: t.Any, format: str = "%Y-%m-%d %H:%M:%S") -> str:
@@ -68,7 +68,7 @@ def filesize_filter(value: float, binary: bool = True) -> str:
     )
     divisor = 1024 if binary else 1000
 
-    size = float(value)
+    size = value
     for unit in units[:-1]:
         if abs(size) < divisor:
             return f"{size:.1f} {unit}"

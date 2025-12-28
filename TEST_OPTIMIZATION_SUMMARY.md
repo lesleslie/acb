@@ -32,15 +32,14 @@ Use pytest markers to categorize tests and run different types of tests based on
 
 ### Updated Markers
 
-```python
-# Available markers in ACB:
+Available markers in ACB:
+
 - unit: Core functionality tests (fast)
 - integration: External service tests (slow)
 - external: Tests requiring external services
 - architecture: Architecture validation tests
 - quick: Tests running under 1 second
 - coverage: Tests providing unique coverage
-```
 
 ### Implementation
 

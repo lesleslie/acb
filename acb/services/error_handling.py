@@ -463,7 +463,7 @@ class ErrorHandlingService:
                 if retry_config.jitter:
                     import random
 
-                    delay *= 0.5 + random.random() * 0.5
+                    delay *= 0.5 + random.random() * 0.5  # nosec B311
 
                 await asyncio.sleep(delay)
 

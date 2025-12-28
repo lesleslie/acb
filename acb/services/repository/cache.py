@@ -443,7 +443,8 @@ class CachedRepository(RepositoryBase[EntityType, IDType]):
                 entity = await self.get_by_id(entity_id)
                 if entity:
                     warmed += 1
-            except Exception:
+            except Exception as e:
+                self.logger.debug(f"Failed to warm cache for entity {entity_id}: {e}")
                 continue
         return warmed
 

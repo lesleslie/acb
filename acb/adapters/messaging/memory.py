@@ -197,7 +197,7 @@ class MemoryMessaging(CleanupMixin):
         # Message storage
         self._queues: dict[str, list[PriorityMessageItem]] = defaultdict(list)
         self._delayed_messages: list[PriorityMessageItem] = []
-        self._processing_messages: dict[UUID, QueueMessage] = {}
+        self._processing_messages: dict[str, QueueMessage] = {}
         self._dead_letter_messages: dict[UUID, tuple[QueueMessage, str]] = {}
 
         # Rate limiting
@@ -471,7 +471,7 @@ class MemoryMessaging(CleanupMixin):
         message = item.message
 
         # Move to processing
-        self._processing_messages[message.message_id] = message
+        self._processing_messages[str(message.message_id)] = message
 
         # Update metrics
         self._messages_received += 1
@@ -496,14 +496,15 @@ class MemoryMessaging(CleanupMixin):
         Raises:
             MessagingOperationError: If message not in processing state
         """
-        if message.message_id not in self._processing_messages:
+        message_id = str(message.message_id)
+        if message_id not in self._processing_messages:
             msg = f"Message {message.message_id} not in processing state"
             raise MessagingOperationError(
                 msg,
             )
 
         # Remove from processing
-        del self._processing_messages[message.message_id]
+        del self._processing_messages[message_id]
 
         # Update memory usage
         message_size = self._estimate_message_size(message)
@@ -531,14 +532,15 @@ class MemoryMessaging(CleanupMixin):
         Raises:
             MessagingOperationError: If message not in processing state
         """
-        if message.message_id not in self._processing_messages:
+        message_id = str(message.message_id)
+        if message_id not in self._processing_messages:
             msg = f"Message {message.message_id} not in processing state"
             raise MessagingOperationError(
                 msg,
             )
 
         # Remove from processing
-        del self._processing_messages[message.message_id]
+        del self._processing_messages[message_id]
 
         # Update metrics
         self._messages_rejected += 1
@@ -881,7 +883,7 @@ class MemoryMessaging(CleanupMixin):
         message = item.message
 
         # Move to processing
-        self._processing_messages[message.message_id] = message
+        self._processing_messages[str(message.message_id)] = message
 
         # Update metrics
         self._messages_received += 1
@@ -1021,7 +1023,7 @@ class MemoryMessaging(CleanupMixin):
         queue_list = self._queues.get(queue, [])
 
         # Count messages by priority
-        priority_counts = {}
+        priority_counts: dict[str, int] = {}
         for item in queue_list:
             priority_name = item.message.priority.name
             priority_counts[priority_name] = priority_counts.get(priority_name, 0) + 1

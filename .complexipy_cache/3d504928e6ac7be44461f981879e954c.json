@@ -1171,15 +1171,15 @@
       "path": "depends.py"
     },
     {
-      "complexity": 7,
-      "file_name": "depends.py",
-      "function_name": "Depends::clear",
-      "path": "depends.py"
-    },
-    {
       "complexity": 13,
       "file_name": "depends.py",
       "function_name": "Depends::get_async",
+      "path": "depends.py"
+    },
+    {
+      "complexity": 18,
+      "file_name": "depends.py",
+      "function_name": "Depends::clear",
       "path": "depends.py"
     },
     {

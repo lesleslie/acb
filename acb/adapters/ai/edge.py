@@ -180,7 +180,7 @@ class EdgeAI(AIBase):
             from transformers import AutoModelForCausalLM, AutoTokenizer
         except ImportError:
             # Provide a lightweight mock client for tests and minimal environments
-            class LiquidAIClient:
+            class _MockLiquidAIClient:
                 def __init__(self, model_id: str, settings: EdgeAISettings) -> None:
                     self.model_id = model_id
                     self.settings = settings
@@ -193,11 +193,11 @@ class EdgeAI(AIBase):
                 async def generate(self, prompt: str, **kwargs: t.Any) -> str:  # noqa: ARG002
                     return f"Mock response for: {prompt}"
 
-            return LiquidAIClient(self._get_lfm_model_id(), self.settings)
+            return _MockLiquidAIClient(self._get_lfm_model_id(), self.settings)
 
         model_id = self._get_lfm_model_id()
 
-        class LiquidAIClient:
+        class _LiquidAIClient:
             """Real LFM2 client using HuggingFace transformers."""
 
             def __init__(self, model_id: str, settings: EdgeAISettings) -> None:
@@ -301,7 +301,7 @@ class EdgeAI(AIBase):
 
                 return Response(text, tokens_used, latency_ms)
 
-        client = LiquidAIClient(model_id, self.settings)
+        client = _LiquidAIClient(model_id, self.settings)
 
         # Preload default model if enabled
         if self.settings.model_preload:

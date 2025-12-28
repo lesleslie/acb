@@ -60,3 +60,18 @@ if _should_disable_http3():
             connectionpool.HTTPSConnectionPool,
         ):
             _patch_init(_candidate)
+
+
+def _patch_crackerjack_skylos_timeout() -> None:
+    try:
+        from crackerjack.config import hooks as cj_hooks
+    except Exception:
+        return
+
+    timeout_value = int(os.environ.get("ACB_CRACKERJACK_SKYLOS_TIMEOUT", "600"))
+    for hook in cj_hooks.COMPREHENSIVE_HOOKS:
+        if hook.name == "skylos" and hook.timeout < timeout_value:
+            hook.timeout = timeout_value
+
+
+_patch_crackerjack_skylos_timeout()

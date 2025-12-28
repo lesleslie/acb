@@ -233,15 +233,19 @@ class Logger(LoggerBase):
             for sink_id in self._active_sinks:
                 try:
                     logger.remove(sink_id)
-                except Exception:
-                    pass  # Handler might already be removed
+                except Exception as e:
+                    self.logger.debug(
+                        f"Failed to remove log handler {sink_id}: {e}"
+                    )  # Handler might already be removed
         except Exception:
             # If any other exception, try removing each sink by ID
             for sink_id in self._active_sinks:
                 try:
                     logger.remove(sink_id)
-                except Exception:
-                    pass  # Handler might already be removed
+                except Exception as e:
+                    self.logger.debug(
+                        f"Failed to remove log handler {sink_id}: {e}"
+                    )  # Handler might already be removed
         else:
             # If remove() worked, clear the active sinks list
             self._active_sinks.clear()
@@ -262,15 +266,19 @@ class Logger(LoggerBase):
             for sink_id in self._active_sinks:
                 try:
                     logger.remove(sink_id)
-                except Exception:
-                    pass  # Handler might already be removed
+                except Exception as e:
+                    self.logger.debug(
+                        f"Failed to remove log handler {sink_id}: {e}"
+                    )  # Handler might already be removed
         except Exception:
             # If any other exception, try removing each sink by ID
             for sink_id in self._active_sinks:
                 try:
                     logger.remove(sink_id)
-                except Exception:
-                    pass  # Handler might already be removed
+                except Exception as e:
+                    self.logger.debug(
+                        f"Failed to remove log handler {sink_id}: {e}"
+                    )  # Handler might already be removed
         else:
             # If remove() worked, clear the active sinks list
             self._active_sinks.clear()
@@ -323,9 +331,9 @@ class Logger(LoggerBase):
                         **sink_config,
                     )
                     self._active_sinks.append(sink_id)
-                except Exception:
+                except Exception as e:
                     # Fallback to simple print if configuration fails
-                    pass
+                    self.logger.debug(f"Failed to add console log handler: {e}")
         else:
             # Add console sink
             try:
@@ -334,9 +342,9 @@ class Logger(LoggerBase):
                     **sink_config,
                 )
                 self._active_sinks.append(sink_id)
-            except Exception:
+            except Exception as e:
                 # Fallback to simple print if configuration fails
-                pass
+                self.logger.debug(f"Failed to add stderr log handler: {e}")
 
     def _add_stderr_sink(self) -> None:
         """Add stderr sink for structured JSON logging (AI/machine consumption)."""
@@ -384,8 +392,8 @@ class Logger(LoggerBase):
                 serialize=False,
             )
             self._active_sinks.append(sink_id)
-        except Exception:
-            pass
+        except Exception as e:
+            self.logger.debug(f"Failed to add stderr JSON log handler: {e}")
 
     def _setup_callbacks(self) -> None:
         """Set up async callbacks if enabled."""
@@ -506,15 +514,19 @@ class Logger(LoggerBase):
             for sink_id in self._active_sinks:
                 try:
                     logger.remove(sink_id)
-                except Exception:
-                    pass  # Handler might already be removed
+                except Exception as e:
+                    self.logger.debug(
+                        f"Failed to remove log handler {sink_id}: {e}"
+                    )  # Handler might already be removed
         except Exception:
             # If any other exception, try removing each sink by ID
             for sink_id in self._active_sinks:
                 try:
                     logger.remove(sink_id)
-                except Exception:
-                    pass  # Handler might already be removed
+                except Exception as e:
+                    self.logger.debug(
+                        f"Failed to remove log handler {sink_id}: {e}"
+                    )  # Handler might already be removed
         else:
             # If remove() worked, clear the active sinks list
             self._active_sinks.clear()

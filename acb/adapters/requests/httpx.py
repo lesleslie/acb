@@ -3,7 +3,6 @@ from uuid import UUID
 import httpx
 import typing as t
 from httpx import Response as HttpxResponse
-from pydantic import SecretStr
 
 from acb.adapters import (
     AdapterCapability,
@@ -53,7 +52,7 @@ MODULE_METADATA = AdapterMetadata(
 class RequestsSettings(RequestsBaseSettings):
     base_url: str = ""
     timeout: int = 10
-    auth: tuple[str, SecretStr] | None = None
+    auth: tuple[str, str] | None = None
     max_connections: int = 100
     max_keepalive_connections: int = 20
     keepalive_expiry: float = 5.0

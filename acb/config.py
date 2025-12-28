@@ -43,16 +43,15 @@ def deep_update(*dicts: dict[str, t.Any]) -> dict[str, t.Any]:
     """Deep merge multiple dictionaries."""
     result: dict[str, t.Any] = {}
     for d in dicts:
-        if isinstance(d, dict):
-            for key, value in d.items():
-                if (
-                    key in result
-                    and isinstance(result[key], dict)
-                    and isinstance(value, dict)
-                ):
-                    result[key] = deep_update(result[key], value)
-                else:
-                    result[key] = value
+        for key, value in d.items():
+            if (
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(value, dict)
+            ):
+                result[key] = deep_update(result[key], value)
+            else:
+                result[key] = value
     return result
 
 
@@ -659,13 +658,14 @@ class Config:
 
                 adapter = get_adapter(item)
                 if adapter and hasattr(adapter, "settings"):
-                    return adapter.settings[item]
+                    # Type narrowing for pyright - we've checked hasattr above
+                    return adapter.settings[item]  # type: ignore[attr-defined]
         msg = f"'Config' object has no attribute '{item}'"
         raise AttributeError(msg)
 
 
 depends.set(Config, get_singleton_instance(Config))
-get_container().add("config", get_singleton_instance(Config))
+get_container().add("config", get_singleton_instance(Config))  # type: ignore[arg-type]
 
 # Ensure basic logging is available even if adapter system fails
 try:
@@ -695,7 +695,7 @@ _ADAPTER_LOCKS: WeakKeyDictionary[t.Any, t.Any] = WeakKeyDictionary()
 
 @rich.repr.auto
 class AdapterBase:
-    config: Inject[Config]
+    config: Inject[Config, object]
 
     @property
     def logger(self) -> t.Any:
@@ -706,7 +706,7 @@ class AdapterBase:
                 from unittest.mock import MagicMock
 
                 # Check if import_adapter returned an empty tuple (dependency not properly registered)
-                if (isinstance(Logger, tuple) and len(Logger) == 0) or isinstance(
+                if (isinstance(Logger, tuple) and len(Logger) == 0) or isinstance(  # type: ignore[arg-type]
                     Logger,
                     MagicMock,
                 ):
@@ -776,7 +776,7 @@ class AdapterBase:
 
     async def _cleanup_resources(self) -> None:
         """Enhanced resource cleanup with comprehensive error handling."""
-        errors = []
+        errors: list[str] = []
 
         # Clean up cached resources first
         for resource_name, resource in list(self._resource_cache.items()):

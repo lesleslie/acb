@@ -11,6 +11,21 @@ import typing as t
 
 __all__: list[str] = ["validate"]
 
+from acb.actions.secure.security_patterns import (
+    PATH_TRAVERSAL_PATTERNS,
+    SCRIPT_INJECTION_PATTERNS,
+    SQL_INJECTION_PATTERNS,
+)
+from acb.actions.secure.security_patterns import (
+    detect_path_traversal as check_path_traversal,
+)
+from acb.actions.secure.security_patterns import (
+    detect_sql_injection as check_sql_injection,
+)
+from acb.actions.secure.security_patterns import (
+    detect_xss as check_xss,
+)
+
 
 class ValidationError(Exception):
     """Raised when input validation fails."""
@@ -29,21 +44,12 @@ class ValidationError(Exception):
 class Validate:
     """Pure utility functions for input validation."""
 
-    # Import common dangerous patterns from shared module
-    from acb.actions.secure.security_patterns import (
-        PATH_TRAVERSAL_PATTERNS,
-        SCRIPT_INJECTION_PATTERNS,
-        SQL_INJECTION_PATTERNS,
-    )
-    from acb.actions.secure.security_patterns import (
-        detect_path_traversal as check_path_traversal,
-    )
-    from acb.actions.secure.security_patterns import (
-        detect_sql_injection as check_sql_injection,
-    )
-    from acb.actions.secure.security_patterns import (
-        detect_xss as check_xss,
-    )
+    PATH_TRAVERSAL_PATTERNS = PATH_TRAVERSAL_PATTERNS
+    SCRIPT_INJECTION_PATTERNS = SCRIPT_INJECTION_PATTERNS
+    SQL_INJECTION_PATTERNS = SQL_INJECTION_PATTERNS
+    check_path_traversal = check_path_traversal
+    check_sql_injection = check_sql_injection
+    check_xss = check_xss
 
     @staticmethod
     def email(email: str) -> bool:

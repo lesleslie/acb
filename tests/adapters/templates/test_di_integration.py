@@ -147,6 +147,7 @@ class TestDIPatterns:
     @pytest.mark.asyncio
     async def test_function_level_injection(self, templates, sample_template):
         """Test injecting templates at function level."""
+        from acb.adapters.templates import TemplatesAdapter
         from acb.depends import depends
 
         depends.set(TemplatesAdapter, templates)

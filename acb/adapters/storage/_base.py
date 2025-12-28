@@ -170,10 +170,13 @@ class StorageBucket:
     async def open(self, path: AsyncPath) -> t.BinaryIO:
         # Lazy import to avoid requiring GCS dependencies for file/memory storage
         try:
-            from google.cloud.exceptions import NotFound as GCSNotFound
+            from google.cloud.exceptions import NotFound as _GCSNotFound
         except ImportError:
             # If google-cloud-storage is not installed, we won't catch GCS-specific errors
-            GCSNotFound = type("NotFound", (Exception,), {})  # Dummy exception type
+            class _GCSNotFound(Exception):  # type: ignore[no-redef]
+                pass
+
+        GCSNotFound = _GCSNotFound
 
         try:
             async with self.client.open(self.get_path(path), "rb") as f:

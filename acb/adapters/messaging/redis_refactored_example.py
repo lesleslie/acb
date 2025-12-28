@@ -8,7 +8,7 @@ Note: This is an example implementation to demonstrate the refactoring approach.
 
 import json
 import time
-from collections.abc import AsyncGenerator, AsyncIterator
+from collections.abc import AsyncIterator
 from uuid import UUID
 
 import asyncio
@@ -23,7 +23,6 @@ from acb.config import Config
 from acb.depends import Inject, depends
 
 from ._base import (
-    ConnectionMixin,
     MessagePriority,
     MessagingConnectionError,
     MessagingOperationError,
@@ -141,7 +140,7 @@ class RedisMessagingSettings(BaseMessagingSettings):
         super().__init__(**values)
 
 
-class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
+class RedisMessaging(PubSubMixin, QueueMixin, CleanupMixin):
     """Redis-backed unified messaging implementation using mixins.
 
     Provides high-performance messaging operations using Redis data structures:
@@ -160,8 +159,7 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
             settings: Redis messaging configuration
         """
         # Initialize all parent classes
-        ConnectionMixin.__init__(self)
-        CleanupMixin.__init__(self)
+        super().__init__()
 
         self._settings: RedisMessagingSettings = settings or RedisMessagingSettings()
 
@@ -341,7 +339,7 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
         self,
         subscription: Subscription,
         timeout: float | None = None,
-    ) -> AsyncGenerator[AsyncIterator[PubSubMessage]]:
+    ) -> AsyncIterator[AsyncIterator[PubSubMessage]]:
         """Receive messages from a subscription."""
         if not self._connected:
             await self.connect()
@@ -353,7 +351,7 @@ class RedisMessaging(ConnectionMixin, PubSubMixin, QueueMixin, CleanupMixin):
             # Subscribe to the topic
             await pubsub.subscribe(subscription.topic)  # type: ignore[attr-defined]
 
-            async def message_generator():
+            async def message_generator() -> AsyncIterator[PubSubMessage]:
                 start_time = time.time()
                 while subscription.active and (
                     timeout is None or (time.time() - start_time) < timeout

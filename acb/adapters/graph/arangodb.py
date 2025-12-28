@@ -155,7 +155,8 @@ class Graph(GraphBase):
             )
 
         # Type checker doesn't know _client is not None after assignment above
-        assert self._client is not None
+        if self._client is None:
+            raise RuntimeError("ArangoDB client initialization failed")
         if auth:
             self._database = self._client.db(
                 name=self._settings.database,

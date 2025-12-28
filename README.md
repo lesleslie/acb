@@ -6,8 +6,9 @@
 
 # <u>A</u>synchronous <u>C</u>omponent <u>B</u>ase (ACB)
 
-[![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
-[![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
+[![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack) [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
+
+## ACB is being sunsetted and superseded by the [Oneiric](https://github.com/lesleslie/oneiric) project
 
 ## What is ACB?
 
@@ -27,13 +28,9 @@ ACB can be used as a standalone platform or as a foundation for higher-level fra
 If you're new to ACB, here are the key concepts to understand:
 
 1. **Actions**: Self-contained utility functions that perform specific tasks like compression, encoding, or hashing. Think of these as your toolbox of helper functions.
-
 1. **Adapters**: Standardized interfaces to external systems like databases, caching, or storage. Adapters let you switch between different implementations (e.g., Redis vs. in-memory cache) without changing your code.
-
 1. **Dependency Injection**: A pattern that automatically provides components to your functions when needed. This eliminates the need to manually create and pass objects around.
-
 1. **Configuration System**: A way to configure your application using YAML files instead of hardcoding values in your code.
-
 1. **Package Registration**: ACB automatically discovers and registers components in your application, reducing boilerplate code.
 
 ## Key Features
@@ -109,7 +106,7 @@ uv add acb
 ACB supports various optional dependencies for different adapters and functionality:
 
 | Feature Group | Components | Installation Command |
-| ----------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| -------------------- | --------------------------------------------------------------- | ------------------------------------------------------ |
 | Cache | Memory and Redis caching | `uv add acb --group cache` |
 | DNS | DNS management (Cloud DNS, Cloudflare, Route53) | `uv add acb --group dns` |
 | FTPD | File transfer (FTP, SFTP) | `uv add acb --group ftpd` |
@@ -287,7 +284,7 @@ This means you can switch from memory cache to Redis by changing a single line i
 #### Key Adapter Categories
 
 | Adapter Category | Description | Implementations |
-| ---------------- | ----------------------- | ---------------------------------------------------------- |
+| ---------------- | --------------------------- | -------------------------------------- |
 | **Cache** | Data caching | Memory, Redis |
 | **DNS** | Domain name management | Cloud DNS |
 | **FTP/SFTP** | File transfer protocols | FTP, SFTP |
@@ -613,7 +610,7 @@ async def use_my_service(my_service: MyCustomService = depends()):
 #### Available Services
 
 | Service Category | Description | Key Features |
-|------------------|-------------|--------------|
+| ---------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
 | **Repository** | Data access layer with Unit of Work pattern | Multi-database coordination, caching integration, transaction management |
 | **Validation** | Data validation with security features | Schema validation, input sanitization, performance monitoring |
 | **Performance** | Optimization services | Metrics collection, cache optimization, query optimization |
@@ -732,11 +729,11 @@ ACB's configuration system is built on Pydantic and supports multiple configurat
 #### Where settings live
 
 | File | Purpose |
-| --- | --- |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `settings/app.yaml` | Application-wide metadata (name, domain, platform, feature toggles) |
 | `settings/debug.yaml` | Controls debug/trace switches per adapter category |
 | `settings/adapters.yaml` | Chooses which implementation backs each adapter category (cache, queue, sql, …) |
-| `settings/<adapter>.yaml` | Per-adapter configuration keyed by adapter category (e.g., `settings/cache.yaml`, `settings/storage.yaml`) |
+| `settings/<adapter>.yaml` | Per-adapter configuration keyed by adapter category (e.g.,`settings/cache.yaml`, `settings/storage.yaml`) |
 | `settings/secrets/` | File-based secrets that override any of the above |
 
 ACB always reads `app.yaml`/`debug.yaml` for global settings. Adapter-specific
@@ -833,7 +830,7 @@ ACB features a simple yet powerful dependency injection system that makes compon
 ACB uses different dependency injection patterns for different architectural layers:
 
 | Component Type | DI Pattern | Interface Type | Injection Syntax | Best For |
-|---------------|-----------|----------------|------------------|----------|
+| -------------- | -------------- | ----------------- | ----------------------------------- | -------------------------------------------------- |
 | **Services** | Protocol-based | `ServiceProtocol` | `Inject[RepositoryServiceProtocol]` | Business logic, complex workflows, easy testing |
 | **Adapters** | Concrete class | Base class | `Inject[Cache]` | Infrastructure, external systems, shared utilities |
 | **Core** | Concrete class | Direct class | `Inject[Config]` | Configuration, logging, foundational components |
@@ -1433,7 +1430,7 @@ ACB 0.19.0+ introduces significant performance improvements and architectural si
 ### Performance Comparison
 
 | Component | Pre-0.18.0 | 0.19.0+ | Improvement |
-| ------------------ | ---------- | ---------- | ------------- |
+| ---------------------- | ---------- | ----------- | ------------- |
 | Adapter Loading | ~50-100ms | ~10-25ms | 60-80% faster |
 | Memory Cache Ops | ~0.2-0.5ms | ~0.05-0.1ms | 70% faster |
 | Configuration Load | ~20-40ms | ~8-15ms | 60% faster |

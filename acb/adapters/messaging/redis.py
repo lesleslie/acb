@@ -235,6 +235,7 @@ class RedisMessaging(CleanupMixin):
         self._pubsub_client: t.Any = None
         self._logger: LoggerType | None = None
         self._connected: bool = False
+        self._processing_messages: dict[str, tuple[QueueMessage, bytes]] = {}
 
     @property
     def logger(self) -> LoggerType:
@@ -516,7 +517,7 @@ class RedisMessaging(CleanupMixin):
 
     async def _dequeue_with_lua(
         self,
-        client,
+        client: t.Any,
         queue_key: str,
         current_time: float,
         timeout: float,
@@ -541,7 +542,7 @@ class RedisMessaging(CleanupMixin):
 
     async def _dequeue_manually(
         self,
-        client,
+        client: t.Any,
         queue_key: str,
         timeout: float,
     ) -> QueueMessage | None:

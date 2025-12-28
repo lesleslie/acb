@@ -4,7 +4,7 @@ import typing as t
 
 try:
     import niquests
-    from niquests import Response as NiquestsResponse
+    from niquests import Response as _NiquestsResponse
 except Exception:  # pragma: no cover - allow tests without niquests installed
     import os as _os
     import sys as _sys
@@ -13,11 +13,18 @@ except Exception:  # pragma: no cover - allow tests without niquests installed
         from unittest.mock import MagicMock
 
         niquests = MagicMock()  # type: ignore[assignment]
-        NiquestsResponse = MagicMock  # type: ignore[assignment]
+
+        class _NiquestsResponse:  # type: ignore[no-redef]
+            def __init__(self) -> None:
+                self.status_code: int | None = None
+                self.headers: dict[str, str] = {}
+                self._content: bytes | None = None
+
+            @property
+            def content(self) -> bytes | None:
+                return self._content
     else:
         raise
-
-from pydantic import SecretStr
 
 from acb.adapters import (
     AdapterCapability,
@@ -29,6 +36,8 @@ from acb.depends import Inject, depends
 
 from ._base import RequestsBase, RequestsBaseSettings
 from ._cache import UniversalHTTPCache
+
+NiquestsResponse = _NiquestsResponse
 
 MODULE_ID = UUID("0197ff55-9026-7672-b2aa-b843381c6604")
 MODULE_STATUS = AdapterStatus.STABLE
@@ -70,7 +79,7 @@ MODULE_METADATA = AdapterMetadata(
 class RequestsSettings(RequestsBaseSettings):
     base_url: str = ""
     timeout: int = 10
-    auth: tuple[str, SecretStr] | None = None
+    auth: tuple[str, str] | None = None
     max_connections: int = 100
     max_keepalive_connections: int = 20
 
@@ -129,7 +138,7 @@ class Requests(RequestsBase, CleanupMixin):
 
         if self.config.requests.auth:
             username, password = self.config.requests.auth
-            session.auth = (username, password.get_secret_value())
+            session.auth = (username, password)  # type: ignore[assignment]
 
         return session
 
@@ -223,14 +232,17 @@ class Requests(RequestsBase, CleanupMixin):
         )
 
         # Store in cache
-        await self._http_cache.store_response(
-            method="GET",
-            url=full_url,
-            status=response.status_code,
-            headers=dict(response.headers),
-            content=response.content,
-            request_headers=headers,
-        )
+        status = response.status_code
+        content = response.content
+        if status is not None and content is not None:
+            await self._http_cache.store_response(
+                method="GET",
+                url=full_url,
+                status=status,
+                headers=dict(response.headers),
+                content=content,
+                request_headers=headers,
+            )
 
         return response
 
@@ -315,14 +327,15 @@ class Requests(RequestsBase, CleanupMixin):
         response = await client.head(url, timeout=timeout, headers=headers)
 
         # Store in cache
-        await self._http_cache.store_response(
-            method="HEAD",
-            url=full_url,
-            status=response.status_code,
-            headers=dict(response.headers),
-            content=b"",
-            request_headers=headers,
-        )
+        if response.status_code is not None:
+            await self._http_cache.store_response(
+                method="HEAD",
+                url=full_url,
+                status=response.status_code,
+                headers=dict(response.headers),
+                content=b"",
+                request_headers=headers,
+            )
 
         return response
 

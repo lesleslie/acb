@@ -153,33 +153,63 @@ class Depends:
         underlying Bevy container when available. If the container does not
         expose a reset/clear API, this is a no-op.
         """
-        try:
-            from bevy import DEFAULT_CONTAINER
+        _clear_container_direct()
 
-            # Completely reset the container to a fresh state
-            DEFAULT_CONTAINER._instances.clear()
-            DEFAULT_CONTAINER._factories.clear()
-            DEFAULT_CONTAINER._qualifier_map.clear()
 
-            # Clear any other known container attributes that store dependencies
-            for attr in ("_type_map", "_cached_instances", "_cache", "_registry"):
-                if hasattr(DEFAULT_CONTAINER, attr):
-                    getattr(DEFAULT_CONTAINER, attr).clear()
-        except Exception:
-            # If the direct attribute access fails, try the methods
-            try:
-                container = get_container()
-            except Exception:
-                return
+def _clear_container_direct() -> None:
+    """Attempt to clear the Bevy container using direct attribute access."""
+    try:
+        from bevy import DEFAULT_CONTAINER
 
-            # Try common container reset/clear operations, ignoring failures.
-            with suppress(Exception):
-                # Newer Bevy releases may expose `reset()`
-                container.reset()  # type: ignore[attr-defined]
-                return
-            with suppress(Exception):
-                # Older variants may expose `clear()`
-                container.clear()  # type: ignore[attr-defined]
+        # Completely reset the container to a fresh state
+        DEFAULT_CONTAINER._instances.clear()
+        DEFAULT_CONTAINER._factories.clear()
+        DEFAULT_CONTAINER._qualifier_map.clear()
+
+        # Clear any other known container attributes that store dependencies
+        _clear_container_attributes(DEFAULT_CONTAINER)
+    except Exception:
+        _clear_container_methods()
+
+
+def _clear_container_attributes(container: t.Any) -> None:
+    """Clear specific container attributes that might store dependencies."""
+    container_attributes = (
+        "_type_map",
+        "_cached_instances",
+        "_cache",
+        "_registry",
+        "_singletons",
+        "_context",
+    )
+
+    for attr in container_attributes:
+        if hasattr(container, attr):
+            attr_value = getattr(container, attr)
+            if hasattr(attr_value, "clear"):
+                attr_value.clear()
+            else:
+                # For non-dict/list-like containers, try to reset to initial state
+                setattr(container, attr, type(attr_value)())
+
+
+def _clear_container_methods() -> None:
+    """Attempt to clear the container using public methods."""
+    try:
+        container = get_container()
+    except Exception:
+        return
+
+    # Try common container reset/clear operations, ignoring failures.
+    with suppress(Exception):
+        # Newer Bevy releases may expose `reset()`
+        if hasattr(container, "reset"):
+            container.reset()  # type: ignore[attr-defined]
+            return
+    with suppress(Exception):
+        # Older variants may expose `clear()`
+        if hasattr(container, "clear"):
+            container.clear()  # type: ignore[attr-defined]
 
 
 def _handle_string_category(category: str, module: str | None) -> t.Any:

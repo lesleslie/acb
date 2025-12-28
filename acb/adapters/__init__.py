@@ -144,10 +144,12 @@ class AdapterMetadata(BaseModel):
     config_example: dict[str, t.Any] | None = None
     capabilities: list[AdapterCapability] = Field(default_factory=list)
     required_packages: list[str] = Field(default_factory=list)
+    optional_packages: dict[str, str] = Field(default_factory=dict)
     deprecated: bool = False
     deprecation_message: str | None = None
     documentation_url: str | None = None
     issue_tracker_url: str | None = None
+    repository_url: str | None = None
     source_repository_url: str | None = None
     license: str | None = None
     stability: str | None = "stable"

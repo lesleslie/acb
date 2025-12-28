@@ -67,7 +67,8 @@ class Storage(StorageBase):
     def get_client(config: Config = depends()) -> Client:
         with catch_warnings():
             filterwarnings("ignore", category=Warning)
-            assert config.app is not None, "App config must be initialized"
+            if config.app is None:
+                raise RuntimeError("App config must be initialized")
             return Client(project=config.app.project)
 
     def set_cors(self, bucket_name: str, cors_config: str) -> None:

@@ -40,7 +40,7 @@ PYDANTIC_AVAILABLE = _pydantic_available
 T = TypeVar("T")
 
 
-class PydanticModelAdapter(ModelAdapterMixin):
+class PydanticModelAdapter(ModelAdapterMixin[T]):
     def __init__(self) -> None:
         if not PYDANTIC_AVAILABLE:
             msg = "Pydantic is required for PydanticModelAdapter"
@@ -62,7 +62,7 @@ class PydanticModelAdapter(ModelAdapterMixin):
         # Use the mixin's default implementation
         return self._manual_serialize(instance)
 
-    def deserialize(self, data: dict[str, Any]) -> T:
+    def deserialize(self, data: dict[str, Any]) -> Any:
         msg = "Deserialize requires specific model class context"
         raise NotImplementedError(msg)
 

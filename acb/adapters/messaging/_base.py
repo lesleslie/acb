@@ -15,7 +15,7 @@ Key Design Principles:
 5. Follows ACB adapter patterns with MODULE_METADATA
 """
 
-from collections.abc import AsyncGenerator, AsyncIterator
+from collections.abc import AsyncIterator
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -24,6 +24,9 @@ import typing as t
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pydantic import BaseModel, Field
+
+if t.TYPE_CHECKING:
+    pass
 
 # Re-export common types for convenience
 __all__ = [
@@ -283,12 +286,12 @@ class PubSubBackend(t.Protocol):
         """Unsubscribe from a topic."""
         ...
 
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore[arg-type]
     async def receive_messages(
         self,
         subscription: Subscription,
         timeout: float | None = None,
-    ) -> AsyncGenerator[AsyncIterator[PubSubMessage]]:
+    ) -> AsyncIterator[AsyncIterator[PubSubMessage]]:
         """Receive messages from a subscription.
 
         Args:
@@ -537,12 +540,12 @@ class UnifiedMessagingBackend(t.Protocol):
         """Unsubscribe from a topic."""
         ...
 
-    @asynccontextmanager
+    @asynccontextmanager  # type: ignore[arg-type]
     async def receive_messages(
         self,
         subscription: Subscription,
         timeout: float | None = None,
-    ) -> AsyncGenerator[AsyncIterator[PubSubMessage]]:
+    ) -> AsyncIterator[AsyncIterator[PubSubMessage]]:
         """Receive messages from a subscription."""
         raise NotImplementedError  # pragma: no cover
 
@@ -634,7 +637,7 @@ class ConnectionMixin:
     _logger: t.Any
     _connected: bool
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         super().__init__(*args, **kwargs)
         self._connection_lock = asyncio.Lock()
 
@@ -664,6 +667,10 @@ class ConnectionMixin:
         if not self._connected:
             await self.connect()
 
+    async def connect(self) -> None:
+        """Connect to the backend (must be implemented by subclasses)."""
+        raise NotImplementedError  # pragma: no cover
+
     async def health_check(self) -> dict[str, t.Any]:
         """Default health check implementation."""
         return {
@@ -677,7 +684,7 @@ class ConnectionMixin:
         return set()
 
 
-class PubSubMixin:
+class PubSubMixin(ConnectionMixin):
     """Provides common pub/sub functionality for messaging backends."""
 
     _settings: MessagingSettings
@@ -690,6 +697,15 @@ class PubSubMixin:
         """Default subscription implementation."""
         await self._ensure_connection()
         return Subscription(topic=topic)
+
+    async def publish(
+        self,
+        topic: str,
+        message: bytes,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        """Publish a message (must be implemented by subclasses)."""
+        raise NotImplementedError  # pragma: no cover
 
     async def publish_batch(
         self,
@@ -720,6 +736,17 @@ class QueueMixin:
             priority=MessagePriority.NORMAL,
             headers={"original_queue": queue, "failure_reason": reason},
         )
+
+    async def enqueue(
+        self,
+        queue: str,
+        message: bytes,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        delay_seconds: float = 0.0,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """Enqueue a message (must be implemented by subclasses)."""
+        raise NotImplementedError  # pragma: no cover
 
     async def enqueue_batch(
         self,

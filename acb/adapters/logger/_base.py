@@ -170,6 +170,7 @@ class LoggerBase(CleanupMixin):
         self._active_sinks: list[t.Any] = []  # Track active sinks for cleanup
         # For testing purposes, allow direct config assignment
         self._config: t.Any = None
+        self.logger: LoggerProtocol = t.cast("LoggerProtocol", self)
 
     @property
     def settings(self) -> LoggerBaseSettings:

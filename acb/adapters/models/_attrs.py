@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import inspect
 
-from typing import Any, Protocol, TypeVar, get_args, get_origin
+from typing import Any, Protocol, get_args, get_origin
 
-from ._base import ModelAdapterMixin
-
-T = TypeVar("T")
+from ._base import ModelAdapterMixin, T
 
 
 class ModelAdapter(Protocol[T]):
@@ -57,7 +55,7 @@ attrs_lib = _attrs_lib
 ATTRS_AVAILABLE = _attrs_available
 
 
-class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
+class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin[T]):  # type: ignore[override, misc]
     def __init__(self) -> None:
         if not ATTRS_AVAILABLE:
             msg = "attrs is required for AttrsModelAdapter"
@@ -65,7 +63,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
 
     def serialize(self, instance: T) -> dict[str, Any]:
         if ATTRS_AVAILABLE and attrs_lib.has(instance.__class__):
-            return attrs_lib.asdict(instance)  # type: ignore[no-any-return]
+            return attrs_lib.asdict(instance)
         return self._manual_serialize(instance)
 
     def _manual_serialize(self, instance: T) -> dict[str, Any]:  # type: ignore[override]
@@ -98,7 +96,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
             filtered_data = self._filter_data_for_model(model_class, data)
             return model_class(**filtered_data)
 
-    def _filter_data_for_model(  # type: ignore[override]
+    def _filter_data_for_model(
         self,
         model_class: type[T],
         data: dict[str, Any],
@@ -135,7 +133,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
 
         return field_mapping
 
-    def validate_data(  # type: ignore[override]
+    def validate_data(
         self,
         model_class: type[T],
         data: dict[str, Any],
@@ -231,7 +229,7 @@ class AttrsModelAdapter(ModelAdapter[T], ModelAdapterMixin):
             and attrs_lib.has(field_type),
         )
 
-    def get_nested_model_class(  # type: ignore[override]
+    def get_nested_model_class(
         self,
         model_class: type[T],
         field_name: str,

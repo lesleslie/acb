@@ -618,7 +618,7 @@ class RepositoryService(ServiceBase, HealthCheckMixin):
             active_transactions = await self.uow_manager.get_active_transactions()
 
             # Check if there are issues
-            if len(registrations) == 0:
+            if not registrations:
                 status = HealthStatus.DEGRADED
                 message = "No repositories registered"
             elif len(active_transactions) > 100:  # Arbitrary high number threshold

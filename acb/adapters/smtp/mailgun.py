@@ -228,10 +228,12 @@ class Smtp(SmtpBase):
         for f in forwards:
             fs = [r for r in routes if self.get_name(r["expression"]) == f]
             deletes.extend(fs[1:])
+        adapters = adapter_registry.get() or []
         adapter = next(
-            a for a in adapter_registry.get() if a.category == "email" and a.enabled
+            (a for a in adapters if a.category == "email" and a.enabled),
+            None,
         )
-        if delete_all or adapter.name == "gmail":
+        if delete_all or (adapter and adapter.name == "gmail"):
             deletes = [r for r in routes if len(self.get_name(r["expression"]))]
             debug(deletes)
             debug(len(deletes))

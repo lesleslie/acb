@@ -204,6 +204,7 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
         self.settings = settings or depends.get_sync(RepositorySettings)
         self._cache = None
         self._metrics: dict[str, t.Any] = {}
+        self._logger: t.Any = None
 
     async def _async_init(self) -> None:
         """Async initialization of repository dependencies."""
@@ -221,6 +222,21 @@ class RepositoryBase[EntityType, IDType](CleanupMixin, ABC):
     def _build_cache_key(self, key: str) -> str:
         """Build cache key with proper prefix."""
         return f"{self.cache_key_prefix}:{key}"
+
+    @property
+    def logger(self) -> t.Any:
+        """Lazy-load logger adapter for repository diagnostics."""
+        if self._logger is None:
+            try:
+                from acb.adapters import import_adapter
+
+                Logger = import_adapter("logger")
+                self._logger = depends.get_sync(Logger)
+            except Exception:
+                import logging
+
+                self._logger = logging.getLogger(self.__class__.__name__)
+        return self._logger
 
     async def _get_cache(self) -> None:
         """Get cache adapter if enabled."""

@@ -307,7 +307,7 @@ class Reasoning(ReasoningBase):
         self,
         request: ReasoningRequest,
         reasoning_chain: list[ReasoningStep],
-    ) -> list[dict]:
+    ) -> list[dict[str, t.Any]]:
         """Initialize function calling by preparing messages and adding to reasoning chain."""
         messages = await self._prepare_messages(request)
         functions = self._prepare_functions(request.tools or [])
@@ -334,10 +334,10 @@ class Reasoning(ReasoningBase):
         self,
         request: ReasoningRequest,
         client: AsyncOpenAI,
-        functions: list,
+        functions: list[dict[str, t.Any]],
         function_tracker: FunctionCallTracker,
         reasoning_chain: list[ReasoningStep],
-        messages: list,
+        messages: list[dict[str, t.Any]],
         max_calls: int,
     ) -> str:
         """Process function calls iteratively."""
@@ -368,10 +368,10 @@ class Reasoning(ReasoningBase):
         self,
         request: ReasoningRequest,
         client: AsyncOpenAI,
-        functions: list,
+        functions: list[dict[str, t.Any]],
         function_tracker: FunctionCallTracker,
         reasoning_chain: list[ReasoningStep],
-        messages: list,
+        messages: list[dict[str, t.Any]],
         call_count: int,
     ) -> dict[str, t.Any]:
         """Execute a single iteration of function calling."""
@@ -412,7 +412,7 @@ class Reasoning(ReasoningBase):
             self._handle_error(e, call_count, reasoning_chain)
             return {"final_answer": "", "new_call_count": call_count + 1}
 
-    def _format_assistant_message(self, message) -> dict:
+    def _format_assistant_message(self, message: t.Any) -> dict[str, t.Any]:
         """Format the assistant message for inclusion in conversation."""
         return {
             "role": "assistant",
@@ -434,11 +434,11 @@ class Reasoning(ReasoningBase):
 
     async def _handle_tool_calls(
         self,
-        message,
+        message: t.Any,
         request: ReasoningRequest,
         function_tracker: FunctionCallTracker,
         reasoning_chain: list[ReasoningStep],
-        messages: list,
+        messages: list[dict[str, t.Any]],
         call_count: int,
     ) -> dict[str, t.Any]:
         """Handle the execution and processing of tool calls."""
@@ -467,8 +467,8 @@ class Reasoning(ReasoningBase):
 
     def _create_tool_call_step(
         self,
-        message,
-        tool_results: list,
+        message: t.Any,
+        tool_results: list[t.Any],
         call_count: int,
     ) -> ReasoningStep:
         """Create a reasoning step for the tool calls."""
